@@ -1,0 +1,18 @@
+{
+  "name": "Sense360 Air Quality (CO2)",
+  "version": "1.0.0-Beta",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 10,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "improv": true,
+      "parts": [
+        {
+          "path": "firmware/Sense360-AirQ-CO2-WROOM1-v1.0.0-Beta.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

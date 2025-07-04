@@ -1,0 +1,18 @@
+{
+  "name": "Sense360 Fan Control (PWM)",
+  "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 10,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "improv": true,
+      "parts": [
+        {
+          "path": "firmware/Sense360-Fan-PWM-S3-v1.0.0-Stable.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

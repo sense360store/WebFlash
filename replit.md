@@ -84,10 +84,25 @@ This is a web-based installer for Sense360 v2.0.0 firmware that uses the officia
 ├── _headers                      # CORS headers for GitHub Pages
 ├── .github/workflows/deploy.yml  # GitHub Actions deployment
 └── firmware/                     # Firmware binary files
-    └── sense360_v2.v2.0.0.factory.bin  # Sense360 v2.0.0 factory firmware
+    ├── Sense360-Fan-PWM-S3-v1.0.0-Stable.bin      # Fan control with PWM (ESP32-S3)
+    ├── Sense360-AirQ-CO2-WROOM1-v1.0.0-Beta.bin   # Air Quality CO2 monitoring (ESP32)
+    ├── Sense360-Multi-S3-v2.1.3-Stable.bin        # Multi-function firmware (ESP32-S3)
+    └── sense360_v2.v2.0.0.factory.bin              # Legacy firmware file
 ```
 
 ## Recent Changes
+- July 04, 2025: Implemented structured naming convention for firmware releases
+  - Added consistent naming format: Sense360-[Family]-[Feature/Type]-[Board/Chip]-[Version]-[Channel].bin
+  - Created three distinct firmware variants: Fan-PWM, AirQ-CO2, and Multi-function
+  - Updated manifest.json to use new firmware naming structure with proper chip family mapping
+  - Added firmware documentation table in README.md with naming convention guidelines
+  - Updated UI to reflect multiple firmware variants and applications
+
+- July 04, 2025: Applied clean minimal theme based on user preference
+  - Changed from gradient to clean white background with subtle styling
+  - Reduced text sizes and simplified visual design for professional appearance
+  - Maintained all ESP32 variant compatibility with cleaner interface
+
 - July 04, 2025: Resolved ESP32-S3 compatibility issue by adding support for multiple ESP32 variants (ESP32, ESP32-S3, ESP32-S2, ESP32-C3) in manifest.json
   - Fixed "board not supported" error that was preventing firmware installation on ESP32-S3 devices
   - Updated manifest.json to include all ESP32 chip families using the same Sense360 firmware binary

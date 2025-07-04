@@ -1,15 +1,38 @@
 # Sense360 ESP32 Installer
 
-A web-based installer for Sense360 v2.0.0 firmware using the official ESP Web Tools library. This tool provides a simple, browser-based interface for flashing Sense360 firmware to ESP32 devices via USB.
+A web-based installer for Sense360 firmware using the official ESP Web Tools library. This tool provides a simple, browser-based interface for flashing Sense360 firmware to ESP32 devices via USB.
 
 ## Features
 
 - **Browser-based flashing** - No software installation required
 - **ESP Web Tools integration** - Uses the official, battle-tested ESP Web Tools library
 - **Multi-chip support** - ESP32, ESP32-S2, ESP32-C3, ESP32-S3
+- **Multiple firmware variants** - Fan control, Air Quality monitoring, and Multi-function firmware
 - **Automatic device detection** - Detects connected ESP32 devices automatically
 - **Wi-Fi provisioning** - Supports Improv protocol for easy Wi-Fi setup
 - **User-friendly interface** - Clean, minimal design with built-in troubleshooting
+
+## Firmware Naming Convention
+
+All firmware files follow this naming structure:
+
+```
+Sense360-[Family]-[Feature/Type]-[Board/Chip]-[Version]-[Channel].bin
+```
+
+- **[Family]**: Main function (Fan, AirQ, Multi)
+- **[Feature/Type]**: Optional feature (PWM, CO2, TVOC, Analog)
+- **[Board/Chip]**: Hardware (S3, WROOM1, C3, S2)
+- **[Version]**: Semantic version (v1.0.0, v2.1.3)
+- **[Channel]**: Stable or Beta
+
+## Available Firmware
+
+| Name | Family | Feature | Board | Version | Channel |
+|------|--------|---------|-------|---------|---------|
+| Sense360-Fan-PWM-S3-v1.0.0-Stable.bin | Fan | PWM | S3 | 1.0.0 | Stable |
+| Sense360-AirQ-CO2-WROOM1-v1.0.0-Beta.bin | AirQ | CO2 | WROOM1 | 1.0.0 | Beta |
+| Sense360-Multi-S3-v2.1.3-Stable.bin | Multi | - | S3 | 2.1.3 | Stable |
 
 ## Requirements
 

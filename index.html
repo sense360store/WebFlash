@@ -23,21 +23,69 @@
 
             <div class="install-section">
                 <h2>Install Sense360 Firmware</h2>
-                <div class="firmware-info">
-                    <h3>Sense360 Firmware Suite</h3>
-                    <p>Multiple firmware variants for different applications</p>
-                    <ul>
-                        <li>✓ Fan control firmware with PWM support</li>
-                        <li>✓ Air Quality monitoring with CO2 sensors</li>
-                        <li>✓ Multi-function firmware for versatile applications</li>
-                        <li>✓ Wi-Fi provisioning support (Improv protocol)</li>
-                        <li>✓ Multi-chip support (ESP32, ESP32-S2, ESP32-S3, ESP32-C3)</li>
-                        <li>✓ Both stable and beta channel releases</li>
-                    </ul>
+                <div class="firmware-selection">
+                    <h3>Select Firmware Variant</h3>
+                    <p>Choose the firmware that matches your intended use case:</p>
+                    
+                    <div class="firmware-options">
+                        <div class="firmware-option">
+                            <input type="radio" id="fan" name="firmware" value="fan" checked>
+                            <label for="fan">
+                                <div class="option-header">
+                                    <strong>Fan Control (PWM)</strong>
+                                    <span class="version">v1.0.0 Stable</span>
+                                </div>
+                                <div class="option-description">
+                                    Optimized for fan control applications with PWM output support. Compatible with ESP32-S3.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">PWM Control</span>
+                                    <span class="feature">Wi-Fi Setup</span>
+                                    <span class="feature">ESP32-S3</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="firmware-option">
+                            <input type="radio" id="airq" name="firmware" value="airq">
+                            <label for="airq">
+                                <div class="option-header">
+                                    <strong>Air Quality (CO2)</strong>
+                                    <span class="version">v1.0.0 Beta</span>
+                                </div>
+                                <div class="option-description">
+                                    Advanced air quality monitoring with CO2 sensor integration. Compatible with ESP32 WROOM1.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">CO2 Sensors</span>
+                                    <span class="feature">Wi-Fi Setup</span>
+                                    <span class="feature">ESP32</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="firmware-option">
+                            <input type="radio" id="multi" name="firmware" value="multi">
+                            <label for="multi">
+                                <div class="option-header">
+                                    <strong>Multi-Function</strong>
+                                    <span class="version">v2.1.3 Stable</span>
+                                </div>
+                                <div class="option-description">
+                                    Versatile firmware supporting multiple sensor types and control options. Compatible with ESP32-S3.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">Multi-Sensor</span>
+                                    <span class="feature">Wi-Fi Setup</span>
+                                    <span class="feature">ESP32-S3</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="install-container">
-                    <esp-web-install-button manifest="./manifest.json">
-                        <button type="button" class="btn-primary" slot="activate">Install Sense360</button>
+                    <esp-web-install-button manifest="./manifest.json" id="install-button">
+                        <button type="button" class="btn-primary" slot="activate">Install Selected Firmware</button>
                         <span slot="not-allowed">
                             <div class="alert alert-danger">
                                 <h3>⚠️ Not Allowed</h3>
@@ -106,5 +154,31 @@
             </p>
         </footer>
     </div>
+    
+    <script>
+        // Handle firmware selection
+        const firmwareOptions = document.querySelectorAll('input[name="firmware"]');
+        const installButton = document.getElementById('install-button');
+        
+        const manifestMap = {
+            'fan': './manifests/fan-manifest.json',
+            'airq': './manifests/airq-manifest.json',
+            'multi': './manifests/multi-manifest.json'
+        };
+        
+        function updateManifest() {
+            const selectedFirmware = document.querySelector('input[name="firmware"]:checked').value;
+            const manifestPath = manifestMap[selectedFirmware];
+            installButton.setAttribute('manifest', manifestPath);
+        }
+        
+        // Add event listeners to radio buttons
+        firmwareOptions.forEach(option => {
+            option.addEventListener('change', updateManifest);
+        });
+        
+        // Set initial manifest (fan firmware by default)
+        updateManifest();
+    </script>
 </body>
 </html>
