@@ -88,6 +88,12 @@ This is a web-based installer for Sense360 v2.0.0 firmware that uses the officia
 ```
 
 ## Recent Changes
+- July 04, 2025: Resolved ESP32-S3 compatibility issue by adding support for multiple ESP32 variants (ESP32, ESP32-S3, ESP32-S2, ESP32-C3) in manifest.json
+  - Fixed "board not supported" error that was preventing firmware installation on ESP32-S3 devices
+  - Updated manifest.json to include all ESP32 chip families using the same Sense360 firmware binary
+  - Added modern gradient theme with enhanced visual design and improved user experience
+  - Updated UI to reflect multi-chip support in firmware features list
+
 - July 04, 2025: Customized for Sense360 v2.0.0 firmware
   - Added specific Sense360 v2.0.0 factory firmware binary
   - Updated manifest.json to target Sense360 firmware specifically
