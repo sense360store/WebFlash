@@ -198,33 +198,23 @@
         });
 
         // Connect button
-        document.getElementById('connectBtn').addEventListener('click', async () => {
-            try {
-                const installer = selectedFirmware === 'factory' ? 
-                    document.getElementById('factoryInstaller') : 
-                    document.getElementById('devInstaller');
-                
-                // Trigger ESP Web Tools install process
-                await installer.activate();
-            } catch (error) {
-                console.error('Connection failed:', error);
-                alert('Failed to connect to device. Please check your connection and try again.');
-            }
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            const installer = selectedFirmware === 'factory' ? 
+                document.getElementById('factoryInstaller') : 
+                document.getElementById('devInstaller');
+            
+            // Trigger ESP Web Tools by clicking the hidden button
+            installer.click();
         });
 
         // Flash button
-        document.getElementById('flashBtn').addEventListener('click', async () => {
-            try {
-                const installer = selectedFirmware === 'factory' ? 
-                    document.getElementById('factoryInstaller') : 
-                    document.getElementById('devInstaller');
-                
-                // Trigger ESP Web Tools install process
-                await installer.activate();
-            } catch (error) {
-                console.error('Flashing failed:', error);
-                alert('Failed to flash firmware. Please check your connection and try again.');
-            }
+        document.getElementById('flashBtn').addEventListener('click', () => {
+            const installer = selectedFirmware === 'factory' ? 
+                document.getElementById('factoryInstaller') : 
+                document.getElementById('devInstaller');
+            
+            // Trigger ESP Web Tools by clicking the hidden button
+            installer.click();
         });
 
         // Update UI based on state
