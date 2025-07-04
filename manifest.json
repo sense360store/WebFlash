@@ -1,6 +1,6 @@
 {
-  "name": "ESP32 Firmware",
-  "version": "1.0.0",
+  "name": "Sense360 v2.0.0",
+  "version": "2.0.0", 
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 10,
   "builds": [
@@ -9,37 +9,7 @@
       "improv": true,
       "parts": [
         {
-          "path": "firmware/esp32-merged-firmware.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "chipFamily": "ESP32-S2",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/esp32s2-merged-firmware.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "chipFamily": "ESP32-C3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/esp32c3-merged-firmware.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/esp32s3-merged-firmware.bin",
+          "path": "firmware/sense360_v2.v2.0.0.factory.bin",
           "offset": 0
         }
       ]

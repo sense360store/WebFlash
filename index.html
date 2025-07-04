@@ -3,29 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Firmware Flasher</title>
+    <title>Sense360 ESP32 Installer</title>
     <link rel="stylesheet" href="css/style.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
     <div id="app">
         <header>
-            <h1>ESP32 Firmware Flasher</h1>
-            <p>Flash firmware to ESP32 devices using ESP Web Tools</p>
+            <h1>Sense360 ESP32 Installer</h1>
+            <p>Flash Sense360 v2.0.0 firmware to ESP32 devices</p>
         </header>
 
         <main>
             <div class="intro-section">
                 <h2>Getting Started</h2>
                 <p>Connect your ESP32 device to your computer using a USB cable. Make sure you're using Chrome or Edge browser with HTTPS enabled.</p>
-                <p>Click the "Connect Device" button below to detect your ESP32 and flash the firmware.</p>
+                <p>This installer will flash the Sense360 v2.0.0 firmware to your ESP32 device. Click the "Install Sense360" button below to begin.</p>
             </div>
 
             <div class="install-section">
-                <h2>Install Firmware</h2>
+                <h2>Install Sense360 Firmware</h2>
+                <div class="firmware-info">
+                    <h3>Sense360 v2.0.0</h3>
+                    <p>Factory firmware for ESP32 devices</p>
+                    <ul>
+                        <li>✓ Wi-Fi provisioning support (Improv protocol)</li>
+                        <li>✓ ESP32 chip family support</li>
+                        <li>✓ Factory reset capability</li>
+                        <li>✓ Ready-to-use configuration</li>
+                    </ul>
+                </div>
                 <div class="install-container">
                     <esp-web-install-button manifest="./manifest.json">
-                        <button type="button" class="btn-primary" slot="activate">Connect Device</button>
+                        <button type="button" class="btn-primary" slot="activate">Install Sense360</button>
                         <span slot="not-allowed">
                             <div class="alert alert-danger">
                                 <h3>⚠️ Not Allowed</h3>

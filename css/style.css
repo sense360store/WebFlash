@@ -64,6 +64,36 @@ main {
     margin-bottom: 10px;
 }
 
+.firmware-info {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.firmware-info h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1.3em;
+}
+
+.firmware-info p {
+    color: #7f8c8d;
+    margin-bottom: 15px;
+}
+
+.firmware-info ul {
+    list-style: none;
+    padding: 0;
+}
+
+.firmware-info li {
+    padding: 5px 0;
+    color: #27ae60;
+    font-weight: 500;
+}
+
 .install-container {
     display: flex;
     justify-content: center;

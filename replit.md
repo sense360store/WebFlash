@@ -1,8 +1,8 @@
-# ESP32 Firmware Flasher
+# Sense360 ESP32 Installer
 
 ## Overview
 
-This is a web-based ESP32 firmware flashing tool that uses the official ESP Web Tools library to provide a reliable, browser-based interface for flashing firmware to ESP32 devices via USB. The application is designed as a static web app suitable for GitHub Pages deployment, providing a minimal but professional interface similar to established ESP flashing tools.
+This is a web-based installer for Sense360 v2.0.0 firmware that uses the official ESP Web Tools library to provide a reliable, browser-based interface for flashing Sense360 firmware to ESP32 devices via USB. The application is designed as a static web app suitable for GitHub Pages deployment, providing a minimal but professional interface for end users to easily install Sense360 firmware.
 
 ## System Architecture
 
@@ -77,20 +77,24 @@ This is a web-based ESP32 firmware flashing tool that uses the official ESP Web 
 ### File Structure
 ```
 /
-├── index.html                    # Main application page with ESP Web Tools
-├── manifest.json                 # ESP Web Tools firmware manifest
+├── index.html                    # Sense360 installer page with ESP Web Tools
+├── manifest.json                 # ESP Web Tools manifest for Sense360 firmware
 ├── css/style.css                 # Application styles
 ├── README.md                     # Project documentation
 ├── _headers                      # CORS headers for GitHub Pages
 ├── .github/workflows/deploy.yml  # GitHub Actions deployment
 └── firmware/                     # Firmware binary files
-    ├── esp32-merged-firmware.bin
-    ├── esp32s2-merged-firmware.bin
-    ├── esp32c3-merged-firmware.bin
-    └── esp32s3-merged-firmware.bin
+    └── sense360_v2.v2.0.0.factory.bin  # Sense360 v2.0.0 factory firmware
 ```
 
 ## Recent Changes
+- July 04, 2025: Customized for Sense360 v2.0.0 firmware
+  - Added specific Sense360 v2.0.0 factory firmware binary
+  - Updated manifest.json to target Sense360 firmware specifically
+  - Rebranded interface as "Sense360 ESP32 Installer"
+  - Added firmware feature highlights and installation instructions
+  - Focused UI on single firmware option for simplified user experience
+
 - July 04, 2025: Major architectural refactor to use ESP Web Tools
   - Removed custom JavaScript implementation (main.js, esp-flasher.js, serial-monitor.js)
   - Integrated official ESP Web Tools library for reliable device communication

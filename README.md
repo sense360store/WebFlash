@@ -1,6 +1,6 @@
-# ESP32 Firmware Flasher
+# Sense360 ESP32 Installer
 
-A minimal web application for flashing ESP32 firmware using the official ESP Web Tools library. This tool provides a simple, browser-based interface for flashing firmware to ESP32 devices via USB.
+A web-based installer for Sense360 v2.0.0 firmware using the official ESP Web Tools library. This tool provides a simple, browser-based interface for flashing Sense360 firmware to ESP32 devices via USB.
 
 ## Features
 
