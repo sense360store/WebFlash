@@ -96,48 +96,173 @@ main {
     margin-bottom: 12px;
 }
 
-.firmware-info {
-    background: var(--bg-tertiary);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border-light);
+.firmware-selection {
+    margin-bottom: 24px;
 }
 
-.firmware-info h3 {
+.firmware-selection h3 {
     color: var(--text-primary);
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.filter-section {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 14px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666' d='M6 8L0 2h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 32px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.firmware-options {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.firmware-option {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.firmware-option:hover {
+    border-color: var(--primary-color);
+}
+
+.firmware-option input[type="radio"] {
+    display: none;
+}
+
+.firmware-option input[type="radio"]:checked + label {
+    border-left: 4px solid var(--primary-color);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.firmware-option label {
+    display: block;
+    padding: 20px;
+    cursor: pointer;
+    background: var(--bg-primary);
+    transition: all 0.2s ease;
+}
+
+.firmware-option label:hover {
+    background: var(--bg-tertiary);
+}
+
+.option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 8px;
+}
+
+.option-header strong {
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 600;
 }
 
-.firmware-info p {
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-    font-size: 14px;
-}
-
-.firmware-info ul {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.firmware-info li {
-    color: var(--text-secondary);
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.firmware-info li::before {
-    content: '✓';
-    color: var(--success-color);
-    font-weight: 600;
+.version-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
     font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.version-badge.stable {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.version-badge.beta {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.version-badge.alpha {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.version-badge.factory {
+    background: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.option-meta {
+    margin-bottom: 8px;
+}
+
+.release-date {
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-style: italic;
+}
+
+.option-description {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.option-features {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.feature {
+    background: var(--border-light);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .install-container {
