@@ -1,0 +1,109 @@
+You are building a new web app from scratch, to be hosted on GitHub Pages and deployed via a GitHub Actions workflow.
+Your goal is to build the minimal, correct foundation (MVP) for an ESP32 firmware flashing tool that works exactly like ESP Web Tools.
+
+Requirements:
+
+1. Project Structure & Hosting
+Codebase should be suitable for static deployment on GitHub Pages.
+
+Provide a working GitHub Actions workflow file to deploy the site to GitHub Pages after every push to main.
+
+2. Core MVP Functionality
+a) Web Serial API
+
+Use the browser’s Web Serial API to connect directly to ESP devices over USB.
+
+Only support Chrome and Edge browsers (no fallback or polyfills, no simulation).
+
+Do NOT attempt to simulate devices or logs—show only real serial output from connected devices.
+
+b) Manifest-based Firmware Selection
+
+Load a manifest.json describing available firmware images for each ESP chip family.
+
+Automatically detect the connected ESP device type and select the correct firmware from the manifest for flashing.
+
+c) Firmware Flashing
+
+Flash the selected firmware to the connected ESP32 using the Web Serial API.
+
+Firmware files must be merged single .bin files for ESP32/ESP-IDF v4+ (see details below).
+
+d) Serial Logs (Live Only)
+
+Provide a live serial console that displays real-time output from the connected device.
+
+Allow sending commands to the device (basic terminal).
+
+e) Wi-Fi Provisioning (Improv, Optional)
+
+If firmware supports Improv Wi-Fi serial standard, allow the user to provision Wi-Fi via serial after flashing.
+
+3. Workflow & Deployment
+Provide a workflow.yml for GitHub Actions that builds (if needed) and deploys to GitHub Pages.
+
+Ensure manifest and firmware .bin files are served with correct CORS headers.
+
+4. UI/UX
+Keep UI minimal and functional—do not design features not described here.
+
+Include:
+
+"Connect Device" button.
+
+Serial monitor window.
+
+"Flash Firmware" button (enabled after connection).
+
+If Improv is detected, guide user to Wi-Fi provisioning.
+
+Show clear warnings if:
+
+User is on unsupported browser.
+
+The site is not served over HTTPS.
+
+5. Reference & Technical Details
+Follow ESP Web Tools docs.
+
+To create merged ESP32 firmware (for manifest):
+
+python
+Copy
+Edit
+esptool --chip esp32 merge_bin \
+  -o merged-firmware.bin \
+  --flash_mode dio \
+  --flash_freq 40m \
+  --flash_size 4MB \
+  0x1000 bootloader.bin \
+  0x8000 partitions.bin \
+  0xe000 boot_app0.bin \
+  0x10000 your_app.bin
+Manifest example (place at /manifest.json):
+
+json
+Copy
+Edit
+{
+  "name": "Sense360 Firmware",
+  "version": "1.0.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "firmware/merged-firmware.bin", "offset": 0 }
+      ]
+    }
+  ]
+}
+Include example HTML usage:
+
+html
+Copy
+Edit
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+<esp-web-install-button manifest="/manifest.json"></esp-web-install-button>
+Do not add any additional features, sample data, or simulated output.
+Build the correct core logic and deployment only.
+Think of this as “laying the foundation” for a house—no extra functionality until the basics are working perfectly.
