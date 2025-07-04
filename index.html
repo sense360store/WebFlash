@@ -5,76 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP32 Firmware Flasher</title>
     <link rel="stylesheet" href="css/style.css">
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
     <div id="app">
         <header>
             <h1>ESP32 Firmware Flasher</h1>
-            <p>Flash firmware to ESP32 devices via Web Serial API</p>
+            <p>Flash firmware to ESP32 devices using ESP Web Tools</p>
         </header>
 
-        <div id="browser-warning" class="warning hidden">
-            <h3>⚠️ Unsupported Browser</h3>
-            <p>This application requires Chrome or Edge browser with Web Serial API support.</p>
-        </div>
-
-        <div id="https-warning" class="warning hidden">
-            <h3>⚠️ HTTPS Required</h3>
-            <p>Web Serial API requires HTTPS connection. Please use a secure connection.</p>
-        </div>
-
         <main>
-            <div class="control-panel">
-                <div class="device-section">
-                    <h2>Device Connection</h2>
-                    <button id="connect-btn" class="btn-primary">Connect Device</button>
-                    <div id="device-info" class="device-info hidden">
-                        <p><strong>Device:</strong> <span id="device-name">Not connected</span></p>
-                        <p><strong>Chip:</strong> <span id="chip-type">Unknown</span></p>
-                        <p><strong>Status:</strong> <span id="connection-status">Disconnected</span></p>
-                    </div>
-                </div>
+            <div class="intro-section">
+                <h2>Getting Started</h2>
+                <p>Connect your ESP32 device to your computer using a USB cable. Make sure you're using Chrome or Edge browser with HTTPS enabled.</p>
+                <p>Click the "Connect Device" button below to detect your ESP32 and flash the firmware.</p>
+            </div>
 
-                <div class="firmware-section">
-                    <h2>Firmware Flashing</h2>
-                    <div id="firmware-info" class="firmware-info hidden">
-                        <p><strong>Firmware:</strong> <span id="firmware-name">Loading...</span></p>
-                        <p><strong>Version:</strong> <span id="firmware-version">Loading...</span></p>
-                    </div>
-                    <button id="flash-btn" class="btn-secondary" disabled>Flash Firmware</button>
-                    <div id="flash-progress" class="progress-container hidden">
-                        <div class="progress-bar">
-                            <div id="progress-fill" class="progress-fill"></div>
-                        </div>
-                        <div id="flash-status" class="status-text">Preparing...</div>
-                    </div>
+            <div class="install-section">
+                <h2>Install Firmware</h2>
+                <div class="install-container">
+                    <esp-web-install-button manifest="./manifest.json">
+                        <button type="button" class="btn-primary" slot="activate">Connect Device</button>
+                        <span slot="not-allowed">
+                            <div class="alert alert-danger">
+                                <h3>⚠️ Not Allowed</h3>
+                                <p>Flashing is only supported from localhost or from a secure (HTTPS) website.</p>
+                            </div>
+                        </span>
+                        <span slot="notsupported">
+                            <div class="alert alert-danger">
+                                <h3>⚠️ Browser Not Supported</h3>
+                                <p>ESP Web Tools requires Chrome or Edge browser. <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#browser_compatibility" target="_blank">Check browser compatibility</a></p>
+                            </div>
+                        </span>
+                    </esp-web-install-button>
                 </div>
+            </div>
 
-                <div id="wifi-section" class="wifi-section hidden">
-                    <h2>Wi-Fi Provisioning</h2>
-                    <p>Improv Wi-Fi provisioning detected. Configure your device's Wi-Fi settings.</p>
-                    <div class="wifi-form">
-                        <input type="text" id="wifi-ssid" placeholder="Network Name (SSID)" />
-                        <input type="password" id="wifi-password" placeholder="Password" />
-                        <button id="provision-wifi-btn" class="btn-secondary">Provision Wi-Fi</button>
+            <div class="features-section">
+                <h2>Features</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>🔌 Easy Connection</h3>
+                        <p>Connect ESP32 devices directly via USB using the Web Serial API</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚡ Fast Flashing</h3>
+                        <p>Automatic chip detection and optimized firmware flashing</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📱 Wi-Fi Setup</h3>
+                        <p>Configure Wi-Fi settings using Improv protocol after flashing</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔍 Serial Monitor</h3>
+                        <p>Real-time serial output monitoring and command interface</p>
                     </div>
                 </div>
             </div>
 
-            <div class="serial-section">
-                <h2>Serial Monitor</h2>
-                <div id="serial-container">
-                    <div id="serial-output" class="serial-output"></div>
-                    <div class="serial-input">
-                        <input type="text" id="serial-command" placeholder="Enter command..." />
-                        <button id="send-command-btn" class="btn-secondary" disabled>Send</button>
-                        <button id="clear-serial-btn" class="btn-secondary">Clear</button>
-                    </div>
+            <div class="troubleshooting-section">
+                <h2>Troubleshooting</h2>
+                <div class="troubleshooting-content">
+                    <h3>Device Not Detected?</h3>
+                    <ul>
+                        <li>Make sure your ESP32 is connected via USB</li>
+                        <li>Check that you're using Chrome or Edge browser</li>
+                        <li>Verify you're accessing the site via HTTPS</li>
+                        <li>Try a different USB cable or port</li>
+                        <li>On Windows, ensure proper drivers are installed</li>
+                    </ul>
+                    
+                    <h3>Flashing Failed?</h3>
+                    <ul>
+                        <li>Hold the BOOT button while connecting (if available)</li>
+                        <li>Try resetting the device before flashing</li>
+                        <li>Ensure no other applications are using the serial port</li>
+                        <li>Check that the firmware file is compatible with your chip</li>
+                    </ul>
                 </div>
             </div>
         </main>
-    </div>
 
-    <script type="module" src="js/main.js"></script>
+        <footer>
+            <p>
+                <a href="https://github.com/esphome/esp-web-tools" target="_blank">Powered by ESP Web Tools</a> | 
+                <a href="https://github.com/your-repo/esp32-flasher" target="_blank">View Source</a>
+            </p>
+        </footer>
+    </div>
 </body>
 </html>

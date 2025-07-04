@@ -1,9 +1,12 @@
 {
   "name": "ESP32 Firmware",
   "version": "1.0.0",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 10,
   "builds": [
     {
       "chipFamily": "ESP32",
+      "improv": true,
       "parts": [
         {
           "path": "firmware/esp32-merged-firmware.bin",
@@ -13,6 +16,7 @@
     },
     {
       "chipFamily": "ESP32-S2",
+      "improv": true,
       "parts": [
         {
           "path": "firmware/esp32s2-merged-firmware.bin",
@@ -22,6 +26,7 @@
     },
     {
       "chipFamily": "ESP32-C3",
+      "improv": true,
       "parts": [
         {
           "path": "firmware/esp32c3-merged-firmware.bin",
@@ -31,6 +36,7 @@
     },
     {
       "chipFamily": "ESP32-S3",
+      "improv": true,
       "parts": [
         {
           "path": "firmware/esp32s3-merged-firmware.bin",
