@@ -3,106 +3,265 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sense360 ESP32 Installer</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Sense360 Flash - ESP32 Firmware Flashing Tool</title>
+    <link rel="stylesheet" href="css/modern-style.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
-    <div id="app">
-        <header>
-            <h1>Sense360 ESP32 Installer</h1>
-            <p>Flash Sense360 v2.0.0 firmware to ESP32 devices</p>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">S3</div>
+                <div>
+                    <div class="logo-text">Sense360 Flash</div>
+                    <div class="subtitle">ESP32 Firmware Flashing Tool</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a href="#" class="header-btn">⚙️</a>
+                <a href="#" class="header-btn">📖</a>
+                <a href="#" class="header-btn">🔗</a>
+            </div>
         </header>
 
-        <main>
-            <div class="intro-section">
-                <h2>Getting Started</h2>
-                <p>Connect your ESP32 device to your computer using a USB cable. Make sure you're using Chrome or Edge browser with HTTPS enabled.</p>
-                <p>This installer will flash the Sense360 v2.0.0 firmware to your ESP32 device. Click the "Install Sense360" button below to begin.</p>
-            </div>
-
-            <div class="install-section">
-                <h2>Install Sense360 Firmware</h2>
-                <div class="firmware-info">
-                    <h3>Sense360 v2.0.0</h3>
-                    <p>Factory firmware for ESP32 devices</p>
-                    <ul>
-                        <li>✓ Wi-Fi provisioning support (Improv protocol)</li>
-                        <li>✓ Multi-chip support (ESP32, ESP32-S2, ESP32-S3, ESP32-C3)</li>
-                        <li>✓ Factory reset capability</li>
-                        <li>✓ Ready-to-use configuration</li>
-                    </ul>
+        <div class="main-grid">
+            <div class="left-panel">
+                <!-- Device Connection Section -->
+                <div class="section">
+                    <h2 class="section-title">Device Connection</h2>
+                    <div class="connection-status">
+                        <div class="status-indicator" id="connectionStatus"></div>
+                        <span class="status-text" id="connectionText">No device connected</span>
+                    </div>
+                    <p class="section-subtitle">Connect your ESP32-based Sense360 device via USB cable to begin flashing firmware.</p>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-primary" id="connectBtn">
+                            🔌 Connect Device
+                        </button>
+                        <button class="btn btn-secondary" id="diagnosticsBtn">
+                            🔧 Test Diagnostics
+                        </button>
+                    </div>
                 </div>
-                <div class="install-container">
-                    <esp-web-install-button manifest="./manifest.json">
-                        <button type="button" class="btn-primary" slot="activate">Install Sense360</button>
-                        <span slot="not-allowed">
-                            <div class="alert alert-danger">
-                                <h3>⚠️ Not Allowed</h3>
-                                <p>Flashing is only supported from localhost or from a secure (HTTPS) website.</p>
+
+                <!-- Firmware Selection Section -->
+                <div class="section">
+                    <h2 class="section-title">Firmware Selection</h2>
+                    <div class="firmware-grid">
+                        <div class="firmware-option selected" data-firmware="factory">
+                            <div class="firmware-header">
+                                <div class="firmware-radio"></div>
+                                <div class="firmware-name">Sense360 V2 v2.0.0</div>
+                                <div class="firmware-tag">Factory</div>
                             </div>
-                        </span>
-                        <span slot="notsupported">
-                            <div class="alert alert-danger">
-                                <h3>⚠️ Browser Not Supported</h3>
-                                <p>ESP Web Tools requires Chrome or Edge browser. <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#browser_compatibility" target="_blank">Check browser compatibility</a></p>
+                            <div class="firmware-description">
+                                First factory firmware for Sense360 V2. Use for initial flashing or device recovery.
                             </div>
-                        </span>
+                        </div>
+                        <div class="firmware-option" data-firmware="development">
+                            <div class="firmware-header">
+                                <div class="firmware-radio"></div>
+                                <div class="firmware-name">Sense360 V2 v2.1.0-dev</div>
+                                <div class="firmware-tag development">Development</div>
+                            </div>
+                            <div class="firmware-description">
+                                Latest development build with enhanced features and bug fixes. Use for testing new capabilities.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flashing Process Section -->
+                <div class="section">
+                    <h2 class="section-title">Flashing Process</h2>
+                    <div class="process-steps">
+                        <div class="process-step">
+                            <div class="step-number" id="step1">1</div>
+                            <div class="step-content">
+                                <div class="step-title">Device Connected</div>
+                                <div class="step-description">ESP32 device detected and ready</div>
+                            </div>
+                        </div>
+                        <div class="process-step">
+                            <div class="step-number" id="step2">2</div>
+                            <div class="step-content">
+                                <div class="step-title">Firmware Selected</div>
+                                <div class="step-description">Choose firmware version to install</div>
+                            </div>
+                        </div>
+                        <div class="process-step">
+                            <div class="step-number" id="step3">3</div>
+                            <div class="step-content">
+                                <div class="step-title">Flashing Complete</div>
+                                <div class="step-description">Device will reboot automatically</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ready-status not-ready" id="readyStatus">
+                        <div class="ready-icon">!</div>
+                        <div class="ready-text">Missing: device connection and firmware selection.</div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-large btn-flash" id="flashBtn" disabled>
+                            ⚡ Flash Firmware
+                        </button>
+                        <button class="btn-large btn-erase" id="eraseBtn" disabled>
+                            🗑️ Erase Flash
+                        </button>
+                    </div>
+                    
+                    <a href="#" class="serial-monitor-link" id="serialMonitorLink">
+                        Open Serial Monitor
+                    </a>
+                </div>
+
+                <!-- Hidden ESP Web Tools -->
+                <div style="display: none;">
+                    <esp-web-install-button
+                        id="factoryInstaller"
+                        manifest="manifest.json">
+                    </esp-web-install-button>
+                    <esp-web-install-button
+                        id="devInstaller"
+                        manifest="manifest-dev.json">
                     </esp-web-install-button>
                 </div>
             </div>
 
-            <div class="features-section">
-                <h2>Features</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <h3>🔌 Easy Connection</h3>
-                        <p>Connect ESP32 devices directly via USB using the Web Serial API</p>
+            <div class="right-panel">
+                <!-- Connection Requirements -->
+                <div class="info-card">
+                    <h3>Connection Requirements</h3>
+                    <div class="requirements-list">
+                        <div class="requirement-item">
+                            <div class="requirement-icon">✓</div>
+                            <div>
+                                <div class="requirement-text">Chrome, Edge, or Opera browser</div>
+                                <div class="requirement-subtext">Web Serial API support required</div>
+                            </div>
+                        </div>
+                        <div class="requirement-item">
+                            <div class="requirement-icon">✓</div>
+                            <div>
+                                <div class="requirement-text">USB cable connected to device</div>
+                                <div class="requirement-subtext">Data cable, not charging-only</div>
+                            </div>
+                        </div>
+                        <div class="requirement-item">
+                            <div class="requirement-icon">✓</div>
+                            <div>
+                                <div class="requirement-text">Device in bootloader mode</div>
+                                <div class="requirement-subtext">Hold BOOT button while connecting</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="feature-card">
-                        <h3>⚡ Fast Flashing</h3>
-                        <p>Automatic chip detection and optimized firmware flashing</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>📱 Wi-Fi Setup</h3>
-                        <p>Configure Wi-Fi settings using Improv protocol after flashing</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>🔍 Serial Monitor</h3>
-                        <p>Real-time serial output monitoring and command interface</p>
+                </div>
+
+                <!-- Project Information -->
+                <div class="info-card">
+                    <h3>Project Information</h3>
+                    <div class="project-links">
+                        <div class="project-link">
+                            <span class="project-link-text">Repository:</span>
+                            <a href="#" class="project-link-value">GitHub</a>
+                        </div>
+                        <div class="project-link">
+                            <span class="project-link-text">Documentation:</span>
+                            <a href="#" class="project-link-value">Docs</a>
+                        </div>
+                        <div class="project-link">
+                            <span class="project-link-text">Support:</span>
+                            <a href="#" class="project-link-value">Forum</a>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <div class="troubleshooting-section">
-                <h2>Troubleshooting</h2>
-                <div class="troubleshooting-content">
-                    <h3>Device Not Detected?</h3>
-                    <ul>
-                        <li>Make sure your ESP32 is connected via USB</li>
-                        <li>Check that you're using Chrome or Edge browser</li>
-                        <li>Verify you're accessing the site via HTTPS</li>
-                        <li>Try a different USB cable or port</li>
-                        <li>On Windows, ensure proper drivers are installed</li>
-                    </ul>
-                    
-                    <h3>Flashing Failed?</h3>
-                    <ul>
-                        <li>Hold the BOOT button while connecting (if available)</li>
-                        <li>Try resetting the device before flashing</li>
-                        <li>Ensure no other applications are using the serial port</li>
-                        <li>Check that the firmware file is compatible with your chip</li>
-                    </ul>
-                </div>
-            </div>
-        </main>
-
-        <footer>
-            <p>
-                <a href="https://github.com/esphome/esp-web-tools" target="_blank">Powered by ESP Web Tools</a> | 
-                <a href="https://github.com/your-repo/esp32-flasher" target="_blank">View Source</a>
-            </p>
-        </footer>
+        </div>
     </div>
+
+    <script>
+        let selectedFirmware = 'factory';
+        let deviceConnected = false;
+
+        // Firmware selection
+        document.querySelectorAll('.firmware-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.firmware-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                option.classList.add('selected');
+                selectedFirmware = option.dataset.firmware;
+                updateUI();
+            });
+        });
+
+        // Connect button
+        document.getElementById('connectBtn').addEventListener('click', () => {
+            const installer = selectedFirmware === 'factory' ? 
+                document.getElementById('factoryInstaller') : 
+                document.getElementById('devInstaller');
+            
+            // Trigger ESP Web Tools connection
+            installer.click();
+        });
+
+        // Flash button
+        document.getElementById('flashBtn').addEventListener('click', () => {
+            const installer = selectedFirmware === 'factory' ? 
+                document.getElementById('factoryInstaller') : 
+                document.getElementById('devInstaller');
+            
+            // Trigger ESP Web Tools flashing
+            installer.click();
+        });
+
+        // Update UI based on state
+        function updateUI() {
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const readyStatus = document.getElementById('readyStatus');
+            const flashBtn = document.getElementById('flashBtn');
+            const eraseBtn = document.getElementById('eraseBtn');
+
+            // Update step indicators
+            step2.classList.add('completed');
+            
+            // Update ready status
+            if (deviceConnected) {
+                step1.classList.add('completed');
+                readyStatus.classList.remove('not-ready');
+                readyStatus.querySelector('.ready-icon').textContent = '✓';
+                readyStatus.querySelector('.ready-text').textContent = 'Ready to Flash';
+                flashBtn.disabled = false;
+                eraseBtn.disabled = false;
+            } else {
+                readyStatus.classList.add('not-ready');
+                readyStatus.querySelector('.ready-icon').textContent = '!';
+                readyStatus.querySelector('.ready-text').textContent = 'Missing: device connection.';
+                flashBtn.disabled = true;
+                eraseBtn.disabled = true;
+            }
+        }
+
+        // Listen for ESP Web Tools events
+        document.addEventListener('esp-web-install-connected', () => {
+            deviceConnected = true;
+            document.getElementById('connectionStatus').classList.add('connected');
+            document.getElementById('connectionText').textContent = 'Device connected';
+            updateUI();
+        });
+
+        document.addEventListener('esp-web-install-disconnected', () => {
+            deviceConnected = false;
+            document.getElementById('connectionStatus').classList.remove('connected');
+            document.getElementById('connectionText').textContent = 'No device connected';
+            updateUI();
+        });
+
+        // Initialize UI
+        updateUI();
+    </script>
 </body>
 </html>

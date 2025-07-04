@@ -1,0 +1,547 @@
+/* Modern Google-like design */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8f9fa;
+    color: #202124;
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e8eaed;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    background: #4285f4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.logo-text {
+    font-size: 20px;
+    font-weight: 500;
+    color: #202124;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #5f6368;
+    margin-left: 4px;
+}
+
+.header-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.header-btn {
+    padding: 8px 12px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    color: #5f6368;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.header-btn:hover {
+    background: #f8f9fa;
+}
+
+/* Main content grid */
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 32px;
+}
+
+/* Left panel */
+.left-panel {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e8eaed;
+    padding: 24px;
+}
+
+.section {
+    margin-bottom: 32px;
+}
+
+.section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: #202124;
+}
+
+.section-subtitle {
+    font-size: 14px;
+    color: #5f6368;
+    margin-bottom: 16px;
+}
+
+/* Device connection */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ea4335;
+}
+
+.status-indicator.connected {
+    background: #34a853;
+}
+
+.status-text {
+    font-size: 14px;
+    color: #5f6368;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #4285f4;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #3367d6;
+}
+
+.btn-secondary {
+    background: white;
+    color: #5f6368;
+    border: 1px solid #dadce0;
+}
+
+.btn-secondary:hover {
+    background: #f8f9fa;
+}
+
+/* Firmware selection */
+.firmware-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.firmware-option {
+    border: 1px solid #e8eaed;
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.firmware-option:hover {
+    border-color: #4285f4;
+    box-shadow: 0 1px 6px rgba(32, 33, 36, 0.1);
+}
+
+.firmware-option.selected {
+    border-color: #4285f4;
+    background: #f8f9ff;
+}
+
+.firmware-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.firmware-radio {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #dadce0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.firmware-option.selected .firmware-radio {
+    border-color: #4285f4;
+}
+
+.firmware-option.selected .firmware-radio::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #4285f4;
+    border-radius: 50%;
+}
+
+.firmware-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: #202124;
+}
+
+.firmware-tag {
+    background: #fef7e0;
+    color: #b7940f;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.firmware-tag.development {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.firmware-description {
+    font-size: 13px;
+    color: #5f6368;
+    margin-left: 28px;
+}
+
+/* Flashing process */
+.process-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.process-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.step-number {
+    width: 24px;
+    height: 24px;
+    background: #f8f9fa;
+    border: 1px solid #e8eaed;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: #5f6368;
+    flex-shrink: 0;
+}
+
+.step-number.active {
+    background: #4285f4;
+    color: white;
+    border-color: #4285f4;
+}
+
+.step-number.completed {
+    background: #34a853;
+    color: white;
+    border-color: #34a853;
+}
+
+.step-content {
+    flex: 1;
+    padding-top: 2px;
+}
+
+.step-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 2px;
+}
+
+.step-description {
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.ready-status {
+    background: #e8f5e8;
+    border: 1px solid #c3e6c3;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ready-status.not-ready {
+    background: #fef7e0;
+    border-color: #f9c74f;
+}
+
+.ready-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #34a853;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 10px;
+}
+
+.ready-status.not-ready .ready-icon {
+    background: #f9c74f;
+}
+
+.ready-text {
+    font-size: 14px;
+    color: #2e7d32;
+}
+
+.ready-status.not-ready .ready-text {
+    color: #b7940f;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.btn-large {
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.btn-flash {
+    background: #4285f4;
+    color: white;
+}
+
+.btn-flash:hover {
+    background: #3367d6;
+}
+
+.btn-flash:disabled {
+    background: #f8f9fa;
+    color: #9aa0a6;
+    cursor: not-allowed;
+}
+
+.btn-erase {
+    background: #fef7e0;
+    color: #b7940f;
+    border: 1px solid #f9c74f;
+}
+
+.btn-erase:hover {
+    background: #fef4e0;
+}
+
+/* Right panel */
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e8eaed;
+    padding: 20px;
+}
+
+.info-card h3 {
+    font-size: 16px;
+    font-weight: 500;
+    color: #202124;
+    margin-bottom: 16px;
+}
+
+.requirements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.requirement-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.requirement-icon {
+    width: 16px;
+    height: 16px;
+    background: #34a853;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.requirement-text {
+    font-size: 13px;
+    color: #202124;
+}
+
+.requirement-subtext {
+    font-size: 12px;
+    color: #5f6368;
+}
+
+.project-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.project-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.project-link:last-child {
+    border-bottom: none;
+}
+
+.project-link-text {
+    font-size: 13px;
+    color: #5f6368;
+}
+
+.project-link-value {
+    font-size: 13px;
+    color: #4285f4;
+    text-decoration: none;
+}
+
+.project-link-value:hover {
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .container {
+        padding: 16px;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .header-actions {
+        margin-left: 0;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+
+/* ESP Web Tools integration */
+esp-web-install-button {
+    display: none;
+}
+
+.esp-web-tools-container {
+    width: 100%;
+}
+
+/* Serial Monitor Link */
+.serial-monitor-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    color: #5f6368;
+    text-decoration: none;
+    font-size: 14px;
+    border-top: 1px solid #e8eaed;
+    margin-top: 16px;
+    padding-top: 16px;
+}
+
+.serial-monitor-link:hover {
+    color: #4285f4;
+}
+
+.serial-monitor-link::before {
+    content: '📟';
+    font-size: 16px;
+}
