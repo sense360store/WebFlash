@@ -198,23 +198,33 @@
         });
 
         // Connect button
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            const installer = selectedFirmware === 'factory' ? 
-                document.getElementById('factoryInstaller') : 
-                document.getElementById('devInstaller');
-            
-            // Trigger ESP Web Tools connection
-            installer.click();
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            try {
+                const installer = selectedFirmware === 'factory' ? 
+                    document.getElementById('factoryInstaller') : 
+                    document.getElementById('devInstaller');
+                
+                // Trigger ESP Web Tools install process
+                await installer.activate();
+            } catch (error) {
+                console.error('Connection failed:', error);
+                alert('Failed to connect to device. Please check your connection and try again.');
+            }
         });
 
         // Flash button
-        document.getElementById('flashBtn').addEventListener('click', () => {
-            const installer = selectedFirmware === 'factory' ? 
-                document.getElementById('factoryInstaller') : 
-                document.getElementById('devInstaller');
-            
-            // Trigger ESP Web Tools flashing
-            installer.click();
+        document.getElementById('flashBtn').addEventListener('click', async () => {
+            try {
+                const installer = selectedFirmware === 'factory' ? 
+                    document.getElementById('factoryInstaller') : 
+                    document.getElementById('devInstaller');
+                
+                // Trigger ESP Web Tools install process
+                await installer.activate();
+            } catch (error) {
+                console.error('Flashing failed:', error);
+                alert('Failed to flash firmware. Please check your connection and try again.');
+            }
         });
 
         // Update UI based on state
@@ -246,22 +256,42 @@
         }
 
         // Listen for ESP Web Tools events
-        document.addEventListener('esp-web-install-connected', () => {
-            deviceConnected = true;
-            document.getElementById('connectionStatus').classList.add('connected');
-            document.getElementById('connectionText').textContent = 'Device connected';
-            updateUI();
-        });
-
-        document.addEventListener('esp-web-install-disconnected', () => {
-            deviceConnected = false;
-            document.getElementById('connectionStatus').classList.remove('connected');
-            document.getElementById('connectionText').textContent = 'No device connected';
-            updateUI();
+        const factoryInstaller = document.getElementById('factoryInstaller');
+        const devInstaller = document.getElementById('devInstaller');
+        
+        // Add event listeners to both installers
+        [factoryInstaller, devInstaller].forEach(installer => {
+            installer.addEventListener('state-changed', (event) => {
+                const state = event.detail.state;
+                
+                if (state === 'connected') {
+                    deviceConnected = true;
+                    document.getElementById('connectionStatus').classList.add('connected');
+                    document.getElementById('connectionText').textContent = 'Device connected';
+                    updateUI();
+                } else if (state === 'disconnected') {
+                    deviceConnected = false;
+                    document.getElementById('connectionStatus').classList.remove('connected');
+                    document.getElementById('connectionText').textContent = 'No device connected';
+                    updateUI();
+                } else if (state === 'installing') {
+                    document.getElementById('step3').classList.add('active');
+                } else if (state === 'installed') {
+                    document.getElementById('step3').classList.remove('active');
+                    document.getElementById('step3').classList.add('completed');
+                }
+            });
         });
 
         // Initialize UI
         updateUI();
+
+        // Debug: Check if ESP Web Tools loaded
+        window.addEventListener('load', () => {
+            console.log('ESP Web Tools loaded:', !!customElements.get('esp-web-install-button'));
+            console.log('Factory installer:', document.getElementById('factoryInstaller'));
+            console.log('Dev installer:', document.getElementById('devInstaller'));
+        });
     </script>
 </body>
 </html>
