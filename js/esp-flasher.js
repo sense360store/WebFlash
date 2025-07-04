@@ -9,16 +9,11 @@ export class ESPFlasher {
 
     async connect() {
         try {
-            // Request serial port
-            this.port = await navigator.serial.requestPort({
-                filters: [
-                    { usbVendorId: 0x10C4, usbProductId: 0xEA60 }, // CP2102
-                    { usbVendorId: 0x1A86, usbProductId: 0x7523 }, // CH340
-                    { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FT232
-                    { usbVendorId: 0x239A, usbProductId: 0x80C2 }, // ESP32-S2
-                ]
-            });
+            // Request serial port with no filters to show all available devices
+            this.port = await navigator.serial.requestPort({});
 
+            console.log('Port selected:', this.port);
+            
             // Open the port
             await this.port.open({
                 baudRate: 115200,
@@ -28,12 +23,17 @@ export class ESPFlasher {
                 flowControl: 'none'
             });
 
+            console.log('Port opened successfully');
+
             // Get device info
             const deviceInfo = await this.getDeviceInfo();
             
+            const portInfo = this.port.getInfo();
+            console.log('Port info:', portInfo);
+            
             return {
                 port: this.port,
-                name: this.port.getInfo().usbProductName || 'ESP32 Device',
+                name: portInfo.usbProductName || 'Serial Device',
                 chipType: deviceInfo.chipType || 'ESP32',
                 ...deviceInfo
             };

@@ -18,10 +18,13 @@ export class SerialMonitor {
 
         try {
             this.isMonitoring = true;
+            console.log('Starting serial monitor...');
             
             // Get reader and writer
             this.reader = this.port.readable.getReader();
             this.writer = this.port.writable.getWriter();
+            
+            console.log('Serial monitor started successfully');
             
             // Start reading loop
             this.readLoop();
@@ -29,6 +32,7 @@ export class SerialMonitor {
         } catch (error) {
             console.error('Failed to start monitoring:', error);
             this.isMonitoring = false;
+            throw error;
         }
     }
 

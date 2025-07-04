@@ -71,18 +71,26 @@ class ESP32FlasherApp {
     }
 
     checkBrowserSupport() {
+        console.log('Checking browser support...');
+        console.log('User agent:', navigator.userAgent);
+        console.log('Protocol:', location.protocol);
+        console.log('Hostname:', location.hostname);
+        
         if (!navigator.serial) {
+            console.error('Web Serial API not supported');
             this.elements.browserWarning.classList.remove('hidden');
             this.elements.connectBtn.disabled = true;
             return false;
         }
 
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            console.error('HTTPS required for Web Serial API');
             this.elements.httpsWarning.classList.remove('hidden');
             this.elements.connectBtn.disabled = true;
             return false;
         }
 
+        console.log('Browser support OK');
         return true;
     }
 
@@ -102,7 +110,9 @@ class ESP32FlasherApp {
             this.elements.connectBtn.disabled = true;
             this.elements.connectBtn.textContent = 'Connecting...';
             
+            console.log('Requesting serial port...');
             const device = await this.flasher.connect();
+            console.log('Device connected:', device);
             this.connectedDevice = device;
             
             this.elements.deviceName.textContent = device.name || 'ESP32 Device';
@@ -130,7 +140,20 @@ class ESP32FlasherApp {
             console.error('Connection failed:', error);
             this.elements.connectBtn.textContent = 'Connect Device';
             this.elements.connectBtn.disabled = false;
-            this.updateFlashStatus('Connection failed: ' + error.message);
+            
+            // Provide user-friendly error messages
+            let errorMessage = 'Connection failed';
+            if (error.name === 'NotFoundError') {
+                errorMessage = 'No device selected or no compatible devices found';
+            } else if (error.name === 'NotAllowedError') {
+                errorMessage = 'Device access denied by user';
+            } else if (error.name === 'SecurityError') {
+                errorMessage = 'Security error - make sure you\'re using HTTPS';
+            } else if (error.message) {
+                errorMessage = 'Connection failed: ' + error.message;
+            }
+            
+            this.updateFlashStatus(errorMessage);
         }
     }
 

@@ -1,0 +1,51 @@
+You are building a web app for flashing ESP32 firmware using the Web Serial API (just like ESP Web Tools). The core MVP is device detection and flashing over USB in the browser, with no extra features. The app is hosted on GitHub Pages, uses HTTPS, and is running in Google Chrome.
+
+Problem:
+When clicking “Connect,” the browser prompt appears but shows “No compatible devices found.”
+The ESP32 device is working with other tools (esphome, esptool) and appears in system USB listings. This is a code/app problem, not a hardware/driver issue.
+
+Your task:
+
+Review the current approach to requesting serial ports and listing available devices in the app.
+
+Check that the Web Serial API is called correctly, e.g., navigator.serial.requestPort() with appropriate filters.
+
+Ensure the device filter is NOT too strict (don’t filter only specific vendor/product IDs unless needed—test with {} for open filter).
+
+Make sure the user is prompted for ALL available serial devices.
+
+After connection, the app must open the selected port at the right baud rate (default 115200) and display output in the Serial Monitor.
+
+Key requirements:
+
+No simulation, no dummy devices—list only real devices the browser can access.
+
+Minimal, reliable code for detecting and listing serial ports.
+
+The app should clearly show if no devices are detected, and log any errors in the browser console.
+
+No features except connect, list devices, open serial, and display real-time serial output.
+
+Example:
+
+js
+Copy
+Edit
+// Minimal example to list serial ports and prompt user
+async function connectSerial() {
+  try {
+    const port = await navigator.serial.requestPort({}); // No filters
+    await port.open({ baudRate: 115200 });
+    // Read from port and display in UI...
+  } catch (e) {
+    console.error('Serial connection error:', e);
+    // Show user-friendly error in UI
+  }
+}
+Focus:
+
+Remove all simulation/fake devices from the app.
+
+Use open filters or allow the user to pick any serial device.
+
+The device connection and serial monitor must work the same as esphome/web flasher.
