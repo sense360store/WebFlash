@@ -5,12 +5,12 @@
   "new_install_improv_wait_time": 10,
   "builds": [
     {
-      "name": "CO2Monitor (ESP32) - Beta",
-      "chipFamily": "ESP32",
+      "name": "CO2Monitor (ESP32S3) - Beta",
+      "chipFamily": "ESP32-S3",
       "improv": true,
       "parts": [
         {
-          "path": "firmware/CO2Monitor/ESP32/beta/firmware-latest.bin",
+          "path": "firmware/CO2Monitor/ESP32S3/beta/firmware-latest.bin",
           "offset": 0
         }
       ]
