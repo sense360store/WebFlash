@@ -14,28 +14,6 @@
           "offset": 0
         }
       ]
-    },
-    {
-      "name": "TemperatureSensor (ESP32) - Beta",
-      "chipFamily": "ESP32",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/TemperatureSensor/ESP32/beta/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "generic_env_monitor (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/generic_env_monitor/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
     }
   ]
 }
