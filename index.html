@@ -31,7 +31,10 @@
                             <label for="device-family">Device Family</label>
                             <select id="device-family" class="filter-select">
                                 <option value="all">All Families</option>
-                                <option value="envmonitor">Environmental Monitor</option>
+                                <option value="envmonitor">Envmonitor</option>
+<option value="generic_env_monitor">Generic_Env_Monitor</option>
+<option value="genericenvmonitor">Genericenvmonitor</option>
+<option value="temperaturesensor">Temperaturesensor</option>
                             </select>
                         </div>
                         
@@ -39,19 +42,89 @@
                             <label for="release-type">Release Type</label>
                             <select id="release-type" class="filter-select">
                                 <option value="all">All Types</option>
-                                <option value="stable">Stable</option>
+                                <option value="beta">Beta</option>
+<option value="stable">Stable</option>
                             </select>
                         </div>
                     </div>
                     
                     <div class="firmware-options">
-                        <div class="firmware-option" data-module="envmonitor" data-release="stable">
-                            <input type="radio" id="envmonitor-stable" name="firmware" value="envmonitor-stable" checked>
-                            <label for="envmonitor-stable">
+                        <div class="firmware-option" data-module="genericenvmonitor" data-release="stable">
+                            <input type="radio" id="genericenvmonitor-stable" name="firmware" value="genericenvmonitor-stable" checked>
+                            <label for="genericenvmonitor-stable">
                                 <div class="option-header">
-                                    <strong>Environmental Monitor</strong>
+                                    <strong>GenericEnvMonitor (ESP32)</strong>
                                     <span class="version-badge stable">Stable</span>
                                 </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.11</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for GenericEnvMonitor devices using ESP32 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32</span> <span class="feature">Monitoring</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="firmware-option" data-module="envmonitor" data-release="stable">
+                            <input type="radio" id="envmonitor-stable" name="firmware" value="envmonitor-stable" >
+                            <label for="envmonitor-stable">
+                                <div class="option-header">
+                                    <strong>EnvMonitor (ESP32S3)</strong>
+                                    <span class="version-badge stable">Stable</span>
+                                </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.11</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for EnvMonitor devices using ESP32-S3 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="firmware-option" data-module="temperaturesensor" data-release="beta">
+                            <input type="radio" id="temperaturesensor-beta" name="firmware" value="temperaturesensor-beta" >
+                            <label for="temperaturesensor-beta">
+                                <div class="option-header">
+                                    <strong>TemperatureSensor (ESP32) - Beta</strong>
+                                    <span class="version-badge beta">Beta</span>
+                                </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.11</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for TemperatureSensor devices using ESP32 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32</span> <span class="feature">Multi-Sensor</span> <span class="feature">Temperature</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="firmware-option" data-module="generic_env_monitor" data-release="stable">
+                            <input type="radio" id="generic_env_monitor-stable" name="firmware" value="generic_env_monitor-stable" >
+                            <label for="generic_env_monitor-stable">
+                                <div class="option-header">
+                                    <strong>generic_env_monitor (Legacy)</strong>
+                                    <span class="version-badge stable">Stable</span>
+                                </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.11</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for generic_env_monitor devices using ESP32-S3 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                                 <div class="option-meta">
                                     <span class="release-date">Released: Jul 11, 2025</span>
                                 </div>

@@ -5,7 +5,18 @@
   "new_install_improv_wait_time": 10,
   "builds": [
     {
-      "name": "Environmental Monitor (ESP32-S3)",
+      "name": "GenericEnvMonitor (ESP32)",
+      "chipFamily": "ESP32",
+      "improv": true,
+      "parts": [
+        {
+          "path": "firmware/GenericEnvMonitor/ESP32/stable/firmware-latest.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "EnvMonitor (ESP32S3)",
       "chipFamily": "ESP32-S3",
       "improv": true,
       "parts": [
@@ -16,34 +27,23 @@
       ]
     },
     {
-      "name": "Environmental Monitor (ESP32)",
+      "name": "TemperatureSensor (ESP32) - Beta",
       "chipFamily": "ESP32",
       "improv": true,
       "parts": [
         {
-          "path": "firmware/EnvMonitor/ESP32/stable/firmware-latest.bin",
+          "path": "firmware/TemperatureSensor/ESP32/beta/firmware-latest.bin",
           "offset": 0
         }
       ]
     },
     {
-      "name": "Environmental Monitor (ESP32-C3)",
-      "chipFamily": "ESP32-C3",
+      "name": "generic_env_monitor (Legacy)",
+      "chipFamily": "ESP32-S3",
       "improv": true,
       "parts": [
         {
-          "path": "firmware/EnvMonitor/ESP32C3/stable/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "Environmental Monitor (ESP32-S2)",
-      "chipFamily": "ESP32-S2",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/EnvMonitor/ESP32S2/stable/firmware-latest.bin",
+          "path": "firmware/generic_env_monitor/firmware-latest.bin",
           "offset": 0
         }
       ]
