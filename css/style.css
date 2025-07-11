@@ -55,6 +55,26 @@ header h1 {
     margin-bottom: 8px;
 }
 
+.no-firmware-message {
+    text-align: center;
+    padding: 48px 24px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 2px dashed var(--border-color);
+}
+
+.no-firmware-message h3 {
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.no-firmware-message p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
 header p {
     color: var(--text-secondary);
     font-size: 14px;
