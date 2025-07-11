@@ -31,7 +31,6 @@
                             <label for="device-family">Device Family</label>
                             <select id="device-family" class="filter-select">
                                 <option value="all">All Families</option>
-                                <option value="sense360">Sense360</option>
                                 <option value="envmonitor">Environmental Monitor</option>
                             </select>
                         </div>
@@ -41,35 +40,13 @@
                             <select id="release-type" class="filter-select">
                                 <option value="all">All Types</option>
                                 <option value="stable">Stable</option>
-                                <option value="beta">Beta</option>
                             </select>
                         </div>
                     </div>
                     
                     <div class="firmware-options">
-                        <div class="firmware-option" data-module="sense360" data-release="stable">
-                            <input type="radio" id="sense360-stable" name="firmware" value="sense360-stable" checked>
-                            <label for="sense360-stable">
-                                <div class="option-header">
-                                    <strong>Sense360 V2 v1.0.0 Fan Control</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Released: Jul 03, 2025</span>
-                                </div>
-                                <div class="option-description">
-                                    Optimized for fan control applications with PWM output support. Compatible with ESP32-S3.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">PWM Control</span>
-                                    <span class="feature">Wi-Fi Setup</span>
-                                    <span class="feature">ESP32-S3</span>
-                                </div>
-                            </label>
-                        </div>
-
                         <div class="firmware-option" data-module="envmonitor" data-release="stable">
-                            <input type="radio" id="envmonitor-stable" name="firmware" value="envmonitor-stable">
+                            <input type="radio" id="envmonitor-stable" name="firmware" value="envmonitor-stable" checked>
                             <label for="envmonitor-stable">
                                 <div class="option-header">
                                     <strong>Environmental Monitor</strong>
@@ -172,8 +149,6 @@
         
         // Map firmware selections to different manifests
         const manifestMap = {
-            'sense360-stable': './manifest.json',
-            'sense360-beta': './manifest.json',
             'envmonitor-stable': './manifest-env-monitor.json'
         };
         
