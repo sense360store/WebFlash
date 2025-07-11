@@ -31,7 +31,7 @@
                             <label for="device-family">Device Family</label>
                             <select id="device-family" class="filter-select">
                                 <option value="all">All Families</option>
-                                <option value="envmonitor">Environmental Monitor</option>
+                                <option value="esphome-web-3b8d3c">Esphome-Web-3B8D3C</option>
                             </select>
                         </div>
                         
@@ -45,10 +45,44 @@
                     </div>
                     
                     <div class="firmware-options">
-                        <div class="no-firmware-message">
-                            <h3>No Firmware Available</h3>
-                            <p>No firmware files have been deployed yet. Check back later for available firmware options.</p>
+                        <div class="firmware-option" data-module="esphome-web-3b8d3c" data-release="stable">
+                            <input type="radio" id="esphome-web-3b8d3c-stable" name="firmware" value="esphome-web-3b8d3c-stable" checked>
+                            <label for="esphome-web-3b8d3c-stable">
+                                <div class="option-header">
+                                    <strong>Esphome-web-3b8d3c (ESP32)</strong>
+                                    <span class="version-badge stable">Stable</span>
+                                </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.11</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for Esphome-web-3b8d3c devices using ESP32 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
                         </div>
+
+                        <div class="firmware-option" data-module="esphome-web-3b8d3c" data-release="stable">
+                            <input type="radio" id="esphome-web-3b8d3c-stable" name="firmware" value="esphome-web-3b8d3c-stable" >
+                            <label for="esphome-web-3b8d3c-stable">
+                                <div class="option-header">
+                                    <strong>esphome-web-3b8d3c (Legacy)</strong>
+                                    <span class="version-badge stable">Stable</span>
+                                </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.11</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for esphome-web-3b8d3c devices using ESP32-S3 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                     </div>
                 </div>
                 <div class="install-container">

@@ -3,5 +3,28 @@
   "version": "2025.07.11",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 10,
-  "builds": []
+  "builds": [
+    {
+      "name": "Esphome-web-3b8d3c (ESP32)",
+      "chipFamily": "ESP32",
+      "improv": true,
+      "parts": [
+        {
+          "path": "firmware/Esphome-web-3b8d3c/ESP32/stable/firmware-latest.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "esphome-web-3b8d3c (Legacy)",
+      "chipFamily": "ESP32-S3",
+      "improv": true,
+      "parts": [
+        {
+          "path": "firmware/esphome-web-3b8d3c/firmware-latest.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
 }
