@@ -5,23 +5,12 @@
   "new_install_improv_wait_time": 10,
   "builds": [
     {
-      "name": "GenericEnvMonitor (ESP32)",
+      "name": "Test (ESP32) - Beta",
       "chipFamily": "ESP32",
       "improv": true,
       "parts": [
         {
-          "path": "firmware/GenericEnvMonitor/ESP32/stable/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "EnvMonitor (ESP32S3)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/EnvMonitor/ESP32S3/stable/firmware-latest.bin",
+          "path": "firmware/Test/ESP32/beta/firmware-latest.bin",
           "offset": 0
         }
       ]
