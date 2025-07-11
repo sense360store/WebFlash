@@ -3,17 +3,5 @@
   "version": "2025.07.11",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 10,
-  "builds": [
-    {
-      "name": "Test (ESP32) - Beta",
-      "chipFamily": "ESP32",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/Test/ESP32/beta/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    }
-  ]
+  "builds": []
 }
