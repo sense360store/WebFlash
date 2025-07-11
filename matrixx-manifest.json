@@ -1,20 +1,9 @@
 {
   "name": "Sense360 ESP32 Firmware",
-  "version": "1.1.0",
+  "version": "1.0.0",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 10,
   "builds": [
-    {
-      "name": "Environmental Monitor (New)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/EnvMonitor/ESP32S3/stable/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
     {
       "name": "ESPHome (Stable)",
       "chipFamily": "ESP32",

@@ -31,8 +31,8 @@
                             <label for="device-family">Device Family</label>
                             <select id="device-family" class="filter-select">
                                 <option value="all">All Families</option>
-                                <option value="esp32">ESP32</option>
-                                <option value="esp32-s3">ESP32-S3</option>
+                                <option value="sense360">Sense360</option>
+                                <option value="envmonitor">Environmental Monitor</option>
                             </select>
                         </div>
                         
@@ -47,9 +47,9 @@
                     </div>
                     
                     <div class="firmware-options">
-                        <div class="firmware-option" data-family="esp32-s3" data-release="stable">
-                            <input type="radio" id="fan" name="firmware" value="fan" checked>
-                            <label for="fan">
+                        <div class="firmware-option" data-module="sense360" data-release="stable">
+                            <input type="radio" id="sense360-stable" name="firmware" value="sense360-stable" checked>
+                            <label for="sense360-stable">
                                 <div class="option-header">
                                     <strong>Sense360 V2 v1.0.0 Fan Control</strong>
                                     <span class="version-badge stable">Stable</span>
@@ -68,43 +68,22 @@
                             </label>
                         </div>
 
-                        <div class="firmware-option" data-family="esp32" data-release="beta">
-                            <input type="radio" id="airq" name="firmware" value="airq">
-                            <label for="airq">
+                        <div class="firmware-option" data-module="envmonitor" data-release="stable">
+                            <input type="radio" id="envmonitor-stable" name="firmware" value="envmonitor-stable">
+                            <label for="envmonitor-stable">
                                 <div class="option-header">
-                                    <strong>Sense360 V2 v1.0.0 Air Quality</strong>
-                                    <span class="version-badge beta">Beta</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Released: Jul 01, 2025</span>
-                                </div>
-                                <div class="option-description">
-                                    Advanced air quality monitoring with CO2 sensor integration. Compatible with ESP32 WROOM1.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">CO2 Sensors</span>
-                                    <span class="feature">Wi-Fi Setup</span>
-                                    <span class="feature">ESP32</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-family="esp32-s3" data-release="stable">
-                            <input type="radio" id="multi" name="firmware" value="multi">
-                            <label for="multi">
-                                <div class="option-header">
-                                    <strong>Sense360 V2 v2.1.3 Multi-Function</strong>
+                                    <strong>Environmental Monitor</strong>
                                     <span class="version-badge stable">Stable</span>
                                 </div>
                                 <div class="option-meta">
-                                    <span class="release-date">Released: Jun 28, 2025</span>
+                                    <span class="release-date">Released: Jul 11, 2025</span>
                                 </div>
                                 <div class="option-description">
-                                    Versatile firmware supporting multiple sensor types and control options. Compatible with ESP32-S3.
+                                    Comprehensive environmental monitoring with multiple sensor support and wireless connectivity.
                                 </div>
                                 <div class="option-features">
                                     <span class="feature">Multi-Sensor</span>
-                                    <span class="feature">Wi-Fi Setup</span>
+                                    <span class="feature">Wireless</span>
                                     <span class="feature">ESP32-S3</span>
                                 </div>
                             </label>
@@ -113,7 +92,7 @@
                 </div>
                 <div class="install-container">
                     <esp-web-install-button manifest="./manifest.json" id="install-button">
-                        <button type="button" class="btn-primary" slot="activate">Install Selected Firmware</button>
+                        <button type="button" class="btn-primary" slot="activate">Install Sense360</button>
                         <span slot="not-allowed">
                             <div class="alert alert-danger">
                                 <h3>⚠️ Not Allowed</h3>
@@ -191,16 +170,17 @@
         const releaseTypeSelect = document.getElementById('release-type');
         const firmwareOptionElements = document.querySelectorAll('.firmware-option');
         
+        // Map firmware selections to different manifests
         const manifestMap = {
-            'fan': './manifests/fan-manifest.json',
-            'airq': './manifests/airq-manifest.json',
-            'multi': './manifests/multi-manifest.json'
+            'sense360-stable': './manifest.json',
+            'sense360-beta': './manifest.json',
+            'envmonitor-stable': './manifest-env-monitor.json'
         };
         
         function updateManifest() {
             const selectedFirmware = document.querySelector('input[name="firmware"]:checked');
-            if (selectedFirmware) {
-                const manifestPath = manifestMap[selectedFirmware.value];
+            if (selectedFirmware && installButton) {
+                const manifestPath = manifestMap[selectedFirmware.value] || './manifest.json';
                 installButton.setAttribute('manifest', manifestPath);
             }
         }
@@ -212,10 +192,10 @@
             let visibleCount = 0;
             
             firmwareOptionElements.forEach(option => {
-                const family = option.dataset.family;
+                const module = option.dataset.module;
                 const release = option.dataset.release;
                 
-                const familyMatch = selectedFamily === 'all' || family === selectedFamily;
+                const familyMatch = selectedFamily === 'all' || module === selectedFamily;
                 const typeMatch = selectedType === 'all' || release === selectedType;
                 
                 if (familyMatch && typeMatch) {
@@ -225,7 +205,7 @@
                     option.style.display = 'none';
                     // Uncheck hidden options
                     const radio = option.querySelector('input[type="radio"]');
-                    if (radio.checked) {
+                    if (radio && radio.checked) {
                         radio.checked = false;
                     }
                 }
@@ -243,16 +223,24 @@
             updateManifest();
         }
         
-        // Add event listeners
-        firmwareOptions.forEach(option => {
-            option.addEventListener('change', updateManifest);
+        // Add event listeners when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners to radio buttons
+            firmwareOptions.forEach(option => {
+                option.addEventListener('change', updateManifest);
+            });
+            
+            // Add event listeners to filter selects
+            if (deviceFamilySelect) {
+                deviceFamilySelect.addEventListener('change', filterFirmwareOptions);
+            }
+            if (releaseTypeSelect) {
+                releaseTypeSelect.addEventListener('change', filterFirmwareOptions);
+            }
+            
+            // Set initial state
+            filterFirmwareOptions();
         });
-        
-        deviceFamilySelect.addEventListener('change', filterFirmwareOptions);
-        releaseTypeSelect.addEventListener('change', filterFirmwareOptions);
-        
-        // Set initial state
-        filterFirmwareOptions();
     </script>
 </body>
 </html>
