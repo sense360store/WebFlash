@@ -16,3 +16,8 @@
 2025-07-12 21:32:16,860 - INFO - Added timestamp for firmware: firmware/debug-esp32s3-config/firmware-latest.bin
 2025-07-12 21:32:16,861 - INFO - Added timestamp for firmware: firmware/debug-esp32s3-config/firmware-20250712-210246.bin
 2025-07-12 21:32:16,862 - INFO - Added timestamp for firmware: firmware/debug-esp32s3-config/firmware-20250712-210247.bin
+2025-07-12 21:52:23,403 - INFO - Added timestamp for firmware: firmware/CO2Monitor/ESP32S3/stable/firmware-latest.bin
+2025-07-12 21:52:23,404 - INFO - Added timestamp for firmware: firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v2.0.1-stable-20250712-214453.bin
+2025-07-12 21:52:23,406 - INFO - Firmware file changed: firmware/debug-esp32s3-config/firmware-latest.bin
+2025-07-12 21:52:23,407 - INFO - Added timestamp for firmware: firmware/debug-esp32s3-config/firmware-latest.bin
+2025-07-12 21:52:23,408 - INFO - Added timestamp for firmware: firmware/debug-esp32s3-config/firmware-20250712-214453.bin

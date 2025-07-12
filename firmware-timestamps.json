@@ -28,9 +28,9 @@
     "version": "2.0.1"
   },
   "firmware/debug-esp32s3-config/firmware-latest.bin": {
-    "added": "2025-07-12T21:32:16.860131",
+    "added": "2025-07-12T21:52:23.407134",
     "file_size": 871584,
-    "file_hash": "e55ecc7fac29be5db29298031aa590201a2c9037a603004c938ce4d3ff2864ed",
+    "file_hash": "b49e18e56679ed07901e97425813ca4786f1becb6fc2e76f554abc70ae93b135",
     "file_path": "firmware/debug-esp32s3-config/firmware-latest.bin",
     "version": "unknown"
   },
@@ -81,6 +81,27 @@
     "file_size": 871584,
     "file_hash": "e55ecc7fac29be5db29298031aa590201a2c9037a603004c938ce4d3ff2864ed",
     "file_path": "firmware/debug-esp32s3-config/firmware-20250712-210247.bin",
+    "version": "unknown"
+  },
+  "firmware/CO2Monitor/ESP32S3/stable/firmware-latest.bin": {
+    "added": "2025-07-12T21:52:23.403241",
+    "file_size": 871584,
+    "file_hash": "b49e18e56679ed07901e97425813ca4786f1becb6fc2e76f554abc70ae93b135",
+    "file_path": "firmware/CO2Monitor/ESP32S3/stable/firmware-latest.bin",
+    "version": "unknown"
+  },
+  "firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v2.0.1-stable-20250712-214453.bin": {
+    "added": "2025-07-12T21:52:23.404633",
+    "file_size": 871584,
+    "file_hash": "b49e18e56679ed07901e97425813ca4786f1becb6fc2e76f554abc70ae93b135",
+    "file_path": "firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v2.0.1-stable-20250712-214453.bin",
+    "version": "2.0.1"
+  },
+  "firmware/debug-esp32s3-config/firmware-20250712-214453.bin": {
+    "added": "2025-07-12T21:52:23.408477",
+    "file_size": 871584,
+    "file_hash": "b49e18e56679ed07901e97425813ca4786f1becb6fc2e76f554abc70ae93b135",
+    "file_path": "firmware/debug-esp32s3-config/firmware-20250712-214453.bin",
     "version": "unknown"
   }
 }
