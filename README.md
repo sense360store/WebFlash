@@ -1,103 +1,218 @@
-# Sense360 ESP32 Installer
+# WebFlash - Sense360 ESP32 Firmware Installer
 
-A web-based installer for Sense360 firmware using the official ESP Web Tools library. This tool provides a simple, browser-based interface for flashing Sense360 firmware to ESP32 devices via USB.
+This is the **public** repository containing the web-based firmware installer for Sense360 ESP32 devices.
+
+## Live Web Interface
+
+🌐 **https://sense360store.github.io/WebFlash**
 
 ## Features
 
-- **Browser-based flashing** - No software installation required
-- **ESP Web Tools integration** - Uses the official, battle-tested ESP Web Tools library
-- **Multi-chip support** - ESP32, ESP32-S2, ESP32-C3, ESP32-S3
-- **Multiple firmware variants** - Fan control, Air Quality monitoring, and Multi-function firmware
-- **Automatic device detection** - Detects connected ESP32 devices automatically
-- **Wi-Fi provisioning** - Supports Improv protocol for easy Wi-Fi setup
-- **User-friendly interface** - Clean, minimal design with built-in troubleshooting
+- **Browser-based Installation**: Flash firmware directly from your web browser
+- **Multi-device Support**: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 compatibility
+- **Automatic Updates**: Firmware manifest and web interface updated automatically
+- **Timestamp Tracking**: See when each firmware was last updated
+- **ESP Web Tools**: Built on the official ESP Web Tools library
 
-## Firmware Naming Convention
-
-All firmware files follow this naming structure:
+## Repository Structure
 
 ```
-Sense360-[Family]-[Feature/Type]-[Board/Chip]-[Version]-[Channel].bin
+WebFlash/
+├── index.html                  # Main web interface
+├── css/style.css              # Styling
+├── manifest.json              # ESP Web Tools manifest
+├── firmware-timestamps.json   # Firmware deployment timestamps
+├── firmware/                  # Compiled firmware binaries
+│   ├── DeviceType/
+│   │   ├── ChipFamily/
+│   │   │   ├── stable/
+│   │   │   │   ├── firmware-latest.bin
+│   │   │   │   └── *.bin
+│   │   │   └── beta/
+│   │   │       ├── firmware-latest.bin
+│   │   │       └── *.bin
+│   │   └── ...
+│   └── ...
+├── scripts/                   # Auto-generated scripts
+│   └── update-web-interface.py
+├── _headers                   # CORS headers for GitHub Pages
+└── README.md                  # This file
 ```
 
-- **[Family]**: Main function (Fan, AirQ, Multi)
-- **[Feature/Type]**: Optional feature (PWM, CO2, TVOC, Analog)
-- **[Board/Chip]**: Hardware (S3, WROOM1, C3, S2)
-- **[Version]**: Semantic version (v1.0.0, v2.1.3)
-- **[Channel]**: Stable or Beta
+## How It Works
 
-## Available Firmware
+### 1. Automatic Deployment
 
-| Name | Family | Feature | Board | Version | Channel |
-|------|--------|---------|-------|---------|---------|
-| Sense360-Fan-PWM-S3-v1.0.0-Stable.bin | Fan | PWM | S3 | 1.0.0 | Stable |
-| Sense360-AirQ-CO2-WROOM1-v1.0.0-Beta.bin | AirQ | CO2 | WROOM1 | 1.0.0 | Beta |
-| Sense360-Multi-S3-v2.1.3-Stable.bin | Multi | - | S3 | 2.1.3 | Stable |
+Firmware is automatically deployed from the private `iot-firmware-src` repository:
 
-## Requirements
+1. **Build**: ESPHome compiles firmware from YAML configurations
+2. **Deploy**: Compiled binaries are pushed to this repository
+3. **Update**: Manifest and web interface are automatically updated
+4. **Publish**: GitHub Pages serves the updated web interface
 
-- **Chrome or Edge browser** (Web Serial API support required)
-- **HTTPS connection** (required for Web Serial API)
-- **ESP32 device** with USB connection
+### 2. Web Interface
 
-## Usage
+The web interface provides:
 
-1. Visit the deployed application at: [Your GitHub Pages URL]
-2. Connect your ESP32 device via USB
-3. Click "Connect Device" button
-4. Select your device from the browser's device picker
-5. Follow the on-screen instructions to flash firmware
+- **Device Selection**: Choose your ESP32 device type
+- **Firmware Filtering**: Filter by device family and release channel
+- **One-Click Installation**: Connect and flash firmware via USB
+- **Progress Tracking**: Real-time installation progress
+- **Troubleshooting**: Built-in help and error handling
 
-## Local Development
+### 3. ESP Web Tools Integration
 
-To run this project locally:
+Uses the official ESP Web Tools library for:
 
-1. Clone the repository
-2. Serve the files using a local web server (HTTPS required)
-3. Open in Chrome or Edge browser
+- **Device Detection**: Automatic ESP32 chip identification
+- **Secure Flashing**: Safe firmware installation process
+- **Progress Monitoring**: Real-time installation feedback
+- **Error Handling**: Comprehensive error reporting
 
-### Using Python:
+## Browser Requirements
+
+- **Chrome or Edge**: Web Serial API support required
+- **HTTPS**: Secure context required for Web Serial API
+- **Modern Browser**: Latest version recommended
+
+## Firmware Information
+
+### Naming Convention
+
+```
+Sense360-[DeviceType]-[ChipFamily]-v[Version]-[Channel].bin
+```
+
+Examples:
+- `Sense360-CO2Monitor-ESP32S3-v2.0.1-beta.bin`
+- `Sense360-TempSensor-ESP32-v1.0.0-stable.bin`
+
+### Release Channels
+
+- **Stable**: Production-ready firmware
+- **Beta**: Testing releases with new features
+- **Alpha**: Development builds (if available)
+
+### Supported Devices
+
+- **ESP32**: Original ESP32 with dual-core processor
+- **ESP32-S2**: Single-core with enhanced security
+- **ESP32-S3**: Dual-core with AI acceleration
+- **ESP32-C3**: RISC-V based with Wi-Fi 6
+
+## Installation Instructions
+
+### 1. Prepare Your Device
+
+1. Connect ESP32 to your computer via USB
+2. Install USB drivers if needed (usually automatic)
+3. Close any other programs using the serial port
+
+### 2. Flash Firmware
+
+1. Visit **https://sense360store.github.io/WebFlash**
+2. Select your device type and firmware channel
+3. Click "Connect & Install Firmware"
+4. Choose your device from the popup
+5. Wait for installation to complete
+
+### 3. First Setup
+
+After flashing:
+
+1. Device will create a Wi-Fi hotspot (configureme-xxxx)
+2. Connect to the hotspot with your phone/computer
+3. Configure your Wi-Fi settings
+4. Device will connect to your network
+
+## Troubleshooting
+
+### Device Not Detected
+
+- **Check USB Connection**: Ensure cable is connected properly
+- **Install Drivers**: Some devices need specific USB drivers
+- **Try Different Cable**: Use a data cable, not charging-only
+- **Check Browser**: Use Chrome or Edge browser
+
+### Installation Failed
+
+- **Download Mode**: Hold BOOT button while connecting
+- **Close Other Programs**: Arduino IDE, serial monitors, etc.
+- **Try Different Port**: Use a different USB port
+- **Check Permissions**: Some systems need admin privileges
+
+### Connection Issues
+
+- **Network Problems**: Check Wi-Fi settings and password
+- **Signal Strength**: Move closer to router during setup
+- **Firewall**: Temporarily disable firewall if needed
+- **Router Settings**: Some routers block new device connections
+
+## Development
+
+### Local Testing
+
 ```bash
-python3 -m http.server 5000
+# Serve locally
+python3 -m http.server 8000
+
+# Visit http://localhost:8000
 ```
 
-### Using Node.js:
-```bash
-npx http-server -p 5000
-```
+### File Updates
 
-## Deployment
+The following files are automatically updated:
 
-This project is designed for deployment on GitHub Pages. The included GitHub Actions workflow automatically deploys the site when changes are pushed to the main branch.
+- `manifest.json`: Generated from deployed firmware
+- `index.html`: Updated with available firmware options
+- `firmware-timestamps.json`: Deployment timestamps
 
-### GitHub Pages Setup
+**Do not manually edit these files** - they are overwritten by automation.
 
-1. Go to your repository's Settings > Pages
-2. Select "Deploy from a branch" as the source
-3. Choose "main" branch and "/ (root)" folder
-4. The site will be available at `https://yourusername.github.io/repository-name`
+## GitHub Pages Configuration
 
-## Firmware Files
+- **Source**: Deploy from main branch
+- **Domain**: sense360store.github.io/WebFlash
+- **CORS**: Configured via `_headers` file
+- **HTTPS**: Enforced for Web Serial API compatibility
 
-Place your firmware binary files in the `firmware/` directory and update the `manifest.json` file accordingly.
+## Support
+
+### Common Issues
+
+1. **Browser Compatibility**: Use Chrome or Edge
+2. **HTTPS Required**: Web Serial API needs secure context
+3. **Device Drivers**: Install appropriate USB drivers
+4. **Firewall/Antivirus**: May block serial port access
+
+### Getting Help
+
+- **GitHub Issues**: Report problems on this repository
+- **Documentation**: Check troubleshooting section above
+- **Community**: Ask questions in discussions
+
+## Technical Details
+
+### ESP Web Tools
+
+- **Library**: https://unpkg.com/esp-web-tools@10
+- **Protocol**: Web Serial API for device communication
+- **Security**: Runs entirely in browser, no server required
+- **Compatibility**: Works with all ESP32 variants
 
 ### Manifest Format
 
-The `manifest.json` file defines the available firmware builds:
-
 ```json
 {
-  "name": "Your Firmware Name",
-  "version": "1.0.0",
-  "new_install_prompt_erase": true,
-  "new_install_improv_wait_time": 10,
+  "name": "Sense360 ESP32 Firmware",
+  "version": "2.0.0",
   "builds": [
     {
-      "chipFamily": "ESP32",
-      "improv": true,
+      "name": "Device Name",
+      "chipFamily": "ESP32S3",
       "parts": [
         {
-          "path": "firmware/esp32-firmware.bin",
+          "path": "firmware/path/to/firmware.bin",
           "offset": 0
         }
       ]
@@ -106,51 +221,6 @@ The `manifest.json` file defines the available firmware builds:
 }
 ```
 
-## CORS Configuration
-
-If hosting firmware files on a different domain, ensure proper CORS headers are configured:
-
-```
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, HEAD, OPTIONS
-Access-Control-Allow-Headers: Content-Type
-```
-
-## Browser Compatibility
-
-This application requires browsers that support the Web Serial API:
-
-- ✅ Chrome 89+
-- ✅ Edge 89+
-- ❌ Firefox (not supported)
-- ❌ Safari (not supported)
-
-## Troubleshooting
-
-### Device Not Detected
-- Ensure ESP32 is connected via USB
-- Try a different USB cable or port
-- Check that you're using Chrome or Edge
-- Verify the site is accessed via HTTPS
-
-### Flashing Issues
-- Hold the BOOT button while connecting (if available)
-- Close other applications that might be using the serial port
-- Try resetting the device before flashing
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
 ## License
 
-This project is open source and available under the MIT License.
-
-## Credits
-
-- Built with [ESP Web Tools](https://github.com/esphome/esp-web-tools)
-- Inspired by [squeezelite-esp32-installer](https://github.com/sle118/squeezelite-esp32-installer)
-- Uses the Web Serial API for device communication
+This project is licensed under the MIT License. See the ESP Web Tools library for its specific license terms.

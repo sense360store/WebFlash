@@ -3,401 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sense360 ESP32 Installer</title>
+    <title>Sense360 ESP32 Firmware Installer</title>
     <link rel="stylesheet" href="css/style.css">
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10?module"></script>
 </head>
 <body>
-    <div id="app">
+    <div class="container">
         <header>
-            <h1>Sense360 ESP32 Installer</h1>
-            <p>Flash Sense360 v2.0.0 firmware to ESP32 devices</p>
+            <h1>Sense360 ESP32 Firmware Installer</h1>
+            <p class="subtitle">Flash firmware to your ESP32 devices using your web browser</p>
         </header>
 
-        <main>
-            <div class="intro-section">
-                <h2>Getting Started</h2>
-                <p>Connect your ESP32 device to your computer using a USB cable. Make sure you're using Chrome or Edge browser with HTTPS enabled.</p>
-                <p>This installer will flash the Sense360 v2.0.0 firmware to your ESP32 device. Click the "Install Sense360" button below to begin.</p>
+        <div class="browser-check">
+            <div class="browser-warning" id="browser-warning" style="display: none;">
+                <h3>⚠️ Browser Not Supported</h3>
+                <p>This installer requires Chrome or Edge browser with Web Serial API support.</p>
+                <p>Please use Chrome or Edge to continue.</p>
             </div>
+        </div>
 
-            <div class="install-section">
-                <h2>Install Sense360 Firmware</h2>
-                <div class="firmware-selection">
-                    <h3>Firmware Selection</h3>
-                    
-                    <div class="filter-section">
-                        <div class="filter-group">
-                            <label for="device-family">Device Family</label>
-                            <select id="device-family" class="filter-select">
-                                <option value="all">All Families</option>
-                                <option value="101">101</option>
-<option value="co2monitor">Co2Monitor</option>
-<option value="esphome-web-3b8d3c">Esphome-Web-3B8D3C</option>
-<option value="test101">Test101</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label for="release-type">Release Type</label>
-                            <select id="release-type" class="filter-select">
-                                <option value="all">All Types</option>
-                                <option value="beta">Beta</option>
-<option value="stable">Stable</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="firmware-options">
-                        <div class="firmware-option" data-module="co2monitor" data-release="beta">
-                            <input type="radio" id="co2monitor-beta" name="firmware" value="co2monitor-beta" checked>
-                            <label for="co2monitor-beta">
-                                <div class="option-header">
-                                    <strong>CO2Monitor (ESP32S3) - Beta</strong>
-                                    <span class="version-badge beta">Beta</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="esphome-web-3b8d3c" data-release="stable">
-                            <input type="radio" id="esphome-web-3b8d3c-stable" name="firmware" value="esphome-web-3b8d3c-stable" >
-                            <label for="esphome-web-3b8d3c-stable">
-                                <div class="option-header">
-                                    <strong>esphome-web-3b8d3c (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for esphome-web-3b8d3c devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="101" data-release="stable">
-                            <input type="radio" id="101-stable" name="firmware" value="101-stable" >
-                            <label for="101-stable">
-                                <div class="option-header">
-                                    <strong>101 (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for 101 devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="test101" data-release="stable">
-                            <input type="radio" id="test101-stable" name="firmware" value="test101-stable" >
-                            <label for="test101-stable">
-                                <div class="option-header">
-                                    <strong>test101 (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for test101 devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="esphome-web-3b8d3c" data-release="stable">
-                            <input type="radio" id="esphome-web-3b8d3c-stable" name="firmware" value="esphome-web-3b8d3c-stable" >
-                            <label for="esphome-web-3b8d3c-stable">
-                                <div class="option-header">
-                                    <strong>esphome-web-3b8d3c (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for esphome-web-3b8d3c devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="test101" data-release="stable">
-                            <input type="radio" id="test101-stable" name="firmware" value="test101-stable" >
-                            <label for="test101-stable">
-                                <div class="option-header">
-                                    <strong>test101 (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for test101 devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for firmware devices using CO2Monitor chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">CO2Monitor</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for firmware devices using CO2Monitor chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">CO2Monitor</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for firmware devices using CO2Monitor chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">CO2Monitor</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.11</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for firmware devices using CO2Monitor chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">CO2Monitor</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    </div>
+        <div class="firmware-selection" id="firmware-selection">
+            <h2>Select Firmware</h2>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="device-family">Device Family:</label>
+                    <select id="device-family">
+                        <option value="all">All Families</option>
+                    </select>
                 </div>
-                <div class="install-container">
-                    <esp-web-install-button manifest="./manifest.json" id="install-button">
-                        <button type="button" class="btn-primary" slot="activate">Install Sense360</button>
-                        <span slot="not-allowed">
-                            <div class="alert alert-danger">
-                                <h3>⚠️ Not Allowed</h3>
-                                <p>Flashing is only supported from localhost or from a secure (HTTPS) website.</p>
-                            </div>
-                        </span>
-                        <span slot="notsupported">
-                            <div class="alert alert-danger">
-                                <h3>⚠️ Browser Not Supported</h3>
-                                <p>ESP Web Tools requires Chrome or Edge browser. <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#browser_compatibility" target="_blank">Check browser compatibility</a></p>
-                            </div>
-                        </span>
-                    </esp-web-install-button>
+                
+                <div class="filter-group">
+                    <label for="release-type">Release Type:</label>
+                    <select id="release-type">
+                        <option value="all">All Types</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="features-section">
-                <h2>Features</h2>
-                <div class="features-grid">
-                    <div class="feature-card">
-                        <h3>🔌 Easy Connection</h3>
-                        <p>Connect ESP32 devices directly via USB using the Web Serial API</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>⚡ Fast Flashing</h3>
-                        <p>Automatic chip detection and optimized firmware flashing</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>📱 Wi-Fi Setup</h3>
-                        <p>Configure Wi-Fi settings using Improv protocol after flashing</p>
-                    </div>
-                    <div class="feature-card">
-                        <h3>🔍 Serial Monitor</h3>
-                        <p>Real-time serial output monitoring and command interface</p>
-                    </div>
+            <div class="firmware-options">
+                <div class="no-firmware-message">
+                    <h3>No Firmware Available</h3>
+                    <p>No firmware files have been deployed yet. Check back later for available firmware options.</p>
                 </div>
+            </div>
+        </div>
+
+        <div class="installation-section" id="installation-section">
+            <h2>Installation</h2>
+            
+            <div class="install-button-container">
+                <esp-web-install-button manifest="manifest.json">
+                    <button slot="activate" class="install-button">
+                        Connect & Install Firmware
+                    </button>
+                    <span slot="unsupported">
+                        <div class="unsupported-message">
+                            <h3>Web Serial API Not Supported</h3>
+                            <p>Your browser doesn't support Web Serial API. Please use Chrome or Edge.</p>
+                        </div>
+                    </span>
+                    <span slot="not-allowed">
+                        <div class="not-allowed-message">
+                            <h3>Connection Not Allowed</h3>
+                            <p>Web Serial API access was denied. Please refresh and try again.</p>
+                        </div>
+                    </span>
+                </esp-web-install-button>
             </div>
 
-            <div class="troubleshooting-section">
-                <h2>Troubleshooting</h2>
-                <div class="troubleshooting-content">
-                    <h3>Device Not Detected?</h3>
-                    <ul>
-                        <li>Make sure your ESP32 is connected via USB</li>
-                        <li>Check that you're using Chrome or Edge browser</li>
-                        <li>Verify you're accessing the site via HTTPS</li>
-                        <li>Try a different USB cable or port</li>
-                        <li>On Windows, ensure proper drivers are installed</li>
-                    </ul>
-                    
-                    <h3>Flashing Failed?</h3>
-                    <ul>
-                        <li>Hold the BOOT button while connecting (if available)</li>
-                        <li>Try resetting the device before flashing</li>
-                        <li>Ensure no other applications are using the serial port</li>
-                        <li>Check that the firmware file is compatible with your chip</li>
-                    </ul>
+            <div class="installation-steps">
+                <h3>Installation Steps</h3>
+                <ol>
+                    <li>Connect your ESP32 device to your computer via USB</li>
+                    <li>Select your desired firmware above</li>
+                    <li>Click "Connect & Install Firmware"</li>
+                    <li>Select your device from the popup</li>
+                    <li>Wait for the installation to complete</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <h2>Firmware Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>Environmental Monitoring</h3>
+                    <p>Temperature, humidity, and air quality sensors</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Wi-Fi Connectivity</h3>
+                    <p>Easy wireless setup with captive portal</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Home Assistant Integration</h3>
+                    <p>Automatic discovery and configuration</p>
+                </div>
+                <div class="feature-card">
+                    <h3>OTA Updates</h3>
+                    <p>Wireless firmware updates after installation</p>
                 </div>
             </div>
-        </main>
+        </div>
+
+        <div class="troubleshooting-section">
+            <h2>Troubleshooting</h2>
+            <div class="troubleshooting-grid">
+                <div class="troubleshooting-item">
+                    <h3>Device Not Detected</h3>
+                    <p>Make sure your device is connected via USB and the correct drivers are installed.</p>
+                </div>
+                <div class="troubleshooting-item">
+                    <h3>Installation Failed</h3>
+                    <p>Try putting your device in download mode by holding the BOOT button while connecting.</p>
+                </div>
+                <div class="troubleshooting-item">
+                    <h3>Connection Issues</h3>
+                    <p>Ensure no other programs are using the serial port. Close Arduino IDE or other serial monitors.</p>
+                </div>
+            </div>
+        </div>
 
         <footer>
-            <p>
-                <a href="https://github.com/esphome/esp-web-tools" target="_blank">Powered by ESP Web Tools</a> | 
-                <a href="https://github.com/your-repo/esp32-flasher" target="_blank">View Source</a>
-            </p>
+            <p>&copy; 2025 Sense360. Built with ESP Web Tools.</p>
         </footer>
     </div>
-    
+
     <script>
-        // Handle firmware selection and filtering
-        const firmwareOptions = document.querySelectorAll('input[name="firmware"]');
-        const installButton = document.getElementById('install-button');
-        const deviceFamilySelect = document.getElementById('device-family');
-        const releaseTypeSelect = document.getElementById('release-type');
-        const firmwareOptionElements = document.querySelectorAll('.firmware-option');
-        
-        // Map firmware selections to different manifests
-        const manifestMap = {
-            'envmonitor-stable': './manifest-env-monitor.json'
-        };
-        
-        function updateManifest() {
-            const selectedFirmware = document.querySelector('input[name="firmware"]:checked');
-            if (selectedFirmware && installButton) {
-                const manifestPath = manifestMap[selectedFirmware.value] || './manifest.json';
-                installButton.setAttribute('manifest', manifestPath);
-            }
+        // Check browser compatibility
+        if (!navigator.serial) {
+            document.getElementById('browser-warning').style.display = 'block';
+            document.getElementById('firmware-selection').style.display = 'none';
+            document.getElementById('installation-section').style.display = 'none';
         }
-        
-        function filterFirmwareOptions() {
-            const selectedFamily = deviceFamilySelect.value;
-            const selectedType = releaseTypeSelect.value;
+
+        // Filter functionality
+        document.getElementById('device-family').addEventListener('change', filterFirmware);
+        document.getElementById('release-type').addEventListener('change', filterFirmware);
+
+        function filterFirmware() {
+            const deviceFamily = document.getElementById('device-family').value;
+            const releaseType = document.getElementById('release-type').value;
             
-            let visibleCount = 0;
+            const firmwareOptions = document.querySelectorAll('.firmware-option');
             
-            firmwareOptionElements.forEach(option => {
-                const module = option.dataset.module;
-                const release = option.dataset.release;
+            firmwareOptions.forEach(option => {
+                const optionModule = option.dataset.module;
+                const optionRelease = option.dataset.release;
                 
-                const familyMatch = selectedFamily === 'all' || module === selectedFamily;
-                const typeMatch = selectedType === 'all' || release === selectedType;
+                const showDevice = deviceFamily === 'all' || optionModule === deviceFamily;
+                const showRelease = releaseType === 'all' || optionRelease === releaseType;
                 
-                if (familyMatch && typeMatch) {
+                if (showDevice && showRelease) {
                     option.style.display = 'block';
-                    visibleCount++;
                 } else {
                     option.style.display = 'none';
-                    // Uncheck hidden options
-                    const radio = option.querySelector('input[type="radio"]');
-                    if (radio && radio.checked) {
-                        radio.checked = false;
-                    }
                 }
             });
-            
-            // Select first visible option if none selected
-            const checkedOption = document.querySelector('input[name="firmware"]:checked');
-            if (!checkedOption && visibleCount > 0) {
-                const firstVisible = document.querySelector('.firmware-option[style="display: block;"] input[type="radio"], .firmware-option:not([style*="none"]) input[type="radio"]');
-                if (firstVisible) {
-                    firstVisible.checked = true;
-                }
-            }
-            
-            updateManifest();
         }
-        
-        // Add event listeners when DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            // Add event listeners to radio buttons
-            firmwareOptions.forEach(option => {
-                option.addEventListener('change', updateManifest);
-            });
-            
-            // Add event listeners to filter selects
-            if (deviceFamilySelect) {
-                deviceFamilySelect.addEventListener('change', filterFirmwareOptions);
-            }
-            if (releaseTypeSelect) {
-                releaseTypeSelect.addEventListener('change', filterFirmwareOptions);
-            }
-            
-            // Set initial state
-            filterFirmwareOptions();
-        });
     </script>
 </body>
 </html>

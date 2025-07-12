@@ -1,52 +1,7 @@
 {
-  "name": "Sense360 Firmware",
-  "version": "2025.07.12",
-  "new_install_prompt_erase": true,
-  "new_install_improv_wait_time": 10,
-  "builds": [
-    {
-      "name": "CO2Monitor (ESP32S3) - Beta",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/CO2Monitor/ESP32S3/beta/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "esphome-web-3b8d3c (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/esphome-web-3b8d3c/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "101 (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/101/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "test101 (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/test101/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    }
-  ]
+  "name": "Sense360 ESP32 Firmware",
+  "version": "2.0.0",
+  "home_assistant_domain": "esphome",
+  "new_install_skip_erase": false,
+  "builds": []
 }
