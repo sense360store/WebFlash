@@ -31,7 +31,6 @@
                     <select id="device-family">
                         <option value="all">All Families</option>
                                 <option value="co2monitor">Co2Monitor</option>
-<option value="d2ebug-esp32s3-config">D2Ebug-Esp32S3-Config</option>
 <option value="debug-esp32s3-config">Debug-Esp32S3-Config</option>
                             </select>
                 </div>
@@ -40,20 +39,50 @@
                     <label for="release-type">Release Type:</label>
                     <select id="release-type">
                         <option value="all">All Types</option>
-                                <option value="beta">Beta</option>
-<option value="stable">Stable</option>
+                                <option value="stable">Stable</option>
                             </select>
                 </div>
             </div>
 
             <div class="firmware-options">
-                        <div class="firmware-option" data-module="co2monitor" data-release="beta">
-                            <input type="radio" id="co2monitor-beta" name="firmware" value="co2monitor-beta" checked>
-                            <label for="co2monitor-beta">
+                        <div class="firmware-option" data-module="co2monitor" data-release="stable">
+                            <input type="radio" id="co2monitor-stable" name="firmware" value="co2monitor-stable" checked>
+                            <label for="co2monitor-stable">
                                 <div class="option-header">
-                                    <strong>CO2Monitor (ESP32S3) - Beta</strong>
-                                    <span class="version-badge beta">Beta</span>
+                                    <strong>CO2Monitor (ESP32S3)</strong>
+                                    <span class="version-badge stable">Stable</span>
                                 </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.12</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
+                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
+                            <label for="debug-esp32s3-config-stable">
+                                <div class="option-header">
+                                    <strong>debug-esp32s3-config (Legacy)</strong>
+                                    <span class="version-badge stable">Stable</span>
+                                </div>
+                                <div class="option-meta">
+                                    <span class="release-date">Updated: 2025.07.12</span>
+                                </div>
+                                <div class="option-description">
+                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
+                                </div>
+                                <div class="option-features">
+                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                                 <div class="option-meta">
                                     <span class="release-date">Updated: 2025.07.12</span>
                                 </div>

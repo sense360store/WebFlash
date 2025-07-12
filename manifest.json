@@ -5,23 +5,12 @@
   "new_install_improv_wait_time": 10,
   "builds": [
     {
-      "name": "CO2Monitor (ESP32S3) - Beta",
+      "name": "CO2Monitor (ESP32S3)",
       "chipFamily": "ESP32-S3",
       "improv": true,
       "parts": [
         {
-          "path": "firmware/CO2Monitor/ESP32S3/beta/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "d2ebug-esp32s3-config (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/d2ebug-esp32s3-config/firmware-latest.bin",
+          "path": "firmware/CO2Monitor/ESP32S3/stable/firmware-latest.bin",
           "offset": 0
         }
       ]
