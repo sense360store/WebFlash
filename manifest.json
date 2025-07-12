@@ -27,6 +27,17 @@
       ]
     },
     {
+      "name": "101 (Legacy)",
+      "chipFamily": "ESP32-S3",
+      "improv": true,
+      "parts": [
+        {
+          "path": "firmware/101/firmware-latest.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
       "name": "test101 (Legacy)",
       "chipFamily": "ESP32-S3",
       "improv": true,
