@@ -1,27 +1,41 @@
 {
-  "name": "Sense360 Firmware",
-  "version": "2025.07.12",
-  "new_install_prompt_erase": true,
-  "new_install_improv_wait_time": 10,
+  "name": "Sense360 ESP32 Firmware",
+  "version": "2.0.0",
+  "home_assistant_domain": "esphome",
+  "new_install_skip_erase": false,
   "builds": [
     {
-      "name": "CO2Monitor (ESP32S3)",
       "chipFamily": "ESP32-S3",
-      "improv": true,
       "parts": [
         {
-          "path": "firmware/CO2Monitor/ESP32S3/stable/firmware-latest.bin",
+          "path": "firmware/sense360_v2.v2.0.0.factory.bin",
           "offset": 0
         }
       ]
     },
     {
-      "name": "debug-esp32s3-config (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
+      "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "firmware/debug-esp32s3-config/firmware-latest.bin",
+          "path": "firmware/sense360_v2.v2.0.0.factory.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-S2",
+      "parts": [
+        {
+          "path": "firmware/sense360_v2.v2.0.0.factory.bin",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "firmware/sense360_v2.v2.0.0.factory.bin",
           "offset": 0
         }
       ]
