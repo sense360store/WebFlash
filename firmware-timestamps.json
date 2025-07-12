@@ -1,0 +1,44 @@
+{
+  "firmware/d2ebug-esp32s3-config/firmware-latest.bin": {
+    "added": "2025-07-12T20:52:54.648331",
+    "file_size": 871584,
+    "file_hash": "05f99c9edc3d650928b56ea9147f14045349323c5275886085af6c64ad5e25ee",
+    "file_path": "firmware/d2ebug-esp32s3-config/firmware-latest.bin",
+    "version": "unknown"
+  },
+  "firmware/d2ebug-esp32s3-config/firmware-20250712-203712.bin": {
+    "added": "2025-07-12T20:52:54.650659",
+    "file_size": 871584,
+    "file_hash": "05f99c9edc3d650928b56ea9147f14045349323c5275886085af6c64ad5e25ee",
+    "file_path": "firmware/d2ebug-esp32s3-config/firmware-20250712-203712.bin",
+    "version": "unknown"
+  },
+  "firmware/CO2Monitor/ESP32S3/beta/firmware-latest.bin": {
+    "added": "2025-07-12T20:52:54.652066",
+    "file_size": 871584,
+    "file_hash": "e996014db660bd8b8e89d20ec0ff2d292a5541feb3e9f322902babe037f4cc66",
+    "file_path": "firmware/CO2Monitor/ESP32S3/beta/firmware-latest.bin",
+    "version": "unknown"
+  },
+  "firmware/CO2Monitor/ESP32S3/beta/Sense360-CO2Monitor-ESP32S3-v2.0.1-beta-20250712-203712.bin": {
+    "added": "2025-07-12T20:52:54.653399",
+    "file_size": 871584,
+    "file_hash": "e996014db660bd8b8e89d20ec0ff2d292a5541feb3e9f322902babe037f4cc66",
+    "file_path": "firmware/CO2Monitor/ESP32S3/beta/Sense360-CO2Monitor-ESP32S3-v2.0.1-beta-20250712-203712.bin",
+    "version": "2.0.1"
+  },
+  "firmware/debug-esp32s3-config/firmware-latest.bin": {
+    "added": "2025-07-12T20:52:54.655140",
+    "file_size": 871584,
+    "file_hash": "e996014db660bd8b8e89d20ec0ff2d292a5541feb3e9f322902babe037f4cc66",
+    "file_path": "firmware/debug-esp32s3-config/firmware-latest.bin",
+    "version": "unknown"
+  },
+  "firmware/debug-esp32s3-config/firmware-20250712-203712.bin": {
+    "added": "2025-07-12T20:52:54.656612",
+    "file_size": 871584,
+    "file_hash": "e996014db660bd8b8e89d20ec0ff2d292a5541feb3e9f322902babe037f4cc66",
+    "file_path": "firmware/debug-esp32s3-config/firmware-20250712-203712.bin",
+    "version": "unknown"
+  }
+}
