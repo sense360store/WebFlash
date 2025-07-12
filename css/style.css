@@ -6,75 +6,81 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background-color: #f5f5f5;
+    font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+    color: #202124;
+    background-color: #ffffff;
+    font-size: 14px;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 32px 24px;
 }
 
 /* Header */
 header {
     text-align: center;
-    margin-bottom: 40px;
-    padding: 40px 0;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 48px;
+    padding: 0;
+    background: transparent;
 }
 
 h1 {
-    font-size: 2.5em;
-    color: #2c3e50;
-    margin-bottom: 10px;
+    font-size: 32px;
+    font-weight: 400;
+    color: #202124;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
 .subtitle {
-    font-size: 1.2em;
-    color: #7f8c8d;
+    font-size: 16px;
+    color: #5f6368;
+    font-weight: 400;
 }
 
 /* Sections */
 section, .firmware-selection, .installation-section, .features-section, .troubleshooting-section {
-    background: white;
-    padding: 30px;
-    margin-bottom: 30px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    background: transparent;
+    padding: 24px 0;
+    margin-bottom: 32px;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 h2 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 1.8em;
+    color: #202124;
+    margin-bottom: 16px;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.25px;
 }
 
 h3 {
-    color: #34495e;
-    margin-bottom: 15px;
-    font-size: 1.3em;
+    color: #202124;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 /* Browser warning */
 .browser-warning {
-    background: #e74c3c;
-    color: white;
-    padding: 20px;
+    background: #fce8e6;
+    color: #d93025;
+    padding: 16px;
     border-radius: 8px;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    border: 1px solid #fad2cf;
 }
 
 /* Firmware selection */
 .filters {
     display: flex;
-    gap: 20px;
-    margin-bottom: 30px;
+    gap: 24px;
+    margin-bottom: 32px;
     flex-wrap: wrap;
 }
 
@@ -85,39 +91,44 @@ h3 {
 }
 
 .filter-group label {
-    font-weight: 600;
-    color: #2c3e50;
+    font-weight: 500;
+    color: #202124;
+    font-size: 14px;
 }
 
 .filter-group select {
-    padding: 10px;
-    border: 2px solid #ecf0f1;
-    border-radius: 5px;
+    padding: 8px 12px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
     font-size: 14px;
     background: white;
+    color: #202124;
+    min-width: 120px;
 }
 
 .filter-group select:focus {
     outline: none;
-    border-color: #3498db;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 1px #1a73e8;
 }
 
 /* Firmware options */
 .firmware-options {
     display: grid;
-    gap: 20px;
+    gap: 16px;
 }
 
 .firmware-option {
-    border: 2px solid #ecf0f1;
+    border: 1px solid #e8eaed;
     border-radius: 8px;
-    padding: 20px;
-    transition: all 0.3s ease;
+    padding: 16px;
+    transition: all 0.2s ease;
+    background: white;
 }
 
 .firmware-option:hover {
-    border-color: #3498db;
-    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
+    border-color: #1a73e8;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .firmware-option input[type="radio"] {
@@ -125,13 +136,13 @@ h3 {
 }
 
 .firmware-option input[type="radio"]:checked + label {
-    background: #ecf0f1;
+    background: #e8f0fe;
 }
 
 .firmware-option label {
     display: block;
     cursor: pointer;
-    padding: 10px 0;
+    padding: 0;
 }
 
 .option-header {
@@ -196,43 +207,50 @@ h3 {
 
 .no-firmware-message {
     text-align: center;
-    padding: 40px;
-    color: #7f8c8d;
+    padding: 48px 24px;
+    color: #5f6368;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e8eaed;
 }
 
 /* Installation section */
 .install-button-container {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 32px;
 }
 
 .install-button {
-    background: #27ae60;
+    background: #1a73e8;
     color: white;
-    padding: 15px 30px;
+    padding: 10px 24px;
     border: none;
-    border-radius: 8px;
-    font-size: 1.1em;
-    font-weight: 600;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background 0.2s ease;
+    letter-spacing: 0.25px;
 }
 
 .install-button:hover {
-    background: #219a52;
+    background: #1557b0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .install-button:disabled {
-    background: #95a5a6;
+    background: #f8f9fa;
+    color: #9aa0a6;
     cursor: not-allowed;
 }
 
 .unsupported-message, .not-allowed-message {
-    background: #e74c3c;
-    color: white;
-    padding: 20px;
+    background: #fce8e6;
+    color: #d93025;
+    padding: 16px;
     border-radius: 8px;
     text-align: center;
+    border: 1px solid #fad2cf;
 }
 
 .installation-steps {
@@ -306,11 +324,11 @@ footer {
 /* Responsive design */
 @media (max-width: 768px) {
     .container {
-        padding: 10px;
+        padding: 16px;
     }
     
     h1 {
-        font-size: 2em;
+        font-size: 28px;
     }
     
     .filters {
