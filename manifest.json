@@ -15,8 +15,9 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-13T13:53:44.129562",
-      "file_size": 26
+      "build_date": "2025-07-13T20:40:52.494341",
+      "file_size": 976752,
+      "improv": true
     },
     {
       "device_type": "CO2Monitor",
@@ -29,36 +30,9 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-13T14:23:57.693215",
-      "file_size": 30
-    },
-    {
-      "device_type": "EnvMonitor",
-      "version": "2.1.0",
-      "channel": "stable",
-      "chipFamily": "ESP32",
-      "parts": [
-        {
-          "path": "firmware/EnvMonitor/ESP32/stable/Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13T14:23:59.351214",
-      "file_size": 43
-    },
-    {
-      "device_type": "EnvMonitor",
-      "version": "2.2.0",
-      "channel": "beta",
-      "chipFamily": "ESP32",
-      "parts": [
-        {
-          "path": "firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13T14:24:00.598213",
-      "file_size": 41
+      "build_date": "2025-07-13T20:40:52.494979",
+      "file_size": 937104,
+      "improv": true
     }
   ]
 }
