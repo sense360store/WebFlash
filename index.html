@@ -87,28 +87,41 @@
             installButton.textContent = `Install ${build.device_type} v${build.version} (${build.chipFamily})`;
             
             // Create individual manifest for selected firmware
-            createSelectedManifest(build);
+            createIndividualManifest(build, index);
         }
         
-        // Create manifest for selected firmware
-        function createSelectedManifest(build) {
-            const selectedManifest = {
+        // Create individual manifest for selected firmware
+        function createIndividualManifest(build, index) {
+            const baseURL = window.location.origin + window.location.pathname.replace(/\/?$/, '');
+            
+            // Create manifest with absolute URLs for firmware parts
+            const individualManifest = {
                 name: `${globalManifest.name} - ${build.device_type}`,
                 version: build.version,
                 home_assistant_domain: globalManifest.home_assistant_domain,
                 new_install_skip_erase: globalManifest.new_install_skip_erase,
                 builds: [{
                     chipFamily: build.chipFamily,
-                    parts: build.parts
+                    parts: build.parts.map(part => ({
+                        ...part,
+                        path: baseURL + '/' + part.path
+                    }))
                 }]
             };
             
-            // Create a blob URL for the manifest
-            const manifestBlob = new Blob([JSON.stringify(selectedManifest)], { type: 'application/json' });
-            const manifestURL = URL.createObjectURL(manifestBlob);
+            console.log('Individual manifest created:', individualManifest);
+            console.log('Firmware path:', individualManifest.builds[0].parts[0].path);
+            console.log('Base URL:', baseURL);
             
-            // Update the ESP Web Tools manifest attribute
-            document.getElementById('main-installer').setAttribute('manifest', manifestURL);
+            // Store the selected firmware index for the server to use
+            localStorage.setItem('selectedFirmwareIndex', index.toString());
+            
+            // Update the ESP Web Tools manifest attribute to use the selected firmware endpoint
+            const installer = document.getElementById('main-installer');
+            const manifestURL = baseURL + '/selected-firmware.json?index=' + index + '&t=' + Date.now();
+            installer.setAttribute('manifest', manifestURL);
+            
+            console.log('Manifest URL updated to:', manifestURL);
         }
         
         // Load firmware info when page loads
@@ -139,7 +152,7 @@
 
         <div class="installation-section" id="installation-section">
             <div class="install-button-container">
-                <esp-web-install-button id="main-installer" manifest="selected-firmware.json">
+                <esp-web-install-button id="main-installer" manifest="manifest.json">
                     <button slot="activate" class="install-button" disabled>
                         Select Firmware to Install
                     </button>

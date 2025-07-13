@@ -22,13 +22,52 @@ class ManifestRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             
-            # Return empty manifest - will be replaced by JavaScript
-            empty_manifest = {
-                "name": "Select Firmware",
-                "version": "1.0.0",
-                "builds": []
-            }
-            self.wfile.write(json.dumps(empty_manifest).encode())
+            # Parse query parameters to get selected firmware index
+            query_params = urllib.parse.parse_qs(parsed_path.query)
+            selected_index = int(query_params.get('index', ['0'])[0])
+            
+            try:
+                with open('manifest.json', 'r') as f:
+                    main_manifest = json.load(f)
+                
+                # Get the selected build by index
+                if main_manifest.get('builds') and selected_index < len(main_manifest['builds']):
+                    selected_build = main_manifest['builds'][selected_index]
+                    
+                    # Build absolute URLs for firmware parts
+                    base_url = f"http://{self.headers.get('Host', 'localhost:5000')}"
+                    
+                    selected_manifest = {
+                        "name": f"{main_manifest['name']} - {selected_build['device_type']}",
+                        "version": selected_build['version'],
+                        "home_assistant_domain": main_manifest['home_assistant_domain'],
+                        "new_install_skip_erase": main_manifest['new_install_skip_erase'],
+                        "builds": [{
+                            "chipFamily": selected_build['chipFamily'],
+                            "parts": [{
+                                "path": f"{base_url}/{selected_build['parts'][0]['path']}",
+                                "offset": selected_build['parts'][0]['offset']
+                            }]
+                        }]
+                    }
+                    
+                    print(f"Serving selected firmware (index {selected_index}): {selected_build['device_type']} v{selected_build['version']}")
+                    print(f"Firmware URL: {selected_manifest['builds'][0]['parts'][0]['path']}")
+                else:
+                    selected_manifest = {
+                        "name": "Invalid Firmware Selection",
+                        "version": "1.0.0",
+                        "builds": []
+                    }
+            except Exception as e:
+                print(f"Error reading manifest: {e}")
+                selected_manifest = {
+                    "name": "Error Loading Firmware",
+                    "version": "1.0.0",
+                    "builds": []
+                }
+            
+            self.wfile.write(json.dumps(selected_manifest).encode())
             return
         
         # Handle CORS preflight
