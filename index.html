@@ -32,7 +32,7 @@
                         const channel = build.channel || 'stable';
                         const buildDate = build.build_date ? new Date(build.build_date).toLocaleDateString() : 'Unknown';
                         
-                        html += `<div class="build-item" data-firmware-index="${index}" onclick="selectFirmware(${index})">
+                        html += `<div class="build-item" data-firmware-index="${index}" data-device-type="${deviceType}" data-chip-family="${chipFamily}" data-version="${version}" data-channel="${channel}" onclick="selectFirmware(${index})">
                             <div class="build-info">
                                 <span class="build-name">${deviceType} v${version}</span>
                                 <span class="build-chip">${chipFamily}</span>
@@ -51,6 +51,9 @@
                     </div>`;
                     
                     firmwareDetails.innerHTML = summary + html;
+                    
+                    // Populate device type filter
+                    populateDeviceTypeFilter();
                 } else {
                     firmwareDetails.innerHTML = '<p>No firmware builds found in manifest.</p>';
                 }
@@ -96,6 +99,66 @@
             console.log('Manifest URL updated to:', manifestFilename);
         }
         
+        // Populate device type filter dropdown
+        function populateDeviceTypeFilter() {
+            if (!globalManifest || !globalManifest.builds) return;
+            
+            const deviceTypes = [...new Set(globalManifest.builds.map(build => build.device_type))];
+            const select = document.getElementById('device-filter');
+            
+            // Clear existing options except "All Devices"
+            select.innerHTML = '<option value="">All Devices</option>';
+            
+            deviceTypes.forEach(deviceType => {
+                const option = document.createElement('option');
+                option.value = deviceType;
+                option.textContent = deviceType;
+                select.appendChild(option);
+            });
+        }
+        
+        // Filter firmware based on device type and search
+        function filterFirmware() {
+            const deviceFilter = document.getElementById('device-filter').value;
+            const searchInput = document.getElementById('search-input').value.toLowerCase();
+            const buildItems = document.querySelectorAll('.build-item');
+            
+            let visibleCount = 0;
+            
+            buildItems.forEach(item => {
+                const deviceType = item.getAttribute('data-device-type');
+                const chipFamily = item.getAttribute('data-chip-family');
+                const version = item.getAttribute('data-version');
+                const channel = item.getAttribute('data-channel');
+                
+                // Check device type filter
+                const matchesDeviceType = !deviceFilter || deviceType === deviceFilter;
+                
+                // Check search input
+                const searchText = `${deviceType} ${chipFamily} ${version} ${channel}`.toLowerCase();
+                const matchesSearch = !searchInput || searchText.includes(searchInput);
+                
+                if (matchesDeviceType && matchesSearch) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Update summary
+            const summary = document.querySelector('.firmware-summary p');
+            if (summary) {
+                const totalBuilds = globalManifest.builds.length;
+                const filterText = visibleCount === totalBuilds ? 
+                    `${totalBuilds} firmware builds` : 
+                    `${visibleCount} of ${totalBuilds} firmware builds`;
+                
+                const chipFamilies = [...new Set(globalManifest.builds.map(build => build.chipFamily))];
+                summary.innerHTML = `<strong>${filterText}</strong> available for <strong>${chipFamilies.join(', ')}</strong> devices`;
+            }
+        }
+        
         // Load firmware info when page loads
         document.addEventListener('DOMContentLoaded', loadFirmwareInfo);
     </script>
@@ -103,8 +166,13 @@
 <body>
     <div class="container">
         <header>
-            <h1>Sense360 ESP32 Firmware Installer</h1>
-            <p class="subtitle">Flash firmware to your ESP32 devices using your web browser</p>
+            <div class="logo-container">
+                <img src="sense360-logo.png" alt="Sense360 Logo" class="logo">
+                <div class="header-text">
+                    <h1>Sense360 ESP32 Firmware Installer</h1>
+                    <p class="subtitle">Flash firmware to your ESP32 devices using your web browser</p>
+                </div>
+            </div>
         </header>
 
         <div class="browser-check">
@@ -117,6 +185,21 @@
 
         <div class="firmware-info" id="firmware-info">
             <h2>Available Firmware</h2>
+            
+            <!-- Device Type Filter -->
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <label for="device-filter">Filter by Device Type:</label>
+                    <select id="device-filter" onchange="filterFirmware()">
+                        <option value="">All Devices</option>
+                    </select>
+                </div>
+                <div class="search-controls">
+                    <label for="search-input">Search:</label>
+                    <input type="text" id="search-input" placeholder="Search firmware..." onkeyup="filterFirmware()">
+                </div>
+            </div>
+            
             <div class="firmware-details" id="firmware-details">
                 <p>Loading firmware information...</p>
             </div>
