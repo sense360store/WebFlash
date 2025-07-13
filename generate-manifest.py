@@ -6,135 +6,101 @@ This script scans the firmware directory structure and creates ESP Web Tools man
 
 import os
 import json
-import glob
+import argparse
 from pathlib import Path
-from datetime import datetime
 
 def scan_firmware_directory(firmware_dir="firmware"):
     """Scan firmware directory and generate manifest entries."""
     
+    firmware_path = Path(firmware_dir)
+    if not firmware_path.exists():
+        print(f"Firmware directory {firmware_dir} not found")
+        return []
+    
     builds = []
     
-    if not os.path.exists(firmware_dir):
-        print(f"Warning: Firmware directory {firmware_dir} not found")
-        return builds
-    
-    # Scan for firmware files in the organized structure
-    # firmware/[DeviceType]/[ChipFamily]/[Channel]/firmware-latest.bin
-    pattern = os.path.join(firmware_dir, "*", "*", "*", "firmware-latest.bin")
-    firmware_files = glob.glob(pattern)
-    
-    print(f"Found {len(firmware_files)} firmware files:")
-    
-    for firmware_file in firmware_files:
-        # Parse path: firmware/DeviceType/ChipFamily/Channel/firmware-latest.bin
-        parts = Path(firmware_file).parts
+    # Scan for firmware files
+    for firmware_file in firmware_path.rglob("firmware-latest.bin"):
+        # Extract info from directory structure
+        # Expected: firmware/DeviceType/ChipFamily/Channel/firmware-latest.bin
+        parts = firmware_file.parts
         
-        if len(parts) >= 5:
-            device_type = parts[1]
-            chip_family = parts[2]
-            channel = parts[3]
+        if len(parts) >= 4:
+            device_type = parts[-4]  # DeviceType
+            chip_family = parts[-3]  # ChipFamily  
+            channel = parts[-2]     # Channel
             
-            # Create friendly name
-            friendly_name = f"{device_type} ({chip_family})"
+            # Create build entry
+            build_name = f"{device_type} ({chip_family})"
             if channel != "stable":
-                friendly_name += f" - {channel.title()}"
+                build_name += f" - {channel.title()}"
             
-            # Map chip family to ESP Web Tools format
-            chip_family_map = {
-                "ESP32": "ESP32",
-                "ESP32S2": "ESP32-S2", 
-                "ESP32S3": "ESP32-S3",
-                "ESP32C3": "ESP32-C3"
-            }
+            # Map chip family to supported chips
+            chip_list = []
+            if chip_family.upper() == "ESP32":
+                chip_list = ["ESP32"]
+            elif chip_family.upper() == "ESP32S2":
+                chip_list = ["ESP32-S2"]
+            elif chip_family.upper() == "ESP32S3":
+                chip_list = ["ESP32-S3"]
+            elif chip_family.upper() == "ESP32C3":
+                chip_list = ["ESP32-C3"]
+            else:
+                chip_list = ["ESP32"]  # Default fallback
             
-            web_tools_chip = chip_family_map.get(chip_family, chip_family)
+            # Calculate relative path from manifest location
+            relative_path = str(firmware_file.relative_to(Path.cwd()))
             
             build_entry = {
-                "name": friendly_name,
-                "chipFamily": web_tools_chip,
-                "improv": True,
-                "parts": [
-                    {
-                        "path": firmware_file.replace("\\", "/"),  # Ensure forward slashes
-                        "offset": 0
-                    }
-                ]
+                "name": build_name,
+                "chipFamily": chip_family.upper(),
+                "parts": [{
+                    "path": relative_path,
+                    "offset": 0
+                }],
+                "improv": True
             }
             
             builds.append(build_entry)
-            print(f"  Added: {friendly_name} -> {firmware_file}")
-    
-    # Also check for legacy firmware files
-    legacy_pattern = os.path.join(firmware_dir, "*", "firmware-latest.bin")
-    legacy_files = glob.glob(legacy_pattern)
-    
-    for legacy_file in legacy_files:
-        # Skip if already processed in organized structure
-        if any(organized_file.startswith(os.path.dirname(legacy_file)) for organized_file in firmware_files):
-            continue
-            
-        parts = Path(legacy_file).parts
-        if len(parts) >= 3:
-            device_type = parts[1]
-            
-            # Create legacy entry
-            build_entry = {
-                "name": f"{device_type} (Legacy)",
-                "chipFamily": "ESP32-S3",  # Default for legacy
-                "improv": True,
-                "parts": [
-                    {
-                        "path": legacy_file.replace("\\", "/"),
-                        "offset": 0
-                    }
-                ]
-            }
-            
-            builds.append(build_entry)
-            print(f"  Added (Legacy): {device_type} -> {legacy_file}")
     
     return builds
 
 def generate_manifest(firmware_dir="firmware", output_file="manifest.json"):
     """Generate complete manifest.json file."""
     
-    # Scan for firmware builds
     builds = scan_firmware_directory(firmware_dir)
     
     if not builds:
-        print("Warning: No firmware files found, creating empty manifest")
+        print("No firmware files found, creating empty manifest")
         builds = []
     
-    # Create manifest structure
     manifest = {
-        "name": "Sense360 Firmware",
-        "version": datetime.now().strftime("%Y.%m.%d"),
-        "new_install_prompt_erase": True,
-        "new_install_improv_wait_time": 10,
+        "name": "Sense360 ESP32 Firmware",
+        "version": "2.0.0",
+        "home_assistant_domain": "esphome",
+        "new_install_skip_erase": False,
         "builds": builds
     }
     
     # Write manifest file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(manifest, f, indent=2, ensure_ascii=False)
+    with open(output_file, 'w') as f:
+        json.dump(manifest, f, indent=2)
     
-    print(f"Generated manifest with {len(builds)} firmware options")
-    print(f"Manifest saved to: {output_file}")
-    
+    print(f"Generated {output_file} with {len(builds)} firmware builds")
     return manifest
 
 def main():
     """Main function."""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Generate ESP Web Tools manifest.json from firmware directory")
+    parser = argparse.ArgumentParser(description="Generate manifest.json from firmware directory")
     parser.add_argument("--firmware-dir", default="firmware", help="Firmware directory to scan")
     parser.add_argument("--output", default="manifest.json", help="Output manifest file")
     
     args = parser.parse_args()
     
-    generate_manifest(args.firmware_dir, args.output)
+    manifest = generate_manifest(args.firmware_dir, args.output)
+    
+    print("Manifest generated successfully:")
+    print(json.dumps(manifest, indent=2))
 
 if __name__ == "__main__":
     main()

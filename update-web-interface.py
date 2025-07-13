@@ -5,182 +5,144 @@ This script modifies index.html to display all available firmware options.
 """
 
 import json
+import argparse
 import re
 from pathlib import Path
+from datetime import datetime
+
+def get_firmware_timestamp(build):
+    """Get formatted timestamp for firmware build."""
+    if "timestamp" in build:
+        try:
+            dt = datetime.fromisoformat(build["timestamp"].replace("Z", "+00:00"))
+            return dt.strftime("%Y-%m-%d %H:%M UTC")
+        except:
+            pass
+    return "Unknown"
 
 def generate_firmware_options_html(manifest_file="manifest.json"):
     """Generate HTML for firmware options based on manifest.json."""
-    
     try:
         with open(manifest_file, 'r') as f:
             manifest = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Error reading manifest: {e}")
-        return ""
+    except (FileNotFoundError, json.JSONDecodeError):
+        # No manifest or invalid JSON, return empty state
+        return """        <div class="firmware-info" id="firmware-info">
+            <h2>No Firmware Available</h2>
+            <div class="firmware-details">
+                <h3>Firmware Not Deployed</h3>
+                <p>No firmware has been deployed yet. Add a YAML file to the iot-firmware-src repository to trigger automatic firmware building and deployment.</p>
+                <div class="firmware-features">
+                    <span class="feature-tag">Auto-Build</span>
+                    <span class="feature-tag">Auto-Deploy</span>
+                    <span class="feature-tag">Lifecycle Management</span>
+                </div>
+            </div>
+        </div>"""
     
     builds = manifest.get("builds", [])
+    
     if not builds:
-        print("No builds found in manifest, creating empty state")
-        return {
-            'firmware_options': '''
-                        <div class="no-firmware-message">
-                            <h3>No Firmware Available</h3>
-                            <p>No firmware files have been deployed yet. Check back later for available firmware options.</p>
-                        </div>''',
-            'device_filter_options': '',
-            'channel_filter_options': ''
-        }
+        return """        <div class="firmware-info" id="firmware-info">
+            <h2>No Firmware Available</h2>
+            <div class="firmware-details">
+                <h3>Firmware Not Deployed</h3>
+                <p>No firmware has been deployed yet. Add a YAML file to the iot-firmware-src repository to trigger automatic firmware building and deployment.</p>
+                <div class="firmware-features">
+                    <span class="feature-tag">Auto-Build</span>
+                    <span class="feature-tag">Auto-Deploy</span>
+                    <span class="feature-tag">Lifecycle Management</span>
+                </div>
+            </div>
+        </div>"""
     
-    html_options = []
-    
-    # Group builds by device type for filtering
-    device_types = set()
-    channels = set()
-    
-    for build in builds:
-        name = build.get("name", "Unknown")
-        # Extract device type and channel from name
-        device_type = name.split(" (")[0]  # "TemperatureSensor (ESP32S3)" -> "TemperatureSensor"
-        channel = "stable"
-        if "beta" in name.lower():
-            channel = "beta"
-        elif "alpha" in name.lower():
-            channel = "alpha"
-        
-        device_types.add(device_type.lower().replace(" ", ""))
-        channels.add(channel)
-    
-    # Generate filter options
-    device_filter_options = []
-    for device_type in sorted(device_types):
-        device_filter_options.append(f'<option value="{device_type}">{device_type.title()}</option>')
-    
-    channel_filter_options = []
-    for channel in sorted(channels):
-        channel_filter_options.append(f'<option value="{channel}">{channel.title()}</option>')
-    
-    # Generate firmware option HTML
-    for i, build in enumerate(builds):
-        name = build.get("name", f"Firmware {i+1}")
+    if len(builds) == 1:
+        # Single firmware option
+        build = builds[0]
+        firmware_name = build.get("name", "ESP32 Firmware")
         chip_family = build.get("chipFamily", "ESP32")
+        timestamp = get_firmware_timestamp(build)
         
-        # Extract info from name
-        device_type = name.split(" (")[0]
-        device_type_key = device_type.lower().replace(" ", "")
-        
-        channel = "stable"
-        if "beta" in name.lower():
-            channel = "beta"
-        elif "alpha" in name.lower():
-            channel = "alpha"
-        
-        # Create option ID
-        option_id = f"{device_type_key}-{channel}"
-        
-        # Create description
-        description = f"Firmware for {device_type} devices using {chip_family} chip family."
-        
-        # Create feature tags
-        features = []
-        features.append(chip_family)
-        if "sensor" in device_type.lower():
-            features.append("Multi-Sensor")
-        if "monitor" in device_type.lower():
-            features.append("Monitoring")
-        if "temperature" in device_type.lower():
-            features.append("Temperature")
-        if "co2" in device_type.lower():
-            features.append("CO2")
-        features.append("Wireless")
-        
-        feature_tags = ' '.join([f'<span class="feature">{feature}</span>' for feature in features])
-        
-        # Determine if this should be checked (first stable option)
-        checked = "checked" if i == 0 else ""
-        
-        # Channel badge class
-        badge_class = "stable" if channel == "stable" else "beta" if channel == "beta" else "alpha"
-        
-        option_html = f'''
-                        <div class="firmware-option" data-module="{device_type_key}" data-release="{channel}">
-                            <input type="radio" id="{option_id}" name="firmware" value="{option_id}" {checked}>
-                            <label for="{option_id}">
-                                <div class="option-header">
-                                    <strong>{name}</strong>
-                                    <span class="version-badge {badge_class}">{channel.title()}</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: {manifest.get('version', 'Unknown')}</span>
-                                </div>
-                                <div class="option-description">
-                                    {description}
-                                </div>
-                                <div class="option-features">
-                                    {feature_tags}
-                                </div>
-                            </label>
-                        </div>'''
-        
-        html_options.append(option_html)
+        return f"""        <div class="firmware-info" id="firmware-info">
+            <h2>Available Firmware</h2>
+            <div class="firmware-details">
+                <h3>{firmware_name}</h3>
+                <p>Ready to install on {chip_family} devices</p>
+                <p class="firmware-timestamp">Added: {timestamp}</p>
+                <div class="firmware-features">
+                    <span class="feature-tag">Auto-Detection</span>
+                    <span class="feature-tag">{chip_family}</span>
+                    <span class="feature-tag">Easy Installation</span>
+                </div>
+            </div>
+        </div>"""
     
-    return {
-        'firmware_options': '\n'.join(html_options),
-        'device_filter_options': '\n'.join(device_filter_options),
-        'channel_filter_options': '\n'.join(channel_filter_options)
-    }
+    # Multiple firmware options
+    firmware_list = []
+    for build in builds:
+        firmware_name = build.get("name", "ESP32 Firmware")
+        chip_family = build.get("chipFamily", "ESP32")
+        timestamp = get_firmware_timestamp(build)
+        
+        firmware_list.append(f"""                <div class="firmware-option">
+                    <h4>{firmware_name}</h4>
+                    <p>Target: {chip_family} | Added: {timestamp}</p>
+                </div>""")
+    
+    return f"""        <div class="firmware-info" id="firmware-info">
+            <h2>Available Firmware</h2>
+            <div class="firmware-details">
+                <h3>Multiple Firmware Options</h3>
+                <p>Choose from {len(builds)} available firmware options for your ESP32 device.</p>
+                <div class="firmware-options">
+{chr(10).join(firmware_list)}
+                </div>
+                <div class="firmware-features">
+                    <span class="feature-tag">Auto-Detection</span>
+                    <span class="feature-tag">Multi-Chip Support</span>
+                    <span class="feature-tag">Easy Installation</span>
+                </div>
+            </div>
+        </div>"""
 
 def update_index_html(html_file="index.html", manifest_file="manifest.json"):
     """Update index.html with generated firmware options."""
-    
-    # Generate new content
-    content = generate_firmware_options_html(manifest_file)
-    if not content:
-        print("No content generated, skipping update")
+    if not Path(html_file).exists():
+        print(f"ERROR: {html_file} not found")
         return False
     
-    try:
-        with open(html_file, 'r') as f:
-            html_content = f.read()
-    except FileNotFoundError:
-        print(f"HTML file {html_file} not found")
+    with open(html_file, 'r') as f:
+        content = f.read()
+    
+    # Generate new firmware info section
+    new_firmware_info = generate_firmware_options_html(manifest_file)
+    
+    # Replace the firmware-info section
+    pattern = r'<div class="firmware-info"[^>]*>.*?</div>\s*</div>'
+    
+    if re.search(pattern, content, re.DOTALL):
+        content = re.sub(pattern, new_firmware_info, content, flags=re.DOTALL)
+    else:
+        print("WARNING: Could not find firmware-info section to replace")
         return False
-    
-    # Update device family filter options
-    device_filter_pattern = r'(<select id="device-family"[^>]*>.*?<option value="all">All Families</option>)(.*?)(</select>)'
-    new_device_options = f'<option value="all">All Families</option>\n                                {content["device_filter_options"]}'
-    html_content = re.sub(device_filter_pattern, f'\\1\n                                {content["device_filter_options"]}\n                            \\3', html_content, flags=re.DOTALL)
-    
-    # Update release type filter options  
-    release_filter_pattern = r'(<select id="release-type"[^>]*>.*?<option value="all">All Types</option>)(.*?)(</select>)'
-    new_release_options = f'<option value="all">All Types</option>\n                                {content["channel_filter_options"]}'
-    html_content = re.sub(release_filter_pattern, f'\\1\n                                {content["channel_filter_options"]}\n                            \\3', html_content, flags=re.DOTALL)
-    
-    # Update firmware options
-    firmware_options_pattern = r'(<div class="firmware-options">)(.*?)(</div>)'
-    html_content = re.sub(firmware_options_pattern, f'\\1{content["firmware_options"]}\n                    \\3', html_content, flags=re.DOTALL)
     
     # Write updated content
     with open(html_file, 'w') as f:
-        f.write(html_content)
+        f.write(content)
     
-    print(f"Updated {html_file} with {len(content['firmware_options'].split('firmware-option'))-1} firmware options")
+    print(f"Updated {html_file} with firmware information")
     return True
 
 def main():
-    """Main function."""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Update web interface with firmware options from manifest")
+    parser = argparse.ArgumentParser(description="Update web interface with firmware information")
     parser.add_argument("--html", default="index.html", help="HTML file to update")
-    parser.add_argument("--manifest", default="manifest.json", help="Manifest file to read")
+    parser.add_argument("--manifest", default="manifest.json", help="Manifest file to read from")
     
     args = parser.parse_args()
     
     success = update_index_html(args.html, args.manifest)
-    if success:
-        print("Web interface updated successfully")
-    else:
-        print("Failed to update web interface")
+    if not success:
+        exit(1)
 
 if __name__ == "__main__":
     main()
