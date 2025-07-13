@@ -95,7 +95,8 @@ class GitHubPagesAutomation:
                         "offset": 0
                     }],
                     "build_date": datetime.fromtimestamp(bin_file.stat().st_mtime).isoformat(),
-                    "file_size": bin_file.stat().st_size
+                    "file_size": bin_file.stat().st_size,
+                    "improv": True
                 }
                 
                 builds.append(build)
@@ -140,7 +141,8 @@ class GitHubPagesAutomation:
                         "parts": [{
                             "path": build['parts'][0]['path'],
                             "offset": 0
-                        }]
+                        }],
+                        "improv": True
                     }]
                 }
                 

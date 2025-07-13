@@ -11,7 +11,8 @@
           "path": "firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
           "offset": 0
         }
-      ]
+      ],
+      "improv": true
     }
   ]
 }

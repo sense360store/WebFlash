@@ -33,7 +33,8 @@ def create_individual_manifests():
                 "parts": [{
                     "path": build['parts'][0]['path'],
                     "offset": build['parts'][0]['offset']
-                }]
+                }],
+                "improv": True
             }]
         }
         
