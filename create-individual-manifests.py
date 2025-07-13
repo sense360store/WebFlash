@@ -16,8 +16,9 @@ def create_individual_manifests():
     with open('manifest.json', 'r') as f:
         main_manifest = json.load(f)
     
-    # Get the base URL for the current deployment
-    base_url = "http://localhost:5000/"
+    # Use relative URLs for GitHub Pages deployment
+    # This ensures the URLs work in any deployment environment
+    base_url = ""
     
     # Create individual manifests for each build
     for index, build in enumerate(main_manifest['builds']):
@@ -30,7 +31,7 @@ def create_individual_manifests():
             "builds": [{
                 "chipFamily": build['chipFamily'],
                 "parts": [{
-                    "path": urljoin(base_url, build['parts'][0]['path']),
+                    "path": build['parts'][0]['path'],
                     "offset": build['parts'][0]['offset']
                 }]
             }]
