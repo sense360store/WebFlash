@@ -42,12 +42,42 @@ h1 {
 }
 
 /* Sections */
-section, .firmware-selection, .installation-section, .features-section, .troubleshooting-section {
+section, .firmware-info, .installation-section, .features-section, .troubleshooting-section {
     background: transparent;
     padding: 24px 0;
     margin-bottom: 32px;
     border-radius: 0;
     box-shadow: none;
+}
+
+/* Firmware info section */
+.firmware-info {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.firmware-details {
+    background: #f8f9fa;
+    padding: 24px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.firmware-features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.feature-tag {
+    background: #e8f0fe;
+    color: #1a73e8;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 h2 {
@@ -110,6 +140,61 @@ h3 {
     outline: none;
     border-color: #1a73e8;
     box-shadow: 0 0 0 1px #1a73e8;
+}
+
+/* Lifecycle section */
+.lifecycle-section {
+    margin-bottom: 32px;
+}
+
+.lifecycle-info {
+    background: #f8f9fa;
+    padding: 24px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.lifecycle-info h3 {
+    color: #1a73e8;
+    margin-bottom: 16px;
+}
+
+.lifecycle-info ol {
+    margin-left: 24px;
+    margin-bottom: 24px;
+}
+
+.lifecycle-info li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.lifecycle-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.lifecycle-features .feature-card {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #dadce0;
+}
+
+.lifecycle-features .feature-card h4 {
+    color: #1a73e8;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.lifecycle-features .feature-card p {
+    color: #5f6368;
+    font-size: 12px;
+    line-height: 1.4;
+    margin: 0;
 }
 
 /* Firmware options */
