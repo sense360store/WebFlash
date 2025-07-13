@@ -1,0 +1,10 @@
+{
+  "firmware_history": {},
+  "deployments": [],
+  "last_scan": "2025-07-13T10:37:28.387634",
+  "statistics": {
+    "total_builds": 0,
+    "successful_deployments": 0,
+    "failed_builds": 3
+  }
+}
