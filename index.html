@@ -18,12 +18,12 @@
                 if (manifest.builds && manifest.builds.length > 0) {
                     // Group builds by device type for better display
                     const deviceGroups = {};
-                    manifest.builds.forEach(build => {
+                    manifest.builds.forEach((build, index) => {
                         const deviceType = build.device_type || 'Unknown';
                         if (!deviceGroups[deviceType]) {
                             deviceGroups[deviceType] = [];
                         }
-                        deviceGroups[deviceType].push(build);
+                        deviceGroups[deviceType].push({...build, index});
                     });
                     
                     let html = `<div class="firmware-summary">
@@ -38,11 +38,32 @@
                         
                         builds.forEach(build => {
                             const buildDate = new Date(build.modified).toLocaleDateString();
+                            const manifestId = `firmware-${build.index}`;
+                            
                             html += `<div class="build-item">
-                                <span class="build-chip">${build.chipFamily}</span>
-                                <span class="build-version">v${build.version}</span>
-                                <span class="build-channel ${build.channel}">${build.channel}</span>
-                                <span class="build-date">${buildDate}</span>
+                                <div class="build-info">
+                                    <span class="build-chip">${build.chipFamily}</span>
+                                    <span class="build-version">v${build.version}</span>
+                                    <span class="build-channel ${build.channel}">${build.channel}</span>
+                                    <span class="build-date">${buildDate}</span>
+                                </div>
+                                <div class="build-actions">
+                                    <esp-web-install-button manifest="#${manifestId}">
+                                        <button slot="activate" class="install-button">
+                                            Install
+                                        </button>
+                                        <span slot="unsupported">
+                                            <div class="unsupported-message">
+                                                <small>Web Serial API not supported. Use Chrome or Edge.</small>
+                                            </div>
+                                        </span>
+                                        <span slot="not-allowed">
+                                            <div class="not-allowed-message">
+                                                <small>Connection denied. Please refresh and try again.</small>
+                                            </div>
+                                        </span>
+                                    </esp-web-install-button>
+                                </div>
                             </div>`;
                         });
                         
@@ -50,6 +71,9 @@
                     });
                     
                     firmwareDetails.innerHTML = html;
+                    
+                    // Create individual manifests for each build
+                    createIndividualManifests(manifest);
                 } else {
                     firmwareDetails.innerHTML = '<p>No firmware builds found in manifest.</p>';
                 }
@@ -58,6 +82,33 @@
                 document.getElementById('firmware-details').innerHTML = 
                     '<p>Error loading firmware information. Please check the console for details.</p>';
             }
+        }
+        
+        // Create individual manifest elements for each firmware build
+        function createIndividualManifests(manifest) {
+            // Remove any existing manifest elements
+            document.querySelectorAll('script[type="application/json"][id^="firmware-"]').forEach(el => el.remove());
+            
+            manifest.builds.forEach((build, index) => {
+                const manifestId = `firmware-${index}`;
+                const individualManifest = {
+                    name: `${manifest.name} - ${build.device_type}`,
+                    version: build.version,
+                    home_assistant_domain: manifest.home_assistant_domain,
+                    new_install_skip_erase: manifest.new_install_skip_erase,
+                    builds: [{
+                        chipFamily: build.chipFamily,
+                        parts: build.parts
+                    }]
+                };
+                
+                // Create script element with individual manifest
+                const script = document.createElement('script');
+                script.type = 'application/json';
+                script.id = manifestId;
+                script.textContent = JSON.stringify(individualManifest);
+                document.head.appendChild(script);
+            });
         }
         
         // Load firmware info when page loads
@@ -87,35 +138,13 @@
         </div>
 
         <div class="installation-section" id="installation-section">
-            <h2>Installation</h2>
-            
-            <div class="install-button-container">
-                <esp-web-install-button manifest="manifest.json">
-                    <button slot="activate" class="install-button">
-                        Connect & Install Firmware
-                    </button>
-                    <span slot="unsupported">
-                        <div class="unsupported-message">
-                            <h3>Web Serial API Not Supported</h3>
-                            <p>Your browser doesn't support Web Serial API. Please use Chrome or Edge.</p>
-                        </div>
-                    </span>
-                    <span slot="not-allowed">
-                        <div class="not-allowed-message">
-                            <h3>Connection Not Allowed</h3>
-                            <p>Web Serial API access was denied. Please refresh and try again.</p>
-                        </div>
-                    </span>
-                </esp-web-install-button>
-            </div>
-
             <div class="installation-steps">
                 <h3>Installation Steps</h3>
                 <ol>
                     <li>Connect your ESP32 device to your computer via USB</li>
-                    <li>Click "Connect & Install Firmware"</li>
-                    <li>Select your device from the popup</li>
-                    <li>Wait for the installation to complete</li>
+                    <li>Select the firmware you want to install from the list above</li>
+                    <li>Click "Install" for your chosen firmware</li>
+                    <li>Select your device from the popup and wait for completion</li>
                 </ol>
             </div>
         </div>
