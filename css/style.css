@@ -27,6 +27,38 @@ header {
     background: transparent;
 }
 
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.logo {
+    height: 80px;
+    width: auto;
+    border-radius: 8px;
+}
+
+.header-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .logo-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .logo {
+        height: 60px;
+    }
+}
+
 h1 {
     font-size: 32px;
     font-weight: 400;
@@ -54,6 +86,64 @@ section, .firmware-info, .installation-section, .features-section, .troubleshoot
 .firmware-info {
     text-align: center;
     margin-bottom: 32px;
+}
+
+/* Filter section */
+.filter-section {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.filter-controls, .search-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-controls label, .search-controls label {
+    font-weight: 500;
+    color: #5f6368;
+    font-size: 14px;
+}
+
+.filter-controls select, .search-controls input {
+    padding: 8px 12px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+    color: #202124;
+    min-width: 150px;
+}
+
+.filter-controls select:focus, .search-controls input:focus {
+    outline: none;
+    border-color: #4285f4;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .filter-controls, .search-controls {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .filter-controls select, .search-controls input {
+        width: 100%;
+        max-width: 200px;
+    }
 }
 
 .firmware-details {
