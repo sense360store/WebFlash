@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sense360 ESP32 Firmware Installer</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js"></script>
+    <script>
+        // Load and display firmware information from manifest.json
+        async function loadFirmwareInfo() {
+            try {
+                const response = await fetch('manifest.json');
+                const manifest = await response.json();
+                
+                const firmwareDetails = document.getElementById('firmware-details');
+                
+                if (manifest.builds && manifest.builds.length > 0) {
+                    // Group builds by device type for better display
+                    const deviceGroups = {};
+                    manifest.builds.forEach(build => {
+                        const deviceType = build.device_type || 'Unknown';
+                        if (!deviceGroups[deviceType]) {
+                            deviceGroups[deviceType] = [];
+                        }
+                        deviceGroups[deviceType].push(build);
+                    });
+                    
+                    let html = `<div class="firmware-summary">
+                        <p><strong>${manifest.total_firmware} firmware builds</strong> available for <strong>${manifest.chip_families.join(', ')}</strong> devices</p>
+                    </div>`;
+                    
+                    // Display each device type
+                    Object.entries(deviceGroups).forEach(([deviceType, builds]) => {
+                        html += `<div class="device-group">
+                            <h4>${deviceType}</h4>
+                            <div class="builds-list">`;
+                        
+                        builds.forEach(build => {
+                            const buildDate = new Date(build.modified).toLocaleDateString();
+                            html += `<div class="build-item">
+                                <span class="build-chip">${build.chipFamily}</span>
+                                <span class="build-version">v${build.version}</span>
+                                <span class="build-channel ${build.channel}">${build.channel}</span>
+                                <span class="build-date">${buildDate}</span>
+                            </div>`;
+                        });
+                        
+                        html += `</div></div>`;
+                    });
+                    
+                    firmwareDetails.innerHTML = html;
+                } else {
+                    firmwareDetails.innerHTML = '<p>No firmware builds found in manifest.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading firmware info:', error);
+                document.getElementById('firmware-details').innerHTML = 
+                    '<p>Error loading firmware information. Please check the console for details.</p>';
+            }
+        }
+        
+        // Load firmware info when page loads
+        document.addEventListener('DOMContentLoaded', loadFirmwareInfo);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sense360 ESP32 Firmware Installer</h1>
+            <p class="subtitle">Flash firmware to your ESP32 devices using your web browser</p>
+        </header>
+
+        <div class="browser-check">
+            <div class="browser-warning" id="browser-warning" style="display: none;">
+                <h3>⚠️ Browser Not Supported</h3>
+                <p>This installer requires Chrome or Edge browser with Web Serial API support.</p>
+                <p>Please use Chrome or Edge to continue.</p>
+            </div>
+        </div>
+
+        <div class="firmware-info" id="firmware-info">
+            <h2>Available Firmware</h2>
+            <div class="firmware-details" id="firmware-details">
+                <p>Loading firmware information...</p>
+            </div>
+        </div>
+
+        <div class="installation-section" id="installation-section">
+            <h2>Installation</h2>
+            
+            <div class="install-button-container">
+                <esp-web-install-button manifest="manifest.json">
+                    <button slot="activate" class="install-button">
+                        Connect & Install Firmware
+                    </button>
+                    <span slot="unsupported">
+                        <div class="unsupported-message">
+                            <h3>Web Serial API Not Supported</h3>
+                            <p>Your browser doesn't support Web Serial API. Please use Chrome or Edge.</p>
+                        </div>
+                    </span>
+                    <span slot="not-allowed">
+                        <div class="not-allowed-message">
+                            <h3>Connection Not Allowed</h3>
+                            <p>Web Serial API access was denied. Please refresh and try again.</p>
+                        </div>
+                    </span>
+                </esp-web-install-button>
+            </div>
+
+            <div class="installation-steps">
+                <h3>Installation Steps</h3>
+                <ol>
+                    <li>Connect your ESP32 device to your computer via USB</li>
+                    <li>Click "Connect & Install Firmware"</li>
+                    <li>Select your device from the popup</li>
+                    <li>Wait for the installation to complete</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="features-section">
+            <h2>Firmware Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h4>Environmental Monitoring</h4>
+                    <p>Temperature, humidity, air quality, and environmental sensors</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Multi-Chip Support</h4>
+                    <p>Compatible with ESP32, ESP32-S2, ESP32-S3, and ESP32-C3 devices</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Easy Installation</h4>
+                    <p>Browser-based flashing with automatic device detection</p>
+                </div>
+                <div class="feature-card">
+                    <h4>Regular Updates</h4>
+                    <p>Latest firmware versions with new features and bug fixes</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="troubleshooting-section">
+            <h2>Troubleshooting</h2>
+            <div class="troubleshooting-grid">
+                <div class="troubleshooting-item">
+                    <h3>No Firmware Available</h3>
+                    <p>No firmware is currently available for installation. Please check back later.</p>
+                </div>
+                <div class="troubleshooting-item">
+                    <h3>Device Not Detected</h3>
+                    <p>Make sure your device is connected via USB and the correct drivers are installed.</p>
+                </div>
+                <div class="troubleshooting-item">
+                    <h3>Installation Failed</h3>
+                    <p>Try putting your device in download mode by holding the BOOT button while connecting.</p>
+                </div>
+                <div class="troubleshooting-item">
+                    <h3>Connection Issues</h3>
+                    <p>Ensure no other programs are using the serial port. Close Arduino IDE or other serial monitors.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Sense360. Built with ESP Web Tools and Firmware Lifecycle Management.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Check browser compatibility
+        if (!navigator.serial) {
+            document.getElementById('browser-warning').style.display = 'block';
+            document.getElementById('firmware-info').style.display = 'none';
+            document.getElementById('installation-section').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
