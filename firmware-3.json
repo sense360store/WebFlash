@@ -1,14 +1,14 @@
 {
-  "name": "Sense360 ESP32 Firmware - EnvMonitor",
-  "version": "2.2.0",
+  "name": "Sense360 ESP32 Firmware - Matrix",
+  "version": "1.0.1",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
     {
-      "chipFamily": "ESP32",
+      "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
+          "path": "firmware/Matrix/ESP32S3/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
           "offset": 0
         }
       ],

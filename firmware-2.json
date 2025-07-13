@@ -1,5 +1,5 @@
 {
-  "name": "Sense360 ESP32 Firmware - FanControl",
+  "name": "Sense360 ESP32 Firmware - Matrix",
   "version": "1.0.0",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/FanControl/ESP32S3/stable/Sense360-FanControl-ESP32S3-v1.0.0-stable.bin",
+          "path": "firmware/Matrix/ESP32S3/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
           "offset": 0
         }
       ],
