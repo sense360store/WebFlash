@@ -22,543 +22,16 @@
             </div>
         </div>
 
-        <div class="firmware-selection" id="firmware-selection">
-            <h2>Select Firmware</h2>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="device-family">Device Family:</label>
-                    <select id="device-family">
-                        <option value="all">All Families</option>
-                                
-                            </select>
+        <div class="firmware-info" id="firmware-info">
+            <h2>No Firmware Available</h2>
+            <div class="firmware-details">
+                <h3>Firmware Not Deployed</h3>
+                <p>No firmware has been deployed yet. Add a YAML file to the iot-firmware-src repository to trigger automatic firmware building and deployment.</p>
+                <div class="firmware-features">
+                    <span class="feature-tag">Auto-Build</span>
+                    <span class="feature-tag">Auto-Deploy</span>
+                    <span class="feature-tag">Lifecycle Management</span>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="release-type">Release Type:</label>
-                    <select id="release-type">
-                        <option value="all">All Types</option>
-                                
-                            </select>
-                </div>
-            </div>
-
-            <div class="firmware-options">
-                        <div class="no-firmware-message">
-                            <h3>No Firmware Available</h3>
-                            <p>No firmware files have been deployed yet. Check back later for available firmware options.</p>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.13</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="d2ebug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="d2ebug-esp32s3-config-stable" name="firmware" value="d2ebug-esp32s3-config-stable" >
-                            <label for="d2ebug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>d2ebug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for d2ebug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="d2ebug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="d2ebug-esp32s3-config-stable" name="firmware" value="d2ebug-esp32s3-config-stable" >
-                            <label for="d2ebug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>d2ebug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for d2ebug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="d2ebug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="d2ebug-esp32s3-config-stable" name="firmware" value="d2ebug-esp32s3-config-stable" >
-                            <label for="d2ebug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>d2ebug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for d2ebug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for CO2Monitor devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Monitoring</span> <span class="feature">CO2</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="d2ebug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="d2ebug-esp32s3-config-stable" name="firmware" value="d2ebug-esp32s3-config-stable" >
-                            <label for="d2ebug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>d2ebug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for d2ebug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="firmware-option" data-module="debug-esp32s3-config" data-release="stable">
-                            <input type="radio" id="debug-esp32s3-config-stable" name="firmware" value="debug-esp32s3-config-stable" >
-                            <label for="debug-esp32s3-config-stable">
-                                <div class="option-header">
-                                    <strong>debug-esp32s3-config (Legacy)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
-                                <div class="option-meta">
-                                    <span class="release-date">Updated: 2025.07.12</span>
-                                </div>
-                                <div class="option-description">
-                                    Firmware for debug-esp32s3-config devices using ESP32-S3 chip family.
-                                </div>
-                                <div class="option-features">
-                                    <span class="feature">ESP32-S3</span> <span class="feature">Wireless</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
             </div>
         </div>
 
@@ -589,7 +62,6 @@
                 <h3>Installation Steps</h3>
                 <ol>
                     <li>Connect your ESP32 device to your computer via USB</li>
-                    <li>Select your desired firmware above</li>
                     <li>Click "Connect & Install Firmware"</li>
                     <li>Select your device from the popup</li>
                     <li>Wait for the installation to complete</li>
@@ -597,24 +69,34 @@
             </div>
         </div>
 
-        <div class="features-section">
-            <h2>Firmware Features</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Environmental Monitoring</h3>
-                    <p>Temperature, humidity, and air quality sensors</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Wi-Fi Connectivity</h3>
-                    <p>Easy wireless setup with captive portal</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Home Assistant Integration</h3>
-                    <p>Automatic discovery and configuration</p>
-                </div>
-                <div class="feature-card">
-                    <h3>OTA Updates</h3>
-                    <p>Wireless firmware updates after installation</p>
+        <div class="lifecycle-section">
+            <h2>Firmware Lifecycle Management</h2>
+            <div class="lifecycle-info">
+                <h3>How It Works</h3>
+                <ol>
+                    <li><strong>Add YAML File:</strong> Create a firmware configuration in the iot-firmware-src repository</li>
+                    <li><strong>Automatic Build:</strong> CI/CD pipeline detects changes and builds firmware</li>
+                    <li><strong>Auto-Deploy:</strong> Firmware is automatically deployed to this web interface</li>
+                    <li><strong>Interface Update:</strong> This page updates to show available firmware options</li>
+                </ol>
+                
+                <div class="lifecycle-features">
+                    <div class="feature-card">
+                        <h4>Change Detection</h4>
+                        <p>Automatically detects new or modified YAML files</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Smart Building</h4>
+                        <p>Builds only changed firmware configurations</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Auto-Deployment</h4>
+                        <p>Deploys firmware and updates web interface</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>Version Tracking</h4>
+                        <p>Tracks firmware versions and deployment history</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -622,6 +104,10 @@
         <div class="troubleshooting-section">
             <h2>Troubleshooting</h2>
             <div class="troubleshooting-grid">
+                <div class="troubleshooting-item">
+                    <h3>No Firmware Available</h3>
+                    <p>Add a YAML configuration file to the iot-firmware-src repository to trigger firmware building.</p>
+                </div>
                 <div class="troubleshooting-item">
                     <h3>Device Not Detected</h3>
                     <p>Make sure your device is connected via USB and the correct drivers are installed.</p>
@@ -638,7 +124,7 @@
         </div>
 
         <footer>
-            <p>&copy; 2025 Sense360. Built with ESP Web Tools.</p>
+            <p>&copy; 2025 Sense360. Built with ESP Web Tools and Firmware Lifecycle Management.</p>
         </footer>
     </div>
 
@@ -646,33 +132,8 @@
         // Check browser compatibility
         if (!navigator.serial) {
             document.getElementById('browser-warning').style.display = 'block';
-            document.getElementById('firmware-selection').style.display = 'none';
+            document.getElementById('firmware-info').style.display = 'none';
             document.getElementById('installation-section').style.display = 'none';
-        }
-
-        // Filter functionality
-        document.getElementById('device-family').addEventListener('change', filterFirmware);
-        document.getElementById('release-type').addEventListener('change', filterFirmware);
-
-        function filterFirmware() {
-            const deviceFamily = document.getElementById('device-family').value;
-            const releaseType = document.getElementById('release-type').value;
-            
-            const firmwareOptions = document.querySelectorAll('.firmware-option');
-            
-            firmwareOptions.forEach(option => {
-                const optionModule = option.dataset.module;
-                const optionRelease = option.dataset.release;
-                
-                const showDevice = deviceFamily === 'all' || optionModule === deviceFamily;
-                const showRelease = releaseType === 'all' || optionRelease === releaseType;
-                
-                if (showDevice && showRelease) {
-                    option.style.display = 'block';
-                } else {
-                    option.style.display = 'none';
-                }
-            });
         }
     </script>
 </body>
