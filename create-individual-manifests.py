@@ -17,7 +17,7 @@ def create_individual_manifests():
         main_manifest = json.load(f)
     
     # Get the base URL for the current deployment
-    base_url = "http://localhost:5000/WebFlash/"
+    base_url = "http://localhost:5000/"
     
     # Create individual manifests for each build
     for index, build in enumerate(main_manifest['builds']):

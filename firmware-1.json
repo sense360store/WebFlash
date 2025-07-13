@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "http://localhost:5000/WebFlash/firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin",
+          "path": "http://localhost:5000/firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin",
           "offset": 0
         }
       ]

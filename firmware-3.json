@@ -8,7 +8,7 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "http://localhost:5000/WebFlash/firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
+          "path": "http://localhost:5000/firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
           "offset": 0
         }
       ]

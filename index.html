@@ -17,49 +17,40 @@
                 const manifest = await response.json();
                 globalManifest = manifest;
                 
+                console.log('Loaded manifest:', manifest);
+                
                 const firmwareDetails = document.getElementById('firmware-details');
                 
                 if (manifest.builds && manifest.builds.length > 0) {
-                    // Group builds by device type for better display
-                    const deviceGroups = {};
+                    // Create simple firmware list
+                    let html = '<div class="firmware-list">';
+                    
                     manifest.builds.forEach((build, index) => {
                         const deviceType = build.device_type || 'Unknown';
-                        if (!deviceGroups[deviceType]) {
-                            deviceGroups[deviceType] = [];
-                        }
-                        deviceGroups[deviceType].push({...build, index});
+                        const chipFamily = build.chipFamily || 'Unknown';
+                        const version = build.version || '1.0.0';
+                        const channel = build.channel || 'stable';
+                        const buildDate = build.build_date ? new Date(build.build_date).toLocaleDateString() : 'Unknown';
+                        
+                        html += `<div class="build-item" data-firmware-index="${index}" onclick="selectFirmware(${index})">
+                            <div class="build-info">
+                                <span class="build-name">${deviceType} v${version}</span>
+                                <span class="build-chip">${chipFamily}</span>
+                                <span class="build-channel ${channel}">${channel}</span>
+                                <span class="build-date">${buildDate}</span>
+                            </div>
+                        </div>`;
                     });
                     
-                    let html = `<div class="firmware-summary">
-                        <p><strong>${manifest.total_firmware} firmware builds</strong> available for <strong>${manifest.chip_families.join(', ')}</strong> devices</p>
+                    html += '</div>';
+                    
+                    // Add summary
+                    const chipFamilies = [...new Set(manifest.builds.map(build => build.chipFamily))];
+                    const summary = `<div class="firmware-summary">
+                        <p><strong>${manifest.builds.length} firmware builds</strong> available for <strong>${chipFamilies.join(', ')}</strong> devices</p>
                     </div>`;
                     
-                    // Display each device type
-                    Object.entries(deviceGroups).forEach(([deviceType, builds]) => {
-                        html += `<div class="device-group">
-                            <h4>${deviceType}</h4>
-                            <div class="builds-list">`;
-                        
-                        builds.forEach(build => {
-                            const buildDate = new Date(build.modified).toLocaleDateString();
-                            
-                            html += `<div class="build-item" data-firmware-index="${build.index}" onclick="selectFirmware(${build.index})">
-                                <div class="build-info">
-                                    <span class="build-chip">${build.chipFamily}</span>
-                                    <span class="build-version">v${build.version}</span>
-                                    <span class="build-channel ${build.channel}">${build.channel}</span>
-                                    <span class="build-date">${buildDate}</span>
-                                </div>
-                                <div class="build-selection">
-                                    <div class="selection-indicator"></div>
-                                </div>
-                            </div>`;
-                        });
-                        
-                        html += `</div></div>`;
-                    });
-                    
-                    firmwareDetails.innerHTML = html;
+                    firmwareDetails.innerHTML = summary + html;
                 } else {
                     firmwareDetails.innerHTML = '<p>No firmware builds found in manifest.</p>';
                 }
