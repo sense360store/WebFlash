@@ -30,8 +30,7 @@
                     <label for="device-family">Device Family:</label>
                     <select id="device-family">
                         <option value="all">All Families</option>
-                                <option value="co2monitor">Co2Monitor</option>
-<option value="debug-esp32s3-config">Debug-Esp32S3-Config</option>
+                                
                             </select>
                 </div>
                 
@@ -39,19 +38,17 @@
                     <label for="release-type">Release Type:</label>
                     <select id="release-type">
                         <option value="all">All Types</option>
-                                <option value="stable">Stable</option>
+                                
                             </select>
                 </div>
             </div>
 
             <div class="firmware-options">
-                        <div class="firmware-option" data-module="co2monitor" data-release="stable">
-                            <input type="radio" id="co2monitor-stable" name="firmware" value="co2monitor-stable" checked>
-                            <label for="co2monitor-stable">
-                                <div class="option-header">
-                                    <strong>CO2Monitor (ESP32S3)</strong>
-                                    <span class="version-badge stable">Stable</span>
-                                </div>
+                        <div class="no-firmware-message">
+                            <h3>No Firmware Available</h3>
+                            <p>No firmware files have been deployed yet. Check back later for available firmware options.</p>
+                        </div>
+                    </div>
                                 <div class="option-meta">
                                     <span class="release-date">Updated: 2025.07.13</span>
                                 </div>

@@ -3,28 +3,5 @@
   "version": "2025.07.13",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 10,
-  "builds": [
-    {
-      "name": "CO2Monitor (ESP32S3)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/CO2Monitor/ESP32S3/stable/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    },
-    {
-      "name": "debug-esp32s3-config (Legacy)",
-      "chipFamily": "ESP32-S3",
-      "improv": true,
-      "parts": [
-        {
-          "path": "firmware/debug-esp32s3-config/firmware-latest.bin",
-          "offset": 0
-        }
-      ]
-    }
-  ]
+  "builds": []
 }
