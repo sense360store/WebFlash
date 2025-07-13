@@ -3,5 +3,88 @@
   "version": "2.0.0",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
-  "builds": []
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "version": "1.0.0",
+      "channel": "stable",
+      "device_type": "CO2Monitor",
+      "filename": "Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
+      "size": 26,
+      "modified": "2025-07-13T13:53:44.129562"
+    },
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin",
+          "offset": 0
+        }
+      ],
+      "version": "1.0.1",
+      "channel": "stable",
+      "device_type": "CO2Monitor",
+      "filename": "Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin",
+      "size": 30,
+      "modified": "2025-07-13T14:23:57.693215"
+    },
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware/EnvMonitor/ESP32/stable/Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "version": "2.1.0",
+      "channel": "stable",
+      "device_type": "EnvMonitor",
+      "filename": "Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin",
+      "size": 43,
+      "modified": "2025-07-13T14:23:59.351214"
+    },
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
+          "offset": 0
+        }
+      ],
+      "version": "2.2.0",
+      "channel": "beta",
+      "device_type": "EnvMonitor",
+      "filename": "Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
+      "size": 41,
+      "modified": "2025-07-13T14:24:00.598213"
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        {
+          "path": "firmware/TempSensor/ESP32C3/stable/Sense360-TempSensor-ESP32C3-v1.5.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "version": "1.5.0",
+      "channel": "stable",
+      "device_type": "TempSensor",
+      "filename": "Sense360-TempSensor-ESP32C3-v1.5.0-stable.bin",
+      "size": 41,
+      "modified": "2025-07-13T14:24:19.709199"
+    }
+  ],
+  "updated": "2025-07-13T14:24:19.885479",
+  "total_firmware": 5,
+  "chip_families": [
+    "ESP32-S3",
+    "ESP32",
+    "ESP32-C3"
+  ]
 }

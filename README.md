@@ -1,226 +1,130 @@
-# WebFlash - Sense360 ESP32 Firmware Installer
+# Sense360 ESP32 Firmware WebFlash Interface
 
-This is the **public** repository containing the web-based firmware installer for Sense360 ESP32 devices.
+A simplified firmware management system for ESP32 devices using ESP Web Tools. This system automatically updates the firmware manifest when new binaries are uploaded.
 
-## Live Web Interface
+## ✨ One-Step Firmware Addition Process
 
-🌐 **https://sense360store.github.io/WebFlash**
+1. **Upload firmware binary** to the appropriate directory:
+   ```
+   firmware/[DeviceType]/[ChipFamily]/[Channel]/Sense360-[DeviceType]-[ChipFamily]-v[Version]-[Channel].bin
+   ```
 
-## Features
+2. **Automatic manifest update** - The system automatically:
+   - Scans the firmware directory
+   - Extracts metadata from filename/path
+   - Updates `manifest.json` with new firmware
+   - ESP Web Tools shows new firmware immediately
 
-- **Browser-based Installation**: Flash firmware directly from your web browser
-- **Multi-device Support**: ESP32, ESP32-S2, ESP32-S3, ESP32-C3 compatibility
-- **Automatic Updates**: Firmware manifest and web interface updated automatically
-- **Timestamp Tracking**: See when each firmware was last updated
-- **ESP Web Tools**: Built on the official ESP Web Tools library
-
-## Repository Structure
+## 📁 Directory Structure
 
 ```
 WebFlash/
-├── index.html                  # Main web interface
-├── css/style.css              # Styling
-├── manifest.json              # ESP Web Tools manifest
-├── firmware-timestamps.json   # Firmware deployment timestamps
-├── firmware/                  # Compiled firmware binaries
-│   ├── DeviceType/
-│   │   ├── ChipFamily/
-│   │   │   ├── stable/
-│   │   │   │   ├── firmware-latest.bin
-│   │   │   │   └── *.bin
-│   │   │   └── beta/
-│   │   │       ├── firmware-latest.bin
-│   │   │       └── *.bin
-│   │   └── ...
-│   └── ...
-├── scripts/                   # Auto-generated scripts
-│   └── update-web-interface.py
-├── _headers                   # CORS headers for GitHub Pages
-└── README.md                  # This file
+├── firmware/                          # Firmware binaries
+│   ├── CO2Monitor/ESP32S3/stable/     # CO2 Monitor firmware
+│   ├── EnvMonitor/ESP32/stable/       # Environmental Monitor firmware
+│   ├── EnvMonitor/ESP32/beta/         # Beta versions
+│   └── TempSensor/ESP32C3/stable/     # Temperature sensor firmware
+├── scripts/
+│   ├── update-manifest.py             # Automatic manifest generator
+│   └── demo-add-firmware.sh           # Demo script
+├── .github/workflows/
+│   └── update-manifest.yml            # GitHub Actions automation
+├── manifest.json                      # ESP Web Tools manifest (auto-generated)
+├── index.html                         # Main installer interface
+└── README.md                          # This file
 ```
 
-## How It Works
+## 🔧 Firmware Naming Convention
 
-### 1. Automatic Deployment
-
-Firmware is automatically deployed from the private `iot-firmware-src` repository:
-
-1. **Build**: ESPHome compiles firmware from YAML configurations
-2. **Deploy**: Compiled binaries are pushed to this repository
-3. **Update**: Manifest and web interface are automatically updated
-4. **Publish**: GitHub Pages serves the updated web interface
-
-### 2. Web Interface
-
-The web interface provides:
-
-- **Device Selection**: Choose your ESP32 device type
-- **Firmware Filtering**: Filter by device family and release channel
-- **One-Click Installation**: Connect and flash firmware via USB
-- **Progress Tracking**: Real-time installation progress
-- **Troubleshooting**: Built-in help and error handling
-
-### 3. ESP Web Tools Integration
-
-Uses the official ESP Web Tools library for:
-
-- **Device Detection**: Automatic ESP32 chip identification
-- **Secure Flashing**: Safe firmware installation process
-- **Progress Monitoring**: Real-time installation feedback
-- **Error Handling**: Comprehensive error reporting
-
-## Browser Requirements
-
-- **Chrome or Edge**: Web Serial API support required
-- **HTTPS**: Secure context required for Web Serial API
-- **Modern Browser**: Latest version recommended
-
-## Firmware Information
-
-### Naming Convention
-
+Firmware files must follow this naming pattern:
 ```
 Sense360-[DeviceType]-[ChipFamily]-v[Version]-[Channel].bin
 ```
 
-Examples:
-- `Sense360-CO2Monitor-ESP32S3-v2.0.1-beta.bin`
-- `Sense360-TempSensor-ESP32-v1.0.0-stable.bin`
+**Examples:**
+- `Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin`
+- `Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin`
+- `Sense360-TempSensor-ESP32C3-v1.5.0-beta.bin`
 
-### Release Channels
+**Parameters:**
+- **DeviceType**: `CO2Monitor`, `EnvMonitor`, `TempSensor`, etc.
+- **ChipFamily**: `ESP32`, `ESP32S2`, `ESP32S3`, `ESP32C3`, `ESP32C6`, `ESP32H2`
+- **Version**: Semantic version (e.g., `1.0.1`, `2.1.0`)
+- **Channel**: `stable`, `beta`, `alpha`
 
-- **Stable**: Production-ready firmware
-- **Beta**: Testing releases with new features
-- **Alpha**: Development builds (if available)
+## 🚀 Usage
 
-### Supported Devices
-
-- **ESP32**: Original ESP32 with dual-core processor
-- **ESP32-S2**: Single-core with enhanced security
-- **ESP32-S3**: Dual-core with AI acceleration
-- **ESP32-C3**: RISC-V based with Wi-Fi 6
-
-## Installation Instructions
-
-### 1. Prepare Your Device
-
-1. Connect ESP32 to your computer via USB
-2. Install USB drivers if needed (usually automatic)
-3. Close any other programs using the serial port
-
-### 2. Flash Firmware
-
-1. Visit **https://sense360store.github.io/WebFlash**
-2. Select your device type and firmware channel
-3. Click "Connect & Install Firmware"
-4. Choose your device from the popup
-5. Wait for installation to complete
-
-### 3. First Setup
-
-After flashing:
-
-1. Device will create a Wi-Fi hotspot (configureme-xxxx)
-2. Connect to the hotspot with your phone/computer
-3. Configure your Wi-Fi settings
-4. Device will connect to your network
-
-## Troubleshooting
-
-### Device Not Detected
-
-- **Check USB Connection**: Ensure cable is connected properly
-- **Install Drivers**: Some devices need specific USB drivers
-- **Try Different Cable**: Use a data cable, not charging-only
-- **Check Browser**: Use Chrome or Edge browser
-
-### Installation Failed
-
-- **Download Mode**: Hold BOOT button while connecting
-- **Close Other Programs**: Arduino IDE, serial monitors, etc.
-- **Try Different Port**: Use a different USB port
-- **Check Permissions**: Some systems need admin privileges
-
-### Connection Issues
-
-- **Network Problems**: Check Wi-Fi settings and password
-- **Signal Strength**: Move closer to router during setup
-- **Firewall**: Temporarily disable firewall if needed
-- **Router Settings**: Some routers block new device connections
-
-## Development
-
-### Local Testing
-
+### Manual Update
 ```bash
-# Serve locally
-python3 -m http.server 8000
+# Update manifest with all firmware in directory
+python3 scripts/update-manifest.py --validate
 
-# Visit http://localhost:8000
+# Use custom firmware directory
+python3 scripts/update-manifest.py --firmware-dir custom/path --validate
 ```
 
-### File Updates
+### Automatic GitHub Actions
+The system automatically updates the manifest when:
+- New `.bin` files are pushed to the `firmware/` directory
+- Changes are made to existing firmware files
 
-The following files are automatically updated:
-
-- `manifest.json`: Generated from deployed firmware
-- `index.html`: Updated with available firmware options
-- `firmware-timestamps.json`: Deployment timestamps
-
-**Do not manually edit these files** - they are overwritten by automation.
-
-## GitHub Pages Configuration
-
-- **Source**: Deploy from main branch
-- **Domain**: sense360store.github.io/WebFlash
-- **CORS**: Configured via `_headers` file
-- **HTTPS**: Enforced for Web Serial API compatibility
-
-## Support
-
-### Common Issues
-
-1. **Browser Compatibility**: Use Chrome or Edge
-2. **HTTPS Required**: Web Serial API needs secure context
-3. **Device Drivers**: Install appropriate USB drivers
-4. **Firewall/Antivirus**: May block serial port access
-
-### Getting Help
-
-- **GitHub Issues**: Report problems on this repository
-- **Documentation**: Check troubleshooting section above
-- **Community**: Ask questions in discussions
-
-## Technical Details
-
-### ESP Web Tools
-
-- **Library**: https://unpkg.com/esp-web-tools@10
-- **Protocol**: Web Serial API for device communication
-- **Security**: Runs entirely in browser, no server required
-- **Compatibility**: Works with all ESP32 variants
-
-### Manifest Format
-
-```json
-{
-  "name": "Sense360 ESP32 Firmware",
-  "version": "2.0.0",
-  "builds": [
-    {
-      "name": "Device Name",
-      "chipFamily": "ESP32S3",
-      "parts": [
-        {
-          "path": "firmware/path/to/firmware.bin",
-          "offset": 0
-        }
-      ]
-    }
-  ]
-}
+### Demo
+```bash
+# See the one-step process in action
+./scripts/demo-add-firmware.sh
 ```
 
-## License
+## 📊 Current Firmware Status
 
-This project is licensed under the MIT License. See the ESP Web Tools library for its specific license terms.
+The system currently manages:
+- **4 firmware builds** across **2 chip families** (ESP32, ESP32-S3)
+- **2 device types** (CO2Monitor, EnvMonitor)
+- **2 channels** (stable, beta)
+
+## 🔍 Manifest Structure
+
+The auto-generated `manifest.json` includes:
+- **ESP Web Tools compatibility** - Standard format
+- **Metadata extraction** - Device type, chip family, version, channel
+- **File information** - Size, modification date, path
+- **Validation** - Ensures all firmware files exist
+
+## 🛠️ Technical Details
+
+### ESP Web Tools Integration
+- Uses official ESP Web Tools library
+- Automatic chip detection
+- Built-in flashing progress
+- Improv Wi-Fi provisioning support
+
+### Browser Requirements
+- Chrome or Edge browsers (Web Serial API)
+- HTTPS connection required
+- Modern browser with Web Serial support
+
+### Supported Chips
+- ESP32 (all variants)
+- ESP32-S2
+- ESP32-S3  
+- ESP32-C3
+- ESP32-C6
+- ESP32-H2
+
+## 🔄 Workflow
+
+1. **Developer uploads firmware** → `firmware/DeviceType/ChipFamily/Channel/`
+2. **GitHub Actions triggers** → Detects new `.bin` files
+3. **Script scans directory** → Finds all firmware binaries
+4. **Metadata extraction** → Parses filename and directory structure
+5. **Manifest update** → Generates new `manifest.json`
+6. **ESP Web Tools reads** → Shows all available firmware automatically
+7. **User selects firmware** → Flashes to device via browser
+
+## 🎯 Benefits
+
+- **Zero manual HTML editing** - Everything updates automatically
+- **Consistent naming** - Enforced naming convention
+- **Metadata tracking** - Version, size, modification dates
+- **Multi-chip support** - Works with all ESP32 variants
+- **GitHub Pages compatible** - Static hosting, no server required
+- **Professional interface** - Clean, modern design
