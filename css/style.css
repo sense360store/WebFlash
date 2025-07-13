@@ -197,8 +197,42 @@ h3 {
     margin: 0;
 }
 
+/* Firmware timestamp */
+.firmware-timestamp {
+    font-size: 12px;
+    color: #5f6368;
+    margin-top: 8px;
+    font-style: italic;
+}
+
 /* Firmware options */
 .firmware-options {
+    display: grid;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.firmware-option {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #dadce0;
+}
+
+.firmware-option h4 {
+    color: #1a73e8;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.firmware-option p {
+    color: #5f6368;
+    margin: 0;
+    font-size: 12px;
+}
+
+/* Original firmware options */
+.firmware-options-original {
     display: grid;
     gap: 16px;
 }
