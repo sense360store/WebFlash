@@ -33,6 +33,36 @@
       "build_date": "2025-07-13T16:57:24+01:00",
       "file_size": 937104,
       "improv": true
+    },
+    {
+      "device_type": "Matrix",
+      "version": "1.0.0",
+      "channel": "stable",
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware/Matrix/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-14T10:28:49+01:00",
+      "file_size": 976752,
+      "improv": true
+    },
+    {
+      "device_type": "Matrix",
+      "version": "1.0.1",
+      "channel": "stable",
+      "chipFamily": "ESP32",
+      "parts": [
+        {
+          "path": "firmware/Matrix/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-14T10:28:49+01:00",
+      "file_size": 937104,
+      "improv": true
     }
   ]
 }
