@@ -73,21 +73,56 @@ class GitHubPagesAutomation:
     def clean_orphaned_manifests(self) -> bool:
         """Clean up all existing firmware-*.json files to ensure clean state."""
         try:
-            # Find all existing firmware manifest files
-            manifest_files = list(Path('.').glob('firmware-*.json'))
+            # Find all existing firmware manifest files with multiple patterns
+            manifest_files = []
+            for pattern in ['firmware-*.json', 'firmware*.json']:
+                manifest_files.extend(list(Path('.').glob(pattern)))
+            
+            # Remove duplicates
+            manifest_files = list(set(manifest_files))
             
             if manifest_files:
                 self.log(f"🧹 Cleaning up {len(manifest_files)} existing manifest files...")
+                cleanup_success = True
                 for manifest_file in manifest_files:
                     try:
-                        manifest_file.unlink()
-                        self.log(f"  ✓ Removed {manifest_file}")
+                        if manifest_file.exists():
+                            manifest_file.unlink()
+                            self.log(f"  ✓ Removed {manifest_file}")
+                        else:
+                            self.log(f"  ℹ️  {manifest_file} already removed")
                     except Exception as e:
                         self.log(f"  ✗ Failed to remove {manifest_file}: {e}")
-                        return False
+                        cleanup_success = False
+                
+                # Verify cleanup worked
+                remaining_files = list(Path('.').glob('firmware-*.json'))
+                if remaining_files:
+                    self.log(f"  ⚠️  {len(remaining_files)} files still remain:")
+                    for remaining_file in remaining_files:
+                        self.log(f"    - {remaining_file}")
+                        # Force remove if still exists
+                        try:
+                            remaining_file.unlink()
+                            self.log(f"    ✓ Force removed {remaining_file}")
+                        except Exception as e:
+                            self.log(f"    ✗ Force removal failed: {e}")
+                            cleanup_success = False
+                
+                if not cleanup_success:
+                    return False
             else:
                 self.log("🧹 No existing manifest files to clean up")
             
+            # Double-check cleanup was successful
+            final_check = list(Path('.').glob('firmware-*.json'))
+            if final_check:
+                self.log(f"ERROR: {len(final_check)} manifest files still exist after cleanup!")
+                for remaining in final_check:
+                    self.log(f"  - {remaining}")
+                return False
+            
+            self.log("✅ Cleanup verified: All firmware-*.json files removed")
             return True
             
         except Exception as e:
@@ -215,6 +250,14 @@ class GitHubPagesAutomation:
                 self.log("ERROR: manifest.json not found")
                 return False
             
+            # Validate main manifest content
+            with open(self.manifest_path) as f:
+                manifest_data = json.load(f)
+                
+            if len(manifest_data['builds']) != len(builds):
+                self.log(f"ERROR: Main manifest has {len(manifest_data['builds'])} builds but expected {len(builds)}")
+                return False
+            
             # Check individual manifests
             for index, build in enumerate(builds):
                 manifest_file = Path(f'firmware-{index}.json')
@@ -228,7 +271,28 @@ class GitHubPagesAutomation:
                     self.log(f"ERROR: Firmware file not found: {firmware_path}")
                     return False
             
+            # Check for orphaned manifest files
+            all_manifests = list(Path('.').glob('firmware-*.json'))
+            expected_manifests = [Path(f'firmware-{i}.json') for i in range(len(builds))]
+            
+            orphaned_manifests = set(all_manifests) - set(expected_manifests)
+            if orphaned_manifests:
+                self.log(f"ERROR: Found {len(orphaned_manifests)} orphaned manifest files:")
+                for orphaned in orphaned_manifests:
+                    self.log(f"  - {orphaned}")
+                return False
+            
+            # Verify perfect synchronization
+            firmware_count = len(list(self.firmware_dir.rglob('*.bin')))
+            manifest_count = len(all_manifests)
+            build_count = len(builds)
+            
+            if firmware_count != manifest_count or firmware_count != build_count:
+                self.log(f"ERROR: Synchronization mismatch - Firmware: {firmware_count}, Manifests: {manifest_count}, Builds: {build_count}")
+                return False
+            
             self.log("✓ All deployment files validated")
+            self.log(f"✓ Perfect synchronization confirmed: {firmware_count} firmware = {manifest_count} manifests = {build_count} builds")
             return True
             
         except Exception as e:
@@ -241,26 +305,35 @@ class GitHubPagesAutomation:
         self.log("STARTING CLEAN STATE AUTOMATION")
         self.log("=" * 60)
         
-        # Step 1: Clean up orphaned manifest files
+        # Step 1: Pre-run cleanup - Remove ALL firmware-*.json files
+        self.log("🧹 Step 1: Pre-run cleanup")
         if not self.clean_orphaned_manifests():
+            self.log("❌ Pre-run cleanup failed")
             return False
         
         # Step 2: Scan firmware directory for actual .bin files
+        self.log("📦 Step 2: Scanning firmware directory")
         builds = self.scan_firmware_directory()
         if not builds:
             self.log("⚠️  No firmware files found. Please add .bin files to firmware/ directory.")
             return False
         
         # Step 3: Create main manifest based on actual files
+        self.log("📄 Step 3: Creating main manifest")
         if not self.create_main_manifest(builds):
+            self.log("❌ Main manifest creation failed")
             return False
         
         # Step 4: Create individual manifests for each firmware
+        self.log("📋 Step 4: Creating individual manifests")
         if not self.create_individual_manifests(builds):
+            self.log("❌ Individual manifest creation failed")
             return False
         
         # Step 5: Validate complete deployment
+        self.log("✅ Step 5: Validating deployment")
         if not self.validate_deployment(builds):
+            self.log("❌ Deployment validation failed")
             return False
         
         # Success summary

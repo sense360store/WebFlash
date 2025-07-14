@@ -33,8 +33,6 @@
       "build_date": "2025-07-13T14:25:36Z",
       "file_size": 30,
       "improv": true
-<<<<<<< HEAD
-=======
     },
     {
       "device_type": "EnvMonitor",
@@ -63,9 +61,8 @@
         }
       ],
       "build_date": "2025-07-13T14:25:36Z",
-      "file_size": 41,
+      "file_size": 22,
       "improv": true
->>>>>>> 4f2a9add260296997e21ceb1883cb4d21a746e87
     }
   ]
 }
