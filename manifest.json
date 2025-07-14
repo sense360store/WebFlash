@@ -38,10 +38,10 @@
       "device_type": "Matrix",
       "version": "1.0.0",
       "channel": "stable",
-      "chipFamily": "ESP32-S3",
+      "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "firmware/Matrix/ESP32S3/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
+          "path": "firmware/Matrix/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
           "offset": 0
         }
       ],
@@ -53,10 +53,10 @@
       "device_type": "Matrix",
       "version": "1.0.1",
       "channel": "stable",
-      "chipFamily": "ESP32-S3",
+      "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "firmware/Matrix/ESP32S3/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
+          "path": "firmware/Matrix/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
           "offset": 0
         }
       ],
