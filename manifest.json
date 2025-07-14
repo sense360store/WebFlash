@@ -15,8 +15,8 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-13T20:40:52.494341",
-      "file_size": 976752,
+      "build_date": "2025-07-13T13:54:57Z",
+      "file_size": 26,
       "improv": true
     },
     {
@@ -30,98 +30,38 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-13T20:40:52.494979",
-      "file_size": 937104,
+      "build_date": "2025-07-13T14:25:36Z",
+      "file_size": 30,
       "improv": true
     },
     {
-      "device_type": "Matrix",
-      "version": "1.0.0",
+      "device_type": "EnvMonitor",
+      "version": "2.1.0",
       "channel": "stable",
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "firmware/Matrix/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
+          "path": "firmware/EnvMonitor/ESP32/stable/Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-13T20:40:52.494341",
-      "file_size": 976752,
+      "build_date": "2025-07-13T14:25:36Z",
+      "file_size": 43,
       "improv": true
     },
     {
-      "device_type": "Matrix",
-      "version": "1.0.1",
-      "channel": "stable",
+      "device_type": "EnvMonitor",
+      "version": "2.2.0",
+      "channel": "beta",
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "firmware/Matrix/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
+          "path": "firmware/EnvMonitor/ESP32/beta/Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-13T20:40:52.494979",
-      "file_size": 937104,
-      "improv": true
-    },
-    {
-      "device_type": "Matrix1",
-      "version": "1.0.0",
-      "channel": "stable",
-      "chipFamily": "ESP32",
-      "parts": [
-        {
-          "path": "firmware/Matrix1/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13T20:40:52.494341",
-      "file_size": 976752,
-      "improv": true
-    },
-    {
-      "device_type": "Matrix1",
-      "version": "1.0.1",
-      "channel": "stable",
-      "chipFamily": "ESP32",
-      "parts": [
-        {
-          "path": "firmware/Matrix1/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13T20:40:52.494979",
-      "file_size": 937104,
-      "improv": true
-    },
-    {
-      "device_type": "Matrix2",
-      "version": "1.0.0",
-      "channel": "stable",
-      "chipFamily": "ESP32",
-      "parts": [
-        {
-          "path": "firmware/Matrix2/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13T20:40:52.494341",
-      "file_size": 976752,
-      "improv": true
-    },
-    {
-      "device_type": "Matrix2",
-      "version": "1.0.1",
-      "channel": "stable",
-      "chipFamily": "ESP32",
-      "parts": [
-        {
-          "path": "firmware/Matrix2/ESP32/stable/Sense360-Matrix-ESP32S3-v1.0.1-beta.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13T20:40:52.494979",
-      "file_size": 937104,
+      "build_date": "2025-07-13T14:25:36Z",
+      "file_size": 41,
       "improv": true
     }
   ]

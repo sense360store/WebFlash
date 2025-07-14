@@ -70,6 +70,55 @@ class GitHubPagesAutomation:
         }
         return mapping.get(chip_family, chip_family)
     
+    def clean_orphaned_manifests(self) -> bool:
+        """Clean up all existing firmware-*.json files to ensure clean state."""
+        try:
+            # Find all existing firmware manifest files
+            manifest_files = list(Path('.').glob('firmware-*.json'))
+            
+            if manifest_files:
+                self.log(f"🧹 Cleaning up {len(manifest_files)} existing manifest files...")
+                for manifest_file in manifest_files:
+                    try:
+                        manifest_file.unlink()
+                        self.log(f"  ✓ Removed {manifest_file}")
+                    except Exception as e:
+                        self.log(f"  ✗ Failed to remove {manifest_file}: {e}")
+                        return False
+            else:
+                self.log("🧹 No existing manifest files to clean up")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"ERROR: Failed to clean up orphaned manifests: {e}")
+            return False
+    
+    def get_build_date(self, file_path: Path) -> str:
+        """Get accurate build date from git commit or file modification time."""
+        try:
+            # First try to get git commit date for this file
+            result = subprocess.run(
+                ['git', 'log', '-1', '--format=%cI', str(file_path)],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                git_date = result.stdout.strip()
+                self.log(f"  📅 Using git commit date: {git_date}")
+                return git_date
+            
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError):
+            # Git not available or no git history for this file
+            pass
+        
+        # Fall back to file modification time
+        file_date = datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
+        self.log(f"  📅 Using file modification date: {file_date}")
+        return file_date
+    
     def scan_firmware_directory(self) -> list:
         """Scan firmware directory and create builds list."""
         builds = []
@@ -94,13 +143,13 @@ class GitHubPagesAutomation:
                         "path": relative_path,
                         "offset": 0
                     }],
-                    "build_date": datetime.fromtimestamp(bin_file.stat().st_mtime).isoformat(),
+                    "build_date": self.get_build_date(bin_file),
                     "file_size": bin_file.stat().st_size,
                     "improv": True
                 }
                 
                 builds.append(build)
-                self.log(f"Found: {bin_file.name} - {metadata['device_type']} v{metadata['version']} ({metadata['chip_family']})")
+                self.log(f"📦 Found: {bin_file.name} - {metadata['device_type']} v{metadata['version']} ({metadata['chip_family']})")
         
         # Sort by device type, then version
         builds.sort(key=lambda x: (x['device_type'], x['version']))
@@ -187,42 +236,51 @@ class GitHubPagesAutomation:
             return False
     
     def run_complete_automation(self) -> bool:
-        """Run complete automation workflow."""
-        self.log("Starting GitHub Pages automation...")
+        """Run complete automation workflow with guaranteed clean state."""
+        self.log("=" * 60)
+        self.log("STARTING CLEAN STATE AUTOMATION")
+        self.log("=" * 60)
         
-        # Scan firmware directory
-        builds = self.scan_firmware_directory()
-        if not builds:
-            self.log("No firmware files found. Please add .bin files to firmware/ directory.")
+        # Step 1: Clean up orphaned manifest files
+        if not self.clean_orphaned_manifests():
             return False
         
-        # Create main manifest
+        # Step 2: Scan firmware directory for actual .bin files
+        builds = self.scan_firmware_directory()
+        if not builds:
+            self.log("⚠️  No firmware files found. Please add .bin files to firmware/ directory.")
+            return False
+        
+        # Step 3: Create main manifest based on actual files
         if not self.create_main_manifest(builds):
             return False
         
-        # Create individual manifests
+        # Step 4: Create individual manifests for each firmware
         if not self.create_individual_manifests(builds):
             return False
         
-        # Validate deployment
+        # Step 5: Validate complete deployment
         if not self.validate_deployment(builds):
             return False
         
         # Success summary
         self.log("=" * 60)
-        self.log("GITHUB PAGES DEPLOYMENT READY")
+        self.log("✅ CLEAN STATE AUTOMATION COMPLETED")
         self.log("=" * 60)
-        self.log(f"✓ {len(builds)} firmware builds processed")
+        self.log(f"✓ Cleaned up orphaned manifest files")
+        self.log(f"✓ {len(builds)} firmware builds processed with accurate dates")
         self.log(f"✓ Main manifest.json created")
         self.log(f"✓ {len(builds)} individual manifests created")
         self.log("✓ All files use relative URLs for GitHub Pages")
         self.log("✓ ESP Web Tools compatibility confirmed")
+        self.log("✓ Perfect synchronization between firmware/ directory and manifests")
         self.log("")
-        self.log("DEPLOYMENT CHECKLIST:")
-        self.log("1. ✓ All manifest files use relative URLs")
-        self.log("2. ✓ Firmware binaries are in firmware/ directory")
-        self.log("3. ✓ Individual manifests created for each firmware")
-        self.log("4. ✓ Files ready for GitHub Pages deployment")
+        self.log("CLEAN STATE GUARANTEE:")
+        self.log("1. ✓ All orphaned manifest files removed")
+        self.log("2. ✓ Manifests match exactly with existing .bin files")
+        self.log("3. ✓ Accurate build dates from git commits or file timestamps")
+        self.log("4. ✓ No manual editing required - 100% automated")
+        self.log("5. ✓ Ready for GitHub Pages deployment")
         self.log("")
         self.log("AUTOMATION WORKFLOW:")
         self.log("• Add .bin file to firmware/ directory")
