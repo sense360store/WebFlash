@@ -1,0 +1,8 @@
+{
+  "released_firmware": [
+    "CO2Monitor-1.0.0-stable-ESP32-S3",
+    "EnvMonitor-2.2.0-beta-ESP32",
+    "EnvMonitor-2.1.0-stable-ESP32",
+    "CO2Monitor-1.0.1-stable-ESP32-S3"
+  ]
+}
