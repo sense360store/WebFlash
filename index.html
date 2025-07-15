@@ -30,14 +30,18 @@
                         const chipFamily = build.chipFamily || 'Unknown';
                         const version = build.version || '1.0.0';
                         const channel = build.channel || 'stable';
+                        const description = build.description || 'Firmware release for ESP32 devices';
                         const buildDate = build.build_date ? new Date(build.build_date).toLocaleDateString() : 'Unknown';
                         
-                        html += `<div class="build-item" data-firmware-index="${index}" data-device-type="${deviceType}" data-chip-family="${chipFamily}" data-version="${version}" data-channel="${channel}" onclick="selectFirmware(${index})">
+                        html += `<div class="build-item" data-firmware-index="${index}" data-device-type="${deviceType}" data-chip-family="${chipFamily}" data-version="${version}" data-channel="${channel}" data-description="${description}" onclick="selectFirmware(${index})">
                             <div class="build-info">
-                                <span class="build-name">${deviceType} v${version}</span>
-                                <span class="build-chip">${chipFamily}</span>
-                                <span class="build-channel ${channel}">${channel}</span>
-                                <span class="build-date">${buildDate}</span>
+                                <div class="build-header">
+                                    <span class="build-name">${deviceType} v${version}</span>
+                                    <span class="build-chip">${chipFamily}</span>
+                                    <span class="build-channel ${channel}">${channel}</span>
+                                    <span class="build-date">${buildDate}</span>
+                                </div>
+                                <div class="build-description">${description}</div>
                             </div>
                         </div>`;
                     });
@@ -134,8 +138,9 @@
                 // Check device type filter
                 const matchesDeviceType = !deviceFilter || deviceType === deviceFilter;
                 
-                // Check search input
-                const searchText = `${deviceType} ${chipFamily} ${version} ${channel}`.toLowerCase();
+                // Check search input (include description in search)
+                const description = item.getAttribute('data-description') || '';
+                const searchText = `${deviceType} ${chipFamily} ${version} ${channel} ${description}`.toLowerCase();
                 const matchesSearch = !searchInput || searchText.includes(searchInput);
                 
                 if (matchesDeviceType && matchesSearch) {

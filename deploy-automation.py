@@ -38,24 +38,25 @@ class GitHubPagesAutomation:
         print(f"[{timestamp}] {message}")
     
     def extract_metadata_from_path(self, file_path: Path) -> dict:
-        """Extract metadata from directory structure."""
+        """Extract metadata from simplified directory structure and filename."""
         parts = file_path.parts
-        if len(parts) >= 4:
-            device_type = parts[-4]
-            chip_family = parts[-3]
-            channel = parts[-2]
+        if len(parts) >= 2:
+            device_type = parts[-2]  # Just the device folder name
             
-            # Extract version from filename
+            # Extract all metadata from filename
             filename = file_path.name
-            version_match = re.search(r'-v([^-]+)-', filename)
-            version = version_match.group(1) if version_match else '1.0.0'
             
-            return {
-                'device_type': device_type,
-                'chip_family': chip_family,
-                'version': version,
-                'channel': channel
-            }
+            # Parse filename: Sense360-{DeviceType}-{ChipFamily}-v{Version}-{Channel}.bin
+            match = re.match(r'Sense360-(\w+)-(ESP32\w*)-v(\d+\.\d+\.\d+)-(\w+)', filename)
+            if match:
+                file_device_type, chip_family, version, channel = match.groups()
+                
+                return {
+                    'device_type': device_type,  # Use folder name as primary device type
+                    'chip_family': chip_family,
+                    'version': version,
+                    'channel': channel
+                }
         return None
     
     def get_chip_family_mapping(self, chip_family: str) -> str:
@@ -69,6 +70,71 @@ class GitHubPagesAutomation:
             'ESP32H2': 'ESP32-H2'
         }
         return mapping.get(chip_family, chip_family)
+    
+    def get_firmware_metadata_from_release_notes(self, device_type: str, chip_family: str, version: str, channel: str) -> dict:
+        """Get firmware metadata from release notes file."""
+        # Create release notes filename (ensure version has 'v' prefix)
+        version_with_v = version if version.startswith('v') else f"v{version}"
+        release_notes_filename = f"{device_type}-{chip_family}-{version_with_v}-{channel}.md"
+        # Look for release notes in the same directory as the firmware
+        release_notes_path = self.firmware_dir / device_type / release_notes_filename
+        
+        # Default metadata
+        metadata = {
+            'description': f'{channel.title()} firmware release for {device_type} devices',
+            'device_type': device_type,
+            'chip_family': chip_family,
+            'version': version,
+            'channel': channel,
+            'features': [],
+            'hardware_requirements': [],
+            'known_issues': [],
+            'changelog': []
+        }
+        
+        if not release_notes_path.exists():
+            self.log(f"⚠️  No release notes found for {release_notes_filename}, using defaults")
+            return metadata
+        
+        try:
+            with open(release_notes_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # Extract release description
+            description_match = re.search(r'## Release Description\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
+            if description_match:
+                metadata['description'] = description_match.group(1).strip()
+            
+            # Extract features
+            features_match = re.search(r'## Features\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
+            if features_match:
+                features_text = features_match.group(1).strip()
+                metadata['features'] = [line.strip('- ').strip() for line in features_text.split('\n') if line.strip().startswith('-')]
+            
+            # Extract hardware requirements
+            hardware_match = re.search(r'## Hardware Requirements\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
+            if hardware_match:
+                hardware_text = hardware_match.group(1).strip()
+                metadata['hardware_requirements'] = [line.strip('- ').strip() for line in hardware_text.split('\n') if line.strip().startswith('-')]
+            
+            # Extract known issues
+            issues_match = re.search(r'## Known Issues\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
+            if issues_match:
+                issues_text = issues_match.group(1).strip()
+                metadata['known_issues'] = [line.strip('- ').strip() for line in issues_text.split('\n') if line.strip().startswith('-')]
+            
+            # Extract changelog
+            changelog_match = re.search(r'## Changelog\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
+            if changelog_match:
+                changelog_text = changelog_match.group(1).strip()
+                metadata['changelog'] = [line.strip('- ').strip() for line in changelog_text.split('\n') if line.strip().startswith('-')]
+            
+            self.log(f"📋 Loaded release notes for {release_notes_filename}")
+            return metadata
+            
+        except Exception as e:
+            self.log(f"⚠️  Error reading release notes {release_notes_filename}: {e}")
+            return metadata
     
     def clean_orphaned_manifests(self) -> bool:
         """Clean up all existing firmware-*.json files to ensure clean state."""
@@ -169,10 +235,19 @@ class GitHubPagesAutomation:
                 # Create relative path for GitHub Pages
                 relative_path = str(bin_file.relative_to(Path('.')))
                 
+                # Get release notes metadata
+                release_metadata = self.get_firmware_metadata_from_release_notes(
+                    metadata['device_type'], 
+                    metadata['chip_family'], 
+                    metadata['version'], 
+                    metadata['channel']
+                )
+                
                 build = {
                     "device_type": metadata['device_type'],
                     "version": metadata['version'],
                     "channel": metadata['channel'],
+                    "description": release_metadata['description'],
                     "chipFamily": self.get_chip_family_mapping(metadata['chip_family']),
                     "parts": [{
                         "path": relative_path,
@@ -180,7 +255,11 @@ class GitHubPagesAutomation:
                     }],
                     "build_date": self.get_build_date(bin_file),
                     "file_size": bin_file.stat().st_size,
-                    "improv": True
+                    "improv": True,
+                    "features": release_metadata['features'][:5] if release_metadata['features'] else [],  # Limit to first 5 features
+                    "hardware_requirements": release_metadata['hardware_requirements'][:3] if release_metadata['hardware_requirements'] else [],  # Limit to first 3 requirements
+                    "known_issues": release_metadata['known_issues'][:3] if release_metadata['known_issues'] else [],  # Limit to first 3 issues
+                    "changelog": release_metadata['changelog'][:5] if release_metadata['changelog'] else []  # Limit to first 5 changelog items
                 }
                 
                 builds.append(build)

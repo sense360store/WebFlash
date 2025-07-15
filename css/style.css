@@ -580,9 +580,15 @@ footer {
 
 .build-info {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.build-header {
+    display: flex;
     align-items: center;
     gap: 15px;
-    flex: 1;
 }
 
 .build-chip {
@@ -624,6 +630,15 @@ footer {
 .build-channel.alpha {
     background-color: #f8d7da;
     color: #721c24;
+}
+
+.build-description {
+    color: #666;
+    font-size: 0.85em;
+    font-style: italic;
+    line-height: 1.3;
+    margin-top: 4px;
+    padding-left: 4px;
 }
 
 .build-date {
