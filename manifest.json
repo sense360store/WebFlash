@@ -5,42 +5,65 @@
   "new_install_skip_erase": false,
   "builds": [
     {
-      "device_type": "Matrix",
+      "device_type": "CO2Monitor",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Stable firmware release for Matrix devices",
+      "description": "Initial release with basic CO2 monitoring capabilities",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/Matrix/Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
+          "path": "firmware/CO2Monitor/Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-15T21:00:24+01:00",
+      "build_date": "2025-07-15T11:17:41.845540",
       "file_size": 976720,
       "improv": true,
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
+      "features": [
+        "Basic CO2 level monitoring",
+        "Temperature and humidity sensing",
+        "Wi-Fi connectivity with Improv setup",
+        "Web dashboard for real-time monitoring",
+        "MQTT integration for Home Assistant"
+      ],
+      "hardware_requirements": [
+        "ESP32-S3 development board",
+        "CO2 sensor (MH-Z19B or similar)",
+        "Temperature/humidity sensor (DHT22)"
+      ],
+      "known_issues": [
+        "CO2 sensor requires 3-minute warm-up period",
+        "Wi-Fi connection timeout after 60 seconds"
+      ],
       "changelog": []
     },
     {
-      "device_type": "Matrix",
+      "device_type": "CO2Monitor",
       "version": "1.0.1",
       "channel": "beta",
-      "description": "Beta firmware release for Matrix devices",
+      "description": "Bug fixes and improved CO2 sensor accuracy",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/Matrix/Sense360-CO2Monitor-ESP32S3-v1.0.1-beta.bin",
+          "path": "firmware/CO2Monitor/Sense360-CO2Monitor-ESP32S3-v1.0.1-beta.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-15T21:00:24+01:00",
+      "build_date": "2025-07-15T11:17:41.845540",
       "file_size": 976720,
       "improv": true,
-      "features": [],
-      "hardware_requirements": [],
+      "features": [
+        "Enhanced CO2 sensor calibration algorithm",
+        "Improved temperature compensation",
+        "Fixed Wi-Fi reconnection issues",
+        "Better error handling for sensor failures",
+        "Reduced memory usage by 15%"
+      ],
+      "hardware_requirements": [
+        "ESP32-S3 development board",
+        "CO2 sensor (MH-Z19B or similar)",
+        "Temperature/humidity sensor (DHT22)"
+      ],
       "known_issues": [],
       "changelog": []
     }
