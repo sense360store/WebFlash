@@ -5,6 +5,21 @@
   "new_install_skip_erase": false,
   "builds": [
     {
+      "device_type": "AirIQMonitor",
+      "version": "1.0.0",
+      "channel": "stable",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/AirIQMonitor/ESP32S3/stable/Sense360-AirIQ-ESP32S3-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-15T14:03:24.366642",
+      "file_size": 940752,
+      "improv": true
+    },
+    {
       "device_type": "CO2Monitor",
       "version": "1.0.0",
       "channel": "stable",
