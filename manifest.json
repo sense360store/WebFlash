@@ -5,24 +5,50 @@
   "new_install_skip_erase": false,
   "builds": [
     {
-      "device_type": "AirIQMonitor",
+      "device_type": "Matrix",
       "version": "1.0.0",
       "channel": "stable",
+      "description": "Stable firmware release for Matrix devices",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/AirIQMonitor/ESP32S3/stable/Sense360-AirIQ-ESP32S3-v1.0.0-stable.bin",
+          "path": "firmware/Matrix/Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-15T14:03:24.366642",
-      "file_size": 940752,
-      "improv": true
+      "build_date": "2025-07-15T20:25:11",
+      "file_size": 26,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": []
     },
     {
-      "device_type": "CO2Monitor",
+      "device_type": "Matrix",
+      "version": "1.0.1",
+      "channel": "stable",
+      "description": "Stable firmware release for Matrix devices",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/Matrix/Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-15T20:25:11",
+      "file_size": 30,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": []
+    },
+    {
+      "device_type": "stable",
       "version": "1.0.0",
       "channel": "stable",
+      "description": "Stable firmware release for stable devices",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
@@ -32,7 +58,31 @@
       ],
       "build_date": "2025-07-14T22:12:21+01:00",
       "file_size": 976752,
-      "improv": true
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": []
+    },
+    {
+      "device_type": "stable",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware release for stable devices",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/AirIQMonitor/ESP32S3/stable/Sense360-AirIQ-ESP32S3-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-15T14:34:28+01:00",
+      "file_size": 940752,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": []
     }
   ]
 }
