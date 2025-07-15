@@ -17,7 +17,7 @@
         }
       ],
       "build_date": "2025-07-15T20:48:29+01:00",
-      "file_size": 26,
+      "file_size": 976720,
       "improv": true,
       "features": [],
       "hardware_requirements": [],
@@ -27,57 +27,17 @@
     {
       "device_type": "Matrix",
       "version": "1.0.1",
-      "channel": "stable",
-      "description": "Stable firmware release for Matrix devices",
+      "channel": "beta",
+      "description": "Beta firmware release for Matrix devices",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/Matrix/Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin",
+          "path": "firmware/Matrix/Sense360-CO2Monitor-ESP32S3-v1.0.1-beta.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-15T20:48:29+01:00",
-      "file_size": 30,
-      "improv": true,
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": []
-    },
-    {
-      "device_type": "stable",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware release for stable devices",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-14T22:12:21+01:00",
-      "file_size": 976752,
-      "improv": true,
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": []
-    },
-    {
-      "device_type": "stable",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware release for stable devices",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/AirIQMonitor/ESP32S3/stable/Sense360-AirIQ-ESP32S3-v1.0.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-15T14:34:28+01:00",
-      "file_size": 940752,
+      "build_date": "2025-07-15T11:17:41.845540",
+      "file_size": 976720,
       "improv": true,
       "features": [],
       "hardware_requirements": [],

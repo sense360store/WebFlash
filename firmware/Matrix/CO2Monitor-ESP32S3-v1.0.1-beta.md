@@ -1,10 +1,10 @@
-# CO2Monitor ESP32-S3 v1.0.1 Stable Release
+# CO2Monitor ESP32-S3 v1.0.1 Beta Release
 
 ## Device Information
 - **Device Type**: CO2Monitor  
 - **Chip Family**: ESP32-S3
 - **Version**: v1.0.1
-- **Channel**: stable
+- **Channel**: beta
 - **Release Date**: 2025-07-13
 
 ## Release Description
