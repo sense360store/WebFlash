@@ -555,7 +555,7 @@ footer {
 
 .build-item {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
     padding: 15px 20px;
     background-color: #ffffff;
@@ -565,6 +565,7 @@ footer {
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     cursor: pointer;
+    min-height: 70px;
 }
 
 .build-item:hover {
@@ -581,8 +582,9 @@ footer {
 .build-info {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     flex: 1;
+    justify-content: flex-start;
 }
 
 .build-header {
@@ -634,17 +636,20 @@ footer {
 
 .build-description {
     color: #666;
-    font-size: 0.85em;
+    font-size: 0.82em;
     font-style: italic;
-    line-height: 1.3;
-    margin-top: 4px;
-    padding-left: 4px;
+    line-height: 1.2;
+    margin-top: 2px;
+    padding-left: 0;
+    max-width: 100%;
+    word-wrap: break-word;
 }
 
 .build-date {
     color: #666;
     font-size: 0.8em;
     margin-left: auto;
+    align-self: flex-start;
 }
 
 .build-selection {
