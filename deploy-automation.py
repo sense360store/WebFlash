@@ -49,17 +49,28 @@ class GitHubPagesAutomation:
         variant = parts[-2]      # Variant name (e.g., "Standard")
         filename = file_path.name
         
-        # Parse filename: {Model}-{Variant}-v{Version}-{Channel}.bin
-        expected_prefix = f"{model}-{variant}-v"
+        # Parse filename: {Model}-{Variant}-[sensor-addon-]v{Version}-{Channel}.bin
+        # Handle both standard and sensor-specific variants
+        expected_prefix = f"{model}-{variant}-"
         if not filename.startswith(expected_prefix):
             return None
             
-        # Extract version and channel from filename
-        name_part = filename[len(expected_prefix):]  # Remove prefix
+        # Extract everything after the model-variant prefix
+        name_part = filename[len(expected_prefix):]
         if name_part.endswith('.bin'):
             name_part = name_part[:-4]
         elif name_part.endswith('.md'):
             name_part = name_part[:-3]
+        
+        # Check if this is a sensor-specific variant
+        sensor_addon = None
+        if name_part.startswith('sen55-hlk2450-v'):
+            sensor_addon = 'sen55-hlk2450'
+            name_part = name_part[len('sen55-hlk2450-v'):]  # Remove sensor addon prefix
+        elif name_part.startswith('v'):
+            name_part = name_part[1:]  # Remove 'v' prefix
+        else:
+            return None
         
         # Split by hyphens to get version-channel
         parts = name_part.split('-')
@@ -72,6 +83,7 @@ class GitHubPagesAutomation:
         return {
             'model': model,
             'variant': variant,
+            'sensor_addon': sensor_addon,
             'version': version,
             'channel': channel
         }
@@ -88,11 +100,14 @@ class GitHubPagesAutomation:
         }
         return mapping.get(chip_family, chip_family)
     
-    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str) -> dict:
+    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str, sensor_addon: str = None) -> dict:
         """Get firmware metadata from release notes file."""
         # Create release notes filename (ensure version has 'v' prefix)
         version_with_v = version if version.startswith('v') else f"v{version}"
-        release_notes_filename = f"{model}-{variant}-{version_with_v}-{channel}.md"
+        if sensor_addon:
+            release_notes_filename = f"{model}-{variant}-{sensor_addon}-{version_with_v}-{channel}.md"
+        else:
+            release_notes_filename = f"{model}-{variant}-{version_with_v}-{channel}.md"
         # Look for release notes in the Model/Variant directory
         release_notes_path = self.firmware_dir / model / variant / release_notes_filename
         
@@ -307,12 +322,18 @@ class GitHubPagesAutomation:
                     metadata['model'], 
                     metadata['variant'], 
                     metadata['version'], 
-                    metadata['channel']
+                    metadata['channel'],
+                    metadata.get('sensor_addon')
                 )
+                
+                # Create variant display name
+                variant_display = metadata['variant']
+                if metadata.get('sensor_addon'):
+                    variant_display = f"{metadata['variant']}-{metadata['sensor_addon']}"
                 
                 build = {
                     "model": metadata['model'],
-                    "variant": metadata['variant'],
+                    "variant": variant_display,
                     "device_type": release_metadata.get('device_type', metadata['model']),
                     "version": metadata['version'],
                     "channel": metadata['channel'],
@@ -320,6 +341,7 @@ class GitHubPagesAutomation:
                     "chipFamily": self.get_chip_family_mapping(release_metadata.get('chip_family', 'ESP32-S3')),
                     "builtin_sensors": release_metadata.get('builtin_sensors', []),
                     "addon_sensors": release_metadata.get('addon_sensors', []),
+                    "sensor_addon": metadata.get('sensor_addon'),
                     "parts": [{
                         "path": relative_path,
                         "offset": 0

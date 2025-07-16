@@ -136,28 +136,7 @@
                 variantSelect.appendChild(option);
             });
             
-            // Populate sensor checkboxes
-            const allBuiltinSensors = [...new Set(globalManifest.builds.flatMap(build => build.builtin_sensors || []))];
-            const builtinContainer = document.getElementById('builtin-sensors-filter');
-            builtinContainer.innerHTML = '';
-            allBuiltinSensors.forEach(sensor => {
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `builtin-${sensor}`;
-                checkbox.value = sensor;
-                checkbox.onchange = filterFirmware;
-                
-                const label = document.createElement('label');
-                label.htmlFor = `builtin-${sensor}`;
-                label.textContent = sensor;
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = 'sensor-checkbox';
-                wrapper.appendChild(checkbox);
-                wrapper.appendChild(label);
-                builtinContainer.appendChild(wrapper);
-            });
-            
+            // Populate addon sensor checkboxes
             const allAddonSensors = [...new Set(globalManifest.builds.flatMap(build => build.addon_sensors || []))];
             const addonContainer = document.getElementById('addon-sensors-filter');
             addonContainer.innerHTML = '';
@@ -187,10 +166,6 @@
             const searchInput = document.getElementById('search-input').value.toLowerCase();
             const buildItems = document.querySelectorAll('.build-item');
             
-            // Get checked built-in sensors
-            const checkedBuiltinSensors = Array.from(document.querySelectorAll('#builtin-sensors-filter input:checked'))
-                .map(checkbox => checkbox.value);
-            
             // Get checked addon sensors
             const checkedAddonSensors = Array.from(document.querySelectorAll('#addon-sensors-filter input:checked'))
                 .map(checkbox => checkbox.value);
@@ -211,17 +186,15 @@
                 const matchesDeviceType = !deviceFilter || deviceType === deviceFilter;
                 const matchesVariant = !variantFilter || variant === variantFilter;
                 
-                // Check sensor filters (firmware must have ALL selected sensors)
-                const matchesBuiltinSensors = checkedBuiltinSensors.length === 0 || 
-                    checkedBuiltinSensors.every(sensor => builtinSensors.includes(sensor));
+                // Check sensor filters (firmware must have ALL selected addon sensors)
                 const matchesAddonSensors = checkedAddonSensors.length === 0 || 
                     checkedAddonSensors.every(sensor => addonSensors.includes(sensor));
                 
                 // Check search input
-                const searchText = `${deviceType} ${variant} ${chipFamily} ${version} ${channel} ${description} ${builtinSensors.join(' ')} ${addonSensors.join(' ')}`.toLowerCase();
+                const searchText = `${deviceType} ${variant} ${chipFamily} ${version} ${channel} ${description} ${addonSensors.join(' ')}`.toLowerCase();
                 const matchesSearch = !searchInput || searchText.includes(searchInput);
                 
-                if (matchesDeviceType && matchesVariant && matchesBuiltinSensors && matchesAddonSensors && matchesSearch) {
+                if (matchesDeviceType && matchesVariant && matchesAddonSensors && matchesSearch) {
                     item.style.display = 'block';
                     visibleCount++;
                 } else {
@@ -290,10 +263,6 @@
                     </div>
                 </div>
                 <div class="filter-row">
-                    <div class="sensor-filters">
-                        <label>Built-in Sensors:</label>
-                        <div id="builtin-sensors-filter" class="sensor-checkboxes"></div>
-                    </div>
                     <div class="sensor-filters">
                         <label>Addon Sensors:</label>
                         <div id="addon-sensors-filter" class="sensor-checkboxes"></div>

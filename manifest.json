@@ -21,6 +21,7 @@
         "Sen55x",
         "HLK2450"
       ],
+      "sensor_addon": null,
       "parts": [
         {
           "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
