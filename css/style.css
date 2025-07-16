@@ -91,14 +91,75 @@ section, .firmware-info, .installation-section, .features-section, .troubleshoot
 /* Filter section */
 .filter-section {
     display: flex;
-    justify-content: center;
-    gap: 32px;
+    flex-direction: column;
+    gap: 16px;
     margin-bottom: 24px;
-    flex-wrap: wrap;
     background: #f8f9fa;
     padding: 20px;
     border-radius: 8px;
     margin-top: 16px;
+}
+
+.filter-row {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.sensor-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.sensor-filters label {
+    font-weight: 500;
+    color: #5f6368;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.sensor-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sensor-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: white;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.sensor-checkbox input[type="checkbox"] {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+}
+
+.sensor-checkbox label {
+    margin: 0;
+    font-size: 12px;
+    color: #202124;
+    cursor: pointer;
+}
+
+.build-variant {
+    background-color: #e8f0fe;
+    color: #1a73e8;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 500;
+    min-width: 70px;
+    text-align: center;
 }
 
 .filter-controls, .search-controls {

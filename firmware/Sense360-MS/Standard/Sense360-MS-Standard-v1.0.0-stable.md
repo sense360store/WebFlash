@@ -1,4 +1,4 @@
-# CO2Monitor ESP32-S3 v1.0.0 Stable Release
+# Sense360-MS ESP32-S3 v1.0.0 Stable Release
 
 ## Device Information
 Model: Sense360-MS

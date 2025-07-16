@@ -5,19 +5,30 @@
   "new_install_skip_erase": false,
   "builds": [
     {
-      "device_type": "CO2Monitor",
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "device_type": "Multi Sensor AQI",
       "version": "1.0.0",
       "channel": "stable",
       "description": "Initial release with basic CO2 monitoring capabilities",
       "chipFamily": "ESP32-S3",
+      "builtin_sensors": [
+        "LTR303",
+        "SCD40",
+        "SHT30"
+      ],
+      "addon_sensors": [
+        "Sen55x",
+        "HLK2450"
+      ],
       "parts": [
         {
-          "path": "firmware/CO2Monitor/Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin",
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
           "offset": 0
         }
       ],
-      "build_date": "2025-07-15T21:31:17+01:00",
-      "file_size": 976720,
+      "build_date": "2025-07-16T19:51:57.440416",
+      "file_size": 1073600,
       "improv": true,
       "features": [
         "Basic CO2 level monitoring",
@@ -35,36 +46,6 @@
         "CO2 sensor requires 3-minute warm-up period",
         "Wi-Fi connection timeout after 60 seconds"
       ],
-      "changelog": []
-    },
-    {
-      "device_type": "CO2Monitor",
-      "version": "1.0.1",
-      "channel": "beta",
-      "description": "Bug fixes and improved CO2 sensor accuracy",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/CO2Monitor/Sense360-CO2Monitor-ESP32S3-v1.0.1-beta.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-15T21:31:17+01:00",
-      "file_size": 976720,
-      "improv": true,
-      "features": [
-        "Enhanced CO2 sensor calibration algorithm",
-        "Improved temperature compensation",
-        "Fixed Wi-Fi reconnection issues",
-        "Better error handling for sensor failures",
-        "Reduced memory usage by 15%"
-      ],
-      "hardware_requirements": [
-        "ESP32-S3 development board",
-        "CO2 sensor (MH-Z19B or similar)",
-        "Temperature/humidity sensor (DHT22)"
-      ],
-      "known_issues": [],
       "changelog": []
     }
   ]

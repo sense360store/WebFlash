@@ -38,26 +38,43 @@ class GitHubPagesAutomation:
         print(f"[{timestamp}] {message}")
     
     def extract_metadata_from_path(self, file_path: Path) -> dict:
-        """Extract metadata from simplified directory structure and filename."""
+        """Extract metadata from Model/Variant directory structure and filename."""
         parts = file_path.parts
-        if len(parts) >= 2:
-            device_type = parts[-2]  # Just the device folder name
+        
+        # Expected structure: firmware/{Model}/{Variant}/{filename}
+        if len(parts) < 4:
+            return None
+        
+        model = parts[-3]        # Model name (e.g., "Sense360-MS")
+        variant = parts[-2]      # Variant name (e.g., "Standard")
+        filename = file_path.name
+        
+        # Parse filename: {Model}-{Variant}-v{Version}-{Channel}.bin
+        expected_prefix = f"{model}-{variant}-v"
+        if not filename.startswith(expected_prefix):
+            return None
             
-            # Extract all metadata from filename
-            filename = file_path.name
-            
-            # Parse filename: Sense360-{DeviceType}-{ChipFamily}-v{Version}-{Channel}.bin
-            match = re.match(r'Sense360-(\w+)-(ESP32\w*)-v(\d+\.\d+\.\d+)-(\w+)', filename)
-            if match:
-                file_device_type, chip_family, version, channel = match.groups()
-                
-                return {
-                    'device_type': device_type,  # Use folder name as primary device type
-                    'chip_family': chip_family,
-                    'version': version,
-                    'channel': channel
-                }
-        return None
+        # Extract version and channel from filename
+        name_part = filename[len(expected_prefix):]  # Remove prefix
+        if name_part.endswith('.bin'):
+            name_part = name_part[:-4]
+        elif name_part.endswith('.md'):
+            name_part = name_part[:-3]
+        
+        # Split by hyphens to get version-channel
+        parts = name_part.split('-')
+        if len(parts) < 2:
+            return None
+        
+        version = parts[0]  # Version (e.g., "1.0.0")
+        channel = parts[1]  # Channel (e.g., "stable")
+        
+        return {
+            'model': model,
+            'variant': variant,
+            'version': version,
+            'channel': channel
+        }
     
     def get_chip_family_mapping(self, chip_family: str) -> str:
         """Map chip family to ESP Web Tools format."""
@@ -71,19 +88,21 @@ class GitHubPagesAutomation:
         }
         return mapping.get(chip_family, chip_family)
     
-    def get_firmware_metadata_from_release_notes(self, device_type: str, chip_family: str, version: str, channel: str) -> dict:
+    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str) -> dict:
         """Get firmware metadata from release notes file."""
         # Create release notes filename (ensure version has 'v' prefix)
         version_with_v = version if version.startswith('v') else f"v{version}"
-        release_notes_filename = f"{device_type}-{chip_family}-{version_with_v}-{channel}.md"
-        # Look for release notes in the same directory as the firmware
-        release_notes_path = self.firmware_dir / device_type / release_notes_filename
+        release_notes_filename = f"{model}-{variant}-{version_with_v}-{channel}.md"
+        # Look for release notes in the Model/Variant directory
+        release_notes_path = self.firmware_dir / model / variant / release_notes_filename
         
         # Default metadata
         metadata = {
-            'description': f'{channel.title()} firmware release for {device_type} devices',
-            'device_type': device_type,
-            'chip_family': chip_family,
+            'description': f'{channel.title()} firmware release for {model} {variant} devices',
+            'model': model,
+            'variant': variant,
+            'builtin_sensors': ['Temperature', 'Humidity'],
+            'addon_sensors': [],
             'version': version,
             'channel': channel,
             'features': [],
@@ -104,6 +123,43 @@ class GitHubPagesAutomation:
             description_match = re.search(r'## Release Description\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
             if description_match:
                 metadata['description'] = description_match.group(1).strip()
+            
+            # Extract device information fields
+            device_info_match = re.search(r'## Device Information\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
+            if device_info_match:
+                device_info = device_info_match.group(1).strip()
+                
+                # Parse individual fields
+                model_match = re.search(r'[*\-\s]*Model[*\s]*:\s*(.+)', device_info)
+                if model_match:
+                    metadata['model'] = model_match.group(1).strip()
+                
+                variant_match = re.search(r'[*\-\s]*Variant[*\s]*:\s*(.+)', device_info)
+                if variant_match:
+                    metadata['variant'] = variant_match.group(1).strip()
+                
+                builtin_match = re.search(r'[*\-\s]*Built-in Sensors[*\s]*:\s*(.+)', device_info)
+                if builtin_match:
+                    sensors = [s.strip() for s in builtin_match.group(1).split(',')]
+                    metadata['builtin_sensors'] = sensors
+                
+                addon_match = re.search(r'[*\-\s]*Addon Sensors[*\s]*:\s*(.+)', device_info)
+                if addon_match:
+                    addon_text = addon_match.group(1).strip()
+                    if addon_text.lower() != 'none':
+                        metadata['addon_sensors'] = [s.strip() for s in addon_text.split(',')]
+                    else:
+                        metadata['addon_sensors'] = []
+                
+                # Extract chip family for compatibility
+                chip_match = re.search(r'[*\-\s]*Chip Family[*\s]*:\s*(.+)', device_info)
+                if chip_match:
+                    metadata['chip_family'] = chip_match.group(1).strip()
+                
+                # Extract device type for compatibility
+                device_type_match = re.search(r'[*\-\s]*Device Type[*\s]*:\s*(.+)', device_info)
+                if device_type_match:
+                    metadata['device_type'] = device_type_match.group(1).strip()
             
             # Extract features
             features_match = re.search(r'## Features\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
@@ -237,18 +293,22 @@ class GitHubPagesAutomation:
                 
                 # Get release notes metadata
                 release_metadata = self.get_firmware_metadata_from_release_notes(
-                    metadata['device_type'], 
-                    metadata['chip_family'], 
+                    metadata['model'], 
+                    metadata['variant'], 
                     metadata['version'], 
                     metadata['channel']
                 )
                 
                 build = {
-                    "device_type": metadata['device_type'],
+                    "model": metadata['model'],
+                    "variant": metadata['variant'],
+                    "device_type": release_metadata.get('device_type', metadata['model']),
                     "version": metadata['version'],
                     "channel": metadata['channel'],
                     "description": release_metadata['description'],
-                    "chipFamily": self.get_chip_family_mapping(metadata['chip_family']),
+                    "chipFamily": self.get_chip_family_mapping(release_metadata.get('chip_family', 'ESP32-S3')),
+                    "builtin_sensors": release_metadata.get('builtin_sensors', []),
+                    "addon_sensors": release_metadata.get('addon_sensors', []),
                     "parts": [{
                         "path": relative_path,
                         "offset": 0
@@ -263,10 +323,10 @@ class GitHubPagesAutomation:
                 }
                 
                 builds.append(build)
-                self.log(f"📦 Found: {bin_file.name} - {metadata['device_type']} v{metadata['version']} ({metadata['chip_family']})")
+                self.log(f"📦 Found: {bin_file.name} - {metadata['model']} {metadata['variant']} v{metadata['version']}")
         
-        # Sort by device type, then version
-        builds.sort(key=lambda x: (x['device_type'], x['version']))
+        # Sort by model, then variant, then version
+        builds.sort(key=lambda x: (x['model'], x['variant'], x['version']))
         return builds
     
     def create_main_manifest(self, builds: list) -> bool:
