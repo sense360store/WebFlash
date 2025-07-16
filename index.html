@@ -33,11 +33,11 @@
                         const description = build.description || 'Firmware release for ESP32 devices';
                         const model = build.model || 'Unknown';
                         const variant = build.variant || 'Standard';
-                        const builtinSensors = build.builtin_sensors || [];
+
                         const addonSensors = build.addon_sensors || [];
                         const buildDate = build.build_date ? new Date(build.build_date).toLocaleDateString() : 'Unknown';
                         
-                        html += `<div class="build-item" data-firmware-index="${index}" data-device-type="${deviceType}" data-chip-family="${chipFamily}" data-version="${version}" data-channel="${channel}" data-description="${description}" data-model="${model}" data-variant="${variant}" data-builtin-sensors="${builtinSensors.join(',')}" data-addon-sensors="${addonSensors.join(',')}" onclick="selectFirmware(${index})">
+                        html += `<div class="build-item" data-firmware-index="${index}" data-device-type="${deviceType}" data-chip-family="${chipFamily}" data-version="${version}" data-channel="${channel}" data-description="${description}" data-model="${model}" data-variant="${variant}" data-addon-sensors="${addonSensors.join(',')}" onclick="selectFirmware(${index})">
                             <div class="build-info">
                                 <div class="build-header">
                                     <span class="build-name">${model} v${version}</span>
@@ -179,7 +179,7 @@
                 const version = item.getAttribute('data-version');
                 const channel = item.getAttribute('data-channel');
                 const description = item.getAttribute('data-description') || '';
-                const builtinSensors = (item.getAttribute('data-builtin-sensors') || '').split(',').filter(s => s.trim());
+
                 const addonSensors = (item.getAttribute('data-addon-sensors') || '').split(',').filter(s => s.trim());
                 
                 // Check all filters
