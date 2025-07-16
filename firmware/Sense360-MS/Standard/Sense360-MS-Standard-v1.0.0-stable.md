@@ -5,7 +5,7 @@ Model: Sense360-MS
 Device Type: Multi Sensor AQI
 Variant: Standard
 Built-in Sensors: LTR303, SCD40, SHT30
-Addon Sensors: Sen55x, HLK2450
+Addon Sensors:
 Chip Family: ESP32-S3
 Version: v1.0.0
 Channel: stable

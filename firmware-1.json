@@ -1,0 +1,18 @@
+{
+  "name": "Sense360 ESP32 Firmware - Multi Sensor AQI",
+  "version": "1.0.0",
+  "home_assistant_domain": "esphome",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "improv": true
+    }
+  ]
+}

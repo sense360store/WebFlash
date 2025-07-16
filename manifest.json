@@ -18,8 +18,7 @@
         "SHT30"
       ],
       "addon_sensors": [
-        "Sen55x",
-        "HLK2450"
+        "Chip Family: ESP32-S3"
       ],
       "sensor_addon": null,
       "parts": [
@@ -46,6 +45,46 @@
       "known_issues": [
         "CO2 sensor requires 3-minute warm-up period",
         "Wi-Fi connection timeout after 60 seconds"
+      ],
+      "changelog": []
+    },
+    {
+      "model": "Sense360-MS",
+      "variant": "Standard-sen55-hlk2450",
+      "device_type": "Multi Sensor AQI",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Complete firmware release for the Sense360-MS multi-sensor air quality monitor including all core sensors plus Sen55x particulate matter sensor and HLK2450 radar presence detection.",
+      "chipFamily": "ESP32-S3",
+      "builtin_sensors": [
+        "LTR303",
+        "SCD40",
+        "SHT30"
+      ],
+      "addon_sensors": [
+        "Sen55x",
+        "HLK2450"
+      ],
+      "sensor_addon": "sen55-hlk2450",
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-13",
+      "file_size": 1073600,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [
+        "ESP32-S3 development board",
+        "LTR303 light sensor",
+        "SCD40 CO2 sensor"
+      ],
+      "known_issues": [
+        "CO2 sensor requires 3-minute warm-up period",
+        "Sen55x sensor requires 30-second initialization",
+        "HLK2450 sensor requires 10-second calibration"
       ],
       "changelog": []
     }
