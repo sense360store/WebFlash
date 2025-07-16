@@ -160,6 +160,11 @@ class GitHubPagesAutomation:
                 device_type_match = re.search(r'[*\-\s]*Device Type[*\s]*:\s*(.+)', device_info)
                 if device_type_match:
                     metadata['device_type'] = device_type_match.group(1).strip()
+                
+                # Extract release date from Release Date field
+                release_date_match = re.search(r'[*\-\s]*Release Date[*\s]*:\s*(.+)', device_info)
+                if release_date_match:
+                    metadata['release_date'] = release_date_match.group(1).strip()
             
             # Extract features
             features_match = re.search(r'## Features\s*\n(.*?)(?=\n##|\n$)', content, re.DOTALL)
@@ -251,10 +256,16 @@ class GitHubPagesAutomation:
             self.log(f"ERROR: Failed to clean up orphaned manifests: {e}")
             return False
     
-    def get_build_date(self, file_path: Path) -> str:
-        """Get accurate build date from git commit or file modification time."""
+    def get_build_date(self, file_path: Path, release_metadata: dict = None) -> str:
+        """Get build date from release notes, git commit, or file modification time."""
+        # First priority: Release Date from .md file
+        if release_metadata and 'release_date' in release_metadata:
+            release_date = release_metadata['release_date']
+            self.log(f"  📅 Using release date from .md file: {release_date}")
+            return release_date
+        
         try:
-            # First try to get git commit date for this file
+            # Second priority: git commit date for this file
             result = subprocess.run(
                 ['git', 'log', '-1', '--format=%cI', str(file_path)],
                 capture_output=True,
@@ -271,7 +282,7 @@ class GitHubPagesAutomation:
             # Git not available or no git history for this file
             pass
         
-        # Fall back to file modification time
+        # Last resort: file modification time
         file_date = datetime.fromtimestamp(file_path.stat().st_mtime).isoformat()
         self.log(f"  📅 Using file modification date: {file_date}")
         return file_date
@@ -313,7 +324,7 @@ class GitHubPagesAutomation:
                         "path": relative_path,
                         "offset": 0
                     }],
-                    "build_date": self.get_build_date(bin_file),
+                    "build_date": self.get_build_date(bin_file, release_metadata),
                     "file_size": bin_file.stat().st_size,
                     "improv": True,
                     "features": release_metadata['features'][:5] if release_metadata['features'] else [],  # Limit to first 5 features
