@@ -24,7 +24,7 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-25T08:28:00.429940",
+      "build_date": "2025-07-25T08:32:07+00:00",
       "file_size": 18,
       "improv": true,
       "features": [],
@@ -32,42 +32,6 @@
         "ESP32-S3 WROOM Core Module"
       ],
       "known_issues": [],
-      "changelog": []
-    },
-    {
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Core Module firmware for the Sense360 modular ESP32-S3 platform with essential environmental monitoring. Designed for Home Assistant integration with standardized expansion headers.",
-      "chipFamily": "ESP32-S3",
-      "builtin_sensors": [
-        "LTR303",
-        "SCD40",
-        "SHT30"
-      ],
-      "addon_sensors": [],
-      "sensor_addon": null,
-      "parts": [
-        {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13",
-      "file_size": 97,
-      "improv": true,
-      "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 development board",
-        "LTR303 light sensor",
-        "SCD40 CO2 sensor"
-      ],
-      "known_issues": [
-        "CO2 sensor requires 3-minute warm-up period",
-        "Wi-Fi connection timeout after 60 seconds"
-      ],
       "changelog": []
     },
     {
@@ -111,6 +75,42 @@
       "changelog": []
     },
     {
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Core Module firmware for the Sense360 modular ESP32-S3 platform with essential environmental monitoring. Designed for Home Assistant integration with standardized expansion headers.",
+      "chipFamily": "ESP32-S3",
+      "builtin_sensors": [
+        "LTR303",
+        "SCD40",
+        "SHT30"
+      ],
+      "addon_sensors": [],
+      "sensor_addon": null,
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-13",
+      "file_size": 97,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [
+        "ESP32-S3 development board",
+        "LTR303 light sensor",
+        "SCD40 CO2 sensor"
+      ],
+      "known_issues": [
+        "CO2 sensor requires 3-minute warm-up period",
+        "Wi-Fi connection timeout after 60 seconds"
+      ],
+      "changelog": []
+    },
+    {
       "config_string": "Wall-POE-AirIQBase",
       "mounting": "Wall",
       "power": "POE",
@@ -128,7 +128,7 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-25T08:27:47.842941",
+      "build_date": "2025-07-25T08:32:07+00:00",
       "file_size": 18,
       "improv": true,
       "features": [],
@@ -154,7 +154,35 @@
           "offset": 0
         }
       ],
-      "build_date": "2025-07-25T08:27:39.328941",
+      "build_date": "2025-07-25T08:32:07+00:00",
+      "file_size": 18,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [
+        "ESP32-S3 WROOM Core Module"
+      ],
+      "known_issues": [],
+      "changelog": []
+    },
+    {
+      "config_string": "Wall-USB-AirIQPro",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": [
+        "AirIQPro"
+      ],
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-USB-AirIQPro configuration",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-AirIQPro-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-25T09:27:39",
       "file_size": 18,
       "improv": true,
       "features": [],
