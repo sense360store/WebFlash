@@ -3,221 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sense360 ESP32 Firmware Installer</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Sense360 Firmware Configuration Tool</title>
+    <link rel="stylesheet" href="css/wizard-style.css?v=1753432000">
     <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js"></script>
-    <script>
-        let globalManifest = null;
-        let selectedFirmware = null;
-        
-        // Load and display firmware information from manifest.json
-        async function loadFirmwareInfo() {
-            try {
-                const response = await fetch('manifest.json');
-                const manifest = await response.json();
-                globalManifest = manifest;
-                
-                console.log('Loaded manifest:', manifest);
-                
-                const firmwareDetails = document.getElementById('firmware-details');
-                
-                if (manifest.builds && manifest.builds.length > 0) {
-                    // Create simple firmware list
-                    let html = '<div class="firmware-list">';
-                    
-                    manifest.builds.forEach((build, index) => {
-                        const deviceType = build.device_type || 'Unknown';
-                        const chipFamily = build.chipFamily || 'Unknown';
-                        const version = build.version || '1.0.0';
-                        const channel = build.channel || 'stable';
-                        const description = build.description || 'Firmware release for ESP32 devices';
-                        const model = build.model || 'Unknown';
-                        const variant = build.variant || 'Standard';
-
-                        const addonSensors = build.addon_sensors || [];
-                        const buildDate = build.build_date ? new Date(build.build_date).toLocaleDateString() : 'Unknown';
-                        
-                        html += `<div class="build-item" data-firmware-index="${index}" data-device-type="${deviceType}" data-chip-family="${chipFamily}" data-version="${version}" data-channel="${channel}" data-description="${description}" data-model="${model}" data-variant="${variant}" data-addon-sensors="${addonSensors.join(',')}" onclick="selectFirmware(${index})">
-                            <div class="build-info">
-                                <div class="build-header">
-                                    <span class="build-name">${model} v${version}</span>
-                                    <span class="build-variant">${variant}</span>
-                                    <span class="build-chip">${chipFamily}</span>
-                                    <span class="build-channel ${channel}">${channel}</span>
-                                    <span class="build-date">Released: ${buildDate}</span>
-                                </div>
-                                <div class="build-description-row">
-                                    <span class="build-description">${description}</span>
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                    
-                    html += '</div>';
-                    
-                    // Add summary
-                    const chipFamilies = [...new Set(manifest.builds.map(build => build.chipFamily))];
-                    const summary = `<div class="firmware-summary">
-                        <p><strong>${manifest.builds.length} firmware builds</strong> available for <strong>${chipFamilies.join(', ')}</strong> devices</p>
-                    </div>`;
-                    
-                    firmwareDetails.innerHTML = summary + html;
-                    
-                    // Populate all filters
-                    populateFilters();
-                } else {
-                    firmwareDetails.innerHTML = '<p>No firmware builds found in manifest.</p>';
-                }
-            } catch (error) {
-                console.error('Error loading firmware info:', error);
-                document.getElementById('firmware-details').innerHTML = 
-                    '<p>Error loading firmware information. Please check the console for details.</p>';
-            }
-        }
-        
-        // Select firmware and update install button
-        function selectFirmware(index) {
-            const build = globalManifest.builds[index];
-            selectedFirmware = build;
-            
-            // Update visual selection
-            document.querySelectorAll('.build-item').forEach(item => {
-                item.classList.remove('selected');
-            });
-            document.querySelector(`[data-firmware-index="${index}"]`).classList.add('selected');
-            
-            // Update install button
-            const installButton = document.querySelector('#main-installer button[slot="activate"]');
-            installButton.disabled = false;
-            installButton.textContent = `Install ${build.device_type} v${build.version} (${build.chipFamily})`;
-            
-            // Create individual manifest for selected firmware
-            createIndividualManifest(build, index);
-        }
-        
-        // Create individual manifest for selected firmware
-        function createIndividualManifest(build, index) {
-            // Use the pre-generated individual manifest files
-            const manifestFilename = `firmware-${index}.json`;
-            
-            console.log('Using individual manifest:', manifestFilename);
-            console.log('Selected firmware:', build.device_type, 'v' + build.version, build.chipFamily);
-            
-            // Update the ESP Web Tools manifest attribute
-            const installer = document.getElementById('main-installer');
-            installer.setAttribute('manifest', manifestFilename);
-            
-            console.log('Manifest URL updated to:', manifestFilename);
-        }
-        
-        // Populate all filters
-        function populateFilters() {
-            if (!globalManifest || !globalManifest.builds) return;
-            
-            // Populate device type filter
-            const deviceTypes = [...new Set(globalManifest.builds.map(build => build.device_type))];
-            const deviceSelect = document.getElementById('device-filter');
-            deviceSelect.innerHTML = '<option value="">All Devices</option>';
-            deviceTypes.forEach(deviceType => {
-                const option = document.createElement('option');
-                option.value = deviceType;
-                option.textContent = deviceType;
-                deviceSelect.appendChild(option);
-            });
-            
-            // Populate variant filter
-            const variants = [...new Set(globalManifest.builds.map(build => build.variant || 'Standard'))];
-            const variantSelect = document.getElementById('variant-filter');
-            variantSelect.innerHTML = '<option value="">All Variants</option>';
-            variants.forEach(variant => {
-                const option = document.createElement('option');
-                option.value = variant;
-                option.textContent = variant;
-                variantSelect.appendChild(option);
-            });
-            
-            // Populate addon sensor checkboxes
-            const allAddonSensors = [...new Set(globalManifest.builds.flatMap(build => build.addon_sensors || []))];
-            const addonContainer = document.getElementById('addon-sensors-filter');
-            addonContainer.innerHTML = '';
-            allAddonSensors.forEach(sensor => {
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `addon-${sensor}`;
-                checkbox.value = sensor;
-                checkbox.onchange = filterFirmware;
-                
-                const label = document.createElement('label');
-                label.htmlFor = `addon-${sensor}`;
-                label.textContent = sensor;
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = 'sensor-checkbox';
-                wrapper.appendChild(checkbox);
-                wrapper.appendChild(label);
-                addonContainer.appendChild(wrapper);
-            });
-        }
-        
-        // Enhanced firmware filtering
-        function filterFirmware() {
-            const deviceFilter = document.getElementById('device-filter').value;
-            const variantFilter = document.getElementById('variant-filter').value;
-            const searchInput = document.getElementById('search-input').value.toLowerCase();
-            const buildItems = document.querySelectorAll('.build-item');
-            
-            // Get checked addon sensors
-            const checkedAddonSensors = Array.from(document.querySelectorAll('#addon-sensors-filter input:checked'))
-                .map(checkbox => checkbox.value);
-            
-            let visibleCount = 0;
-            
-            buildItems.forEach(item => {
-                const deviceType = item.getAttribute('data-device-type');
-                const variant = item.getAttribute('data-variant');
-                const chipFamily = item.getAttribute('data-chip-family');
-                const version = item.getAttribute('data-version');
-                const channel = item.getAttribute('data-channel');
-                const description = item.getAttribute('data-description') || '';
-
-                const addonSensors = (item.getAttribute('data-addon-sensors') || '').split(',').filter(s => s.trim());
-                
-                // Check all filters
-                const matchesDeviceType = !deviceFilter || deviceType === deviceFilter;
-                const matchesVariant = !variantFilter || variant === variantFilter;
-                
-                // Check sensor filters (firmware must have ALL selected addon sensors)
-                const matchesAddonSensors = checkedAddonSensors.length === 0 || 
-                    checkedAddonSensors.every(sensor => addonSensors.includes(sensor));
-                
-                // Check search input
-                const searchText = `${deviceType} ${variant} ${chipFamily} ${version} ${channel} ${description} ${addonSensors.join(' ')}`.toLowerCase();
-                const matchesSearch = !searchInput || searchText.includes(searchInput);
-                
-                if (matchesDeviceType && matchesVariant && matchesAddonSensors && matchesSearch) {
-                    item.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-            
-            // Update summary
-            const summary = document.querySelector('.firmware-summary p');
-            if (summary) {
-                const totalBuilds = globalManifest.builds.length;
-                const filterText = visibleCount === totalBuilds ? 
-                    `${totalBuilds} firmware builds` : 
-                    `${visibleCount} of ${totalBuilds} firmware builds`;
-                
-                const chipFamilies = [...new Set(globalManifest.builds.map(build => build.chipFamily))];
-                summary.innerHTML = `<strong>${filterText}</strong> available for <strong>${chipFamilies.join(', ')}</strong> devices`;
-            }
-        }
-        
-        // Load firmware info when page loads
-        document.addEventListener('DOMContentLoaded', loadFirmwareInfo);
-    </script>
 </head>
 <body>
     <div class="container">
@@ -225,143 +13,500 @@
             <div class="logo-container">
                 <img src="sense360-logo.png" alt="Sense360 Logo" class="logo">
                 <div class="header-text">
-                    <h1>Sense360 ESP32 Firmware Installer</h1>
-                    <p class="subtitle">Flash firmware to your ESP32 devices using your web browser</p>
+                    <h1>Sense360 Firmware Configuration Tool</h1>
+                    <p class="subtitle">Configure and download the correct firmware for your modular hardware</p>
                 </div>
             </div>
         </header>
+
+        <div class="wizard-container">
+            <!-- Progress Indicator -->
+            <div class="progress-bar">
+                <div class="progress-step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Mounting</div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Power</div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Modules</div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+
+            <!-- Step 1: Mounting Type -->
+            <div class="wizard-step active" id="step-1">
+                <h2>Step 1: Where is this unit being installed?</h2>
+                <div class="option-grid">
+                    <label class="option-card">
+                        <input type="radio" name="mounting" value="wall">
+                        <div class="option-content">
+                            <div class="option-icon">🏠</div>
+                            <div class="option-title">Wall Mount</div>
+                            <div class="option-description">Standard wall installation with full module support</div>
+                        </div>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="mounting" value="ceiling">
+                        <div class="option-content">
+                            <div class="option-icon">🔲</div>
+                            <div class="option-title">Ceiling Mount</div>
+                            <div class="option-description">Ceiling installation (Fan Module not available)</div>
+                        </div>
+                    </label>
+                </div>
+                <div class="wizard-actions">
+                    <button class="btn btn-primary btn-next" onclick="nextStep()" disabled>Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Power Option -->
+            <div class="wizard-step" id="step-2">
+                <h2>Step 2: Select Power Option</h2>
+                <div class="option-grid">
+                    <label class="option-card">
+                        <input type="radio" name="power" value="usb">
+                        <div class="option-content">
+                            <div class="option-icon">🔌</div>
+                            <div class="option-title">USB Power</div>
+                            <div class="option-description">Standard USB-C power connection</div>
+                        </div>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="power" value="poe">
+                        <div class="option-content">
+                            <div class="option-icon">🌐</div>
+                            <div class="option-title">POE Module</div>
+                            <div class="option-description">Power over Ethernet module</div>
+                        </div>
+                    </label>
+                    <label class="option-card">
+                        <input type="radio" name="power" value="pwr">
+                        <div class="option-content">
+                            <div class="option-icon">⚡</div>
+                            <div class="option-title">PWR Module</div>
+                            <div class="option-description">External power module</div>
+                        </div>
+                    </label>
+                </div>
+                <div class="wizard-actions">
+                    <button class="btn btn-secondary" onclick="previousStep()">Back</button>
+                    <button class="btn btn-primary btn-next" onclick="nextStep()" disabled>Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Expansion Modules -->
+            <div class="wizard-step" id="step-3">
+                <h2>Step 3: Add Expansion Modules</h2>
+                
+                <!-- AirIQ Module -->
+                <div class="module-section">
+                    <h3>AirIQ Module</h3>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="radio" name="airiq" value="none" checked>
+                            <div class="option-content">
+                                <div class="option-title">None</div>
+                                <div class="option-description">No AirIQ module</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="airiq" value="base">
+                            <div class="option-content">
+                                <div class="option-title">Base</div>
+                                <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="airiq" value="pro">
+                            <div class="option-content">
+                                <div class="option-title">Pro</div>
+                                <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Presence Module -->
+                <div class="module-section">
+                    <h3>Presence Module</h3>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="radio" name="presence" value="none" checked>
+                            <div class="option-content">
+                                <div class="option-title">None</div>
+                                <div class="option-description">No Presence module</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="presence" value="base">
+                            <div class="option-content">
+                                <div class="option-title">Base</div>
+                                <div class="option-description">SEN0609 mmWave sensor</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="presence" value="pro">
+                            <div class="option-content">
+                                <div class="option-title">Pro</div>
+                                <div class="option-description">SEN0609 + LD2450 radar</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Comfort Module -->
+                <div class="module-section">
+                    <h3>Comfort Module</h3>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="radio" name="comfort" value="none" checked>
+                            <div class="option-content">
+                                <div class="option-title">None</div>
+                                <div class="option-description">No Comfort module</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="comfort" value="base">
+                            <div class="option-content">
+                                <div class="option-title">Base</div>
+                                <div class="option-description">SHT40 + LTR-303 sensors</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Fan Module (only for wall mount) -->
+                <div class="module-section" id="fan-module-section">
+                    <h3>Fan Module</h3>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="radio" name="fan" value="none" checked>
+                            <div class="option-content">
+                                <div class="option-title">None</div>
+                                <div class="option-description">No Fan module</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="fan" value="pwm">
+                            <div class="option-content">
+                                <div class="option-title">PWM</div>
+                                <div class="option-description">Variable speed fan control</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="fan" value="analog">
+                            <div class="option-content">
+                                <div class="option-title">Analog</div>
+                                <div class="option-description">0-10V analog fan control</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="wizard-actions">
+                    <button class="btn btn-secondary" onclick="previousStep()">Back</button>
+                    <button class="btn btn-primary btn-next" onclick="nextStep()">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Review & Download -->
+            <div class="wizard-step" id="step-4">
+                <h2>Step 4: Review & Download</h2>
+                
+                <div class="configuration-summary">
+                    <h3>Your Configuration</h3>
+                    <div id="config-summary">
+                        <!-- Summary will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="firmware-section">
+                    <h3>Compatible Firmware</h3>
+                    <div id="compatible-firmware">
+                        <!-- Compatible firmware will be shown here -->
+                    </div>
+                </div>
+
+                <div class="wizard-actions">
+                    <button class="btn btn-secondary" onclick="previousStep()">Back</button>
+                    <button class="btn btn-primary" id="download-btn" disabled>Download Firmware</button>
+                </div>
+            </div>
+        </div>
 
         <div class="browser-check">
             <div class="browser-warning" id="browser-warning" style="display: none;">
                 <h3>⚠️ Browser Not Supported</h3>
                 <p>This installer requires Chrome or Edge browser with Web Serial API support.</p>
-                <p>Please use Chrome or Edge to continue.</p>
             </div>
         </div>
-
-        <div class="firmware-info" id="firmware-info">
-            <h2>Available Firmware</h2>
-            
-            <!-- Advanced Filters -->
-            <div class="filter-section">
-                <div class="filter-row">
-                    <div class="filter-controls">
-                        <label for="device-filter">Device Type:</label>
-                        <select id="device-filter" onchange="filterFirmware()">
-                            <option value="">All Devices</option>
-                        </select>
-                    </div>
-                    <div class="filter-controls">
-                        <label for="variant-filter">Variant:</label>
-                        <select id="variant-filter" onchange="filterFirmware()">
-                            <option value="">All Variants</option>
-                        </select>
-                    </div>
-                    <div class="search-controls">
-                        <label for="search-input">Search:</label>
-                        <input type="text" id="search-input" placeholder="Search firmware..." onkeyup="filterFirmware()">
-                    </div>
-                </div>
-                <div class="filter-row">
-                    <div class="sensor-filters">
-                        <label>Addon Sensors:</label>
-                        <div id="addon-sensors-filter" class="sensor-checkboxes"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="firmware-details" id="firmware-details">
-                <p>Loading firmware information...</p>
-            </div>
-        </div>
-
-        <div class="installation-section" id="installation-section">
-            <div class="install-button-container">
-                <esp-web-install-button id="main-installer" manifest="manifest.json">
-                    <button slot="activate" class="install-button" disabled>
-                        Select Firmware to Install
-                    </button>
-                    <span slot="unsupported">
-                        <div class="unsupported-message">
-                            <h3>Web Serial API Not Supported</h3>
-                            <p>Your browser doesn't support Web Serial API. Please use Chrome or Edge.</p>
-                        </div>
-                    </span>
-                    <span slot="not-allowed">
-                        <div class="not-allowed-message">
-                            <h3>Connection Not Allowed</h3>
-                            <p>Web Serial API access was denied. Please refresh and try again.</p>
-                        </div>
-                    </span>
-                </esp-web-install-button>
-            </div>
-
-            <div class="installation-steps">
-                <h3>Installation Steps</h3>
-                <ol>
-                    <li>Connect your ESP32 device to your computer via USB</li>
-                    <li>Select the firmware you want to install from the list above</li>
-                    <li>Click "Install Selected Firmware" when ready</li>
-                    <li>Select your device from the popup and wait for completion</li>
-                </ol>
-            </div>
-        </div>
-
-        <div class="features-section">
-            <h2>Firmware Features</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h4>Environmental Monitoring</h4>
-                    <p>Temperature, humidity, air quality, and environmental sensors</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Multi-Chip Support</h4>
-                    <p>Compatible with ESP32, ESP32-S2, ESP32-S3, and ESP32-C3 devices</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Easy Installation</h4>
-                    <p>Browser-based flashing with automatic device detection</p>
-                </div>
-                <div class="feature-card">
-                    <h4>Regular Updates</h4>
-                    <p>Latest firmware versions with new features and bug fixes</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="troubleshooting-section">
-            <h2>Troubleshooting</h2>
-            <div class="troubleshooting-grid">
-                <div class="troubleshooting-item">
-                    <h3>No Firmware Available</h3>
-                    <p>No firmware is currently available for installation. Please check back later.</p>
-                </div>
-                <div class="troubleshooting-item">
-                    <h3>Device Not Detected</h3>
-                    <p>Make sure your device is connected via USB and the correct drivers are installed.</p>
-                </div>
-                <div class="troubleshooting-item">
-                    <h3>Installation Failed</h3>
-                    <p>Try putting your device in download mode by holding the BOOT button while connecting.</p>
-                </div>
-                <div class="troubleshooting-item">
-                    <h3>Connection Issues</h3>
-                    <p>Ensure no other programs are using the serial port. Close Arduino IDE or other serial monitors.</p>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <p>&copy; 2025 Sense360. Built with ESP Web Tools and Firmware Lifecycle Management.</p>
-        </footer>
     </div>
 
     <script>
-        // Check browser compatibility
-        if (!navigator.serial) {
-            document.getElementById('browser-warning').style.display = 'block';
-            document.getElementById('firmware-info').style.display = 'none';
-            document.getElementById('installation-section').style.display = 'none';
+        let currentStep = 1;
+        const totalSteps = 4;
+        const configuration = {
+            mounting: null,
+            power: null,
+            airiq: 'none',
+            presence: 'none',
+            comfort: 'none',
+            fan: 'none'
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check browser compatibility
+            if (!navigator.serial) {
+                document.getElementById('browser-warning').style.display = 'block';
+            }
+
+            // Add event listeners
+            document.querySelectorAll('input[name="mounting"]').forEach(input => {
+                input.addEventListener('change', handleMountingChange);
+            });
+
+            document.querySelectorAll('input[name="power"]').forEach(input => {
+                input.addEventListener('change', handlePowerChange);
+            });
+
+            document.querySelectorAll('input[name="airiq"]').forEach(input => {
+                input.addEventListener('change', updateConfiguration);
+            });
+
+            document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+                input.addEventListener('change', updateConfiguration);
+            });
+
+            document.querySelectorAll('input[name="presence"]').forEach(input => {
+                input.addEventListener('change', updateConfiguration);
+            });
+
+            document.querySelectorAll('input[name="comfort"]').forEach(input => {
+                input.addEventListener('change', updateConfiguration);
+            });
+
+            document.querySelectorAll('input[name="fan"]').forEach(input => {
+                input.addEventListener('change', updateConfiguration);
+            });
+        });
+
+        function handleMountingChange(e) {
+            configuration.mounting = e.target.value;
+            document.querySelector('#step-1 .btn-next').disabled = false;
+
+            // Show/hide fan module based on mounting type
+            if (currentStep === 3) {
+                updateFanModuleVisibility();
+            }
+        }
+
+        function handlePowerChange(e) {
+            configuration.power = e.target.value;
+            document.querySelector('#step-2 .btn-next').disabled = false;
+        }
+
+        function updateFanModuleVisibility() {
+            const fanSection = document.getElementById('fan-module-section');
+            if (configuration.mounting === 'ceiling') {
+                fanSection.style.display = 'none';
+                // Reset fan selection if ceiling mount
+                document.querySelector('input[name="fan"][value="none"]').checked = true;
+                configuration.fan = 'none';
+            } else {
+                fanSection.style.display = 'block';
+            }
+        }
+
+        function updateConfiguration() {
+            // Update AirIQ
+            const airiqValue = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
+            configuration.airiq = airiqValue;
+
+            // Update Presence module
+            configuration.presence = document.querySelector('input[name="presence"]:checked')?.value || 'none';
+
+            // Update Comfort module
+            configuration.comfort = document.querySelector('input[name="comfort"]:checked')?.value || 'none';
+
+            // Update Fan module (only if wall mount)
+            if (configuration.mounting === 'wall') {
+                configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                // Hide current step
+                document.getElementById(`step-${currentStep}`).classList.remove('active');
+                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+                
+                currentStep++;
+                
+                // Show next step
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+
+                // Special handling for step 3
+                if (currentStep === 3) {
+                    updateFanModuleVisibility();
+                }
+
+                // Update summary on final step
+                if (currentStep === 4) {
+                    updateSummary();
+                    findCompatibleFirmware();
+                }
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                // Hide current step
+                document.getElementById(`step-${currentStep}`).classList.remove('active');
+                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
+                
+                currentStep--;
+                
+                // Show previous step
+                document.getElementById(`step-${currentStep}`).classList.add('active');
+                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+            }
+        }
+
+        function updateSummary() {
+            updateConfiguration();
+            
+            let summaryHtml = '<div class="summary-grid">';
+            
+            // Mounting
+            summaryHtml += `
+                <div class="summary-item">
+                    <div class="summary-label">Mounting Type:</div>
+                    <div class="summary-value">${configuration.mounting ? configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1) : 'Not selected'}</div>
+                </div>
+            `;
+            
+            // Power
+            summaryHtml += `
+                <div class="summary-item">
+                    <div class="summary-label">Power Option:</div>
+                    <div class="summary-value">${configuration.power ? configuration.power.toUpperCase() : 'Not selected'}</div>
+                </div>
+            `;
+            
+            // AirIQ
+            if (configuration.airiq !== 'none') {
+                const airiqSensors = {
+                    'base': ['SGP41', 'SCD41', 'MiCS4514', 'BMP390'],
+                    'pro': ['SGP41', 'SCD41', 'MiCS4514', 'BMP390', 'SEN0321', 'SPS30', 'SFA40']
+                };
+                summaryHtml += `
+                    <div class="summary-item">
+                        <div class="summary-label">AirIQ Module:</div>
+                        <div class="summary-value">${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}</div>
+                        <div class="summary-sensors">Includes: ${airiqSensors[configuration.airiq].join(', ')}</div>
+                    </div>
+                `;
+            }
+            
+            // Presence
+            if (configuration.presence !== 'none') {
+                const presenceSensors = {
+                    'base': ['SEN0609 mmWave sensor'],
+                    'pro': ['SEN0609 mmWave sensor', 'LD2450 24GHz radar']
+                };
+                summaryHtml += `
+                    <div class="summary-item">
+                        <div class="summary-label">Presence Module:</div>
+                        <div class="summary-value">${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}</div>
+                        <div class="summary-sensors">Includes: ${presenceSensors[configuration.presence].join(', ')}</div>
+                    </div>
+                `;
+            }
+            
+            // Comfort
+            if (configuration.comfort !== 'none') {
+                summaryHtml += `
+                    <div class="summary-item">
+                        <div class="summary-label">Comfort Module:</div>
+                        <div class="summary-value">${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}</div>
+                        <div class="summary-sensors">Includes: SHT40 (Temperature/Humidity), LTR-303 (Light)</div>
+                    </div>
+                `;
+            }
+            
+            // Fan
+            if (configuration.fan !== 'none') {
+                const fanTypes = {
+                    'pwm': 'Variable speed fan control via PWM',
+                    'analog': '0-10V analog fan control'
+                };
+                summaryHtml += `
+                    <div class="summary-item">
+                        <div class="summary-label">Fan Module:</div>
+                        <div class="summary-value">${configuration.fan.toUpperCase()}</div>
+                        <div class="summary-sensors">${fanTypes[configuration.fan]}</div>
+                    </div>
+                `;
+            }
+            
+            summaryHtml += '</div>';
+            document.getElementById('config-summary').innerHTML = summaryHtml;
+        }
+
+        async function findCompatibleFirmware() {
+            // Generate firmware filename based on configuration
+            let firmwareName = 'Sense360';
+            
+            // Add mounting type
+            firmwareName += `-${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
+            
+            // Add power option
+            firmwareName += `-${configuration.power.toUpperCase()}`;
+            
+            // Add modules
+            if (configuration.airiq !== 'none') {
+                firmwareName += `-AirIQ${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}`;
+            }
+            
+            if (configuration.presence !== 'none') {
+                firmwareName += `-Presence${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}`;
+            }
+            
+            if (configuration.comfort !== 'none') {
+                firmwareName += `-Comfort${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}`;
+            }
+            
+            if (configuration.fan !== 'none') {
+                firmwareName += `-Fan${configuration.fan.toUpperCase()}`;
+            }
+            
+            // For now, show a placeholder
+            const firmwareHtml = `
+                <div class="firmware-item">
+                    <div class="firmware-name">${firmwareName}-v1.0.0-stable.bin</div>
+                    <div class="firmware-details">
+                        <span class="firmware-size">1.2 MB</span>
+                        <span class="firmware-date">2025-07-25</span>
+                    </div>
+                    <esp-web-install-button manifest="manifests/${firmwareName}.json">
+                        <button slot="activate" class="btn btn-primary">
+                            Install Firmware
+                        </button>
+                    </esp-web-install-button>
+                </div>
+            `;
+            
+            document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
+            document.getElementById('download-btn').disabled = false;
         }
     </script>
 </body>

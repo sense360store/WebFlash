@@ -37,56 +37,99 @@ class GitHubPagesAutomation:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {message}")
     
-    def extract_metadata_from_path(self, file_path: Path) -> dict:
-        """Extract metadata from Model/Variant directory structure and filename."""
-        parts = file_path.parts
+    def extract_metadata_from_path(self, file_path: Path) -> dict | None:
+        """Extract metadata from configuration-based firmware filename."""
+        # New configuration-based structure: firmware/configurations/Sense360-{Config}-v{Version}-{Channel}.bin
+        # Where {Config} can be: Wall-USB-AirIQBase-Presence-Comfort-FanPWM
         
-        # Expected structure: firmware/{Model}/{Variant}/{filename}
-        if len(parts) < 4:
-            return None
-        
-        model = parts[-3]        # Model name (e.g., "Sense360-MS")
-        variant = parts[-2]      # Variant name (e.g., "Standard")
-        filename = file_path.name
-        
-        # Parse filename: {Model}-{Variant}-[sensor-addon-]v{Version}-{Channel}.bin
-        # Handle both standard and sensor-specific variants
-        expected_prefix = f"{model}-{variant}-"
-        if not filename.startswith(expected_prefix):
-            return None
+        if 'configurations' in str(file_path):
+            # Configuration-based structure
+            filename = file_path.stem  # filename without extension
             
-        # Extract everything after the model-variant prefix
-        name_part = filename[len(expected_prefix):]
-        if name_part.endswith('.bin'):
-            name_part = name_part[:-4]
-        elif name_part.endswith('.md'):
-            name_part = name_part[:-3]
-        
-        # Check if this is a sensor-specific variant
-        sensor_addon = None
-        if name_part.startswith('sen55-hlk2450-v'):
-            sensor_addon = 'sen55-hlk2450'
-            name_part = name_part[len('sen55-hlk2450-v'):]  # Remove sensor addon prefix
-        elif name_part.startswith('v'):
-            name_part = name_part[1:]  # Remove 'v' prefix
+            # Configuration-based pattern
+            pattern = r'Sense360-(.+)-v([0-9.]+)-(stable|beta|alpha)'
+            match = re.match(pattern, filename)
+            
+            if match:
+                config_string, version, channel = match.groups()
+                
+                # Parse configuration string
+                config_parts = config_string.split('-')
+                metadata = {
+                    'mounting': None,
+                    'power': None,
+                    'modules': [],
+                    'version': version,
+                    'channel': channel,
+                    'config_string': config_string,
+                    'is_configuration': True
+                }
+                
+                # First part should be mounting (Wall/Ceiling)
+                if config_parts and config_parts[0] in ['Wall', 'Ceiling']:
+                    metadata['mounting'] = config_parts[0]
+                    config_parts.pop(0)
+                
+                # Second part should be power (USB/POE/PWR)
+                if config_parts and config_parts[0] in ['USB', 'POE', 'PWR']:
+                    metadata['power'] = config_parts[0]
+                    config_parts.pop(0)
+                
+                # Remaining parts are modules
+                metadata['modules'] = config_parts
+                
+                return metadata
         else:
-            return None
-        
-        # Split by hyphens to get version-channel
-        parts = name_part.split('-')
-        if len(parts) < 2:
-            return None
-        
-        version = parts[0]  # Version (e.g., "1.0.0")
-        channel = parts[1]  # Channel (e.g., "stable")
-        
-        return {
-            'model': model,
-            'variant': variant,
-            'sensor_addon': sensor_addon,
-            'version': version,
-            'channel': channel
-        }
+            # Legacy Model/Variant structure
+            parts = file_path.parts
+            
+            # Expected structure: firmware/{Model}/{Variant}/{filename}
+            if len(parts) < 4:
+                return None
+            
+            model = parts[-3]        # Model name (e.g., "Sense360-MS")
+            variant = parts[-2]      # Variant name (e.g., "Standard")
+            filename = file_path.name
+            
+            # Parse filename: {Model}-{Variant}-[sensor-addon-]v{Version}-{Channel}.bin
+            # Handle both standard and sensor-specific variants
+            expected_prefix = f"{model}-{variant}-"
+            if not filename.startswith(expected_prefix):
+                return None
+                
+            # Extract everything after the model-variant prefix
+            name_part = filename[len(expected_prefix):]
+            if name_part.endswith('.bin'):
+                name_part = name_part[:-4]
+            elif name_part.endswith('.md'):
+                name_part = name_part[:-3]
+            
+            # Check if this is a sensor-specific variant
+            sensor_addon = None
+            if name_part.startswith('sen55-hlk2450-v'):
+                sensor_addon = 'sen55-hlk2450'
+                name_part = name_part[len('sen55-hlk2450-v'):]  # Remove sensor addon prefix
+            elif name_part.startswith('v'):
+                name_part = name_part[1:]  # Remove 'v' prefix
+            else:
+                return None
+            
+            # Split by hyphens to get version-channel
+            parts = name_part.split('-')
+            if len(parts) < 2:
+                return None
+            
+            version = parts[0]  # Version (e.g., "1.0.0")
+            channel = parts[1]  # Channel (e.g., "stable")
+            
+            return {
+                'model': model,
+                'variant': variant,
+                'sensor_addon': sensor_addon,
+                'version': version,
+                'channel': channel,
+                'is_configuration': False
+            }
     
     def get_chip_family_mapping(self, chip_family: str) -> str:
         """Map chip family to ESP Web Tools format."""
@@ -100,7 +143,62 @@ class GitHubPagesAutomation:
         }
         return mapping.get(chip_family, chip_family)
     
-    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str, sensor_addon: str = None) -> dict:
+    def get_configuration_metadata_from_release_notes(self, config_string: str, version: str, channel: str) -> dict:
+        """Get firmware metadata from configuration-based release notes file."""
+        # Create release notes filename
+        version_with_v = version if version.startswith('v') else f"v{version}"
+        release_notes_filename = f"Sense360-{config_string}-{version_with_v}-{channel}.md"
+        release_notes_path = self.firmware_dir / "configurations" / release_notes_filename
+        
+        # Default metadata for configuration-based firmware
+        metadata = {
+            'description': f'{channel.title()} firmware for Sense360 {config_string} configuration',
+            'config_string': config_string,
+            'chip_family': 'ESP32-S3',
+            'version': version,
+            'channel': channel,
+            'features': [],
+            'hardware_requirements': ['ESP32-S3 WROOM Core Module'],
+            'known_issues': [],
+            'changelog': []
+        }
+        
+        if not release_notes_path.exists():
+            self.log(f"⚠️  No release notes found for {release_notes_filename}, using defaults")
+            return metadata
+        
+        # Parse release notes for additional metadata
+        try:
+            content = release_notes_path.read_text()
+            
+            # Extract configuration details
+            if 'Mounting Type' in content:
+                mounting_match = re.search(r'\*\*Mounting Type\*\*:\s*(\w+)', content)
+                if mounting_match:
+                    metadata['mounting'] = mounting_match.group(1)
+            
+            if 'Power Option' in content:
+                power_match = re.search(r'\*\*Power Option\*\*:\s*(\w+)', content)
+                if power_match:
+                    metadata['power'] = power_match.group(1)
+            
+            if 'Expansion Modules' in content:
+                modules_match = re.search(r'\*\*Expansion Modules\*\*:\s*(.+)', content)
+                if modules_match:
+                    metadata['modules'] = modules_match.group(1)
+            
+            if 'Description' in content:
+                desc_match = re.search(r'## Description\s*\n(.*?)\n\n', content, re.DOTALL)
+                if desc_match:
+                    metadata['description'] = desc_match.group(1).strip()
+            
+            self.log(f"✓ Loaded release notes for {config_string}")
+        except Exception as e:
+            self.log(f"⚠️  Error parsing release notes: {e}")
+        
+        return metadata
+    
+    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str, sensor_addon: str | None = None) -> dict:
         """Get firmware metadata from release notes file."""
         # Create release notes filename (ensure version has 'v' prefix)
         version_with_v = version if version.startswith('v') else f"v{version}"
@@ -111,9 +209,9 @@ class GitHubPagesAutomation:
         # Look for release notes in the Model/Variant directory
         release_notes_path = self.firmware_dir / model / variant / release_notes_filename
         
-        # Default metadata
+        # Default metadata for modular platform
         metadata = {
-            'description': f'{channel.title()} firmware release for {model} {variant} devices',
+            'description': f'{channel.title()} firmware release for {model} {variant} with Core Module support',
             'model': model,
             'variant': variant,
             'builtin_sensors': ['Temperature', 'Humidity'],
@@ -158,7 +256,8 @@ class GitHubPagesAutomation:
                     sensors = [s.strip() for s in builtin_match.group(1).split(',')]
                     metadata['builtin_sensors'] = sensors
                 
-                addon_match = re.search(r'[*\-\s]*Addon Sensors[*\s]*:\s*(.+)', device_info)
+                # Support both legacy "Addon Sensors" and new "Expansion Modules" terminology
+                addon_match = re.search(r'[*\-\s]*(?:Addon Sensors|Expansion Modules)[*\s]*:\s*(.+)', device_info)
                 if addon_match:
                     addon_text = addon_match.group(1).strip()
                     if addon_text.lower() != 'none':
@@ -271,7 +370,7 @@ class GitHubPagesAutomation:
             self.log(f"ERROR: Failed to clean up orphaned manifests: {e}")
             return False
     
-    def get_build_date(self, file_path: Path, release_metadata: dict = None) -> str:
+    def get_build_date(self, file_path: Path, release_metadata: dict | None = None) -> str:
         """Get build date from release notes, git commit, or file modification time."""
         # First priority: Release Date from .md file
         if release_metadata and 'release_date' in release_metadata:
@@ -317,56 +416,90 @@ class GitHubPagesAutomation:
                 # Create relative path for GitHub Pages
                 relative_path = str(bin_file.relative_to(Path('.')))
                 
-                # Get release notes metadata
-                release_metadata = self.get_firmware_metadata_from_release_notes(
-                    metadata['model'], 
-                    metadata['variant'], 
-                    metadata['version'], 
-                    metadata['channel'],
-                    metadata.get('sensor_addon')
-                )
-                
-                # Create variant display name
-                variant_display = metadata['variant']
-                if metadata.get('sensor_addon'):
-                    variant_display = f"{metadata['variant']}-{metadata['sensor_addon']}"
-                
-                build = {
-                    "model": metadata['model'],
-                    "variant": variant_display,
-                    "device_type": release_metadata.get('device_type', metadata['model']),
-                    "version": metadata['version'],
-                    "channel": metadata['channel'],
-                    "description": release_metadata['description'],
-                    "chipFamily": self.get_chip_family_mapping(release_metadata.get('chip_family', 'ESP32-S3')),
-                    "builtin_sensors": release_metadata.get('builtin_sensors', []),
-                    "addon_sensors": release_metadata.get('addon_sensors', []),
-                    "sensor_addon": metadata.get('sensor_addon'),
-                    "parts": [{
-                        "path": relative_path,
-                        "offset": 0
-                    }],
-                    "build_date": self.get_build_date(bin_file, release_metadata),
-                    "file_size": bin_file.stat().st_size,
-                    "improv": True,
-                    "features": release_metadata['features'][:5] if release_metadata['features'] else [],  # Limit to first 5 features
-                    "hardware_requirements": release_metadata['hardware_requirements'][:3] if release_metadata['hardware_requirements'] else [],  # Limit to first 3 requirements
-                    "known_issues": release_metadata['known_issues'][:3] if release_metadata['known_issues'] else [],  # Limit to first 3 issues
-                    "changelog": release_metadata['changelog'][:5] if release_metadata['changelog'] else []  # Limit to first 5 changelog items
-                }
+                if metadata.get('is_configuration'):
+                    # Configuration-based firmware
+                    release_metadata = self.get_configuration_metadata_from_release_notes(
+                        metadata['config_string'], 
+                        metadata['version'], 
+                        metadata['channel']
+                    )
+                    
+                    build = {
+                        "config_string": metadata['config_string'],
+                        "mounting": metadata.get('mounting', 'Unknown'),
+                        "power": metadata.get('power', 'Unknown'),
+                        "modules": metadata.get('modules', []),
+                        "device_type": "Core Module",
+                        "version": metadata['version'],
+                        "channel": metadata['channel'],
+                        "description": release_metadata['description'],
+                        "chipFamily": self.get_chip_family_mapping(release_metadata.get('chip_family', 'ESP32-S3')),
+                        "parts": [{
+                            "path": relative_path,
+                            "offset": 0
+                        }],
+                        "build_date": self.get_build_date(bin_file, release_metadata),
+                        "file_size": bin_file.stat().st_size,
+                        "improv": True,
+                        "features": release_metadata.get('features', [])[:5],
+                        "hardware_requirements": release_metadata.get('hardware_requirements', [])[:3],
+                        "known_issues": release_metadata.get('known_issues', [])[:3],
+                        "changelog": release_metadata.get('changelog', [])[:5]
+                    }
+                    
+                    self.log(f"📦 Found configuration: {bin_file.name} - {metadata['config_string']} v{metadata['version']}")
+                else:
+                    # Legacy Model/Variant structure
+                    release_metadata = self.get_firmware_metadata_from_release_notes(
+                        metadata['model'], 
+                        metadata['variant'], 
+                        metadata['version'], 
+                        metadata['channel'],
+                        metadata.get('sensor_addon')
+                    )
+                    
+                    # Create variant display name
+                    variant_display = metadata['variant']
+                    if metadata.get('sensor_addon'):
+                        variant_display = f"{metadata['variant']}-{metadata['sensor_addon']}"
+                    
+                    build = {
+                        "model": metadata['model'],
+                        "variant": variant_display,
+                        "device_type": release_metadata.get('device_type', metadata['model']),
+                        "version": metadata['version'],
+                        "channel": metadata['channel'],
+                        "description": release_metadata['description'],
+                        "chipFamily": self.get_chip_family_mapping(release_metadata.get('chip_family', 'ESP32-S3')),
+                        "builtin_sensors": release_metadata.get('builtin_sensors', []),
+                        "addon_sensors": release_metadata.get('addon_sensors', []),
+                        "sensor_addon": metadata.get('sensor_addon'),
+                        "parts": [{
+                            "path": relative_path,
+                            "offset": 0
+                        }],
+                        "build_date": self.get_build_date(bin_file, release_metadata),
+                        "file_size": bin_file.stat().st_size,
+                        "improv": True,
+                        "features": release_metadata['features'][:5] if release_metadata['features'] else [],
+                        "hardware_requirements": release_metadata['hardware_requirements'][:3] if release_metadata['hardware_requirements'] else [],
+                        "known_issues": release_metadata['known_issues'][:3] if release_metadata['known_issues'] else [],
+                        "changelog": release_metadata['changelog'][:5] if release_metadata['changelog'] else []
+                    }
+                    
+                    self.log(f"📦 Found legacy: {bin_file.name} - {metadata['model']} {metadata['variant']} v{metadata['version']}")
                 
                 builds.append(build)
-                self.log(f"📦 Found: {bin_file.name} - {metadata['model']} {metadata['variant']} v{metadata['version']}")
         
-        # Sort by model, then variant, then version
-        builds.sort(key=lambda x: (x['model'], x['variant'], x['version']))
+        # Sort by version and configuration
+        builds.sort(key=lambda x: (x.get('config_string', x.get('model', '')), x['version']))
         return builds
     
     def create_main_manifest(self, builds: list) -> bool:
         """Create main manifest.json file."""
         try:
             manifest = {
-                "name": "Sense360 ESP32 Firmware",
+                "name": "Sense360 Modular Platform Firmware",
                 "version": "1.0.0",
                 "home_assistant_domain": "esphome",
                 "new_install_skip_erase": False,

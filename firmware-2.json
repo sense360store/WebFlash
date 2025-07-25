@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin",
           "offset": 0
         }
       ],

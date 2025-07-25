@@ -1,25 +1,53 @@
 {
-  "name": "Sense360 ESP32 Firmware",
+  "name": "Sense360 Modular Platform Firmware",
   "version": "1.0.0",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
     {
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "device_type": "Multi Sensor AQI",
+      "config_string": "Ceiling-PWR-AirIQPro-Presence-Comfort",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQPro",
+        "Presence",
+        "Comfort"
+      ],
+      "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Initial release with basic CO2 monitoring capabilities",
+      "description": "Ceiling-mounted Sense360 with external power module and complete sensor suite including AirIQ Pro, dual presence detection, and comfort sensors.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQPro-Presence-Comfort-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-25T08:28:00.429940",
+      "file_size": 18,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [
+        "ESP32-S3 WROOM Core Module"
+      ],
+      "known_issues": [],
+      "changelog": []
+    },
+    {
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Core Module firmware for the Sense360 modular ESP32-S3 platform with essential environmental monitoring. Designed for Home Assistant integration with standardized expansion headers.",
       "chipFamily": "ESP32-S3",
       "builtin_sensors": [
         "LTR303",
         "SCD40",
         "SHT30"
       ],
-      "addon_sensors": [
-        "Chip Family: ESP32-S3"
-      ],
+      "addon_sensors": [],
       "sensor_addon": null,
       "parts": [
         {
@@ -28,19 +56,13 @@
         }
       ],
       "build_date": "2025-07-13",
-      "file_size": 1073600,
+      "file_size": 97,
       "improv": true,
-      "features": [
-        "Basic CO2 level monitoring",
-        "Temperature and humidity sensing",
-        "Wi-Fi connectivity with Improv setup",
-        "Web dashboard for real-time monitoring",
-        "MQTT integration for Home Assistant"
-      ],
+      "features": [],
       "hardware_requirements": [
         "ESP32-S3 development board",
-        "CO2 sensor (MH-Z19B or similar)",
-        "Temperature/humidity sensor (DHT22)"
+        "LTR303 light sensor",
+        "SCD40 CO2 sensor"
       ],
       "known_issues": [
         "CO2 sensor requires 3-minute warm-up period",
@@ -51,10 +73,10 @@
     {
       "model": "Sense360-MS",
       "variant": "Standard-sen55-hlk2450",
-      "device_type": "Multi Sensor AQI",
+      "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Complete firmware release for the Sense360-MS multi-sensor air quality monitor including all core sensors plus Sen55x particulate matter sensor and HLK2450 radar presence detection.",
+      "description": "Core Module firmware with AirIQ and Presence expansion modules. Features ESP32-S3 Core Module with AirIQ Module (Sen55x air quality) and Presence Module (HLK2450 radar) support for DIY-friendly Home Assistant integration.",
       "chipFamily": "ESP32-S3",
       "builtin_sensors": [
         "LTR303",
@@ -73,7 +95,7 @@
         }
       ],
       "build_date": "2025-07-13",
-      "file_size": 1073600,
+      "file_size": 121,
       "improv": true,
       "features": [],
       "hardware_requirements": [
@@ -86,6 +108,60 @@
         "Sen55x sensor requires 30-second initialization",
         "HLK2450 sensor requires 10-second calibration"
       ],
+      "changelog": []
+    },
+    {
+      "config_string": "Wall-POE-AirIQBase",
+      "mounting": "Wall",
+      "power": "POE",
+      "modules": [
+        "AirIQBase"
+      ],
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Wall-mounted Sense360 with Power over Ethernet and AirIQ Base module for comprehensive air quality monitoring.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-POE-AirIQBase-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-25T08:27:47.842941",
+      "file_size": 18,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [
+        "ESP32-S3 WROOM Core Module"
+      ],
+      "known_issues": [],
+      "changelog": []
+    },
+    {
+      "config_string": "Wall-USB",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": [],
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Base firmware for Sense360 wall-mounted units with USB power. This is the minimal configuration with no expansion modules.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.bin",
+          "offset": 0
+        }
+      ],
+      "build_date": "2025-07-25T08:27:39.328941",
+      "file_size": 18,
+      "improv": true,
+      "features": [],
+      "hardware_requirements": [
+        "ESP32-S3 WROOM Core Module"
+      ],
+      "known_issues": [],
       "changelog": []
     }
   ]
