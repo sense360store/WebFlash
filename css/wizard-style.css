@@ -427,6 +427,82 @@ h1 {
     color: #5f6368;
 }
 
+/* Release notes styles */
+.firmware-info {
+    flex: 1;
+}
+
+.release-notes-link {
+    color: #1a73e8;
+    text-decoration: none;
+    font-size: 14px;
+    margin-left: 16px;
+}
+
+.release-notes-link:hover {
+    text-decoration: underline;
+}
+
+.release-notes-section {
+    background-color: #f8f9fa;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 24px;
+    margin-top: 16px;
+}
+
+.release-notes-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #202124;
+}
+
+.release-notes-content h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: #202124;
+}
+
+.release-notes-content h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    color: #202124;
+}
+
+.release-notes-content h4 {
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    color: #202124;
+}
+
+.release-notes-content ul {
+    margin: 8px 0;
+    padding-left: 24px;
+}
+
+.release-notes-content li {
+    margin: 4px 0;
+}
+
+.release-notes-content .loading {
+    text-align: center;
+    color: #5f6368;
+    padding: 20px;
+}
+
+.release-notes-content .no-notes,
+.release-notes-content .error {
+    text-align: center;
+    color: #5f6368;
+    padding: 20px;
+    font-style: italic;
+}
+
 /* Browser Warning */
 .browser-warning {
     background: #fef7e0;
