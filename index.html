@@ -236,7 +236,7 @@
 
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
-                    <button class="btn btn-primary" id="download-btn" disabled>Download Firmware</button>
+                    <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
                 </div>
             </div>
         </div>
@@ -505,19 +505,31 @@
                 }
                 
                 if (matchingFirmware) {
+                    // Store firmware info globally
+                    window.currentFirmware = matchingFirmware;
+                    window.currentConfigString = configString;
+                    
                     // Firmware exists - show install option
                     const firmwareHtml = `
                         <div class="firmware-item">
-                            <div class="firmware-name">Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin</div>
-                            <div class="firmware-details">
-                                <span class="firmware-size">${(matchingFirmware.file_size / 1024).toFixed(1)} KB</span>
-                                <span class="firmware-date">${new Date(matchingFirmware.build_date).toLocaleDateString()}</span>
+                            <div class="firmware-info">
+                                <div class="firmware-name">Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin</div>
+                                <div class="firmware-details">
+                                    <span class="firmware-size">${(matchingFirmware.file_size / 1024).toFixed(1)} KB</span>
+                                    <span class="firmware-date">${new Date(matchingFirmware.build_date).toLocaleDateString()}</span>
+                                    <a href="#" class="release-notes-link" onclick="toggleReleaseNotes(event)">View Release Notes</a>
+                                </div>
                             </div>
                             <esp-web-install-button manifest="firmware-${manifest.builds.indexOf(matchingFirmware)}.json">
                                 <button slot="activate" class="btn btn-primary">
                                     Install Firmware
                                 </button>
                             </esp-web-install-button>
+                        </div>
+                        <div class="release-notes-section" id="release-notes" style="display: none;">
+                            <div class="release-notes-content">
+                                <div class="loading">Loading release notes...</div>
+                            </div>
                         </div>
                     `;
                     document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
@@ -545,6 +557,81 @@
                 `;
                 document.getElementById('compatible-firmware').innerHTML = errorHtml;
                 document.getElementById('download-btn').disabled = true;
+            }
+        }
+        
+        async function toggleReleaseNotes(event) {
+            event.preventDefault();
+            const notesSection = document.getElementById('release-notes');
+            const link = event.target;
+            
+            if (notesSection.style.display === 'none') {
+                notesSection.style.display = 'block';
+                link.textContent = 'Hide Release Notes';
+                
+                // Load release notes if not already loaded
+                if (notesSection.querySelector('.loading')) {
+                    await loadReleaseNotes();
+                }
+            } else {
+                notesSection.style.display = 'none';
+                link.textContent = 'View Release Notes';
+            }
+        }
+        
+        async function loadReleaseNotes() {
+            const notesSection = document.getElementById('release-notes');
+            const configString = window.currentConfigString;
+            const firmware = window.currentFirmware;
+            
+            try {
+                // Try to load release notes file
+                const notesPath = `firmware/configurations/Sense360-${configString}-v${firmware.version}-${firmware.channel}.md`;
+                const response = await fetch(notesPath);
+                
+                if (response.ok) {
+                    const markdown = await response.text();
+                    // Simple markdown to HTML conversion for basic formatting
+                    const html = markdown
+                        .replace(/^### (.*$)/gim, '<h4>$1</h4>')
+                        .replace(/^## (.*$)/gim, '<h3>$1</h3>')
+                        .replace(/^# (.*$)/gim, '<h2>$1</h2>')
+                        .replace(/^\* (.*$)/gim, '<li>$1</li>')
+                        .replace(/\n\n/g, '</p><p>')
+                        .replace(/^/g, '<p>')
+                        .replace(/$/g, '</p>')
+                        .replace(/<p><h/g, '<h')
+                        .replace(/<\/h\d><\/p>/g, '</h$1>')
+                        .replace(/<p><li>/g, '<ul><li>')
+                        .replace(/<\/li><\/p>/g, '</li></ul>');
+                    
+                    notesSection.querySelector('.release-notes-content').innerHTML = html;
+                } else {
+                    notesSection.querySelector('.release-notes-content').innerHTML = `
+                        <p class="no-notes">No release notes available for this firmware version.</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading release notes:', error);
+                notesSection.querySelector('.release-notes-content').innerHTML = `
+                    <p class="error">Unable to load release notes.</p>
+                `;
+            }
+        }
+        
+        function downloadFirmware() {
+            if (window.currentFirmware && window.currentConfigString) {
+                const firmware = window.currentFirmware;
+                const configString = window.currentConfigString;
+                const firmwarePath = firmware.parts[0].path;
+                
+                // Create a link element and trigger download
+                const link = document.createElement('a');
+                link.href = firmwarePath;
+                link.download = `Sense360-${configString}-v${firmware.version}-${firmware.channel}.bin`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         }
     </script>
