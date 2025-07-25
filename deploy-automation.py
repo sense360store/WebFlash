@@ -24,6 +24,7 @@ from pathlib import Path
 from datetime import datetime
 import subprocess
 import re
+from typing import Optional, Dict, List
 
 class GitHubPagesAutomation:
     def __init__(self, local_mode: bool = False):
@@ -37,7 +38,7 @@ class GitHubPagesAutomation:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {message}")
     
-    def extract_metadata_from_path(self, file_path: Path) -> dict | None:
+    def extract_metadata_from_path(self, file_path: Path) -> Optional[Dict]:
         """Extract metadata from configuration-based firmware filename."""
         # New configuration-based structure: firmware/configurations/Sense360-{Config}-v{Version}-{Channel}.bin
         # Where {Config} can be: Wall-USB-AirIQBase-Presence-Comfort-FanPWM
@@ -198,7 +199,7 @@ class GitHubPagesAutomation:
         
         return metadata
     
-    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str, sensor_addon: str | None = None) -> dict:
+    def get_firmware_metadata_from_release_notes(self, model: str, variant: str, version: str, channel: str, sensor_addon: Optional[str] = None) -> dict:
         """Get firmware metadata from release notes file."""
         # Create release notes filename (ensure version has 'v' prefix)
         version_with_v = version if version.startswith('v') else f"v{version}"
@@ -370,7 +371,7 @@ class GitHubPagesAutomation:
             self.log(f"ERROR: Failed to clean up orphaned manifests: {e}")
             return False
     
-    def get_build_date(self, file_path: Path, release_metadata: dict | None = None) -> str:
+    def get_build_date(self, file_path: Path, release_metadata: Optional[Dict] = None) -> str:
         """Get build date from release notes, git commit, or file modification time."""
         # First priority: Release Date from .md file
         if release_metadata and 'release_date' in release_metadata:
