@@ -174,7 +174,7 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-USB-AirIQPro configuration",
+      "description": "Base firmware for Sense360 wall-mounted units with USB power. This is the minimal configuration with no expansion modules.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
