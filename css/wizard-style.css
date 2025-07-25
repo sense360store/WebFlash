@@ -385,6 +385,48 @@ h1 {
     color: #5f6368;
 }
 
+/* Firmware not available styles */
+.firmware-not-available,
+.firmware-error {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 24px;
+    text-align: center;
+}
+
+.firmware-not-available h4,
+.firmware-error h4 {
+    color: #856404;
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.firmware-not-available p,
+.firmware-error p {
+    color: #856404;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.config-string {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    background-color: #fff;
+    padding: 12px 16px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 16px 0;
+    border: 1px solid #e0e0e0;
+}
+
+.help-text {
+    font-size: 14px;
+    margin-top: 16px;
+    color: #5f6368;
+}
+
 /* Browser Warning */
 .browser-warning {
     background: #fef7e0;
