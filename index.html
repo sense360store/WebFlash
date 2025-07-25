@@ -464,49 +464,88 @@
 
         async function findCompatibleFirmware() {
             // Generate firmware filename based on configuration
-            let firmwareName = 'Sense360';
+            let configString = '';
             
             // Add mounting type
-            firmwareName += `-${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
+            configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
             
             // Add power option
-            firmwareName += `-${configuration.power.toUpperCase()}`;
+            configString += `-${configuration.power.toUpperCase()}`;
             
             // Add modules
             if (configuration.airiq !== 'none') {
-                firmwareName += `-AirIQ${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}`;
+                configString += `-AirIQ${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}`;
             }
             
             if (configuration.presence !== 'none') {
-                firmwareName += `-Presence${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}`;
+                configString += `-Presence${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}`;
             }
             
             if (configuration.comfort !== 'none') {
-                firmwareName += `-Comfort${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}`;
+                configString += `-Comfort${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}`;
             }
             
             if (configuration.fan !== 'none') {
-                firmwareName += `-Fan${configuration.fan.toUpperCase()}`;
+                configString += `-Fan${configuration.fan.toUpperCase()}`;
             }
             
-            // For now, show a placeholder
-            const firmwareHtml = `
-                <div class="firmware-item">
-                    <div class="firmware-name">${firmwareName}-v1.0.0-stable.bin</div>
-                    <div class="firmware-details">
-                        <span class="firmware-size">1.2 MB</span>
-                        <span class="firmware-date">2025-07-25</span>
+            // Load manifest to check if firmware exists
+            try {
+                const response = await fetch('manifest.json');
+                const manifest = await response.json();
+                
+                // Find matching firmware in manifest
+                let matchingFirmware = null;
+                for (const build of manifest.builds) {
+                    // Check if this build matches our configuration
+                    if (build.config_string === configString) {
+                        matchingFirmware = build;
+                        break;
+                    }
+                }
+                
+                if (matchingFirmware) {
+                    // Firmware exists - show install option
+                    const firmwareHtml = `
+                        <div class="firmware-item">
+                            <div class="firmware-name">Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin</div>
+                            <div class="firmware-details">
+                                <span class="firmware-size">${(matchingFirmware.file_size / 1024).toFixed(1)} KB</span>
+                                <span class="firmware-date">${new Date(matchingFirmware.build_date).toLocaleDateString()}</span>
+                            </div>
+                            <esp-web-install-button manifest="firmware-${manifest.builds.indexOf(matchingFirmware)}.json">
+                                <button slot="activate" class="btn btn-primary">
+                                    Install Firmware
+                                </button>
+                            </esp-web-install-button>
+                        </div>
+                    `;
+                    document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
+                    document.getElementById('download-btn').disabled = false;
+                } else {
+                    // Firmware doesn't exist - show message
+                    const notAvailableHtml = `
+                        <div class="firmware-not-available">
+                            <h4>Firmware Not Available</h4>
+                            <p>The firmware for this configuration has not been built yet:</p>
+                            <p class="config-string">Sense360-${configString}-v1.0.0-stable.bin</p>
+                            <p class="help-text">Please contact support or check back later for this specific configuration.</p>
+                        </div>
+                    `;
+                    document.getElementById('compatible-firmware').innerHTML = notAvailableHtml;
+                    document.getElementById('download-btn').disabled = true;
+                }
+            } catch (error) {
+                console.error('Error loading manifest:', error);
+                const errorHtml = `
+                    <div class="firmware-error">
+                        <h4>Error Loading Firmware</h4>
+                        <p>Unable to check firmware availability. Please try again later.</p>
                     </div>
-                    <esp-web-install-button manifest="manifests/${firmwareName}.json">
-                        <button slot="activate" class="btn btn-primary">
-                            Install Firmware
-                        </button>
-                    </esp-web-install-button>
-                </div>
-            `;
-            
-            document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
-            document.getElementById('download-btn').disabled = false;
+                `;
+                document.getElementById('compatible-firmware').innerHTML = errorHtml;
+                document.getElementById('download-btn').disabled = true;
+            }
         }
     </script>
 </body>
