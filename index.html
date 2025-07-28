@@ -591,19 +591,56 @@
                 
                 if (response.ok) {
                     const markdown = await response.text();
-                    // Simple markdown to HTML conversion for basic formatting
-                    const html = markdown
-                        .replace(/^### (.*$)/gim, '<h4>$1</h4>')
-                        .replace(/^## (.*$)/gim, '<h3>$1</h3>')
-                        .replace(/^# (.*$)/gim, '<h2>$1</h2>')
-                        .replace(/^\* (.*$)/gim, '<li>$1</li>')
-                        .replace(/\n\n/g, '</p><p>')
-                        .replace(/^/g, '<p>')
-                        .replace(/$/g, '</p>')
-                        .replace(/<p><h/g, '<h')
-                        .replace(/<\/h\d><\/p>/g, '</h$1>')
-                        .replace(/<p><li>/g, '<ul><li>')
-                        .replace(/<\/li><\/p>/g, '</li></ul>');
+                    // Better markdown to HTML conversion
+                    let html = '';
+                    const lines = markdown.split('\n');
+                    let inList = false;
+                    let inParagraph = false;
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        
+                        // Close paragraph if needed
+                        if (inParagraph && (line === '' || line.match(/^#/) || line.match(/^-/))) {
+                            html += '</p>';
+                            inParagraph = false;
+                        }
+                        
+                        // Close list if needed
+                        if (inList && !line.match(/^-/)) {
+                            html += '</ul>';
+                            inList = false;
+                        }
+                        
+                        // Headers
+                        if (line.match(/^# /)) {
+                            html += `<h2>${line.substring(2)}</h2>`;
+                        } else if (line.match(/^## /)) {
+                            html += `<h3>${line.substring(3)}</h3>`;
+                        } else if (line.match(/^### /)) {
+                            html += `<h4>${line.substring(4)}</h4>`;
+                        }
+                        // List items
+                        else if (line.match(/^- /)) {
+                            if (!inList) {
+                                html += '<ul>';
+                                inList = true;
+                            }
+                            html += `<li>${line.substring(2)}</li>`;
+                        }
+                        // Regular text
+                        else if (line !== '') {
+                            if (!inParagraph) {
+                                html += '<p>';
+                                inParagraph = true;
+                            }
+                            html += line + ' ';
+                        }
+                    }
+                    
+                    // Close any open tags
+                    if (inParagraph) html += '</p>';
+                    if (inList) html += '</ul>';
                     
                     notesSection.querySelector('.release-notes-content').innerHTML = html;
                 } else {
