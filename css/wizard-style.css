@@ -455,38 +455,47 @@ h1 {
     font-size: 14px;
     line-height: 1.6;
     color: #202124;
+    max-height: 600px;
+    overflow-y: auto;
 }
 
 .release-notes-content h2 {
     font-size: 18px;
-    font-weight: 500;
-    margin-bottom: 12px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
     color: #202124;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 8px;
 }
 
 .release-notes-content h3 {
     font-size: 16px;
-    font-weight: 500;
-    margin-top: 16px;
-    margin-bottom: 8px;
+    font-weight: 600;
+    margin: 20px 0 12px 0;
     color: #202124;
 }
 
 .release-notes-content h4 {
     font-size: 14px;
-    font-weight: 500;
-    margin-top: 12px;
-    margin-bottom: 6px;
+    font-weight: 600;
+    margin: 16px 0 8px 0;
     color: #202124;
+}
+
+.release-notes-content p {
+    margin: 8px 0;
+    line-height: 1.6;
 }
 
 .release-notes-content ul {
     margin: 8px 0;
     padding-left: 24px;
+    list-style-type: disc;
 }
 
 .release-notes-content li {
-    margin: 4px 0;
+    margin: 6px 0;
+    line-height: 1.5;
 }
 
 .release-notes-content .loading {
