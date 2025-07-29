@@ -1,234 +1,91 @@
-# Sense360 ESP32 Firmware Installer
+# WebFlash — Sense360 ESP32 Firmware Installer
 
-A complete automation system for ESP32 firmware management with GitHub Pages deployment.
+A simple, browser‑based way to flash Sense360 ESP32 firmware using **ESP Web Tools**. No drivers or local toolchains required for most users.
 
-## Overview
+**Live site:** https://sense360store.github.io/WebFlash/
 
-This system provides 100% automated firmware management for ESP32 devices using ESP Web Tools. Simply add firmware files to the directory structure and the system automatically updates manifests and web interface.
+---
 
-## Root Cause of "Failed to fetch" Error
+## What is WebFlash?
 
-The original error occurred because individual manifest files contained hardcoded localhost URLs (`http://localhost:5000/firmware/...`) but the site was deployed to GitHub Pages with HTTPS. ESP Web Tools couldn't fetch firmware from localhost URLs in production.
+WebFlash lets you select a device type and firmware channel (e.g. *stable* or *beta*) and then flash it directly from your browser over USB. After flashing, the device can be provisioned onto Wi‑Fi via Improv Serial.
 
-**Solution:** Use relative URLs (`firmware/CO2Monitor/ESP32S3/stable/firmware.bin`) that work in any deployment environment.
+---
 
-## Complete Automation System
+## Key features
 
-### 1. Adding Firmware (100% Automated)
+- **One‑click flashing** via ESP Web Tools (Web Serial / WebUSB)
+- **Wi‑Fi setup** right after flashing (Improv Serial)
+- **Filter & search** by device type, chip family, version, and channel
+- **Mobile‑friendly** UI (works best on desktop for flashing)
+- **Hosted on GitHub Pages** for easy, reliable access
 
-```bash
-# 1. Add firmware binary to correct directory structure
-cp my-firmware.bin firmware/DeviceType/ChipFamily/Channel/Sense360-DeviceType-ChipFamily-vX.X.X-Channel.bin
+> **Browser support:** Use a Chromium‑based browser (Chrome, Edge) on Windows, macOS, or Linux. (Firefox and Safari currently have limited Web Serial support.)
 
-# 2. Run automation (updates everything)
-python3 deploy-automation.py
+---
 
-# 3. Commit and push to GitHub
-git add .
-git commit -m "Add new firmware"
-git push
-```
+## Quick start (for users)
 
-### 2. Removing Firmware (100% Automated)
+1. Go to **WebFlash**: https://sense360store.github.io/WebFlash/
+2. Select your **Device Type**, **Chip Family**, and **Channel**.
+3. Choose the desired **firmware version**.
+4. Click **Connect** when prompted, select your device, and start flashing.
+5. When flashing completes, follow the on‑screen steps to **enter Wi‑Fi details** (Improv).
 
-```bash
-# 1. Delete firmware file
-rm firmware/DeviceType/ChipFamily/Channel/firmware.bin
+> **Tip:** If your device does not appear, try a different USB cable/port, or close other serial tools (Arduino, esptool, etc.) that may have the port open.
 
-# 2. Run automation (removes from manifest/UI)
-python3 deploy-automation.py
+---
 
-# 3. Commit and push
-git add .
-git commit -m "Remove firmware"
-git push
-```
+## Supported devices
 
-### 3. Directory Structure
+The WebFlash page lists all currently available Sense360 firmware. Typical categories include:
 
-```
-firmware/
-├── CO2Monitor/
-│   └── ESP32S3/
-│       └── stable/
-│           ├── Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin
-│           └── Sense360-CO2Monitor-ESP32S3-v1.0.1-stable.bin
-├── EnvMonitor/
-│   └── ESP32/
-│       ├── stable/
-│       │   └── Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin
-│       └── beta/
-│           └── Sense360-EnvMonitor-ESP32-v2.2.0-beta.bin
-└── TempSensor/
-    └── ESP32S3/
-        └── stable/
-            └── Sense360-TempSensor-ESP32S3-v1.0.0-stable.bin
-```
+- **CO₂ Monitor** (ESP32‑S3) — stable/beta  
+- **Env Monitor** (ESP32) — stable/beta  
+- **Temp Sensor** (ESP32‑S3) — stable  
 
-## GitHub Pages Deployment
+Availability depends on what firmware we publish. Always prefer **stable** for production devices.
 
-### Automatic Deployment
+---
 
-The system includes GitHub Actions workflow that automatically:
-1. Runs automation on every push
-2. Updates manifests with relative URLs
-3. Deploys to GitHub Pages
-4. Ensures CORS headers are set
+## Safety & privacy
 
-### Manual Deployment
+- Only flash firmware you trust.  
+- WebFlash runs fully in your browser; it does **not** upload device secrets.  
+- Your Wi‑Fi credentials are sent directly to the device using the Improv workflow.
 
-```bash
-# Run automation for GitHub Pages
-python3 deploy-automation.py
-
-# Files are ready for GitHub Pages deployment
-```
-
-## ESP Web Tools Integration
-
-### Manifest Files
-
-- **Main manifest** (`manifest.json`): Lists all firmware builds
-- **Individual manifests** (`firmware-0.json`, `firmware-1.json`, etc.): One per firmware for ESP Web Tools
-- **Relative URLs**: All URLs are relative for GitHub Pages compatibility
-- **Improv Serial**: All manifests include `"improv": true` for automatic Wi-Fi setup
-
-### User Interface Features
-
-- **Logo Integration**: Sense360 logo in header with responsive design
-- **Device Type Filter**: Dropdown to filter firmware by device type (CO2Monitor, EnvMonitor, etc.)
-- **Search Functionality**: Real-time text search across device type, chip family, version, and channel
-- **Dynamic Summary**: Shows filtered results count and available chip families
-- **Responsive Design**: Works on desktop and mobile devices
-
-### Improv Serial Wi-Fi Setup
-
-After firmware installation, ESP Web Tools automatically prompts users for Wi-Fi credentials:
-
-1. **Flash firmware** via ESP Web Tools
-2. **Browser prompts** for Wi-Fi credentials (automatic)
-3. **User enters** SSID and password in browser
-4. **Device connects** to Wi-Fi automatically
-5. **No manual AP** connection required
-
-### URL Construction
-
-- **Development**: `http://localhost:5000/firmware/...`
-- **Production**: `https://your-repo.github.io/firmware/...`
-- **Solution**: Use relative URLs that work in both environments
-
-## Scripts
-
-### Core Scripts
-
-- `deploy-automation.py`: Main automation script for GitHub Pages
-- `create-individual-manifests.py`: Creates individual manifest files
-- `test-complete-workflow.py`: Tests complete workflow
-- `watch-firmware.py`: Watches for firmware changes (development)
-
-### Usage
-
-```bash
-# Full automation
-python3 deploy-automation.py
-
-# Local development with localhost URLs
-python3 deploy-automation.py --local
-
-# Watch for changes (development)
-python3 watch-firmware.py
-
-# Test complete workflow
-python3 test-complete-workflow.py
-```
-
-## Best Practices
-
-### ESP Web Tools Compliance
-
-1. **Relative URLs**: All firmware paths are relative
-2. **CORS Headers**: Proper CORS configuration in `_headers`
-3. **Manifest Format**: Follows ESP Web Tools specification
-4. **Individual Manifests**: One manifest per firmware for clean selection
-5. **Improv Serial**: All firmware includes `improv_serial:` and manifests include `"improv": true`
-
-### Automation Workflow
-
-1. **No Manual Editing**: Never edit manifest.json or index.html manually
-2. **Directory Structure**: Use consistent naming convention
-3. **Automatic Updates**: Run automation after any firmware changes
-4. **GitHub Actions**: Automatic deployment on push
-5. **Improv Serial**: Automatically enabled for all firmware builds
-
-### File Naming Convention
-
-```
-Sense360-[DeviceType]-[ChipFamily]-v[Version]-[Channel].bin
-
-Examples:
-- Sense360-CO2Monitor-ESP32S3-v1.0.0-stable.bin
-- Sense360-EnvMonitor-ESP32-v2.1.0-stable.bin
-- Sense360-TempSensor-ESP32S3-v1.0.0-beta.bin
-```
+---
 
 ## Troubleshooting
 
-### Common Issues
+- **“Failed to fetch” during flashing**  
+  Refresh the page and try again. If the issue persists, use Chrome/Edge and ensure you’re on the official site:  
+  https://sense360store.github.io/WebFlash/
 
-1. **"Failed to fetch" error**: Check that URLs are relative, not absolute
-2. **CORS errors**: Ensure `_headers` file is deployed
-3. **Manifest not found**: Run automation script to generate manifests
-4. **Firmware not accessible**: Check file exists in correct directory
+- **No device ports listed**  
+  Use a data‑capable USB cable, try a different port, and close other serial tools. On Linux, you may need to add your user to the `dialout` group and re‑login.
 
-### Debug Steps
+- **CORS or manifest errors**  
+  Clear cache (hard reload) and try again. If it continues, open an issue with details (device, OS, browser, steps).
 
+---
+
+## For maintainers (project team)
+
+> These notes are for engineers publishing new firmware to the site.
+
+<details>
+<summary><strong>Adding or removing firmware (automated)</strong></summary>
+
+**Add new firmware:**
 ```bash
-# Test complete workflow
-python3 test-complete-workflow.py
+# Place firmware in the directory that matches your device/chip/channel
+cp build/MyFirmware.bin firmware/DeviceType/ChipFamily/Channel/Sense360-DeviceType-ChipFamily-vX.Y.Z-Channel.bin
 
-# Test Improv Serial integration
-python3 test-improv-serial.py
+# Rebuild manifests and UI metadata
+python3 deploy-automation.py
 
-# Validate deployment
-python3 deploy-automation.py --validate
-
-# Check individual manifest
-curl https://your-repo.github.io/firmware-0.json
-
-# Check firmware file
-curl -I https://your-repo.github.io/firmware/DeviceType/ChipFamily/Channel/firmware.bin
-```
-
-## Development
-
-### Local Development
-
-```bash
-# Start local server
-python3 -m http.server 5000
-
-# Watch for changes
-python3 watch-firmware.py
-
-# Test workflow
-python3 test-complete-workflow.py
-```
-
-### Adding New Device Types
-
-1. Create directory structure: `firmware/NewDevice/ChipFamily/Channel/`
-2. Add firmware binary with naming convention
-3. Run automation: `python3 deploy-automation.py`
-4. Commit and push
-
-## Summary
-
-This system provides complete automation for ESP32 firmware management:
-
-- **100% Automated**: No manual manifest editing required
-- **GitHub Pages Ready**: Uses relative URLs and proper CORS
-- **ESP Web Tools Compatible**: Follows all best practices
-- **Reliable**: Comprehensive testing and validation
-- **Scalable**: Easy to add new devices and firmware
-
-The "Failed to fetch" error has been completely resolved by using relative URLs that work in any deployment environment.
+# Commit and deploy
+git add .
+git commit -m "Add Sense360-DeviceType-...-vX.Y.Z-Channel.bin"
+git push
