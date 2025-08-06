@@ -181,28 +181,36 @@ h1 {
     background: #e8f0fe;
 }
 
-/* Module-specific color styling */
-.option-card input[value="none"]:checked + .option-content {
-    background: #f0f4f8;
-    border-color: #94a3b8;
-}
-
-.option-card input[value="base"]:checked + .option-content {
-    background: #e0f2fe;
-    border-color: #0ea5e9;
-}
-
-.option-card input[value="pro"]:checked + .option-content {
-    background: #fed7d2;
-    border-color: #ea580c;
-}
-
-/* Pro module badge styling */
-.option-card input[value="pro"] + .option-content .option-title {
-    color: #ea580c;
-    font-weight: 700;
+/* Module badge styling */
+.option-title {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
+    color: white;
+    background: #6b7280;
+    margin-bottom: 8px;
+}
+
+/* None module badge */
+.option-card input[value="none"] + .option-content .option-title {
+    background: #6b7280;
+    color: white;
+}
+
+/* Base module badge */
+.option-card input[value="base"] + .option-content .option-title {
+    background: #ea580c;
+    color: white;
+}
+
+/* Pro module badge */
+.option-card input[value="pro"] + .option-content .option-title {
+    background: #ea580c;
+    color: white;
 }
 
 .option-icon {
@@ -224,14 +232,7 @@ h1 {
     object-fit: contain;
 }
 
-.option-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #202124;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+/* This will be overridden by the badge styling above */
 
 .option-description {
     font-size: 14px;
