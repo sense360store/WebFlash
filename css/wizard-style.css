@@ -6,7 +6,7 @@
 }
 
 body {
-    font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.5;
     color: #202124;
     background-color: #f8f9fa;
@@ -38,7 +38,7 @@ header {
 }
 
 .logo {
-    height: 50px;
+    height: 70px;
     width: auto;
     object-fit: contain;
 }
@@ -79,14 +79,14 @@ h1 {
     content: '';
     position: absolute;
     top: 20px;
-    left: 50%;
-    width: 100%;
+    left: calc(50% + 20px);
+    width: calc(100% - 40px);
     height: 2px;
     background: #dadce0;
-    z-index: -1;
+    z-index: 0;
 }
 
-.progress-step.active:not(:last-child)::after {
+.progress-step.completed::after {
     background: #1a73e8;
 }
 
@@ -102,6 +102,8 @@ h1 {
     margin: 0 auto 8px;
     font-weight: 500;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
 }
 
 .progress-step.active .step-number {
@@ -179,6 +181,30 @@ h1 {
     background: #e8f0fe;
 }
 
+/* Module-specific color styling */
+.option-card input[value="none"]:checked + .option-content {
+    background: #f0f4f8;
+    border-color: #94a3b8;
+}
+
+.option-card input[value="base"]:checked + .option-content {
+    background: #e0f2fe;
+    border-color: #0ea5e9;
+}
+
+.option-card input[value="pro"]:checked + .option-content {
+    background: #fed7d2;
+    border-color: #ea580c;
+}
+
+/* Pro module badge styling */
+.option-card input[value="pro"] + .option-content .option-title {
+    color: #ea580c;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .option-icon {
     font-size: 48px;
     margin-bottom: 16px;
@@ -199,10 +225,12 @@ h1 {
 }
 
 .option-title {
-    font-size: 18px;
-    font-weight: 500;
+    font-size: 16px;
+    font-weight: 600;
     color: #202124;
     margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .option-description {
