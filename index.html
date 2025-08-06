@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sense360 Firmware Configuration Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/wizard-style.css?v=1753432000">
     <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js"></script>
 </head>
@@ -364,6 +367,9 @@
 
         function nextStep() {
             if (currentStep < totalSteps) {
+                // Mark current step as completed
+                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('completed');
+                
                 // Hide current step
                 document.getElementById(`step-${currentStep}`).classList.remove('active');
                 document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
@@ -394,6 +400,9 @@
                 document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
                 
                 currentStep--;
+                
+                // Remove completed class from this step (user went back)
+                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('completed');
                 
                 // Show previous step
                 document.getElementById(`step-${currentStep}`).classList.add('active');
