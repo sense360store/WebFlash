@@ -1,0 +1,40 @@
+name: WebFlash crash report
+description: Report a WebFlash crash with device and channel details.
+title: "[Crash <md5-8>]"
+labels:
+  - bug
+  - webflash
+body:
+  - type: input
+    id: crash_id
+    attributes:
+      label: Crash ID
+      description: Provide the short crash identifier (md5-8).
+      placeholder: e.g. a1b2c3d4
+    validations:
+      required: true
+  - type: input
+    id: device_channel
+    attributes:
+      label: Device / Channel
+      description: Include the device identifier and firmware channel observed.
+      placeholder: e.g. sense360-ms · stable
+    validations:
+      required: false
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Steps to reproduce
+      description: List the steps needed to trigger the crash.
+      placeholder: |
+        1. Start flashing Sense360-MS on stable channel
+        2. ...
+      render: markdown
+    validations:
+      required: true
+  - type: checkboxes
+    id: support_bundle
+    attributes:
+      label: Did you include the support bundle?
+      options:
+        - label: Yes, support bundle attached
