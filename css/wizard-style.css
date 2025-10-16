@@ -559,6 +559,32 @@ h1 {
     transform: translateY(0);
 }
 
+.remember-preference {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.remember-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    color: #37474f;
+    font-weight: 500;
+}
+
+.remember-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-green);
+}
+
+.remember-label {
+    font-size: 0.95rem;
+}
+
 @keyframes readyPulse {
     0% {
         box-shadow: 0 0 0 0 rgba(var(--brand-green-contrast-rgb), 0.45);
