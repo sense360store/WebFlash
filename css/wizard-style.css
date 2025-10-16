@@ -185,7 +185,22 @@ h1 {
     min-width: 0;
 }
 
-.wizard-summary {
+#step-4.review-has-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 32px;
+    align-items: flex-start;
+}
+
+#step-4 .review-main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+}
+
+.wizard-summary,
+#step-4 .summary-wrap {
     position: sticky;
     top: 1rem;
     align-self: start;
@@ -290,6 +305,85 @@ h1 {
 
 .summary-card__status[data-status-type="error"] {
     color: #d93025;
+}
+
+#step-4 .summary-card {
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+}
+
+#step-4 .summary-card__title {
+    margin: 0;
+}
+
+#step-4 .summary-card__intro {
+    display: none;
+}
+
+#step-4 .summary-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+#step-4 .summary-list li {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+#step-4 .summary-list strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    min-width: 96px;
+}
+
+#step-4 .summary-note {
+    margin: 4px 0 0;
+    font-size: 13px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+    color: color-mix(in srgb, var(--danger) 70%, var(--color-text-primary));
+}
+
+#step-4 .summary-note[hidden] {
+    display: none;
+}
+
+#step-4 .summary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#step-4 .summary-actions .btn {
+    width: 100%;
+    justify-content: center;
+}
+
+#step-4 .summary-actions .btn-secondary {
+    background: none;
+}
+
+@media (max-width: 960px) {
+    #step-4.review-has-summary {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #step-4 .summary-wrap {
+        position: static;
+        order: -1;
+        margin-bottom: 24px;
+    }
 }
 
 .configuration-summary .summary-warning-tag {
