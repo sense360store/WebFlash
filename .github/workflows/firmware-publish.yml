@@ -53,50 +53,36 @@ jobs:
             --manifest-path manifest.json \
             --manifest-prefix firmware- \
             --summary
-- name: List firmware & dry-run summary
-  run: |
-    set -euo pipefail
-    echo "== .bin files =="
-    find firmware -type f -name '*.bin' -printf '%p\n' | sort
-    echo "== gen-manifests dry-run summary =="
-    python scripts/gen-manifests.py \
-      --firmware-dir firmware \
-      --manifest-path manifest.json \
-      --manifest-prefix firmware- \
-      --summary --dry-run
 
-- name: Assert AirIQPro present
-  run: |
-    set -euo pipefail
-    grep -qi '"config_string": *"Ceiling-POE-AirIQPro"' manifest.json || {
-      echo "❌ Missing Ceiling-POE-AirIQPro in manifest.json" >&2
-      exit 1
-    }
-      - name: Validate Ceiling-POE-AirIQBase manifest
+      - name: List firmware & dry-run summary
         run: |
           set -euo pipefail
-          if command -v python >/dev/null 2>&1; then
-            python scripts/gen-manifests.py \
-              --firmware-dir firmware \
-              --manifest-path manifest.json \
-              --manifest-prefix firmware- \
-              --assert-config Ceiling-POE-AirIQBase \
-              --summary
-          else
-            echo "Python unavailable; falling back to grep"
-            grep -qi '"config_string": *"Ceiling-POE-AirIQBase"' manifest.json || {
-              echo "Ceiling-POE-AirIQBase config missing from manifest.json" >&2
-              exit 1
-            }
-          fi
+          echo "== .bin files =="
+          find firmware -type f -name '*.bin' -printf '%p\n' | sort
+          echo "== gen-manifests dry-run summary =="
+          python scripts/gen-manifests.py \
+            --firmware-dir firmware \
+            --manifest-path manifest.json \
+            --manifest-prefix firmware- \
+            --summary --dry-run
 
-      # NEW: configure Pages and upload the repo root (includes fresh manifest.json)
+      - name: Assert required configs present
+        run: |
+          set -euo pipefail
+          for k in "Ceiling-POE-AirIQBase" "Ceiling-POE-AirIQPro"; do
+            if ! grep -qi "\"config_string\": *\"$k\"" manifest.json; then
+              echo "❌ Missing $k in manifest.json" >&2
+              exit 1
+            fi
+          done
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Upload repo root so the fresh manifest.json is included
           path: ./
 
   deploy:
@@ -104,7 +90,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      # UPDATED: reference the correct step id below
       url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       pages: write
