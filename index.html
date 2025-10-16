@@ -416,6 +416,7 @@
             }
 
             if (currentStep === 4) {
+                updateConfiguration({ skipUrlUpdate: true });
                 updateSummary();
                 findCompatibleFirmware();
             }
@@ -426,8 +427,6 @@
         }
 
         function updateSummary() {
-            updateConfiguration({ skipUrlUpdate: true });
-
             let summaryHtml = '<div class="summary-grid">';
             
             // Mounting
