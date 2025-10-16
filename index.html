@@ -507,12 +507,24 @@
         }
 
         async function findCompatibleFirmware() {
+            // Ensure required selections are present before building the config string
+            if (!configuration.mounting || !configuration.power) {
+                document.getElementById('compatible-firmware').innerHTML = `
+                    <div class="firmware-error">
+                        <h4>Incomplete Configuration</h4>
+                        <p>Please select both a mounting location and power option before checking firmware compatibility.</p>
+                    </div>
+                `;
+                document.getElementById('download-btn').disabled = true;
+                return;
+            }
+
             // Generate firmware filename based on configuration
             let configString = '';
-            
+
             // Add mounting type
             configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
-            
+
             // Add power option
             configString += `-${configuration.power.toUpperCase()}`;
             
