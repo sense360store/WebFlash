@@ -8,8 +8,8 @@
 body {
     font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     line-height: 1.5;
-    color: #202124;
-    background-color: #f8f9fa;
+    color: var(--color-text-primary);
+    background-color: var(--color-background);
     font-size: 16px;
 }
 
@@ -35,7 +35,7 @@ body {
 header {
     text-align: center;
     margin-bottom: 32px;
-    background: white;
+    background: var(--color-surface);
     padding: 24px;
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
@@ -58,13 +58,13 @@ header {
 h1 {
     font-size: 28px;
     font-weight: 400;
-    color: #202124;
+    color: var(--color-text-primary);
     margin-bottom: 8px;
 }
 
 .subtitle {
     font-size: 16px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 /* Progress Bar */
@@ -115,7 +115,7 @@ h1 {
     left: calc(50% + 20px);
     width: calc(100% - 40px);
     height: 2px;
-    background: #dadce0;
+    background: var(--color-border);
     z-index: 0;
 }
 
@@ -127,7 +127,7 @@ h1 {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #dadce0;
+    background: var(--color-border);
     color: white;
     display: flex;
     align-items: center;
@@ -158,17 +158,17 @@ h1 {
 
 .step-label {
     font-size: 14px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 .progress-step.active .step-label {
-    color: #202124;
+    color: var(--color-text-primary);
     font-weight: 500;
 }
 
 /* Wizard Container */
 .wizard-container {
-    background: white;
+    background: var(--color-surface);
     border-radius: 12px;
     padding: 48px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
@@ -207,7 +207,7 @@ h1 {
     font-size: 24px;
     font-weight: 400;
     margin-bottom: 32px;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 /* Option Grid */
@@ -230,7 +230,7 @@ h1 {
 }
 
 .option-content {
-    border: 2px solid #dadce0;
+    border: 2px solid var(--color-border);
     border-radius: 8px;
     padding: 24px;
     text-align: center;
@@ -239,7 +239,7 @@ h1 {
 
 .option-card:hover .option-content {
     border-color: var(--brand-green);
-    background: #f8f9fa;
+    background: var(--color-surface-muted);
 }
 
 .option-card input[type="radio"]:checked + .option-content {
@@ -302,14 +302,14 @@ h1 {
 
 .option-description {
     font-size: 14px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 /* Module Sections */
 .module-section {
     margin-bottom: 32px;
     padding: 24px;
-    background: #f8f9fa;
+    background: var(--color-surface-muted);
     border-radius: 8px;
 }
 
@@ -317,7 +317,7 @@ h1 {
     font-size: 18px;
     font-weight: 500;
     margin-bottom: 16px;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 /* Checkbox Grid */
@@ -339,7 +339,7 @@ h1 {
 }
 
 .checkbox-content {
-    border: 2px solid #dadce0;
+    border: 2px solid var(--color-border);
     border-radius: 8px;
     padding: 16px;
     transition: all 0.2s ease;
@@ -347,7 +347,7 @@ h1 {
 
 .checkbox-card:hover .checkbox-content {
     border-color: var(--brand-green);
-    background: white;
+    background: var(--color-surface);
 }
 
 .checkbox-card input[type="checkbox"]:checked + .checkbox-content {
@@ -357,13 +357,13 @@ h1 {
 
 .checkbox-title {
     font-weight: 500;
-    color: #202124;
+    color: var(--color-text-primary);
     margin-bottom: 4px;
 }
 
 .checkbox-description {
     font-size: 14px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 /* Wizard Actions */
@@ -372,7 +372,7 @@ h1 {
     justify-content: space-between;
     margin-top: 32px;
     padding-top: 24px;
-    border-top: 1px solid #dadce0;
+    border-top: 1px solid var(--color-border);
 }
 
 /* Buttons */
@@ -467,19 +467,19 @@ h1 {
 }
 
 .btn-secondary {
-    background: white;
-    color: #5f6368;
-    border: 1px solid #dadce0;
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
 }
 
 .btn-secondary:hover {
-    background: #f8f9fa;
-    border-color: #5f6368;
+    background: var(--color-surface-muted);
+    border-color: var(--color-text-secondary);
 }
 
 /* Configuration Summary */
 .configuration-summary {
-    background: #f8f9fa;
+    background: var(--color-surface-muted);
     border-radius: 8px;
     padding: 24px;
     margin-bottom: 32px;
@@ -489,7 +489,7 @@ h1 {
     font-size: 18px;
     font-weight: 500;
     margin-bottom: 16px;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 /* Pre-Flash Checklist */
@@ -522,7 +522,7 @@ h1 {
 
 .pre-flash-checklist .checklist-subtitle {
     font-size: 14px;
-    color: #3c4043;
+    color: var(--color-text-tertiary);
     margin-bottom: 16px;
 }
 
@@ -546,7 +546,7 @@ h1 {
 }
 
 .pre-flash-checklist [data-checklist-item] .item-text {
-    color: #202124;
+    color: var(--color-text-primary);
     font-size: 14px;
     line-height: 1.5;
 }
@@ -566,7 +566,7 @@ h1 {
     justify-content: center;
     color: var(--brand-green);
     font-size: 12px;
-    background: #fff;
+    background: var(--color-surface);
     transition: all 0.3s ease;
 }
 
@@ -631,7 +631,7 @@ h1 {
     grid-template-columns: 200px 1fr;
     gap: 16px;
     padding: 12px 0;
-    border-bottom: 1px solid #e8eaed;
+    border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .summary-item:last-child {
@@ -640,17 +640,17 @@ h1 {
 
 .summary-label {
     font-weight: 500;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 .summary-value {
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 .summary-sensors {
     grid-column: 2;
     font-size: 14px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
     margin-top: 4px;
 }
 
@@ -663,7 +663,7 @@ h1 {
     font-size: 18px;
     font-weight: 500;
     margin-bottom: 16px;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 .legacy-firmware-section {
@@ -671,9 +671,9 @@ h1 {
 }
 
 .legacy-panel {
-    border: 1px solid #dadce0;
+    border: 1px solid var(--color-border);
     border-radius: 8px;
-    background: #f8f9fa;
+    background: var(--color-surface-muted);
     padding: 0 16px 16px;
 }
 
@@ -689,7 +689,7 @@ h1 {
     cursor: pointer;
     list-style: none;
     font-weight: 500;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 .legacy-panel summary::-webkit-details-marker {
@@ -702,7 +702,7 @@ h1 {
 
 .legacy-panel-subtitle {
     font-size: 14px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
     font-weight: 400;
 }
 
@@ -713,7 +713,7 @@ h1 {
 }
 
 .legacy-build-group {
-    border-top: 1px solid #dadce0;
+    border-top: 1px solid var(--color-border);
     padding-top: 24px;
 }
 
@@ -733,7 +733,7 @@ h1 {
 .legacy-group-title {
     font-size: 16px;
     font-weight: 600;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 .legacy-group-variant {
@@ -754,8 +754,8 @@ h1 {
 }
 
 .legacy-build-card {
-    background: #fff;
-    border: 1px solid #dadce0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 20px;
     display: flex;
@@ -771,19 +771,19 @@ h1 {
 
 .legacy-build-name {
     font-weight: 600;
-    color: #202124;
+    color: var(--color-text-primary);
     margin-bottom: 8px;
 }
 
 .legacy-build-meta {
     font-size: 13px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
     margin-bottom: 12px;
 }
 
 .legacy-build-description {
     font-size: 14px;
-    color: #3c4043;
+    color: var(--color-text-tertiary);
     margin: 0;
 }
 
@@ -804,8 +804,8 @@ h1 {
 }
 
 .firmware-item {
-    background: #f8f9fa;
-    border: 1px solid #dadce0;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 24px;
     display: flex;
@@ -819,7 +819,7 @@ h1 {
 
 .firmware-name {
     font-weight: 500;
-    color: #202124;
+    color: var(--color-text-primary);
     margin-bottom: 8px;
 }
 
@@ -827,7 +827,7 @@ h1 {
     display: flex;
     gap: 16px;
     font-size: 14px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 /* Firmware not available styles */
@@ -858,18 +858,18 @@ h1 {
 .config-string {
     font-family: 'Roboto Mono', monospace;
     font-size: 14px;
-    background-color: #fff;
+    background-color: var(--color-surface);
     padding: 12px 16px;
     border-radius: 4px;
     display: inline-block;
     margin: 16px 0;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-border-strong);
 }
 
 .help-text {
     font-size: 14px;
     margin-top: 16px;
-    color: #5f6368;
+    color: var(--color-text-secondary);
 }
 
 /* Release notes styles */
@@ -890,8 +890,8 @@ h1 {
 }
 
 .release-notes-section {
-    background-color: #f8f9fa;
-    border: 1px solid #dadce0;
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 24px;
     margin-top: 16px;
@@ -911,8 +911,8 @@ h1 {
 }
 
 .firmware-meta-section {
-    background-color: #f8f9fa;
-    border: 1px solid #dadce0;
+    background-color: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 20px;
     display: flex;
@@ -923,7 +923,7 @@ h1 {
 .firmware-meta-section h4 {
     font-size: 16px;
     font-weight: 600;
-    color: #202124;
+    color: var(--color-text-primary);
     margin: 0;
 }
 
@@ -938,14 +938,14 @@ h1 {
 
 .firmware-meta-section li {
     font-size: 14px;
-    color: #3c4043;
+    color: var(--color-text-tertiary);
     line-height: 1.5;
 }
 
 .release-notes-content {
     font-size: 14px;
     line-height: 1.6;
-    color: #202124;
+    color: var(--color-text-primary);
     max-height: 600px;
     overflow-y: auto;
 }
@@ -954,8 +954,8 @@ h1 {
     font-size: 18px;
     font-weight: 600;
     margin: 0 0 16px 0;
-    color: #202124;
-    border-bottom: 1px solid #e0e0e0;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-strong);
     padding-bottom: 8px;
 }
 
@@ -963,14 +963,14 @@ h1 {
     font-size: 16px;
     font-weight: 600;
     margin: 20px 0 12px 0;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 .release-notes-content h4 {
     font-size: 14px;
     font-weight: 600;
     margin: 16px 0 8px 0;
-    color: #202124;
+    color: var(--color-text-primary);
 }
 
 .release-notes-content p {
@@ -991,14 +991,14 @@ h1 {
 
 .release-notes-content .loading {
     text-align: center;
-    color: #5f6368;
+    color: var(--color-text-secondary);
     padding: 20px;
 }
 
 .release-notes-content .no-notes,
 .release-notes-content .error {
     text-align: center;
-    color: #5f6368;
+    color: var(--color-text-secondary);
     padding: 20px;
     font-style: italic;
 }
