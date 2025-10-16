@@ -44,7 +44,11 @@ function setChecklistCompletion(isComplete) {
 }
 
 function attachInstallButtonListeners() {
-    const installButtons = document.querySelectorAll('#compatible-firmware .install-firmware-btn');
+    const selectors = [
+        '#compatible-firmware esp-web-install-button button[slot="activate"]',
+        '#legacy-firmware-list esp-web-install-button button[slot="activate"]'
+    ];
+    const installButtons = document.querySelectorAll(selectors.join(', '));
     installButtons.forEach(button => {
         if (button.dataset.checklistBound === 'true') {
             return;
@@ -583,6 +587,7 @@ function renderLegacyFirmware(groups) {
 
     list.innerHTML = legacyHtml;
     section.style.display = 'block';
+    attachInstallButtonListeners();
 }
 
 async function findCompatibleFirmware() {
@@ -624,6 +629,7 @@ async function findCompatibleFirmware() {
                 <p>Please select both a mounting location and power option before checking firmware compatibility.</p>
             </div>
         `;
+        attachInstallButtonListeners();
         return;
     }
 
@@ -746,6 +752,7 @@ async function findCompatibleFirmware() {
             `;
             document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
             setReadyState(true);
+            attachInstallButtonListeners();
         } else {
             // Firmware doesn't exist - show message
             const notAvailableHtml = `
@@ -757,6 +764,7 @@ async function findCompatibleFirmware() {
                 </div>
             `;
             document.getElementById('compatible-firmware').innerHTML = notAvailableHtml;
+            attachInstallButtonListeners();
         }
 
         renderLegacyFirmware(legacyGroups);
@@ -769,6 +777,7 @@ async function findCompatibleFirmware() {
             </div>
         `;
         document.getElementById('compatible-firmware').innerHTML = errorHtml;
+        attachInstallButtonListeners();
         renderLegacyFirmware([]);
     }
 }
