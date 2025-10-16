@@ -28,12 +28,13 @@ function formatModuleValue(value) {
 function ensureSummaryContainer() {
     let summaryHost = document.getElementById('wizard-summary');
     if (summaryHost) {
+        summaryHost.classList.add('wizard-summary', 'summary-wrap');
         return summaryHost;
     }
 
     summaryHost = document.createElement('aside');
     summaryHost.id = 'wizard-summary';
-    summaryHost.className = 'wizard-summary';
+    summaryHost.className = 'wizard-summary summary-wrap';
     document.body.appendChild(summaryHost);
     return summaryHost;
 }
@@ -71,7 +72,7 @@ function createSummaryCard() {
     heading.textContent = 'Configuration summary';
 
     const intro = document.createElement('p');
-    intro.className = 'summary-card__intro';
+    intro.className = 'summary-card__intro summary-note';
     intro.textContent = 'Selections update automatically as you move through the wizard.';
 
     const rows = document.createElement('div');
@@ -88,11 +89,11 @@ function createSummaryCard() {
     warning.textContent = 'Fan not available on Ceiling';
 
     const actions = document.createElement('div');
-    actions.className = 'summary-card__actions';
+    actions.className = 'summary-card__actions summary-actions';
 
     const copyButton = document.createElement('button');
     copyButton.type = 'button';
-    copyButton.className = 'btn btn-secondary summary-card__copy';
+    copyButton.className = 'btn summary-card__copy primary';
     copyButton.textContent = 'Copy sharable link';
 
     const status = document.createElement('p');
