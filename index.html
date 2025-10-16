@@ -281,7 +281,10 @@
 
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
-                    <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                    <div class="primary-action-group">
+                        <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                        <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -784,6 +787,36 @@
         }
 
         async function findCompatibleFirmware() {
+            const downloadBtn = document.getElementById('download-btn');
+            const setReadyState = (isReady) => {
+                if (downloadBtn) {
+                    downloadBtn.disabled = !isReady;
+                    downloadBtn.classList.toggle('is-ready', isReady);
+                }
+
+                const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
+                if (installButton) {
+                    installButton.classList.toggle('is-ready', isReady);
+                }
+
+                const helperTexts = document.querySelectorAll('[data-ready-helper]');
+                helperTexts.forEach(helper => {
+                    if (isReady) {
+                        if (helper.textContent !== 'Ready to flash') {
+                            helper.textContent = 'Ready to flash';
+                        }
+                        helper.classList.add('is-visible');
+                    } else {
+                        helper.classList.remove('is-visible');
+                        if (helper.textContent) {
+                            helper.textContent = '';
+                        }
+                    }
+                });
+            };
+
+            setReadyState(false);
+
             // Ensure required selections are present before building the config string
             if (!configuration.mounting || !configuration.power) {
                 document.getElementById('compatible-firmware').innerHTML = `
@@ -792,8 +825,6 @@
                         <p>Please select both a mounting location and power option before checking firmware compatibility.</p>
                     </div>
                 `;
-                document.getElementById('download-btn').disabled = true;
-                setChecklistCompletion(false);
                 return;
             }
 
@@ -898,11 +929,14 @@
                                     <a href="#" class="release-notes-link" onclick="toggleReleaseNotes(event)">View Release Notes</a>
                                 </div>
                             </div>
-                            <esp-web-install-button manifest="firmware-${manifest.builds.indexOf(matchingFirmware)}.json">
-                                <button slot="activate" class="btn btn-primary install-firmware-btn">
-                                    Install Firmware
-                                </button>
-                            </esp-web-install-button>
+                            <div class="firmware-actions">
+                                <esp-web-install-button manifest="firmware-${manifest.builds.indexOf(matchingFirmware)}.json">
+                                    <button slot="activate" class="btn btn-primary">
+                                        Install Firmware
+                                    </button>
+                                </esp-web-install-button>
+                                <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
+                            </div>
                         </div>
                         ${metadataBlock}
                         <div class="release-notes-section" id="release-notes" style="display: none;">
@@ -912,9 +946,7 @@
                         </div>
                     `;
                     document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
-                    document.getElementById('download-btn').disabled = false;
-                    syncChecklistCompletion();
-                    attachInstallButtonListeners();
+                    setReadyState(true);
                 } else {
                     // Firmware doesn't exist - show message
                     const notAvailableHtml = `
@@ -926,10 +958,6 @@
                         </div>
                     `;
                     document.getElementById('compatible-firmware').innerHTML = notAvailableHtml;
-                    document.getElementById('download-btn').disabled = true;
-                    window.currentFirmware = null;
-                    window.currentConfigString = configString;
-                    syncChecklistCompletion();
                 }
 
                 renderLegacyFirmware(legacyGroups);
@@ -942,9 +970,6 @@
                     </div>
                 `;
                 document.getElementById('compatible-firmware').innerHTML = errorHtml;
-                document.getElementById('download-btn').disabled = true;
-                window.currentFirmware = null;
-                syncChecklistCompletion();
                 renderLegacyFirmware([]);
             }
         }
