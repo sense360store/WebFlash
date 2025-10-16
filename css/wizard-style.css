@@ -189,10 +189,6 @@ h1 {
     .wizard-layout {
         grid-template-columns: 1fr;
     }
-
-    .wizard-summary {
-        position: static;
-    }
 }
 
 /* Wizard Steps */
