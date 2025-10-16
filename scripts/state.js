@@ -20,6 +20,19 @@ const allowedOptions = {
     fan: ['none', 'pwm', 'analog']
 };
 
+function escapeHtml(value) {
+    const stringValue = String(value);
+    const replacements = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+
+    return stringValue.replace(/[&<>"']/g, char => replacements[char]);
+}
+
 let checklistCompleted = false;
 let rememberChoices = false;
 let rememberedState = null;
@@ -802,70 +815,112 @@ async function loadReleaseNotes() {
         const notesPath = `firmware/configurations/Sense360-${configString}-v${firmware.version}-${firmware.channel}.md`;
         const response = await fetch(notesPath);
 
+        const contentContainer = notesSection.querySelector('.release-notes-content');
+        if (!contentContainer) {
+            return;
+        }
+
         if (response.ok) {
             const markdown = await response.text();
-            // Better markdown to HTML conversion
-            let html = '';
             const lines = markdown.split('\n');
-            let inList = false;
-            let inParagraph = false;
+            const fragment = document.createDocumentFragment();
 
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
+            let currentList = null;
+            let currentParagraph = null;
 
-                // Close paragraph if needed
-                if (inParagraph && (line === '' || line.match(/^#/) || line.match(/^-/))) {
-                    html += '</p>';
-                    inParagraph = false;
+            const closeParagraph = () => {
+                currentParagraph = null;
+            };
+
+            const closeList = () => {
+                currentList = null;
+            };
+
+            lines.forEach(rawLine => {
+                const line = rawLine.trim();
+
+                if (line === '') {
+                    closeParagraph();
+                    closeList();
+                    return;
                 }
 
-                // Close list if needed
-                if (inList && !line.match(/^-/)) {
-                    html += '</ul>';
-                    inList = false;
-                }
+                const isHeader = line.startsWith('# ')
+                    || line.startsWith('## ')
+                    || line.startsWith('### ');
+                const isListItem = line.startsWith('- ');
 
-                // Headers
-                if (line.match(/^# /)) {
-                    html += `<h2>${line.substring(2)}</h2>`;
-                } else if (line.match(/^## /)) {
-                    html += `<h3>${line.substring(3)}</h3>`;
-                } else if (line.match(/^### /)) {
-                    html += `<h4>${line.substring(4)}</h4>`;
-                }
-                // List items
-                else if (line.match(/^- /)) {
-                    if (!inList) {
-                        html += '<ul>';
-                        inList = true;
+                if (isHeader) {
+                    closeParagraph();
+                    closeList();
+
+                    let headerElement = null;
+                    if (line.startsWith('### ')) {
+                        headerElement = document.createElement('h4');
+                        headerElement.textContent = line.substring(4);
+                    } else if (line.startsWith('## ')) {
+                        headerElement = document.createElement('h3');
+                        headerElement.textContent = line.substring(3);
+                    } else if (line.startsWith('# ')) {
+                        headerElement = document.createElement('h2');
+                        headerElement.textContent = line.substring(2);
                     }
-                    html += `<li>${line.substring(2)}</li>`;
-                }
-                // Regular text
-                else if (line !== '') {
-                    if (!inParagraph) {
-                        html += '<p>';
-                        inParagraph = true;
+
+                    if (headerElement) {
+                        fragment.appendChild(headerElement);
                     }
-                    html += line + ' ';
+
+                    return;
                 }
-            }
 
-            // Close any open tags
-            if (inParagraph) html += '</p>';
-            if (inList) html += '</ul>';
+                if (isListItem) {
+                    closeParagraph();
 
-            notesSection.querySelector('.release-notes-content').innerHTML = html;
+                    if (!currentList) {
+                        currentList = document.createElement('ul');
+                        fragment.appendChild(currentList);
+                    }
+
+                    const listItem = document.createElement('li');
+                    listItem.textContent = line.substring(2);
+                    currentList.appendChild(listItem);
+                    return;
+                }
+
+                closeList();
+
+                if (!currentParagraph) {
+                    currentParagraph = document.createElement('p');
+                    fragment.appendChild(currentParagraph);
+                    currentParagraph.textContent = line;
+                } else {
+                    currentParagraph.textContent = `${currentParagraph.textContent} ${line}`.trim();
+                }
+            });
+
+            contentContainer.replaceChildren(fragment);
         } else {
-            notesSection.querySelector('.release-notes-content').innerHTML = `
-                <p class="no-notes">No release notes available for this firmware version.</p>
-            `;
+            const noNotesMessage = document.createElement('p');
+            noNotesMessage.className = 'no-notes';
+            noNotesMessage.textContent = 'No release notes available for this firmware version.';
+            contentContainer.replaceChildren(noNotesMessage);
         }
     } catch (error) {
         console.error('Error loading release notes:', error);
-        notesSection.querySelector('.release-notes-content').innerHTML = `
-            <p class="error">Unable to load release notes.</p>
-        `;
+        const notesElement = document.getElementById('release-notes');
+        if (!notesElement) {
+            return;
+        }
+
+        const contentContainer = notesElement.querySelector('.release-notes-content');
+        if (!contentContainer) {
+            return;
+        }
+
+        const errorMessage = document.createElement('p');
+        errorMessage.className = 'error';
+        errorMessage.textContent = 'Unable to load release notes.';
+        contentContainer.replaceChildren(errorMessage);
     }
 }
 
