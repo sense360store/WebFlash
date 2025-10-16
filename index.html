@@ -248,6 +248,18 @@
                     </div>
                 </div>
 
+                <div class="legacy-firmware-section" id="legacy-firmware-section" style="display: none;">
+                    <details class="legacy-panel" id="legacy-firmware-panel">
+                        <summary>
+                            <span class="legacy-panel-title">Legacy Firmware Builds</span>
+                            <span class="legacy-panel-subtitle">Manual install options for configurations not yet supported by the wizard</span>
+                        </summary>
+                        <div class="legacy-panel-body" id="legacy-firmware-list">
+                            <!-- Legacy firmware builds will be injected here -->
+                        </div>
+                    </details>
+                </div>
+
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
@@ -505,6 +517,105 @@
             document.getElementById('config-summary').innerHTML = summaryHtml;
         }
 
+        function groupLegacyBuilds(builds) {
+            const groupsMap = new Map();
+
+            builds.forEach((build, index) => {
+                if (!build.config_string) {
+                    const model = build.model || 'Unknown Model';
+                    const variant = build.variant || '';
+                    const key = `${model}||${variant}`;
+
+                    if (!groupsMap.has(key)) {
+                        groupsMap.set(key, {
+                            model,
+                            variant,
+                            builds: []
+                        });
+                    }
+
+                    groupsMap.get(key).builds.push({
+                        ...build,
+                        manifestIndex: index
+                    });
+                }
+            });
+
+            return Array.from(groupsMap.values()).sort((a, b) => {
+                const modelCompare = a.model.localeCompare(b.model);
+                if (modelCompare !== 0) {
+                    return modelCompare;
+                }
+                return a.variant.localeCompare(b.variant);
+            });
+        }
+
+        function renderLegacyFirmware(groups) {
+            const section = document.getElementById('legacy-firmware-section');
+            const list = document.getElementById('legacy-firmware-list');
+            const panel = document.getElementById('legacy-firmware-panel');
+
+            if (!section || !list) {
+                return;
+            }
+
+            if (!groups.length) {
+                section.style.display = 'none';
+                list.innerHTML = '';
+                if (panel) {
+                    panel.removeAttribute('open');
+                }
+                return;
+            }
+
+            const legacyHtml = groups.map(group => {
+                const variantTag = group.variant ? `<span class="legacy-group-variant">${group.variant}</span>` : '';
+                const buildsHtml = group.builds.map(build => {
+                    const versionLabel = build.version ? `v${build.version}${build.channel ? `-${build.channel}` : ''}` : '';
+                    const buildDate = build.build_date ? new Date(build.build_date) : null;
+                    const buildDateLabel = buildDate && !isNaN(buildDate.getTime()) ? buildDate.toLocaleDateString() : '';
+                    const fileSize = Number(build.file_size);
+                    const sizeLabel = Number.isFinite(fileSize) && fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : '';
+                    const metaParts = [];
+                    if (versionLabel) metaParts.push(versionLabel);
+                    if (buildDateLabel) metaParts.push(buildDateLabel);
+                    if (sizeLabel) metaParts.push(sizeLabel);
+                    const metaHtml = metaParts.length ? `<div class="legacy-build-meta">${metaParts.join(' · ')}</div>` : '';
+                    const description = build.description || 'No description available for this firmware build.';
+
+                    return `
+                        <div class="legacy-build-card">
+                            <div class="legacy-build-info">
+                                <div class="legacy-build-name">${group.model}${group.variant ? ` · ${group.variant}` : ''}</div>
+                                ${metaHtml}
+                                <p class="legacy-build-description">${description}</p>
+                            </div>
+                            <div class="legacy-build-actions">
+                                <esp-web-install-button manifest="firmware-${build.manifestIndex}.json" class="legacy-install-button">
+                                    <button slot="activate" class="btn btn-primary btn-small">Install Firmware</button>
+                                </esp-web-install-button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <section class="legacy-build-group">
+                        <header class="legacy-group-header">
+                            <h4 class="legacy-group-title">${group.model}</h4>
+                            ${variantTag}
+                        </header>
+                        <div class="legacy-builds">
+                            ${buildsHtml}
+                        </div>
+                    </section>
+                `;
+            }).join('');
+
+            list.innerHTML = legacyHtml;
+            section.style.display = 'block';
+        }
+
         async function findCompatibleFirmware() {
             // Ensure required selections are present before building the config string
             if (!configuration.mounting || !configuration.power) {
@@ -548,7 +659,8 @@
             try {
                 const response = await fetch('manifest.json');
                 const manifest = await response.json();
-                
+                const legacyGroups = groupLegacyBuilds(manifest.builds);
+
                 // Find matching firmware in manifest
                 let matchingFirmware = null;
                 for (const build of manifest.builds) {
@@ -563,7 +675,43 @@
                     // Store firmware info globally
                     window.currentFirmware = matchingFirmware;
                     window.currentConfigString = configString;
-                    
+
+                    const metadataSections = [
+                        { key: 'features', title: 'Key Features' },
+                        { key: 'hardware_requirements', title: 'Hardware Requirements' },
+                        { key: 'known_issues', title: 'Known Issues' },
+                        { key: 'changelog', title: 'Changelog' }
+                    ];
+
+                    const metadataHtml = metadataSections
+                        .map(({ key, title }) => {
+                            const items = matchingFirmware[key];
+                            if (!Array.isArray(items) || items.length === 0) {
+                                return '';
+                            }
+
+                            const listItems = items
+                                .map(item => `<li>${item}</li>`)
+                                .join('');
+
+                            return `
+                                <section class="firmware-meta-section firmware-${key.replace(/_/g, '-')}">
+                                    <h4>${title}</h4>
+                                    <ul>${listItems}</ul>
+                                </section>
+                            `;
+                        })
+                        .filter(Boolean)
+                        .join('');
+
+                    const metadataBlock = metadataHtml
+                        ? `
+                            <div class="firmware-metadata">
+                                ${metadataHtml}
+                            </div>
+                        `
+                        : '';
+
                     // Firmware exists - show install option
                     const firmwareHtml = `
                         <div class="firmware-item">
@@ -581,6 +729,7 @@
                                 </button>
                             </esp-web-install-button>
                         </div>
+                        ${metadataBlock}
                         <div class="release-notes-section" id="release-notes" style="display: none;">
                             <div class="release-notes-content">
                                 <div class="loading">Loading release notes...</div>
@@ -602,6 +751,8 @@
                     document.getElementById('compatible-firmware').innerHTML = notAvailableHtml;
                     document.getElementById('download-btn').disabled = true;
                 }
+
+                renderLegacyFirmware(legacyGroups);
             } catch (error) {
                 console.error('Error loading manifest:', error);
                 const errorHtml = `
@@ -612,6 +763,7 @@
                 `;
                 document.getElementById('compatible-firmware').innerHTML = errorHtml;
                 document.getElementById('download-btn').disabled = true;
+                renderLegacyFirmware([]);
             }
         }
         
