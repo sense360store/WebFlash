@@ -13,6 +13,18 @@ body {
     font-size: 16px;
 }
 
+:root {
+    --brand-green: #00c853;
+    --brand-green-rgb: 0, 200, 83;
+    --brand-green-contrast: #008631;
+    --brand-green-contrast-rgb: 0, 134, 49;
+    --brand-green-contrast-hover: #00742a;
+    --brand-green-contrast-active: #006221;
+    --brand-green-tint: #e8f5e9;
+    --brand-green-tint-strong: #d0ebd6;
+    --brand-green-border: #a4d9b8;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -79,7 +91,7 @@ h1 {
     left: 50%;
     width: 32px;
     height: 3px;
-    background: #1a73e8;
+    background: var(--brand-green);
     border-radius: 999px;
     transform: translateX(-50%) scaleX(0);
     opacity: 0;
@@ -108,7 +120,7 @@ h1 {
 }
 
 .progress-step.completed::after {
-    background: #1a73e8;
+    background: var(--brand-green);
 }
 
 .step-number {
@@ -140,7 +152,7 @@ h1 {
 }
 
 .progress-step.active .step-number {
-    background: #1a73e8;
+    background: var(--brand-green-contrast);
     animation: progress-step-pop 0.4s ease;
 }
 
@@ -226,13 +238,13 @@ h1 {
 }
 
 .option-card:hover .option-content {
-    border-color: #1a73e8;
+    border-color: var(--brand-green);
     background: #f8f9fa;
 }
 
 .option-card input[type="radio"]:checked + .option-content {
-    border-color: #1a73e8;
-    background: #e8f0fe;
+    border-color: var(--brand-green-contrast);
+    background: var(--brand-green-tint);
 }
 
 /* Module badge styling */
@@ -257,13 +269,13 @@ h1 {
 
 /* Base module badge */
 .option-card input[value="base"] + .option-content .option-title {
-    background: #ea580c;
+    background: var(--brand-green-contrast);
     color: white;
 }
 
 /* Pro module badge */
 .option-card input[value="pro"] + .option-content .option-title {
-    background: #ea580c;
+    background: var(--brand-green-contrast);
     color: white;
 }
 
@@ -335,13 +347,13 @@ h1 {
 }
 
 .checkbox-card:hover .checkbox-content {
-    border-color: #1a73e8;
+    border-color: var(--brand-green);
     background: white;
 }
 
 .checkbox-card input[type="checkbox"]:checked + .checkbox-content {
-    border-color: #1a73e8;
-    background: #e8f0fe;
+    border-color: var(--brand-green-contrast);
+    background: var(--brand-green-tint);
 }
 
 .checkbox-title {
@@ -381,22 +393,22 @@ h1 {
 }
 
 .btn-primary {
-    background: #1a73e8;
+    background: var(--brand-green-contrast);
     color: white;
 }
 
 .btn-primary.is-ready {
-    background: #188038;
-    box-shadow: 0 0 0 0 rgba(24, 128, 56, 0.45);
+    background: var(--brand-green-contrast-hover);
+    box-shadow: 0 0 0 0 rgba(var(--brand-green-contrast-rgb), 0.45);
     color: #fff;
 }
 
 .btn-primary.is-ready:hover:not(:disabled) {
-    background: #0d652d;
+    background: var(--brand-green-contrast-active);
 }
 
 .btn-primary.is-ready:focus-visible {
-    outline: 3px solid rgba(24, 128, 56, 0.45);
+    outline: 3px solid rgba(var(--brand-green-contrast-rgb), 0.45);
     outline-offset: 2px;
 }
 
@@ -410,7 +422,7 @@ h1 {
 
 .ready-helper {
     font-size: 14px;
-    color: #188038;
+    color: var(--brand-green-contrast);
     margin: 0;
     opacity: 0;
     transform: translateY(-4px);
@@ -427,13 +439,13 @@ h1 {
 
 @keyframes readyPulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(24, 128, 56, 0.45);
+        box-shadow: 0 0 0 0 rgba(var(--brand-green-contrast-rgb), 0.45);
     }
     70% {
-        box-shadow: 0 0 0 14px rgba(24, 128, 56, 0);
+        box-shadow: 0 0 0 14px rgba(var(--brand-green-contrast-rgb), 0);
     }
     100% {
-        box-shadow: 0 0 0 0 rgba(24, 128, 56, 0);
+        box-shadow: 0 0 0 0 rgba(var(--brand-green-contrast-rgb), 0);
     }
 }
 
@@ -446,12 +458,12 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
     .btn-primary.is-ready {
         animation: none;
-        box-shadow: 0 0 0 4px rgba(24, 128, 56, 0.25);
+        box-shadow: 0 0 0 4px rgba(var(--brand-green-contrast-rgb), 0.25);
     }
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #1557b0;
+    background: var(--brand-green-contrast-hover);
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
@@ -483,26 +495,26 @@ h1 {
 
 /* Pre-Flash Checklist */
 .pre-flash-checklist {
-    background: #f0f7ff;
-    border: 1px solid #d2e3fc;
+    background: var(--brand-green-tint);
+    border: 1px solid var(--brand-green-border);
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 32px;
-    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.12);
+    box-shadow: 0 1px 3px rgba(var(--brand-green-rgb), 0.12);
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .pre-flash-checklist[data-complete="true"] {
-    background: #e6f0ff;
-    border-color: #a7c8ff;
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.14);
+    background: var(--brand-green-tint-strong);
+    border-color: var(--brand-green-border);
+    box-shadow: 0 4px 12px rgba(var(--brand-green-rgb), 0.14);
 }
 
 .pre-flash-checklist .checklist-heading {
     margin-bottom: 8px;
     font-size: 18px;
     font-weight: 600;
-    color: #1a73e8;
+    color: var(--brand-green-contrast);
 }
 
 .pre-flash-checklist[data-complete="false"] .checklist-heading {
@@ -530,7 +542,7 @@ h1 {
     gap: 12px;
     padding: 12px 16px;
     border-radius: 10px;
-    background: rgba(26, 115, 232, 0.08);
+    background: rgba(var(--brand-green-rgb), 0.08);
     transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
 }
 
@@ -542,18 +554,18 @@ h1 {
 
 .pre-flash-checklist [data-checklist-item] strong {
     font-weight: 600;
-    color: #174ea6;
+    color: var(--brand-green-contrast-active);
 }
 
 .pre-flash-checklist [data-checklist-item] .status-icon {
     flex: 0 0 22px;
     height: 22px;
     border-radius: 50%;
-    border: 2px solid #1a73e8;
+    border: 2px solid var(--brand-green);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #1a73e8;
+    color: var(--brand-green);
     font-size: 12px;
     background: #fff;
     transition: all 0.3s ease;
@@ -567,11 +579,11 @@ h1 {
 }
 
 .pre-flash-checklist [data-checklist-item][data-complete="true"] {
-    background: rgba(26, 115, 232, 0.12);
+    background: rgba(var(--brand-green-rgb), 0.12);
 }
 
 .pre-flash-checklist [data-checklist-item][data-complete="true"] .status-icon {
-    background: #1a73e8;
+    background: var(--brand-green-contrast);
     color: #fff;
 }
 
@@ -582,13 +594,13 @@ h1 {
 
 @keyframes checklistGlow {
     0% {
-        text-shadow: 0 0 0 rgba(26, 115, 232, 0.3);
+        text-shadow: 0 0 0 rgba(var(--brand-green-rgb), 0.3);
     }
     50% {
-        text-shadow: 0 0 12px rgba(26, 115, 232, 0.45);
+        text-shadow: 0 0 12px rgba(var(--brand-green-rgb), 0.45);
     }
     100% {
-        text-shadow: 0 0 0 rgba(26, 115, 232, 0.3);
+        text-shadow: 0 0 0 rgba(var(--brand-green-rgb), 0.3);
     }
 }
 
@@ -731,7 +743,7 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: #fff;
-    background: #1a73e8;
+    background: var(--brand-green-contrast);
     padding: 4px 12px;
     border-radius: 999px;
 }
@@ -867,13 +879,14 @@ h1 {
 }
 
 .release-notes-link {
-    color: #1a73e8;
+    color: var(--brand-green-contrast);
     text-decoration: none;
     font-size: 14px;
     margin-left: 16px;
 }
 
 .release-notes-link:hover {
+    color: var(--brand-green-contrast-hover);
     text-decoration: underline;
 }
 

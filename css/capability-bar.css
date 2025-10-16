@@ -1,0 +1,132 @@
+#capability-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: #f8fafc;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.capability-bar__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.capability-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    border: 1px solid #cbd5f5;
+    background: #e0e7ff;
+    color: #1e3a8a;
+}
+
+.capability-chip[data-status="available"] {
+    background: #e8f5e9;
+    border-color: #a5d6a7;
+    color: #1b5e20;
+}
+
+.capability-chip[data-status="unavailable"] {
+    background: #ffebee;
+    border-color: #ef9a9a;
+    color: #b71c1c;
+}
+
+.capability-chip[data-status="partial"] {
+    background: #fff3e0;
+    border-color: #ffcc80;
+    color: #e65100;
+}
+
+.capability-chip-label {
+    font-weight: 600;
+}
+
+.capability-chip-status {
+    font-weight: 500;
+}
+
+.capability-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 140px;
+}
+
+.capability-copy-btn {
+    align-self: flex-start;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #1a73e8;
+    background: #1a73e8;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.capability-copy-btn:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.capability-copy-btn:hover {
+    background: #1558b0;
+    border-color: #1558b0;
+}
+
+.capability-copy-feedback {
+    font-size: 0.8rem;
+    color: #1e3a8a;
+}
+
+.capability-note {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    border: 1px solid #f8b4b4;
+    background: #fff5f5;
+    color: #7f1d1d;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.capability-note a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.capability-note__actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.capability-note__dismiss {
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #b91c1c;
+    background: transparent;
+    color: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.capability-note__dismiss:focus-visible {
+    outline: 3px solid #fb7185;
+    outline-offset: 2px;
+}
+
+.capability-note__dismiss:hover {
+    background: #fee2e2;
+}
