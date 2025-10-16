@@ -545,9 +545,35 @@
                 return;
             }
 
-            const legacyHtml = groups.map(group => {
-                const variantTag = group.variant ? `<span class="legacy-group-variant">${group.variant}</span>` : '';
-                const buildsHtml = group.builds.map(build => {
+            list.innerHTML = '';
+
+            const legacyFragment = document.createDocumentFragment();
+
+            groups.forEach(group => {
+                const groupSection = document.createElement('section');
+                groupSection.className = 'legacy-build-group';
+
+                const header = document.createElement('header');
+                header.className = 'legacy-group-header';
+
+                const title = document.createElement('h4');
+                title.className = 'legacy-group-title';
+                title.textContent = group.model || '';
+                header.appendChild(title);
+
+                if (group.variant) {
+                    const variant = document.createElement('span');
+                    variant.className = 'legacy-group-variant';
+                    variant.textContent = group.variant;
+                    header.appendChild(variant);
+                }
+
+                groupSection.appendChild(header);
+
+                const buildsContainer = document.createElement('div');
+                buildsContainer.className = 'legacy-builds';
+
+                group.builds.forEach(build => {
                     const versionLabel = build.version ? `v${build.version}${build.channel ? `-${build.channel}` : ''}` : '';
                     const buildDate = build.build_date ? new Date(build.build_date) : null;
                     const buildDateLabel = buildDate && !isNaN(buildDate.getTime()) ? buildDate.toLocaleDateString() : '';
@@ -557,39 +583,59 @@
                     if (versionLabel) metaParts.push(versionLabel);
                     if (buildDateLabel) metaParts.push(buildDateLabel);
                     if (sizeLabel) metaParts.push(sizeLabel);
-                    const metaHtml = metaParts.length ? `<div class="legacy-build-meta">${metaParts.join(' · ')}</div>` : '';
-                    const description = build.description || 'No description available for this firmware build.';
 
-                    return `
-                        <div class="legacy-build-card">
-                            <div class="legacy-build-info">
-                                <div class="legacy-build-name">${group.model}${group.variant ? ` · ${group.variant}` : ''}</div>
-                                ${metaHtml}
-                                <p class="legacy-build-description">${description}</p>
-                            </div>
-                            <div class="legacy-build-actions">
-                                <esp-web-install-button manifest="firmware-${build.manifestIndex}.json" class="legacy-install-button">
-                                    <button slot="activate" class="btn btn-primary btn-small">Install Firmware</button>
-                                </esp-web-install-button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
+                    const buildCard = document.createElement('div');
+                    buildCard.className = 'legacy-build-card';
 
-                return `
-                    <section class="legacy-build-group">
-                        <header class="legacy-group-header">
-                            <h4 class="legacy-group-title">${group.model}</h4>
-                            ${variantTag}
-                        </header>
-                        <div class="legacy-builds">
-                            ${buildsHtml}
-                        </div>
-                    </section>
-                `;
-            }).join('');
+                    const info = document.createElement('div');
+                    info.className = 'legacy-build-info';
 
-            list.innerHTML = legacyHtml;
+                    const name = document.createElement('div');
+                    name.className = 'legacy-build-name';
+                    const nameParts = [];
+                    if (group.model) nameParts.push(group.model);
+                    if (group.variant) nameParts.push(group.variant);
+                    name.textContent = nameParts.join(' · ');
+                    info.appendChild(name);
+
+                    if (metaParts.length) {
+                        const meta = document.createElement('div');
+                        meta.className = 'legacy-build-meta';
+                        meta.textContent = metaParts.join(' · ');
+                        info.appendChild(meta);
+                    }
+
+                    const description = document.createElement('p');
+                    description.className = 'legacy-build-description';
+                    description.textContent = build.description || 'No description available for this firmware build.';
+                    info.appendChild(description);
+
+                    buildCard.appendChild(info);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'legacy-build-actions';
+
+                    const installButton = document.createElement('esp-web-install-button');
+                    installButton.setAttribute('manifest', `firmware-${build.manifestIndex}.json`);
+                    installButton.className = 'legacy-install-button';
+
+                    const activateButton = document.createElement('button');
+                    activateButton.slot = 'activate';
+                    activateButton.className = 'btn btn-primary btn-small';
+                    activateButton.textContent = 'Install Firmware';
+
+                    installButton.appendChild(activateButton);
+                    actions.appendChild(installButton);
+                    buildCard.appendChild(actions);
+
+                    buildsContainer.appendChild(buildCard);
+                });
+
+                groupSection.appendChild(buildsContainer);
+                legacyFragment.appendChild(groupSection);
+            });
+
+            list.appendChild(legacyFragment);
             section.style.display = 'block';
         }
 
