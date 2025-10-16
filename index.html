@@ -284,7 +284,15 @@
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <div class="primary-action-group">
-                        <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                        <div class="primary-action-controls">
+                            <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                            <button class="btn btn-icon" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
+                                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                                    <path d="M10.59 13.41a4 4 0 0 1 5.66 0l1.18 1.18a4 4 0 0 1 0 5.66l-2 2a4 4 0 0 1-5.66 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M13.41 10.59a4 4 0 0 1-5.66 0L6.59 9.43a4 4 0 0 1 0-5.66l2-2a4 4 0 0 1 5.66 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </svg>
+                            </button>
+                        </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     </div>
                 </div>
@@ -321,6 +329,7 @@
         };
 
         let checklistCompleted = false;
+        let toastTimeoutId = null;
 
         function syncChecklistCompletion() {
             const section = document.querySelector('.pre-flash-checklist');
@@ -353,18 +362,23 @@
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check browser compatibility
-            if (!navigator.serial) {
-                document.getElementById('browser-warning').style.display = 'block';
-            }
+            document.addEventListener('DOMContentLoaded', () => {
+                // Check browser compatibility
+                if (!navigator.serial) {
+                    document.getElementById('browser-warning').style.display = 'block';
+                }
 
-            syncChecklistCompletion();
+                syncChecklistCompletion();
 
-            // Add event listeners
-            document.querySelectorAll('input[name="mounting"]').forEach(input => {
-                input.addEventListener('change', handleMountingChange);
-            });
+                const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
+                if (copyUrlBtn && !navigator.clipboard) {
+                    copyUrlBtn.title = 'Copy requires Clipboard API support';
+                }
+
+                // Add event listeners
+                document.querySelectorAll('input[name="mounting"]').forEach(input => {
+                    input.addEventListener('change', handleMountingChange);
+                });
 
             document.querySelectorAll('input[name="power"]').forEach(input => {
                 input.addEventListener('change', handlePowerChange);
@@ -796,6 +810,20 @@
                     downloadBtn.classList.toggle('is-ready', isReady);
                 }
 
+                const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
+                if (copyUrlBtn) {
+                    const clipboardSupported = !!navigator.clipboard;
+                    const canCopy = clipboardSupported && isReady && window.currentFirmware && window.currentFirmware.parts && window.currentFirmware.parts.length > 0;
+                    copyUrlBtn.disabled = !canCopy;
+                    copyUrlBtn.classList.toggle('is-ready', canCopy);
+
+                    if (!clipboardSupported) {
+                        copyUrlBtn.title = 'Copy requires Clipboard API support';
+                    } else {
+                        copyUrlBtn.removeAttribute('title');
+                    }
+                }
+
                 const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
                 if (installButton) {
                     installButton.classList.toggle('is-ready', isReady);
@@ -818,6 +846,7 @@
             };
 
             setReadyState(false);
+            window.currentFirmware = null;
 
             // Ensure required selections are present before building the config string
             if (!configuration.mounting || !configuration.power) {
@@ -1077,7 +1106,7 @@
                 const firmware = window.currentFirmware;
                 const configString = window.currentConfigString;
                 const firmwarePath = firmware.parts[0].path;
-                
+
                 // Create a link element and trigger download
                 const link = document.createElement('a');
                 link.href = firmwarePath;
@@ -1086,6 +1115,79 @@
                 link.click();
                 document.body.removeChild(link);
             }
+        }
+
+        function getResolvedFirmwareUrl() {
+            if (!window.currentFirmware || !Array.isArray(window.currentFirmware.parts) || window.currentFirmware.parts.length === 0) {
+                return null;
+            }
+
+            const firmwarePath = window.currentFirmware.parts[0].path;
+            if (!firmwarePath) {
+                return null;
+            }
+
+            try {
+                return new URL(firmwarePath, window.location.href).href;
+            } catch (error) {
+                console.warn('Unable to resolve firmware URL:', error);
+                return firmwarePath;
+            }
+        }
+
+        async function copyFirmwareUrl() {
+            if (!navigator.clipboard) {
+                showToast('Copy not supported');
+                return;
+            }
+
+            const firmwareUrl = getResolvedFirmwareUrl();
+            if (!firmwareUrl) {
+                showToast('Nothing to copy');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(firmwareUrl);
+                showToast('Copied');
+            } catch (error) {
+                console.error('Failed to copy firmware URL:', error);
+                showToast('Copy failed');
+            }
+
+            const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
+            if (copyUrlBtn) {
+                copyUrlBtn.blur();
+            }
+        }
+
+        function showToast(message, options = {}) {
+            const { duration = 2000 } = options;
+            let toast = document.getElementById('app-toast');
+
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'app-toast';
+                toast.className = 'app-toast';
+                toast.setAttribute('role', 'status');
+                toast.setAttribute('aria-live', 'polite');
+                document.body.appendChild(toast);
+            }
+
+            toast.textContent = message;
+
+            // Trigger reflow to restart animation when message changes rapidly
+            toast.classList.remove('is-visible');
+            void toast.offsetWidth;
+            toast.classList.add('is-visible');
+
+            if (toastTimeoutId) {
+                clearTimeout(toastTimeoutId);
+            }
+
+            toastTimeoutId = setTimeout(() => {
+                toast.classList.remove('is-visible');
+            }, duration);
         }
 
         function initializeFromUrl() {
