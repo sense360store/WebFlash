@@ -53,7 +53,25 @@ jobs:
             --manifest-path manifest.json \
             --manifest-prefix firmware- \
             --summary
+- name: List firmware & dry-run summary
+  run: |
+    set -euo pipefail
+    echo "== .bin files =="
+    find firmware -type f -name '*.bin' -printf '%p\n' | sort
+    echo "== gen-manifests dry-run summary =="
+    python scripts/gen-manifests.py \
+      --firmware-dir firmware \
+      --manifest-path manifest.json \
+      --manifest-prefix firmware- \
+      --summary --dry-run
 
+- name: Assert AirIQPro present
+  run: |
+    set -euo pipefail
+    grep -qi '"config_string": *"Ceiling-POE-AirIQPro"' manifest.json || {
+      echo "❌ Missing Ceiling-POE-AirIQPro in manifest.json" >&2
+      exit 1
+    }
       - name: Validate Ceiling-POE-AirIQBase manifest
         run: |
           set -euo pipefail
