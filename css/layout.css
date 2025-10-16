@@ -1,0 +1,129 @@
+:root {
+    scroll-padding-top: 72px;
+}
+
+.wizard-shell {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1rem;
+    align-items: start;
+    width: 100%;
+}
+
+@media (max-width: 1023px) {
+    .wizard-shell {
+        display: block;
+    }
+}
+
+.wizard-shell .wizard-main {
+    min-width: 0;
+}
+
+.wizard-sidebar {
+    position: sticky;
+    top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sidebar-card {
+    border: 1px solid var(--border, #d0d7de);
+    background: var(--surface, #fff);
+    border-radius: 0.5rem;
+    padding: 0.75rem 0.9rem;
+    color: inherit;
+}
+
+.sidebar-card + .sidebar-card {
+    margin-top: 0.75rem;
+}
+
+.sidebar-card h4 {
+    margin: 0.1rem 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.sidebar-card p {
+    margin: 0.4rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.sidebar-list {
+    margin: 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.sidebar-list li {
+    font-size: 0.95rem;
+}
+
+.sidebar-list li strong {
+    font-weight: 600;
+}
+
+.sidebar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+.wizard-sidebar .btn {
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border, #d0d7de);
+    background: var(--bg-elev-1, #f6f8fa);
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.wizard-sidebar .btn.primary {
+    background: var(--accent, #2ea6ff);
+    color: var(--accent-contrast, #001b2b);
+    border: 0;
+}
+
+.wizard-sidebar .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.wizard-sidebar .btn:focus-visible {
+    outline: 2px solid var(--focus-ring, #66b3ff);
+    outline-offset: 2px;
+}
+
+.sidebar-warning {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--warning-fg, #8a5b00);
+}
+
+.sidebar-fw-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.sidebar-fw-note {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.sidebar-muted {
+    color: var(--text-muted, #57606a);
+}
+
+@media (max-width: 1023px) {
+    .wizard-sidebar {
+        position: static;
+    }
+}
