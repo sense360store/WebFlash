@@ -1,0 +1,217 @@
+:root {
+    color-scheme: light;
+    --color-background: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f8f9fa;
+    --color-surface-soft: #eef1f4;
+    --color-border: #dadce0;
+    --color-border-subtle: #e8eaed;
+    --color-border-strong: #e0e0e0;
+    --color-text-primary: #202124;
+    --color-text-secondary: #5f6368;
+    --color-text-tertiary: #3c4043;
+    --color-progress-line: #dadce0;
+    --color-step-inactive-bg: #dadce0;
+    --color-toggle-bg: rgba(255, 255, 255, 0.9);
+    --color-toggle-border: rgba(32, 33, 36, 0.15);
+    --color-toggle-text: #202124;
+    --color-toggle-hover: rgba(32, 33, 36, 0.08);
+    --capability-bar-bg: #f8fafc;
+    --capability-bar-border: #dbeafe;
+    --capability-note-bg: #fff5f5;
+    --capability-note-border: #f8b4b4;
+    --capability-note-text: #7f1d1d;
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --color-background: #0f172a;
+    --color-surface: #1f2937;
+    --color-surface-muted: #16213a;
+    --color-surface-soft: #1a2538;
+    --color-border: #334155;
+    --color-border-subtle: #2b3b52;
+    --color-border-strong: #3b4a5f;
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5f5;
+    --color-text-tertiary: #e2e8f0;
+    --color-progress-line: #334155;
+    --color-step-inactive-bg: #334155;
+    --color-toggle-bg: rgba(30, 41, 59, 0.85);
+    --color-toggle-border: rgba(148, 163, 184, 0.4);
+    --color-toggle-text: #f8fafc;
+    --color-toggle-hover: rgba(148, 163, 184, 0.12);
+    --capability-bar-bg: rgba(30, 41, 59, 0.6);
+    --capability-bar-border: #334155;
+    --capability-note-bg: rgba(185, 28, 28, 0.12);
+    --capability-note-border: rgba(248, 180, 180, 0.45);
+    --capability-note-text: #fecaca;
+}
+
+body {
+    color: var(--color-text-primary);
+    background-color: var(--color-background);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+header,
+.wizard-container,
+.legacy-panel,
+.legacy-panel summary,
+.legacy-panel-body,
+.legacy-build-card,
+.option-content,
+.checkbox-content {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
+.module-section,
+.configuration-summary,
+.pre-flash-checklist,
+.review-card,
+.installation-step {
+    background-color: var(--color-surface-muted);
+}
+
+h1,
+.wizard-step h2,
+.module-section h3,
+.configuration-summary h3,
+.legacy-panel-title,
+.legacy-group-title,
+.legacy-build-name,
+.legacy-panel summary,
+.legacy-panel summary .legacy-panel-title,
+.legacy-panel summary .legacy-panel-subtitle {
+    color: var(--color-text-primary);
+}
+
+.subtitle,
+.step-label,
+.option-description,
+.checkbox-description,
+.legacy-panel-subtitle,
+.legacy-build-meta,
+.legacy-build-description,
+.ready-helper,
+.review-card p,
+.installation-step p {
+    color: var(--color-text-secondary);
+}
+
+.progress-step::after {
+    background: var(--color-progress-line);
+}
+
+.step-number {
+    background: var(--color-step-inactive-bg);
+}
+
+.wizard-actions {
+    border-top: 1px solid var(--color-border);
+}
+
+.option-content,
+.checkbox-content,
+.legacy-build-card,
+.configuration-summary,
+.pre-flash-checklist,
+.legacy-panel,
+.legacy-panel summary,
+.legacy-build-card,
+.capability-note {
+    border-color: var(--color-border);
+}
+
+.btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+    background: var(--color-surface-muted);
+    border-color: var(--color-text-secondary);
+}
+
+#capability-bar {
+    background: var(--capability-bar-bg);
+    border-color: var(--capability-bar-border);
+}
+
+.capability-note {
+    background: var(--capability-note-bg);
+    border-color: var(--capability-note-border);
+    color: var(--capability-note-text);
+}
+
+[data-theme="dark"] .capability-chip {
+    background: rgba(148, 163, 184, 0.18);
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .capability-chip[data-status="available"] {
+    background: rgba(34, 197, 94, 0.18);
+    border-color: #34d399;
+    color: #bbf7d0;
+}
+
+[data-theme="dark"] .capability-chip[data-status="unavailable"] {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: #f87171;
+    color: #fecaca;
+}
+
+[data-theme="dark"] .capability-chip[data-status="partial"] {
+    background: rgba(249, 115, 22, 0.16);
+    border-color: #fb923c;
+    color: #fed7aa;
+}
+
+[data-theme="dark"] .capability-copy-feedback {
+    color: var(--color-text-secondary);
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-toggle-border);
+    background: var(--color-toggle-bg);
+    color: var(--color-toggle-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--color-toggle-hover);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid rgba(66, 133, 244, 0.45);
+    outline-offset: 3px;
+}
+
+.theme-toggle__icon {
+    font-size: 1.1rem;
+}
+
+.theme-toggle__label {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .theme-toggle__label {
+        display: inline;
+    }
+}
