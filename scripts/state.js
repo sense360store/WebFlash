@@ -1,4 +1,5 @@
 import { getPref, setPref } from './prefs.js';
+import { escapeHtml } from './utils/escape-html.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -555,7 +556,12 @@ function renderLegacyFirmware(groups) {
     }
 
     const legacyHtml = groups.map(group => {
-        const variantTag = group.variant ? `<span class="legacy-group-variant">${group.variant}</span>` : '';
+        const modelText = group.model || 'Unknown Model';
+        const variantText = group.variant || '';
+        const sanitizedModel = escapeHtml(modelText);
+        const sanitizedVariant = escapeHtml(variantText);
+        const variantTag = variantText ? `<span class="legacy-group-variant">${sanitizedVariant}</span>` : '';
+
         const buildsHtml = group.builds.map(build => {
             const versionLabel = build.version ? `v${build.version}${build.channel ? `-${build.channel}` : ''}` : '';
             const buildDate = build.build_date ? new Date(build.build_date) : null;
@@ -563,18 +569,21 @@ function renderLegacyFirmware(groups) {
             const fileSize = Number(build.file_size);
             const sizeLabel = Number.isFinite(fileSize) && fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : '';
             const metaParts = [];
-            if (versionLabel) metaParts.push(versionLabel);
-            if (buildDateLabel) metaParts.push(buildDateLabel);
-            if (sizeLabel) metaParts.push(sizeLabel);
+            if (versionLabel) metaParts.push(escapeHtml(versionLabel));
+            if (buildDateLabel) metaParts.push(escapeHtml(buildDateLabel));
+            if (sizeLabel) metaParts.push(escapeHtml(sizeLabel));
             const metaHtml = metaParts.length ? `<div class="legacy-build-meta">${metaParts.join(' · ')}</div>` : '';
             const description = build.description || 'No description available for this firmware build.';
+            const sanitizedDescription = escapeHtml(description);
+            const buildName = variantText ? `${modelText} · ${variantText}` : modelText;
+            const sanitizedBuildName = escapeHtml(buildName);
 
             return `
                 <div class="legacy-build-card">
                     <div class="legacy-build-info">
-                        <div class="legacy-build-name">${group.model}${group.variant ? ` · ${group.variant}` : ''}</div>
+                        <div class="legacy-build-name">${sanitizedBuildName}</div>
                         ${metaHtml}
-                        <p class="legacy-build-description">${description}</p>
+                        <p class="legacy-build-description">${sanitizedDescription}</p>
                     </div>
                     <div class="legacy-build-actions">
                         <esp-web-install-button manifest="firmware-${build.manifestIndex}.json" class="legacy-install-button">
@@ -588,7 +597,7 @@ function renderLegacyFirmware(groups) {
         return `
             <section class="legacy-build-group">
                 <header class="legacy-group-header">
-                    <h4 class="legacy-group-title">${group.model}</h4>
+                    <h4 class="legacy-group-title">${sanitizedModel}</h4>
                     ${variantTag}
                 </header>
                 <div class="legacy-builds">
@@ -695,6 +704,8 @@ async function findCompatibleFirmware() {
             }
         }
 
+        const sanitizedConfigString = escapeHtml(configString);
+
         if (matchingFirmware) {
             // Store firmware info globally
             window.currentFirmware = matchingFirmware;
@@ -715,7 +726,7 @@ async function findCompatibleFirmware() {
                     }
 
                     const listItems = items
-                        .map(item => `<li>${item}</li>`)
+                        .map(item => `<li>${escapeHtml(item)}</li>`)
                         .join('');
 
                     return `
@@ -727,6 +738,19 @@ async function findCompatibleFirmware() {
                 })
                 .filter(Boolean)
                 .join('');
+
+            const firmwareVersion = matchingFirmware.version ?? '';
+            const firmwareChannel = matchingFirmware.channel ?? '';
+            const firmwareName = `Sense360-${configString}-v${firmwareVersion}-${firmwareChannel}.bin`;
+            const sanitizedFirmwareName = escapeHtml(firmwareName);
+
+            const fileSize = Number(matchingFirmware.file_size);
+            const fileSizeLabel = Number.isFinite(fileSize) && fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : '';
+            const sanitizedFileSizeLabel = escapeHtml(fileSizeLabel);
+
+            const buildDate = matchingFirmware.build_date ? new Date(matchingFirmware.build_date) : null;
+            const buildDateLabel = buildDate && !Number.isNaN(buildDate.getTime()) ? buildDate.toLocaleDateString() : '';
+            const sanitizedBuildDateLabel = escapeHtml(buildDateLabel);
 
             const metadataBlock = metadataHtml
                 ? `
@@ -740,10 +764,10 @@ async function findCompatibleFirmware() {
             const firmwareHtml = `
                 <div class="firmware-item">
                     <div class="firmware-info">
-                        <div class="firmware-name">Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin</div>
+                        <div class="firmware-name">${sanitizedFirmwareName}</div>
                         <div class="firmware-details">
-                            <span class="firmware-size">${(matchingFirmware.file_size / 1024).toFixed(1)} KB</span>
-                            <span class="firmware-date">${new Date(matchingFirmware.build_date).toLocaleDateString()}</span>
+                            <span class="firmware-size">${sanitizedFileSizeLabel}</span>
+                            <span class="firmware-date">${sanitizedBuildDateLabel}</span>
                             <a href="#" class="release-notes-link" onclick="toggleReleaseNotes(event)">View Release Notes</a>
                         </div>
                     </div>
@@ -772,7 +796,7 @@ async function findCompatibleFirmware() {
                 <div class="firmware-not-available">
                     <h4>Firmware Not Available</h4>
                     <p>The firmware for this configuration has not been built yet:</p>
-                    <p class="config-string">Sense360-${configString}-v1.0.0-stable.bin</p>
+                    <p class="config-string">Sense360-${sanitizedConfigString}-v1.0.0-stable.bin</p>
                     <p class="help-text">Please contact support or check back later for this specific configuration.</p>
                 </div>
             `;
