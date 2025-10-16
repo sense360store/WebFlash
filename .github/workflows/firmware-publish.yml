@@ -54,6 +54,24 @@ jobs:
             --manifest-prefix firmware- \
             --summary
 
+      - name: Validate Ceiling-POE-AirIQBase manifest
+        run: |
+          set -euo pipefail
+          if command -v python >/dev/null 2>&1; then
+            python scripts/gen-manifests.py \
+              --firmware-dir firmware \
+              --manifest-path manifest.json \
+              --manifest-prefix firmware- \
+              --assert-config Ceiling-POE-AirIQBase \
+              --summary
+          else
+            echo "Python unavailable; falling back to grep"
+            grep -qi 'Ceiling-POE-AirIQBase' manifest.json || {
+              echo "Ceiling-POE-AirIQBase config missing from manifest.json" >&2
+              exit 1
+            }
+          fi
+
       - name: Prepare Pages artifact
         run: |
           set -euo pipefail
