@@ -299,6 +299,8 @@
         </div>
     </div>
 
+    <script src="scripts/firmware-meta.js"></script>
+    <script src="scripts/ui-firmware-card.js"></script>
     <script>
         let currentStep = 1;
         const totalSteps = 4;
@@ -790,6 +792,7 @@
 
         async function findCompatibleFirmware() {
             const downloadBtn = document.getElementById('download-btn');
+            const firmwareContainer = document.getElementById('compatible-firmware');
             const setReadyState = (isReady) => {
                 if (downloadBtn) {
                     downloadBtn.disabled = !isReady;
@@ -821,7 +824,7 @@
 
             // Ensure required selections are present before building the config string
             if (!configuration.mounting || !configuration.power) {
-                document.getElementById('compatible-firmware').innerHTML = `
+                firmwareContainer.innerHTML = `
                     <div class="firmware-error">
                         <h4>Incomplete Configuration</h4>
                         <p>Please select both a mounting location and power option before checking firmware compatibility.</p>
@@ -921,13 +924,27 @@
                         : '';
 
                     // Firmware exists - show install option
+                    const firmwarePath = matchingFirmware.parts && matchingFirmware.parts[0] ? matchingFirmware.parts[0].path : null;
+                    const firmwareFilename = `Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin`;
+
+                    const metadataLoader = (typeof window.fetchFirmwareMeta === 'function' && firmwarePath)
+                        ? () => window.fetchFirmwareMeta(firmwarePath)
+                        : null;
+
+                    const firmwareCard = (typeof window.renderFirmwareCard === 'function' && firmwarePath)
+                        ? window.renderFirmwareCard({
+                            assetUrl: firmwarePath,
+                            filename: firmwareFilename,
+                            buildDate: matchingFirmware.build_date,
+                            metadataLoader
+                        })
+                        : null;
+
                     const firmwareHtml = `
                         <div class="firmware-item">
                             <div class="firmware-info">
-                                <div class="firmware-name">Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin</div>
+                                <div class="firmware-name">${firmwareFilename}</div>
                                 <div class="firmware-details">
-                                    <span class="firmware-size">${(matchingFirmware.file_size / 1024).toFixed(1)} KB</span>
-                                    <span class="firmware-date">${new Date(matchingFirmware.build_date).toLocaleDateString()}</span>
                                     <a href="#" class="release-notes-link" onclick="toggleReleaseNotes(event)">View Release Notes</a>
                                 </div>
                             </div>
@@ -947,7 +964,12 @@
                             </div>
                         </div>
                     `;
-                    document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
+
+                    firmwareContainer.innerHTML = '';
+                    if (firmwareCard) {
+                        firmwareContainer.appendChild(firmwareCard);
+                    }
+                    firmwareContainer.insertAdjacentHTML('beforeend', firmwareHtml);
                     setReadyState(true);
                 } else {
                     // Firmware doesn't exist - show message
@@ -959,7 +981,7 @@
                             <p class="help-text">Please contact support or check back later for this specific configuration.</p>
                         </div>
                     `;
-                    document.getElementById('compatible-firmware').innerHTML = notAvailableHtml;
+                    firmwareContainer.innerHTML = notAvailableHtml;
                 }
 
                 renderLegacyFirmware(legacyGroups);
@@ -971,7 +993,7 @@
                         <p>Unable to check firmware availability. Please try again later.</p>
                     </div>
                 `;
-                document.getElementById('compatible-firmware').innerHTML = errorHtml;
+                firmwareContainer.innerHTML = errorHtml;
                 renderLegacyFirmware([]);
             }
         }
