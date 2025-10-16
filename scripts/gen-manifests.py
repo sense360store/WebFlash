@@ -85,6 +85,12 @@ CHIP_HINTS = [
     ("esp32", "ESP32"),
 ]
 
+CONFIG_CHIP_HINTS = {
+    "esp32": "ESP32",
+    "esp32c3": "ESP32-C3",
+    "esp32s3": "ESP32-S3",
+}
+
 
 def canonical_channel(value: Optional[str], fallback: str = DEFAULT_CHANNEL) -> str:
     base = fallback.strip().lower() if fallback else DEFAULT_CHANNEL
@@ -141,6 +147,7 @@ class FirmwareMetadata:
     model: Optional[str]
     variant: Optional[str]
     sensor_addon: Optional[str]
+    chip_family: Optional[str] = None
     device_type: str = DEFAULT_DEVICE_TYPE
     description: Optional[str] = None
     features: List[str] = field(default_factory=list)
@@ -157,8 +164,25 @@ class FirmwareMetadata:
         return firmware_dir / model_dir / variant_dir / self.normalized_filename()
 
 
+def _normalise_config_tokens(tokens: List[str]) -> Tuple[List[str], Optional[str]]:
+    filtered: List[str] = []
+    chip_hint: Optional[str] = None
+    for token in tokens:
+        lowered = token.lower()
+        if lowered == "none":
+            continue
+        if lowered in CONFIG_CHIP_HINTS:
+            chip_hint = CONFIG_CHIP_HINTS[lowered]
+            continue
+        filtered.append(token)
+    return filtered, chip_hint
+
+
 def parse_firmware_metadata(
-    path: Path, *, default_channel: Optional[str] = None
+    path: Path,
+    *,
+    default_channel: Optional[str] = None,
+    force_configuration: Optional[bool] = None,
 ) -> FirmwareMetadata:
     fallback_channel = canonical_channel(default_channel, DEFAULT_CHANNEL)
     name = path.name
@@ -174,17 +198,25 @@ def parse_firmware_metadata(
     tokens = [token for token in name_part.split("-") if token]
     if not tokens:
         raise ValueError(f"Unable to derive metadata from '{name}'")
-    first_token = tokens[0]
-    if first_token.lower() in MOUNTING_TOKENS:
-        mounting = first_token.title()
+    config_tokens, chip_hint = _normalise_config_tokens(tokens)
+    first_token = config_tokens[0] if config_tokens else ""
+    is_config = False
+    if force_configuration is not None:
+        is_config = force_configuration
+    elif first_token and first_token.lower() in MOUNTING_TOKENS:
+        is_config = True
+    if is_config:
+        if not config_tokens:
+            raise ValueError(f"No configuration tokens found in '{name}'")
+        mounting = config_tokens[0].replace("_", " ").title()
         power = None
         module_tokens = []
-        if len(tokens) >= 2 and tokens[1].lower() in POWER_TOKENS:
-            power = tokens[1].upper()
-            module_tokens = tokens[2:]
+        if len(config_tokens) >= 2 and config_tokens[1].lower() in POWER_TOKENS:
+            power = config_tokens[1].upper()
+            module_tokens = config_tokens[2:]
         else:
-            module_tokens = tokens[1:]
-        config_string = "-".join(tokens)
+            module_tokens = config_tokens[1:]
+        config_string = "-".join(config_tokens)
         description = f"{channel.title()} firmware for Sense360 {config_string} configuration."
         return FirmwareMetadata(
             name_part=config_string,
@@ -198,6 +230,7 @@ def parse_firmware_metadata(
             model=None,
             variant=None,
             sensor_addon=None,
+            chip_family=chip_hint,
             description=description,
         )
     model_suffix = tokens[0]
@@ -227,6 +260,7 @@ def parse_firmware_metadata(
         model=model,
         variant=variant,
         sensor_addon=sensor_addon,
+        chip_family=None,
         description=description,
     )
 
@@ -340,8 +374,15 @@ def collect_firmware(
         return artifacts
     for bin_path in sorted(firmware_dir.rglob("*.bin")):
         try:
+            rel_parts = bin_path.relative_to(firmware_dir).parts
+        except ValueError:
+            rel_parts = ()
+        force_config = rel_parts and rel_parts[0] == "configurations"
+        try:
             metadata = parse_firmware_metadata(
-                bin_path, default_channel=default_channel
+                bin_path,
+                default_channel=default_channel,
+                force_configuration=force_config,
             )
         except ValueError as exc:  # pragma: no cover - fatal validation
             raise SystemExit(f"Unable to parse metadata from {bin_path}: {exc}") from exc
@@ -359,7 +400,7 @@ def collect_firmware(
                 source_path = target_path
         else:
             source_path = bin_path
-        chip_family = detect_chip_family(metadata, target_path)
+        chip_family = metadata.chip_family or detect_chip_family(metadata, target_path)
         md5 = compute_md5(source_path)
         stat = source_path.stat()
         build_date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
@@ -510,7 +551,7 @@ def write_individual_manifests(
 
 
 def build_summary_table(artifacts: Sequence[FirmwareArtifact]) -> str:
-    headers = ["Idx", "Device", "Channel", "Version", "Path", "MD5"]
+    headers = ["Idx", "Device/Config", "Channel", "Version", "Path", "MD5"]
     rows: List[List[str]] = []
     for index, artifact in enumerate(artifacts):
         meta = artifact.metadata
@@ -587,6 +628,15 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="Preview changes without writing files or moving binaries.",
     )
+    parser.add_argument(
+        "--assert-config",
+        action="append",
+        dest="assert_configs",
+        help=(
+            "Ensure that the specified configuration string exists in the generated "
+            "manifest. Can be provided multiple times or as a comma-separated list."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -624,14 +674,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(message)
             return 0
         raise SystemExit(message)
-    write_json_file(manifest_path, manifest, dry_run=args.dry_run)
-    write_individual_manifests(
-        ordered,
-        manifest_prefix,
-        repo_root,
-        dry_run=args.dry_run,
-    )
-    if args.summary or args.summary_file:
+    requested_configs: List[str] = []
+    if args.assert_configs:
+        for value in args.assert_configs:
+            if not value:
+                continue
+            requested_configs.extend(
+                [item.strip() for item in value.split(",") if item.strip()]
+            )
+    if args.summary or args.summary_file or requested_configs:
         table = build_summary_table(ordered)
         print("\nFirmware summary:\n")
         print(table)
@@ -643,6 +694,29 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             else:
                 summary_target.parent.mkdir(parents=True, exist_ok=True)
                 summary_target.write_text(table + "\n", encoding="utf-8")
+    if requested_configs:
+        available_configs = {
+            artifact.metadata.config_string
+            for artifact in ordered
+            if artifact.metadata.is_configuration and artifact.metadata.config_string
+        }
+        missing_configs = sorted(
+            config for config in requested_configs if config not in available_configs
+        )
+        if missing_configs:
+            print(
+                "Missing required configuration(s): "
+                + ", ".join(missing_configs),
+                file=sys.stderr,
+            )
+            return 1
+    write_json_file(manifest_path, manifest, dry_run=args.dry_run)
+    write_individual_manifests(
+        ordered,
+        manifest_prefix,
+        repo_root,
+        dry_run=args.dry_run,
+    )
     print(
         f"Generated {manifest_path} and {len(ordered)} ESP Web Tools manifest file(s) "
         f"with {len(ordered)} build entries."
