@@ -241,6 +241,25 @@
                     </div>
                 </div>
 
+                <section class="pre-flash-checklist" aria-labelledby="pre-flash-title">
+                    <h3 class="checklist-heading" id="pre-flash-title">Pre-Flash Checklist</h3>
+                    <p class="checklist-subtitle">Follow these quick steps to prepare your device before installing firmware.</p>
+                    <ul class="checklist-items">
+                        <li data-checklist-item data-complete="false">
+                            <span class="status-icon" aria-hidden="true"></span>
+                            <span class="item-text">Connect the Sense360 hub to your computer with a USB-C cable.</span>
+                        </li>
+                        <li data-checklist-item data-complete="false">
+                            <span class="status-icon" aria-hidden="true"></span>
+                            <span class="item-text">Hold the <strong>BOOT</strong> button on the hub.</span>
+                        </li>
+                        <li data-checklist-item data-complete="false">
+                            <span class="status-icon" aria-hidden="true"></span>
+                            <span class="item-text">While holding BOOT, press and release <strong>RESET</strong>, then release BOOT.</span>
+                        </li>
+                    </ul>
+                </section>
+
                 <div class="firmware-section">
                     <h3>Compatible Firmware</h3>
                     <div id="compatible-firmware">
@@ -299,12 +318,46 @@
             fan: ['none', 'pwm', 'analog']
         };
 
+        let checklistCompleted = false;
+
+        function syncChecklistCompletion() {
+            const section = document.querySelector('.pre-flash-checklist');
+            if (!section) return;
+
+            const completionValue = checklistCompleted ? 'true' : 'false';
+            section.dataset.complete = completionValue;
+
+            section.querySelectorAll('[data-checklist-item]').forEach(item => {
+                item.dataset.complete = completionValue;
+            });
+        }
+
+        function setChecklistCompletion(isComplete) {
+            checklistCompleted = isComplete;
+            syncChecklistCompletion();
+        }
+
+        function attachInstallButtonListeners() {
+            const installButtons = document.querySelectorAll('#compatible-firmware .install-firmware-btn');
+            installButtons.forEach(button => {
+                if (button.dataset.checklistBound === 'true') {
+                    return;
+                }
+                button.addEventListener('click', () => {
+                    setChecklistCompletion(true);
+                });
+                button.dataset.checklistBound = 'true';
+            });
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             // Check browser compatibility
             if (!navigator.serial) {
                 document.getElementById('browser-warning').style.display = 'block';
             }
+
+            syncChecklistCompletion();
 
             // Add event listeners
             document.querySelectorAll('input[name="mounting"]').forEach(input => {
@@ -390,41 +443,49 @@
 
         function nextStep() {
             if (currentStep < totalSteps) {
-                setStep(currentStep + 1);
+                setStep(currentStep + 1, { animate: true });
             }
         }
 
         function previousStep() {
             if (currentStep > 1) {
-                setStep(currentStep - 1);
+                setStep(currentStep - 1, { animate: true });
             }
         }
 
-        function setStep(targetStep, { skipUrlUpdate = false } = {}) {
+        function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
             if (targetStep < 1 || targetStep > totalSteps) {
                 return;
             }
 
-            for (let i = 1; i <= totalSteps; i++) {
-                const stepElement = document.getElementById(`step-${i}`);
-                const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
+            const previousStep = currentStep;
+            const targetStepElement = document.getElementById(`step-${targetStep}`);
 
-                if (i === targetStep) {
-                    stepElement.classList.add('active');
-                    progressElement.classList.add('active');
-                } else {
-                    stepElement.classList.remove('active');
-                    progressElement.classList.remove('active');
-                }
-
-                if (i < targetStep) {
-                    progressElement.classList.add('completed');
-                } else {
-                    progressElement.classList.remove('completed');
-                }
+            if (!targetStepElement) {
+                return;
             }
 
-            currentStep = targetStep;
+            if (previousStep !== targetStep) {
+                currentStep = targetStep;
+            }
+
+            updateProgressSteps(targetStep);
+
+            if (animate && previousStep !== targetStep) {
+                animateStepTransition(previousStep, targetStep);
+            } else {
+                document.querySelectorAll('.wizard-step').forEach(step => {
+                    const stepNumber = Number(step.id.replace('step-', ''));
+                    if (stepNumber === targetStep) {
+                        step.classList.add('active');
+                        step.classList.remove('entering', 'leaving');
+                    } else {
+                        step.classList.remove('active', 'entering', 'leaving');
+                    }
+                });
+
+                focusStep(targetStepElement);
+            }
 
             if (currentStep === 3) {
                 updateFanModuleVisibility();
@@ -438,6 +499,112 @@
 
             if (!skipUrlUpdate) {
                 updateUrlFromConfiguration();
+            }
+        }
+
+        function updateProgressSteps(targetStep) {
+            for (let i = 1; i <= totalSteps; i++) {
+                const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
+                if (!progressElement) continue;
+
+                if (i === targetStep) {
+                    progressElement.classList.add('active');
+                } else {
+                    progressElement.classList.remove('active');
+                }
+
+                if (i < targetStep) {
+                    progressElement.classList.add('completed');
+                } else {
+                    progressElement.classList.remove('completed');
+                }
+            }
+        }
+
+        function animateStepTransition(fromStep, toStep) {
+            const fromElement = fromStep ? document.getElementById(`step-${fromStep}`) : null;
+            const toElement = document.getElementById(`step-${toStep}`);
+
+            if (fromElement && fromElement !== toElement) {
+                fromElement.classList.add('leaving');
+                fromElement.classList.remove('entering');
+
+                const handleLeave = (event) => {
+                    if (event.target !== fromElement || event.propertyName !== 'opacity') {
+                        return;
+                    }
+
+                    clearTimeout(leaveFallback);
+                    fromElement.removeEventListener('transitionend', handleLeave);
+                    fromElement.classList.remove('leaving');
+                };
+
+                const leaveFallback = setTimeout(() => {
+                    fromElement.removeEventListener('transitionend', handleLeave);
+                    fromElement.classList.remove('leaving');
+                }, 450);
+
+                fromElement.addEventListener('transitionend', handleLeave);
+                fromElement.classList.remove('active');
+            }
+
+            if (!toElement) {
+                return;
+            }
+
+            toElement.classList.remove('leaving');
+            toElement.classList.add('entering');
+            toElement.classList.remove('active');
+
+            const activateStep = () => {
+                toElement.classList.add('active');
+
+                const handleEnter = (event) => {
+                    if (event.target !== toElement || event.propertyName !== 'opacity') {
+                        return;
+                    }
+
+                    clearTimeout(enterFallback);
+                    toElement.removeEventListener('transitionend', handleEnter);
+                    toElement.classList.remove('entering');
+                    focusStep(toElement);
+                };
+
+                const enterFallback = setTimeout(() => {
+                    toElement.removeEventListener('transitionend', handleEnter);
+                    toElement.classList.remove('entering');
+                    focusStep(toElement);
+                }, 450);
+
+                toElement.addEventListener('transitionend', handleEnter);
+            };
+
+            requestAnimationFrame(activateStep);
+        }
+
+        function focusStep(stepElement) {
+            if (!stepElement) {
+                return;
+            }
+
+            const focusableSelector = 'input:not([disabled]), button:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
+            const focusable = stepElement.querySelector(focusableSelector);
+
+            if (focusable) {
+                focusable.focus();
+                return;
+            }
+
+            const heading = stepElement.querySelector('h2, h3, h4');
+            if (heading) {
+                if (!heading.hasAttribute('tabindex')) {
+                    heading.setAttribute('tabindex', '-1');
+                    heading.addEventListener('blur', () => {
+                        heading.removeAttribute('tabindex');
+                    }, { once: true });
+                }
+
+                heading.focus();
             }
         }
 
@@ -662,6 +829,7 @@
             }
 
             // Generate firmware filename based on configuration
+            const previousConfigString = window.currentConfigString;
             let configString = '';
 
             // Add mounting type
@@ -686,7 +854,13 @@
             if (configuration.fan !== 'none') {
                 configString += `-Fan${configuration.fan.toUpperCase()}`;
             }
-            
+
+            if (previousConfigString !== configString) {
+                setChecklistCompletion(false);
+            } else {
+                syncChecklistCompletion();
+            }
+
             // Load manifest to check if firmware exists
             try {
                 const response = await fetch('manifest.json');
@@ -932,7 +1106,7 @@
                 targetStep = Math.min(3, maxStep);
             }
 
-            setStep(targetStep, { skipUrlUpdate: true });
+            setStep(targetStep, { skipUrlUpdate: true, animate: false });
         }
 
         function applyConfiguration(initialConfig) {
