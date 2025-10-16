@@ -347,6 +347,12 @@
             fan: 'none'
         };
         const configuration = { ...defaultConfiguration };
+        const PREF_KEYS = {
+            rememberChoices: 'sense360.rememberChoices',
+            lastWizardState: 'sense360.lastWizardState'
+        };
+
+        let rememberToggleInputs = [];
         const allowedOptions = {
             mounting: ['wall', 'ceiling'],
             power: ['usb', 'poe', 'pwr'],
@@ -358,6 +364,141 @@
 
         let checklistCompleted = false;
         let toastTimeoutId = null;
+
+        function getPreferenceStorage() {
+            try {
+                return window.localStorage;
+            } catch (error) {
+                console.warn('Local storage is not available:', error);
+                return null;
+            }
+        }
+
+        function getPreference(key, defaultValue = null) {
+            const storage = getPreferenceStorage();
+            if (!storage) {
+                return defaultValue;
+            }
+
+            try {
+                const rawValue = storage.getItem(key);
+                if (rawValue === null) {
+                    return defaultValue;
+                }
+                return JSON.parse(rawValue);
+            } catch (error) {
+                console.warn('Failed to read stored preference', key, error);
+                return defaultValue;
+            }
+        }
+
+        function setPreference(key, value) {
+            const storage = getPreferenceStorage();
+            if (!storage) {
+                return;
+            }
+
+            try {
+                if (value === null || value === undefined) {
+                    storage.removeItem(key);
+                } else {
+                    storage.setItem(key, JSON.stringify(value));
+                }
+            } catch (error) {
+                console.warn('Failed to persist preference', key, error);
+            }
+        }
+
+        function isRememberEnabled() {
+            return Boolean(getPreference(PREF_KEYS.rememberChoices, false));
+        }
+
+        function setRememberEnabled(enabled) {
+            setPreference(PREF_KEYS.rememberChoices, Boolean(enabled));
+        }
+
+        function normalizeRememberedConfiguration(rawConfig) {
+            if (!rawConfig || typeof rawConfig !== 'object' || Array.isArray(rawConfig)) {
+                return null;
+            }
+
+            const normalized = { ...defaultConfiguration };
+            let hasPersistedValue = false;
+
+            Object.keys(defaultConfiguration).forEach(key => {
+                if (!(key in rawConfig)) {
+                    return;
+                }
+
+                const value = rawConfig[key];
+                const defaultValue = defaultConfiguration[key];
+
+                if (value === null) {
+                    if (defaultValue === null) {
+                        normalized[key] = null;
+                    }
+                    return;
+                }
+
+                const allowed = allowedOptions[key];
+                if (allowed && allowed.includes(value)) {
+                    normalized[key] = value;
+                    if (value !== defaultValue) {
+                        hasPersistedValue = true;
+                    }
+                }
+            });
+
+            return hasPersistedValue ? normalized : null;
+        }
+
+        function loadRememberedConfiguration() {
+            const rawConfig = getPreference(PREF_KEYS.lastWizardState, null);
+            const normalized = normalizeRememberedConfiguration(rawConfig);
+
+            if (!normalized && rawConfig) {
+                clearRememberedConfiguration();
+            }
+
+            return normalized;
+        }
+
+        function persistConfigurationSnapshot() {
+            if (!isRememberEnabled()) {
+                return;
+            }
+
+            const snapshot = {};
+            Object.keys(defaultConfiguration).forEach(key => {
+                const value = configuration[key];
+                snapshot[key] = value === undefined ? defaultConfiguration[key] : value;
+            });
+            setPreference(PREF_KEYS.lastWizardState, snapshot);
+        }
+
+        function clearRememberedConfiguration() {
+            setPreference(PREF_KEYS.lastWizardState, null);
+        }
+
+        function syncRememberToggleState(enabled) {
+            rememberToggleInputs.forEach(input => {
+                if (input.checked !== enabled) {
+                    input.checked = enabled;
+                }
+            });
+        }
+
+        function handleRememberToggleChange(event) {
+            const enabled = event.target.checked;
+            setRememberEnabled(enabled);
+            syncRememberToggleState(enabled);
+
+            if (enabled) {
+                persistConfigurationSnapshot();
+            } else {
+                clearRememberedConfiguration();
+            }
+        }
 
         function runStepRender(stepElement, stepNumber, renderFn) {
             const boundary = window.supportBoundary;
@@ -445,10 +586,6 @@
                 input.addEventListener('change', updateConfiguration);
             });
 
-            document.querySelectorAll('input[type="checkbox"]').forEach(input => {
-                input.addEventListener('change', updateConfiguration);
-            });
-
             document.querySelectorAll('input[name="presence"]').forEach(input => {
                 input.addEventListener('change', updateConfiguration);
             });
@@ -461,7 +598,17 @@
                 input.addEventListener('change', updateConfiguration);
             });
 
-            initializeFromUrl();
+            rememberToggleInputs = Array.from(document.querySelectorAll('[data-remember-toggle]'));
+            rememberToggleInputs.forEach(input => {
+                input.addEventListener('change', handleRememberToggleChange);
+            });
+
+            const rememberEnabled = isRememberEnabled();
+            syncRememberToggleState(rememberEnabled);
+
+            const savedConfig = rememberEnabled ? loadRememberedConfiguration() : null;
+
+            initializeFromUrl({ baseConfig: savedConfig });
         });
 
         function handleMountingChange(e) {
@@ -479,6 +626,7 @@
             configuration.power = e.target.value;
             document.querySelector('#step-2 .btn-next').disabled = false;
             updateUrlFromConfiguration();
+            persistConfigurationSnapshot();
         }
 
         function updateFanModuleVisibility() {
@@ -512,6 +660,8 @@
             if (!options.skipUrlUpdate) {
                 updateUrlFromConfiguration();
             }
+
+            persistConfigurationSnapshot();
         }
 
         function nextStep() {
@@ -1257,10 +1407,34 @@
             }, duration);
         }
 
-        function initializeFromUrl() {
+        function initializeFromUrl(options = {}) {
+            const { baseConfig = null } = options;
             const { parsedConfig, providedKeys, parsedStep } = parseConfigurationFromLocation();
 
-            applyConfiguration(parsedConfig);
+            let configToApply;
+            const effectiveProvidedKeys = new Set(providedKeys);
+
+            if (baseConfig) {
+                configToApply = { ...baseConfig };
+
+                providedKeys.forEach(key => {
+                    if (key in parsedConfig) {
+                        configToApply[key] = parsedConfig[key];
+                    }
+                });
+
+                if (effectiveProvidedKeys.size === 0) {
+                    Object.keys(baseConfig).forEach(key => {
+                        if (baseConfig[key] !== defaultConfiguration[key]) {
+                            effectiveProvidedKeys.add(key);
+                        }
+                    });
+                }
+            } else {
+                configToApply = parsedConfig;
+            }
+
+            applyConfiguration(configToApply);
 
             const maxStep = getMaxReachableStep();
             let targetStep;
@@ -1271,7 +1445,7 @@
                 targetStep = 1;
             } else if (!configuration.power) {
                 targetStep = 2;
-            } else if (['airiq', 'presence', 'comfort', 'fan'].some(key => providedKeys.has(key))) {
+            } else if (['airiq', 'presence', 'comfort', 'fan'].some(key => effectiveProvidedKeys.has(key))) {
                 targetStep = Math.min(4, maxStep);
             } else {
                 targetStep = Math.min(3, maxStep);
