@@ -36,6 +36,22 @@ WebFlash lets you select a device type and firmware channel (e.g. *stable* or *b
 
 ---
 
+## Ideas to improve the flashing experience
+
+The current workflow gets the job done, but we can make it even more welcoming for first-time installers. A few ideas that balance functionality with visual polish:
+
+- **Guided deployment checklist** – add a collapsible sidebar or modal that walks through prerequisites (USB cable, browser support, power). Each item could animate to a “checked” state as the user completes it.
+- **Contextual highlight cues** – when the page prompts the user to click a button (e.g., *Connect* or *Install*), briefly pulse or glow the button so it stands out on the screen.
+- **Progress timeline** – replace the plain text status messages with a horizontal timeline that fills step by step (detect device → erase → flash → verify → finish). Pair it with iconography to make successes/failures obvious.
+- **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (stable = green, beta = amber) and hover animations that reveal checksum, release date, or changelog link.
+- **Success animation & next steps** – celebrate a successful flash with a short checkmark animation and a clearly highlighted box that lists the next actions (e.g., “Press reset,” “Open provisioning app”).
+- **Inline troubleshooting callouts** – surface the most common issues right beneath the flashing controls using accordion callouts so help is one click away.
+- **Theming for dark/light modes** – allow the user to toggle between themes so the long flashing sessions are easier on the eyes.
+
+Implementing even a few of these ideas should reduce friction, build confidence, and make the tool feel more polished.
+
+---
+
 ## Supported devices
 
 The WebFlash page lists all currently available Sense360 firmware. Typical categories include:
