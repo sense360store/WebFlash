@@ -176,9 +176,17 @@ h1 {
 
 .wizard-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 32px;
     align-items: flex-start;
+}
+
+.wizard-layout--two-column {
+    grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.wizard-shell .wizard-layout--two-column {
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .wizard-main {
@@ -186,7 +194,7 @@ h1 {
 }
 
 @media (max-width: 1100px) {
-    .wizard-layout {
+    .wizard-layout--two-column {
         grid-template-columns: 1fr;
     }
 }
