@@ -1,0 +1,654 @@
+#!/usr/bin/env python3
+"""
+Generate Sense360 firmware manifests for ESP Web Tools and the WebFlash UI.
+
+This script normalises firmware binaries under ./firmware, rebuilds manifest.json,
+and regenerates the numbered firmware-*.json files consumed by ESP Web Tools.
+
+Usage (from repository root):
+    python scripts/gen-manifests.py --summary
+    python scripts/gen-manifests.py --dry-run   # preview without writing files
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple
+
+try:
+    from packaging.version import Version as _PackagingVersion
+except Exception:  # pragma: no cover - packaging is optional
+    _PackagingVersion = None  # type: ignore
+
+DEFAULT_CHANNEL = "stable"
+DEFAULT_DEVICE_TYPE = "Core Module"
+
+CANONICAL_CHANNELS = {"stable", "beta", "dev"}
+CHANNEL_ALIASES = {
+    "release": "stable",
+    "prod": "stable",
+    "production": "stable",
+    "ga": "stable",
+    "lts": "stable",
+    "prerelease": "beta",
+    "rc": "beta",
+    "candidate": "beta",
+    "preview": "beta",
+    "alpha": "dev",
+    "nightly": "dev",
+    "canary": "dev",
+    "experimental": "dev",
+}
+
+CHANNEL_ORDER = {"stable": 0, "beta": 1, "dev": 2}
+
+MOUNTING_TOKENS = {
+    "wall",
+    "ceiling",
+    "desk",
+    "portable",
+    "lab",
+    "bench",
+    "dev",
+    "test",
+}
+POWER_TOKENS = {
+    "usb",
+    "poe",
+    "pwr",
+    "dc",
+    "ac",
+    "battery",
+    "mains",
+    "solar",
+}
+
+CHIP_HINTS = [
+    ("esp32s3", "ESP32-S3"),
+    ("esp32-s3", "ESP32-S3"),
+    ("esp32s2", "ESP32-S2"),
+    ("esp32-s2", "ESP32-S2"),
+    ("esp32c3", "ESP32-C3"),
+    ("esp32-c3", "ESP32-C3"),
+    ("esp32c6", "ESP32-C6"),
+    ("esp32-c6", "ESP32-C6"),
+    ("esp32h2", "ESP32-H2"),
+    ("esp32-h2", "ESP32-H2"),
+    ("esp32", "ESP32"),
+]
+
+
+def canonical_channel(value: Optional[str], fallback: str = DEFAULT_CHANNEL) -> str:
+    base = fallback.strip().lower() if fallback else DEFAULT_CHANNEL
+    if base not in CANONICAL_CHANNELS:
+        base = DEFAULT_CHANNEL
+    if not value:
+        return base
+    key = value.strip().lower()
+    if key in CANONICAL_CHANNELS:
+        return key
+    if key in CHANNEL_ALIASES:
+        return CHANNEL_ALIASES[key]
+    return base
+
+
+def normalise_version(raw: Optional[str]) -> str:
+    value = (raw or "").strip()
+    if not value:
+        return "0.0.0"
+    if value[0] in {"v", "V"} and len(value) > 1:
+        value = value[1:]
+    return value
+
+
+def _safe_segment(value: Optional[str], fallback: str) -> str:
+    if not value:
+        return fallback
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", value.strip())
+    slug = slug.strip("-")
+    return slug or fallback
+
+
+def split_name_version_channel(base: str, default_channel: str) -> Tuple[str, str, str]:
+    if "-v" not in base:
+        raise ValueError(f"Missing '-v' segment in '{base}'")
+    name_part, remainder = base.rsplit("-v", 1)
+    if "-" in remainder:
+        version_part, channel_part = remainder.rsplit("-", 1)
+    else:
+        version_part, channel_part = remainder, default_channel
+    return name_part, version_part, channel_part
+
+
+@dataclass
+class FirmwareMetadata:
+    name_part: str
+    version: str
+    channel: str
+    is_configuration: bool
+    config_string: Optional[str]
+    mounting: Optional[str]
+    power: Optional[str]
+    modules: List[str]
+    model: Optional[str]
+    variant: Optional[str]
+    sensor_addon: Optional[str]
+    device_type: str = DEFAULT_DEVICE_TYPE
+    description: Optional[str] = None
+    features: List[str] = field(default_factory=list)
+    hardware_requirements: List[str] = field(default_factory=list)
+
+    def normalized_filename(self) -> str:
+        return f"Sense360-{self.name_part}-v{self.version}-{self.channel}.bin"
+
+    def target_path(self, firmware_dir: Path) -> Path:
+        if self.is_configuration:
+            return firmware_dir / "configurations" / self.normalized_filename()
+        model_dir = _safe_segment(self.model, "Sense360")
+        variant_dir = _safe_segment(self.variant, "Default")
+        return firmware_dir / model_dir / variant_dir / self.normalized_filename()
+
+
+def parse_firmware_metadata(
+    path: Path, *, default_channel: Optional[str] = None
+) -> FirmwareMetadata:
+    fallback_channel = canonical_channel(default_channel, DEFAULT_CHANNEL)
+    name = path.name
+    base = name[:-4] if name.lower().endswith(".bin") else Path(name).stem
+    if not base.startswith("Sense360-"):
+        raise ValueError(f"Firmware name '{name}' must start with 'Sense360-'")
+    name_body = base[len("Sense360-") :]
+    name_part, version_part, channel_part = split_name_version_channel(
+        name_body, fallback_channel
+    )
+    version = normalise_version(version_part)
+    channel = canonical_channel(channel_part, fallback_channel)
+    tokens = [token for token in name_part.split("-") if token]
+    if not tokens:
+        raise ValueError(f"Unable to derive metadata from '{name}'")
+    first_token = tokens[0]
+    if first_token.lower() in MOUNTING_TOKENS:
+        mounting = first_token.title()
+        power = None
+        module_tokens = []
+        if len(tokens) >= 2 and tokens[1].lower() in POWER_TOKENS:
+            power = tokens[1].upper()
+            module_tokens = tokens[2:]
+        else:
+            module_tokens = tokens[1:]
+        config_string = "-".join(tokens)
+        description = f"{channel.title()} firmware for Sense360 {config_string} configuration."
+        return FirmwareMetadata(
+            name_part=config_string,
+            version=version,
+            channel=channel,
+            is_configuration=True,
+            config_string=config_string,
+            mounting=mounting,
+            power=power,
+            modules=module_tokens,
+            model=None,
+            variant=None,
+            sensor_addon=None,
+            description=description,
+        )
+    model_suffix = tokens[0]
+    model = f"Sense360-{model_suffix}"
+    variant = tokens[1] if len(tokens) >= 2 else "Default"
+    sensor_addon = "-".join(tokens[2:]) if len(tokens) > 2 else None
+    legacy_name_part = "-".join(
+        [model_suffix]
+        + ([variant] if variant else [])
+        + ([sensor_addon] if sensor_addon else [])
+    )
+    description = (
+        f"{channel.title()} firmware for {model}"
+        + (f" {variant}" if variant else "")
+        + (f" ({sensor_addon})" if sensor_addon else "")
+        + "."
+    )
+    return FirmwareMetadata(
+        name_part=legacy_name_part,
+        version=version,
+        channel=channel,
+        is_configuration=False,
+        config_string=None,
+        mounting=None,
+        power=None,
+        modules=[],
+        model=model,
+        variant=variant,
+        sensor_addon=sensor_addon,
+        description=description,
+    )
+
+
+@dataclass
+class FirmwareArtifact:
+    path: Path
+    metadata: FirmwareMetadata
+    relative_path: str
+    chip_family: str
+    md5: str
+    file_size: int
+    build_date: str
+
+    def manifest_entry(self) -> Dict[str, object]:
+        entry: Dict[str, object] = {
+            "device_type": self.metadata.device_type,
+            "version": self.metadata.version,
+            "channel": self.metadata.channel,
+            "description": self.metadata.description or "",
+            "chipFamily": self.chip_family,
+            "parts": [
+                {
+                    "path": self.relative_path,
+                    "offset": 0,
+                    "md5": self.md5,
+                }
+            ],
+            "build_date": self.build_date,
+            "file_size": self.file_size,
+            "improv": True,
+            "md5": self.md5,
+            "features": list(self.metadata.features),
+            "hardware_requirements": list(self.metadata.hardware_requirements),
+            "known_issues": [],
+            "changelog": [],
+        }
+        if self.metadata.is_configuration:
+            entry.update(
+                {
+                    "config_string": self.metadata.config_string,
+                    "mounting": self.metadata.mounting,
+                    "power": self.metadata.power,
+                    "modules": list(self.metadata.modules),
+                }
+            )
+        else:
+            entry.update(
+                {
+                    "model": self.metadata.model,
+                    "variant": self.metadata.variant,
+                    "sensor_addon": self.metadata.sensor_addon,
+                }
+            )
+        return entry
+
+
+def compute_md5(path: Path) -> str:
+    digest = hashlib.md5()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def detect_chip_family(metadata: FirmwareMetadata, path: Path) -> str:
+    haystack = f"{path.as_posix()} {metadata.name_part} {(metadata.model or '')}".lower()
+    for needle, chip in CHIP_HINTS:
+        if needle in haystack:
+            return chip
+    return "ESP32-S3"
+
+
+def _version_tuple(value: str) -> Tuple[Tuple[int, ...], int, str]:
+    main, _, suffix = value.partition("-")
+    numeric_parts: List[int] = []
+    for piece in main.split("."):
+        piece = piece.strip()
+        if not piece:
+            numeric_parts.append(0)
+            continue
+        try:
+            numeric_parts.append(int(piece))
+        except ValueError:
+            digits = "".join(ch for ch in piece if ch.isdigit())
+            numeric_parts.append(int(digits) if digits else 0)
+    if not numeric_parts:
+        numeric_parts = [0]
+    stability = 1 if not suffix else 0
+    return (tuple(numeric_parts), stability, suffix)
+
+
+def version_is_newer(candidate: str, current: str) -> bool:
+    if _PackagingVersion is not None:
+        try:
+            return _PackagingVersion(candidate) > _PackagingVersion(current)
+        except Exception:
+            pass
+    return _version_tuple(candidate) > _version_tuple(current)
+
+
+def collect_firmware(
+    firmware_dir: Path,
+    repo_root: Path,
+    *,
+    dry_run: bool = False,
+    default_channel: str = DEFAULT_CHANNEL,
+) -> List[FirmwareArtifact]:
+    artifacts: List[FirmwareArtifact] = []
+    if not firmware_dir.exists():
+        return artifacts
+    for bin_path in sorted(firmware_dir.rglob("*.bin")):
+        try:
+            metadata = parse_firmware_metadata(
+                bin_path, default_channel=default_channel
+            )
+        except ValueError as exc:  # pragma: no cover - fatal validation
+            raise SystemExit(f"Unable to parse metadata from {bin_path}: {exc}") from exc
+        target_path = metadata.target_path(firmware_dir)
+        source_path = bin_path
+        if bin_path.resolve() != target_path.resolve():
+            if dry_run:
+                print(f"[dry-run] Would move {bin_path} -> {target_path}")
+            else:
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                if target_path.exists():
+                    target_path.unlink()
+                bin_path.replace(target_path)
+                print(f"Normalised firmware path: {bin_path} → {target_path}")
+                source_path = target_path
+        else:
+            source_path = bin_path
+        chip_family = detect_chip_family(metadata, target_path)
+        md5 = compute_md5(source_path)
+        stat = source_path.stat()
+        build_date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+        rel_path = Path(os.path.relpath(target_path, repo_root)).as_posix()
+        artifacts.append(
+            FirmwareArtifact(
+                path=target_path,
+                metadata=metadata,
+                relative_path=rel_path,
+                chip_family=chip_family,
+                md5=md5,
+                file_size=stat.st_size,
+                build_date=build_date,
+            )
+        )
+    return artifacts
+
+
+def select_latest_builds(
+    artifacts: Sequence[FirmwareArtifact],
+) -> Tuple[List[FirmwareArtifact], List[Tuple[FirmwareArtifact, FirmwareArtifact]]]:
+    best: Dict[Tuple[object, ...], FirmwareArtifact] = {}
+    superseded: List[Tuple[FirmwareArtifact, FirmwareArtifact]] = []
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if meta.is_configuration:
+            key = ("config", meta.config_string, meta.channel)
+        else:
+            key = (
+                "legacy",
+                meta.model,
+                meta.variant,
+                meta.sensor_addon,
+                meta.channel,
+            )
+        current = best.get(key)
+        if current is None:
+            best[key] = artifact
+            continue
+        if version_is_newer(meta.version, current.metadata.version):
+            superseded.append((current, artifact))
+            best[key] = artifact
+        else:
+            superseded.append((artifact, current))
+    return list(best.values()), superseded
+
+
+def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifact]:
+    config_builds = [a for a in artifacts if a.metadata.is_configuration]
+    legacy_builds = [a for a in artifacts if not a.metadata.is_configuration]
+    config_builds.sort(
+        key=lambda art: (
+            (art.metadata.config_string or "").lower(),
+            CHANNEL_ORDER.get(art.metadata.channel, 99),
+        )
+    )
+    legacy_builds.sort(
+        key=lambda art: (
+            (art.metadata.model or "").lower(),
+            (art.metadata.variant or "").lower(),
+            (art.metadata.sensor_addon or "").lower(),
+            CHANNEL_ORDER.get(art.metadata.channel, 99),
+        )
+    )
+    return config_builds + legacy_builds
+
+
+def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
+    stable_versions = [
+        a.metadata.version for a in artifacts if a.metadata.channel == "stable"
+    ]
+    candidates = stable_versions or [a.metadata.version for a in artifacts]
+    if not candidates:
+        return "0.0.0"
+    best_version = candidates[0]
+    for candidate in candidates[1:]:
+        if version_is_newer(candidate, best_version):
+            best_version = candidate
+    return best_version
+
+
+def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
+    return {
+        "name": "Sense360 Modular Platform Firmware",
+        "version": determine_manifest_version(artifacts),
+        "home_assistant_domain": "esphome",
+        "new_install_skip_erase": False,
+        "builds": [artifact.manifest_entry() for artifact in artifacts],
+    }
+
+
+def write_json_file(path: Path, data: Dict[str, object], *, dry_run: bool) -> None:
+    if dry_run:
+        print(f"[dry-run] Would write {path}")
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=2)
+        handle.write("\n")
+
+
+def write_individual_manifests(
+    artifacts: Sequence[FirmwareArtifact],
+    prefix: Path,
+    repo_root: Path,
+    *,
+    dry_run: bool,
+) -> None:
+    base_dir = (repo_root / prefix.parent).resolve()
+    prefix_name = prefix.name
+    if base_dir.exists():
+        existing = sorted(base_dir.glob(f"{prefix_name}[0-9]*.json"))
+    else:
+        existing = []
+    for path in existing:
+        if dry_run:
+            print(f"[dry-run] Would remove {path}")
+        else:
+            path.unlink()
+    for index, artifact in enumerate(artifacts):
+        data = {
+            "name": "Sense360 ESP32 Firmware - Core Module",
+            "version": artifact.metadata.version,
+            "home_assistant_domain": "esphome",
+            "new_install_skip_erase": False,
+            "builds": [
+                {
+                    "chipFamily": artifact.chip_family,
+                    "parts": [
+                        {
+                            "path": artifact.relative_path,
+                            "offset": 0,
+                            "md5": artifact.md5,
+                        }
+                    ],
+                    "improv": True,
+                }
+            ],
+        }
+        path = base_dir / f"{prefix_name}{index}.json"
+        if dry_run:
+            print(f"[dry-run] Would write {path}")
+        else:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("w", encoding="utf-8") as handle:
+                json.dump(data, handle, indent=2)
+                handle.write("\n")
+
+
+def build_summary_table(artifacts: Sequence[FirmwareArtifact]) -> str:
+    headers = ["Idx", "Device", "Channel", "Version", "Path", "MD5"]
+    rows: List[List[str]] = []
+    for index, artifact in enumerate(artifacts):
+        meta = artifact.metadata
+        if meta.is_configuration:
+            device = f"Sense360-{meta.config_string}"
+        else:
+            parts = [meta.model or "Sense360"]
+            if meta.variant:
+                parts.append(meta.variant)
+            device = " ".join(part for part in parts if part).strip()
+            if meta.sensor_addon:
+                device += f" ({meta.sensor_addon})"
+        rows.append(
+            [
+                str(index),
+                device,
+                meta.channel,
+                meta.version,
+                artifact.relative_path,
+                artifact.md5,
+            ]
+        )
+    data = [headers] + rows
+    widths = [max(len(row[i]) for row in data) for i in range(len(headers))]
+    lines = [
+        "  ".join(row[i].ljust(widths[i]) for i in range(len(headers))).rstrip()
+        for row in data
+    ]
+    return "\n".join(lines)
+
+
+def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Generate manifest.json and ESP Web Tools manifests from firmware binaries."
+        )
+    )
+    parser.add_argument(
+        "--firmware-dir",
+        default="firmware",
+        help="Directory that stores firmware binaries (default: firmware)",
+    )
+    parser.add_argument(
+        "--repo-root",
+        default=".",
+        help="Repository root used for relative paths (default: current directory)",
+    )
+    parser.add_argument(
+        "--manifest-path",
+        default="manifest.json",
+        help="Path to write manifest.json (default: manifest.json)",
+    )
+    parser.add_argument(
+        "--manifest-prefix",
+        default="firmware-",
+        help="Filename prefix (optionally with directories) for ESP Web Tools manifests.",
+    )
+    parser.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print a summary table of detected firmware builds.",
+    )
+    parser.add_argument(
+        "--summary-file",
+        help="Optional path to write the summary table.",
+    )
+    parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="Do not fail when no firmware binaries are found.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without writing files or moving binaries.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    args = parse_args(argv)
+    repo_root = Path(args.repo_root).resolve()
+    firmware_dir = (repo_root / args.firmware_dir).resolve()
+    manifest_path = (repo_root / args.manifest_path).resolve()
+    manifest_prefix = Path(args.manifest_prefix)
+    artifacts = collect_firmware(
+        firmware_dir,
+        repo_root,
+        dry_run=args.dry_run,
+        default_channel=DEFAULT_CHANNEL,
+    )
+    if not artifacts:
+        message = f"No firmware binaries found in {firmware_dir}"
+        if args.allow_empty:
+            print(message)
+            return 0
+        raise SystemExit(message)
+    selected, superseded = select_latest_builds(artifacts)
+    if superseded:
+        print("Detected multiple versions of the same firmware; keeping the newest builds.")
+        for old, new in superseded:
+            print(
+                f"  - {new.metadata.name_part} {new.metadata.version} ({new.metadata.channel}) "
+                f"supersedes {old.metadata.version}"
+            )
+    ordered = sort_artifacts(selected)
+    manifest = build_manifest(ordered)
+    if not manifest["builds"]:
+        message = "Manifest would be empty; aborting."
+        if args.allow_empty:
+            print(message)
+            return 0
+        raise SystemExit(message)
+    write_json_file(manifest_path, manifest, dry_run=args.dry_run)
+    write_individual_manifests(
+        ordered,
+        manifest_prefix,
+        repo_root,
+        dry_run=args.dry_run,
+    )
+    if args.summary or args.summary_file:
+        table = build_summary_table(ordered)
+        print("\nFirmware summary:\n")
+        print(table)
+        summary_path = args.summary_file or os.environ.get("GITHUB_STEP_SUMMARY")
+        if summary_path:
+            summary_target = Path(summary_path)
+            if args.dry_run:
+                print(f"[dry-run] Would write summary table to {summary_target}")
+            else:
+                summary_target.parent.mkdir(parents=True, exist_ok=True)
+                summary_target.write_text(table + "\n", encoding="utf-8")
+    print(
+        f"Generated {manifest_path} and {len(ordered)} ESP Web Tools manifest file(s) "
+        f"with {len(ordered)} build entries."
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -90,18 +90,24 @@ Availability depends on what firmware we publish. Always prefer **stable** for p
 
 > These notes are for engineers publishing new firmware to the site.
 
-<details>
-<summary><strong>Adding or removing firmware (automated)</strong></summary>
+### Automated publishing
 
-**Add new firmware:**
-```bash
-# Place firmware in the directory that matches your device/chip/channel
-cp build/MyFirmware.bin firmware/DeviceType/ChipFamily/Channel/Sense360-DeviceType-ChipFamily-vX.Y.Z-Channel.bin
+The WebFlash site rebuilds and deploys itself whenever fresh firmware is introduced. Two entry points feed the pipeline:
 
-# Rebuild manifests and UI metadata
-python3 deploy-automation.py
+1. **GitHub Releases** – Publish a release and attach `.bin` files. Pre-releases map to the **beta** channel, while the latest non-pre-release release becomes **stable**. The workflow downloads the assets with `scripts/sync-from-releases.py` and normalises their filenames.
+2. **Direct commits** – Push `.bin` files anywhere under `firmware/`. `scripts/gen-manifests.py` enforces the naming convention, regenerates `manifest.json`, and writes the `firmware-N.json` files that ESP Web Tools consumes.
+3. **Deployment** – After manifests are rebuilt, the workflow uploads the repository to GitHub Pages with the correct CORS headers.
 
-# Commit and deploy
-git add .
-git commit -m "Add Sense360-DeviceType-...-vX.Y.Z-Channel.bin"
-git push
+#### Add a new device or firmware build
+
+- **Using Releases**
+  1. Build your firmware and name each binary `Sense360-<Model>-vX.Y.Z-<channel>.bin`.
+  2. Draft a GitHub Release and upload the binaries as assets. Mark the release as pre-release for beta/dev builds.
+  3. Publish the release — the workflow mirrors the assets into `firmware/`, regenerates manifests, and deploys the site.
+
+- **Using direct commits**
+  1. Copy the binary into `firmware/`, following the directory and filename convention above.
+  2. Run `python3 scripts/gen-manifests.py --summary` locally to preview naming, checksums, and generated manifests.
+  3. Commit the updated firmware plus regenerated JSON files. Pushing to `main` triggers an automatic deploy.
+
+Need a dry run? Append `--dry-run` to `scripts/gen-manifests.py` or `scripts/sync-from-releases.py` to inspect actions without writing files.
