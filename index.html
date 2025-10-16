@@ -302,7 +302,12 @@
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <div class="primary-action-group">
-                        <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                        <div class="download-action-row">
+                            <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                            <button class="btn btn-tertiary-icon" id="copy-link-btn" type="button" onclick="copyFirmwareLink()" aria-label="Copy firmware download link" disabled>
+                                <span aria-hidden="true">🔗</span>
+                            </button>
+                        </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     </div>
                 </div>
@@ -320,6 +325,8 @@
             </div>
         </div>
     </div>
+
+    <div class="toast" id="copy-toast" role="status" aria-live="polite"></div>
 
     <script>
         let currentStep = 1;
@@ -812,10 +819,16 @@
 
         async function findCompatibleFirmware() {
             const downloadBtn = document.getElementById('download-btn');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
             const setReadyState = (isReady) => {
                 if (downloadBtn) {
                     downloadBtn.disabled = !isReady;
                     downloadBtn.classList.toggle('is-ready', isReady);
+                }
+
+                if (copyLinkBtn) {
+                    copyLinkBtn.disabled = !isReady;
+                    copyLinkBtn.classList.toggle('is-ready', isReady);
                 }
 
                 const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
@@ -1110,6 +1123,45 @@
             }
         }
 
+        async function copyFirmwareLink() {
+            if (!window.currentFirmware || !window.currentConfigString) {
+                return;
+            }
+
+            const firmware = window.currentFirmware;
+            const firmwarePath = firmware.parts[0].path;
+            const resolvedUrl = new URL(firmwarePath, window.location.href).toString();
+
+            if (!navigator.clipboard || !navigator.clipboard.writeText) {
+                console.warn('Clipboard API not available in this browser.');
+                showToast('Copy failed');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(resolvedUrl);
+                showToast('Copied');
+            } catch (error) {
+                console.error('Unable to copy firmware link:', error);
+                showToast('Copy failed');
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('copy-toast');
+            if (!toast) {
+                return;
+            }
+
+            toast.textContent = message;
+            toast.classList.add('is-visible');
+
+            clearTimeout(showToast.timeoutId);
+            showToast.timeoutId = setTimeout(() => {
+                toast.classList.remove('is-visible');
+            }, 2000);
+        }
+
         function initializeFromUrl() {
             const { parsedConfig, providedKeys, parsedStep } = parseConfigurationFromLocation();
 
@@ -1245,7 +1297,6 @@
             history.replaceState(null, '', newUrl);
         }
     </script>
-    <script type="module" src="scripts/ui-troubleshoot.js"></script>
     <script type="module" src="scripts/init-review.js"></script>
 </body>
 </html>
