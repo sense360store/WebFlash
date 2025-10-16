@@ -528,7 +528,43 @@
                     // Store firmware info globally
                     window.currentFirmware = matchingFirmware;
                     window.currentConfigString = configString;
-                    
+
+                    const metadataSections = [
+                        { key: 'features', title: 'Key Features' },
+                        { key: 'hardware_requirements', title: 'Hardware Requirements' },
+                        { key: 'known_issues', title: 'Known Issues' },
+                        { key: 'changelog', title: 'Changelog' }
+                    ];
+
+                    const metadataHtml = metadataSections
+                        .map(({ key, title }) => {
+                            const items = matchingFirmware[key];
+                            if (!Array.isArray(items) || items.length === 0) {
+                                return '';
+                            }
+
+                            const listItems = items
+                                .map(item => `<li>${item}</li>`)
+                                .join('');
+
+                            return `
+                                <section class="firmware-meta-section firmware-${key.replace(/_/g, '-')}">
+                                    <h4>${title}</h4>
+                                    <ul>${listItems}</ul>
+                                </section>
+                            `;
+                        })
+                        .filter(Boolean)
+                        .join('');
+
+                    const metadataBlock = metadataHtml
+                        ? `
+                            <div class="firmware-metadata">
+                                ${metadataHtml}
+                            </div>
+                        `
+                        : '';
+
                     // Firmware exists - show install option
                     const firmwareHtml = `
                         <div class="firmware-item">
@@ -546,6 +582,7 @@
                                 </button>
                             </esp-web-install-button>
                         </div>
+                        ${metadataBlock}
                         <div class="release-notes-section" id="release-notes" style="display: none;">
                             <div class="release-notes-content">
                                 <div class="loading">Loading release notes...</div>

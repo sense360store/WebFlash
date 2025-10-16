@@ -495,6 +495,51 @@ h1 {
     margin-top: 16px;
 }
 
+.firmware-metadata {
+    margin-top: 24px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .firmware-metadata {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+.firmware-meta-section {
+    background-color: #f8f9fa;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.firmware-meta-section h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202124;
+    margin: 0;
+}
+
+.firmware-meta-section ul {
+    list-style: disc;
+    padding-left: 20px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.firmware-meta-section li {
+    font-size: 14px;
+    color: #3c4043;
+    line-height: 1.5;
+}
+
 .release-notes-content {
     font-size: 14px;
     line-height: 1.6;
