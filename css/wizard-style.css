@@ -406,6 +406,143 @@ h1 {
     color: #202124;
 }
 
+.legacy-firmware-section {
+    margin-bottom: 32px;
+}
+
+.legacy-panel {
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    background: #f8f9fa;
+    padding: 0 16px 16px;
+}
+
+.legacy-panel[open] {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.legacy-panel summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 0;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 500;
+    color: #202124;
+}
+
+.legacy-panel summary::-webkit-details-marker {
+    display: none;
+}
+
+.legacy-panel-title {
+    font-size: 18px;
+}
+
+.legacy-panel-subtitle {
+    font-size: 14px;
+    color: #5f6368;
+    font-weight: 400;
+}
+
+.legacy-panel-body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.legacy-build-group {
+    border-top: 1px solid #dadce0;
+    padding-top: 24px;
+}
+
+.legacy-build-group:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+.legacy-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.legacy-group-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #202124;
+}
+
+.legacy-group-variant {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #fff;
+    background: #1a73e8;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+.legacy-builds {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.legacy-build-card {
+    background: #fff;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.legacy-build-info {
+    flex: 1 1 260px;
+}
+
+.legacy-build-name {
+    font-weight: 600;
+    color: #202124;
+    margin-bottom: 8px;
+}
+
+.legacy-build-meta {
+    font-size: 13px;
+    color: #5f6368;
+    margin-bottom: 12px;
+}
+
+.legacy-build-description {
+    font-size: 14px;
+    color: #3c4043;
+    margin: 0;
+}
+
+.legacy-build-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+}
+
+.legacy-install-button {
+    display: flex;
+}
+
+.btn-small {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
 .firmware-item {
     background: #f8f9fa;
     border: 1px solid #dadce0;
@@ -599,5 +736,30 @@ h1 {
 
     .btn {
         width: 100%;
+    }
+
+    .legacy-panel {
+        padding: 0 12px 12px;
+    }
+
+    .legacy-panel summary {
+        padding: 12px 0;
+    }
+
+    .legacy-build-card {
+        flex-direction: column;
+    }
+
+    .legacy-build-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .legacy-install-button {
+        width: 100%;
+    }
+
+    .legacy-install-button .btn {
+        text-align: center;
     }
 }
