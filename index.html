@@ -10,7 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/wizard-style.css?v=1753432000">
     <link rel="stylesheet" href="css/capability-bar.css">
+    <link rel="stylesheet" href="css/accordion.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js"></script>
+    <script src="scripts/theme.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -228,6 +230,13 @@
                     </div>
                 </div>
 
+                <div class="remember-preference">
+                    <label class="remember-toggle">
+                        <input type="checkbox" data-remember-toggle>
+                        <span class="remember-label">Remember my last choices</span>
+                    </label>
+                </div>
+
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <button class="btn btn-primary btn-next" onclick="nextStep()">Next</button>
@@ -283,6 +292,13 @@
                     </details>
                 </div>
 
+                <div class="remember-preference">
+                    <label class="remember-toggle">
+                        <input type="checkbox" data-remember-toggle>
+                        <span class="remember-label">Remember my last choices</span>
+                    </label>
+                </div>
+
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <div class="primary-action-group">
@@ -313,15 +329,13 @@
         </div>
     </div>
 
-    <script type="module" src="scripts/state.js"></script>
-    <script type="module" src="scripts/query-presets.js"></script>
-    <script type="module" src="scripts/ui-summary.js"></script>
+    <div class="toast" id="copy-toast" role="status" aria-live="polite"></div>
+
     <script>
         let currentStep = 1;
         const totalSteps = 4;
         const defaultConfiguration = {
             mounting: null,
-            mount: null,
             power: null,
             airiq: 'none',
             presence: 'none',
@@ -329,7 +343,7 @@
             fan: 'none'
         };
         const configuration = { ...defaultConfiguration };
-        let allowedOptions = {
+        const allowedOptions = {
             mounting: ['wall', 'ceiling'],
             power: ['usb', 'poe', 'pwr'],
             airiq: ['none', 'base', 'pro'],
@@ -419,7 +433,6 @@
 
         function handleMountingChange(e) {
             configuration.mounting = e.target.value;
-            configuration.mount = configuration.mounting;
             document.querySelector('#step-1 .btn-next').disabled = false;
 
             // Show/hide fan module based on mounting type
@@ -432,9 +445,6 @@
         function handlePowerChange(e) {
             configuration.power = e.target.value;
             document.querySelector('#step-2 .btn-next').disabled = false;
-            if (window.wizardState) {
-                window.wizardState.setState({ power: configuration.power });
-            }
             updateUrlFromConfiguration();
         }
 
@@ -445,9 +455,6 @@
                 // Reset fan selection if ceiling mount
                 document.querySelector('input[name="fan"][value="none"]').checked = true;
                 configuration.fan = 'none';
-                if (window.wizardState) {
-                    window.wizardState.setState({ fan: configuration.fan });
-                }
             } else {
                 fanSection.style.display = 'block';
             }
@@ -467,28 +474,11 @@
             // Update Fan module (only if wall mount)
             if (configuration.mounting === 'wall') {
                 configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
-            } else {
-                configuration.fan = 'none';
-            }
-
-            configuration.mount = configuration.mounting;
-
-            if (window.wizardState) {
-                window.wizardState.setState({
-                    mount: configuration.mounting,
-                    power: configuration.power,
-                    airiq: configuration.airiq,
-                    presence: configuration.presence,
-                    comfort: configuration.comfort,
-                    fan: configuration.fan
-                });
             }
 
             if (!options.skipUrlUpdate) {
                 updateUrlFromConfiguration();
             }
-
-            updateSummary();
         }
 
         function nextStep() {
@@ -517,9 +507,6 @@
 
             if (previousStep !== targetStep) {
                 currentStep = targetStep;
-                if (window.wizardState) {
-                    window.wizardState.setStep(currentStep);
-                }
             }
 
             updateProgressSteps(targetStep);
@@ -737,10 +724,6 @@
             }
             
             summaryHtml += '</div>';
-
-            if (configuration.mounting === 'ceiling') {
-                summaryHtml += '<div class="summary-warning-tag">Fan not available on Ceiling</div>';
-            }
             document.getElementById('config-summary').innerHTML = summaryHtml;
         }
 
@@ -845,6 +828,7 @@
 
         async function findCompatibleFirmware() {
             const downloadBtn = document.getElementById('download-btn');
+            const copyLinkBtn = document.getElementById('copy-link-btn');
             const setReadyState = (isReady) => {
                 if (downloadBtn) {
                     downloadBtn.disabled = !isReady;
@@ -1255,14 +1239,7 @@
         }
 
         function applyConfiguration(initialConfig) {
-            const mergedConfig = { ...defaultConfiguration, ...initialConfig };
-
-            if (!mergedConfig.mounting && mergedConfig.mount) {
-                mergedConfig.mounting = mergedConfig.mount;
-            }
-
-            Object.assign(configuration, mergedConfig);
-            configuration.mount = configuration.mounting;
+            Object.assign(configuration, defaultConfiguration, initialConfig);
 
             if (configuration.mounting) {
                 const mountingInput = document.querySelector(`input[name="mounting"][value="${configuration.mounting}"]`);
@@ -1309,30 +1286,6 @@
         }
 
         function parseConfigurationFromLocation() {
-            if (window.queryPresets) {
-                const { state, providedKeys, step } = window.queryPresets.parseFromLocation();
-                const parsedConfig = { ...defaultConfiguration };
-
-                parsedConfig.mounting = state.mount || null;
-                parsedConfig.mount = parsedConfig.mounting;
-                parsedConfig.power = state.power || null;
-                parsedConfig.airiq = state.airiq || 'none';
-                parsedConfig.presence = state.presence || 'none';
-                parsedConfig.comfort = state.comfort || 'none';
-                parsedConfig.fan = state.fan || 'none';
-
-                const mappedKeys = new Set();
-                providedKeys.forEach((key) => {
-                    if (key === 'mount') {
-                        mappedKeys.add('mounting');
-                    } else {
-                        mappedKeys.add(key);
-                    }
-                });
-
-                return { parsedConfig, providedKeys: mappedKeys, parsedStep: step };
-            }
-
             const combinedParams = new URLSearchParams();
             const searchParams = new URLSearchParams(window.location.search);
             const hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
@@ -1350,19 +1303,11 @@
             const providedKeys = new Set();
 
             Object.keys(allowedOptions).forEach(key => {
-                const aliases = key === 'mounting' ? ['mounting', 'mount'] : [key];
-                aliases.some(alias => {
-                    const value = combinedParams.get(alias);
-                    if (value && allowedOptions[key].includes(value)) {
-                        parsedConfig[key] = value;
-                        if (key === 'mounting') {
-                            parsedConfig.mount = value;
-                        }
-                        providedKeys.add(key);
-                        return true;
-                    }
-                    return false;
-                });
+                const value = combinedParams.get(key);
+                if (value && allowedOptions[key].includes(value)) {
+                    parsedConfig[key] = value;
+                    providedKeys.add(key);
+                }
             });
 
             let parsedStep = null;
@@ -1378,26 +1323,10 @@
         }
 
         function updateUrlFromConfiguration() {
-            if (window.queryPresets && typeof window.queryPresets.updateUrl === 'function') {
-                const state = window.wizardState
-                    ? window.wizardState.getState()
-                    : {
-                        mount: configuration.mounting,
-                        power: configuration.power,
-                        airiq: configuration.airiq,
-                        presence: configuration.presence,
-                        comfort: configuration.comfort,
-                        fan: configuration.fan
-                    };
-
-                window.queryPresets.updateUrl(state, currentStep);
-                return;
-            }
-
             const params = new URLSearchParams();
 
             if (configuration.mounting) {
-                params.set('mount', configuration.mounting);
+                params.set('mounting', configuration.mounting);
             }
 
             if (configuration.power) {
