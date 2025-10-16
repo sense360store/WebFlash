@@ -305,6 +305,8 @@
         </div>
     </div>
 
+    <script src="scripts/support/errors.js"></script>
+    <script src="scripts/support/boundary.js"></script>
     <script type="module" src="scripts/state.js"></script>
     <script type="module" src="scripts/query-presets.js"></script>
     <script type="module" src="scripts/ui-summary.js"></script>
@@ -331,6 +333,31 @@
         };
 
         let checklistCompleted = false;
+
+        function runStepRender(stepElement, stepNumber, renderFn) {
+            const boundary = window.supportBoundary;
+            const render = typeof renderFn === 'function' ? renderFn : null;
+
+            if (boundary && typeof boundary.render === 'function') {
+                return boundary.render(stepElement, {
+                    stepId: stepElement ? stepElement.id : `step-${stepNumber}`,
+                    stepNumber,
+                    render
+                });
+            }
+
+            if (!render) {
+                return { ok: true, skipped: true };
+            }
+
+            try {
+                render();
+                return { ok: true };
+            } catch (error) {
+                console.error(`[wizard] Step ${stepNumber} render failed`, error);
+                return { ok: false, error };
+            }
+        }
 
         function syncChecklistCompletion() {
             const section = document.querySelector('.pre-flash-checklist');
@@ -543,13 +570,17 @@
             }
 
             if (currentStep === 3) {
-                updateFanModuleVisibility();
+                runStepRender(targetStepElement, 3, () => {
+                    updateFanModuleVisibility();
+                });
             }
 
             if (currentStep === 4) {
-                updateConfiguration({ skipUrlUpdate: true });
-                updateSummary();
-                findCompatibleFirmware();
+                runStepRender(targetStepElement, 4, () => {
+                    updateConfiguration({ skipUrlUpdate: true });
+                    updateSummary();
+                    findCompatibleFirmware();
+                });
             }
 
             if (!skipUrlUpdate) {

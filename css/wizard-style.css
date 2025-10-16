@@ -333,6 +333,42 @@ h1 {
     color: #202124;
 }
 
+.wizard-step__content {
+    display: contents;
+}
+
+.wizard-step__error {
+    margin-top: 16px;
+}
+
+.wizard-step__error[hidden] {
+    display: none;
+}
+
+.wizard-step__error .btn {
+    margin-top: 16px;
+}
+
+.wizard-step__error details {
+    margin-top: 16px;
+    text-align: left;
+}
+
+.wizard-step__error .error-stack {
+    margin-top: 8px;
+    padding: 12px;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    color: #202124;
+    max-height: 200px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 /* Option Grid */
 .option-grid {
     display: grid;
