@@ -319,7 +319,6 @@
                     </div>
                 </div>
 
-                <aside id="wizard-summary" class="wizard-summary summary-wrap"></aside>
             </div>
         </div>
 
@@ -366,8 +365,6 @@
 
         let checklistCompleted = false;
         let toastTimeoutId = null;
-        let reviewSummaryElements = null;
-        let reviewCopyResetTimer = null;
 
         function getPreferenceStorage() {
             try {
@@ -419,216 +416,6 @@
 
         function setRememberEnabled(enabled) {
             setPreference(PREF_KEYS.rememberChoices, Boolean(enabled));
-        }
-
-        function ensureReviewSummaryPanel() {
-            const reviewStep = document.getElementById('step-4');
-            if (!reviewStep) {
-                return null;
-            }
-
-            reviewStep.classList.add('review-has-summary');
-
-            let reviewMain = reviewStep.querySelector('.review-main');
-            if (!reviewMain) {
-                reviewMain = document.createElement('div');
-                reviewMain.className = 'review-main';
-                const children = Array.from(reviewStep.children);
-                children.forEach((child) => {
-                    reviewMain.appendChild(child);
-                });
-                reviewStep.appendChild(reviewMain);
-            }
-
-            let wrap = reviewStep.querySelector('.summary-wrap');
-            if (!wrap) {
-                wrap = document.createElement('aside');
-                wrap.className = 'summary-wrap';
-                wrap.setAttribute('aria-label', 'Your configuration summary');
-                wrap.innerHTML = `
-                    <div class="summary-card" id="review-summary-card">
-                        <h3 class="summary-card__title">Your configuration</h3>
-                        <ul class="summary-list" id="review-summary-list" aria-live="polite"></ul>
-                        <p class="summary-note" id="review-summary-note" hidden></p>
-                        <div class="summary-actions">
-                            <button type="button" class="btn btn-primary" id="btn-copy-link">Copy sharable link</button>
-                            <button type="button" class="btn btn-secondary" id="btn-reset">Start over</button>
-                        </div>
-                    </div>
-                `;
-                reviewStep.appendChild(wrap);
-            }
-
-            const list = wrap.querySelector('#review-summary-list');
-            const note = wrap.querySelector('#review-summary-note');
-            const copyButton = wrap.querySelector('#btn-copy-link');
-            const resetButton = wrap.querySelector('#btn-reset');
-
-            if (copyButton && copyButton.dataset.bound !== 'true') {
-                copyButton.dataset.bound = 'true';
-                copyButton.dataset.defaultLabel = copyButton.textContent || 'Copy sharable link';
-                copyButton.addEventListener('click', handleReviewShareCopy);
-            }
-
-            if (resetButton && resetButton.dataset.bound !== 'true') {
-                resetButton.dataset.bound = 'true';
-                resetButton.addEventListener('click', handleReviewReset);
-            }
-
-            reviewSummaryElements = { list, note, copyButton, resetButton };
-            return reviewSummaryElements;
-        }
-
-        function handleReviewReset() {
-            try {
-                setPreference(PREF_KEYS.lastWizardState, null);
-                const storage = getPreferenceStorage();
-                if (storage && typeof storage.removeItem === 'function') {
-                    storage.removeItem('lastWizardState');
-                }
-            } catch (error) {
-                console.warn('Failed to clear remembered configuration', error);
-            }
-
-            window.location.href = window.location.pathname;
-        }
-
-        function buildSharableUrlFromConfiguration() {
-            const params = new URLSearchParams();
-
-            if (configuration.mounting) {
-                params.set('mount', configuration.mounting);
-            }
-
-            if (configuration.power) {
-                params.set('power', configuration.power);
-            }
-
-            params.set('airiq', configuration.airiq || 'none');
-            params.set('presence', configuration.presence || 'none');
-            params.set('comfort', configuration.comfort || 'none');
-
-            const fanValue = configuration.mounting === 'wall'
-                ? (configuration.fan || 'none')
-                : 'none';
-            params.set('fan', fanValue || 'none');
-
-            const base = `${window.location.origin}${window.location.pathname}`;
-            const query = params.toString();
-            return query ? `${base}?${query}` : base;
-        }
-
-        function fallbackCopyToClipboard(text) {
-            const input = document.createElement('textarea');
-            input.value = text;
-            input.setAttribute('readonly', '');
-            input.style.position = 'absolute';
-            input.style.left = '-9999px';
-            document.body.appendChild(input);
-
-            let success = false;
-            try {
-                input.select();
-                success = document.execCommand('copy');
-            } catch (error) {
-                success = false;
-            }
-
-            document.body.removeChild(input);
-            return success;
-        }
-
-        async function handleReviewShareCopy(event) {
-            const button = event.currentTarget;
-            const shareUrl = buildSharableUrlFromConfiguration();
-            let success = false;
-
-            try {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(shareUrl);
-                    success = true;
-                } else {
-                    success = fallbackCopyToClipboard(shareUrl);
-                }
-            } catch (error) {
-                console.warn('Failed to copy sharable link', error);
-            }
-
-            const defaultLabel = button.dataset.defaultLabel || 'Copy sharable link';
-            clearTimeout(reviewCopyResetTimer);
-
-            button.textContent = success ? 'Copied' : 'Copy failed';
-
-            reviewCopyResetTimer = setTimeout(() => {
-                button.textContent = defaultLabel;
-            }, 1200);
-        }
-
-        function getSummaryLabel(value) {
-            const map = {
-                wall: 'Wall',
-                ceiling: 'Ceiling',
-                usb: 'USB Power',
-                poe: 'PoE Module',
-                pwr: 'PWR Module',
-                none: 'None',
-                base: 'Base',
-                pro: 'Pro',
-                pwm: 'PWM',
-                analog: 'Analog'
-            };
-
-            if (!value) {
-                return 'Not selected';
-            }
-
-            return map[value] || value;
-        }
-
-        function renderReviewSummary() {
-            const summary = ensureReviewSummaryPanel();
-            if (!summary) {
-                return;
-            }
-
-            const { list, note } = summary;
-            if (!list) {
-                return;
-            }
-
-            const items = [];
-            items.push(['Mount', configuration.mounting ? getSummaryLabel(configuration.mounting) : 'Not selected']);
-            items.push(['Power', configuration.power ? getSummaryLabel(configuration.power) : 'Not selected']);
-            items.push(['AirIQ', getSummaryLabel(configuration.airiq || 'none')]);
-            items.push(['Presence', getSummaryLabel(configuration.presence || 'none')]);
-            items.push(['Comfort', getSummaryLabel(configuration.comfort || 'none')]);
-
-            let fanDisplay = 'Not selected';
-            if (configuration.mounting === 'wall') {
-                fanDisplay = getSummaryLabel(configuration.fan || 'none');
-            } else if (configuration.mounting) {
-                fanDisplay = 'Unavailable';
-            }
-            items.push(['Fan', fanDisplay]);
-
-            list.innerHTML = items
-                .map(([label, value]) => `<li><strong>${label}:</strong> ${value}</li>`)
-                .join('');
-
-            const conflicts = [];
-            if (configuration.mounting === 'ceiling' && configuration.fan && configuration.fan !== 'none') {
-                conflicts.push('Fan Module is not available on Ceiling mounts.');
-            }
-
-            if (note) {
-                if (conflicts.length > 0) {
-                    note.textContent = conflicts.join(' ');
-                    note.hidden = false;
-                } else {
-                    note.textContent = '';
-                    note.hidden = true;
-                }
-            }
         }
 
         function normalizeRememberedConfiguration(rawConfig) {
@@ -781,9 +568,6 @@
                 }
 
                 syncChecklistCompletion();
-                ensureReviewSummaryPanel();
-                renderReviewSummary();
-
                 const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
                 if (copyUrlBtn && !navigator.clipboard) {
                     copyUrlBtn.title = 'Copy requires Clipboard API support';
@@ -843,7 +627,6 @@
             document.querySelector('#step-2 .btn-next').disabled = false;
             updateUrlFromConfiguration();
             persistConfigurationSnapshot();
-            renderReviewSummary();
         }
 
         function updateFanModuleVisibility() {
@@ -938,7 +721,6 @@
                     updateConfiguration({ skipUrlUpdate: true });
                     updateSummary();
                     findCompatibleFirmware();
-                    renderReviewSummary();
                 });
             }
 
@@ -1787,8 +1569,6 @@
     <script type="module" src="scripts/init-review.js"></script>
     <script src="scripts/theme.js"></script>
     <script src="scripts/theme-toggle.js"></script>
-    <script src="scripts/state-shim.js"></script>
-    <script src="scripts/summary-panel.js"></script>
     <script src="scripts/layout/state-summary.js"></script>
     <script src="scripts/layout/firmware-note.js"></script>
     <script src="scripts/layout/init-splitview.js"></script>
