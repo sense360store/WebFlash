@@ -25,8 +25,10 @@
         </header>
 
         <div class="wizard-container">
-            <!-- Progress Indicator -->
-            <div class="progress-bar">
+            <div class="wizard-layout">
+                <div class="wizard-main">
+                    <!-- Progress Indicator -->
+                    <div class="progress-bar">
                 <div class="progress-step active" data-step="1">
                     <div class="step-number">1</div>
                     <div class="step-label">Mounting</div>
@@ -43,10 +45,10 @@
                     <div class="step-number">4</div>
                     <div class="step-label">Review</div>
                 </div>
-            </div>
+                    </div>
 
-            <!-- Step 1: Mounting Type -->
-            <div class="wizard-step active" id="step-1">
+                    <!-- Step 1: Mounting Type -->
+                    <div class="wizard-step active" id="step-1">
                 <h2>Step 1: Where is this unit being installed?</h2>
                 <div class="option-grid">
                     <label class="option-card">
@@ -83,10 +85,10 @@
                 <div class="wizard-actions">
                     <button class="btn btn-primary btn-next" onclick="nextStep()" disabled>Next</button>
                 </div>
-            </div>
+                    </div>
 
-            <!-- Step 2: Power Option -->
-            <div class="wizard-step" id="step-2">
+                    <!-- Step 2: Power Option -->
+                    <div class="wizard-step" id="step-2">
                 <h2>Step 2: Select Power Option</h2>
                 <div class="option-grid">
                     <label class="option-card">
@@ -115,10 +117,10 @@
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <button class="btn btn-primary btn-next" onclick="nextStep()" disabled>Next</button>
                 </div>
-            </div>
+                    </div>
 
-            <!-- Step 3: Expansion Modules -->
-            <div class="wizard-step" id="step-3">
+                    <!-- Step 3: Expansion Modules -->
+                    <div class="wizard-step" id="step-3">
                 <h2>Step 3: Add Expansion Modules</h2>
                 
                 <!-- AirIQ Module -->
@@ -237,10 +239,10 @@
                     <button class="btn btn-secondary" onclick="previousStep()">Back</button>
                     <button class="btn btn-primary btn-next" onclick="nextStep()">Next</button>
                 </div>
-            </div>
+                    </div>
 
-            <!-- Step 4: Review & Download -->
-            <div class="wizard-step" id="step-4">
+                    <!-- Step 4: Review & Download -->
+                    <div class="wizard-step" id="step-4">
                 <h2>Step 4: Review & Download</h2>
                 
                 <div class="configuration-summary">
@@ -302,6 +304,10 @@
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     </div>
                 </div>
+                    </div>
+                </div>
+
+                <aside id="wizard-summary" class="wizard-summary"></aside>
             </div>
         </div>
 
