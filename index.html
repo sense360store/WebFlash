@@ -266,13 +266,22 @@
     <script>
         let currentStep = 1;
         const totalSteps = 4;
-        const configuration = {
+        const defaultConfiguration = {
             mounting: null,
             power: null,
             airiq: 'none',
             presence: 'none',
             comfort: 'none',
             fan: 'none'
+        };
+        const configuration = { ...defaultConfiguration };
+        const allowedOptions = {
+            mounting: ['wall', 'ceiling'],
+            power: ['usb', 'poe', 'pwr'],
+            airiq: ['none', 'base', 'pro'],
+            presence: ['none', 'base', 'pro'],
+            comfort: ['none', 'base'],
+            fan: ['none', 'pwm', 'analog']
         };
 
         // Initialize
@@ -310,6 +319,8 @@
             document.querySelectorAll('input[name="fan"]').forEach(input => {
                 input.addEventListener('change', updateConfiguration);
             });
+
+            initializeFromUrl();
         });
 
         function handleMountingChange(e) {
@@ -317,14 +328,16 @@
             document.querySelector('#step-1 .btn-next').disabled = false;
 
             // Show/hide fan module based on mounting type
-            if (currentStep === 3) {
-                updateFanModuleVisibility();
-            }
+            updateFanModuleVisibility();
+
+            updateConfiguration({ skipUrlUpdate: true });
+            updateUrlFromConfiguration();
         }
 
         function handlePowerChange(e) {
             configuration.power = e.target.value;
             document.querySelector('#step-2 .btn-next').disabled = false;
+            updateUrlFromConfiguration();
         }
 
         function updateFanModuleVisibility() {
@@ -339,7 +352,7 @@
             }
         }
 
-        function updateConfiguration() {
+        function updateConfiguration(options = {}) {
             // Update AirIQ
             const airiqValue = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
             configuration.airiq = airiqValue;
@@ -354,56 +367,67 @@
             if (configuration.mounting === 'wall') {
                 configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
             }
+
+            if (!options.skipUrlUpdate) {
+                updateUrlFromConfiguration();
+            }
         }
 
         function nextStep() {
             if (currentStep < totalSteps) {
-                // Mark current step as completed
-                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('completed');
-                
-                // Hide current step
-                document.getElementById(`step-${currentStep}`).classList.remove('active');
-                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
-                
-                currentStep++;
-                
-                // Show next step
-                document.getElementById(`step-${currentStep}`).classList.add('active');
-                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
-
-                // Special handling for step 3
-                if (currentStep === 3) {
-                    updateFanModuleVisibility();
-                }
-
-                // Update summary on final step
-                if (currentStep === 4) {
-                    updateSummary();
-                    findCompatibleFirmware();
-                }
+                setStep(currentStep + 1);
             }
         }
 
         function previousStep() {
             if (currentStep > 1) {
-                // Hide current step
-                document.getElementById(`step-${currentStep}`).classList.remove('active');
-                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('active');
-                
-                currentStep--;
-                
-                // Remove completed class from this step (user went back)
-                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.remove('completed');
-                
-                // Show previous step
-                document.getElementById(`step-${currentStep}`).classList.add('active');
-                document.querySelector(`.progress-step[data-step="${currentStep}"]`).classList.add('active');
+                setStep(currentStep - 1);
+            }
+        }
+
+        function setStep(targetStep, { skipUrlUpdate = false } = {}) {
+            if (targetStep < 1 || targetStep > totalSteps) {
+                return;
+            }
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepElement = document.getElementById(`step-${i}`);
+                const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
+
+                if (i === targetStep) {
+                    stepElement.classList.add('active');
+                    progressElement.classList.add('active');
+                } else {
+                    stepElement.classList.remove('active');
+                    progressElement.classList.remove('active');
+                }
+
+                if (i < targetStep) {
+                    progressElement.classList.add('completed');
+                } else {
+                    progressElement.classList.remove('completed');
+                }
+            }
+
+            currentStep = targetStep;
+
+            if (currentStep === 3) {
+                updateFanModuleVisibility();
+            }
+
+            if (currentStep === 4) {
+                updateSummary();
+                findCompatibleFirmware();
+            }
+
+            if (!skipUrlUpdate) {
+                updateUrlFromConfiguration();
             }
         }
 
         function updateSummary() {
-            updateConfiguration();
-            
+            updateConfiguration({ skipUrlUpdate: true });
+
             let summaryHtml = '<div class="summary-grid">';
             
             // Mounting
@@ -690,6 +714,141 @@
                 link.click();
                 document.body.removeChild(link);
             }
+        }
+
+        function initializeFromUrl() {
+            const { parsedConfig, providedKeys, parsedStep } = parseConfigurationFromLocation();
+
+            applyConfiguration(parsedConfig);
+
+            const maxStep = getMaxReachableStep();
+            let targetStep;
+
+            if (parsedStep) {
+                targetStep = Math.min(parsedStep, maxStep);
+            } else if (!configuration.mounting) {
+                targetStep = 1;
+            } else if (!configuration.power) {
+                targetStep = 2;
+            } else if (['airiq', 'presence', 'comfort', 'fan'].some(key => providedKeys.has(key))) {
+                targetStep = Math.min(4, maxStep);
+            } else {
+                targetStep = Math.min(3, maxStep);
+            }
+
+            setStep(targetStep, { skipUrlUpdate: true });
+        }
+
+        function applyConfiguration(initialConfig) {
+            Object.assign(configuration, defaultConfiguration, initialConfig);
+
+            if (configuration.mounting) {
+                const mountingInput = document.querySelector(`input[name="mounting"][value="${configuration.mounting}"]`);
+                if (mountingInput) {
+                    mountingInput.checked = true;
+                    document.querySelector('#step-1 .btn-next').disabled = false;
+                }
+            } else {
+                document.querySelector('#step-1 .btn-next').disabled = true;
+            }
+
+            if (configuration.power) {
+                const powerInput = document.querySelector(`input[name="power"][value="${configuration.power}"]`);
+                if (powerInput) {
+                    powerInput.checked = true;
+                    document.querySelector('#step-2 .btn-next').disabled = false;
+                }
+            } else {
+                document.querySelector('#step-2 .btn-next').disabled = true;
+            }
+
+            ['airiq', 'presence', 'comfort', 'fan'].forEach(key => {
+                const value = configuration[key];
+                const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
+                if (input) {
+                    input.checked = true;
+                }
+            });
+
+            updateFanModuleVisibility();
+            updateConfiguration({ skipUrlUpdate: true });
+        }
+
+        function getMaxReachableStep() {
+            if (!configuration.mounting) {
+                return 1;
+            }
+
+            if (!configuration.power) {
+                return 2;
+            }
+
+            return 4;
+        }
+
+        function parseConfigurationFromLocation() {
+            const combinedParams = new URLSearchParams();
+            const searchParams = new URLSearchParams(window.location.search);
+            const hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
+            const hashParams = new URLSearchParams(hash);
+
+            hashParams.forEach((value, key) => {
+                combinedParams.set(key, value);
+            });
+
+            searchParams.forEach((value, key) => {
+                combinedParams.set(key, value);
+            });
+
+            const parsedConfig = { ...defaultConfiguration };
+            const providedKeys = new Set();
+
+            Object.keys(allowedOptions).forEach(key => {
+                const value = combinedParams.get(key);
+                if (value && allowedOptions[key].includes(value)) {
+                    parsedConfig[key] = value;
+                    providedKeys.add(key);
+                }
+            });
+
+            let parsedStep = null;
+            const stepValue = combinedParams.get('step');
+            if (stepValue) {
+                const numericStep = parseInt(stepValue, 10);
+                if (!Number.isNaN(numericStep) && numericStep >= 1 && numericStep <= totalSteps) {
+                    parsedStep = numericStep;
+                }
+            }
+
+            return { parsedConfig, providedKeys, parsedStep };
+        }
+
+        function updateUrlFromConfiguration() {
+            const params = new URLSearchParams();
+
+            if (configuration.mounting) {
+                params.set('mounting', configuration.mounting);
+            }
+
+            if (configuration.power) {
+                params.set('power', configuration.power);
+            }
+
+            params.set('airiq', configuration.airiq || 'none');
+            params.set('presence', configuration.presence || 'none');
+            params.set('comfort', configuration.comfort || 'none');
+
+            if (configuration.mounting === 'wall') {
+                params.set('fan', configuration.fan || 'none');
+            } else {
+                params.set('fan', 'none');
+            }
+
+            params.set('step', String(currentStep));
+
+            const paramString = params.toString();
+            const newUrl = paramString ? `${window.location.pathname}?${paramString}` : window.location.pathname;
+            history.replaceState(null, '', newUrl);
         }
     </script>
 </body>
