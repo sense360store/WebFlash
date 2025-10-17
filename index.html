@@ -330,6 +330,16 @@
             fan: 'none'
         };
         const configuration = { ...defaultConfiguration };
+        const FIRMWARE_CHANNEL_ORDER = { general: 0, preview: 1, beta: 2, dev: 3 };
+        const FIRMWARE_CHANNEL_LABELS = {
+            general: 'General',
+            preview: 'Preview',
+            beta: 'Beta',
+            dev: 'Dev'
+        };
+        let currentFirmwareOptions = [];
+        let firmwareOptionsMap = new Map();
+        let currentFirmwareSelectionId = null;
         const PREF_KEYS = {
             rememberChoices: 'sense360.rememberChoices',
             lastWizardState: 'sense360.lastWizardState'
@@ -536,6 +546,10 @@
                     return;
                 }
                 button.addEventListener('click', () => {
+                    const card = button.closest('[data-firmware-card]');
+                    if (card && card.dataset.firmwareId) {
+                        selectFirmwareById(card.dataset.firmwareId, { updateConfigString: false });
+                    }
                     setChecklistCompletion(true);
                 });
                 button.dataset.checklistBound = 'true';
@@ -996,54 +1010,343 @@
             attachInstallButtonListeners();
         }
 
-        async function findCompatibleFirmware() {
-            const downloadBtn = document.getElementById('download-btn');
-            const copyLinkBtn = document.getElementById('copy-link-btn');
-            const setReadyState = (isReady) => {
-                if (downloadBtn) {
-                    downloadBtn.disabled = !isReady;
-                    downloadBtn.classList.toggle('is-ready', isReady);
+        function clearFirmwareOptions() {
+            currentFirmwareOptions = [];
+            firmwareOptionsMap = new Map();
+            currentFirmwareSelectionId = null;
+            window.currentFirmware = null;
+            updateSharedReadyState();
+        }
+
+        function getFirmwareId(build) {
+            return `firmware-${build.manifestIndex}`;
+        }
+
+        function parseVersionParts(version) {
+            return String(version || '')
+                .split('.')
+                .map(part => {
+                    const value = parseInt(part, 10);
+                    return Number.isFinite(value) ? value : 0;
+                });
+        }
+
+        function compareVersionsDesc(a, b) {
+            const partsA = parseVersionParts(a);
+            const partsB = parseVersionParts(b);
+            const length = Math.max(partsA.length, partsB.length);
+
+            for (let i = 0; i < length; i++) {
+                const valueA = partsA[i] ?? 0;
+                const valueB = partsB[i] ?? 0;
+                if (valueA !== valueB) {
+                    return valueB - valueA;
                 }
+            }
 
-                const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
-                if (copyUrlBtn) {
-                    const clipboardSupported = !!navigator.clipboard;
-                    const canCopy = clipboardSupported && isReady && window.currentFirmware && window.currentFirmware.parts && window.currentFirmware.parts.length > 0;
-                    copyUrlBtn.disabled = !canCopy;
-                    copyUrlBtn.classList.toggle('is-ready', canCopy);
+            return 0;
+        }
 
-                    if (!clipboardSupported) {
-                        copyUrlBtn.title = 'Copy requires Clipboard API support';
-                    } else {
-                        copyUrlBtn.removeAttribute('title');
-                    }
+        function compareFirmwareBuilds(a, b) {
+            const orderA = FIRMWARE_CHANNEL_ORDER[a.channel] ?? Number.MAX_SAFE_INTEGER;
+            const orderB = FIRMWARE_CHANNEL_ORDER[b.channel] ?? Number.MAX_SAFE_INTEGER;
+
+            if (orderA !== orderB) {
+                return orderA - orderB;
+            }
+
+            const versionCompare = compareVersionsDesc(a.version, b.version);
+            if (versionCompare !== 0) {
+                return versionCompare;
+            }
+
+            const dateA = Date.parse(a.build_date || '') || 0;
+            const dateB = Date.parse(b.build_date || '') || 0;
+            if (dateA !== dateB) {
+                return dateB - dateA;
+            }
+
+            return 0;
+        }
+
+        function setFirmwareOptions(builds, configString) {
+            currentFirmwareOptions = Array.isArray(builds) ? builds : [];
+            firmwareOptionsMap = new Map(
+                currentFirmwareOptions.map(build => [build.firmwareId, build])
+            );
+
+            if (configString) {
+                window.currentConfigString = configString;
+            }
+
+            if (!currentFirmwareOptions.length) {
+                currentFirmwareSelectionId = null;
+                window.currentFirmware = null;
+            }
+
+            updateSharedReadyState();
+        }
+
+        function selectFirmwareById(firmwareId, options = {}) {
+            if (!firmwareId || !firmwareOptionsMap.has(firmwareId)) {
+                return;
+            }
+
+            const firmware = firmwareOptionsMap.get(firmwareId);
+            currentFirmwareSelectionId = firmwareId;
+            window.currentFirmware = firmware;
+
+            if (options.updateConfigString !== false && firmware.config_string) {
+                window.currentConfigString = firmware.config_string;
+            }
+
+            updateSharedReadyState();
+        }
+
+        function selectDefaultFirmware() {
+            if (!currentFirmwareOptions.length) {
+                currentFirmwareSelectionId = null;
+                window.currentFirmware = null;
+                updateSharedReadyState();
+                return;
+            }
+
+            const preferred = currentFirmwareOptions.find(build => build.channel === 'general')
+                || currentFirmwareOptions[0];
+
+            selectFirmwareById(preferred.firmwareId);
+        }
+
+        function getCardHelperMessage(channel, isSelected) {
+            if (!currentFirmwareOptions.length) {
+                return '';
+            }
+
+            if (isSelected) {
+                if (channel === 'preview') {
+                    return 'Preview build ready to flash';
                 }
-
-                const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
-                if (installButton) {
-                    installButton.classList.toggle('is-ready', isReady);
+                if (channel === 'general') {
+                    return 'Ready to flash';
                 }
+                const channelLabel = FIRMWARE_CHANNEL_LABELS[channel] || channel;
+                return `${channelLabel} build ready`;
+            }
 
-                const helperTexts = document.querySelectorAll('[data-ready-helper]');
-                helperTexts.forEach(helper => {
-                    if (isReady) {
-                        if (helper.textContent !== 'Ready to flash') {
-                            helper.textContent = 'Ready to flash';
-                        }
+            if (channel === 'preview') {
+                return 'Preview build available for testing';
+            }
+
+            if (channel === 'general') {
+                return 'General build available';
+            }
+
+            if (channel) {
+                const channelLabel = FIRMWARE_CHANNEL_LABELS[channel] || channel;
+                return `${channelLabel} build available`;
+            }
+
+            return '';
+        }
+
+        function updateFirmwareCardStates() {
+            const cards = document.querySelectorAll('#compatible-firmware [data-firmware-card]');
+            cards.forEach(card => {
+                const firmwareId = card.dataset.firmwareId;
+                const helper = card.querySelector('[data-ready-helper]');
+                const channel = card.dataset.channel || '';
+                const isSelected = firmwareId === currentFirmwareSelectionId;
+
+                card.classList.toggle('is-selected', isSelected);
+                card.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+
+                if (helper) {
+                    const helperMessage = getCardHelperMessage(channel, isSelected);
+                    if (helperMessage) {
+                        helper.textContent = helperMessage;
                         helper.classList.add('is-visible');
                     } else {
+                        helper.textContent = '';
                         helper.classList.remove('is-visible');
-                        if (helper.textContent) {
-                            helper.textContent = '';
+                    }
+                }
+            });
+        }
+
+        function updateSharedReadyState() {
+            const isReady = !!(
+                window.currentFirmware &&
+                Array.isArray(window.currentFirmware.parts) &&
+                window.currentFirmware.parts.length > 0
+            );
+
+            const downloadBtn = document.getElementById('download-btn');
+            if (downloadBtn) {
+                downloadBtn.disabled = !isReady;
+                downloadBtn.classList.toggle('is-ready', isReady);
+            }
+
+            const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
+            if (copyUrlBtn) {
+                const clipboardSupported = !!navigator.clipboard;
+                const canCopy = clipboardSupported && isReady;
+                copyUrlBtn.disabled = !canCopy;
+                copyUrlBtn.classList.toggle('is-ready', canCopy);
+
+                if (!clipboardSupported) {
+                    copyUrlBtn.title = 'Copy requires Clipboard API support';
+                } else {
+                    copyUrlBtn.removeAttribute('title');
+                }
+            }
+
+            const installButtons = document.querySelectorAll('#compatible-firmware esp-web-install-button button[slot="activate"]');
+            installButtons.forEach(button => {
+                const card = button.closest('[data-firmware-card]');
+                const isSelectedCard = card && card.dataset.firmwareId === currentFirmwareSelectionId;
+                button.classList.toggle('is-ready', isSelectedCard && isReady);
+            });
+
+            const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
+            if (primaryHelper) {
+                if (isReady) {
+                    if (primaryHelper.textContent !== 'Ready to flash') {
+                        primaryHelper.textContent = 'Ready to flash';
+                    }
+                    primaryHelper.classList.add('is-visible');
+                } else {
+                    primaryHelper.textContent = '';
+                    primaryHelper.classList.remove('is-visible');
+                }
+            }
+
+            updateFirmwareCardStates();
+        }
+
+        function bindFirmwareCards() {
+            const cards = document.querySelectorAll('#compatible-firmware [data-firmware-card]');
+            cards.forEach(card => {
+                if (card.dataset.selectionBound === 'true') {
+                    return;
+                }
+
+                if (!card.hasAttribute('tabindex')) {
+                    card.setAttribute('tabindex', '0');
+                }
+
+                card.addEventListener('click', event => {
+                    if (event.target.closest('.release-notes-link')) {
+                        return;
+                    }
+                    const firmwareId = card.dataset.firmwareId;
+                    if (firmwareId) {
+                        selectFirmwareById(firmwareId, { updateConfigString: false });
+                    }
+                });
+
+                card.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        const firmwareId = card.dataset.firmwareId;
+                        if (firmwareId) {
+                            selectFirmwareById(firmwareId, { updateConfigString: false });
                         }
                     }
                 });
-            };
 
-            setReadyState(false);
-            window.currentFirmware = null;
+                card.dataset.selectionBound = 'true';
+            });
+        }
 
-            // Ensure required selections are present before building the config string
+        function createFirmwareCardHtml(build, configString, metadataSections) {
+            const firmwareName = `Sense360-${configString}-v${build.version}-${build.channel}.bin`;
+            const fileSizeKb = Number(build.file_size);
+            const sizeLabel = Number.isFinite(fileSizeKb) ? `${(fileSizeKb / 1024).toFixed(1)} KB` : '';
+            const buildDate = build.build_date ? new Date(build.build_date) : null;
+            const buildDateLabel = buildDate && !isNaN(buildDate.getTime()) ? buildDate.toLocaleDateString() : '';
+            const channelLabel = FIRMWARE_CHANNEL_LABELS[build.channel] || (build.channel ? build.channel : 'Custom');
+            const channelClass = build.channel ? `firmware-channel-tag is-${build.channel}` : 'firmware-channel-tag';
+            const releaseNotesId = `${build.firmwareId}-release-notes`;
+            const descriptionHtml = build.description
+                ? `<p class="firmware-description">${build.description}</p>`
+                : '';
+
+            const metadataHtml = metadataSections
+                .map(({ key, title }) => {
+                    const items = build[key];
+                    if (!Array.isArray(items) || items.length === 0) {
+                        return '';
+                    }
+
+                    const listItems = items
+                        .map(item => `<li>${item}</li>`)
+                        .join('');
+
+                    return `
+                        <section class="firmware-meta-section firmware-${key.replace(/_/g, '-')}">
+                            <h4>${title}</h4>
+                            <ul>${listItems}</ul>
+                        </section>
+                    `;
+                })
+                .filter(Boolean)
+                .join('');
+
+            const metadataBlock = metadataHtml
+                ? `
+                    <div class="firmware-metadata">
+                        ${metadataHtml}
+                    </div>
+                `
+                : '';
+
+            const metaParts = [];
+            if (sizeLabel) metaParts.push(`<span class="firmware-size">${sizeLabel}</span>`);
+            if (buildDateLabel) metaParts.push(`<span class="firmware-date">${buildDateLabel}</span>`);
+
+            metaParts.push(`
+                <a href="#" class="release-notes-link" data-release-notes-trigger data-release-notes-id="${releaseNotesId}" data-firmware-id="${build.firmwareId}" onclick="toggleReleaseNotes(event)">
+                    View Release Notes
+                </a>
+            `);
+
+            const metaHtml = metaParts.join('');
+
+            return `
+                <div class="firmware-card" data-firmware-card data-firmware-id="${build.firmwareId}" data-channel="${build.channel || ''}" aria-selected="false">
+                    <div class="firmware-item">
+                        <div class="firmware-info">
+                            <div class="firmware-header">
+                                <div class="firmware-name">${firmwareName}</div>
+                                <span class="${channelClass}">${channelLabel}</span>
+                            </div>
+                            <div class="firmware-details">
+                                ${metaHtml}
+                            </div>
+                            ${descriptionHtml}
+                        </div>
+                        <div class="firmware-actions">
+                            <esp-web-install-button manifest="firmware-${build.manifestIndex}.json" data-firmware-id="${build.firmwareId}">
+                                <button slot="activate" class="btn btn-primary" data-firmware-id="${build.firmwareId}">
+                                    Install Firmware
+                                </button>
+                            </esp-web-install-button>
+                            <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
+                        </div>
+                    </div>
+                    ${metadataBlock}
+                    <div class="release-notes-section" id="${releaseNotesId}" data-release-notes-container style="display: none;">
+                        <div class="release-notes-content">
+                            <div class="loading">Loading release notes...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function findCompatibleFirmware() {
+            clearFirmwareOptions();
+
             if (!configuration.mounting || !configuration.power) {
                 document.getElementById('compatible-firmware').innerHTML = `
                     <div class="firmware-error">
@@ -1092,23 +1395,18 @@
             try {
                 const response = await fetch('manifest.json');
                 const manifest = await response.json();
+                const buildsWithIndex = manifest.builds.map((build, index) => {
+                    const enriched = { ...build, manifestIndex: index };
+                    enriched.firmwareId = getFirmwareId(enriched);
+                    return enriched;
+                });
                 const legacyGroups = groupLegacyBuilds(manifest.builds);
 
-                // Find matching firmware in manifest
-                let matchingFirmware = null;
-                for (const build of manifest.builds) {
-                    // Check if this build matches our configuration
-                    if (build.config_string === configString) {
-                        matchingFirmware = build;
-                        break;
-                    }
-                }
-                
-                if (matchingFirmware) {
-                    // Store firmware info globally
-                    window.currentFirmware = matchingFirmware;
-                    window.currentConfigString = configString;
+                const matchingFirmwares = buildsWithIndex
+                    .filter(build => build.config_string === configString)
+                    .sort(compareFirmwareBuilds);
 
+                if (matchingFirmwares.length) {
                     const metadataSections = [
                         { key: 'features', title: 'Key Features' },
                         { key: 'hardware_requirements', title: 'Hardware Requirements' },
@@ -1116,67 +1414,17 @@
                         { key: 'changelog', title: 'Changelog' }
                     ];
 
-                    const metadataHtml = metadataSections
-                        .map(({ key, title }) => {
-                            const items = matchingFirmware[key];
-                            if (!Array.isArray(items) || items.length === 0) {
-                                return '';
-                            }
-
-                            const listItems = items
-                                .map(item => `<li>${item}</li>`)
-                                .join('');
-
-                            return `
-                                <section class="firmware-meta-section firmware-${key.replace(/_/g, '-')}">
-                                    <h4>${title}</h4>
-                                    <ul>${listItems}</ul>
-                                </section>
-                            `;
-                        })
-                        .filter(Boolean)
+                    const firmwareHtml = matchingFirmwares
+                        .map(build => createFirmwareCardHtml(build, configString, metadataSections))
                         .join('');
 
-                    const metadataBlock = metadataHtml
-                        ? `
-                            <div class="firmware-metadata">
-                                ${metadataHtml}
-                            </div>
-                        `
-                        : '';
-
-                    // Firmware exists - show install option
-                    const firmwareHtml = `
-                        <div class="firmware-item">
-                            <div class="firmware-info">
-                                <div class="firmware-name">Sense360-${configString}-v${matchingFirmware.version}-${matchingFirmware.channel}.bin</div>
-                                <div class="firmware-details">
-                                    <span class="firmware-size">${(matchingFirmware.file_size / 1024).toFixed(1)} KB</span>
-                                    <span class="firmware-date">${new Date(matchingFirmware.build_date).toLocaleDateString()}</span>
-                                    <a href="#" class="release-notes-link" onclick="toggleReleaseNotes(event)">View Release Notes</a>
-                                </div>
-                            </div>
-                            <div class="firmware-actions">
-                                <esp-web-install-button manifest="firmware-${manifest.builds.indexOf(matchingFirmware)}.json">
-                                    <button slot="activate" class="btn btn-primary">
-                                        Install Firmware
-                                    </button>
-                                </esp-web-install-button>
-                                <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
-                            </div>
-                        </div>
-                        ${metadataBlock}
-                        <div class="release-notes-section" id="release-notes" style="display: none;">
-                            <div class="release-notes-content">
-                                <div class="loading">Loading release notes...</div>
-                            </div>
-                        </div>
-                    `;
                     document.getElementById('compatible-firmware').innerHTML = firmwareHtml;
-                    setReadyState(true);
+
+                    setFirmwareOptions(matchingFirmwares, configString);
+                    selectDefaultFirmware();
+                    bindFirmwareCards();
                     attachInstallButtonListeners();
                 } else {
-                    // Firmware doesn't exist - show message
                     const notAvailableHtml = `
                         <div class="firmware-not-available">
                             <h4>Firmware Not Available</h4>
@@ -1186,6 +1434,7 @@
                         </div>
                     `;
                     document.getElementById('compatible-firmware').innerHTML = notAvailableHtml;
+                    clearFirmwareOptions();
                     attachInstallButtonListeners();
                 }
 
@@ -1199,6 +1448,7 @@
                     </div>
                 `;
                 document.getElementById('compatible-firmware').innerHTML = errorHtml;
+                clearFirmwareOptions();
                 attachInstallButtonListeners();
                 renderLegacyFirmware([]);
             }
@@ -1206,98 +1456,112 @@
         
         async function toggleReleaseNotes(event) {
             event.preventDefault();
-            const notesSection = document.getElementById('release-notes');
-            const link = event.target;
-            
-            if (notesSection.style.display === 'none') {
+            const trigger = event.currentTarget || event.target;
+            const notesId = trigger.dataset.releaseNotesId;
+            const firmwareId = trigger.dataset.firmwareId;
+            if (!notesId) {
+                return;
+            }
+
+            const notesSection = document.getElementById(notesId);
+            if (!notesSection) {
+                return;
+            }
+
+            if (firmwareId) {
+                selectFirmwareById(firmwareId, { updateConfigString: false });
+            }
+
+            const isHidden = notesSection.style.display === 'none' || notesSection.style.display === '';
+            if (isHidden) {
                 notesSection.style.display = 'block';
-                link.textContent = 'Hide Release Notes';
-                
-                // Load release notes if not already loaded
-                if (notesSection.querySelector('.loading')) {
-                    await loadReleaseNotes();
+                trigger.textContent = 'Hide Release Notes';
+
+                if (notesSection.dataset.loaded !== 'true') {
+                    await loadReleaseNotesForFirmware(firmwareId, notesSection);
                 }
             } else {
                 notesSection.style.display = 'none';
-                link.textContent = 'View Release Notes';
+                trigger.textContent = 'View Release Notes';
             }
         }
-        
-        async function loadReleaseNotes() {
-            const notesSection = document.getElementById('release-notes');
-            const configString = window.currentConfigString;
-            const firmware = window.currentFirmware;
-            
+
+        async function loadReleaseNotesForFirmware(firmwareId, notesSection) {
+            const firmware = (firmwareId && firmwareOptionsMap.get(firmwareId)) || window.currentFirmware;
+            const configString = firmware ? firmware.config_string : window.currentConfigString;
+            const contentRoot = notesSection.querySelector('.release-notes-content');
+
+            if (!firmware || !configString || !contentRoot) {
+                if (contentRoot) {
+                    contentRoot.innerHTML = `
+                        <p class="error">Unable to load release notes.</p>
+                    `;
+                }
+                return;
+            }
+
             try {
-                // Try to load release notes file
                 const notesPath = `firmware/configurations/Sense360-${configString}-v${firmware.version}-${firmware.channel}.md`;
                 const response = await fetch(notesPath);
-                
+
                 if (response.ok) {
                     const markdown = await response.text();
-                    // Better markdown to HTML conversion
                     let html = '';
                     const lines = markdown.split('\n');
                     let inList = false;
                     let inParagraph = false;
-                    
+
                     for (let i = 0; i < lines.length; i++) {
                         const line = lines[i].trim();
-                        
-                        // Close paragraph if needed
-                        if (inParagraph && (line === '' || line.match(/^#/) || line.match(/^-/))) {
+
+                        if (inParagraph && (line === '' || line.match(/^#/) || line.match(/^-+/))) {
                             html += '</p>';
                             inParagraph = false;
                         }
-                        
-                        // Close list if needed
-                        if (inList && !line.match(/^-/)) {
+
+                        if (inList && !line.match(/^- /)) {
                             html += '</ul>';
                             inList = false;
                         }
-                        
-                        // Headers
+
                         if (line.match(/^# /)) {
                             html += `<h2>${line.substring(2)}</h2>`;
                         } else if (line.match(/^## /)) {
                             html += `<h3>${line.substring(3)}</h3>`;
                         } else if (line.match(/^### /)) {
                             html += `<h4>${line.substring(4)}</h4>`;
-                        }
-                        // List items
-                        else if (line.match(/^- /)) {
+                        } else if (line.match(/^- /)) {
                             if (!inList) {
                                 html += '<ul>';
                                 inList = true;
                             }
                             html += `<li>${line.substring(2)}</li>`;
-                        }
-                        // Regular text
-                        else if (line !== '') {
+                        } else if (line !== '') {
                             if (!inParagraph) {
                                 html += '<p>';
                                 inParagraph = true;
                             }
-                            html += line + ' ';
+                            html += `${line} `;
                         }
                     }
-                    
-                    // Close any open tags
+
                     if (inParagraph) html += '</p>';
                     if (inList) html += '</ul>';
-                    
-                    notesSection.querySelector('.release-notes-content').innerHTML = html;
+
+                    contentRoot.innerHTML = html;
                 } else {
-                    notesSection.querySelector('.release-notes-content').innerHTML = `
+                    contentRoot.innerHTML = `
                         <p class="no-notes">No release notes available for this firmware version.</p>
                     `;
                 }
             } catch (error) {
                 console.error('Error loading release notes:', error);
-                notesSection.querySelector('.release-notes-content').innerHTML = `
+                contentRoot.innerHTML = `
                     <p class="error">Unable to load release notes.</p>
                 `;
             }
+
+            notesSection.dataset.loaded = 'true';
         }
         
         function downloadFirmware() {

@@ -958,6 +958,18 @@ h1 {
     font-size: 14px;
 }
 
+#compatible-firmware {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.firmware-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 .firmware-item {
     background: var(--color-surface-muted);
     border: 1px solid var(--color-border);
@@ -966,6 +978,32 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.firmware-card.is-selected .firmware-item,
+.firmware-item:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.firmware-item:focus-within {
+    outline: none;
+}
+
+.firmware-header {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+@media (min-width: 600px) {
+    .firmware-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
 }
 
 .firmware-actions esp-web-install-button {
@@ -975,7 +1013,6 @@ h1 {
 .firmware-name {
     font-weight: 500;
     color: var(--color-text-primary);
-    margin-bottom: 8px;
 }
 
 .firmware-details {
@@ -983,6 +1020,47 @@ h1 {
     gap: 16px;
     font-size: 14px;
     color: var(--color-text-secondary);
+    flex-wrap: wrap;
+}
+
+.firmware-description {
+    font-size: 14px;
+    color: var(--color-text-tertiary);
+    margin: 12px 0 0;
+}
+
+.firmware-channel-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--chip-bg);
+    color: var(--color-text-secondary);
+}
+
+.firmware-channel-tag.is-general {
+    background: color-mix(in srgb, var(--success) 18%, transparent);
+    color: color-mix(in srgb, var(--success) 55%, var(--color-text-primary));
+}
+
+.firmware-channel-tag.is-preview {
+    background: color-mix(in srgb, var(--warning) 22%, transparent);
+    color: color-mix(in srgb, var(--warning) 55%, black);
+}
+
+.firmware-channel-tag.is-beta {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: color-mix(in srgb, var(--accent) 55%, var(--accent-contrast));
+}
+
+.firmware-channel-tag.is-dev {
+    background: color-mix(in srgb, var(--danger) 18%, transparent);
+    color: color-mix(in srgb, var(--danger) 60%, white);
 }
 
 /* Firmware not available styles */
