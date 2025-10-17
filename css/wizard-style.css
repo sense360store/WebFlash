@@ -84,6 +84,14 @@ h1 {
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
+.progress-step[data-reachable="true"] {
+    cursor: pointer;
+}
+
+.progress-step[data-reachable="false"] {
+    cursor: not-allowed;
+}
+
 .progress-step::before {
     content: '';
     position: absolute;

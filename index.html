@@ -556,8 +556,57 @@
             });
         }
 
+        function initializeProgressStepControls() {
+            const progressSteps = document.querySelectorAll('.progress-step[data-step]');
+
+            progressSteps.forEach(stepElement => {
+                if (stepElement.dataset.progressBound === 'true') {
+                    return;
+                }
+
+                const stepNumber = Number(stepElement.dataset.step);
+                if (!Number.isFinite(stepNumber)) {
+                    return;
+                }
+
+                stepElement.setAttribute('role', 'button');
+                stepElement.dataset.progressBound = 'true';
+
+                const requestStepChange = (event) => {
+                    event.preventDefault();
+                    handleProgressStepRequest(stepNumber, stepElement);
+                };
+
+                stepElement.addEventListener('click', requestStepChange);
+                stepElement.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        requestStepChange(event);
+                    }
+                });
+            });
+
+            updateProgressSteps(currentStep);
+        }
+
+        function handleProgressStepRequest(stepNumber, stepElement) {
+            const maxReachableStep = getMaxReachableStep();
+
+            if (stepNumber <= maxReachableStep) {
+                setStep(stepNumber, { animate: true });
+                return;
+            }
+
+            showLockedStepNotice(stepNumber, stepElement);
+        }
+
+        function showLockedStepNotice(stepNumber, stepElement) {
+            const stepLabel = stepElement?.querySelector('.step-label')?.textContent?.trim();
+            const labelText = stepLabel ? `Step ${stepNumber} (${stepLabel})` : `Step ${stepNumber}`;
+            showToast(`Finish previous steps to unlock ${labelText}.`, { duration: 3000 });
+        }
+
         // Initialize
-            document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
                 // Check browser compatibility
                 if (!navigator.serial) {
                     document.getElementById('browser-warning').style.display = 'block';
@@ -574,37 +623,39 @@
                     input.addEventListener('change', handleMountingChange);
                 });
 
-            document.querySelectorAll('input[name="power"]').forEach(input => {
-                input.addEventListener('change', handlePowerChange);
-            });
+                document.querySelectorAll('input[name="power"]').forEach(input => {
+                    input.addEventListener('change', handlePowerChange);
+                });
 
-            document.querySelectorAll('input[name="airiq"]').forEach(input => {
-                input.addEventListener('change', updateConfiguration);
-            });
+                document.querySelectorAll('input[name="airiq"]').forEach(input => {
+                    input.addEventListener('change', updateConfiguration);
+                });
 
-            document.querySelectorAll('input[name="presence"]').forEach(input => {
-                input.addEventListener('change', updateConfiguration);
-            });
+                document.querySelectorAll('input[name="presence"]').forEach(input => {
+                    input.addEventListener('change', updateConfiguration);
+                });
 
-            document.querySelectorAll('input[name="comfort"]').forEach(input => {
-                input.addEventListener('change', updateConfiguration);
-            });
+                document.querySelectorAll('input[name="comfort"]').forEach(input => {
+                    input.addEventListener('change', updateConfiguration);
+                });
 
-            document.querySelectorAll('input[name="fan"]').forEach(input => {
-                input.addEventListener('change', updateConfiguration);
-            });
+                document.querySelectorAll('input[name="fan"]').forEach(input => {
+                    input.addEventListener('change', updateConfiguration);
+                });
 
-            rememberToggleInputs = Array.from(document.querySelectorAll('[data-remember-toggle]'));
-            rememberToggleInputs.forEach(input => {
-                input.addEventListener('change', handleRememberToggleChange);
-            });
+                initializeProgressStepControls();
 
-            const rememberEnabled = isRememberEnabled();
-            syncRememberToggleState(rememberEnabled);
+                rememberToggleInputs = Array.from(document.querySelectorAll('[data-remember-toggle]'));
+                rememberToggleInputs.forEach(input => {
+                    input.addEventListener('change', handleRememberToggleChange);
+                });
 
-            const savedConfig = rememberEnabled ? loadRememberedConfiguration() : null;
+                const rememberEnabled = isRememberEnabled();
+                syncRememberToggleState(rememberEnabled);
 
-            initializeFromUrl({ baseConfig: savedConfig });
+                const savedConfig = rememberEnabled ? loadRememberedConfiguration() : null;
+
+                initializeFromUrl({ baseConfig: savedConfig });
         });
 
         function handleMountingChange(e) {
@@ -726,6 +777,8 @@
         }
 
         function updateProgressSteps(targetStep) {
+            const maxReachableStep = getMaxReachableStep();
+
             for (let i = 1; i <= totalSteps; i++) {
                 const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
                 if (!progressElement) continue;
@@ -740,6 +793,19 @@
                     progressElement.classList.add('completed');
                 } else {
                     progressElement.classList.remove('completed');
+                }
+
+                const isReachable = i <= maxReachableStep;
+                const isCurrent = i === targetStep;
+
+                progressElement.dataset.reachable = isReachable ? 'true' : 'false';
+                progressElement.setAttribute('aria-disabled', isReachable ? 'false' : 'true');
+                progressElement.setAttribute('tabindex', isReachable ? '0' : '-1');
+
+                if (isCurrent) {
+                    progressElement.setAttribute('aria-current', 'step');
+                } else {
+                    progressElement.removeAttribute('aria-current');
                 }
             }
         }
