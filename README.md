@@ -54,13 +54,15 @@ Implementing even a few of these ideas should reduce friction, build confidence,
 
 ## Supported devices
 
-The WebFlash page lists all currently available Sense360 firmware. Typical categories include:
+The WebFlash wizard focuses on the Sense360 modular platform. Firmware is organised around the options surfaced in the configurator:
 
-- **CO₂ Monitor** (ESP32‑S3) — general/preview
-- **Env Monitor** (ESP32) — general/preview
-- **Temp Sensor** (ESP32‑S3) — general
+- **Mounting** – Wall and Ceiling installations are supported. Ceiling builds exclude the fan module, matching the behaviour in the wizard.
+- **Power** – Select from USB power, a POE backplate, or the external PWR supply module.
+- **Modules** – AirIQ (None/Base/Pro), Presence (None/Base/Pro), Comfort (None/Base), and Fan (None/PWM/Analog, wall-only).
 
-Availability depends on what firmware we publish. Always prefer **general** for production devices.
+Each firmware build is grouped by a configuration string that concatenates the selected options (for example, `Wall-USB-AirIQPro` becomes Mount-Power-Modules). Current entries in `manifest.json` include `Ceiling-POE-AirIQBase`, `Ceiling-PWR-AirIQPro-Presence-Comfort`, `Wall-POE-AirIQBase`, and `Wall-USB`. The manifest also tracks Sense360-MS Standard binaries, which appear without a configuration string while the new modular catalogue matures.
+
+Availability depends on what firmware we publish. Always prefer **general** builds for production devices.
 
 ---
 
