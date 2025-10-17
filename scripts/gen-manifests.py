@@ -28,40 +28,45 @@ try:
 except Exception:  # pragma: no cover - packaging is optional
     _PackagingVersion = None  # type: ignore
 
-DEFAULT_CHANNEL = "general"
+DEFAULT_CHANNEL = "stable"
 DEFAULT_DEVICE_TYPE = "Core Module"
 
-CANONICAL_CHANNELS = {"general", "preview", "beta", "dev"}
-CHANNEL_ALIASES = {
-    "release": "general",
-    "prod": "general",
-    "production": "general",
-    "ga": "general",
-    "lts": "general",
-    "stable": "general",
-    "prerelease": "preview",
-    "rc": "preview",
-    "candidate": "preview",
-    "alpha": "dev",
-    "nightly": "dev",
-    "canary": "dev",
-    "experimental": "dev",
-}
+CANONICAL_CHANNELS = {"stable", "beta", "dev"}
+CHANNEL_ALIASES: Dict[str, str] = {}
+CHANNEL_ALIASES.update(
+    {
+        "general": "stable",
+        "ga": "stable",
+        "release": "stable",
+        "prod": "stable",
+        "production": "stable",
+        "lts": "stable",
+        "preview": "beta",
+        "prerelease": "beta",
+        "rc": "beta",
+        "candidate": "beta",
+        "alpha": "dev",
+        "nightly": "dev",
+        "canary": "dev",
+        "experimental": "dev",
+    }
+)
 
-CHANNEL_ORDER = {"general": 0, "preview": 1, "beta": 2, "dev": 3}
+CHANNEL_ORDER = {
+    "stable": 0,
+    "general": 0,
+    "beta": 1,
+    "preview": 1,
+    "dev": 2,
+}
 
 
 def _channel_descriptor(channel: str) -> Tuple[str, str]:
-    lowered = channel.lower()
-    if lowered == "general":
+    lowered = canonical_channel(channel, DEFAULT_CHANNEL)
+    if lowered == "stable":
         return (
-            "General availability firmware",
+            "Stable firmware",
             "Recommended for production deployments.",
-        )
-    if lowered == "preview":
-        return (
-            "Preview firmware",
-            "Includes early access changes for validation before general release.",
         )
     if lowered == "beta":
         return (
@@ -517,15 +522,18 @@ def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifa
 
 
 def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
-    general_versions = [
-        a.metadata.version for a in artifacts if a.metadata.channel == "general"
-    ]
-    preview_versions = [
-        a.metadata.version for a in artifacts if a.metadata.channel == "preview"
-    ]
-    candidates = general_versions or preview_versions or [
-        a.metadata.version for a in artifacts
-    ]
+    stable_versions = []
+    beta_versions = []
+    fallback_versions = []
+    for artifact in artifacts:
+        channel = canonical_channel(artifact.metadata.channel, DEFAULT_CHANNEL)
+        if channel == "stable":
+            stable_versions.append(artifact.metadata.version)
+        elif channel == "beta":
+            beta_versions.append(artifact.metadata.version)
+        else:
+            fallback_versions.append(artifact.metadata.version)
+    candidates = stable_versions or beta_versions or fallback_versions
     if not candidates:
         return "0.0.0"
     best_version = candidates[0]
