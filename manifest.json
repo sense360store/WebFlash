@@ -1,10 +1,142 @@
 {
   "name": "Sense360 Modular Platform Firmware",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "home_assistant_domain": "esphome",
   "new_install_skip_erase": false,
   "builds": [
     {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360 Ceiling-POE-AirIQBase configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQBase-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-17T08:25:41.392917+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-AirIQBase",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "AirIQBase"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-POE-AirIQBase configuration. Includes early access changes for validation before general release.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQBase-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-17T08:27:12.201198+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-AirIQBase",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "AirIQBase"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "2.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360 Ceiling-POE-AirIQPro configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQPro-v2.0.0-general.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-17T08:25:41.392917+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-AirIQPro",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "AirIQPro"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "2.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-POE-AirIQPro configuration. Includes early access changes for validation before general release.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQPro-v2.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-17T08:27:12.201198+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-AirIQPro",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "AirIQPro"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360 Ceiling-PWR-AirIQPro-Presence-Comfort configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQPro-Presence-Comfort-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-16T21:21:39.131625+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
       "config_string": "Ceiling-PWR-AirIQPro-Presence-Comfort",
       "mounting": "Ceiling",
       "power": "PWR",
@@ -12,185 +144,301 @@
         "AirIQPro",
         "Presence",
         "Comfort"
-      ],
+      ]
+    },
+    {
       "device_type": "Core Module",
       "version": "1.0.0",
-      "channel": "stable",
-      "description": "Ceiling-mounted Sense360 with external power module and complete sensor suite including AirIQ Pro, dual presence detection, and comfort sensors.",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-PWR-AirIQPro-Presence-Comfort configuration. Includes early access changes for validation before general release.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQPro-Presence-Comfort-v1.0.0-stable.bin",
-          "offset": 0
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQPro-Presence-Comfort-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-07-25T08:32:07+00:00",
+      "build_date": "2025-10-17T08:27:12.201198+00:00",
       "file_size": 18,
       "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
       "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 WROOM Core Module"
-      ],
+      "hardware_requirements": [],
       "known_issues": [],
-      "changelog": []
+      "changelog": [],
+      "config_string": "Ceiling-PWR-AirIQPro-Presence-Comfort",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQPro",
+        "Presence",
+        "Comfort"
+      ]
     },
     {
-      "model": "Sense360-MS",
-      "variant": "Standard-sen55-hlk2450",
       "device_type": "Core Module",
       "version": "1.0.0",
-      "channel": "stable",
-      "description": "Core Module firmware with AirIQ and Presence expansion modules. Features ESP32-S3 Core Module with AirIQ Module (Sen55x air quality) and Presence Module (HLK2450 radar) support for DIY-friendly Home Assistant integration.",
+      "channel": "general",
+      "description": "General availability firmware for Sense360 Wall-POE-AirIQBase configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
-      "builtin_sensors": [
-        "LTR303",
-        "SCD40",
-        "SHT30"
-      ],
-      "addon_sensors": [
-        "Sen55x",
-        "HLK2450"
-      ],
-      "sensor_addon": "sen55-hlk2450",
       "parts": [
         {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin",
-          "offset": 0
+          "path": "firmware/configurations/Sense360-Wall-POE-AirIQBase-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-07-13",
-      "file_size": 121,
+      "build_date": "2025-10-16T21:21:39.131625+00:00",
+      "file_size": 18,
       "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
       "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 development board",
-        "LTR303 light sensor",
-        "SCD40 CO2 sensor"
-      ],
-      "known_issues": [
-        "CO2 sensor requires 3-minute warm-up period",
-        "Sen55x sensor requires 30-second initialization",
-        "HLK2450 sensor requires 10-second calibration"
-      ],
-      "changelog": []
-    },
-    {
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Core Module firmware for the Sense360 modular ESP32-S3 platform with essential environmental monitoring. Designed for Home Assistant integration with standardized expansion headers.",
-      "chipFamily": "ESP32-S3",
-      "builtin_sensors": [
-        "LTR303",
-        "SCD40",
-        "SHT30"
-      ],
-      "addon_sensors": [],
-      "sensor_addon": null,
-      "parts": [
-        {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
-          "offset": 0
-        }
-      ],
-      "build_date": "2025-07-13",
-      "file_size": 97,
-      "improv": true,
-      "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 development board",
-        "LTR303 light sensor",
-        "SCD40 CO2 sensor"
-      ],
-      "known_issues": [
-        "CO2 sensor requires 3-minute warm-up period",
-        "Wi-Fi connection timeout after 60 seconds"
-      ],
-      "changelog": []
-    },
-    {
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
       "config_string": "Wall-POE-AirIQBase",
       "mounting": "Wall",
       "power": "POE",
       "modules": [
         "AirIQBase"
-      ],
+      ]
+    },
+    {
       "device_type": "Core Module",
       "version": "1.0.0",
-      "channel": "stable",
-      "description": "Wall-mounted Sense360 with Power over Ethernet and AirIQ Base module for comprehensive air quality monitoring.",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Wall-POE-AirIQBase configuration. Includes early access changes for validation before general release.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-POE-AirIQBase-v1.0.0-stable.bin",
-          "offset": 0
+          "path": "firmware/configurations/Sense360-Wall-POE-AirIQBase-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-07-25T08:32:07+00:00",
+      "build_date": "2025-10-17T08:27:12.205198+00:00",
       "file_size": 18,
       "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
       "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 WROOM Core Module"
-      ],
+      "hardware_requirements": [],
       "known_issues": [],
-      "changelog": []
+      "changelog": [],
+      "config_string": "Wall-POE-AirIQBase",
+      "mounting": "Wall",
+      "power": "POE",
+      "modules": [
+        "AirIQBase"
+      ]
     },
     {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360 Wall-USB configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-16T21:21:39.131625+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
       "config_string": "Wall-USB",
       "mounting": "Wall",
       "power": "USB",
-      "modules": [],
+      "modules": []
+    },
+    {
       "device_type": "Core Module",
       "version": "1.0.0",
-      "channel": "stable",
-      "description": "Base firmware for Sense360 wall-mounted units with USB power. This is the minimal configuration with no expansion modules.",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Wall-USB configuration. Includes early access changes for validation before general release.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.bin",
-          "offset": 0
+          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-07-25T08:32:07+00:00",
+      "build_date": "2025-10-17T08:27:12.205198+00:00",
       "file_size": 18,
       "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
       "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 WROOM Core Module"
-      ],
+      "hardware_requirements": [],
       "known_issues": [],
-      "changelog": []
+      "changelog": [],
+      "config_string": "Wall-USB",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": []
     },
     {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360 Wall-USB-AirIQPro configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-AirIQPro-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+        }
+      ],
+      "build_date": "2025-10-16T21:21:39.131625+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
       "config_string": "Wall-USB-AirIQPro",
       "mounting": "Wall",
       "power": "USB",
       "modules": [
         "AirIQPro"
-      ],
+      ]
+    },
+    {
       "device_type": "Core Module",
       "version": "1.0.0",
-      "channel": "stable",
-      "description": "Base firmware for Sense360 wall-mounted units with USB power. This is the minimal configuration with no expansion modules.",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Wall-USB-AirIQPro configuration. Includes early access changes for validation before general release.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-USB-AirIQPro-v1.0.0-stable.bin",
-          "offset": 0
+          "path": "firmware/configurations/Sense360-Wall-USB-AirIQPro-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-07-25T09:27:39",
+      "build_date": "2025-10-17T08:27:12.205198+00:00",
       "file_size": 18,
       "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
       "features": [],
-      "hardware_requirements": [
-        "ESP32-S3 WROOM Core Module"
-      ],
+      "hardware_requirements": [],
       "known_issues": [],
-      "changelog": []
+      "changelog": [],
+      "config_string": "Wall-USB-AirIQPro",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": [
+        "AirIQPro"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360-MS Standard. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "e97def6cc38584770512c0bb0ff6a32d"
+        }
+      ],
+      "build_date": "2025-10-16T21:21:39.131625+00:00",
+      "file_size": 97,
+      "improv": true,
+      "md5": "e97def6cc38584770512c0bb0ff6a32d",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "sensor_addon": null
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360-MS Standard. Includes early access changes for validation before general release.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "e97def6cc38584770512c0bb0ff6a32d"
+        }
+      ],
+      "build_date": "2025-10-17T08:27:12.201198+00:00",
+      "file_size": 97,
+      "improv": true,
+      "md5": "e97def6cc38584770512c0bb0ff6a32d",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "sensor_addon": null
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "general",
+      "description": "General availability firmware for Sense360-MS Standard (sen55-hlk2450). Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-general.bin",
+          "offset": 0,
+          "md5": "c264fd3eed9a39ff8247f4ff46fa62b1"
+        }
+      ],
+      "build_date": "2025-10-16T21:21:39.131625+00:00",
+      "file_size": 121,
+      "improv": true,
+      "md5": "c264fd3eed9a39ff8247f4ff46fa62b1",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "sensor_addon": "sen55-hlk2450"
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360-MS Standard (sen55-hlk2450). Includes early access changes for validation before general release.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "c264fd3eed9a39ff8247f4ff46fa62b1"
+        }
+      ],
+      "build_date": "2025-10-17T08:27:12.201198+00:00",
+      "file_size": 121,
+      "improv": true,
+      "md5": "c264fd3eed9a39ff8247f4ff46fa62b1",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "model": "Sense360-MS",
+      "variant": "Standard",
+      "sensor_addon": "sen55-hlk2450"
     }
   ]
 }

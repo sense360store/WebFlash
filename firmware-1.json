@@ -8,8 +8,9 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin",
-          "offset": 0
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQBase-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
       "improv": true

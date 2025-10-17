@@ -31,7 +31,7 @@ except Exception:  # pragma: no cover - packaging is optional
 DEFAULT_CHANNEL = "general"
 DEFAULT_DEVICE_TYPE = "Core Module"
 
-CANONICAL_CHANNELS = {"general", "preview"}
+CANONICAL_CHANNELS = {"general", "preview", "beta", "dev"}
 CHANNEL_ALIASES = {
     "release": "general",
     "prod": "general",
@@ -42,16 +42,56 @@ CHANNEL_ALIASES = {
     "prerelease": "preview",
     "rc": "preview",
     "candidate": "preview",
-    "beta": "preview",
-    "preview": "preview",
-    "alpha": "preview",
-    "nightly": "preview",
-    "canary": "preview",
-    "experimental": "preview",
-    "dev": "preview",
+    "alpha": "dev",
+    "nightly": "dev",
+    "canary": "dev",
+    "experimental": "dev",
 }
 
-CHANNEL_ORDER = {"general": 0, "preview": 1}
+CHANNEL_ORDER = {"general": 0, "preview": 1, "beta": 2, "dev": 3}
+
+
+def _channel_descriptor(channel: str) -> Tuple[str, str]:
+    lowered = channel.lower()
+    if lowered == "general":
+        return (
+            "General availability firmware",
+            "Recommended for production deployments.",
+        )
+    if lowered == "preview":
+        return (
+            "Preview firmware",
+            "Includes early access changes for validation before general release.",
+        )
+    if lowered == "beta":
+        return (
+            "Beta firmware",
+            "Use for broader testing ahead of production rollout.",
+        )
+    if lowered == "dev":
+        return (
+            "Development firmware",
+            "Experimental build for internal testing only.",
+        )
+    title = lowered.title() if lowered else "Firmware"
+    return (f"{title} firmware", "")
+
+
+def describe_configuration(channel: str, config_string: str) -> str:
+    headline, suffix = _channel_descriptor(channel)
+    base = f"{headline} for Sense360 {config_string} configuration."
+    return f"{base} {suffix}".strip()
+
+
+def describe_legacy(channel: str, model: str, variant: Optional[str], sensor_addon: Optional[str]) -> str:
+    headline, suffix = _channel_descriptor(channel)
+    details = model
+    if variant:
+        details += f" {variant}"
+    if sensor_addon:
+        details += f" ({sensor_addon})"
+    base = f"{headline} for {details}."
+    return f"{base} {suffix}".strip()
 
 MOUNTING_TOKENS = {
     "wall",
@@ -220,7 +260,7 @@ def parse_firmware_metadata(
         else:
             module_tokens = config_tokens[1:]
         config_string = "-".join(config_tokens)
-        description = f"{channel.title()} firmware for Sense360 {config_string} configuration."
+        description = describe_configuration(channel, config_string)
         return FirmwareMetadata(
             name_part=config_string,
             version=version,
@@ -245,12 +285,7 @@ def parse_firmware_metadata(
         + ([variant] if variant else [])
         + ([sensor_addon] if sensor_addon else [])
     )
-    description = (
-        f"{channel.title()} firmware for {model}"
-        + (f" {variant}" if variant else "")
-        + (f" ({sensor_addon})" if sensor_addon else "")
-        + "."
-    )
+    description = describe_legacy(channel, model, variant, sensor_addon)
     return FirmwareMetadata(
         name_part=legacy_name_part,
         version=version,
@@ -475,7 +510,12 @@ def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
     general_versions = [
         a.metadata.version for a in artifacts if a.metadata.channel == "general"
     ]
-    candidates = general_versions or [a.metadata.version for a in artifacts]
+    preview_versions = [
+        a.metadata.version for a in artifacts if a.metadata.channel == "preview"
+    ]
+    candidates = general_versions or preview_versions or [
+        a.metadata.version for a in artifacts
+    ]
     if not candidates:
         return "0.0.0"
     best_version = candidates[0]

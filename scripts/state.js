@@ -886,7 +886,7 @@ async function findCompatibleFirmware() {
                 <div class="firmware-not-available">
                     <h4>Firmware Not Available</h4>
                     <p>The firmware for this configuration has not been built yet:</p>
-                    <p class="config-string">Sense360-${sanitizedConfigString}-v1.0.0.bin</p>
+                    <p class="config-string">Sense360-${sanitizedConfigString}-v1.0.0-general.bin</p>
                     <p class="help-text">Please contact support or check back later for this specific configuration.</p>
                 </div>
             `;

@@ -36,7 +36,7 @@ def generate_firmware_options_html(manifest_file="manifest.json"):
     for index, build in enumerate(manifest['builds']):
         device_type = build.get('device_type', 'Unknown')
         version = build.get('version', '1.0.0')
-        channel = build.get('channel', 'stable')
+        channel = build.get('channel', 'general')
         chip_family = build.get('chipFamily', 'ESP32')
         build_date = get_firmware_timestamp(build)
         file_size = build.get('file_size', 0)
@@ -50,7 +50,12 @@ def generate_firmware_options_html(manifest_file="manifest.json"):
             size_str = f"{file_size} bytes"
         
         # Channel styling
-        channel_class = 'stable' if channel == 'stable' else 'beta'
+        channel_class = {
+            'general': 'general',
+            'preview': 'preview',
+            'beta': 'beta',
+            'dev': 'alpha'
+        }.get(channel, 'preview')
         
         html.append(f'''
                 <div class="build-item" data-firmware-index="{index}" onclick="selectFirmware({index})">
