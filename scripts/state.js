@@ -35,7 +35,6 @@ let manifestLoadError = null;
 let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
-let manifestLegacyGroups = [];
 
 const DEFAULT_CHANNEL_KEY = 'stable';
 
@@ -260,7 +259,6 @@ function buildManifestContext(manifest) {
     manifestBuildsWithIndex = [];
     manifestConfigStringLookup = new Map();
     manifestAvailabilityIndex = new Map();
-    manifestLegacyGroups = [];
 
     const builds = Array.isArray(manifest?.builds) ? manifest.builds : [];
 
@@ -299,7 +297,6 @@ function buildManifestContext(manifest) {
         }
     });
 
-    manifestLegacyGroups = groupLegacyBuilds(manifestBuildsWithIndex);
 }
 
 function isManifestReady() {
@@ -371,11 +368,7 @@ function setChecklistCompletion(isComplete) {
 }
 
 function attachInstallButtonListeners() {
-    const selectors = [
-        '#compatible-firmware esp-web-install-button button[slot="activate"]',
-        '#legacy-firmware-list esp-web-install-button button[slot="activate"]'
-    ];
-    const installButtons = document.querySelectorAll(selectors.join(', '));
+    const installButtons = document.querySelectorAll('#compatible-firmware esp-web-install-button button[slot="activate"]');
     installButtons.forEach(button => {
         if (button.dataset.checklistBound === 'true') {
             return;
@@ -1072,114 +1065,6 @@ function updateSummary() {
     document.getElementById('config-summary').innerHTML = summaryHtml;
 }
 
-function groupLegacyBuilds(builds) {
-    const groupsMap = new Map();
-
-    builds.forEach((build, index) => {
-        if (!build.config_string) {
-            const model = build.model || 'Unknown Model';
-            const variant = build.variant || '';
-            const key = `${model}||${variant}`;
-
-            if (!groupsMap.has(key)) {
-                groupsMap.set(key, {
-                    model,
-                    variant,
-                    builds: []
-                });
-            }
-
-            groupsMap.get(key).builds.push({
-                ...build,
-                manifestIndex: index
-            });
-        }
-    });
-
-    return Array.from(groupsMap.values()).sort((a, b) => {
-        const modelCompare = a.model.localeCompare(b.model);
-        if (modelCompare !== 0) {
-            return modelCompare;
-        }
-        return a.variant.localeCompare(b.variant);
-    });
-}
-
-function renderLegacyFirmware(groups) {
-    const section = document.getElementById('legacy-firmware-section');
-    const list = document.getElementById('legacy-firmware-list');
-    const panel = document.getElementById('legacy-firmware-panel');
-
-    if (!section || !list) {
-        return;
-    }
-
-    if (!groups.length) {
-        section.style.display = 'none';
-        list.innerHTML = '';
-        if (panel) {
-            panel.removeAttribute('open');
-        }
-        return;
-    }
-
-    const legacyHtml = groups.map(group => {
-        const modelText = group.model || 'Unknown Model';
-        const variantText = group.variant || '';
-        const sanitizedModel = escapeHtml(modelText);
-        const sanitizedVariant = escapeHtml(variantText);
-        const variantTag = variantText ? `<span class="legacy-group-variant">${sanitizedVariant}</span>` : '';
-
-        const buildsHtml = group.builds.map(build => {
-            const versionLabel = build.version ? `v${build.version}${build.channel ? `-${build.channel}` : ''}` : '';
-            const buildDate = build.build_date ? new Date(build.build_date) : null;
-            const buildDateLabel = buildDate && !isNaN(buildDate.getTime()) ? buildDate.toLocaleDateString() : '';
-            const fileSize = Number(build.file_size);
-            const sizeLabel = Number.isFinite(fileSize) && fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : '';
-            const metaParts = [];
-            if (versionLabel) metaParts.push(escapeHtml(versionLabel));
-            if (buildDateLabel) metaParts.push(escapeHtml(buildDateLabel));
-            if (sizeLabel) metaParts.push(escapeHtml(sizeLabel));
-            const metaHtml = metaParts.length ? `<div class="legacy-build-meta">${metaParts.join(' · ')}</div>` : '';
-            const description = build.description || 'No description available for this firmware build.';
-            const sanitizedDescription = escapeHtml(description);
-            const buildName = variantText ? `${modelText} · ${variantText}` : modelText;
-            const sanitizedBuildName = escapeHtml(buildName);
-
-            return `
-                <div class="legacy-build-card">
-                    <div class="legacy-build-info">
-                        <div class="legacy-build-name">${sanitizedBuildName}</div>
-                        ${metaHtml}
-                        <p class="legacy-build-description">${sanitizedDescription}</p>
-                    </div>
-                    <div class="legacy-build-actions">
-                        <esp-web-install-button manifest="firmware-${build.manifestIndex}.json" class="legacy-install-button">
-                            <button slot="activate" class="btn btn-primary btn-small">Install Firmware</button>
-                        </esp-web-install-button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        return `
-            <section class="legacy-build-group">
-                <header class="legacy-group-header">
-                    <h4 class="legacy-group-title">${sanitizedModel}</h4>
-                    ${variantTag}
-                </header>
-                <div class="legacy-builds">
-                    ${buildsHtml}
-                </div>
-            </section>
-        `;
-    }).join('');
-
-    list.innerHTML = legacyHtml;
-    section.style.display = 'block';
-    attachInstallButtonListeners();
-}
-
 function updateFirmwareControls() {
     const isReady = Boolean(
         window.currentFirmware
@@ -1500,7 +1385,6 @@ async function findCompatibleFirmware() {
         `;
         updateFirmwareControls();
         attachInstallButtonListeners();
-        renderLegacyFirmware([]);
         return;
     }
 
@@ -1539,8 +1423,6 @@ async function findCompatibleFirmware() {
     // Load manifest to check if firmware exists
     try {
         await loadManifestData();
-        const legacyGroups = manifestLegacyGroups;
-        const matchingBuilds = (manifestConfigStringLookup.get(configString) || []).slice();
 
         const groupedBuilds = groupBuildsByConfig(manifestBuildsWithIndex);
         const sortedBuilds = (groupedBuilds.get(configString) || [])
@@ -1552,8 +1434,6 @@ async function findCompatibleFirmware() {
                 }
                 return compareVersionsDesc(a.version, b.version);
             });
-
-        renderLegacyFirmware(groupLegacyBuilds(manifestData?.builds || []));
 
         if (sortedBuilds.length) {
             setFirmwareOptions(sortedBuilds, configString);
@@ -1588,7 +1468,6 @@ async function findCompatibleFirmware() {
         window.currentFirmware = null;
         updateFirmwareControls();
         attachInstallButtonListeners();
-        renderLegacyFirmware([]);
     }
 }
 
