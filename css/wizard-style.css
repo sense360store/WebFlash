@@ -287,10 +287,104 @@ h1 {
     margin-bottom: 32px;
 }
 
+.module-availability-hint {
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface-muted);
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.module-availability-hint strong {
+    display: inline-block;
+    margin-right: 8px;
+    color: var(--color-text-primary);
+}
+
+.module-availability-hint.is-success {
+    border-color: color-mix(in srgb, var(--success) 35%, var(--color-border));
+    background: color-mix(in srgb, var(--success) 12%, var(--color-surface-muted));
+    color: var(--color-text-primary);
+}
+
+.module-availability-hint.is-warning {
+    border-color: color-mix(in srgb, var(--warning) 45%, var(--color-border));
+    background: color-mix(in srgb, var(--warning) 16%, var(--color-surface-muted));
+    color: var(--color-text-primary);
+}
+
+.module-availability-hint.is-error {
+    border-color: color-mix(in srgb, var(--danger) 45%, var(--color-border));
+    background: color-mix(in srgb, var(--danger) 18%, var(--color-surface-muted));
+    color: var(--color-text-primary);
+}
+
+.module-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    margin: 6px 8px 0 0;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    border: 1px solid var(--color-border-subtle);
+    background: var(--chip-bg);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.module-tag--success {
+    background: color-mix(in srgb, var(--success) 20%, var(--chip-bg));
+    color: color-mix(in srgb, var(--success) 75%, var(--color-text-primary));
+    border-color: color-mix(in srgb, var(--success) 35%, var(--color-border-subtle));
+}
+
+.module-tag--info {
+    background: color-mix(in srgb, var(--accent) 16%, var(--chip-bg));
+    color: color-mix(in srgb, var(--accent) 80%, var(--color-text-primary));
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--color-border-subtle));
+}
+
+.module-tag--error {
+    background: color-mix(in srgb, var(--danger) 20%, var(--chip-bg));
+    color: color-mix(in srgb, var(--danger) 75%, var(--color-text-primary));
+    border-color: color-mix(in srgb, var(--danger) 40%, var(--color-border-subtle));
+}
+
 .option-card {
     display: block;
     cursor: pointer;
     position: relative;
+}
+
+.option-card.is-unavailable {
+    cursor: not-allowed;
+}
+
+.option-card.is-unavailable .option-content {
+    border-color: var(--color-border-subtle);
+    background: color-mix(in srgb, var(--color-surface-muted) 90%, transparent);
+    color: var(--color-text-tertiary);
+}
+
+.option-card.is-unavailable .option-title {
+    background: color-mix(in srgb, var(--color-border-subtle) 80%, transparent);
+    color: var(--color-text-tertiary);
+}
+
+.option-card.is-unavailable .option-description {
+    color: var(--color-text-tertiary);
+}
+
+.option-card.is-unavailable:hover .option-content {
+    border-color: var(--color-border-subtle);
+    background: color-mix(in srgb, var(--color-surface-muted) 90%, transparent);
 }
 
 .option-card input[type="radio"] {
@@ -314,6 +408,14 @@ h1 {
 .option-card input[type="radio"]:checked + .option-content {
     border-color: var(--brand-green-contrast);
     background: var(--brand-green-tint);
+}
+
+.option-status {
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: color-mix(in srgb, var(--danger) 75%, var(--color-text-primary));
+    text-align: center;
 }
 
 /* Module badge styling */

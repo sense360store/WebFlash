@@ -21,6 +21,22 @@ const allowedOptions = {
     fan: ['none', 'pwm', 'analog']
 };
 
+const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan'];
+const MODULE_LABELS = {
+    airiq: 'AirIQ',
+    presence: 'Presence',
+    comfort: 'Comfort',
+    fan: 'Fan'
+};
+
+let manifestLoadPromise = null;
+let manifestData = null;
+let manifestLoadError = null;
+let manifestBuildsWithIndex = [];
+let manifestConfigStringLookup = new Map();
+let manifestAvailabilityIndex = new Map();
+let manifestLegacyGroups = [];
+
 const DEFAULT_CHANNEL_KEY = 'stable';
 
 const CHANNEL_ALIAS_MAP = {
@@ -143,6 +159,199 @@ function escapeHtml(value) {
 
     return stringValue.replace(/[&<>"']/g, char => replacements[char]);
 }
+
+function normaliseMountingToken(value) {
+    const token = (value || '').toString().trim().toLowerCase();
+    if (allowedOptions.mounting.includes(token)) {
+        return token;
+    }
+    return null;
+}
+
+function normalisePowerToken(value) {
+    const token = (value || '').toString().trim().toLowerCase();
+    if (allowedOptions.power.includes(token)) {
+        return token;
+    }
+    return null;
+}
+
+function normaliseModuleValue(key, value) {
+    const allowed = allowedOptions[key];
+    if (!allowed) {
+        return value;
+    }
+
+    const normalised = (value || '').toString().trim().toLowerCase();
+    if (normalised && allowed.includes(normalised)) {
+        return normalised;
+    }
+
+    if (!normalised) {
+        if (allowed.includes('base')) {
+            return 'base';
+        }
+        if (allowed.includes('none')) {
+            return 'none';
+        }
+    }
+
+    if (allowed.includes('none')) {
+        return 'none';
+    }
+
+    return allowed[0];
+}
+
+function parseConfigStringState(configString) {
+    if (!configString) {
+        return null;
+    }
+
+    const segments = configString
+        .split('-')
+        .map(segment => segment.trim())
+        .filter(Boolean);
+
+    if (segments.length < 2) {
+        return null;
+    }
+
+    const mounting = normaliseMountingToken(segments[0]);
+    const power = normalisePowerToken(segments[1]);
+
+    if (!mounting || !power) {
+        return null;
+    }
+
+    const moduleState = {
+        airiq: 'none',
+        presence: 'none',
+        comfort: 'none',
+        fan: 'none'
+    };
+
+    for (let index = 2; index < segments.length; index += 1) {
+        const segment = segments[index];
+        if (!segment) {
+            continue;
+        }
+
+        if (segment.startsWith('AirIQ')) {
+            const suffix = segment.substring('AirIQ'.length);
+            moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'base');
+        } else if (segment.startsWith('Presence')) {
+            const suffix = segment.substring('Presence'.length);
+            moduleState.presence = normaliseModuleValue('presence', suffix ? suffix.toLowerCase() : 'base');
+        } else if (segment.startsWith('Comfort')) {
+            const suffix = segment.substring('Comfort'.length);
+            moduleState.comfort = normaliseModuleValue('comfort', suffix ? suffix.toLowerCase() : 'base');
+        } else if (segment.startsWith('Fan')) {
+            const suffix = segment.substring('Fan'.length);
+            moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
+        }
+    }
+
+    return {
+        mounting,
+        power,
+        ...moduleState
+    };
+}
+
+function buildBaseKey(state) {
+    return `${state.mounting}|${state.power}`;
+}
+
+function buildModuleComboKey(state) {
+    return MODULE_KEYS
+        .map(key => `${key}=${state[key] ?? 'none'}`)
+        .join('|');
+}
+
+function buildManifestContext(manifest) {
+    manifestBuildsWithIndex = [];
+    manifestConfigStringLookup = new Map();
+    manifestAvailabilityIndex = new Map();
+    manifestLegacyGroups = [];
+
+    const builds = Array.isArray(manifest?.builds) ? manifest.builds : [];
+
+    builds.forEach((build, index) => {
+        const buildWithIndex = { ...build, manifestIndex: index };
+        manifestBuildsWithIndex.push(buildWithIndex);
+
+        const configString = build.config_string;
+        if (configString) {
+            if (!manifestConfigStringLookup.has(configString)) {
+                manifestConfigStringLookup.set(configString, []);
+            }
+            manifestConfigStringLookup.get(configString).push(buildWithIndex);
+
+            const parsedState = parseConfigStringState(configString);
+            if (parsedState) {
+                const baseKey = buildBaseKey(parsedState);
+                if (!manifestAvailabilityIndex.has(baseKey)) {
+                    manifestAvailabilityIndex.set(baseKey, {
+                        modules: {
+                            airiq: new Set(),
+                            presence: new Set(),
+                            comfort: new Set(),
+                            fan: new Set()
+                        },
+                        combos: new Set()
+                    });
+                }
+
+                const availability = manifestAvailabilityIndex.get(baseKey);
+                MODULE_KEYS.forEach(moduleKey => {
+                    availability.modules[moduleKey].add(parsedState[moduleKey]);
+                });
+                availability.combos.add(buildModuleComboKey(parsedState));
+            }
+        }
+    });
+
+    manifestLegacyGroups = groupLegacyBuilds(manifestBuildsWithIndex);
+}
+
+function isManifestReady() {
+    return manifestData !== null;
+}
+
+async function loadManifestData() {
+    if (manifestData) {
+        return manifestData;
+    }
+
+    if (manifestLoadPromise) {
+        return manifestLoadPromise;
+    }
+
+    manifestLoadPromise = fetch('manifest.json', { cache: 'no-store' })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Manifest request failed with status ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            manifestData = data;
+            manifestLoadError = null;
+            buildManifestContext(data);
+            return data;
+        })
+        .catch(error => {
+            manifestLoadError = error;
+            manifestLoadPromise = null;
+            console.error('Failed to load manifest:', error);
+            throw error;
+        });
+
+    return manifestLoadPromise;
+}
+
+const manifestReadyPromise = loadManifestData().catch(() => null);
 
 let checklistCompleted = false;
 let rememberChoices = false;
@@ -319,6 +528,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initializeFromUrl();
+
+    manifestReadyPromise
+        .then(() => {
+            updateModuleOptionAvailability();
+            updateModuleAvailabilityMessage();
+
+            if (currentStep === 4) {
+                findCompatibleFirmware();
+            }
+        })
+        .catch(() => {
+            resetOptionAvailability();
+            updateModuleAvailabilityMessage();
+        });
 });
 
 function handleMountingChange(e) {
@@ -335,6 +558,7 @@ function handleMountingChange(e) {
 function handlePowerChange(e) {
     configuration.power = e.target.value;
     document.querySelector('#step-2 .btn-next').disabled = false;
+    updateConfiguration({ skipUrlUpdate: true });
     updateUrlFromConfiguration();
 }
 
@@ -350,21 +574,259 @@ function updateFanModuleVisibility() {
     }
 }
 
-function updateConfiguration(options = {}) {
-    // Update AirIQ
-    const airiqValue = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
-    configuration.airiq = airiqValue;
-
-    // Update Presence module
+function syncConfigurationFromInputs() {
+    configuration.airiq = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
     configuration.presence = document.querySelector('input[name="presence"]:checked')?.value || 'none';
-
-    // Update Comfort module
     configuration.comfort = document.querySelector('input[name="comfort"]:checked')?.value || 'none';
 
-    // Update Fan module (only if wall mount)
     if (configuration.mounting === 'wall') {
         configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
+    } else {
+        configuration.fan = 'none';
+        const fanNoneInput = document.querySelector('input[name="fan"][value="none"]');
+        if (fanNoneInput && !fanNoneInput.checked) {
+            fanNoneInput.checked = true;
+        }
     }
+}
+
+function getOptionStatusElement(card) {
+    if (!card) {
+        return null;
+    }
+
+    let status = card.querySelector('[data-option-status]');
+    if (!status) {
+        const container = card.querySelector('.option-content') || card;
+        status = document.createElement('p');
+        status.className = 'option-status';
+        status.setAttribute('data-option-status', 'true');
+        status.style.display = 'none';
+        container.appendChild(status);
+    }
+
+    return status;
+}
+
+function applyOptionAvailabilityState(input, { available, reason }) {
+    input.disabled = !available;
+    const card = input.closest('.option-card');
+
+    if (card) {
+        if (available) {
+            card.classList.remove('is-unavailable');
+            card.removeAttribute('aria-disabled');
+        } else {
+            card.classList.add('is-unavailable');
+            card.setAttribute('aria-disabled', 'true');
+        }
+
+        const status = card.querySelector('[data-option-status]');
+        if (!available) {
+            const statusElement = status || getOptionStatusElement(card);
+            statusElement.textContent = reason || 'Not available for this configuration.';
+            statusElement.style.display = 'block';
+        } else if (status) {
+            status.textContent = '';
+            status.style.display = 'none';
+        }
+    }
+}
+
+function resetOptionAvailability() {
+    MODULE_KEYS.forEach(key => {
+        document.querySelectorAll(`input[name="${key}"]`).forEach(input => {
+            input.disabled = false;
+            const card = input.closest('.option-card');
+            if (card) {
+                card.classList.remove('is-unavailable');
+                card.removeAttribute('aria-disabled');
+                const status = card.querySelector('[data-option-status]');
+                if (status) {
+                    status.textContent = '';
+                    status.style.display = 'none';
+                }
+            }
+        });
+    });
+}
+
+function formatMountingPowerLabel(state) {
+    const parts = [];
+    if (state.mounting) {
+        parts.push(`${state.mounting.charAt(0).toUpperCase()}${state.mounting.slice(1)} mount`);
+    }
+    if (state.power) {
+        parts.push(`${state.power.toUpperCase()} power`);
+    }
+    return parts.join(' + ');
+}
+
+function formatModuleSelectionLabel(key, value) {
+    const label = MODULE_LABELS[key] || key;
+    if (value === 'none') {
+        return `${label} None`;
+    }
+
+    if (key === 'fan') {
+        return `${label} ${value.toUpperCase()}`;
+    }
+
+    return `${label} ${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+}
+
+function formatOptionUnavailableReason(baseState, moduleKey, value) {
+    const moduleLabel = formatModuleSelectionLabel(moduleKey, value);
+    const combinationLabel = formatMountingPowerLabel(baseState);
+
+    if (combinationLabel) {
+        return `${moduleLabel} is not available for ${combinationLabel}.`;
+    }
+
+    return `${moduleLabel} is not available for the current selection.`;
+}
+
+function createModuleTag(label, variant = 'info') {
+    return `<span class="module-tag module-tag--${variant}">${escapeHtml(label)}</span>`;
+}
+
+function updateModuleOptionAvailability() {
+    if (manifestLoadError || !configuration.mounting || !configuration.power) {
+        resetOptionAvailability();
+        return;
+    }
+
+    if (!isManifestReady()) {
+        return;
+    }
+
+    const baseState = {
+        mounting: configuration.mounting,
+        power: configuration.power
+    };
+    const baseKey = buildBaseKey(baseState);
+    const availability = manifestAvailabilityIndex.get(baseKey) || null;
+
+    MODULE_KEYS.forEach(key => {
+        const options = Array.from(document.querySelectorAll(`input[name="${key}"]`));
+        if (!options.length) {
+            return;
+        }
+
+        const previouslyChecked = options.find(option => option.checked) || null;
+        let selectionNeedsUpdate = false;
+
+        options.forEach(input => {
+            let available = true;
+            let reason = '';
+
+            if (!availability) {
+                available = false;
+                reason = formatOptionUnavailableReason(baseState, key, input.value);
+            } else {
+                const allowedValues = availability.modules[key];
+                available = allowedValues.has(input.value);
+                if (!available) {
+                    reason = formatOptionUnavailableReason(baseState, key, input.value);
+                }
+            }
+
+            if (!available && input.checked) {
+                input.checked = false;
+                selectionNeedsUpdate = true;
+            }
+
+            applyOptionAvailabilityState(input, { available, reason });
+        });
+
+        if (selectionNeedsUpdate) {
+            const fallback = options.find(option => !option.disabled);
+            if (fallback) {
+                fallback.checked = true;
+            } else if (previouslyChecked) {
+                previouslyChecked.checked = true;
+            }
+        }
+    });
+}
+
+function updateModuleAvailabilityMessage() {
+    const hint = document.getElementById('module-availability-hint');
+    if (!hint) {
+        return;
+    }
+
+    hint.classList.remove('is-success', 'is-warning', 'is-error');
+
+    if (manifestLoadError) {
+        hint.classList.add('is-error');
+        hint.innerHTML = '<strong>Unable to load firmware manifest.</strong> Module availability cannot be determined right now.';
+        return;
+    }
+
+    if (!configuration.mounting || !configuration.power) {
+        hint.innerHTML = 'Select a mounting and power option to see supported expansion modules.';
+        return;
+    }
+
+    if (!isManifestReady()) {
+        hint.innerHTML = 'Checking firmware coverage…';
+        return;
+    }
+
+    const baseState = {
+        mounting: configuration.mounting,
+        power: configuration.power
+    };
+    const baseKey = buildBaseKey(baseState);
+    const availability = manifestAvailabilityIndex.get(baseKey) || null;
+    const combinationLabel = formatMountingPowerLabel(baseState);
+
+    if (!availability) {
+        hint.classList.add('is-warning');
+        const label = combinationLabel ? escapeHtml(combinationLabel) : 'this selection';
+        hint.innerHTML = `<strong>No firmware coverage yet.</strong> We don't have builds for ${label}.`;
+        return;
+    }
+
+    const moduleComboKey = buildModuleComboKey(configuration);
+    const unsupportedModules = MODULE_KEYS.filter(moduleKey => !availability.modules[moduleKey].has(configuration[moduleKey]));
+
+    if (unsupportedModules.length > 0) {
+        hint.classList.add('is-warning');
+        const unavailableTags = unsupportedModules
+            .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'error'))
+            .join(' ');
+        const scopeLabel = combinationLabel ? ` for ${escapeHtml(combinationLabel)}` : '';
+        hint.innerHTML = `<strong>Not available${scopeLabel}:</strong> ${unavailableTags}`;
+        return;
+    }
+
+    if (!availability.combos.has(moduleComboKey)) {
+        hint.classList.add('is-warning');
+        const selectedTags = MODULE_KEYS
+            .filter(moduleKey => configuration[moduleKey] !== 'none')
+            .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'info'))
+            .join(' ') || createModuleTag('Core only', 'info');
+        const label = combinationLabel ? escapeHtml(combinationLabel) : 'this selection';
+        hint.innerHTML = `<strong>Partial support.</strong> ${label} is supported, but not with this exact module mix. ${selectedTags}`;
+        return;
+    }
+
+    hint.classList.add('is-success');
+    const selectedTags = MODULE_KEYS
+        .filter(moduleKey => configuration[moduleKey] !== 'none')
+        .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'success'))
+        .join(' ') || createModuleTag('Core only', 'success');
+    const label = combinationLabel ? escapeHtml(combinationLabel) : 'this configuration';
+    hint.innerHTML = `<strong>Firmware available!</strong> ${label} is ready for flashing. ${selectedTags}`;
+}
+
+function updateConfiguration(options = {}) {
+    syncConfigurationFromInputs();
+    updateModuleOptionAvailability();
+    syncConfigurationFromInputs();
+    updateModuleAvailabilityMessage();
 
     if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
@@ -421,6 +883,8 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 
     if (currentStep === 3) {
         updateFanModuleVisibility();
+        updateModuleOptionAvailability();
+        updateModuleAvailabilityMessage();
     }
 
     if (currentStep === 4) {
@@ -1083,14 +1547,13 @@ async function findCompatibleFirmware() {
 
     window.currentConfigString = configString;
 
+    const sanitizedConfigString = escapeHtml(configString);
+
+    // Load manifest to check if firmware exists
     try {
-        const response = await fetch('manifest.json', { cache: 'no-store' });
-        const manifest = await response.json();
-        const buildsWithIndex = manifest.builds.map((build, index) => {
-            const enriched = { ...build, manifestIndex: index };
-            enriched.firmwareId = getFirmwareId(enriched);
-            return enriched;
-        });
+        await loadManifestData();
+        const legacyGroups = manifestLegacyGroups;
+        const matchingBuilds = (manifestConfigStringLookup.get(configString) || []).slice();
 
         const groupedBuilds = groupBuildsByConfig(buildsWithIndex);
         const sortedBuilds = (groupedBuilds.get(configString) || [])
