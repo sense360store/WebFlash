@@ -12,10 +12,10 @@
 firmware/[DeviceType]/[ChipFamily]/[Channel]/Sense360-[DeviceType]-[ChipFamily]-v[Version]-[Channel].bin
 ```
 
-### Step 2: Run Automation
+### Step 2: Regenerate Manifests
 ```bash
 cd WebFlash
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 ### Step 3: Deploy
@@ -32,10 +32,10 @@ git push origin main
 rm firmware/[DeviceType]/[ChipFamily]/[Channel]/[filename].bin
 ```
 
-### Step 2: Run Automation
+### Step 2: Regenerate Manifests
 ```bash
 cd WebFlash
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 ### Step 3: Deploy
@@ -79,16 +79,16 @@ git push origin main
 ## 📋 Verification Checklist
 
 ### After Adding Firmware:
-- [ ] Automation script runs without errors
+- [ ] Manifest generator runs without errors (`python3 scripts/gen-manifests.py --summary`)
 - [ ] `python3 test-complete-workflow.py` passes
 - [ ] `python3 test-improv-serial.py` passes
-- [ ] Firmware appears in web interface dropdown
+- [ ] Firmware appears in the WebFlash wizard recommendation
 - [ ] ESP Web Tools install button works
 - [ ] Wi-Fi setup prompts after flashing
 
 ### After Removing Firmware:
-- [ ] Automation script runs without errors
-- [ ] Firmware no longer appears in web interface
+- [ ] Manifest generator runs without errors (`python3 scripts/gen-manifests.py --summary`)
+- [ ] Firmware no longer appears in the WebFlash wizard
 - [ ] Individual manifest files correctly renumbered
 - [ ] All tests still pass
 
