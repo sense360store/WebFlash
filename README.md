@@ -8,17 +8,17 @@ A simple, browser‑based way to flash Sense360 ESP32 firmware using **ESP Web T
 
 ## What is WebFlash?
 
-WebFlash lets you select a device type and firmware channel (e.g. *general* or *preview*) and then flash it directly from your browser over USB. After flashing, the device can be provisioned onto Wi‑Fi via Improv Serial.
+WebFlash is a guided wizard for building the exact Sense360 firmware your hardware needs. Start by picking how the hub will be mounted, choose the power option, toggle the expansion modules you have installed, and then review a tailored firmware recommendation. The final step provides an instant download plus an embedded ESP Web Tools installer so you can flash the hub from the browser.
 
 ---
 
 ## Key features
 
-- **One‑click flashing** via ESP Web Tools (Web Serial / WebUSB)
-- **Wi‑Fi setup** right after flashing (Improv Serial)
-- **Filter & search** by device type, chip family, version, and channel
-- **Mobile‑friendly** UI (works best on desktop for flashing)
-- **Hosted on GitHub Pages** for easy, reliable access
+- **Step-by-step configuration** — Mounting → Power → Modules → Review keeps choices focused and easy to follow.
+- **Context-aware firmware filtering** — Shows only builds that match the selected mount type, power module, and expansion modules.
+- **Integrated flashing options** — Download Firmware for offline installs or click **Install Firmware** in the embedded ESP Web Tools panel to flash in the browser.
+- **Pre-flash checklist** — Confirms the hub is connected, in bootloader mode, and ready before installing.
+- **Hosted on GitHub Pages** — Always available without extra software.
 
 > **Browser support:** Use a Chromium‑based browser (Chrome, Edge) on Windows, macOS, or Linux. (Firefox and Safari currently have limited Web Serial support.)
 
@@ -27,10 +27,12 @@ WebFlash lets you select a device type and firmware channel (e.g. *general* or *
 ## Quick start (for users)
 
 1. Go to **WebFlash**: https://sense360store.github.io/WebFlash/
-2. Select your **Device Type**, **Chip Family**, and **Channel**.
-3. Choose the desired **firmware version**.
-4. Click **Connect** when prompted, select your device, and start flashing.
-5. When flashing completes, follow the on‑screen steps to **enter Wi‑Fi details** (Improv).
+2. Step through the wizard:
+   - **Mounting** — choose **Wall Mount** or **Ceiling Mount**.
+   - **Power** — pick **USB Power**, **POE Module**, or **PWR Module**.
+   - **Modules** — enable the **AirIQ Module**, **Presence Module**, **Comfort Module**, and **Fan Module** that match your hardware (options include **None**, **Base**, **Pro**, plus **PWM** or **Analog** for the Fan Module on wall mounts).
+3. Review the summary and Pre-Flash Checklist. When ready, use the recommended firmware card to either click **Download Firmware** for a `.bin` file or **Install Firmware** to launch the ESP Web Tools installer directly in the browser.
+4. Follow the installer prompts to finish flashing; the hub will reboot with your selected configuration.
 
 > **Tip:** If your device does not appear, try a different USB cable/port, or close other serial tools (Arduino, esptool, etc.) that may have the port open.
 
@@ -41,7 +43,7 @@ WebFlash lets you select a device type and firmware channel (e.g. *general* or *
 The current workflow gets the job done, but we can make it even more welcoming for first-time installers. A few ideas that balance functionality with visual polish:
 
 - **Guided deployment checklist** – add a collapsible sidebar or modal that walks through prerequisites (USB cable, browser support, power). Each item could animate to a “checked” state as the user completes it.
-- **Contextual highlight cues** – when the page prompts the user to click a button (e.g., *Connect* or *Install*), briefly pulse or glow the button so it stands out on the screen.
+- **Contextual highlight cues** – when the page prompts the user to click a button (e.g., *Download Firmware* or *Install Firmware*), briefly pulse or glow the button so it stands out on the screen.
 - **Progress timeline** – replace the plain text status messages with a horizontal timeline that fills step by step (detect device → erase → flash → verify → finish). Pair it with iconography to make successes/failures obvious.
 - **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (general = green, preview = amber) and hover animations that reveal checksum, release date, or changelog link.
 - **Success animation & next steps** – celebrate a successful flash with a short checkmark animation and a clearly highlighted box that lists the next actions (e.g., “Press reset,” “Open provisioning app”).
