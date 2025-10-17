@@ -1542,7 +1542,7 @@ async function findCompatibleFirmware() {
         const legacyGroups = manifestLegacyGroups;
         const matchingBuilds = (manifestConfigStringLookup.get(configString) || []).slice();
 
-        const groupedBuilds = groupBuildsByConfig(buildsWithIndex);
+        const groupedBuilds = groupBuildsByConfig(manifestBuildsWithIndex);
         const sortedBuilds = (groupedBuilds.get(configString) || [])
             .slice()
             .sort((a, b) => {
@@ -1553,7 +1553,7 @@ async function findCompatibleFirmware() {
                 return compareVersionsDesc(a.version, b.version);
             });
 
-        renderLegacyFirmware(groupLegacyBuilds(manifest.builds));
+        renderLegacyFirmware(groupLegacyBuilds(manifestData?.builds || []));
 
         if (sortedBuilds.length) {
             setFirmwareOptions(sortedBuilds, configString);
