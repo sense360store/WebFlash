@@ -112,7 +112,7 @@ If no release notes file is found, the system uses generic fallbacks:
 ### Testing
 
 After adding release notes:
-1. Run `python3 deploy-automation.py` to regenerate manifests
+1. Run `python3 scripts/gen-manifests.py --summary` to regenerate manifests
 2. Check the web interface to verify descriptions display correctly
 3. Test that descriptions are included in search functionality
 4. Verify that additional metadata is included in manifest files
@@ -128,7 +128,7 @@ The release notes system automatically includes in manifest.json:
 
 ### Automation Integration
 
-The system integrates with `deploy-automation.py`:
+The system integrates with the manifest generator (`scripts/gen-manifests.py`):
 1. Scans firmware directory for .bin files
 2. Extracts metadata from file paths
 3. Loads corresponding release notes file
