@@ -84,6 +84,41 @@ function getChannelPriority(channel) {
     return 99;
 }
 
+function parseVersionSegments(version) {
+    if (!version) {
+        return [];
+    }
+
+    const numericSegments = String(version)
+        .match(/\d+/g);
+
+    if (!numericSegments) {
+        return [];
+    }
+
+    return numericSegments.map(segment => Number.parseInt(segment, 10));
+}
+
+function compareVersionsDesc(aVersion, bVersion) {
+    const aSegments = parseVersionSegments(aVersion);
+    const bSegments = parseVersionSegments(bVersion);
+    const maxLength = Math.max(aSegments.length, bSegments.length);
+
+    for (let index = 0; index < maxLength; index += 1) {
+        const aValue = aSegments[index] ?? 0;
+        const bValue = bSegments[index] ?? 0;
+
+        if (aValue !== bValue) {
+            return bValue - aValue;
+        }
+    }
+
+    const aLabel = aVersion || '';
+    const bLabel = bVersion || '';
+
+    return bLabel.localeCompare(aLabel);
+}
+
 function escapeHtml(value) {
     const stringValue = String(value);
     const replacements = {
@@ -774,7 +809,7 @@ async function findCompatibleFirmware() {
                 if (priorityDiff !== 0) {
                     return priorityDiff;
                 }
-                return (a.version || '').localeCompare(b.version || '');
+                return compareVersionsDesc(a.version, b.version);
             });
 
             const preferredBuild = sortedBuilds.find(build => getChannelPriority(build.channel) === 0) || sortedBuilds[0];
