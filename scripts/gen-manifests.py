@@ -28,27 +28,30 @@ try:
 except Exception:  # pragma: no cover - packaging is optional
     _PackagingVersion = None  # type: ignore
 
-DEFAULT_CHANNEL = "stable"
+DEFAULT_CHANNEL = "general"
 DEFAULT_DEVICE_TYPE = "Core Module"
 
-CANONICAL_CHANNELS = {"stable", "beta", "dev"}
+CANONICAL_CHANNELS = {"general", "preview"}
 CHANNEL_ALIASES = {
-    "release": "stable",
-    "prod": "stable",
-    "production": "stable",
-    "ga": "stable",
-    "lts": "stable",
-    "prerelease": "beta",
-    "rc": "beta",
-    "candidate": "beta",
-    "preview": "beta",
-    "alpha": "dev",
-    "nightly": "dev",
-    "canary": "dev",
-    "experimental": "dev",
+    "release": "general",
+    "prod": "general",
+    "production": "general",
+    "ga": "general",
+    "lts": "general",
+    "stable": "general",
+    "prerelease": "preview",
+    "rc": "preview",
+    "candidate": "preview",
+    "beta": "preview",
+    "preview": "preview",
+    "alpha": "preview",
+    "nightly": "preview",
+    "canary": "preview",
+    "experimental": "preview",
+    "dev": "preview",
 }
 
-CHANNEL_ORDER = {"stable": 0, "beta": 1, "dev": 2}
+CHANNEL_ORDER = {"general": 0, "preview": 1}
 
 MOUNTING_TOKENS = {
     "wall",
@@ -469,10 +472,10 @@ def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifa
 
 
 def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
-    stable_versions = [
-        a.metadata.version for a in artifacts if a.metadata.channel == "stable"
+    general_versions = [
+        a.metadata.version for a in artifacts if a.metadata.channel == "general"
     ]
-    candidates = stable_versions or [a.metadata.version for a in artifacts]
+    candidates = general_versions or [a.metadata.version for a in artifacts]
     if not candidates:
         return "0.0.0"
     best_version = candidates[0]

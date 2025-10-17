@@ -96,7 +96,7 @@ def sync_assets(
         print("Release does not contain any assets.")
         return []
     firmware_dir.mkdir(parents=True, exist_ok=True)
-    fallback_channel = "beta" if release.get("prerelease") else "stable"
+    fallback_channel = "preview" if release.get("prerelease") else "general"
     downloaded: List[Path] = []
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir_path = Path(tmp_dir)
