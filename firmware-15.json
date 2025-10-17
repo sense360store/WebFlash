@@ -8,9 +8,9 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQPro-Presence-Comfort-v1.0.0-preview.bin",
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-preview.bin",
           "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+          "md5": "c264fd3eed9a39ff8247f4ff46fa62b1"
         }
       ],
       "improv": true

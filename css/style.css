@@ -573,12 +573,14 @@ h3 {
     text-transform: uppercase;
 }
 
-.version-badge.stable {
+.version-badge.stable,
+.version-badge.general {
     background: #27ae60;
     color: white;
 }
 
-.version-badge.beta {
+.version-badge.beta,
+.version-badge.preview {
     background: #f39c12;
     color: white;
 }
@@ -840,12 +842,14 @@ footer {
     text-align: center;
 }
 
-.build-channel.stable {
+.build-channel.stable,
+.build-channel.general {
     background-color: #d4edda;
     color: #155724;
 }
 
-.build-channel.beta {
+.build-channel.beta,
+.build-channel.preview {
     background-color: #fff3cd;
     color: #856404;
 }

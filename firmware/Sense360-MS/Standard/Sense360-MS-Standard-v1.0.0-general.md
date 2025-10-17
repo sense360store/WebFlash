@@ -1,4 +1,4 @@
-# Sense360-MS ESP32-S3 v1.0.0 Stable Release
+# Sense360-MS ESP32-S3 v1.0.0 General Release
 
 ## Device Information
 Model: Sense360-MS
@@ -8,7 +8,7 @@ Built-in Sensors: LTR303, SCD40, SHT30
 Expansion Modules: None
 Chip Family: ESP32-S3
 Version: v1.0.0
-Channel: stable
+Channel: general
 Release Date: 2025-07-13
 
 ## Release Description
@@ -18,12 +18,12 @@ Core Module firmware for the Sense360 modular ESP32-S3 platform with essential e
 
 | Firmware File Name | Sensors Included |
 |---------------------|------------------|
-| Sense360-MS-Standard-v1.0.0-stable.bin | LTR303, SCD40, SHT30 |
-| Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin | LTR303, SCD40, SHT30, Sen55x, HLK2450 |
+| Sense360-MS-Standard-v1.0.0-general.bin | LTR303, SCD40, SHT30 |
+| Sense360-MS-Standard-sen55-hlk2450-v1.0.0-general.bin | LTR303, SCD40, SHT30, Sen55x, HLK2450 |
 
-**Base firmware** (Sense360-MS-Standard-v1.0.0-stable.bin) supports the core sensors only.
+**Base firmware** (Sense360-MS-Standard-v1.0.0-general.bin) supports the core sensors only.
 
-**Add-on firmware** (Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin) supports all core sensors plus the Sen55x and HLK2450 optional sensors.
+**Add-on firmware** (Sense360-MS-Standard-sen55-hlk2450-v1.0.0-general.bin) supports all core sensors plus the Sen55x and HLK2450 optional sensors.
 
 ## Key Features
 - Core air quality monitoring with essential sensors

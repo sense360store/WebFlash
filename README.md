@@ -8,7 +8,7 @@ A simple, browser‑based way to flash Sense360 ESP32 firmware using **ESP Web T
 
 ## What is WebFlash?
 
-WebFlash lets you select a device type and firmware channel (e.g. *stable* or *beta*) and then flash it directly from your browser over USB. After flashing, the device can be provisioned onto Wi‑Fi via Improv Serial.
+WebFlash lets you select a device type and firmware channel (e.g. *general* or *preview*) and then flash it directly from your browser over USB. After flashing, the device can be provisioned onto Wi‑Fi via Improv Serial.
 
 ---
 
@@ -43,7 +43,7 @@ The current workflow gets the job done, but we can make it even more welcoming f
 - **Guided deployment checklist** – add a collapsible sidebar or modal that walks through prerequisites (USB cable, browser support, power). Each item could animate to a “checked” state as the user completes it.
 - **Contextual highlight cues** – when the page prompts the user to click a button (e.g., *Connect* or *Install*), briefly pulse or glow the button so it stands out on the screen.
 - **Progress timeline** – replace the plain text status messages with a horizontal timeline that fills step by step (detect device → erase → flash → verify → finish). Pair it with iconography to make successes/failures obvious.
-- **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (stable = green, beta = amber) and hover animations that reveal checksum, release date, or changelog link.
+- **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (general = green, preview = amber) and hover animations that reveal checksum, release date, or changelog link.
 - **Success animation & next steps** – celebrate a successful flash with a short checkmark animation and a clearly highlighted box that lists the next actions (e.g., “Press reset,” “Open provisioning app”).
 - **Inline troubleshooting callouts** – surface the most common issues right beneath the flashing controls using accordion callouts so help is one click away.
 - **Theming for dark/light modes** – allow the user to toggle between themes so the long flashing sessions are easier on the eyes.
@@ -56,11 +56,11 @@ Implementing even a few of these ideas should reduce friction, build confidence,
 
 The WebFlash page lists all currently available Sense360 firmware. Typical categories include:
 
-- **CO₂ Monitor** (ESP32‑S3) — stable/beta  
-- **Env Monitor** (ESP32) — stable/beta  
-- **Temp Sensor** (ESP32‑S3) — stable  
+- **CO₂ Monitor** (ESP32‑S3) — general/preview
+- **Env Monitor** (ESP32) — general/preview
+- **Temp Sensor** (ESP32‑S3) — general
 
-Availability depends on what firmware we publish. Always prefer **stable** for production devices.
+Availability depends on what firmware we publish. Always prefer **general** for production devices.
 
 ---
 
@@ -94,7 +94,7 @@ Availability depends on what firmware we publish. Always prefer **stable** for p
 
 The WebFlash site rebuilds and deploys itself whenever fresh firmware is introduced. Two entry points feed the pipeline:
 
-1. **GitHub Releases** – Publish a release and attach `.bin` files. Pre-releases map to the **beta** channel, while the latest non-pre-release release becomes **stable**. The workflow downloads the assets with `scripts/sync-from-releases.py` and normalises their filenames.
+1. **GitHub Releases** – Publish a release and attach `.bin` files. Pre-releases map to the **preview** channel, while the latest non-pre-release release becomes **general**. The workflow downloads the assets with `scripts/sync-from-releases.py` and normalises their filenames.
 2. **Direct commits** – Push `.bin` files anywhere under `firmware/`. `scripts/gen-manifests.py` enforces the naming convention, regenerates `manifest.json`, and writes the `firmware-N.json` files that ESP Web Tools consumes.
 3. **Deployment** – After manifests are rebuilt, the workflow uploads the repository to GitHub Pages with the correct CORS headers.
 
