@@ -283,11 +283,8 @@
                     <div class="primary-action-group">
                         <div class="primary-action-controls">
                             <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
-                            <button class="btn btn-icon" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
-                                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                                    <rect x="5" y="9" width="12" height="12" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.8"></rect>
-                                    <path d="M9 9V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
-                                </svg>
+                            <button class="btn btn-copy" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
+                                Copy
                             </button>
                         </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
