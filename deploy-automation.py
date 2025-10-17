@@ -48,11 +48,12 @@ class GitHubPagesAutomation:
             filename = file_path.stem  # filename without extension
             
             # Configuration-based pattern
-            pattern = r'Sense360-(.+)-v([0-9.]+)-(stable|beta|alpha)'
+            pattern = r'Sense360-(.+)-v([0-9.]+)-(stable|beta|alpha|general|preview)'
             match = re.match(pattern, filename)
             
             if match:
                 config_string, version, channel = match.groups()
+                channel = channel.lower()
                 
                 # Parse configuration string
                 config_parts = config_string.split('-')
@@ -121,7 +122,7 @@ class GitHubPagesAutomation:
                 return None
             
             version = parts[0]  # Version (e.g., "1.0.0")
-            channel = parts[1]  # Channel (e.g., "stable")
+            channel = parts[1].lower()  # Channel (e.g., "general")
             
             return {
                 'model': model,
