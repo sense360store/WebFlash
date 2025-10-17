@@ -29,6 +29,34 @@ const MODULE_LABELS = {
     fan: 'Fan'
 };
 
+const MODULE_SEGMENT_FORMATTERS = {
+    airiq: value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`,
+    presence: value => `Presence${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
+    comfort: value => `Comfort${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
+    fan: value => `Fan${value.toUpperCase()}`
+};
+
+function formatConfigSegment(moduleKey, moduleValue) {
+    const key = (moduleKey || '').toString().trim().toLowerCase();
+    const value = (moduleValue || '').toString().trim().toLowerCase();
+
+    if (!key || !value || value === 'none') {
+        return '';
+    }
+
+    const formatter = MODULE_SEGMENT_FORMATTERS[key];
+    if (!formatter) {
+        return '';
+    }
+
+    const segment = formatter(value);
+    if (!segment) {
+        return '';
+    }
+
+    return `-${segment}`;
+}
+
 let manifestLoadPromise = null;
 let manifestData = null;
 let manifestLoadError = null;
@@ -1394,21 +1422,10 @@ async function findCompatibleFirmware() {
     configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
     configString += `-${configuration.power.toUpperCase()}`;
 
-    if (configuration.airiq !== 'none') {
-        configString += `-AirIQ${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}`;
-    }
-
-    if (configuration.presence !== 'none') {
-        configString += `-Presence${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}`;
-    }
-
-    if (configuration.comfort !== 'none') {
-        configString += `-Comfort${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}`;
-    }
-
-    if (configuration.fan !== 'none') {
-        configString += `-Fan${configuration.fan.toUpperCase()}`;
-    }
+    configString += formatConfigSegment('airiq', configuration.airiq);
+    configString += formatConfigSegment('presence', configuration.presence);
+    configString += formatConfigSegment('comfort', configuration.comfort);
+    configString += formatConfigSegment('fan', configuration.fan);
 
     if (previousConfigString !== configString) {
         setChecklistCompletion(false);
