@@ -11,7 +11,7 @@ const textEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : nul
 
 function loadPako() {
     if (!pakoModulePromise) {
-        pakoModulePromise = import('https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.esm.mjs');
+        pakoModulePromise = import('./vendor/pako.esm.mjs');
     }
     return pakoModulePromise;
 }
