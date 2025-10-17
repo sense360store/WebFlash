@@ -400,6 +400,12 @@ def version_is_newer(candidate: str, current: str) -> bool:
     return _version_tuple(candidate) > _version_tuple(current)
 
 
+def _version_sort_key(version: str) -> Tuple[Tuple[int, ...], int, str]:
+    numeric_parts, stability, suffix = _version_tuple(version)
+    neg_parts = tuple(-part for part in numeric_parts)
+    return (neg_parts, -stability, suffix)
+
+
 def collect_firmware(
     firmware_dir: Path,
     repo_root: Path,
@@ -460,6 +466,8 @@ def collect_firmware(
 def select_latest_builds(
     artifacts: Sequence[FirmwareArtifact],
 ) -> Tuple[List[FirmwareArtifact], List[Tuple[FirmwareArtifact, FirmwareArtifact]]]:
+    """Identify newer builds without discarding older versions."""
+
     best: Dict[Tuple[object, ...], FirmwareArtifact] = {}
     superseded: List[Tuple[FirmwareArtifact, FirmwareArtifact]] = []
     for artifact in artifacts:
@@ -481,20 +489,22 @@ def select_latest_builds(
         if version_is_newer(meta.version, current.metadata.version):
             superseded.append((current, artifact))
             best[key] = artifact
-        else:
+        elif version_is_newer(current.metadata.version, meta.version):
             superseded.append((artifact, current))
-    return list(best.values()), superseded
+    return list(artifacts), superseded
 
 
 def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifact]:
     config_builds = [a for a in artifacts if a.metadata.is_configuration]
     legacy_builds = [a for a in artifacts if not a.metadata.is_configuration]
+    config_builds.sort(key=lambda art: _version_sort_key(art.metadata.version))
     config_builds.sort(
         key=lambda art: (
             (art.metadata.config_string or "").lower(),
             CHANNEL_ORDER.get(art.metadata.channel, 99),
         )
     )
+    legacy_builds.sort(key=lambda art: _version_sort_key(art.metadata.version))
     legacy_builds.sort(
         key=lambda art: (
             (art.metadata.model or "").lower(),

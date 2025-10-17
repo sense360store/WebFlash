@@ -8,9 +8,9 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQPro-v1.0.0-preview.bin",
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-preview.bin",
           "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+          "md5": "e97def6cc38584770512c0bb0ff6a32d"
         }
       ],
       "improv": true
