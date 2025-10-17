@@ -233,7 +233,7 @@ firmware/
 - ✅ `deploy-automation.py` - Automation script improvements
 - ✅ `create-individual-manifests.py` - Individual manifest generation
 - ✅ `README.md` - Documentation updates
-- ✅ `css/style.css` - UI styling changes
+- ✅ `css/wizard-style.css` - UI styling updates for the configurator
 - ✅ ESPHome YAML files - Firmware configuration
 
 ### If Manual Editing Seems Necessary:
