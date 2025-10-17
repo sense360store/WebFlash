@@ -147,19 +147,6 @@ function compareVersionsDesc(aVersion, bVersion) {
     return bLabel.localeCompare(aLabel);
 }
 
-function escapeHtml(value) {
-    const stringValue = String(value);
-    const replacements = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    };
-
-    return stringValue.replace(/[&<>"']/g, char => replacements[char]);
-}
-
 function normaliseMountingToken(value) {
     const token = (value || '').toString().trim().toLowerCase();
     if (allowedOptions.mounting.includes(token)) {
