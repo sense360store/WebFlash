@@ -21,23 +21,27 @@ const allowedOptions = {
     fan: ['none', 'pwm', 'analog']
 };
 
+const DEFAULT_CHANNEL_KEY = 'stable';
+
+const CHANNEL_ALIAS_MAP = {
+    general: 'stable',
+    stable: 'stable',
+    ga: 'stable',
+    release: 'stable',
+    beta: 'beta',
+    preview: 'beta',
+    dev: 'dev',
+    nightly: 'dev',
+    canary: 'dev'
+};
+
 const CHANNEL_DISPLAY_MAP = {
-    general: {
-        label: 'General Release',
-        description: 'Recommended for most installations and validated for production deployments.',
-        notesFallback: 'General release notes are not available for this firmware version yet.'
-    },
     stable: {
         label: 'General Release',
         description: 'Recommended for most installations and validated for production deployments.',
         notesFallback: 'General release notes are not available for this firmware version yet.'
     },
     beta: {
-        label: 'Preview Release',
-        description: 'Preview upcoming capabilities with limited validation. Expect rapid updates.',
-        notesFallback: 'Preview release notes are not yet available for this firmware version.'
-    },
-    preview: {
         label: 'Preview Release',
         description: 'Preview upcoming capabilities with limited validation. Expect rapid updates.',
         notesFallback: 'Preview release notes are not yet available for this firmware version.'
@@ -63,11 +67,19 @@ const CHANNEL_PRIORITY_MAP = {
     beta: 1,
     preview: 1,
     dev: 2,
+    nightly: 2,
+    canary: 2,
     experimental: 2
 };
 
 function normaliseChannelKey(channel) {
-    return (channel || '').toString().trim().toLowerCase();
+    const normalised = (channel || '').toString().trim().toLowerCase();
+
+    if (!normalised) {
+        return DEFAULT_CHANNEL_KEY;
+    }
+
+    return CHANNEL_ALIAS_MAP[normalised] || normalised || DEFAULT_CHANNEL_KEY;
 }
 
 function getChannelDisplayInfo(channel) {
