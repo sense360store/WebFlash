@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-general.bin",
+          "path": "firmware/configurations/Sense360-Wall-POE-AirIQBase-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
