@@ -292,6 +292,7 @@ function buildManifestContext(manifest) {
 
     builds.forEach((build, index) => {
         const buildWithIndex = { ...build, manifestIndex: index };
+        buildWithIndex.firmwareId = getFirmwareId(buildWithIndex);
         manifestBuildsWithIndex.push(buildWithIndex);
 
         const configString = build.config_string;
