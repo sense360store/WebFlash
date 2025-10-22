@@ -400,7 +400,9 @@ async function createSupportBundle(options = {}) {
 
     const deviceId = state?.deviceId || state?.device || state?.config_string || 'unknown-device';
     const channel = state?.channel || state?.firmwareChannel || options.stateSnapshot?.channel || 'unknown-channel';
-    const summary = `WebFlash ${app.version} – ${deviceId}/${channel} – ${md5.slice(0, 8)}`;
+    const guidanceSeen = state?.postInstallGuidance?.seen === true;
+    const guidanceTag = `guidance:${guidanceSeen ? 'yes' : 'no'}`;
+    const summary = `WebFlash ${app.version} – ${deviceId}/${channel} – ${md5.slice(0, 8)} – ${guidanceTag}`;
 
     return {
         jsonBlob,

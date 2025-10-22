@@ -36,6 +36,13 @@ WebFlash is a guided wizard for building the exact Sense360 firmware your hardwa
 
 > **Tip:** If your device does not appear, try a different USB cable/port, or close other serial tools (Arduino, esptool, etc.) that may have the port open.
 
+### Rescue installer
+
+- Step 4 now includes a dedicated **Rescue Install** card that stays visible regardless of the configuration you pick.
+- Use the rescue build when the normal firmware refuses to boot, crashes midway through flashing, or the hub is stuck in download mode.
+- The rescue image is a known-good bootloader that brings the device back online so you can immediately re-run the standard firmware installer.
+- When you trigger the rescue installer, the support bundle records the attempt (including timestamps and state transitions) to help engineering diagnose stubborn failures.
+
 ---
 
 ## Ideas to improve the flashing experience

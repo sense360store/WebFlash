@@ -10,10 +10,15 @@
         {
           "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQPro-Presence-Comfort-v1.0.0-beta.bin",
           "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611"
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "improv": true
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
     }
   ]
 }
