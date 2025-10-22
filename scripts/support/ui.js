@@ -774,7 +774,8 @@ function initSupportUI() {
             stateSnapshot: gatherStateSnapshot(),
             capabilities: gatherCapabilities(),
             serialLogLines: serialLines,
-            includeIPs: options.allowIPs
+            includeIPs: options.allowIPs,
+            esphomeYaml: window.currentFirmwareYaml
         }).then(async (bundle) => {
             currentBundle = {
                 ...bundle,

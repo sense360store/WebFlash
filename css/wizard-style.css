@@ -1492,22 +1492,51 @@ h1 {
     gap: 16px;
 }
 
-.firmware-card--rescue .firmware-item {
+.firmware-yaml-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface-muted);
+}
+
+.firmware-yaml-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.firmware-yaml-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.firmware-yaml-code {
     background: var(--color-surface);
-    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 16px;
+    font-family: var(--font-monospace, 'SFMono-Regular', 'Fira Code', monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    overflow: auto;
+    max-height: 360px;
 }
 
-.firmware-card--rescue .btn.btn-secondary {
-    background: var(--accent);
-    color: var(--accent-contrast);
-    border-color: var(--accent);
+.firmware-yaml-code code {
+    display: block;
+    white-space: pre;
 }
 
-.firmware-card--rescue .btn.btn-secondary:hover,
-.firmware-card--rescue .btn.btn-secondary:focus-visible {
-    background: color-mix(in srgb, var(--accent) 85%, black 15%);
-    border-color: color-mix(in srgb, var(--accent) 85%, black 15%);
+.firmware-yaml-meta {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
 }
 
 .firmware-item {
@@ -1649,6 +1678,21 @@ h1 {
     font-size: 14px;
     margin-top: 16px;
     color: var(--color-text-secondary);
+}
+
+.post-flash-guidance {
+    margin-top: 24px;
+    max-width: 640px;
+}
+
+.post-flash-guidance a {
+    color: var(--brand-green-contrast);
+    text-decoration: none;
+}
+
+.post-flash-guidance a:hover {
+    color: var(--brand-green-contrast-hover);
+    text-decoration: underline;
 }
 
 /* Release notes styles */
