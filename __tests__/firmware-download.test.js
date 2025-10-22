@@ -173,6 +173,11 @@ describe('firmware download interactions', () => {
             ]
         };
         window.currentConfigString = 'TestConfig';
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Test verification complete',
+            parts: []
+        });
 
         const appendSpy = jest.spyOn(document.body, 'appendChild');
         const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
@@ -207,6 +212,11 @@ describe('firmware download interactions', () => {
             ]
         };
         window.currentConfigString = 'Wall-USB';
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Test verification complete',
+            parts: []
+        });
 
         const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
@@ -242,6 +252,11 @@ describe('firmware download interactions', () => {
 
         window.currentFirmware = firmware;
         window.currentConfigString = 'Wall-USB';
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Test verification complete',
+            parts: []
+        });
 
         await window.copyFirmwareUrl();
 
@@ -274,6 +289,11 @@ describe('firmware download interactions', () => {
 
         window.currentFirmware = firmware;
         window.currentConfigString = 'Wall-USB';
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Test verification complete',
+            parts: []
+        });
 
         __testHooks.renderSelectedFirmware();
 

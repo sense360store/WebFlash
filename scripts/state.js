@@ -75,6 +75,23 @@ let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
 
+const SIGNATURE_SALT_TEXT = 'Sense360 Firmware Signing Salt v1';
+const signatureSaltBytes = typeof TextEncoder !== 'undefined'
+    ? new TextEncoder().encode(SIGNATURE_SALT_TEXT)
+    : null;
+
+function createEmptyVerificationState(status = 'idle', message = '') {
+    return {
+        status,
+        message,
+        parts: new Map(),
+        firmwareId: null
+    };
+}
+
+let firmwareVerificationState = createEmptyVerificationState();
+let firmwareVerificationToken = 0;
+
 const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
     stable: 'stable',
     general: 'stable',
@@ -105,6 +122,11 @@ const CHANNEL_DISPLAY_MAP = {
         label: 'Development Build',
         description: 'Cutting-edge development firmware intended for advanced testing only.',
         notesFallback: 'Development build notes are not available for this firmware version.'
+    },
+    rescue: {
+        label: 'Rescue Build',
+        description: 'Emergency recovery firmware for bringing devices back from failed installs.',
+        notesFallback: 'Rescue builds do not ship release notes.'
     }
 };
 
@@ -121,6 +143,7 @@ const CHANNEL_PRIORITY_MAP = {
     release: 0,
     prod: 0,
     production: 0,
+    rescue: -1,
     lts: 0,
     preview: 1,
     prerelease: 1,
@@ -409,12 +432,306 @@ const REMEMBER_TOGGLE_SELECTOR = '[data-remember-toggle]';
 
 const firmwareSelectorWrapper = document.getElementById('firmware-selector');
 const firmwareVersionSelect = document.getElementById('firmware-version-select');
+const SERIAL_DETECTION_DEFAULT_MESSAGE = 'Connect your Sense360 hub and choose “Detect Device”.';
+const serialDetectionSummary = document.getElementById('serial-detection-summary');
+const serialDetectionList = document.getElementById('serial-detection-list');
+const serialDetectionGuidance = document.getElementById('serial-detection-guidance');
+const serialDetectionRefreshButton = document.getElementById('serial-detection-refresh');
 let firmwareOptions = [];
 let firmwareOptionsMap = new Map();
 let currentFirmwareSelectionId = null;
 let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
+let serialDetectionPromise = null;
+
+const MAX_RESCUE_HISTORY = 20;
+const rescueInstallHistory = [];
+
+function summariseRescueDetail(detail) {
+    if (!detail || typeof detail !== 'object') {
+        return {};
+    }
+
+    const summary = {};
+    const source = typeof detail.details === 'object' && detail.details !== null
+        ? detail.details
+        : detail;
+
+    if (typeof detail.message === 'string' && detail.message.trim()) {
+        summary.message = detail.message.trim();
+    }
+
+    if (typeof source.stage === 'string' && source.stage.trim()) {
+        summary.stage = source.stage.trim();
+    }
+
+    if (typeof source.status === 'string' && source.status.trim()) {
+        summary.status = source.status.trim();
+    }
+
+    if (typeof source.error === 'string' && source.error.trim()) {
+        summary.error = source.error.trim();
+    }
+
+    if (typeof source.done === 'boolean') {
+        summary.done = source.done;
+    }
+
+    return summary;
+}
+
+function recordRescueInstallEvent(eventType, detail = {}) {
+    if (!eventType) {
+        return null;
+    }
+
+    const entry = {
+        type: String(eventType),
+        timestamp: new Date().toISOString(),
+        step: currentStep,
+        configString: window.currentConfigString || null
+    };
+
+    if (detail && typeof detail === 'object') {
+        const clean = {};
+        Object.entries(detail).forEach(([key, value]) => {
+            if (value === undefined || typeof value === 'function') {
+                return;
+            }
+
+            if (value && typeof value === 'object') {
+                try {
+                    clean[key] = JSON.parse(JSON.stringify(value));
+                } catch (error) {
+                    clean[key] = String(value);
+                }
+            } else {
+                clean[key] = value;
+            }
+        });
+
+        if (Object.keys(clean).length > 0) {
+            entry.detail = clean;
+        }
+    }
+
+    rescueInstallHistory.push(entry);
+    if (rescueInstallHistory.length > MAX_RESCUE_HISTORY) {
+        rescueInstallHistory.splice(0, rescueInstallHistory.length - MAX_RESCUE_HISTORY);
+    }
+
+    window.supportBundle?.recordEvent?.('rescue-install', entry);
+
+    return entry;
+}
+
+function getRescueInstallHistory() {
+    return rescueInstallHistory.slice();
+}
+
+const POST_INSTALL_GUIDANCE_SELECTOR = '[data-post-install-guidance]';
+const POST_INSTALL_GUIDANCE_NOTE_SELECTOR = '[data-post-install-guidance-note]';
+const INSTALL_SUCCESS_STATES = new Set(['finished', 'complete', 'completed', 'success']);
+
+const postInstallGuidanceState = {
+    seen: false,
+    lastShownAt: null,
+    firmwareId: null,
+    firmwareVersion: null,
+    firmwareChannel: null,
+    configString: null
+};
+
+function syncPostInstallGuidanceState(partial = {}) {
+    Object.assign(postInstallGuidanceState, partial);
+    if (typeof window !== 'undefined') {
+        window.webflashPostInstallGuidance = { ...postInstallGuidanceState };
+    }
+}
+
+const existingGuidanceState = typeof window !== 'undefined'
+    && window.webflashPostInstallGuidance
+    && typeof window.webflashPostInstallGuidance === 'object'
+        ? window.webflashPostInstallGuidance
+        : null;
+
+if (existingGuidanceState) {
+    Object.assign(postInstallGuidanceState, existingGuidanceState);
+}
+
+syncPostInstallGuidanceState();
+
+function getPostInstallGuidancePanel() {
+    return document.querySelector(POST_INSTALL_GUIDANCE_SELECTOR);
+}
+
+function formatGuidanceTimestamp(isoString) {
+    if (!isoString) {
+        return '';
+    }
+
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
+function resolveFirmwareFromHost(host) {
+    if (!host) {
+        return window.currentFirmware || null;
+    }
+
+    const firmwareId = host.dataset?.firmwareId
+        || host.querySelector?.('button[slot="activate"]')?.dataset?.firmwareId
+        || null;
+
+    if (firmwareId && firmwareOptionsMap.has(firmwareId)) {
+        return firmwareOptionsMap.get(firmwareId);
+    }
+
+    return window.currentFirmware || null;
+}
+
+function revealPostInstallGuidance(firmware = window.currentFirmware) {
+    const panel = getPostInstallGuidancePanel();
+    const nowIso = new Date().toISOString();
+    const configString = firmware?.config_string || window.currentConfigString || null;
+
+    syncPostInstallGuidanceState({
+        seen: true,
+        lastShownAt: nowIso,
+        firmwareId: firmware?.firmwareId || firmware?.firmware_id || null,
+        firmwareVersion: firmware?.version || null,
+        firmwareChannel: firmware?.channel || null,
+        configString
+    });
+
+    if (!panel) {
+        return;
+    }
+
+    if (panel.hidden) {
+        panel.hidden = false;
+    }
+
+    panel.classList.add('is-visible');
+    panel.setAttribute('data-visible', 'true');
+
+    const note = panel.querySelector(POST_INSTALL_GUIDANCE_NOTE_SELECTOR);
+    if (note) {
+        const labelParts = [];
+        const modelLabel = firmware?.device_type || firmware?.model || null;
+        if (modelLabel) {
+            labelParts.push(modelLabel);
+        } else if (configString) {
+            labelParts.push(configString);
+        }
+        if (firmware?.version) {
+            labelParts.push(`v${firmware.version}`);
+        }
+
+        const timestampLabel = formatGuidanceTimestamp(nowIso);
+        const context = labelParts.join(' ').trim();
+
+        if (timestampLabel && context) {
+            note.textContent = `Guidance shown for ${context} at ${timestampLabel}.`;
+        } else if (timestampLabel) {
+            note.textContent = `Guidance shown at ${timestampLabel}.`;
+        } else if (context) {
+            note.textContent = `Guidance shown for ${context}.`;
+        } else {
+            note.textContent = 'Guidance shown just now.';
+        }
+        note.hidden = false;
+    }
+}
+
+function isInstallSuccessEvent(event) {
+    if (!event || typeof event !== 'object') {
+        return false;
+    }
+
+    if (event.type === 'install-success' || event.type === 'install-complete') {
+        const detail = event.detail;
+        if (detail && typeof detail === 'object' && (detail.error || detail.details?.error)) {
+            return false;
+        }
+        return true;
+    }
+
+    if (event.type !== 'state-changed') {
+        return false;
+    }
+
+    const detail = event.detail;
+    if (detail && typeof detail === 'object') {
+        if (detail.error || detail.details?.error) {
+            return false;
+        }
+
+        const stateValue = detail.state || detail.status || detail.phase || detail.stage;
+        if (typeof stateValue === 'string') {
+            return INSTALL_SUCCESS_STATES.has(stateValue.toLowerCase());
+        }
+
+        if (typeof detail.details?.state === 'string') {
+            return INSTALL_SUCCESS_STATES.has(detail.details.state.toLowerCase());
+        }
+
+        return false;
+    }
+
+    if (typeof detail === 'string') {
+        return INSTALL_SUCCESS_STATES.has(detail.toLowerCase());
+    }
+
+    return false;
+}
+
+function setupPostInstallGuidancePanel() {
+    const panel = getPostInstallGuidancePanel();
+    if (!panel || panel.dataset.guidanceBound === 'true') {
+        return;
+    }
+
+    panel.addEventListener('click', async event => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const button = target?.closest?.('[data-copy-text]');
+        if (!button || !(button instanceof HTMLElement) || !panel.contains(button)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const text = button.dataset.copyText || '';
+        if (!text) {
+            return;
+        }
+
+        if (!navigator.clipboard) {
+            showToast('Copy not supported');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            const message = button.dataset.copySuccess || 'Copied';
+            showToast(message);
+        } catch (error) {
+            console.error('Failed to copy guidance text', error);
+            showToast('Copy failed');
+        }
+    });
+
+    panel.dataset.guidanceBound = 'true';
+}
 
 const diagnosticsElements = new Map();
 let diagnosticsRefreshButton = null;
@@ -629,87 +946,326 @@ function refreshPreflightDiagnostics({ userInitiated = false, force = false } = 
     return promise;
 }
 
+function getFirmwareChipFamily(firmware = window.currentFirmware) {
+    if (!firmware || typeof firmware !== 'object') {
+        return '';
+    }
+
+    const family = firmware.chipFamily ?? firmware.chip_family ?? '';
+    return typeof family === 'string' ? family.trim() : '';
+}
+
+function getDetectedChipFamily() {
+    const detection = window.serialDetection;
+    if (!detection) {
+        return '';
+    }
+
+    const primary = typeof detection.chipFamily === 'string' ? detection.chipFamily.trim() : '';
+    if (primary) {
+        return primary;
+    }
+
+    if (Array.isArray(detection.chipFamilies) && detection.chipFamilies.length) {
+        const fallback = detection.chipFamilies.find(family => typeof family === 'string' && family.trim());
+        if (fallback) {
+            return fallback.trim();
+        }
+    }
+
+    if (Array.isArray(detection.ports)) {
+        const portMatch = detection.ports.find(port => typeof port?.chipFamily === 'string' && port.chipFamily.trim());
+        if (portMatch) {
+            return portMatch.chipFamily.trim();
+        }
+    }
+
+    return '';
+}
+
+function getSerialCompatibilityState() {
+    const expectedLabel = getFirmwareChipFamily();
+    const detectedLabel = getDetectedChipFamily();
+    const compatible = isChipFamilyCompatible(detectedLabel, expectedLabel);
+    const mismatch = Boolean(expectedLabel && detectedLabel && !compatible);
+
+    return {
+        mismatch,
+        isCompatible: !mismatch,
+        expectedLabel,
+        detectedLabel,
+        hasFirmwareFamily: Boolean(expectedLabel),
+        hasDetectedFamily: Boolean(detectedLabel)
+    };
+}
+
+function renderSerialDetectionInfo({ loading = false } = {}) {
+    if (!serialDetectionSummary || !serialDetectionGuidance) {
+        return;
+    }
+
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && 'serial' in navigator;
+
+    if (!hasSerialSupport) {
+        serialDetectionSummary.textContent = 'This browser does not support the Web Serial API.';
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.innerHTML = 'Use Chrome or Edge to flash firmware directly from the browser.';
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = true;
+        }
+        return;
+    }
+
+    if (loading) {
+        serialDetectionSummary.textContent = 'Checking for connected devices…';
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.textContent = '';
+        return;
+    }
+
+    const detection = window.serialDetection;
+
+    if (!detection) {
+        serialDetectionSummary.textContent = SERIAL_DETECTION_DEFAULT_MESSAGE;
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.textContent = '';
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = false;
+        }
+        return;
+    }
+
+    const ports = Array.isArray(detection.ports) ? detection.ports : [];
+    const deviceCount = ports.length;
+
+    if (serialDetectionList) {
+        serialDetectionList.innerHTML = '';
+        if (deviceCount > 0) {
+            serialDetectionList.hidden = false;
+            ports.forEach(port => {
+                const item = document.createElement('li');
+                item.textContent = formatPortSummary(port);
+                serialDetectionList.appendChild(item);
+            });
+        } else {
+            serialDetectionList.hidden = false;
+            const item = document.createElement('li');
+            item.textContent = detection.requestError
+                ? 'Permission required to read connected devices.'
+                : 'No authorized devices detected yet.';
+            serialDetectionList.appendChild(item);
+        }
+    }
+
+    if (detection.error) {
+        serialDetectionSummary.textContent = 'Unable to access Web Serial devices.';
+    } else if (deviceCount > 0) {
+        const baseLabel = deviceCount === 1 ? 'Detected 1 device' : `Detected ${deviceCount} devices`;
+        const chipLabel = getDetectedChipFamily();
+        serialDetectionSummary.textContent = chipLabel ? `${baseLabel} · ${chipLabel}` : baseLabel;
+    } else if (detection.requestError) {
+        serialDetectionSummary.textContent = 'Permission required to read connected devices.';
+    } else {
+        serialDetectionSummary.textContent = SERIAL_DETECTION_DEFAULT_MESSAGE;
+    }
+
+    const guidanceParts = [];
+
+    if (detection.error) {
+        guidanceParts.push(escapeHtml(detection.error));
+    } else if (detection.requestError && !deviceCount) {
+        guidanceParts.push('Click “Detect Device” and authorize the Sense360 hub when prompted.');
+    } else if (!deviceCount) {
+        guidanceParts.push('Connect your Sense360 hub via USB and select “Detect Device”.');
+    }
+
+    const compatibility = getSerialCompatibilityState();
+    if (compatibility.mismatch) {
+        const expectedLabel = escapeHtml(compatibility.expectedLabel || 'selected firmware');
+        const detectedLabel = escapeHtml(compatibility.detectedLabel || 'connected device');
+        guidanceParts.push(`<strong>Chip mismatch.</strong> Detected ${detectedLabel}, but the selected firmware targets ${expectedLabel}. Choose matching firmware or connect the appropriate hub.`);
+    }
+
+    serialDetectionGuidance.innerHTML = guidanceParts.join(' ');
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.disabled = false;
+    }
+}
+
+async function refreshSerialDetection({ promptUser = false } = {}) {
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && 'serial' in navigator;
+
+    if (!hasSerialSupport) {
+        renderSerialDetectionInfo();
+        return null;
+    }
+
+    if (serialDetectionPromise) {
+        return serialDetectionPromise;
+    }
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.disabled = true;
+    }
+
+    renderSerialDetectionInfo({ loading: true });
+
+    serialDetectionPromise = detectSerialDevices({ promptUser })
+        .then(result => {
+            window.serialDetection = result;
+            return result;
+        })
+        .catch(error => {
+            console.error('Failed to detect serial devices:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            window.serialDetection = {
+                supported: true,
+                ports: [],
+                chipFamily: null,
+                chipFamilies: [],
+                error: message,
+                requestError: null,
+                timestamp: Date.now()
+            };
+            return window.serialDetection;
+        })
+        .finally(() => {
+            serialDetectionPromise = null;
+            renderSerialDetectionInfo();
+            updateFirmwareControls();
+        });
+
+    return serialDetectionPromise;
+}
+
 function attachInstallButtonListeners() {
-    const installHosts = document.querySelectorAll('#compatible-firmware esp-web-install-button');
+    const installHosts = document.querySelectorAll('esp-web-install-button[data-webflash-install]');
 
     installHosts.forEach(host => {
         const activateButton = host.querySelector('button[slot="activate"]');
+        const isRescueHost = host.hasAttribute('data-rescue-install');
 
         if (activateButton && activateButton.dataset.checklistBound !== 'true') {
             activateButton.addEventListener('click', () => {
                 const firmwareId = activateButton.dataset.firmwareId;
                 if (firmwareId) {
                     selectFirmwareById(firmwareId, { syncSelector: false });
+                } else if (isRescueHost || activateButton.dataset.rescueInstall === 'true') {
+                    recordRescueInstallEvent('launch-click');
                 }
             });
             activateButton.dataset.checklistBound = 'true';
         }
 
-        if (host.dataset.serialLogBound === 'true') {
-            return;
+        if (host.dataset.installGuidanceBound !== 'true') {
+            const handleInstallStateChange = (event) => {
+                if (!isInstallSuccessEvent(event)) {
+                    return;
+                }
+
+                const firmware = resolveFirmwareFromHost(host) || window.currentFirmware;
+                revealPostInstallGuidance(firmware);
+            };
+
+            host.addEventListener('state-changed', handleInstallStateChange);
+            host.addEventListener('install-success', handleInstallStateChange);
+            host.addEventListener('install-complete', handleInstallStateChange);
+
+            host.dataset.installGuidanceBound = 'true';
         }
 
-        const bindLogForwarding = () => {
-            if (host.dataset.serialLogBound === 'true') {
-                return;
-            }
-
-            const forwardLogEvent = (event) => {
-                const message = event?.detail?.message ?? event?.detail ?? '';
-                if (typeof message !== 'string' || message.length === 0) {
-                    return;
-                }
-                window.supportBundle?.pushSerial?.(message);
-            };
-
-            const resetSerialBuffer = (event) => {
-                const detail = event?.detail;
-                const state = typeof detail === 'string' ? detail : detail?.state;
-                if (!state) {
+        if (host.dataset.serialLogBound !== 'true') {
+            const bindLogForwarding = () => {
+                if (host.dataset.serialLogBound === 'true') {
                     return;
                 }
 
-                if (state === 'initializing' || state === 'preparing') {
-                    const isInProgress = typeof detail === 'object'
-                        ? detail.details?.done === false || detail.details === undefined
-                        : true;
-
-                    if (isInProgress) {
-                        window.supportBundle?.clearSerial?.();
-                    }
-                }
-            };
-
-            // ESP Web Tools dispatches "log"/"console" events from the install button
-            // to expose console output. Forward the payload to the support bundle so
-            // that generated bundles include raw serial logs for troubleshooting.
-            host.addEventListener('log', forwardLogEvent);
-            host.addEventListener('console', forwardLogEvent);
-
-            // The flashing dialog also emits "state-changed" events as the install
-            // progresses. When a new session moves into the initializing/preparing
-            // phase we reset the buffered log output so the bundle only contains the
-            // latest attempt.
-            host.addEventListener('state-changed', resetSerialBuffer);
-
-            host.dataset.serialLogBound = 'true';
-        };
-
-        if (isManifestReady()) {
-            bindLogForwarding();
-        } else if (host.dataset.serialLogPending !== 'true') {
-            host.dataset.serialLogPending = 'true';
-            manifestReadyPromise
-                .then(() => {
-                    delete host.dataset.serialLogPending;
-                    if (!document.body.contains(host)) {
+                const forwardLogEvent = (event) => {
+                    const message = event?.detail?.message ?? event?.detail ?? '';
+                    if (typeof message !== 'string' || message.length === 0) {
                         return;
                     }
-                    bindLogForwarding();
-                })
-                .catch(() => {
-                    delete host.dataset.serialLogPending;
-                });
+                    window.supportBundle?.pushSerial?.(message);
+                };
+
+                const resetSerialBuffer = (event) => {
+                    const detail = event?.detail;
+                    const state = typeof detail === 'string' ? detail : detail?.state;
+                    if (!state) {
+                        return;
+                    if (isInProgress) {
+                        window.supportBundle?.clearSerial?.();
+                        if (isRescueHost) {
+                            recordRescueInstallEvent('session-start', { state });
+                        }
+                    }
+                }
+
+                if (isRescueHost) {
+                    const previousState = host.dataset.rescueLastState || '';
+                    if (previousState !== state) {
+                        host.dataset.rescueLastState = state;
+                        const summary = summariseRescueDetail(detail);
+                        recordRescueInstallEvent('state-changed', { state, ...summary });
+                        if (state === 'finished' || state === 'completed') {
+                            recordRescueInstallEvent('session-finished', summary);
+                        } else if (state === 'error' || state === 'failed') {
+                            recordRescueInstallEvent('session-error', summary);
+                        }
+                    }
+
+                    if (state === 'initializing' || state === 'preparing') {
+                        const isInProgress = typeof detail === 'object'
+                            ? detail.details?.done === false || detail.details === undefined
+                            : true;
+
+                        if (isInProgress) {
+                            window.supportBundle?.clearSerial?.();
+                        }
+                    }
+                };
+
+                // ESP Web Tools dispatches "log"/"console" events from the install button
+                // to expose console output. Forward the payload to the support bundle so
+                // that generated bundles include raw serial logs for troubleshooting.
+                host.addEventListener('log', forwardLogEvent);
+                host.addEventListener('console', forwardLogEvent);
+
+                // The flashing dialog also emits "state-changed" events as the install
+                // progresses. When a new session moves into the initializing/preparing
+                // phase we reset the buffered log output so the bundle only contains the
+                // latest attempt.
+                host.addEventListener('state-changed', resetSerialBuffer);
+
+                host.dataset.serialLogBound = 'true';
+            };
+
+            if (isManifestReady()) {
+                bindLogForwarding();
+            } else if (host.dataset.serialLogPending !== 'true') {
+                host.dataset.serialLogPending = 'true';
+                manifestReadyPromise
+                    .then(() => {
+                        delete host.dataset.serialLogPending;
+                        if (!document.body.contains(host)) {
+                            return;
+                        }
+                        bindLogForwarding();
+                    })
+                    .catch(() => {
+                        delete host.dataset.serialLogPending;
+                    });
+            }
         }
     });
 }
@@ -789,9 +1345,22 @@ function initializeWizard() {
         if (warning) {
             warning.style.display = 'block';
         }
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = true;
+        }
+    }
+
+    renderSerialDetectionInfo();
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.addEventListener('click', () => {
+            refreshSerialDetection({ promptUser: true });
+        });
     }
 
     setupRememberPreferenceControls();
+    setupPostInstallGuidancePanel();
+    window.webflashRescueInstallHistory = rescueInstallHistory;
 
     initializeDiagnosticsUI();
     updateDiagnosticsUI();
@@ -821,6 +1390,7 @@ function initializeWizard() {
         input.addEventListener('change', updateConfiguration);
     });
 
+    attachInstallButtonListeners();
     initializeFromUrl();
 
     manifestReadyPromise
@@ -1387,11 +1957,19 @@ function updateSummary() {
 }
 
 function updateFirmwareControls() {
-    const isReady = Boolean(
+    const hasFirmware = Boolean(
         window.currentFirmware
         && Array.isArray(window.currentFirmware.parts)
         && window.currentFirmware.parts.length > 0
     );
+    const verificationStatus = (firmwareVerificationState.status || '').toString().toLowerCase();
+    const isVerified = verificationStatus === 'verified';
+    const isPending = verificationStatus === 'pending';
+    const isFailed = verificationStatus === 'failed';
+    const isReady = hasFirmware && isVerified;
+
+    const compatibility = getSerialCompatibilityState();
+    const actionsAllowed = isReady && !compatibility.mismatch;
 
     const diagnosticsReady = areDiagnosticsPassing();
     const readyToFlash = isReady && diagnosticsReady;
@@ -1440,6 +2018,23 @@ function updateFirmwareControls() {
         }
     }
 
+    const helperContext = (() => {
+        if (!hasFirmware) {
+            return { text: '', isError: false };
+        }
+        if (isPending) {
+            return { text: 'Verifying firmware…', isError: false };
+        }
+        if (isFailed) {
+            const message = firmwareVerificationState.message || 'Verification failed';
+            return { text: message, isError: true };
+        }
+        if (isVerified) {
+            return { text: 'Ready to flash', isError: false };
+        }
+        return { text: 'Awaiting verification…', isError: false };
+    })();
+
     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
     if (detailHelper) {
         if (readyToFlash) {
@@ -1450,8 +2045,9 @@ function updateFirmwareControls() {
             detailHelper.classList.add('is-visible');
         } else {
             detailHelper.textContent = '';
-            detailHelper.classList.remove('is-visible');
+            detailHelper.classList.remove('is-visible', 'is-warning');
         }
+        detailHelper.classList.toggle('is-error', helperContext.isError);
     }
 
     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
@@ -1466,9 +2062,12 @@ function updateFirmwareControls() {
             primaryHelper.classList.add('is-visible');
         } else {
             primaryHelper.textContent = '';
-            primaryHelper.classList.remove('is-visible');
+            primaryHelper.classList.remove('is-visible', 'is-warning');
         }
+        primaryHelper.classList.toggle('is-error', helperContext.isError);
     }
+
+    renderSerialDetectionInfo();
 }
 
 function groupBuildsByConfig(builds) {
@@ -1535,19 +2134,106 @@ function getFirmwareDisplayName(firmware, fallbackConfigString = '') {
     return `${model}${variantSegment}${sensorAddonSegment}${versionSegment}${channelSegment}.bin`;
 }
 
+function normaliseVerificationStatus(status) {
+    const key = (status || '').toString().toLowerCase();
+    if (key === 'pending' || key === 'verified' || key === 'failed') {
+        return key;
+    }
+    return 'unknown';
+}
+
+function getPartVerificationContext(part) {
+    if (!part) {
+        return { status: 'unknown', message: '' };
+    }
+
+    const state = firmwareVerificationState;
+    const existing = state.parts.get(part.resolvedUrl);
+    if (existing) {
+        const status = normaliseVerificationStatus(existing.status);
+        return {
+            status,
+            message: existing.message || '',
+            sha256Match: existing.sha256Match ?? null,
+            signatureMatch: existing.signatureMatch ?? null
+        };
+    }
+
+    const globalStatus = normaliseVerificationStatus(state.status);
+    if (globalStatus === 'pending') {
+        return { status: 'pending', message: 'Verification pending…' };
+    }
+    if (globalStatus === 'failed') {
+        return { status: 'failed', message: state.message || 'Verification failed.' };
+    }
+    if (globalStatus === 'verified') {
+        return { status: 'verified', message: 'Checksum and signature verified.' };
+    }
+
+    return { status: 'unknown', message: '' };
+}
+
 function renderFirmwarePartsSection(firmware) {
     const parts = getFirmwarePartsMetadata(firmware);
     if (!parts.length) {
         return '';
     }
 
+    const overallStatus = normaliseVerificationStatus(firmwareVerificationState.status);
+    const overallMessage = (() => {
+        if (overallStatus === 'pending') {
+            return 'Verifying firmware…';
+        }
+        if (overallStatus === 'verified') {
+            return firmwareVerificationState.message || 'Firmware verified successfully.';
+        }
+        if (overallStatus === 'failed') {
+            return firmwareVerificationState.message || 'Firmware verification failed.';
+        }
+        return '';
+    })();
+
     const listItems = parts
         .map(part => {
             const offsetText = part.offsetHex ? `Offset ${part.offsetHex}` : 'Offset not specified';
+            const verification = getPartVerificationContext(part);
+            const partStatus = normaliseVerificationStatus(verification.status);
+            const statusMessage = verification.message
+                || (partStatus === 'verified'
+                    ? 'Checksum and signature verified.'
+                    : partStatus === 'pending'
+                        ? 'Verification pending…'
+                        : partStatus === 'failed'
+                            ? 'Verification failed.'
+                            : '');
+            const checksumValue = part.sha256 || '';
+            const signatureValue = part.signature || '';
+            const checksumDisplay = checksumValue || 'Unavailable';
+            const signatureDisplay = signatureValue || 'Unavailable';
+            const checksumCopyButton = checksumValue
+                ? `<button type="button" class="copy-inline-btn" data-copy-text="${escapeHtml(checksumValue)}" data-copy-label="SHA-256 checksum">Copy</button>`
+                : '';
+            const signatureCopyButton = signatureValue
+                ? `<button type="button" class="copy-inline-btn" data-copy-text="${escapeHtml(signatureValue)}" data-copy-label="Signature blob">Copy</button>`
+                : '';
+
             return `
-                <li class="firmware-part-row">
-                    <span class="firmware-part-name">${escapeHtml(part.fileName)}</span>
-                    <span class="firmware-part-offset">${escapeHtml(offsetText)}</span>
+                <li class="firmware-part-row" data-verification-status="${escapeHtml(partStatus)}">
+                    <div class="firmware-part-main">
+                        <span class="firmware-part-name">${escapeHtml(part.fileName)}</span>
+                        <span class="firmware-part-offset">${escapeHtml(offsetText)}</span>
+                    </div>
+                    <div class="firmware-part-detail">
+                        <span class="firmware-part-label">SHA-256</span>
+                        <code class="firmware-part-code">${escapeHtml(checksumDisplay)}</code>
+                        ${checksumCopyButton}
+                    </div>
+                    <div class="firmware-part-detail">
+                        <span class="firmware-part-label">Signature</span>
+                        <code class="firmware-part-code">${escapeHtml(signatureDisplay)}</code>
+                        ${signatureCopyButton}
+                        <span class="firmware-part-status status-${escapeHtml(partStatus)}">${escapeHtml(statusMessage)}</span>
+                    </div>
                 </li>
             `;
         })
@@ -1557,11 +2243,16 @@ function renderFirmwarePartsSection(firmware) {
         ? '<p class="firmware-parts-hint">Flash each file to the offset shown below.</p>'
         : '';
 
+    const statusNotice = overallMessage
+        ? `<p class="firmware-verification-message status-${escapeHtml(overallStatus)}">${escapeHtml(overallMessage)}</p>`
+        : '';
+
     return `
-        <section class="firmware-parts" data-multi-part="${parts.length > 1}">
+        <section class="firmware-parts" data-multi-part="${parts.length > 1}" data-verification-status="${escapeHtml(overallStatus)}">
             <h4>${parts.length > 1 ? 'Firmware files' : 'Firmware file'}</h4>
             <ul class="firmware-parts-list">${listItems}</ul>
             ${hint}
+            ${statusNotice}
         </section>
     `;
 }
@@ -1655,7 +2346,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                     ${descriptionHtml}
                 </div>
                 <div class="firmware-actions">
-                    <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
+                    <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-webflash-install>
                         <button slot="activate" class="btn btn-primary" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
                             Install Firmware
                         </button>
@@ -1769,6 +2460,8 @@ function clearFirmwareOptions() {
     window.currentFirmware = null;
     additionalFirmwareBuckets = new Map();
     firmwareStatusMessage = null;
+    firmwareVerificationToken += 1;
+    firmwareVerificationState = createEmptyVerificationState();
 
     if (firmwareVersionSelect) {
         firmwareVersionSelect.innerHTML = '';
@@ -1786,6 +2479,8 @@ function clearFirmwareOptions() {
 function setFirmwareOptions(builds, configString, modelBuckets = new Map()) {
     firmwareOptions = Array.isArray(builds) ? builds.slice() : [];
     firmwareOptionsMap = new Map();
+    firmwareVerificationToken += 1;
+    firmwareVerificationState = createEmptyVerificationState();
 
     firmwareOptions.forEach(build => {
         firmwareOptionsMap.set(build.firmwareId, build);
@@ -1892,6 +2587,8 @@ function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelecto
 
     window.currentFirmware = firmware;
     firmwareStatusMessage = null;
+    firmwareVerificationToken += 1;
+    firmwareVerificationState = createEmptyVerificationState();
 
     if (updateConfigString) {
         if (firmware.config_string) {
@@ -1913,12 +2610,15 @@ function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelecto
     }
 
     updateFirmwareControls();
+    verifyCurrentFirmwareIntegrity();
 }
 
 function selectDefaultFirmware() {
     if (!firmwareOptions.length) {
         currentFirmwareSelectionId = null;
         window.currentFirmware = null;
+        firmwareVerificationToken += 1;
+        firmwareVerificationState = createEmptyVerificationState();
         renderSelectedFirmware();
         updateFirmwareControls();
         return;
@@ -1981,6 +2681,8 @@ function renderSelectedFirmware() {
 
 async function findCompatibleFirmware() {
     clearFirmwareOptions();
+
+    refreshSerialDetection({ promptUser: false });
 
     if (!configuration.mounting || !configuration.power) {
         window.currentConfigString = null;
@@ -2305,6 +3007,9 @@ function getFirmwarePartsMetadata(firmware) {
             const offsetValue = Number(part?.offset);
             const offset = Number.isFinite(offsetValue) ? Math.trunc(offsetValue) : null;
             const offsetHex = formatFirmwareOffset(offset);
+            const sha256 = typeof part?.sha256 === 'string' ? part.sha256.trim() : '';
+            const signature = typeof part?.signature === 'string' ? part.signature.trim() : '';
+            const md5 = typeof part?.md5 === 'string' ? part.md5.trim() : '';
 
             return {
                 index,
@@ -2312,10 +3017,251 @@ function getFirmwarePartsMetadata(firmware) {
                 resolvedUrl,
                 fileName,
                 offset,
-                offsetHex
+                offsetHex,
+                sha256,
+                signature,
+                md5
             };
         })
         .filter(Boolean);
+}
+
+function arrayBufferToHex(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let result = '';
+    for (let index = 0; index < bytes.length; index += 1) {
+        result += bytes[index].toString(16).padStart(2, '0');
+    }
+    return result;
+}
+
+function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let index = 0; index < bytes.length; index += 1) {
+        binary += String.fromCharCode(bytes[index]);
+    }
+    return btoa(binary);
+}
+
+async function computeSha256Hex(buffer) {
+    const digest = await window.crypto.subtle.digest('SHA-256', buffer);
+    return arrayBufferToHex(digest);
+}
+
+async function computeSignatureBase64(buffer) {
+    if (!signatureSaltBytes) {
+        throw new Error('Signature salt unavailable for verification.');
+    }
+    const dataBytes = new Uint8Array(buffer);
+    const combined = new Uint8Array(dataBytes.length + signatureSaltBytes.length);
+    combined.set(dataBytes, 0);
+    combined.set(signatureSaltBytes, dataBytes.length);
+    const digest = await window.crypto.subtle.digest('SHA-256', combined);
+    return arrayBufferToBase64(digest);
+}
+
+async function verifyFirmwarePart(part) {
+    const result = {
+        resolvedUrl: part.resolvedUrl,
+        fileName: part.fileName,
+        status: 'failed',
+        message: '',
+        sha256Match: false,
+        signatureMatch: false,
+        expectedSha256: (part.sha256 || '').toLowerCase(),
+        expectedSignature: (part.signature || '').trim(),
+        computedSha256: '',
+        computedSignature: ''
+    };
+
+    const targetName = part.fileName || 'firmware part';
+
+    try {
+        if (!part.resolvedUrl) {
+            throw new Error(`Missing URL for ${targetName}.`);
+        }
+        if (!result.expectedSha256) {
+            throw new Error(`Missing checksum for ${targetName}.`);
+        }
+        if (!result.expectedSignature) {
+            throw new Error(`Missing signature for ${targetName}.`);
+        }
+
+        const response = await fetch(part.resolvedUrl, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`Unable to download ${targetName} (HTTP ${response.status}).`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const computedSha = await computeSha256Hex(buffer);
+        result.computedSha256 = computedSha;
+        result.sha256Match = computedSha === result.expectedSha256;
+
+        const computedSignature = await computeSignatureBase64(buffer);
+        result.computedSignature = computedSignature;
+        result.signatureMatch = computedSignature === result.expectedSignature;
+
+        if (result.sha256Match && result.signatureMatch) {
+            result.status = 'verified';
+            result.message = 'Checksum and signature verified.';
+        } else if (!result.sha256Match) {
+            result.message = `Checksum mismatch for ${targetName}.`;
+        } else if (!result.signatureMatch) {
+            result.message = `Signature mismatch for ${targetName}.`;
+        } else {
+            result.message = `Verification failed for ${targetName}.`;
+        }
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Verification failed.';
+        if (!result.message) {
+            result.message = errorMessage;
+        }
+    }
+
+    return result;
+}
+
+function setFirmwareVerificationStateForTests(state) {
+    if (!state || typeof state !== 'object') {
+        firmwareVerificationState = createEmptyVerificationState();
+        return;
+    }
+
+    let partsEntries = [];
+    if (state.parts instanceof Map) {
+        partsEntries = Array.from(state.parts.entries());
+    } else if (Array.isArray(state.parts)) {
+        partsEntries = state.parts.filter(entry => Array.isArray(entry) && entry.length === 2);
+    }
+
+    firmwareVerificationState = {
+        status: state.status || 'idle',
+        message: state.message || '',
+        parts: new Map(partsEntries),
+        firmwareId: state.firmwareId || null
+    };
+}
+
+async function verifyCurrentFirmwareIntegrity() {
+    const firmware = window.currentFirmware;
+    const token = ++firmwareVerificationToken;
+
+    if (!firmware) {
+        firmwareVerificationState = createEmptyVerificationState();
+        updateFirmwareControls();
+        renderSelectedFirmware();
+        return;
+    }
+
+    const parts = getFirmwarePartsMetadata(firmware);
+    if (!parts.length) {
+        firmwareVerificationState = {
+            status: 'failed',
+            message: 'No firmware files available for verification.',
+            parts: new Map(),
+            firmwareId: firmware.firmwareId || null
+        };
+        updateFirmwareControls();
+        renderSelectedFirmware();
+        return;
+    }
+
+    if (!window.crypto || !window.crypto.subtle || !signatureSaltBytes) {
+        const failureMap = new Map();
+        parts.forEach(part => {
+            failureMap.set(part.resolvedUrl, {
+                status: 'failed',
+                message: 'Firmware verification not supported in this browser.',
+                sha256Match: false,
+                signatureMatch: false
+            });
+        });
+        firmwareVerificationState = {
+            status: 'failed',
+            message: 'Firmware verification is not supported in this browser.',
+            parts: failureMap,
+            firmwareId: firmware.firmwareId || null
+        };
+        updateFirmwareControls();
+        renderSelectedFirmware();
+        return;
+    }
+
+    const pendingMap = new Map();
+    parts.forEach(part => {
+        pendingMap.set(part.resolvedUrl, {
+            status: 'pending',
+            message: 'Verification pending…'
+        });
+    });
+
+    firmwareVerificationState = {
+        status: 'pending',
+        message: 'Verifying firmware…',
+        parts: pendingMap,
+        firmwareId: firmware.firmwareId || null
+    };
+    updateFirmwareControls();
+    renderSelectedFirmware();
+
+    try {
+        const results = await Promise.all(parts.map(part => verifyFirmwarePart(part)));
+        if (token !== firmwareVerificationToken) {
+            return;
+        }
+
+        const resultMap = new Map();
+        let overallStatus = 'verified';
+        let overallMessage = 'Firmware verified successfully.';
+
+        results.forEach(result => {
+            const status = normaliseVerificationStatus(result.status);
+            resultMap.set(result.resolvedUrl, {
+                status,
+                message: result.message || '',
+                sha256Match: result.sha256Match,
+                signatureMatch: result.signatureMatch
+            });
+
+            if (status !== 'verified' && overallStatus === 'verified') {
+                overallStatus = 'failed';
+                overallMessage = result.message || 'Firmware verification failed.';
+            }
+        });
+
+        firmwareVerificationState = {
+            status: overallStatus,
+            message: overallMessage,
+            parts: resultMap,
+            firmwareId: firmware.firmwareId || null
+        };
+    } catch (error) {
+        if (token !== firmwareVerificationToken) {
+            return;
+        }
+        console.error('Firmware verification failed:', error);
+        const failureMap = new Map();
+        parts.forEach(part => {
+            failureMap.set(part.resolvedUrl, {
+                status: 'failed',
+                message: 'Verification aborted due to an unexpected error.',
+                sha256Match: false,
+                signatureMatch: false
+            });
+        });
+        firmwareVerificationState = {
+            status: 'failed',
+            message: 'Unexpected error verifying firmware.',
+            parts: failureMap,
+            firmwareId: firmware.firmwareId || null
+        };
+    } finally {
+        if (token === firmwareVerificationToken) {
+            updateFirmwareControls();
+            renderSelectedFirmware();
+        }
+    }
 }
 
 function buildFirmwarePartsClipboardText(parts) {
@@ -2573,6 +3519,35 @@ function showToast(message, options = {}) {
     }, duration);
 }
 
+document.addEventListener('click', async event => {
+    const trigger = event.target.closest('[data-copy-text]');
+    if (!trigger) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (!navigator.clipboard) {
+        showToast('Copy not supported');
+        return;
+    }
+
+    const value = trigger.getAttribute('data-copy-text') || '';
+    if (!value) {
+        showToast('Nothing to copy');
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(value);
+        const label = trigger.getAttribute('data-copy-label') || 'Value';
+        showToast(`${label} copied`);
+    } catch (error) {
+        console.error('Failed to copy value:', error);
+        showToast('Copy failed');
+    }
+});
+
 function downloadFirmware() {
     if (!areDiagnosticsPassing()) {
         const message = getDiagnosticsBlockingMessage() || 'Resolve diagnostics before downloading firmware.';
@@ -2582,6 +3557,21 @@ function downloadFirmware() {
 
     const firmware = window.currentFirmware;
     const parts = getFirmwarePartsMetadata(firmware);
+
+    const verificationStatus = (firmwareVerificationState.status || '').toString().toLowerCase();
+    if (verificationStatus !== 'verified') {
+        if (verificationStatus === 'pending') {
+            showToast('Firmware verification in progress');
+        } else if (verificationStatus === 'failed') {
+            showToast(firmwareVerificationState.message || 'Firmware verification failed');
+        } else {
+            showToast('Verifying firmware…');
+            if (verificationStatus === 'idle' && firmware) {
+                verifyCurrentFirmwareIntegrity();
+            }
+        }
+        return;
+    }
 
     if (!parts.length) {
         return;
