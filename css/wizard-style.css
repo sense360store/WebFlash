@@ -1319,8 +1319,181 @@ h1 {
         align-items: stretch;
     }
 
-    .primary-action-group .ready-helper,
-    .firmware-actions .ready-helper {
-        text-align: center;
-    }
+.primary-action-group .ready-helper,
+.firmware-actions .ready-helper {
+    text-align: center;
+}
+}
+
+.firmware-parts {
+    border-top: 1px solid var(--color-border);
+    padding-top: 16px;
+    margin-top: 8px;
+}
+
+.firmware-parts h4 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.firmware-parts-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.firmware-part-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: baseline;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.firmware-part-name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+    word-break: break-all;
+}
+
+.firmware-part-offset {
+    font-family: 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+}
+
+.firmware-parts[data-multi-part="true"] .firmware-parts-hint {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+}
+
+.multi-part-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(17, 24, 39, 0.55);
+    z-index: 1100;
+}
+
+.multi-part-modal {
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text-primary, #111827);
+    border-radius: 12px;
+    max-width: 520px;
+    width: 100%;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.25);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.multi-part-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid var(--color-border, #d1d5db);
+}
+
+.multi-part-modal__header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.multi-part-modal__close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--color-text-tertiary, #6b7280);
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.multi-part-modal__body {
+    padding: 18px 22px;
+    overflow-y: auto;
+}
+
+.multi-part-modal__intro {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.multi-part-modal__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.multi-part-modal__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--color-surface-muted, #f3f4f6);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.multi-part-modal__item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.multi-part-modal__item-name {
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.multi-part-modal__item-offset {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    font-family: 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+}
+
+.multi-part-modal__item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.multi-part-modal__item-actions a {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent, #2563eb);
+    text-decoration: none;
+}
+
+.multi-part-modal__footer {
+    padding: 16px 22px 20px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid var(--color-border, #d1d5db);
+}
+
+.multi-part-modal-backdrop[hidden] {
+    display: none;
+}
+
+.multi-part-modal__footer .btn {
+    min-width: 140px;
 }

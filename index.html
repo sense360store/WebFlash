@@ -298,17 +298,34 @@
         </div>
 
         <div class="browser-check">
-            <div class="browser-warning" id="browser-warning" style="display: none;">
-                <h3>⚠️ Browser Not Supported</h3>
-                <p>This installer requires Chrome or Edge browser with Web Serial API support.</p>
-            </div>
+        <div class="browser-warning" id="browser-warning" style="display: none;">
+            <h3>⚠️ Browser Not Supported</h3>
+            <p>This installer requires Chrome or Edge browser with Web Serial API support.</p>
         </div>
     </div>
+</div>
 
-    <script src="scripts/support/errors.js"></script>
-    <script src="scripts/support/boundary.js"></script>
-    <script src="scripts/wizard-state-observer.js"></script>
-    <script type="module" src="scripts/state.js"></script>
+<div id="multi-part-download-modal" class="multi-part-modal-backdrop" hidden>
+    <div class="multi-part-modal" role="dialog" aria-modal="true" aria-labelledby="multi-part-modal-title">
+        <header class="multi-part-modal__header">
+            <h2 id="multi-part-modal-title">Multiple firmware files required</h2>
+            <button type="button" class="multi-part-modal__close" data-multi-part-close aria-label="Close multi-part firmware details">&times;</button>
+        </header>
+        <div class="multi-part-modal__body">
+            <p class="multi-part-modal__intro">Download each binary and flash it at the listed offset. Files are also linked below for quick access.</p>
+            <ul class="multi-part-modal__list" data-multi-part-list></ul>
+        </div>
+        <footer class="multi-part-modal__footer">
+            <button type="button" class="btn btn-secondary" data-multi-part-close>Close</button>
+            <button type="button" class="btn btn-primary" data-multi-part-copy>Copy all URLs</button>
+        </footer>
+    </div>
+</div>
+
+<script src="scripts/support/errors.js"></script>
+<script src="scripts/support/boundary.js"></script>
+<script src="scripts/wizard-state-observer.js"></script>
+<script type="module" src="scripts/state.js"></script>
     <script type="module" src="scripts/query-presets.js"></script>
     <script type="module" src="scripts/support/ui.js"></script>
 
