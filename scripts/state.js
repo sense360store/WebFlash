@@ -800,6 +800,9 @@ const serialDetectionSummary = document.getElementById('serial-detection-summary
 const serialDetectionList = document.getElementById('serial-detection-list');
 const serialDetectionGuidance = document.getElementById('serial-detection-guidance');
 const serialDetectionRefreshButton = document.getElementById('serial-detection-refresh');
+const POST_INSTALL_GUIDANCE_SELECTOR = '[data-post-install-guidance]';
+const POST_INSTALL_GUIDANCE_NOTE_SELECTOR = '[data-post-install-guidance-note]';
+const POST_INSTALL_GUIDANCE_ACTION_SELECTOR = '.post-install-guidance__action';
 let firmwareOptions = [];
 let firmwareOptionsMap = new Map();
 let currentFirmwareSelectionId = null;
@@ -809,6 +812,257 @@ let firmwareStatusMessage = null;
 let currentFirmwareYamlDownloadUrl = null;
 
 window.currentFirmwareYaml = null;
+
+const postInstallGuidanceState = {
+    available: false,
+    seen: false,
+    actionsUnlocked: false,
+    revealedAt: null,
+    note: null,
+    firmwareId: null,
+    firmwareVersion: null,
+    firmwareChannel: null,
+    configString: null,
+    firmwareDisplayName: null
+};
+
+if (typeof window !== 'undefined') {
+    window.webflashPostInstallGuidance = postInstallGuidanceState;
+}
+
+let postInstallGuidanceElements = null;
+
+function hydratePostInstallGuidanceCopySources(panel) {
+    if (!panel) {
+        return;
+    }
+
+    const sources = panel.querySelectorAll('[data-copy-source]');
+    sources.forEach(source => {
+        const container = source.closest('.post-install-guidance__actions') || panel;
+        if (!container) {
+            return;
+        }
+
+        const copyText = source.textContent ? source.textContent.trim() : '';
+        if (!copyText) {
+            return;
+        }
+
+        const targets = container.querySelectorAll('[data-copy-text]');
+        targets.forEach(target => {
+            if (!target) {
+                return;
+            }
+
+            target.setAttribute('data-copy-text', copyText);
+            if (!target.hasAttribute('data-copy-label')) {
+                const label = target.textContent ? target.textContent.trim() : 'Value';
+                target.setAttribute('data-copy-label', label || 'Value');
+            }
+        });
+    });
+}
+
+function hydratePostInstallGuidanceCollapseControls(panel) {
+    if (!panel) {
+        return [];
+    }
+
+    const toggles = Array.from(panel.querySelectorAll('[data-guidance-toggle]'));
+    const boundToggles = [];
+
+    toggles.forEach(toggle => {
+        if (!toggle || toggle.dataset.guidanceCollapseBound === 'true') {
+            return;
+        }
+
+        const targetSelector = toggle.getAttribute('data-guidance-toggle');
+        if (!targetSelector) {
+            return;
+        }
+
+        let target = null;
+        try {
+            target = panel.querySelector(targetSelector);
+        } catch (error) {
+            target = null;
+        }
+
+        if (!target && targetSelector.startsWith('#')) {
+            target = document.getElementById(targetSelector.slice(1));
+        }
+
+        if (!target) {
+            return;
+        }
+
+        const updateVisibility = (expanded) => {
+            toggle.setAttribute('aria-expanded', String(expanded));
+            if (expanded) {
+                target.hidden = false;
+                target.classList.remove('is-collapsed');
+            } else {
+                target.hidden = true;
+                target.classList.add('is-collapsed');
+            }
+        };
+
+        const initialExpanded = toggle.getAttribute('aria-expanded') === 'true';
+        updateVisibility(initialExpanded);
+
+        const handleToggle = (event) => {
+            if (event) {
+                event.preventDefault();
+            }
+            const expanded = toggle.getAttribute('aria-expanded') === 'true';
+            updateVisibility(!expanded);
+        };
+
+        toggle.addEventListener('click', handleToggle);
+        toggle.dataset.guidanceCollapseBound = 'true';
+        boundToggles.push({ toggle, target });
+    });
+
+    return boundToggles;
+}
+
+function setPostInstallGuidanceActionsEnabled(isEnabled) {
+    if (!postInstallGuidanceElements || !Array.isArray(postInstallGuidanceElements.actions)) {
+        return;
+    }
+
+    postInstallGuidanceElements.actions.forEach(action => {
+        if (!action) {
+            return;
+        }
+
+        action.classList.toggle('is-disabled', !isEnabled);
+
+        if (action.tagName === 'BUTTON') {
+            action.disabled = !isEnabled;
+            return;
+        }
+
+        if (action.tagName === 'A') {
+            if (action.dataset.guidanceGuardBound !== 'true') {
+                action.addEventListener('click', (event) => {
+                    if (action.dataset.guidanceLocked === 'true') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                });
+                action.dataset.guidanceGuardBound = 'true';
+            }
+
+            action.dataset.guidanceLocked = (!isEnabled).toString();
+            if (!isEnabled) {
+                action.setAttribute('aria-disabled', 'true');
+                action.setAttribute('tabindex', '-1');
+            } else {
+                action.removeAttribute('aria-disabled');
+                action.removeAttribute('tabindex');
+            }
+        }
+    });
+
+    postInstallGuidanceState.actionsUnlocked = Boolean(isEnabled);
+}
+
+function formatPostInstallGuidanceNote(firmware) {
+    if (!firmware) {
+        return 'Firmware install finished.';
+    }
+
+    const parts = [];
+    const version = (firmware.version || '').toString().trim();
+    const channel = (firmware.channel || '').toString().trim();
+    const configString = (firmware.config_string || window.currentConfigString || '').toString().trim();
+
+    if (configString) {
+        parts.push(`config ${configString}`);
+    }
+    if (version) {
+        parts.push(`version ${version}`);
+    }
+    if (channel) {
+        parts.push(`${channel} channel`);
+    }
+
+    if (!parts.length) {
+        return 'Firmware install finished.';
+    }
+
+    return `Installed ${parts.join(' · ')}.`;
+}
+
+function setupPostInstallGuidancePanel() {
+    if (postInstallGuidanceElements && postInstallGuidanceElements.initialized) {
+        return postInstallGuidanceElements;
+    }
+
+    const panel = document.querySelector(POST_INSTALL_GUIDANCE_SELECTOR);
+    postInstallGuidanceElements = {
+        panel,
+        note: null,
+        actions: [],
+        toggles: [],
+        initialized: false
+    };
+
+    postInstallGuidanceState.available = Boolean(panel);
+
+    if (!panel) {
+        return postInstallGuidanceElements;
+    }
+
+    const note = panel.querySelector(POST_INSTALL_GUIDANCE_NOTE_SELECTOR);
+    const actions = Array.from(panel.querySelectorAll(POST_INSTALL_GUIDANCE_ACTION_SELECTOR));
+
+    postInstallGuidanceElements.note = note || null;
+    postInstallGuidanceElements.actions = actions;
+
+    hydratePostInstallGuidanceCopySources(panel);
+    postInstallGuidanceElements.toggles = hydratePostInstallGuidanceCollapseControls(panel);
+    setPostInstallGuidanceActionsEnabled(false);
+
+    panel.hidden = true;
+    panel.setAttribute('data-guidance-ready', 'true');
+
+    postInstallGuidanceElements.initialized = true;
+    return postInstallGuidanceElements;
+}
+
+function revealPostInstallGuidance(firmware) {
+    const elements = setupPostInstallGuidancePanel();
+
+    const noteText = formatPostInstallGuidanceNote(firmware);
+    postInstallGuidanceState.seen = true;
+    postInstallGuidanceState.revealedAt = new Date().toISOString();
+    postInstallGuidanceState.note = noteText;
+    postInstallGuidanceState.firmwareId = firmware ? getFirmwareId(firmware) : null;
+    postInstallGuidanceState.firmwareVersion = firmware?.version ?? null;
+    postInstallGuidanceState.firmwareChannel = firmware?.channel ?? null;
+    postInstallGuidanceState.configString = firmware?.config_string ?? window.currentConfigString ?? null;
+    postInstallGuidanceState.firmwareDisplayName = firmware ? getFirmwareDisplayName(firmware, window.currentConfigString || '') : null;
+
+    if (!elements || !elements.panel) {
+        postInstallGuidanceState.available = false;
+        postInstallGuidanceState.actionsUnlocked = false;
+        return;
+    }
+
+    elements.panel.hidden = false;
+    elements.panel.removeAttribute('hidden');
+    elements.panel.setAttribute('data-guidance-visible', 'true');
+
+    if (elements.note) {
+        elements.note.textContent = noteText;
+        elements.note.hidden = !noteText;
+    }
+
+    setPostInstallGuidanceActionsEnabled(true);
+}
 
         const text = button.dataset.copyText || '';
         if (!text) {
