@@ -17,7 +17,14 @@ function resolveStorageCandidate(source) {
         return injected;
     }
 
-    const storage = source.localStorage;
+    let storage;
+    try {
+        storage = source.localStorage;
+    } catch (error) {
+        console.warn('Failed to access localStorage on candidate source', error);
+        return null;
+    }
+
     if (storage && typeof storage.getItem === 'function') {
         return storage;
     }
