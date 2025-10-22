@@ -14,11 +14,19 @@
         stable: 'stable',
         ga: 'stable',
         release: 'stable',
+        prod: 'stable',
+        production: 'stable',
+        lts: 'stable',
         beta: 'beta',
-        preview: 'beta',
+        preview: 'preview',
+        prerelease: 'preview',
+        rc: 'beta',
+        candidate: 'beta',
         dev: 'dev',
+        alpha: 'dev',
         nightly: 'dev',
-        canary: 'dev'
+        canary: 'dev',
+        experimental: 'dev'
     };
 
     const subscribers = new Set();

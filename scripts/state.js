@@ -76,30 +76,46 @@ const CHANNEL_ALIAS_MAP = {
     stable: 'stable',
     ga: 'stable',
     release: 'stable',
+    prod: 'stable',
+    production: 'stable',
+    lts: 'stable',
     beta: 'beta',
-    preview: 'beta',
+    preview: 'preview',
+    prerelease: 'preview',
+    rc: 'beta',
+    candidate: 'beta',
     dev: 'dev',
+    alpha: 'dev',
     nightly: 'dev',
-    canary: 'dev'
+    canary: 'dev',
+    experimental: 'dev'
 };
 
 const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
-    stable: 'general',
-    general: 'general',
-    beta: 'preview',
-    preview: 'preview'
+    stable: 'stable',
+    general: 'stable',
+    preview: 'preview',
+    prerelease: 'preview',
+    beta: 'beta',
+    rc: 'beta',
+    candidate: 'beta'
 };
 
 const CHANNEL_DISPLAY_MAP = {
     stable: {
-        label: 'General Release',
-        description: 'Recommended for most installations and validated for production deployments.',
-        notesFallback: 'General release notes are not available for this firmware version yet.'
+        label: 'Stable Release',
+        description: 'Recommended for production deployments with full validation.',
+        notesFallback: 'Stable release notes are not available for this firmware version yet.'
+    },
+    preview: {
+        label: 'Preview Release',
+        description: 'Early-access builds for evaluating upcoming capabilities with limited validation.',
+        notesFallback: 'Preview release notes are not yet available for this firmware version.'
     },
     beta: {
-        label: 'Preview Release',
-        description: 'Preview upcoming capabilities with limited validation. Expect rapid updates.',
-        notesFallback: 'Preview release notes are not yet available for this firmware version.'
+        label: 'Beta Release',
+        description: 'Release candidate builds for broader testing ahead of stable rollout.',
+        notesFallback: 'Beta release notes are not yet available for this firmware version.'
     },
     dev: {
         label: 'Development Build',
@@ -119,12 +135,19 @@ const CHANNEL_PRIORITY_MAP = {
     stable: 0,
     ga: 0,
     release: 0,
-    beta: 1,
+    prod: 0,
+    production: 0,
+    lts: 0,
     preview: 1,
-    dev: 2,
-    nightly: 2,
-    canary: 2,
-    experimental: 2
+    prerelease: 1,
+    beta: 2,
+    rc: 2,
+    candidate: 2,
+    dev: 3,
+    alpha: 3,
+    nightly: 3,
+    canary: 3,
+    experimental: 3
 };
 
 function normaliseChannelKey(channel) {
