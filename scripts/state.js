@@ -514,6 +514,209 @@ function getRescueInstallHistory() {
     return rescueInstallHistory.slice();
 }
 
+const POST_INSTALL_GUIDANCE_SELECTOR = '[data-post-install-guidance]';
+const POST_INSTALL_GUIDANCE_NOTE_SELECTOR = '[data-post-install-guidance-note]';
+const INSTALL_SUCCESS_STATES = new Set(['finished', 'complete', 'completed', 'success']);
+
+const postInstallGuidanceState = {
+    seen: false,
+    lastShownAt: null,
+    firmwareId: null,
+    firmwareVersion: null,
+    firmwareChannel: null,
+    configString: null
+};
+
+function syncPostInstallGuidanceState(partial = {}) {
+    Object.assign(postInstallGuidanceState, partial);
+    if (typeof window !== 'undefined') {
+        window.webflashPostInstallGuidance = { ...postInstallGuidanceState };
+    }
+}
+
+const existingGuidanceState = typeof window !== 'undefined'
+    && window.webflashPostInstallGuidance
+    && typeof window.webflashPostInstallGuidance === 'object'
+        ? window.webflashPostInstallGuidance
+        : null;
+
+if (existingGuidanceState) {
+    Object.assign(postInstallGuidanceState, existingGuidanceState);
+}
+
+syncPostInstallGuidanceState();
+
+function getPostInstallGuidancePanel() {
+    return document.querySelector(POST_INSTALL_GUIDANCE_SELECTOR);
+}
+
+function formatGuidanceTimestamp(isoString) {
+    if (!isoString) {
+        return '';
+    }
+
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
+function resolveFirmwareFromHost(host) {
+    if (!host) {
+        return window.currentFirmware || null;
+    }
+
+    const firmwareId = host.dataset?.firmwareId
+        || host.querySelector?.('button[slot="activate"]')?.dataset?.firmwareId
+        || null;
+
+    if (firmwareId && firmwareOptionsMap.has(firmwareId)) {
+        return firmwareOptionsMap.get(firmwareId);
+    }
+
+    return window.currentFirmware || null;
+}
+
+function revealPostInstallGuidance(firmware = window.currentFirmware) {
+    const panel = getPostInstallGuidancePanel();
+    const nowIso = new Date().toISOString();
+    const configString = firmware?.config_string || window.currentConfigString || null;
+
+    syncPostInstallGuidanceState({
+        seen: true,
+        lastShownAt: nowIso,
+        firmwareId: firmware?.firmwareId || firmware?.firmware_id || null,
+        firmwareVersion: firmware?.version || null,
+        firmwareChannel: firmware?.channel || null,
+        configString
+    });
+
+    if (!panel) {
+        return;
+    }
+
+    if (panel.hidden) {
+        panel.hidden = false;
+    }
+
+    panel.classList.add('is-visible');
+    panel.setAttribute('data-visible', 'true');
+
+    const note = panel.querySelector(POST_INSTALL_GUIDANCE_NOTE_SELECTOR);
+    if (note) {
+        const labelParts = [];
+        const modelLabel = firmware?.device_type || firmware?.model || null;
+        if (modelLabel) {
+            labelParts.push(modelLabel);
+        } else if (configString) {
+            labelParts.push(configString);
+        }
+        if (firmware?.version) {
+            labelParts.push(`v${firmware.version}`);
+        }
+
+        const timestampLabel = formatGuidanceTimestamp(nowIso);
+        const context = labelParts.join(' ').trim();
+
+        if (timestampLabel && context) {
+            note.textContent = `Guidance shown for ${context} at ${timestampLabel}.`;
+        } else if (timestampLabel) {
+            note.textContent = `Guidance shown at ${timestampLabel}.`;
+        } else if (context) {
+            note.textContent = `Guidance shown for ${context}.`;
+        } else {
+            note.textContent = 'Guidance shown just now.';
+        }
+        note.hidden = false;
+    }
+}
+
+function isInstallSuccessEvent(event) {
+    if (!event || typeof event !== 'object') {
+        return false;
+    }
+
+    if (event.type === 'install-success' || event.type === 'install-complete') {
+        const detail = event.detail;
+        if (detail && typeof detail === 'object' && (detail.error || detail.details?.error)) {
+            return false;
+        }
+        return true;
+    }
+
+    if (event.type !== 'state-changed') {
+        return false;
+    }
+
+    const detail = event.detail;
+    if (detail && typeof detail === 'object') {
+        if (detail.error || detail.details?.error) {
+            return false;
+        }
+
+        const stateValue = detail.state || detail.status || detail.phase || detail.stage;
+        if (typeof stateValue === 'string') {
+            return INSTALL_SUCCESS_STATES.has(stateValue.toLowerCase());
+        }
+
+        if (typeof detail.details?.state === 'string') {
+            return INSTALL_SUCCESS_STATES.has(detail.details.state.toLowerCase());
+        }
+
+        return false;
+    }
+
+    if (typeof detail === 'string') {
+        return INSTALL_SUCCESS_STATES.has(detail.toLowerCase());
+    }
+
+    return false;
+}
+
+function setupPostInstallGuidancePanel() {
+    const panel = getPostInstallGuidancePanel();
+    if (!panel || panel.dataset.guidanceBound === 'true') {
+        return;
+    }
+
+    panel.addEventListener('click', async event => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const button = target?.closest?.('[data-copy-text]');
+        if (!button || !(button instanceof HTMLElement) || !panel.contains(button)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const text = button.dataset.copyText || '';
+        if (!text) {
+            return;
+        }
+
+        if (!navigator.clipboard) {
+            showToast('Copy not supported');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            const message = button.dataset.copySuccess || 'Copied';
+            showToast(message);
+        } catch (error) {
+            console.error('Failed to copy guidance text', error);
+            showToast('Copy failed');
+        }
+    });
+
+    panel.dataset.guidanceBound = 'true';
+}
+
 function syncChecklistCompletion() {
     const section = document.querySelector('.pre-flash-checklist');
     if (!section) return;
@@ -753,35 +956,42 @@ function attachInstallButtonListeners() {
             activateButton.dataset.checklistBound = 'true';
         }
 
-        if (host.dataset.serialLogBound === 'true') {
-            return;
-        }
-
-        const bindLogForwarding = () => {
-            if (host.dataset.serialLogBound === 'true') {
-                return;
-            }
-
-            const forwardLogEvent = (event) => {
-                const message = event?.detail?.message ?? event?.detail ?? '';
-                if (typeof message !== 'string' || message.length === 0) {
+        if (host.dataset.installGuidanceBound !== 'true') {
+            const handleInstallStateChange = (event) => {
+                if (!isInstallSuccessEvent(event)) {
                     return;
                 }
-                window.supportBundle?.pushSerial?.(message);
+
+                const firmware = resolveFirmwareFromHost(host) || window.currentFirmware;
+                revealPostInstallGuidance(firmware);
             };
 
-            const resetSerialBuffer = (event) => {
-                const detail = event?.detail;
-                const state = typeof detail === 'string' ? detail : detail?.state;
-                if (!state) {
+            host.addEventListener('state-changed', handleInstallStateChange);
+            host.addEventListener('install-success', handleInstallStateChange);
+            host.addEventListener('install-complete', handleInstallStateChange);
+
+            host.dataset.installGuidanceBound = 'true';
+        }
+
+        if (host.dataset.serialLogBound !== 'true') {
+            const bindLogForwarding = () => {
+                if (host.dataset.serialLogBound === 'true') {
                     return;
                 }
 
-                if (state === 'initializing' || state === 'preparing') {
-                    const isInProgress = typeof detail === 'object'
-                        ? detail.details?.done === false || detail.details === undefined
-                        : true;
+                const forwardLogEvent = (event) => {
+                    const message = event?.detail?.message ?? event?.detail ?? '';
+                    if (typeof message !== 'string' || message.length === 0) {
+                        return;
+                    }
+                    window.supportBundle?.pushSerial?.(message);
+                };
 
+                const resetSerialBuffer = (event) => {
+                    const detail = event?.detail;
+                    const state = typeof detail === 'string' ? detail : detail?.state;
+                    if (!state) {
+                        return;
                     if (isInProgress) {
                         window.supportBundle?.clearSerial?.();
                         if (isRescueHost) {
@@ -802,39 +1012,49 @@ function attachInstallButtonListeners() {
                             recordRescueInstallEvent('session-error', summary);
                         }
                     }
-                }
+
+                    if (state === 'initializing' || state === 'preparing') {
+                        const isInProgress = typeof detail === 'object'
+                            ? detail.details?.done === false || detail.details === undefined
+                            : true;
+
+                        if (isInProgress) {
+                            window.supportBundle?.clearSerial?.();
+                        }
+                    }
+                };
+
+                // ESP Web Tools dispatches "log"/"console" events from the install button
+                // to expose console output. Forward the payload to the support bundle so
+                // that generated bundles include raw serial logs for troubleshooting.
+                host.addEventListener('log', forwardLogEvent);
+                host.addEventListener('console', forwardLogEvent);
+
+                // The flashing dialog also emits "state-changed" events as the install
+                // progresses. When a new session moves into the initializing/preparing
+                // phase we reset the buffered log output so the bundle only contains the
+                // latest attempt.
+                host.addEventListener('state-changed', resetSerialBuffer);
+
+                host.dataset.serialLogBound = 'true';
             };
 
-            // ESP Web Tools dispatches "log"/"console" events from the install button
-            // to expose console output. Forward the payload to the support bundle so
-            // that generated bundles include raw serial logs for troubleshooting.
-            host.addEventListener('log', forwardLogEvent);
-            host.addEventListener('console', forwardLogEvent);
-
-            // The flashing dialog also emits "state-changed" events as the install
-            // progresses. When a new session moves into the initializing/preparing
-            // phase we reset the buffered log output so the bundle only contains the
-            // latest attempt.
-            host.addEventListener('state-changed', resetSerialBuffer);
-
-            host.dataset.serialLogBound = 'true';
-        };
-
-        if (isManifestReady()) {
-            bindLogForwarding();
-        } else if (host.dataset.serialLogPending !== 'true') {
-            host.dataset.serialLogPending = 'true';
-            manifestReadyPromise
-                .then(() => {
-                    delete host.dataset.serialLogPending;
-                    if (!document.body.contains(host)) {
-                        return;
-                    }
-                    bindLogForwarding();
-                })
-                .catch(() => {
-                    delete host.dataset.serialLogPending;
-                });
+            if (isManifestReady()) {
+                bindLogForwarding();
+            } else if (host.dataset.serialLogPending !== 'true') {
+                host.dataset.serialLogPending = 'true';
+                manifestReadyPromise
+                    .then(() => {
+                        delete host.dataset.serialLogPending;
+                        if (!document.body.contains(host)) {
+                            return;
+                        }
+                        bindLogForwarding();
+                    })
+                    .catch(() => {
+                        delete host.dataset.serialLogPending;
+                    });
+            }
         }
     });
 }
@@ -929,6 +1149,7 @@ function initializeWizard() {
 
     syncChecklistCompletion();
     setupRememberPreferenceControls();
+    setupPostInstallGuidancePanel();
     window.webflashRescueInstallHistory = rescueInstallHistory;
 
     document.querySelectorAll('input[name="mounting"]').forEach(input => {

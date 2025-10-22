@@ -186,6 +186,11 @@ function gatherStateSnapshot() {
         ...gatherFirmwareContext()
     };
 
+    const guidanceState = typeof window !== 'undefined' ? window.webflashPostInstallGuidance : null;
+    if (guidanceState && typeof guidanceState === 'object') {
+        snapshot.postInstallGuidance = { ...guidanceState };
+    } else {
+        snapshot.postInstallGuidance = { seen: false };
     const rescueHistory = Array.isArray(window.webflashRescueInstallHistory)
         ? window.webflashRescueInstallHistory
         : [];

@@ -1095,6 +1095,117 @@ h1 {
     color: #fff;
 }
 
+.post-install-guidance {
+    margin-top: 28px;
+    padding: 22px 24px;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--color-border));
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    box-shadow: 0 16px 32px -24px rgba(0, 27, 43, 0.55);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+.post-install-guidance.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.post-install-guidance__header {
+    margin-bottom: 16px;
+}
+
+.post-install-guidance__header h3 {
+    margin: 0 0 6px;
+}
+
+.post-install-guidance__header p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.post-install-guidance__note {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+}
+
+.post-install-guidance__list {
+    margin: 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 18px;
+}
+
+.post-install-guidance__item {
+    padding-left: 4px;
+}
+
+.post-install-guidance__item-heading h4 {
+    margin: 0 0 6px;
+    font-size: 16px;
+}
+
+.post-install-guidance__actions {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.post-install-guidance__actions--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.post-install-guidance__action {
+    flex-shrink: 0;
+}
+
+.post-install-guidance__code {
+    display: block;
+    font-size: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    max-width: 100%;
+    word-break: break-word;
+}
+
+.post-install-guidance__pitfall {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-left: 3px solid color-mix(in srgb, var(--warning) 65%, var(--color-border));
+    background: color-mix(in srgb, var(--warning) 12%, var(--bg-elev-1));
+    border-radius: 8px;
+    font-size: 14px;
+    color: color-mix(in srgb, var(--warning) 55%, var(--color-text-primary));
+}
+
+.post-install-guidance__pitfall code {
+    font-size: 13px;
+}
+
+@media (max-width: 768px) {
+    .post-install-guidance {
+        padding: 18px;
+    }
+
+    .post-install-guidance__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .post-install-guidance__actions--stacked {
+        gap: 10px;
+    }
+
+    .post-install-guidance__action {
+        width: 100%;
+    }
+}
+
 .pre-flash-checklist [data-checklist-item][data-complete="true"] .status-icon::before {
     opacity: 1;
     transform: scale(1);
