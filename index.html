@@ -217,6 +217,23 @@
                     </div>
                 </div>
 
+                <section class="preset-panel" id="preset-manager" aria-labelledby="preset-manager-title">
+                    <div class="preset-panel__header">
+                        <h3 class="preset-panel__title" id="preset-manager-title">Presets</h3>
+                        <p class="preset-panel__description">Save and reuse frequently used configurations.</p>
+                    </div>
+                    <ul class="preset-panel__list" data-preset-list role="list"></ul>
+                    <p class="preset-panel__empty" data-preset-empty>Save your first preset to get started.</p>
+                    <form class="preset-panel__form" data-preset-form>
+                        <label class="preset-panel__label" for="preset-name-input">Preset name</label>
+                        <div class="preset-panel__controls">
+                            <input id="preset-name-input" type="text" name="preset-name" data-preset-name placeholder="e.g. Wall • USB • Pro modules" autocomplete="off">
+                            <button type="submit" class="btn btn-secondary btn-small" data-preset-save disabled>Save preset</button>
+                        </div>
+                        <p class="preset-panel__hint">Presets capture your selections from steps 1–3.</p>
+                    </form>
+                </section>
+
                 <div class="remember-preference">
                     <label class="remember-toggle">
                         <input type="checkbox" data-remember-toggle>
