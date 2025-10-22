@@ -62,7 +62,7 @@ The WebFlash wizard focuses on the Sense360 modular platform. Firmware is organi
 - **Power** – Select from USB power, a POE backplate, or the external PWR supply module.
 - **Modules** – AirIQ (None/Base/Pro), Presence (None/Base/Pro), Comfort (None/Base), and Fan (None/PWM/Analog, wall-only).
 
-Each firmware build is grouped by a configuration string that concatenates the selected options (for example, `Wall-USB-AirIQPro` becomes Mount-Power-Modules). Current entries in `manifest.json` include `Ceiling-POE-AirIQBase`, `Ceiling-PWR-AirIQPro-Presence-Comfort`, `Wall-POE-AirIQBase`, and `Wall-USB`. The manifest also tracks Sense360-MS Standard binaries, which appear without a configuration string while the new modular catalogue matures.
+Each firmware build is grouped by a configuration string that concatenates the selected options (for example, `Wall-USB-AirIQPro` becomes Mount-Power-Modules). Current entries in `manifest.json` include `Ceiling-POE-AirIQBase`, `Ceiling-PWR-AirIQPro-Presence-Comfort`, `Wall-POE-AirIQBase`, and `Wall-USB`.
 
 Availability depends on what firmware we publish. Always prefer **general** builds for production devices.
 
@@ -118,9 +118,6 @@ Need a dry run? Append `--dry-run` to `scripts/gen-manifests.py` or `scripts/syn
 
 #### Support share links
 
-Support and QA often rely on the **Copy sharable link** button in the sidebar to capture the current firmware recommendation. That helper now understands both modular and Sense360-MS devices:
-
-- **Modular hubs** – links continue to encode the wizard selections (`mount`, `power`, `airiq`, `presence`, `comfort`, `fan`) alongside the requested `channel`.
-- **Sense360-MS** – when a Sense360-MS build is active, links emit `model=Sense360-MS` and `variant=Standard`. The optional add-on firmware also adds `sensor_addon=sen55-hlk2450`. Include `channel` to target a specific release track (stable, beta, etc.).
+Support and QA often rely on the **Copy sharable link** button in the sidebar to capture the current firmware recommendation. Links encode the wizard selections (`mount`, `power`, `airiq`, `presence`, `comfort`, `fan`) alongside the requested `channel`.
 
 These query parameters also work when composing troubleshooting links manually.

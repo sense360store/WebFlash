@@ -17,7 +17,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -45,7 +45,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -73,7 +73,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -101,7 +101,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -129,7 +129,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -157,7 +157,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:58:06.048143+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -185,7 +185,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -213,7 +213,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:58:06.048143+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -241,7 +241,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:58:06.048143+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -269,7 +269,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -299,7 +299,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -329,7 +329,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.353832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -357,7 +357,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.353832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -374,6 +374,32 @@
     },
     {
       "device_type": "Core Module",
+      "version": "1.1.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-USB configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-v1.1.0-stable.bin",
+          "offset": 0,
+          "md5": "e02ba33bea0997b543ddac28af33fc2f"
+        }
+      ],
+      "build_date": "2025-10-22T14:05:14.874544+00:00",
+      "file_size": 1032016,
+      "improv": true,
+      "md5": "e02ba33bea0997b543ddac28af33fc2f",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-USB",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": []
+    },
+    {
+      "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Wall-USB configuration. Recommended for production deployments.",
@@ -385,7 +411,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.353832+00:00",
+      "build_date": "2025-10-22T14:05:14.858544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -411,7 +437,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.353832+00:00",
+      "build_date": "2025-10-22T14:05:14.858544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -437,7 +463,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.353832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -465,7 +491,7 @@
           "md5": "1eb1fea3994bbbeea11080159dbbe611"
         }
       ],
-      "build_date": "2025-10-17T09:04:37.353832+00:00",
+      "build_date": "2025-10-22T14:05:14.854544+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -479,106 +505,6 @@
       "modules": [
         "AirIQPro"
       ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360-MS Standard. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "e97def6cc38584770512c0bb0ff6a32d"
-        }
-      ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
-      "file_size": 97,
-      "improv": true,
-      "md5": "e97def6cc38584770512c0bb0ff6a32d",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "sensor_addon": null
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360-MS Standard. Use for broader testing ahead of production rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-beta.bin",
-          "offset": 0,
-          "md5": "e97def6cc38584770512c0bb0ff6a32d"
-        }
-      ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
-      "file_size": 97,
-      "improv": true,
-      "md5": "e97def6cc38584770512c0bb0ff6a32d",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "sensor_addon": null
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360-MS Standard (sen55-hlk2450). Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "c264fd3eed9a39ff8247f4ff46fa62b1"
-        }
-      ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
-      "file_size": 121,
-      "improv": true,
-      "md5": "c264fd3eed9a39ff8247f4ff46fa62b1",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "sensor_addon": "sen55-hlk2450"
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360-MS Standard (sen55-hlk2450). Use for broader testing ahead of production rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-sen55-hlk2450-v1.0.0-beta.bin",
-          "offset": 0,
-          "md5": "c264fd3eed9a39ff8247f4ff46fa62b1"
-        }
-      ],
-      "build_date": "2025-10-17T09:04:37.349832+00:00",
-      "file_size": 121,
-      "improv": true,
-      "md5": "c264fd3eed9a39ff8247f4ff46fa62b1",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "model": "Sense360-MS",
-      "variant": "Standard",
-      "sensor_addon": "sen55-hlk2450"
     }
   ]
 }
