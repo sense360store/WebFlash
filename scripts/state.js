@@ -1239,6 +1239,37 @@ function getFirmwareDisplayName(firmware, fallbackConfigString = '') {
     return `${model}${variantSegment}${sensorAddonSegment}${versionSegment}${channelSegment}.bin`;
 }
 
+function renderFirmwarePartsSection(firmware) {
+    const parts = getFirmwarePartsMetadata(firmware);
+    if (!parts.length) {
+        return '';
+    }
+
+    const listItems = parts
+        .map(part => {
+            const offsetText = part.offsetHex ? `Offset ${part.offsetHex}` : 'Offset not specified';
+            return `
+                <li class="firmware-part-row">
+                    <span class="firmware-part-name">${escapeHtml(part.fileName)}</span>
+                    <span class="firmware-part-offset">${escapeHtml(offsetText)}</span>
+                </li>
+            `;
+        })
+        .join('');
+
+    const hint = parts.length > 1
+        ? '<p class="firmware-parts-hint">Flash each file to the offset shown below.</p>'
+        : '';
+
+    return `
+        <section class="firmware-parts" data-multi-part="${parts.length > 1}">
+            <h4>${parts.length > 1 ? 'Firmware files' : 'Firmware file'}</h4>
+            <ul class="firmware-parts-list">${listItems}</ul>
+            ${hint}
+        </section>
+    `;
+}
+
 function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'primary', cardClassName = 'firmware-card' } = {}) {
     if (!firmware) {
         return '';
@@ -1306,6 +1337,8 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
         `
         : '';
 
+    const partsSectionHtml = renderFirmwarePartsSection(firmware);
+
     const descriptionHtml = firmware.description
         ? `<p class="firmware-description">${escapeHtml(firmware.description)}</p>`
         : '';
@@ -1334,6 +1367,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                     <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                 </div>
             </div>
+            ${partsSectionHtml}
             ${metadataBlock}
             <div class="release-notes-section" id="${escapeHtml(releaseNotesId)}" data-release-notes-container data-loaded="false" style="display: none;">
                 <div class="release-notes-content">
@@ -1943,42 +1977,271 @@ async function loadReleaseNotes({ notesSection, firmwareId }) {
     }
 }
 
-function getResolvedFirmwareUrl() {
-    if (!window.currentFirmware || !Array.isArray(window.currentFirmware.parts) || window.currentFirmware.parts.length === 0) {
+const MULTI_PART_MODAL_ID = 'multi-part-download-modal';
+
+let multiPartModalElements = null;
+let multiPartModalRestoreFocus = null;
+
+function formatFirmwareOffset(offset) {
+    if (!Number.isFinite(offset)) {
         return null;
     }
 
-    const firmwarePath = window.currentFirmware.parts[0].path;
-    if (!firmwarePath) {
+    const hex = Math.max(0, Math.trunc(offset)).toString(16).toUpperCase();
+    const padded = hex.padStart(Math.max(6, hex.length), '0');
+    return `0x${padded}`;
+}
+
+function getFirmwarePartsMetadata(firmware) {
+    if (!firmware || !Array.isArray(firmware.parts) || firmware.parts.length === 0) {
+        return [];
+    }
+
+    return firmware.parts
+        .map((part, index) => {
+            const path = typeof part?.path === 'string' ? part.path.trim() : '';
+            if (!path) {
+                return null;
+            }
+
+            let resolvedUrl = path;
+            try {
+                resolvedUrl = new URL(path, window.location.href).href;
+            } catch (error) {
+                console.warn('Unable to resolve firmware part URL:', error);
+            }
+
+            const fileName = path.split('/').filter(Boolean).pop() || `firmware-part-${index + 1}.bin`;
+            const offsetValue = Number(part?.offset);
+            const offset = Number.isFinite(offsetValue) ? Math.trunc(offsetValue) : null;
+            const offsetHex = formatFirmwareOffset(offset);
+
+            return {
+                index,
+                path,
+                resolvedUrl,
+                fileName,
+                offset,
+                offsetHex
+            };
+        })
+        .filter(Boolean);
+}
+
+function buildFirmwarePartsClipboardText(parts) {
+    if (!Array.isArray(parts) || parts.length === 0) {
+        return '';
+    }
+
+    return parts
+        .map(part => {
+            const offsetLabel = part.offsetHex ? part.offsetHex : 'offset unknown';
+            return `${part.fileName} @ ${offsetLabel} -> ${part.resolvedUrl}`;
+        })
+        .join('\n');
+}
+
+function getResolvedFirmwareUrl() {
+    const parts = getFirmwarePartsMetadata(window.currentFirmware);
+    if (!parts.length) {
         return null;
+    }
+
+    const [primaryPart] = parts;
+    return primaryPart?.resolvedUrl || null;
+}
+
+function ensureMultiPartModalElements() {
+    if (multiPartModalElements) {
+        return multiPartModalElements;
+    }
+
+    const backdrop = document.getElementById(MULTI_PART_MODAL_ID);
+    if (!backdrop) {
+        return null;
+    }
+
+    const modal = backdrop.querySelector('.multi-part-modal');
+    const list = backdrop.querySelector('[data-multi-part-list]');
+    const copyButton = backdrop.querySelector('[data-multi-part-copy]');
+    const closeButtons = Array.from(backdrop.querySelectorAll('[data-multi-part-close]'));
+
+    multiPartModalElements = {
+        backdrop,
+        modal,
+        list,
+        copyButton,
+        closeButtons,
+        currentParts: []
+    };
+
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            closeMultiPartModal();
+        });
+    });
+
+    backdrop.addEventListener('click', event => {
+        if (event.target === backdrop) {
+            closeMultiPartModal();
+        }
+    });
+
+    if (copyButton) {
+        copyButton.addEventListener('click', async () => {
+            if (!multiPartModalElements?.currentParts?.length) {
+                return;
+            }
+            await copyFirmwarePartsToClipboard(multiPartModalElements.currentParts);
+        });
+    }
+
+    return multiPartModalElements;
+}
+
+function renderMultiPartModalContent(firmware, parts) {
+    const elements = ensureMultiPartModalElements();
+    if (!elements || !elements.list) {
+        return;
+    }
+
+    const listItems = parts
+        .map(part => {
+            const offsetLabel = part.offsetHex ? `Offset ${part.offsetHex}` : 'Offset not specified';
+            const downloadName = part.fileName || getFirmwareDisplayName(firmware, window.currentConfigString || '');
+
+            return `
+                <li class="multi-part-modal__item">
+                    <div class="multi-part-modal__item-info">
+                        <span class="multi-part-modal__item-name">${escapeHtml(part.fileName)}</span>
+                        <span class="multi-part-modal__item-offset">${escapeHtml(offsetLabel)}</span>
+                    </div>
+                    <div class="multi-part-modal__item-actions">
+                        <a href="${escapeHtml(part.resolvedUrl)}" download="${escapeHtml(downloadName)}">Download</a>
+                    </div>
+                </li>
+            `;
+        })
+        .join('');
+
+    elements.list.innerHTML = listItems;
+}
+
+function openMultiPartModal(firmware, parts) {
+    if (!Array.isArray(parts) || parts.length === 0) {
+        return;
+    }
+
+    const elements = ensureMultiPartModalElements();
+    if (!elements || !elements.backdrop) {
+        return;
+    }
+
+    renderMultiPartModalContent(firmware, parts);
+    elements.currentParts = parts;
+
+    multiPartModalRestoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    elements.backdrop.hidden = false;
+
+    const focusTarget = elements.copyButton
+        || elements.list?.querySelector('a')
+        || elements.closeButtons?.[0]
+        || null;
+
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+        focusTarget.focus();
+    }
+
+    if (!elements.keydownHandler) {
+        elements.keydownHandler = event => {
+            if (event.key === 'Escape') {
+                closeMultiPartModal();
+            }
+        };
+    }
+
+    document.addEventListener('keydown', elements.keydownHandler);
+}
+
+function closeMultiPartModal() {
+    if (!multiPartModalElements || !multiPartModalElements.backdrop) {
+        return;
+    }
+
+    multiPartModalElements.backdrop.hidden = true;
+    if (multiPartModalElements.keydownHandler) {
+        document.removeEventListener('keydown', multiPartModalElements.keydownHandler);
+    }
+
+    if (multiPartModalRestoreFocus && typeof multiPartModalRestoreFocus.focus === 'function') {
+        multiPartModalRestoreFocus.focus();
+    }
+
+    multiPartModalRestoreFocus = null;
+}
+
+async function copyFirmwarePartsToClipboard(parts) {
+    if (!navigator.clipboard) {
+        showToast('Copy not supported');
+        return false;
+    }
+
+    const clipboardText = buildFirmwarePartsClipboardText(parts);
+    if (!clipboardText) {
+        showToast('Nothing to copy');
+        return false;
     }
 
     try {
-        return new URL(firmwarePath, window.location.href).href;
+        await navigator.clipboard.writeText(clipboardText);
+        const label = parts.length === 1 ? 'link' : 'links';
+        showToast(`Copied ${parts.length} ${label}`);
+        return true;
     } catch (error) {
-        console.warn('Unable to resolve firmware URL:', error);
-        return firmwarePath;
+        console.error('Failed to copy firmware URLs:', error);
+        showToast('Copy failed');
+        return false;
     }
 }
 
 async function copyFirmwareUrl() {
-    if (!navigator.clipboard) {
-        showToast('Copy not supported');
-        return;
-    }
+    const firmware = window.currentFirmware;
+    const parts = getFirmwarePartsMetadata(firmware);
 
-    const firmwareUrl = getResolvedFirmwareUrl();
-    if (!firmwareUrl) {
+    if (!parts.length) {
         showToast('Nothing to copy');
         return;
     }
 
-    try {
-        await navigator.clipboard.writeText(firmwareUrl);
-        showToast('Copied');
-    } catch (error) {
-        console.error('Failed to copy firmware URL:', error);
-        showToast('Copy failed');
+    if (parts.length > 1) {
+        openMultiPartModal(firmware, parts);
+
+        if (!navigator.clipboard) {
+            showToast('Copy not supported');
+            return;
+        }
+
+        await copyFirmwarePartsToClipboard(parts);
+    } else {
+        if (!navigator.clipboard) {
+            showToast('Copy not supported');
+            return;
+        }
+
+        const firmwareUrl = parts[0].resolvedUrl;
+        if (!firmwareUrl) {
+            showToast('Nothing to copy');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(firmwareUrl);
+            showToast('Copied');
+        } catch (error) {
+            console.error('Failed to copy firmware URL:', error);
+            showToast('Copy failed');
+        }
     }
 
     const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
@@ -2016,18 +2279,25 @@ function showToast(message, options = {}) {
 
 function downloadFirmware() {
     const firmware = window.currentFirmware;
-    if (!firmware || !Array.isArray(firmware.parts) || firmware.parts.length === 0) {
+    const parts = getFirmwarePartsMetadata(firmware);
+
+    if (!parts.length) {
         return;
     }
 
-    const firmwarePath = firmware.parts[0].path;
-    if (!firmwarePath) {
+    if (parts.length > 1) {
+        openMultiPartModal(firmware, parts);
+        return;
+    }
+
+    const [primaryPart] = parts;
+    if (!primaryPart?.resolvedUrl) {
         return;
     }
 
     const link = document.createElement('a');
-    link.href = firmwarePath;
-    link.download = getFirmwareDisplayName(firmware, window.currentConfigString || '');
+    link.href = primaryPart.resolvedUrl;
+    link.download = getFirmwareDisplayName(firmware, window.currentConfigString || '') || primaryPart.fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2198,5 +2468,7 @@ export const __testHooks = Object.freeze({
     loadManifestData,
     findCompatibleFirmware,
     manifestReadyPromise: () => manifestReadyPromise,
-    isManifestReady
+    isManifestReady,
+    renderSelectedFirmware,
+    getFirmwarePartsMetadata
 });
