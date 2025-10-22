@@ -6,11 +6,7 @@ import {
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
-import {
-    runPreflightDiagnostics,
-    didMandatoryChecksPass,
-    firstBlockingCheck
-} from './support/preflight.js';
+import { generateEsphomeYaml } from './utils/esphome-yaml.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -446,272 +442,9 @@ let currentFirmwareSelectionId = null;
 let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
-let serialDetectionPromise = null;
+let currentFirmwareYamlDownloadUrl = null;
 
-const MAX_RESCUE_HISTORY = 20;
-const rescueInstallHistory = [];
-
-function summariseRescueDetail(detail) {
-    if (!detail || typeof detail !== 'object') {
-        return {};
-    }
-
-    const summary = {};
-    const source = typeof detail.details === 'object' && detail.details !== null
-        ? detail.details
-        : detail;
-
-    if (typeof detail.message === 'string' && detail.message.trim()) {
-        summary.message = detail.message.trim();
-    }
-
-    if (typeof source.stage === 'string' && source.stage.trim()) {
-        summary.stage = source.stage.trim();
-    }
-
-    if (typeof source.status === 'string' && source.status.trim()) {
-        summary.status = source.status.trim();
-    }
-
-    if (typeof source.error === 'string' && source.error.trim()) {
-        summary.error = source.error.trim();
-    }
-
-    if (typeof source.done === 'boolean') {
-        summary.done = source.done;
-    }
-
-    return summary;
-}
-
-function recordRescueInstallEvent(eventType, detail = {}) {
-    if (!eventType) {
-        return null;
-    }
-
-    const entry = {
-        type: String(eventType),
-        timestamp: new Date().toISOString(),
-        step: currentStep,
-        configString: window.currentConfigString || null
-    };
-
-    if (detail && typeof detail === 'object') {
-        const clean = {};
-        Object.entries(detail).forEach(([key, value]) => {
-            if (value === undefined || typeof value === 'function') {
-                return;
-            }
-
-            if (value && typeof value === 'object') {
-                try {
-                    clean[key] = JSON.parse(JSON.stringify(value));
-                } catch (error) {
-                    clean[key] = String(value);
-                }
-            } else {
-                clean[key] = value;
-            }
-        });
-
-        if (Object.keys(clean).length > 0) {
-            entry.detail = clean;
-        }
-    }
-
-    rescueInstallHistory.push(entry);
-    if (rescueInstallHistory.length > MAX_RESCUE_HISTORY) {
-        rescueInstallHistory.splice(0, rescueInstallHistory.length - MAX_RESCUE_HISTORY);
-    }
-
-    window.supportBundle?.recordEvent?.('rescue-install', entry);
-
-    return entry;
-}
-
-function getRescueInstallHistory() {
-    return rescueInstallHistory.slice();
-}
-
-const POST_INSTALL_GUIDANCE_SELECTOR = '[data-post-install-guidance]';
-const POST_INSTALL_GUIDANCE_NOTE_SELECTOR = '[data-post-install-guidance-note]';
-const INSTALL_SUCCESS_STATES = new Set(['finished', 'complete', 'completed', 'success']);
-
-const postInstallGuidanceState = {
-    seen: false,
-    lastShownAt: null,
-    firmwareId: null,
-    firmwareVersion: null,
-    firmwareChannel: null,
-    configString: null
-};
-
-function syncPostInstallGuidanceState(partial = {}) {
-    Object.assign(postInstallGuidanceState, partial);
-    if (typeof window !== 'undefined') {
-        window.webflashPostInstallGuidance = { ...postInstallGuidanceState };
-    }
-}
-
-const existingGuidanceState = typeof window !== 'undefined'
-    && window.webflashPostInstallGuidance
-    && typeof window.webflashPostInstallGuidance === 'object'
-        ? window.webflashPostInstallGuidance
-        : null;
-
-if (existingGuidanceState) {
-    Object.assign(postInstallGuidanceState, existingGuidanceState);
-}
-
-syncPostInstallGuidanceState();
-
-function getPostInstallGuidancePanel() {
-    return document.querySelector(POST_INSTALL_GUIDANCE_SELECTOR);
-}
-
-function formatGuidanceTimestamp(isoString) {
-    if (!isoString) {
-        return '';
-    }
-
-    const date = new Date(isoString);
-    if (Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    return date.toLocaleString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
-}
-
-function resolveFirmwareFromHost(host) {
-    if (!host) {
-        return window.currentFirmware || null;
-    }
-
-    const firmwareId = host.dataset?.firmwareId
-        || host.querySelector?.('button[slot="activate"]')?.dataset?.firmwareId
-        || null;
-
-    if (firmwareId && firmwareOptionsMap.has(firmwareId)) {
-        return firmwareOptionsMap.get(firmwareId);
-    }
-
-    return window.currentFirmware || null;
-}
-
-function revealPostInstallGuidance(firmware = window.currentFirmware) {
-    const panel = getPostInstallGuidancePanel();
-    const nowIso = new Date().toISOString();
-    const configString = firmware?.config_string || window.currentConfigString || null;
-
-    syncPostInstallGuidanceState({
-        seen: true,
-        lastShownAt: nowIso,
-        firmwareId: firmware?.firmwareId || firmware?.firmware_id || null,
-        firmwareVersion: firmware?.version || null,
-        firmwareChannel: firmware?.channel || null,
-        configString
-    });
-
-    if (!panel) {
-        return;
-    }
-
-    if (panel.hidden) {
-        panel.hidden = false;
-    }
-
-    panel.classList.add('is-visible');
-    panel.setAttribute('data-visible', 'true');
-
-    const note = panel.querySelector(POST_INSTALL_GUIDANCE_NOTE_SELECTOR);
-    if (note) {
-        const labelParts = [];
-        const modelLabel = firmware?.device_type || firmware?.model || null;
-        if (modelLabel) {
-            labelParts.push(modelLabel);
-        } else if (configString) {
-            labelParts.push(configString);
-        }
-        if (firmware?.version) {
-            labelParts.push(`v${firmware.version}`);
-        }
-
-        const timestampLabel = formatGuidanceTimestamp(nowIso);
-        const context = labelParts.join(' ').trim();
-
-        if (timestampLabel && context) {
-            note.textContent = `Guidance shown for ${context} at ${timestampLabel}.`;
-        } else if (timestampLabel) {
-            note.textContent = `Guidance shown at ${timestampLabel}.`;
-        } else if (context) {
-            note.textContent = `Guidance shown for ${context}.`;
-        } else {
-            note.textContent = 'Guidance shown just now.';
-        }
-        note.hidden = false;
-    }
-}
-
-function isInstallSuccessEvent(event) {
-    if (!event || typeof event !== 'object') {
-        return false;
-    }
-
-    if (event.type === 'install-success' || event.type === 'install-complete') {
-        const detail = event.detail;
-        if (detail && typeof detail === 'object' && (detail.error || detail.details?.error)) {
-            return false;
-        }
-        return true;
-    }
-
-    if (event.type !== 'state-changed') {
-        return false;
-    }
-
-    const detail = event.detail;
-    if (detail && typeof detail === 'object') {
-        if (detail.error || detail.details?.error) {
-            return false;
-        }
-
-        const stateValue = detail.state || detail.status || detail.phase || detail.stage;
-        if (typeof stateValue === 'string') {
-            return INSTALL_SUCCESS_STATES.has(stateValue.toLowerCase());
-        }
-
-        if (typeof detail.details?.state === 'string') {
-            return INSTALL_SUCCESS_STATES.has(detail.details.state.toLowerCase());
-        }
-
-        return false;
-    }
-
-    if (typeof detail === 'string') {
-        return INSTALL_SUCCESS_STATES.has(detail.toLowerCase());
-    }
-
-    return false;
-}
-
-function setupPostInstallGuidancePanel() {
-    const panel = getPostInstallGuidancePanel();
-    if (!panel || panel.dataset.guidanceBound === 'true') {
-        return;
-    }
-
-    panel.addEventListener('click', async event => {
-        const target = event.target instanceof HTMLElement ? event.target : null;
-        const button = target?.closest?.('[data-copy-text]');
-        if (!button || !(button instanceof HTMLElement) || !panel.contains(button)) {
-            return;
-        }
-
-        event.preventDefault();
+window.currentFirmwareYaml = null;
 
         const text = button.dataset.copyText || '';
         if (!text) {
@@ -1248,6 +981,23 @@ function attachInstallButtonListeners() {
             }
         }
     });
+}
+
+function attachYamlActionHandlers() {
+    const panel = document.querySelector('[data-firmware-yaml]');
+    if (!panel) {
+        return;
+    }
+
+    const copyButton = panel.querySelector('[data-yaml-copy]');
+    if (copyButton) {
+        copyButton.addEventListener('click', handleYamlCopy);
+    }
+
+    const downloadButton = panel.querySelector('[data-yaml-download]');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', handleYamlDownload);
+    }
 }
 
 function syncRememberToggleElements(sourceToggle) {
@@ -2345,6 +2095,33 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
     `;
 }
 
+function createFirmwareYamlPanel({ yaml = '', context = null } = {}) {
+    if (!yaml || typeof yaml !== 'string' || yaml.trim().length === 0) {
+        return '';
+    }
+
+    const moduleSummary = context?.moduleSummary || 'No expansion modules';
+    const sensorsSummary = Array.isArray(context?.aggregatedSensors) && context.aggregatedSensors.length
+        ? `Sensors: ${context.aggregatedSensors.join(', ')}`
+        : 'Sensors: None listed';
+
+    const infoLine = `${moduleSummary} • ${sensorsSummary}`;
+
+    return `
+        <section class="firmware-yaml-panel" data-firmware-yaml>
+            <div class="firmware-yaml-header">
+                <h4>ESPHome YAML</h4>
+                <div class="firmware-yaml-actions">
+                    <button type="button" class="btn btn-secondary" data-yaml-copy>Copy YAML</button>
+                    <button type="button" class="btn btn-secondary" data-yaml-download>Download YAML</button>
+                </div>
+            </div>
+            <pre class="firmware-yaml-code"><code>${escapeHtml(yaml)}</code></pre>
+            <p class="firmware-yaml-meta">${escapeHtml(infoLine)}</p>
+        </section>
+    `;
+}
+
 function formatVariantHeadingLabel(bucket) {
     if (!bucket) {
         return '';
@@ -2620,7 +2397,33 @@ function renderSelectedFirmware() {
     if (firmware) {
         const configContext = firmware.config_string || window.currentConfigString || '';
         sections.push(createFirmwareCardHtml(firmware, { configString: configContext, contextKey: 'primary' }));
+
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
+
+        const yamlResult = generateEsphomeYaml({
+            firmware,
+            configString: configContext,
+            manifest: manifestData
+        });
+
+        if (yamlResult?.yaml && yamlResult.yaml.trim()) {
+            window.currentFirmwareYaml = {
+                yaml: yamlResult.yaml,
+                context: yamlResult.context
+            };
+            sections.push(createFirmwareYamlPanel(window.currentFirmwareYaml));
+        } else {
+            window.currentFirmwareYaml = null;
+        }
     } else if (firmwareStatusMessage?.type === 'not-available' && firmwareStatusMessage.configString) {
+        window.currentFirmwareYaml = null;
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
         const sanitizedConfig = escapeHtml(firmwareStatusMessage.configString);
         sections.push(`
             <div class="firmware-not-available">
@@ -2631,6 +2434,11 @@ function renderSelectedFirmware() {
             </div>
         `);
     } else if (firmwareStatusMessage?.type === 'error' && firmwareStatusMessage.message) {
+        window.currentFirmwareYaml = null;
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
         sections.push(`
             <div class="firmware-error">
                 <h4>Error Loading Firmware</h4>
@@ -2638,6 +2446,11 @@ function renderSelectedFirmware() {
             </div>
         `);
     } else {
+        window.currentFirmwareYaml = null;
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
         sections.push(`
             <div class="firmware-selection-placeholder">
                 <p>Select a firmware release to see details.</p>
@@ -2657,6 +2470,7 @@ function renderSelectedFirmware() {
     container.innerHTML = sections.join('');
 
     attachInstallButtonListeners();
+    attachYamlActionHandlers();
 }
 
 async function findCompatibleFirmware() {
@@ -3419,6 +3233,69 @@ async function copyFirmwarePartsToClipboard(parts) {
         showToast('Copy failed');
         return false;
     }
+}
+
+async function handleYamlCopy(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    const yaml = window.currentFirmwareYaml?.yaml;
+    if (!yaml || !yaml.trim()) {
+        showToast('Nothing to copy');
+        return;
+    }
+
+    if (!navigator.clipboard) {
+        showToast('Copy not supported');
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(yaml);
+        showToast('YAML copied to clipboard');
+    } catch (error) {
+        console.error('Failed to copy YAML snippet:', error);
+        showToast('Copy failed');
+    }
+}
+
+function handleYamlDownload(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    const yamlPayload = window.currentFirmwareYaml;
+    const yaml = yamlPayload?.yaml;
+    if (!yaml || !yaml.trim()) {
+        showToast('Nothing to download');
+        return;
+    }
+
+    if (currentFirmwareYamlDownloadUrl) {
+        URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+        currentFirmwareYamlDownloadUrl = null;
+    }
+
+    const blob = new Blob([yaml], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    currentFirmwareYamlDownloadUrl = url;
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = yamlPayload?.context?.yamlFileName || 'sense360-firmware.yaml';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+        if (currentFirmwareYamlDownloadUrl === url) {
+            URL.revokeObjectURL(url);
+            currentFirmwareYamlDownloadUrl = null;
+        }
+    }, 1000);
+
+    showToast('YAML download started');
 }
 
 async function copyFirmwareUrl() {

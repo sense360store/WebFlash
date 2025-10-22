@@ -253,6 +253,119 @@ function sanitiseSerial(lines = [], allowIPs) {
     });
 }
 
+function cloneYamlContext(context) {
+    if (!context || typeof context !== 'object') {
+        return null;
+    }
+
+    const allowedKeys = [
+        'configString',
+        'version',
+        'channel',
+        'manifestIndex',
+        'deviceType',
+        'modules',
+        'aggregatedSensors',
+        'parts',
+        'slug',
+        'deviceName',
+        'friendlyName',
+        'md5',
+        'fileSize',
+        'manifestVersion',
+        'generatedAt',
+        'moduleSummary',
+        'projectVersion',
+        'yamlFileName'
+    ];
+
+    const cloned = {};
+
+    allowedKeys.forEach((key) => {
+        if (!Object.prototype.hasOwnProperty.call(context, key)) {
+            return;
+        }
+
+        const value = context[key];
+        if (value === undefined) {
+            return;
+        }
+
+        if (Array.isArray(value)) {
+            cloned[key] = value
+                .map((entry) => {
+                    if (entry === null) {
+                        return null;
+                    }
+                    if (typeof entry === 'string' || typeof entry === 'number' || typeof entry === 'boolean') {
+                        return entry;
+                    }
+                    if (Array.isArray(entry)) {
+                        return entry.filter((item) => typeof item === 'string' || typeof item === 'number');
+                    }
+                    if (entry && typeof entry === 'object') {
+                        const nested = {};
+                        Object.entries(entry).forEach(([nestedKey, nestedValue]) => {
+                            if (nestedValue === undefined) {
+                                return;
+                            }
+                            if (typeof nestedValue === 'string' || typeof nestedValue === 'number' || typeof nestedValue === 'boolean') {
+                                nested[nestedKey] = nestedValue;
+                            } else if (Array.isArray(nestedValue)) {
+                                nested[nestedKey] = nestedValue.filter((item) => typeof item === 'string' || typeof item === 'number');
+                            } else if (nestedValue === null) {
+                                nested[nestedKey] = null;
+                            }
+                        });
+                        return nested;
+                    }
+                    return null;
+                })
+                .filter((entry) => entry !== null && entry !== undefined);
+            return;
+        }
+
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null) {
+            cloned[key] = value;
+        }
+    });
+
+    return cloned;
+}
+
+function normaliseEsphomeYaml(esphomeYaml) {
+    if (!esphomeYaml) {
+        return null;
+    }
+
+    if (typeof esphomeYaml === 'string') {
+        const trimmed = esphomeYaml.trim();
+        if (!trimmed) {
+            return null;
+        }
+        return {
+            text: trimmed,
+            context: null
+        };
+    }
+
+    if (typeof esphomeYaml !== 'object') {
+        return null;
+    }
+
+    const text = typeof esphomeYaml.yaml === 'string' ? esphomeYaml.yaml.trim() : '';
+    if (!text) {
+        return null;
+    }
+
+    const context = cloneYamlContext(esphomeYaml.context);
+
+    return {
+        text,
+        context
+    };
+}
+
 async function createSupportBundle(options = {}) {
     const allowIPs = Boolean(options.includeIPs);
     const app = normaliseApp(options.app);
@@ -263,6 +376,7 @@ async function createSupportBundle(options = {}) {
         lines: serialLines,
         count: serialLines.length
     };
+    const esphomeYaml = normaliseEsphomeYaml(options.esphomeYaml);
 
     const payload = {
         ts: new Date().toISOString(),
@@ -272,6 +386,10 @@ async function createSupportBundle(options = {}) {
         errors: sanitiseErrors(allowIPs),
         serial
     };
+
+    if (esphomeYaml) {
+        payload.esphomeYaml = esphomeYaml;
+    }
 
     const jsonString = JSON.stringify(payload, null, 2);
     const sizeBytes = toBytes(jsonString).length;
