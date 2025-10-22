@@ -10,10 +10,15 @@
         {
           "path": "firmware/configurations/Sense360-Wall-USB-v1.1.0-stable.bin",
           "offset": 0,
-          "md5": "e02ba33bea0997b543ddac28af33fc2f"
+          "md5": "e02ba33bea0997b543ddac28af33fc2f",
+          "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
+          "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "improv": true
+      "improv": true,
+      "md5": "e02ba33bea0997b543ddac28af33fc2f",
+      "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
+      "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
     }
   ]
 }
