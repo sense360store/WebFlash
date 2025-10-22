@@ -1,5 +1,6 @@
 import { createSupportBundle, createGzip } from './bundle.js';
 import { getState, getStep } from '../state.js';
+import { redact } from './redact.js';
 
 const STYLE_ID = 'support-bundle-style';
 const MAX_SERIAL_LINES = 2000;
@@ -33,6 +34,19 @@ function ensureStyle() {
 .support-checkbox{display:flex;align-items:flex-start;gap:8px;font-size:14px;color:#1f2937}
 .support-checkbox input{margin-top:3px}
 .support-modal__summary{margin-bottom:14px;padding:11px;font-size:13px;min-height:44px;color:#1f2937;background:#f3f4f6;border-radius:8px}
+.support-modal__preview{margin-bottom:14px;border-top:1px solid #e5e7eb;padding-top:12px;font-size:13px;color:#1f2937}
+.support-preview__header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.support-preview__title{flex:1 1 auto;font-weight:600}
+.support-preview__actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.support-preview__actions button{flex:0 0 auto;padding:7px 11px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:#1f2937;font:600 12px/1.1 inherit}
+.support-preview__actions button[disabled]{opacity:.55}
+.support-preview__toggle{border:0;background:none;color:#2563eb;font:600 13px/1.2 inherit;padding:6px 0}
+.support-preview__toggle:focus-visible,.support-preview__toggle:hover{outline:2px solid #2563eb;outline-offset:2px}
+.support-preview__refresh{border:1px solid #d1d5db;background:#fff;color:#1f2937;font:600 12px/1.1 inherit;padding:7px 11px;border-radius:6px}
+.support-preview__refresh:focus-visible,.support-preview__refresh:hover{outline:2px solid #2563eb;outline-offset:2px}
+.support-preview__body[hidden]{display:none}
+.support-preview__content{margin:0;background:#0f172a;color:#f8fafc;padding:10px;border-radius:8px;font-family:SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:12px;max-height:200px;overflow:auto;white-space:pre-wrap}
+.support-modal__preview.is-open .support-preview__toggle{color:#1f2937}
 .support-modal__actions{display:flex;flex-wrap:wrap;gap:8px}
 .support-modal__actions button{flex:1 1 auto;min-width:112px;padding:9px;border-radius:8px;border:1px solid transparent;font:600 14px/1.1 inherit;background:#2563eb;color:#fff}
 .support-modal__actions button.secondary{background:#fff;color:#1f2937;border-color:#d1d5db}
@@ -385,6 +399,62 @@ function createModalElements(closeModal, onCreate) {
     summaryBox.setAttribute('data-support-summary', '');
     summaryBox.textContent = 'Summary will appear here after generating a bundle.';
 
+    const previewSection = document.createElement('section');
+    previewSection.className = 'support-modal__preview';
+
+    const previewHeader = document.createElement('div');
+    previewHeader.className = 'support-preview__header';
+
+    const previewTitle = document.createElement('span');
+    previewTitle.className = 'support-preview__title';
+    previewTitle.textContent = 'Diagnostics preview';
+
+    const previewRefreshButton = document.createElement('button');
+    previewRefreshButton.type = 'button';
+    previewRefreshButton.className = 'support-preview__refresh';
+    previewRefreshButton.textContent = 'Refresh';
+
+    const previewToggle = document.createElement('button');
+    previewToggle.type = 'button';
+    previewToggle.className = 'support-preview__toggle';
+    previewToggle.setAttribute('aria-expanded', 'false');
+    previewToggle.textContent = 'Show preview';
+
+    previewHeader.appendChild(previewTitle);
+    previewHeader.appendChild(previewRefreshButton);
+    previewHeader.appendChild(previewToggle);
+
+    const previewBody = document.createElement('div');
+    previewBody.className = 'support-preview__body';
+    previewBody.hidden = true;
+
+    const previewActions = document.createElement('div');
+    previewActions.className = 'support-preview__actions';
+
+    const previewCopyButton = document.createElement('button');
+    previewCopyButton.type = 'button';
+    previewCopyButton.textContent = 'Copy preview';
+    previewCopyButton.disabled = true;
+
+    const previewDownloadButton = document.createElement('button');
+    previewDownloadButton.type = 'button';
+    previewDownloadButton.textContent = 'Download preview';
+    previewDownloadButton.disabled = true;
+
+    previewActions.appendChild(previewCopyButton);
+    previewActions.appendChild(previewDownloadButton);
+
+    const previewContent = document.createElement('pre');
+    previewContent.className = 'support-preview__content';
+    previewContent.setAttribute('tabindex', '0');
+    previewContent.textContent = 'Preview diagnostics before sharing with support.';
+
+    previewBody.appendChild(previewActions);
+    previewBody.appendChild(previewContent);
+
+    previewSection.appendChild(previewHeader);
+    previewSection.appendChild(previewBody);
+
     const actions = document.createElement('div');
     actions.className = 'support-modal__actions';
 
@@ -439,6 +509,7 @@ function createModalElements(closeModal, onCreate) {
     body.appendChild(intro);
     body.appendChild(optionsGroup);
     body.appendChild(summaryBox);
+    body.appendChild(previewSection);
     body.appendChild(actions);
     body.appendChild(status);
 
@@ -459,7 +530,14 @@ function createModalElements(closeModal, onCreate) {
         copyButton,
         shareButton,
         emailButton,
-        issueButton
+        issueButton,
+        previewSection,
+        previewToggle,
+        previewBody,
+        previewContent,
+        previewCopyButton,
+        previewDownloadButton,
+        previewRefreshButton
     };
 }
 
@@ -504,11 +582,32 @@ function initSupportUI() {
     const appInfo = resolveAppInfo();
 
     const elements = createModalElements(closeModal, handleCreate);
-    const { backdrop, modal, summaryBox, status, createButton, downloadButton, copyButton, shareButton, emailButton, issueButton } = elements;
+    const {
+        backdrop,
+        modal,
+        summaryBox,
+        status,
+        createButton,
+        downloadButton,
+        copyButton,
+        emailButton,
+        issueButton,
+        serialInput,
+        ipInput,
+        previewSection,
+        previewToggle,
+        previewBody,
+        previewContent,
+        previewCopyButton,
+        previewDownloadButton,
+        previewRefreshButton
+    } = elements;
 
     document.body.appendChild(backdrop);
 
     let removeFocusTrap = null;
+    let currentPreviewText = '';
+    let previewExpanded = false;
 
     function enableActions(enabled) {
         downloadButton.disabled = !enabled;
@@ -517,10 +616,72 @@ function initSupportUI() {
         issueButton.disabled = !enabled;
     }
 
+    function getPreviewOptions() {
+        return {
+            serial: Boolean(serialInput?.checked),
+            allowIPs: Boolean(ipInput?.checked)
+        };
+    }
+
+    function buildPreviewText() {
+        const options = getPreviewOptions();
+        const errorsApi = window.supportErrors;
+        const bundleApi = window.supportBundle;
+
+        const rawErrors = typeof errorsApi?.getErrors === 'function' ? errorsApi.getErrors() : [];
+        const rawSerial = typeof bundleApi?.getSerialLogs === 'function' ? bundleApi.getSerialLogs() : [];
+
+        const sanitized = redact({ errors: rawErrors, serialLogs: rawSerial }, { allowIPs: options.allowIPs });
+
+        const errors = Array.isArray(sanitized.errors) ? sanitized.errors : [];
+        const serialLogs = Array.isArray(sanitized.serialLogs) ? sanitized.serialLogs : [];
+
+        const payload = {
+            errors,
+            serialLogs: options.serial ? serialLogs : '[excluded by modal settings]'
+        };
+
+        const errorCount = errors.length;
+        const serialCount = options.serial ? serialLogs.length : 0;
+        const summaryParts = [`${errorCount} error${errorCount === 1 ? '' : 's'}`];
+
+        if (options.serial) {
+            summaryParts.push(`${serialCount} serial line${serialCount === 1 ? '' : 's'}`);
+        } else {
+            summaryParts.push('serial logs excluded');
+        }
+
+        currentPreviewText = JSON.stringify(payload, null, 2);
+        previewContent.textContent = currentPreviewText;
+
+        const hasContent = currentPreviewText.trim().length > 0;
+        previewCopyButton.disabled = !hasContent;
+        previewDownloadButton.disabled = !hasContent;
+
+        setStatus(status, `Preview updated (${summaryParts.join(', ')}).`);
+    }
+
+    function setPreviewExpanded(expanded) {
+        previewExpanded = expanded;
+        previewBody.hidden = !expanded;
+        previewSection.classList.toggle('is-open', expanded);
+        previewToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        previewToggle.textContent = expanded ? 'Hide preview' : 'Show preview';
+
+        if (expanded) {
+            buildPreviewText();
+        }
+    }
+
+    function refreshPreview() {
+        buildPreviewText();
+    }
+
     function openModal() {
         lastActiveElement = document.activeElement;
         backdrop.classList.add('is-open');
         removeFocusTrap = trapFocus(modal);
+        refreshPreview();
         setTimeout(() => {
             modal.querySelector('button:not([disabled])')?.focus();
         }, 0);
@@ -532,6 +693,7 @@ function initSupportUI() {
             removeFocusTrap();
             removeFocusTrap = null;
         }
+        setPreviewExpanded(false);
         if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
             lastActiveElement.focus();
         }
@@ -611,7 +773,22 @@ function initSupportUI() {
         setStatus(status, 'Download started.');
     }
 
-    async function handleCopy() {
+    function handlePreviewDownload() {
+        if (!currentPreviewText.trim()) {
+            return;
+        }
+
+        const blob = new Blob([currentPreviewText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        downloadUrls.add(url);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `webflash-support-preview-${Date.now()}.txt`;
+        link.click();
+        setStatus(status, 'Preview download started.');
+    }
+
+    function handleCopy() {
         if (!currentBundle) {
             return;
         }
@@ -661,6 +838,35 @@ function initSupportUI() {
         }
     }
 
+    function handlePreviewCopy() {
+        if (!currentPreviewText.trim()) {
+            return;
+        }
+
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(currentPreviewText).then(() => {
+                setStatus(status, 'Preview copied to clipboard.');
+            }).catch(() => {
+                setStatus(status, 'Unable to copy preview.', 'error');
+            });
+            return;
+        }
+
+        const textarea = document.createElement('textarea');
+        textarea.value = currentPreviewText;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            setStatus(status, 'Preview copied to clipboard.');
+        } catch (error) {
+            setStatus(status, 'Unable to copy preview.', 'error');
+        }
+        document.body.removeChild(textarea);
+    }
+
     function handleEmail() {
         if (!currentBundle) {
             return;
@@ -683,9 +889,16 @@ function initSupportUI() {
 
     downloadButton.addEventListener('click', handleDownload);
     copyButton.addEventListener('click', handleCopy);
-    shareButton.addEventListener('click', handleShareCopy);
     emailButton.addEventListener('click', handleEmail);
     issueButton.addEventListener('click', handleIssue);
+    previewToggle.addEventListener('click', () => {
+        setPreviewExpanded(!previewExpanded);
+    });
+    previewRefreshButton.addEventListener('click', refreshPreview);
+    previewCopyButton.addEventListener('click', handlePreviewCopy);
+    previewDownloadButton.addEventListener('click', handlePreviewDownload);
+    serialInput.addEventListener('change', refreshPreview);
+    ipInput.addEventListener('change', refreshPreview);
 
     backdrop.addEventListener('click', (event) => {
         if (event.target === backdrop) {
