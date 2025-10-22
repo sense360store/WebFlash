@@ -593,6 +593,7 @@ function initSupportUI() {
     createSupportButton(openModal);
 
     window.supportBundle = Object.freeze({
+        open: openModal,
         pushSerial: pushSerialLog,
         clearSerial: () => {
             serialLogBuffer.length = 0;
