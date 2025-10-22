@@ -1605,6 +1605,22 @@
             }
         }
 
+        const RELEASE_NOTES_CHANNEL_SUFFIX = {
+            stable: 'general',
+            general: 'general',
+            beta: 'preview',
+            preview: 'preview'
+        };
+
+        function resolveReleaseNotesChannel(channel) {
+            if (!channel) {
+                return '';
+            }
+
+            const key = channel.toString().trim().toLowerCase();
+            return RELEASE_NOTES_CHANNEL_SUFFIX[key] || key;
+        }
+
         async function loadReleaseNotesForFirmware(firmwareId, notesSection) {
             const firmware = (firmwareId && firmwareOptionsMap.get(firmwareId)) || window.currentFirmware;
             const configString = firmware ? firmware.config_string : window.currentConfigString;
@@ -1620,7 +1636,9 @@
             }
 
             try {
-                const notesPath = `firmware/configurations/Sense360-${configString}-v${firmware.version}-${firmware.channel}.md`;
+                const releaseNotesChannel = resolveReleaseNotesChannel(firmware.channel);
+                const channelSuffix = releaseNotesChannel ? `-${releaseNotesChannel}` : '';
+                const notesPath = `firmware/configurations/Sense360-${configString}-v${firmware.version}${channelSuffix}.md`;
                 const response = await fetch(notesPath);
 
                 if (response.ok) {

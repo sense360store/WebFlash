@@ -78,6 +78,13 @@ const CHANNEL_ALIAS_MAP = {
     canary: 'dev'
 };
 
+const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
+    stable: 'general',
+    general: 'general',
+    beta: 'preview',
+    preview: 'preview'
+};
+
 const CHANNEL_DISPLAY_MAP = {
     stable: {
         label: 'General Release',
@@ -129,6 +136,15 @@ function getChannelDisplayInfo(channel) {
     const key = normaliseChannelKey(channel);
     const display = CHANNEL_DISPLAY_MAP[key] || DEFAULT_CHANNEL_DISPLAY;
     return { key, ...display };
+}
+
+function resolveReleaseNotesChannel(channel) {
+    if (!channel) {
+        return '';
+    }
+
+    const key = channel.toString().trim().toLowerCase();
+    return RELEASE_NOTES_CHANNEL_SUFFIX_MAP[key] || key;
 }
 
 function getChannelPriority(channel) {
@@ -1565,7 +1581,8 @@ async function loadReleaseNotes({ notesSection, configString, version, channel }
     }
 
     try {
-        const channelSuffix = channel ? `-${channel}` : '';
+        const releaseNotesChannel = resolveReleaseNotesChannel(channel);
+        const channelSuffix = releaseNotesChannel ? `-${releaseNotesChannel}` : '';
         const notesPath = `firmware/configurations/Sense360-${configString}-v${version}${channelSuffix}.md`;
         const response = await fetch(notesPath);
 
