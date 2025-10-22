@@ -351,9 +351,11 @@ function readInstallQueryParams() {
   const params = getCombinedSearchParams();
   const { configKey, missingRequired, invalidOptional } = buildConfigResultFromParams(params);
 
+  const lookup = buildInstallLookupFromParams(params);
+
   let validationError = null;
 
-  if (!configKey) {
+  if (!configKey && (!lookup || lookup.type !== 'model')) {
     if (missingRequired.length > 0) {
       validationError = {
         title: 'Direct Install Link Incomplete',
@@ -380,7 +382,7 @@ function readInstallQueryParams() {
   }
 
   return {
-    lookup: buildInstallLookupFromParams(params),
+    lookup,
     channel: readChannelFromParams(params),
     parameterError: validationError
   };
