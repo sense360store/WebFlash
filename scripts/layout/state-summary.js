@@ -8,10 +8,36 @@
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
 
+    const DEFAULT_CHANNEL_KEY = 'stable';
+    const CHANNEL_ALIAS_MAP = {
+        general: 'stable',
+        stable: 'stable',
+        ga: 'stable',
+        release: 'stable',
+        beta: 'beta',
+        preview: 'beta',
+        dev: 'dev',
+        nightly: 'dev',
+        canary: 'dev'
+    };
+
     const subscribers = new Set();
     let pending = false;
     let sidebarRefs = null;
     let copyResetTimer = null;
+
+    function normaliseChannelKey(channel) {
+        const value = (channel ?? '').toString().trim().toLowerCase();
+        if (!value) {
+            return null;
+        }
+
+        if (CHANNEL_ALIAS_MAP[value]) {
+            return CHANNEL_ALIAS_MAP[value];
+        }
+
+        return value || DEFAULT_CHANNEL_KEY;
+    }
 
     function readFieldMeta(field) {
         const { name } = field;
@@ -287,6 +313,11 @@
         }, 1200);
     }
 
+    /**
+     * Builds a shareable URL containing the current wizard selections.
+     * The optional `channel` query parameter targets a specific firmware channel
+     * so support can generate links that open directly to the desired release.
+     */
     function buildShareableUrl(state) {
         const params = new URLSearchParams();
         if (state.mount) {
@@ -300,6 +331,14 @@
         params.set('presence', state.presence || 'none');
         params.set('comfort', state.comfort || 'none');
         params.set('fan', state.fan || 'none');
+
+        const currentFirmware = window.currentFirmware || null;
+        if (currentFirmware && currentFirmware.channel) {
+            const channel = normaliseChannelKey(currentFirmware.channel);
+            if (channel) {
+                params.set('channel', channel);
+            }
+        }
 
         const base = `${window.location.origin}${window.location.pathname}`;
         const query = params.toString();

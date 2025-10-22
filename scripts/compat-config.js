@@ -36,6 +36,32 @@ const OPTION_MAPPINGS = {
 
 const OPTIONAL_KEYS = new Set(['airiq', 'presence', 'comfort', 'fan']);
 
+const DEFAULT_CHANNEL_KEY = 'stable';
+const CHANNEL_ALIAS_MAP = {
+  general: 'stable',
+  stable: 'stable',
+  ga: 'stable',
+  release: 'stable',
+  beta: 'beta',
+  preview: 'beta',
+  dev: 'dev',
+  nightly: 'dev',
+  canary: 'dev'
+};
+
+const CHANNEL_PRIORITY_MAP = {
+  stable: 0,
+  general: 0,
+  ga: 0,
+  release: 0,
+  beta: 1,
+  preview: 1,
+  dev: 2,
+  nightly: 2,
+  canary: 2,
+  experimental: 2
+};
+
 let currentManifestUrl = null;
 
 function cleanupManifestUrl() {
@@ -73,6 +99,19 @@ function formatBuildDate(dateLike) {
   } catch (_error) {
     return '';
   }
+}
+
+function getBuildTimestamp(dateLike) {
+  if (!dateLike) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const timestamp = Date.parse(dateLike);
+  if (Number.isNaN(timestamp)) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  return timestamp;
 }
 
 function getCombinedSearchParams() {
@@ -140,9 +179,42 @@ function normalizeValue(key, rawValue) {
   return mapping.get(normalized) || null;
 }
 
-function buildConfigKeyFromParams() {
-  const params = getCombinedSearchParams();
+function normalizeRequestedChannel(rawChannel) {
+  if (rawChannel === null || rawChannel === undefined) {
+    return null;
+  }
 
+  const normalized = String(rawChannel).trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  return CHANNEL_ALIAS_MAP[normalized] || normalized;
+}
+
+function normalizeManifestChannel(channel) {
+  const normalized = String(channel ?? '').trim().toLowerCase();
+  if (!normalized) {
+    return DEFAULT_CHANNEL_KEY;
+  }
+
+  return CHANNEL_ALIAS_MAP[normalized] || normalized || DEFAULT_CHANNEL_KEY;
+}
+
+function getChannelPriority(channel) {
+  const normalized = normalizeManifestChannel(channel);
+  if (Object.prototype.hasOwnProperty.call(CHANNEL_PRIORITY_MAP, normalized)) {
+    return CHANNEL_PRIORITY_MAP[normalized];
+  }
+  return 99;
+}
+
+function readChannelFromParams(params = getCombinedSearchParams()) {
+  const raw = readParam(params, 'channel');
+  return normalizeRequestedChannel(raw);
+}
+
+function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
   const mountValue = normalizeValue('mount', readParam(params, 'mount'));
   const powerValue = normalizeValue('power', readParam(params, 'power'));
 
@@ -183,6 +255,14 @@ function buildConfigKeyFromParams() {
   return segments.join('-');
 }
 
+function readInstallQueryParams() {
+  const params = getCombinedSearchParams();
+  return {
+    configKey: buildConfigKeyFromParams(params),
+    channel: readChannelFromParams(params)
+  };
+}
+
 function ensureContainer() {
   let container = document.getElementById('compat-config-installer');
   if (container) {
@@ -220,7 +300,7 @@ function renderStatus(container, message) {
   container.style.display = '';
 }
 
-function renderNoMatch(container, configKey) {
+function renderNoMatch(container, configKey, channel) {
   container.innerHTML = '';
 
   const heading = document.createElement('h3');
@@ -236,13 +316,24 @@ function renderNoMatch(container, configKey) {
   message.appendChild(title);
 
   const description = document.createElement('p');
-  description.textContent = 'The requested firmware configuration was not found in the manifest:';
+  if (channel) {
+    description.textContent = 'The requested firmware configuration and channel were not found in the manifest:';
+  } else {
+    description.textContent = 'The requested firmware configuration was not found in the manifest:';
+  }
   message.appendChild(description);
 
   const config = document.createElement('p');
   config.className = 'config-string';
   config.textContent = configKey;
   message.appendChild(config);
+
+  if (channel) {
+    const channelLine = document.createElement('p');
+    channelLine.className = 'config-channel';
+    channelLine.textContent = `Channel: ${channel}`;
+    message.appendChild(channelLine);
+  }
 
   container.appendChild(message);
   container.style.display = '';
@@ -419,7 +510,7 @@ async function loadManifest() {
 }
 
 async function initializeCompatInstall() {
-  const configKey = buildConfigKeyFromParams();
+  const { configKey, channel: requestedChannel } = readInstallQueryParams();
   if (!configKey) {
     return;
   }
@@ -430,19 +521,61 @@ async function initializeCompatInstall() {
   try {
     const manifest = await loadManifest();
     const builds = Array.isArray(manifest.builds) ? manifest.builds : [];
-    const matchingBuild = builds.find((build) => {
+    const normalizedConfigKey = configKey.toLowerCase();
+    const matchingBuilds = builds.filter((build) => {
       if (!build || typeof build.config_string !== 'string') {
         return false;
       }
-      return build.config_string.toLowerCase() === configKey.toLowerCase();
+      return build.config_string.toLowerCase() === normalizedConfigKey;
     });
 
-    if (!matchingBuild) {
-      renderNoMatch(container, configKey);
+    if (matchingBuilds.length === 0) {
+      renderNoMatch(container, configKey, requestedChannel || undefined);
       return;
     }
 
-    renderInstall(container, manifest, matchingBuild, configKey);
+    let selectedBuild = null;
+
+    if (requestedChannel) {
+      const normalizedRequestedChannel = normalizeManifestChannel(requestedChannel);
+      const channelMatches = matchingBuilds.filter((build) => {
+        return normalizeManifestChannel(build.channel) === normalizedRequestedChannel;
+      });
+
+      selectedBuild = channelMatches[0] || null;
+
+      if (!selectedBuild) {
+        renderNoMatch(container, configKey, requestedChannel);
+        return;
+      }
+    } else {
+      let bestPriority = Number.POSITIVE_INFINITY;
+      let bestTimestamp = Number.NEGATIVE_INFINITY;
+
+      for (const build of matchingBuilds) {
+        const priority = getChannelPriority(build.channel);
+        const timestamp = getBuildTimestamp(build.build_date);
+
+        if (priority < bestPriority) {
+          bestPriority = priority;
+          bestTimestamp = timestamp;
+          selectedBuild = build;
+          continue;
+        }
+
+        if (priority === bestPriority && timestamp > bestTimestamp) {
+          bestTimestamp = timestamp;
+          selectedBuild = build;
+        }
+      }
+    }
+
+    if (!selectedBuild) {
+      renderNoMatch(container, configKey, requestedChannel || undefined);
+      return;
+    }
+
+    renderInstall(container, manifest, selectedBuild, configKey);
   } catch (error) {
     console.error('Direct install lookup failed', error);
     renderError(container, 'Please refresh the page and try again.');
