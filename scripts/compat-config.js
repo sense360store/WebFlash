@@ -4,7 +4,10 @@ const PARAM_ALIASES = {
   airiq: ['airiq'],
   presence: ['presence'],
   comfort: ['comfort'],
-  fan: ['fan']
+  fan: ['fan'],
+  model: ['model'],
+  variant: ['variant'],
+  sensor_addon: ['sensor_addon', 'sensor-addon']
 };
 
 const OPTION_MAPPINGS = {
@@ -255,10 +258,64 @@ function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
   return segments.join('-');
 }
 
+function normalizeModelLookupValue(raw) {
+  if (raw === null || raw === undefined) {
+    return null;
+  }
+
+  const trimmed = String(raw).trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function createModelSignature(model, variant, sensorAddon) {
+  const normalizedModel = model.toLowerCase();
+  const normalizedVariant = variant.toLowerCase();
+  const normalizedAddon = sensorAddon ? sensorAddon.toLowerCase() : '__base__';
+  return `${normalizedModel}::${normalizedVariant}::${normalizedAddon}`;
+}
+
+function buildModelLookupFromParams(params = getCombinedSearchParams()) {
+  const model = normalizeModelLookupValue(readParam(params, 'model'));
+  const variant = normalizeModelLookupValue(readParam(params, 'variant'));
+
+  if (!model || !variant) {
+    return null;
+  }
+
+  const sensorAddonRaw = normalizeModelLookupValue(readParam(params, 'sensor_addon'));
+  const sensorAddon = sensorAddonRaw && sensorAddonRaw.toLowerCase() === 'none'
+    ? null
+    : sensorAddonRaw;
+
+  return {
+    type: 'model',
+    model,
+    variant,
+    sensorAddon,
+    signature: createModelSignature(model, variant, sensorAddon)
+  };
+}
+
+function buildInstallLookupFromParams(params = getCombinedSearchParams()) {
+  const configKey = buildConfigKeyFromParams(params);
+  if (configKey) {
+    return {
+      type: 'config',
+      key: configKey
+    };
+  }
+
+  return buildModelLookupFromParams(params);
+}
+
 function readInstallQueryParams() {
   const params = getCombinedSearchParams();
   return {
-    configKey: buildConfigKeyFromParams(params),
+    lookup: buildInstallLookupFromParams(params),
     channel: readChannelFromParams(params)
   };
 }
@@ -300,7 +357,36 @@ function renderStatus(container, message) {
   container.style.display = '';
 }
 
-function renderNoMatch(container, configKey, channel) {
+function describeLookupForDisplay(lookup) {
+  if (!lookup || lookup.type !== 'model') {
+    if (!lookup || !lookup.key) {
+      return {
+        heading: 'Configuration',
+        value: ''
+      };
+    }
+
+    return {
+      heading: 'Configuration',
+      value: lookup.key
+    };
+  }
+
+  const segments = [lookup.model];
+  if (lookup.variant) {
+    segments.push(lookup.variant);
+  }
+  if (lookup.sensorAddon) {
+    segments.push(lookup.sensorAddon);
+  }
+
+  return {
+    heading: 'Device',
+    value: segments.join(' · ')
+  };
+}
+
+function renderNoMatch(container, lookup, channel) {
   container.innerHTML = '';
 
   const heading = document.createElement('h3');
@@ -315,17 +401,24 @@ function renderNoMatch(container, configKey, channel) {
   title.textContent = 'Firmware Not Found';
   message.appendChild(title);
 
+  const lookupDisplay = describeLookupForDisplay(lookup);
+  const isModelLookup = lookup && lookup.type === 'model';
+
   const description = document.createElement('p');
   if (channel) {
-    description.textContent = 'The requested firmware configuration and channel were not found in the manifest:';
+    description.textContent = isModelLookup
+      ? 'The requested firmware device selection and channel were not found in the manifest:'
+      : 'The requested firmware configuration and channel were not found in the manifest:';
   } else {
-    description.textContent = 'The requested firmware configuration was not found in the manifest:';
+    description.textContent = isModelLookup
+      ? 'The requested firmware device selection was not found in the manifest:'
+      : 'The requested firmware configuration was not found in the manifest:';
   }
   message.appendChild(description);
 
   const config = document.createElement('p');
   config.className = 'config-string';
-  config.textContent = configKey;
+  config.textContent = lookupDisplay.value || '—';
   message.appendChild(config);
 
   if (channel) {
@@ -424,7 +517,65 @@ function createOneOffManifest(manifest, build) {
   return currentManifestUrl;
 }
 
-function renderInstall(container, manifestData, build, configKey) {
+function extractFirmwareFileName(build) {
+  if (build && Array.isArray(build.parts)) {
+    for (const part of build.parts) {
+      if (part && typeof part.path === 'string') {
+        const trimmedPath = part.path.trim();
+        if (trimmedPath) {
+          const lastSlash = trimmedPath.lastIndexOf('/');
+          return lastSlash >= 0 ? trimmedPath.slice(lastSlash + 1) : trimmedPath;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatFallbackFileName(build, lookup) {
+  const versionSuffix = build && build.version ? `-v${build.version}` : '';
+  const channelSuffix = build && build.channel ? `-${build.channel}` : '';
+
+  if (build && typeof build.config_string === 'string' && build.config_string.trim()) {
+    return `Sense360-${build.config_string.trim()}${versionSuffix}${channelSuffix}.bin`;
+  }
+
+  if (lookup && lookup.type === 'model') {
+    const segments = [lookup.model];
+    if (lookup.variant) {
+      segments.push(lookup.variant);
+    }
+    if (lookup.sensorAddon) {
+      segments.push(lookup.sensorAddon);
+    }
+    const base = segments.filter(Boolean).join('-') || 'Sense360-Firmware';
+    return `${base}${versionSuffix}${channelSuffix}.bin`;
+  }
+
+  return `Sense360-Firmware${versionSuffix}${channelSuffix}.bin`;
+}
+
+function getModelSignatureForBuild(build) {
+  if (!build || typeof build !== 'object') {
+    return null;
+  }
+
+  const model = normalizeModelLookupValue(build.model);
+  const variant = normalizeModelLookupValue(build.variant);
+  if (!model || !variant) {
+    return null;
+  }
+
+  const sensorAddonRaw = normalizeModelLookupValue(build.sensor_addon);
+  const sensorAddon = sensorAddonRaw && sensorAddonRaw.toLowerCase() === 'none'
+    ? null
+    : sensorAddonRaw;
+
+  return createModelSignature(model, variant, sensorAddon);
+}
+
+function renderInstall(container, manifestData, build, lookup) {
   const manifestUrl = createOneOffManifest(manifestData, build);
 
   container.innerHTML = '';
@@ -436,8 +587,11 @@ function renderInstall(container, manifestData, build, configKey) {
 
   const subtitle = document.createElement('p');
   subtitle.className = 'compat-config-subtitle';
-  subtitle.textContent = `Configuration: ${configKey}`;
-  container.appendChild(subtitle);
+  const lookupDisplay = describeLookupForDisplay(lookup);
+  if (lookupDisplay.value) {
+    subtitle.textContent = `${lookupDisplay.heading}: ${lookupDisplay.value}`;
+    container.appendChild(subtitle);
+  }
 
   const firmwareItem = document.createElement('div');
   firmwareItem.className = 'firmware-item compat-config-item';
@@ -447,9 +601,8 @@ function renderInstall(container, manifestData, build, configKey) {
 
   const firmwareName = document.createElement('div');
   firmwareName.className = 'firmware-name';
-  const versionSuffix = build.version ? `-v${build.version}` : '';
-  const channelSuffix = build.channel ? `-${build.channel}` : '';
-  firmwareName.textContent = `Sense360-${configKey}${versionSuffix}${channelSuffix}.bin`;
+  const inferredName = extractFirmwareFileName(build) || formatFallbackFileName(build, lookup);
+  firmwareName.textContent = inferredName;
   firmwareInfo.appendChild(firmwareName);
 
   const firmwareDetails = document.createElement('div');
@@ -510,8 +663,8 @@ async function loadManifest() {
 }
 
 async function initializeCompatInstall() {
-  const { configKey, channel: requestedChannel } = readInstallQueryParams();
-  if (!configKey) {
+  const { lookup, channel: requestedChannel } = readInstallQueryParams();
+  if (!lookup) {
     return;
   }
 
@@ -521,16 +674,28 @@ async function initializeCompatInstall() {
   try {
     const manifest = await loadManifest();
     const builds = Array.isArray(manifest.builds) ? manifest.builds : [];
-    const normalizedConfigKey = configKey.toLowerCase();
-    const matchingBuilds = builds.filter((build) => {
-      if (!build || typeof build.config_string !== 'string') {
-        return false;
+    let matchingBuilds = [];
+
+    if (lookup.type === 'model') {
+      const targetSignature = lookup.signature || null;
+      if (targetSignature) {
+        matchingBuilds = builds.filter((build) => {
+          const buildSignature = getModelSignatureForBuild(build);
+          return buildSignature === targetSignature;
+        });
       }
-      return build.config_string.toLowerCase() === normalizedConfigKey;
-    });
+    } else {
+      const normalizedConfigKey = lookup.key.toLowerCase();
+      matchingBuilds = builds.filter((build) => {
+        if (!build || typeof build.config_string !== 'string') {
+          return false;
+        }
+        return build.config_string.toLowerCase() === normalizedConfigKey;
+      });
+    }
 
     if (matchingBuilds.length === 0) {
-      renderNoMatch(container, configKey, requestedChannel || undefined);
+      renderNoMatch(container, lookup, requestedChannel || undefined);
       return;
     }
 
@@ -545,7 +710,7 @@ async function initializeCompatInstall() {
       selectedBuild = channelMatches[0] || null;
 
       if (!selectedBuild) {
-        renderNoMatch(container, configKey, requestedChannel);
+        renderNoMatch(container, lookup, requestedChannel);
         return;
       }
     } else {
@@ -571,11 +736,11 @@ async function initializeCompatInstall() {
     }
 
     if (!selectedBuild) {
-      renderNoMatch(container, configKey, requestedChannel || undefined);
+      renderNoMatch(container, lookup, requestedChannel || undefined);
       return;
     }
 
-    renderInstall(container, manifest, selectedBuild, configKey);
+    renderInstall(container, manifest, selectedBuild, lookup);
   } catch (error) {
     console.error('Direct install lookup failed', error);
     renderError(container, 'Please refresh the page and try again.');
