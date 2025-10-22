@@ -7,6 +7,7 @@ const MAX_SERIAL_LINES = 2000;
 
 const serialLogBuffer = [];
 const downloadUrls = new Set();
+const statusFlashTimers = new WeakMap();
 let currentBundle = null;
 let includeGzipByDefault = false;
 let lastActiveElement = null;
@@ -230,13 +231,96 @@ function buildIssueUrl(bundle, options = {}) {
     return `https://github.com/sense360store/WebFlash/issues/new?${params.toString()}`;
 }
 
-function setStatus(statusEl, message, type = 'info') {
+function setStatus(statusEl, message, type = 'info', options = {}) {
     if (!statusEl) {
         return;
     }
     statusEl.textContent = message;
     statusEl.dataset.status = type;
     statusEl.setAttribute('aria-live', 'polite');
+    if (options.persist !== false) {
+        const existingTimer = statusFlashTimers.get(statusEl);
+        if (existingTimer) {
+            clearTimeout(existingTimer);
+            statusFlashTimers.delete(statusEl);
+        }
+        statusEl.dataset.lastMessage = message;
+        statusEl.dataset.lastStatusType = type;
+    }
+}
+
+function flashStatus(statusEl, message, type = 'info', duration = 1200) {
+    if (!statusEl) {
+        return;
+    }
+
+    const previousMessage = statusEl.dataset.lastMessage ?? statusEl.textContent ?? '';
+    const previousType = statusEl.dataset.lastStatusType ?? statusEl.dataset.status ?? 'info';
+
+    setStatus(statusEl, message, type, { persist: false });
+
+    const existingTimer = statusFlashTimers.get(statusEl);
+    if (existingTimer) {
+        clearTimeout(existingTimer);
+    }
+
+    const timer = setTimeout(() => {
+        setStatus(statusEl, previousMessage, previousType);
+        statusFlashTimers.delete(statusEl);
+    }, duration);
+
+    statusFlashTimers.set(statusEl, timer);
+}
+
+async function copyTextToClipboard(text) {
+    if (typeof text !== 'string') {
+        return false;
+    }
+
+    const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+    const doc = typeof document !== 'undefined' ? document : undefined;
+
+    if (!doc || !doc.body) {
+        return false;
+    }
+
+    try {
+        if (nav?.clipboard?.writeText) {
+            await nav.clipboard.writeText(text);
+            return true;
+        }
+    } catch (error) {
+        console.warn('navigator.clipboard.writeText failed', error);
+    }
+
+    let textarea;
+    try {
+        textarea = doc.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        doc.body.appendChild(textarea);
+        if (typeof textarea.focus === 'function') {
+            try {
+                textarea.focus({ preventScroll: true });
+            } catch (focusError) {
+                textarea.focus();
+            }
+        }
+        textarea.select();
+        if (typeof doc.execCommand !== 'function') {
+            return false;
+        }
+        const successful = doc.execCommand('copy');
+        return successful;
+    } catch (error) {
+        console.warn('Fallback clipboard copy failed', error);
+        return false;
+    } finally {
+        if (textarea && textarea.parentNode) {
+            textarea.parentNode.removeChild(textarea);
+        }
+    }
 }
 
 function createModalElements(closeModal, onCreate) {
@@ -394,6 +478,11 @@ function createModalElements(closeModal, onCreate) {
     copyButton.classList.add('secondary');
     copyButton.disabled = true;
 
+    const shareButton = document.createElement('button');
+    shareButton.type = 'button';
+    shareButton.textContent = 'Copy share link';
+    shareButton.classList.add('secondary');
+
     const emailButton = document.createElement('button');
     emailButton.type = 'button';
     emailButton.textContent = 'Email support';
@@ -409,6 +498,7 @@ function createModalElements(closeModal, onCreate) {
     actions.appendChild(createButton);
     actions.appendChild(downloadButton);
     actions.appendChild(copyButton);
+    actions.appendChild(shareButton);
     actions.appendChild(emailButton);
     actions.appendChild(issueButton);
 
@@ -438,6 +528,7 @@ function createModalElements(closeModal, onCreate) {
         createButton,
         downloadButton,
         copyButton,
+        shareButton,
         emailButton,
         issueButton,
         previewSection,
@@ -701,27 +792,49 @@ function initSupportUI() {
         if (!currentBundle) {
             return;
         }
-        const text = currentBundle.summary;
-        if (navigator.clipboard?.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
-                setStatus(status, 'Summary copied to clipboard.');
-            }).catch(() => {
-                setStatus(status, 'Unable to copy summary.', 'error');
-            });
+        const success = await copyTextToClipboard(currentBundle.summary);
+        if (success) {
+            flashStatus(status, 'Summary copied to clipboard.');
         } else {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                setStatus(status, 'Summary copied to clipboard.');
-            } catch (error) {
-                setStatus(status, 'Unable to copy summary.', 'error');
-            }
-            document.body.removeChild(textarea);
+            flashStatus(status, 'Unable to copy summary.', 'error');
+        }
+    }
+
+    async function handleShareCopy() {
+        const wizardSummary = window.wizardStateSummary || null;
+        if (!wizardSummary || typeof wizardSummary.buildShareableUrl !== 'function') {
+            flashStatus(status, 'Share link is not available.', 'error');
+            return;
+        }
+
+        let state = {};
+        try {
+            state = typeof wizardSummary.getState === 'function' ? wizardSummary.getState() : {};
+        } catch (error) {
+            console.error('Unable to read wizard state', error);
+            flashStatus(status, 'Unable to read current configuration.', 'error');
+            return;
+        }
+
+        let url = '';
+        try {
+            url = wizardSummary.buildShareableUrl(state);
+        } catch (error) {
+            console.error('Failed to build shareable URL', error);
+            flashStatus(status, 'Unable to create share link.', 'error');
+            return;
+        }
+
+        if (!url) {
+            flashStatus(status, 'Share link is not available.', 'error');
+            return;
+        }
+
+        const success = await copyTextToClipboard(url);
+        if (success) {
+            flashStatus(status, 'Share link copied to clipboard.');
+        } else {
+            flashStatus(status, 'Unable to copy share link.', 'error');
         }
     }
 
@@ -807,6 +920,7 @@ function initSupportUI() {
     createSupportButton(openModal);
 
     window.supportBundle = Object.freeze({
+        open: openModal,
         pushSerial: pushSerialLog,
         clearSerial: () => {
             serialLogBuffer.length = 0;
