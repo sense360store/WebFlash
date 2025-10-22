@@ -13,6 +13,7 @@ Usage (from repository root):
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -319,6 +320,8 @@ class FirmwareArtifact:
     relative_path: str
     chip_family: str
     md5: str
+    sha256: str
+    signature: str
     file_size: int
     build_date: str
 
@@ -334,12 +337,16 @@ class FirmwareArtifact:
                     "path": self.relative_path,
                     "offset": 0,
                     "md5": self.md5,
+                    "sha256": self.sha256,
+                    "signature": self.signature,
                 }
             ],
             "build_date": self.build_date,
             "file_size": self.file_size,
             "improv": True,
             "md5": self.md5,
+            "sha256": self.sha256,
+            "signature": self.signature,
             "features": list(self.metadata.features),
             "hardware_requirements": list(self.metadata.hardware_requirements),
             "known_issues": [],
@@ -365,12 +372,22 @@ class FirmwareArtifact:
         return entry
 
 
-def compute_md5(path: Path) -> str:
-    digest = hashlib.md5()
+SIGNATURE_SALT = b"Sense360 Firmware Signing Salt v1"
+
+
+def compute_digests(path: Path) -> Tuple[str, str, str]:
+    md5_digest = hashlib.md5()
+    sha_digest = hashlib.sha256()
+    signature_digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(65536), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+            md5_digest.update(chunk)
+            sha_digest.update(chunk)
+            signature_digest.update(chunk)
+    signature_digest.update(SIGNATURE_SALT)
+    signature_bytes = signature_digest.digest()
+    signature_blob = base64.b64encode(signature_bytes).decode("ascii")
+    return md5_digest.hexdigest(), sha_digest.hexdigest(), signature_blob
 
 
 def detect_chip_family(metadata: FirmwareMetadata, path: Path) -> str:
@@ -454,7 +471,7 @@ def collect_firmware(
         else:
             source_path = bin_path
         chip_family = metadata.chip_family or detect_chip_family(metadata, target_path)
-        md5 = compute_md5(source_path)
+        md5, sha256, signature = compute_digests(source_path)
         stat = source_path.stat()
         build_date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
         rel_path = Path(os.path.relpath(target_path, repo_root)).as_posix()
@@ -465,6 +482,8 @@ def collect_firmware(
                 relative_path=rel_path,
                 chip_family=chip_family,
                 md5=md5,
+                sha256=sha256,
+                signature=signature,
                 file_size=stat.st_size,
                 build_date=build_date,
             )
@@ -599,9 +618,14 @@ def write_individual_manifests(
                             "path": artifact.relative_path,
                             "offset": 0,
                             "md5": artifact.md5,
+                            "sha256": artifact.sha256,
+                            "signature": artifact.signature,
                         }
                     ],
                     "improv": True,
+                    "md5": artifact.md5,
+                    "sha256": artifact.sha256,
+                    "signature": artifact.signature,
                 }
             ],
         }
