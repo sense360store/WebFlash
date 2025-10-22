@@ -6,6 +6,7 @@ import {
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
+import { generateEsphomeYaml } from './utils/esphome-yaml.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -411,6 +412,9 @@ let currentFirmwareSelectionId = null;
 let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
+let currentFirmwareYamlDownloadUrl = null;
+
+window.currentFirmwareYaml = null;
 
 function syncChecklistCompletion() {
     const section = document.querySelector('.pre-flash-checklist');
@@ -513,6 +517,23 @@ function attachInstallButtonListeners() {
                 });
         }
     });
+}
+
+function attachYamlActionHandlers() {
+    const panel = document.querySelector('[data-firmware-yaml]');
+    if (!panel) {
+        return;
+    }
+
+    const copyButton = panel.querySelector('[data-yaml-copy]');
+    if (copyButton) {
+        copyButton.addEventListener('click', handleYamlCopy);
+    }
+
+    const downloadButton = panel.querySelector('[data-yaml-download]');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', handleYamlDownload);
+    }
 }
 
 function syncRememberToggleElements(sourceToggle) {
@@ -1443,6 +1464,33 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
     `;
 }
 
+function createFirmwareYamlPanel({ yaml = '', context = null } = {}) {
+    if (!yaml || typeof yaml !== 'string' || yaml.trim().length === 0) {
+        return '';
+    }
+
+    const moduleSummary = context?.moduleSummary || 'No expansion modules';
+    const sensorsSummary = Array.isArray(context?.aggregatedSensors) && context.aggregatedSensors.length
+        ? `Sensors: ${context.aggregatedSensors.join(', ')}`
+        : 'Sensors: None listed';
+
+    const infoLine = `${moduleSummary} • ${sensorsSummary}`;
+
+    return `
+        <section class="firmware-yaml-panel" data-firmware-yaml>
+            <div class="firmware-yaml-header">
+                <h4>ESPHome YAML</h4>
+                <div class="firmware-yaml-actions">
+                    <button type="button" class="btn btn-secondary" data-yaml-copy>Copy YAML</button>
+                    <button type="button" class="btn btn-secondary" data-yaml-download>Download YAML</button>
+                </div>
+            </div>
+            <pre class="firmware-yaml-code"><code>${escapeHtml(yaml)}</code></pre>
+            <p class="firmware-yaml-meta">${escapeHtml(infoLine)}</p>
+        </section>
+    `;
+}
+
 function formatVariantHeadingLabel(bucket) {
     if (!bucket) {
         return '';
@@ -1709,7 +1757,33 @@ function renderSelectedFirmware() {
     if (firmware) {
         const configContext = firmware.config_string || window.currentConfigString || '';
         sections.push(createFirmwareCardHtml(firmware, { configString: configContext, contextKey: 'primary' }));
+
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
+
+        const yamlResult = generateEsphomeYaml({
+            firmware,
+            configString: configContext,
+            manifest: manifestData
+        });
+
+        if (yamlResult?.yaml && yamlResult.yaml.trim()) {
+            window.currentFirmwareYaml = {
+                yaml: yamlResult.yaml,
+                context: yamlResult.context
+            };
+            sections.push(createFirmwareYamlPanel(window.currentFirmwareYaml));
+        } else {
+            window.currentFirmwareYaml = null;
+        }
     } else if (firmwareStatusMessage?.type === 'not-available' && firmwareStatusMessage.configString) {
+        window.currentFirmwareYaml = null;
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
         const sanitizedConfig = escapeHtml(firmwareStatusMessage.configString);
         sections.push(`
             <div class="firmware-not-available">
@@ -1720,6 +1794,11 @@ function renderSelectedFirmware() {
             </div>
         `);
     } else if (firmwareStatusMessage?.type === 'error' && firmwareStatusMessage.message) {
+        window.currentFirmwareYaml = null;
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
         sections.push(`
             <div class="firmware-error">
                 <h4>Error Loading Firmware</h4>
@@ -1727,6 +1806,11 @@ function renderSelectedFirmware() {
             </div>
         `);
     } else {
+        window.currentFirmwareYaml = null;
+        if (currentFirmwareYamlDownloadUrl) {
+            URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+            currentFirmwareYamlDownloadUrl = null;
+        }
         sections.push(`
             <div class="firmware-selection-placeholder">
                 <p>Select a firmware release to see details.</p>
@@ -1746,6 +1830,7 @@ function renderSelectedFirmware() {
     container.innerHTML = sections.join('');
 
     attachInstallButtonListeners();
+    attachYamlActionHandlers();
 }
 
 async function findCompatibleFirmware() {
@@ -2268,6 +2353,69 @@ async function copyFirmwarePartsToClipboard(parts) {
         showToast('Copy failed');
         return false;
     }
+}
+
+async function handleYamlCopy(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    const yaml = window.currentFirmwareYaml?.yaml;
+    if (!yaml || !yaml.trim()) {
+        showToast('Nothing to copy');
+        return;
+    }
+
+    if (!navigator.clipboard) {
+        showToast('Copy not supported');
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(yaml);
+        showToast('YAML copied to clipboard');
+    } catch (error) {
+        console.error('Failed to copy YAML snippet:', error);
+        showToast('Copy failed');
+    }
+}
+
+function handleYamlDownload(event) {
+    if (event) {
+        event.preventDefault();
+    }
+
+    const yamlPayload = window.currentFirmwareYaml;
+    const yaml = yamlPayload?.yaml;
+    if (!yaml || !yaml.trim()) {
+        showToast('Nothing to download');
+        return;
+    }
+
+    if (currentFirmwareYamlDownloadUrl) {
+        URL.revokeObjectURL(currentFirmwareYamlDownloadUrl);
+        currentFirmwareYamlDownloadUrl = null;
+    }
+
+    const blob = new Blob([yaml], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    currentFirmwareYamlDownloadUrl = url;
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = yamlPayload?.context?.yamlFileName || 'sense360-firmware.yaml';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+        if (currentFirmwareYamlDownloadUrl === url) {
+            URL.revokeObjectURL(url);
+            currentFirmwareYamlDownloadUrl = null;
+        }
+    }, 1000);
+
+    showToast('YAML download started');
 }
 
 async function copyFirmwareUrl() {

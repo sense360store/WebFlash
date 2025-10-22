@@ -1002,6 +1002,53 @@ h1 {
     gap: 16px;
 }
 
+.firmware-yaml-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface-muted);
+}
+
+.firmware-yaml-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.firmware-yaml-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.firmware-yaml-code {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 16px;
+    font-family: var(--font-monospace, 'SFMono-Regular', 'Fira Code', monospace);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    overflow: auto;
+    max-height: 360px;
+}
+
+.firmware-yaml-code code {
+    display: block;
+    white-space: pre;
+}
+
+.firmware-yaml-meta {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+}
+
 .firmware-item {
     background: var(--color-surface-muted);
     border: 1px solid var(--color-border);
