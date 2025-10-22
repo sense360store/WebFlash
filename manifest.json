@@ -19,7 +19,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -51,7 +51,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -83,7 +83,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -115,7 +115,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -147,7 +147,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -179,7 +179,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -211,7 +211,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -243,7 +243,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -275,7 +275,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -307,7 +307,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -341,7 +341,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -363,6 +363,38 @@
     {
       "device_type": "Core Module",
       "version": "1.0.0",
+      "channel": "rescue",
+      "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin",
+          "offset": 0,
+          "md5": "4c701b6c02ab3bbf922e4f7f4a041b43",
+          "sha256": "48d1239e199fe886f4046708c42059197f8227f23c92cb621a4f6892b8d27b0d",
+          "signature": "BNPfYyIy/W9uePK8VpUB84x9iI9EdLexJ+KiZ4aWDAg="
+        }
+      ],
+      "build_date": "2025-10-22T21:22:45.840767+00:00",
+      "file_size": 31,
+      "improv": false,
+      "md5": "4c701b6c02ab3bbf922e4f7f4a041b43",
+      "sha256": "48d1239e199fe886f4046708c42059197f8227f23c92cb621a4f6892b8d27b0d",
+      "signature": "BNPfYyIy/W9uePK8VpUB84x9iI9EdLexJ+KiZ4aWDAg=",
+      "features": [
+        "rescue"
+      ],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Rescue",
+      "mounting": "Universal",
+      "power": "Universal",
+      "modules": []
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Wall-POE-AirIQBase configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
@@ -375,7 +407,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -407,7 +439,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -439,7 +471,7 @@
           "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.292164+00:00",
+      "build_date": "2025-10-22T19:14:49.891220+00:00",
       "file_size": 1032016,
       "improv": true,
       "md5": "e02ba33bea0997b543ddac28af33fc2f",
@@ -469,7 +501,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.879220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -499,7 +531,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -529,7 +561,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -561,7 +593,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T15:49:51.284164+00:00",
+      "build_date": "2025-10-22T19:14:49.875220+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -577,36 +609,6 @@
       "modules": [
         "AirIQPro"
       ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "rescue",
-      "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/rescue/Sense360-Rescue.bin",
-          "offset": 0,
-          "md5": "4c701b6c02ab3bbf922e4f7f4a041b43"
-        }
-      ],
-      "build_date": "2024-01-01T00:00:00.000Z",
-      "file_size": 31,
-      "improv": false,
-      "md5": "4c701b6c02ab3bbf922e4f7f4a041b43",
-      "features": [
-        "rescue"
-      ],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Factory reset build for emergency recovery"
-      ],
-      "config_string": "Rescue",
-      "mounting": "Universal",
-      "power": "Universal",
-      "modules": []
     }
   ]
 }
