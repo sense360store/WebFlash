@@ -56,14 +56,40 @@
                     <label class="option-card">
                         <input type="radio" name="mounting" value="wall">
                         <div class="option-content">
-                            <div class="option-title">Wall Mount</div>
+                            <div class="option-header">
+                                <div class="option-title">Wall Mount</div>
+                                <button
+                                    type="button"
+                                    class="option-info-button"
+                                    data-option-info
+                                    data-option-group="mounting"
+                                    data-option-value="wall"
+                                    aria-label="Details about Wall Mount"
+                                    aria-describedby="tooltip-text-mounting-wall"
+                                >
+                                    <span aria-hidden="true">i</span>
+                                </button>
+                            </div>
                             <div class="option-description">Standard wall installation with full module support</div>
                         </div>
                     </label>
                     <label class="option-card">
                         <input type="radio" name="mounting" value="ceiling">
                         <div class="option-content">
-                            <div class="option-title">Ceiling Mount</div>
+                            <div class="option-header">
+                                <div class="option-title">Ceiling Mount</div>
+                                <button
+                                    type="button"
+                                    class="option-info-button"
+                                    data-option-info
+                                    data-option-group="mounting"
+                                    data-option-value="ceiling"
+                                    aria-label="Details about Ceiling Mount"
+                                    aria-describedby="tooltip-text-mounting-ceiling"
+                                >
+                                    <span aria-hidden="true">i</span>
+                                </button>
+                            </div>
                             <div class="option-description">Ceiling installation (Fan Module not available)</div>
                         </div>
                     </label>
@@ -80,21 +106,60 @@
                     <label class="option-card">
                         <input type="radio" name="power" value="usb">
                         <div class="option-content">
-                            <div class="option-title">USB Power</div>
+                            <div class="option-header">
+                                <div class="option-title">USB Power</div>
+                                <button
+                                    type="button"
+                                    class="option-info-button"
+                                    data-option-info
+                                    data-option-group="power"
+                                    data-option-value="usb"
+                                    aria-label="Details about USB Power"
+                                    aria-describedby="tooltip-text-power-usb"
+                                >
+                                    <span aria-hidden="true">i</span>
+                                </button>
+                            </div>
                             <div class="option-description">Standard USB-C power connection</div>
                         </div>
                     </label>
                     <label class="option-card">
                         <input type="radio" name="power" value="poe">
                         <div class="option-content">
-                            <div class="option-title">POE Module</div>
+                            <div class="option-header">
+                                <div class="option-title">POE Module</div>
+                                <button
+                                    type="button"
+                                    class="option-info-button"
+                                    data-option-info
+                                    data-option-group="power"
+                                    data-option-value="poe"
+                                    aria-label="Details about POE Module"
+                                    aria-describedby="tooltip-text-power-poe"
+                                >
+                                    <span aria-hidden="true">i</span>
+                                </button>
+                            </div>
                             <div class="option-description">Power over Ethernet module</div>
                         </div>
                     </label>
                     <label class="option-card">
                         <input type="radio" name="power" value="pwr">
                         <div class="option-content">
-                            <div class="option-title">PWR Module</div>
+                            <div class="option-header">
+                                <div class="option-title">PWR Module</div>
+                                <button
+                                    type="button"
+                                    class="option-info-button"
+                                    data-option-info
+                                    data-option-group="power"
+                                    data-option-value="pwr"
+                                    aria-label="Details about PWR Module"
+                                    aria-describedby="tooltip-text-power-pwr"
+                                >
+                                    <span aria-hidden="true">i</span>
+                                </button>
+                            </div>
                             <div class="option-description">External power module</div>
                         </div>
                     </label>
@@ -119,21 +184,60 @@
                         <label class="option-card">
                             <input type="radio" name="airiq" value="none" checked>
                             <div class="option-content">
-                                <div class="option-title">None</div>
+                                <div class="option-header">
+                                    <div class="option-title">None</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="airiq"
+                                        data-option-value="none"
+                                        aria-label="Details about selecting no AirIQ module"
+                                        aria-describedby="tooltip-text-airiq-none"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">No AirIQ module</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="airiq" value="base">
                             <div class="option-content">
-                                <div class="option-title">Base</div>
+                                <div class="option-header">
+                                    <div class="option-title">Base</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="airiq"
+                                        data-option-value="base"
+                                        aria-label="Details about AirIQ Base"
+                                        aria-describedby="tooltip-text-airiq-base"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="airiq" value="pro">
                             <div class="option-content">
-                                <div class="option-title">Pro</div>
+                                <div class="option-header">
+                                    <div class="option-title">Pro</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="airiq"
+                                        data-option-value="pro"
+                                        aria-label="Details about AirIQ Pro"
+                                        aria-describedby="tooltip-text-airiq-pro"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
                             </div>
                         </label>
@@ -147,21 +251,60 @@
                         <label class="option-card">
                             <input type="radio" name="presence" value="none" checked>
                             <div class="option-content">
-                                <div class="option-title">None</div>
+                                <div class="option-header">
+                                    <div class="option-title">None</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="presence"
+                                        data-option-value="none"
+                                        aria-label="Details about selecting no Presence module"
+                                        aria-describedby="tooltip-text-presence-none"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">No Presence module</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="presence" value="base">
                             <div class="option-content">
-                                <div class="option-title">Base</div>
+                                <div class="option-header">
+                                    <div class="option-title">Base</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="presence"
+                                        data-option-value="base"
+                                        aria-label="Details about Presence Base"
+                                        aria-describedby="tooltip-text-presence-base"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">SEN0609 mmWave sensor</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="presence" value="pro">
                             <div class="option-content">
-                                <div class="option-title">Pro</div>
+                                <div class="option-header">
+                                    <div class="option-title">Pro</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="presence"
+                                        data-option-value="pro"
+                                        aria-label="Details about Presence Pro"
+                                        aria-describedby="tooltip-text-presence-pro"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">SEN0609 + LD2450 radar</div>
                             </div>
                         </label>
@@ -175,14 +318,40 @@
                         <label class="option-card">
                             <input type="radio" name="comfort" value="none" checked>
                             <div class="option-content">
-                                <div class="option-title">None</div>
+                                <div class="option-header">
+                                    <div class="option-title">None</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="comfort"
+                                        data-option-value="none"
+                                        aria-label="Details about selecting no Comfort module"
+                                        aria-describedby="tooltip-text-comfort-none"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">No Comfort module</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="comfort" value="base">
                             <div class="option-content">
-                                <div class="option-title">Base</div>
+                                <div class="option-header">
+                                    <div class="option-title">Base</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="comfort"
+                                        data-option-value="base"
+                                        aria-label="Details about Comfort Base"
+                                        aria-describedby="tooltip-text-comfort-base"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">SHT40 + LTR-303 sensors</div>
                             </div>
                         </label>
@@ -196,26 +365,82 @@
                         <label class="option-card">
                             <input type="radio" name="fan" value="none" checked>
                             <div class="option-content">
-                                <div class="option-title">None</div>
+                                <div class="option-header">
+                                    <div class="option-title">None</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="fan"
+                                        data-option-value="none"
+                                        aria-label="Details about selecting no Fan module"
+                                        aria-describedby="tooltip-text-fan-none"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">No Fan module</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="fan" value="pwm">
                             <div class="option-content">
-                                <div class="option-title">PWM</div>
+                                <div class="option-header">
+                                    <div class="option-title">PWM</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="fan"
+                                        data-option-value="pwm"
+                                        aria-label="Details about PWM Fan Module"
+                                        aria-describedby="tooltip-text-fan-pwm"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">Variable speed fan control</div>
                             </div>
                         </label>
                         <label class="option-card">
                             <input type="radio" name="fan" value="analog">
                             <div class="option-content">
-                                <div class="option-title">Analog</div>
+                                <div class="option-header">
+                                    <div class="option-title">Analog</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="fan"
+                                        data-option-value="analog"
+                                        aria-label="Details about Analog Fan Module"
+                                        aria-describedby="tooltip-text-fan-analog"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
                                 <div class="option-description">0-10V analog fan control</div>
                             </div>
                         </label>
                     </div>
                 </div>
+
+                <section class="preset-panel" id="preset-manager" aria-labelledby="preset-manager-title">
+                    <div class="preset-panel__header">
+                        <h3 class="preset-panel__title" id="preset-manager-title">Presets</h3>
+                        <p class="preset-panel__description">Save and reuse frequently used configurations.</p>
+                    </div>
+                    <ul class="preset-panel__list" data-preset-list role="list"></ul>
+                    <p class="preset-panel__empty" data-preset-empty>Save your first preset to get started.</p>
+                    <form class="preset-panel__form" data-preset-form>
+                        <label class="preset-panel__label" for="preset-name-input">Preset name</label>
+                        <div class="preset-panel__controls">
+                            <input id="preset-name-input" type="text" name="preset-name" data-preset-name placeholder="e.g. Wall • USB • Pro modules" autocomplete="off">
+                            <button type="submit" class="btn btn-secondary btn-small" data-preset-save disabled>Save preset</button>
+                        </div>
+                        <p class="preset-panel__hint">Presets capture your selections from steps 1–3.</p>
+                    </form>
+                </section>
 
                 <div class="remember-preference">
                     <label class="remember-toggle">
@@ -240,6 +465,18 @@
                         <!-- Summary will be populated by JavaScript -->
                     </div>
                 </div>
+
+                <section class="hardware-detection" aria-labelledby="hardware-detection-title">
+                    <div class="hardware-detection__header">
+                        <h3 id="hardware-detection-title">Detected Device</h3>
+                        <button type="button" class="btn btn-secondary" id="serial-detection-refresh">Detect Device</button>
+                    </div>
+                    <div id="serial-detection" class="hardware-detection__body" role="status" aria-live="polite">
+                        <p id="serial-detection-summary" class="hardware-detection__summary">Connect your Sense360 hub and choose “Detect Device”.</p>
+                        <ul id="serial-detection-list" class="hardware-detection__list"></ul>
+                        <p id="serial-detection-guidance" class="hardware-detection__guidance"></p>
+                    </div>
+                </section>
 
                 <section class="pre-flash-checklist" aria-labelledby="pre-flash-title">
                     <h3 class="checklist-heading" id="pre-flash-title">Pre-Flash Checklist</h3>
@@ -270,6 +507,65 @@
                         <!-- Compatible firmware will be shown here -->
                     </div>
                 </div>
+
+                <section class="post-install-guidance" data-post-install-guidance hidden aria-live="polite">
+                    <div class="post-install-guidance__header">
+                        <h3>Next steps</h3>
+                        <p>Firmware installed successfully. Finish setup by provisioning Wi‑Fi and assigning a friendly device name.</p>
+                        <p class="post-install-guidance__note" data-post-install-guidance-note hidden></p>
+                    </div>
+                    <ol class="post-install-guidance__list">
+                        <li class="post-install-guidance__item">
+                            <div class="post-install-guidance__item-heading">
+                                <h4>Provision Wi‑Fi</h4>
+                            </div>
+                            <p>Keep the hub connected and start the Improv Wi‑Fi workflow so it can join your network:</p>
+                            <div class="post-install-guidance__actions">
+                                <a class="btn btn-secondary post-install-guidance__action" href="https://web.esphome.io/improv/?autostart=1#device=serial" target="_blank" rel="noopener" data-guidance-link="improv">Open Improv Wi‑Fi</a>
+                                <button type="button" class="btn btn-copy post-install-guidance__action" data-copy-text="https://web.esphome.io/improv/?autostart=1#device=serial" data-copy-success="Improv link copied">Copy link</button>
+                            </div>
+                            <p class="post-install-guidance__pitfall"><strong>Common pitfall:</strong> Improv only works on 2.4&nbsp;GHz SSIDs without captive portals, VPN requirements, or MAC filtering. If provisioning stalls, double-check the network and leave BOOT/RESET alone until the flow finishes.</p>
+                        </li>
+                        <li class="post-install-guidance__item">
+                            <div class="post-install-guidance__item-heading">
+                                <h4>Name the device</h4>
+                            </div>
+                            <p>Apply the fleet naming convention before installation day. Use this template with the Sense360 CLI or Fleet Manager rename dialog.</p>
+                            <div class="post-install-guidance__actions post-install-guidance__actions--stacked">
+                                <code class="post-install-guidance__code" data-copy-source>sense360-cli device name --id &lt;device-id&gt; --name &quot;Building-Room-Device&quot;</code>
+                                <button type="button" class="btn btn-copy post-install-guidance__action" data-copy-text="sense360-cli device name --id &lt;device-id&gt; --name &quot;Building-Room-Device&quot;" data-copy-success="Command copied">Copy command</button>
+                            </div>
+                            <p class="post-install-guidance__pitfall"><strong>Common pitfall:</strong> Names with spaces, emojis, or punctuation are rejected. Stick to letters, numbers, and hyphens—for example <code>Lobby-01-East</code>.</p>
+                        </li>
+                    </ol>
+                <section class="rescue-install" aria-labelledby="rescue-install-title">
+                    <h3 class="rescue-install__heading" id="rescue-install-title">Rescue Install</h3>
+                    <p class="rescue-install__intro">If the recommended firmware fails to boot or the hub is stuck in a flashing loop, use the rescue image to restore the bootloader before trying again.</p>
+                    <div class="firmware-card firmware-card--rescue" data-rescue-card>
+                        <div class="firmware-item">
+                            <div class="firmware-info">
+                                <div class="firmware-header">
+                                    <div class="firmware-name">Sense360 Rescue Firmware</div>
+                                    <span class="firmware-channel-tag is-rescue">Rescue Build</span>
+                                </div>
+                                <div class="firmware-details">
+                                    <span class="firmware-version">v1.0.0-rescue</span>
+                                    <span class="firmware-size">31 B</span>
+                                    <span class="firmware-date">Jan 1, 2024</span>
+                                </div>
+                                <p class="firmware-description">Launches a known-good recovery image that skips configuration matching to bring unresponsive devices back online.</p>
+                            </div>
+                            <div class="firmware-actions">
+                                <esp-web-install-button manifest="firmware-18.json" data-rescue-install data-webflash-install>
+                                    <button slot="activate" class="btn btn-secondary" type="button" data-rescue-install>
+                                        Launch Rescue Installer
+                                    </button>
+                                </esp-web-install-button>
+                                <p class="ready-helper" role="status" aria-live="polite">Always available for emergency recovery.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 <div class="remember-preference">
                     <label class="remember-toggle">
@@ -336,6 +632,7 @@
 <script type="module" src="scripts/state.js"></script>
     <script type="module" src="scripts/query-presets.js"></script>
     <script type="module" src="scripts/support/ui.js"></script>
+    <script type="module" src="scripts/support/option-tooltips.js"></script>
 
     <script type="module" src="scripts/compat-config.js"></script>
     <script type="module" src="scripts/init-review.js"></script>

@@ -505,6 +505,36 @@
       "modules": [
         "AirIQPro"
       ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "rescue",
+      "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/rescue/Sense360-Rescue.bin",
+          "offset": 0,
+          "md5": "4c701b6c02ab3bbf922e4f7f4a041b43"
+        }
+      ],
+      "build_date": "2024-01-01T00:00:00.000Z",
+      "file_size": 31,
+      "improv": false,
+      "md5": "4c701b6c02ab3bbf922e4f7f4a041b43",
+      "features": [
+        "rescue"
+      ],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [
+        "Factory reset build for emergency recovery"
+      ],
+      "config_string": "Rescue",
+      "mounting": "Universal",
+      "power": "Universal",
+      "modules": []
     }
   ]
 }

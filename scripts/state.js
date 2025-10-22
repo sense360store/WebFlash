@@ -6,6 +6,11 @@ import {
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
+import {
+    detectSerialDevices,
+    formatPortSummary,
+    isChipFamilyCompatible
+} from './support/serial-detection.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -103,6 +108,11 @@ const CHANNEL_DISPLAY_MAP = {
         label: 'Development Build',
         description: 'Cutting-edge development firmware intended for advanced testing only.',
         notesFallback: 'Development build notes are not available for this firmware version.'
+    },
+    rescue: {
+        label: 'Rescue Build',
+        description: 'Emergency recovery firmware for bringing devices back from failed installs.',
+        notesFallback: 'Rescue builds do not ship release notes.'
     }
 };
 
@@ -119,6 +129,7 @@ const CHANNEL_PRIORITY_MAP = {
     release: 0,
     prod: 0,
     production: 0,
+    rescue: -1,
     lts: 0,
     preview: 1,
     prerelease: 1,
@@ -408,12 +419,306 @@ const REMEMBER_TOGGLE_SELECTOR = '[data-remember-toggle]';
 
 const firmwareSelectorWrapper = document.getElementById('firmware-selector');
 const firmwareVersionSelect = document.getElementById('firmware-version-select');
+const SERIAL_DETECTION_DEFAULT_MESSAGE = 'Connect your Sense360 hub and choose “Detect Device”.';
+const serialDetectionSummary = document.getElementById('serial-detection-summary');
+const serialDetectionList = document.getElementById('serial-detection-list');
+const serialDetectionGuidance = document.getElementById('serial-detection-guidance');
+const serialDetectionRefreshButton = document.getElementById('serial-detection-refresh');
 let firmwareOptions = [];
 let firmwareOptionsMap = new Map();
 let currentFirmwareSelectionId = null;
 let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
+let serialDetectionPromise = null;
+
+const MAX_RESCUE_HISTORY = 20;
+const rescueInstallHistory = [];
+
+function summariseRescueDetail(detail) {
+    if (!detail || typeof detail !== 'object') {
+        return {};
+    }
+
+    const summary = {};
+    const source = typeof detail.details === 'object' && detail.details !== null
+        ? detail.details
+        : detail;
+
+    if (typeof detail.message === 'string' && detail.message.trim()) {
+        summary.message = detail.message.trim();
+    }
+
+    if (typeof source.stage === 'string' && source.stage.trim()) {
+        summary.stage = source.stage.trim();
+    }
+
+    if (typeof source.status === 'string' && source.status.trim()) {
+        summary.status = source.status.trim();
+    }
+
+    if (typeof source.error === 'string' && source.error.trim()) {
+        summary.error = source.error.trim();
+    }
+
+    if (typeof source.done === 'boolean') {
+        summary.done = source.done;
+    }
+
+    return summary;
+}
+
+function recordRescueInstallEvent(eventType, detail = {}) {
+    if (!eventType) {
+        return null;
+    }
+
+    const entry = {
+        type: String(eventType),
+        timestamp: new Date().toISOString(),
+        step: currentStep,
+        configString: window.currentConfigString || null
+    };
+
+    if (detail && typeof detail === 'object') {
+        const clean = {};
+        Object.entries(detail).forEach(([key, value]) => {
+            if (value === undefined || typeof value === 'function') {
+                return;
+            }
+
+            if (value && typeof value === 'object') {
+                try {
+                    clean[key] = JSON.parse(JSON.stringify(value));
+                } catch (error) {
+                    clean[key] = String(value);
+                }
+            } else {
+                clean[key] = value;
+            }
+        });
+
+        if (Object.keys(clean).length > 0) {
+            entry.detail = clean;
+        }
+    }
+
+    rescueInstallHistory.push(entry);
+    if (rescueInstallHistory.length > MAX_RESCUE_HISTORY) {
+        rescueInstallHistory.splice(0, rescueInstallHistory.length - MAX_RESCUE_HISTORY);
+    }
+
+    window.supportBundle?.recordEvent?.('rescue-install', entry);
+
+    return entry;
+}
+
+function getRescueInstallHistory() {
+    return rescueInstallHistory.slice();
+}
+
+const POST_INSTALL_GUIDANCE_SELECTOR = '[data-post-install-guidance]';
+const POST_INSTALL_GUIDANCE_NOTE_SELECTOR = '[data-post-install-guidance-note]';
+const INSTALL_SUCCESS_STATES = new Set(['finished', 'complete', 'completed', 'success']);
+
+const postInstallGuidanceState = {
+    seen: false,
+    lastShownAt: null,
+    firmwareId: null,
+    firmwareVersion: null,
+    firmwareChannel: null,
+    configString: null
+};
+
+function syncPostInstallGuidanceState(partial = {}) {
+    Object.assign(postInstallGuidanceState, partial);
+    if (typeof window !== 'undefined') {
+        window.webflashPostInstallGuidance = { ...postInstallGuidanceState };
+    }
+}
+
+const existingGuidanceState = typeof window !== 'undefined'
+    && window.webflashPostInstallGuidance
+    && typeof window.webflashPostInstallGuidance === 'object'
+        ? window.webflashPostInstallGuidance
+        : null;
+
+if (existingGuidanceState) {
+    Object.assign(postInstallGuidanceState, existingGuidanceState);
+}
+
+syncPostInstallGuidanceState();
+
+function getPostInstallGuidancePanel() {
+    return document.querySelector(POST_INSTALL_GUIDANCE_SELECTOR);
+}
+
+function formatGuidanceTimestamp(isoString) {
+    if (!isoString) {
+        return '';
+    }
+
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+
+    return date.toLocaleString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
+function resolveFirmwareFromHost(host) {
+    if (!host) {
+        return window.currentFirmware || null;
+    }
+
+    const firmwareId = host.dataset?.firmwareId
+        || host.querySelector?.('button[slot="activate"]')?.dataset?.firmwareId
+        || null;
+
+    if (firmwareId && firmwareOptionsMap.has(firmwareId)) {
+        return firmwareOptionsMap.get(firmwareId);
+    }
+
+    return window.currentFirmware || null;
+}
+
+function revealPostInstallGuidance(firmware = window.currentFirmware) {
+    const panel = getPostInstallGuidancePanel();
+    const nowIso = new Date().toISOString();
+    const configString = firmware?.config_string || window.currentConfigString || null;
+
+    syncPostInstallGuidanceState({
+        seen: true,
+        lastShownAt: nowIso,
+        firmwareId: firmware?.firmwareId || firmware?.firmware_id || null,
+        firmwareVersion: firmware?.version || null,
+        firmwareChannel: firmware?.channel || null,
+        configString
+    });
+
+    if (!panel) {
+        return;
+    }
+
+    if (panel.hidden) {
+        panel.hidden = false;
+    }
+
+    panel.classList.add('is-visible');
+    panel.setAttribute('data-visible', 'true');
+
+    const note = panel.querySelector(POST_INSTALL_GUIDANCE_NOTE_SELECTOR);
+    if (note) {
+        const labelParts = [];
+        const modelLabel = firmware?.device_type || firmware?.model || null;
+        if (modelLabel) {
+            labelParts.push(modelLabel);
+        } else if (configString) {
+            labelParts.push(configString);
+        }
+        if (firmware?.version) {
+            labelParts.push(`v${firmware.version}`);
+        }
+
+        const timestampLabel = formatGuidanceTimestamp(nowIso);
+        const context = labelParts.join(' ').trim();
+
+        if (timestampLabel && context) {
+            note.textContent = `Guidance shown for ${context} at ${timestampLabel}.`;
+        } else if (timestampLabel) {
+            note.textContent = `Guidance shown at ${timestampLabel}.`;
+        } else if (context) {
+            note.textContent = `Guidance shown for ${context}.`;
+        } else {
+            note.textContent = 'Guidance shown just now.';
+        }
+        note.hidden = false;
+    }
+}
+
+function isInstallSuccessEvent(event) {
+    if (!event || typeof event !== 'object') {
+        return false;
+    }
+
+    if (event.type === 'install-success' || event.type === 'install-complete') {
+        const detail = event.detail;
+        if (detail && typeof detail === 'object' && (detail.error || detail.details?.error)) {
+            return false;
+        }
+        return true;
+    }
+
+    if (event.type !== 'state-changed') {
+        return false;
+    }
+
+    const detail = event.detail;
+    if (detail && typeof detail === 'object') {
+        if (detail.error || detail.details?.error) {
+            return false;
+        }
+
+        const stateValue = detail.state || detail.status || detail.phase || detail.stage;
+        if (typeof stateValue === 'string') {
+            return INSTALL_SUCCESS_STATES.has(stateValue.toLowerCase());
+        }
+
+        if (typeof detail.details?.state === 'string') {
+            return INSTALL_SUCCESS_STATES.has(detail.details.state.toLowerCase());
+        }
+
+        return false;
+    }
+
+    if (typeof detail === 'string') {
+        return INSTALL_SUCCESS_STATES.has(detail.toLowerCase());
+    }
+
+    return false;
+}
+
+function setupPostInstallGuidancePanel() {
+    const panel = getPostInstallGuidancePanel();
+    if (!panel || panel.dataset.guidanceBound === 'true') {
+        return;
+    }
+
+    panel.addEventListener('click', async event => {
+        const target = event.target instanceof HTMLElement ? event.target : null;
+        const button = target?.closest?.('[data-copy-text]');
+        if (!button || !(button instanceof HTMLElement) || !panel.contains(button)) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const text = button.dataset.copyText || '';
+        if (!text) {
+            return;
+        }
+
+        if (!navigator.clipboard) {
+            showToast('Copy not supported');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            const message = button.dataset.copySuccess || 'Copied';
+            showToast(message);
+        } catch (error) {
+            console.error('Failed to copy guidance text', error);
+            showToast('Copy failed');
+        }
+    });
+
+    panel.dataset.guidanceBound = 'true';
+}
 
 function getHomeAssistantIntegrationsButton() {
     return document.getElementById('open-ha-integrations-btn');
@@ -493,17 +798,222 @@ function setChecklistCompletion(isComplete) {
     }
 }
 
+function getFirmwareChipFamily(firmware = window.currentFirmware) {
+    if (!firmware || typeof firmware !== 'object') {
+        return '';
+    }
+
+    const family = firmware.chipFamily ?? firmware.chip_family ?? '';
+    return typeof family === 'string' ? family.trim() : '';
+}
+
+function getDetectedChipFamily() {
+    const detection = window.serialDetection;
+    if (!detection) {
+        return '';
+    }
+
+    const primary = typeof detection.chipFamily === 'string' ? detection.chipFamily.trim() : '';
+    if (primary) {
+        return primary;
+    }
+
+    if (Array.isArray(detection.chipFamilies) && detection.chipFamilies.length) {
+        const fallback = detection.chipFamilies.find(family => typeof family === 'string' && family.trim());
+        if (fallback) {
+            return fallback.trim();
+        }
+    }
+
+    if (Array.isArray(detection.ports)) {
+        const portMatch = detection.ports.find(port => typeof port?.chipFamily === 'string' && port.chipFamily.trim());
+        if (portMatch) {
+            return portMatch.chipFamily.trim();
+        }
+    }
+
+    return '';
+}
+
+function getSerialCompatibilityState() {
+    const expectedLabel = getFirmwareChipFamily();
+    const detectedLabel = getDetectedChipFamily();
+    const compatible = isChipFamilyCompatible(detectedLabel, expectedLabel);
+    const mismatch = Boolean(expectedLabel && detectedLabel && !compatible);
+
+    return {
+        mismatch,
+        isCompatible: !mismatch,
+        expectedLabel,
+        detectedLabel,
+        hasFirmwareFamily: Boolean(expectedLabel),
+        hasDetectedFamily: Boolean(detectedLabel)
+    };
+}
+
+function renderSerialDetectionInfo({ loading = false } = {}) {
+    if (!serialDetectionSummary || !serialDetectionGuidance) {
+        return;
+    }
+
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && 'serial' in navigator;
+
+    if (!hasSerialSupport) {
+        serialDetectionSummary.textContent = 'This browser does not support the Web Serial API.';
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.innerHTML = 'Use Chrome or Edge to flash firmware directly from the browser.';
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = true;
+        }
+        return;
+    }
+
+    if (loading) {
+        serialDetectionSummary.textContent = 'Checking for connected devices…';
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.textContent = '';
+        return;
+    }
+
+    const detection = window.serialDetection;
+
+    if (!detection) {
+        serialDetectionSummary.textContent = SERIAL_DETECTION_DEFAULT_MESSAGE;
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.textContent = '';
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = false;
+        }
+        return;
+    }
+
+    const ports = Array.isArray(detection.ports) ? detection.ports : [];
+    const deviceCount = ports.length;
+
+    if (serialDetectionList) {
+        serialDetectionList.innerHTML = '';
+        if (deviceCount > 0) {
+            serialDetectionList.hidden = false;
+            ports.forEach(port => {
+                const item = document.createElement('li');
+                item.textContent = formatPortSummary(port);
+                serialDetectionList.appendChild(item);
+            });
+        } else {
+            serialDetectionList.hidden = false;
+            const item = document.createElement('li');
+            item.textContent = detection.requestError
+                ? 'Permission required to read connected devices.'
+                : 'No authorized devices detected yet.';
+            serialDetectionList.appendChild(item);
+        }
+    }
+
+    if (detection.error) {
+        serialDetectionSummary.textContent = 'Unable to access Web Serial devices.';
+    } else if (deviceCount > 0) {
+        const baseLabel = deviceCount === 1 ? 'Detected 1 device' : `Detected ${deviceCount} devices`;
+        const chipLabel = getDetectedChipFamily();
+        serialDetectionSummary.textContent = chipLabel ? `${baseLabel} · ${chipLabel}` : baseLabel;
+    } else if (detection.requestError) {
+        serialDetectionSummary.textContent = 'Permission required to read connected devices.';
+    } else {
+        serialDetectionSummary.textContent = SERIAL_DETECTION_DEFAULT_MESSAGE;
+    }
+
+    const guidanceParts = [];
+
+    if (detection.error) {
+        guidanceParts.push(escapeHtml(detection.error));
+    } else if (detection.requestError && !deviceCount) {
+        guidanceParts.push('Click “Detect Device” and authorize the Sense360 hub when prompted.');
+    } else if (!deviceCount) {
+        guidanceParts.push('Connect your Sense360 hub via USB and select “Detect Device”.');
+    }
+
+    const compatibility = getSerialCompatibilityState();
+    if (compatibility.mismatch) {
+        const expectedLabel = escapeHtml(compatibility.expectedLabel || 'selected firmware');
+        const detectedLabel = escapeHtml(compatibility.detectedLabel || 'connected device');
+        guidanceParts.push(`<strong>Chip mismatch.</strong> Detected ${detectedLabel}, but the selected firmware targets ${expectedLabel}. Choose matching firmware or connect the appropriate hub.`);
+    }
+
+    serialDetectionGuidance.innerHTML = guidanceParts.join(' ');
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.disabled = false;
+    }
+}
+
+async function refreshSerialDetection({ promptUser = false } = {}) {
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && 'serial' in navigator;
+
+    if (!hasSerialSupport) {
+        renderSerialDetectionInfo();
+        return null;
+    }
+
+    if (serialDetectionPromise) {
+        return serialDetectionPromise;
+    }
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.disabled = true;
+    }
+
+    renderSerialDetectionInfo({ loading: true });
+
+    serialDetectionPromise = detectSerialDevices({ promptUser })
+        .then(result => {
+            window.serialDetection = result;
+            return result;
+        })
+        .catch(error => {
+            console.error('Failed to detect serial devices:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            window.serialDetection = {
+                supported: true,
+                ports: [],
+                chipFamily: null,
+                chipFamilies: [],
+                error: message,
+                requestError: null,
+                timestamp: Date.now()
+            };
+            return window.serialDetection;
+        })
+        .finally(() => {
+            serialDetectionPromise = null;
+            renderSerialDetectionInfo();
+            updateFirmwareControls();
+        });
+
+    return serialDetectionPromise;
+}
+
 function attachInstallButtonListeners() {
-    const installHosts = document.querySelectorAll('#compatible-firmware esp-web-install-button');
+    const installHosts = document.querySelectorAll('esp-web-install-button[data-webflash-install]');
 
     installHosts.forEach(host => {
         const activateButton = host.querySelector('button[slot="activate"]');
+        const isRescueHost = host.hasAttribute('data-rescue-install');
 
         if (activateButton && activateButton.dataset.checklistBound !== 'true') {
             activateButton.addEventListener('click', () => {
                 const firmwareId = activateButton.dataset.firmwareId;
                 if (firmwareId) {
                     selectFirmwareById(firmwareId, { syncSelector: false });
+                } else if (isRescueHost || activateButton.dataset.rescueInstall === 'true') {
+                    recordRescueInstallEvent('launch-click');
                 }
                 setHomeAssistantIntegrationsButtonEnabled(false);
                 setChecklistCompletion(true);
@@ -511,40 +1021,49 @@ function attachInstallButtonListeners() {
             activateButton.dataset.checklistBound = 'true';
         }
 
-        if (host.dataset.serialLogBound === 'true') {
-            return;
+        if (host.dataset.installGuidanceBound !== 'true') {
+            const handleInstallStateChange = (event) => {
+                if (!isInstallSuccessEvent(event)) {
+                    return;
+                }
+
+                const firmware = resolveFirmwareFromHost(host) || window.currentFirmware;
+                revealPostInstallGuidance(firmware);
+            };
+
+            host.addEventListener('state-changed', handleInstallStateChange);
+            host.addEventListener('install-success', handleInstallStateChange);
+            host.addEventListener('install-complete', handleInstallStateChange);
+
+            host.dataset.installGuidanceBound = 'true';
         }
 
-        const bindLogForwarding = () => {
-            if (host.dataset.serialLogBound === 'true') {
-                return;
-            }
-
-            const forwardLogEvent = (event) => {
-                const message = event?.detail?.message ?? event?.detail ?? '';
-                if (typeof message !== 'string' || message.length === 0) {
-                    return;
-                }
-                window.supportBundle?.pushSerial?.(message);
-            };
-
-            const resetSerialBuffer = (event) => {
-                const detail = event?.detail;
-                const state = typeof detail === 'string' ? detail : detail?.state;
-                if (!state) {
+        if (host.dataset.serialLogBound !== 'true') {
+            const bindLogForwarding = () => {
+                if (host.dataset.serialLogBound === 'true') {
                     return;
                 }
 
-                if (state === 'initializing' || state === 'preparing') {
-                    const isInProgress = typeof detail === 'object'
-                        ? detail.details?.done === false || detail.details === undefined
-                        : true;
+                const forwardLogEvent = (event) => {
+                    const message = event?.detail?.message ?? event?.detail ?? '';
+                    if (typeof message !== 'string' || message.length === 0) {
+                        return;
+                    }
+                    window.supportBundle?.pushSerial?.(message);
+                };
 
+                const resetSerialBuffer = (event) => {
+                    const detail = event?.detail;
+                    const state = typeof detail === 'string' ? detail : detail?.state;
+                    if (!state) {
+                        return;
                     if (isInProgress) {
                         window.supportBundle?.clearSerial?.();
+                        if (isRescueHost) {
+                            recordRescueInstallEvent('session-start', { state });
+                        }
                     }
                 }
-            };
 
             // ESP Web Tools dispatches "log"/"console" events from the install button
             // to expose console output. Forward the payload to the support bundle so
@@ -562,25 +1081,61 @@ function attachInstallButtonListeners() {
             };
 
             host.addEventListener('state-changed', handleStateChanged);
-
-            host.dataset.serialLogBound = 'true';
-        };
-
-        if (isManifestReady()) {
-            bindLogForwarding();
-        } else if (host.dataset.serialLogPending !== 'true') {
-            host.dataset.serialLogPending = 'true';
-            manifestReadyPromise
-                .then(() => {
-                    delete host.dataset.serialLogPending;
-                    if (!document.body.contains(host)) {
-                        return;
+                if (isRescueHost) {
+                    const previousState = host.dataset.rescueLastState || '';
+                    if (previousState !== state) {
+                        host.dataset.rescueLastState = state;
+                        const summary = summariseRescueDetail(detail);
+                        recordRescueInstallEvent('state-changed', { state, ...summary });
+                        if (state === 'finished' || state === 'completed') {
+                            recordRescueInstallEvent('session-finished', summary);
+                        } else if (state === 'error' || state === 'failed') {
+                            recordRescueInstallEvent('session-error', summary);
+                        }
                     }
-                    bindLogForwarding();
-                })
-                .catch(() => {
-                    delete host.dataset.serialLogPending;
-                });
+
+                    if (state === 'initializing' || state === 'preparing') {
+                        const isInProgress = typeof detail === 'object'
+                            ? detail.details?.done === false || detail.details === undefined
+                            : true;
+
+                        if (isInProgress) {
+                            window.supportBundle?.clearSerial?.();
+                        }
+                    }
+                };
+
+                // ESP Web Tools dispatches "log"/"console" events from the install button
+                // to expose console output. Forward the payload to the support bundle so
+                // that generated bundles include raw serial logs for troubleshooting.
+                host.addEventListener('log', forwardLogEvent);
+                host.addEventListener('console', forwardLogEvent);
+
+                // The flashing dialog also emits "state-changed" events as the install
+                // progresses. When a new session moves into the initializing/preparing
+                // phase we reset the buffered log output so the bundle only contains the
+                // latest attempt.
+                host.addEventListener('state-changed', resetSerialBuffer);
+
+                host.dataset.serialLogBound = 'true';
+            };
+
+            if (isManifestReady()) {
+                bindLogForwarding();
+            } else if (host.dataset.serialLogPending !== 'true') {
+                host.dataset.serialLogPending = 'true';
+                manifestReadyPromise
+                    .then(() => {
+                        delete host.dataset.serialLogPending;
+                        if (!document.body.contains(host)) {
+                            return;
+                        }
+                        bindLogForwarding();
+                    })
+                    .catch(() => {
+                        delete host.dataset.serialLogPending;
+                    });
+            }
         }
     });
 }
@@ -660,10 +1215,23 @@ function initializeWizard() {
         if (warning) {
             warning.style.display = 'block';
         }
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = true;
+        }
+    }
+
+    renderSerialDetectionInfo();
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.addEventListener('click', () => {
+            refreshSerialDetection({ promptUser: true });
+        });
     }
 
     syncChecklistCompletion();
     setupRememberPreferenceControls();
+    setupPostInstallGuidancePanel();
+    window.webflashRescueInstallHistory = rescueInstallHistory;
 
     document.querySelectorAll('input[name="mounting"]').forEach(input => {
         input.addEventListener('change', handleMountingChange);
@@ -689,6 +1257,7 @@ function initializeWizard() {
         input.addEventListener('change', updateConfiguration);
     });
 
+    attachInstallButtonListeners();
     initializeFromUrl();
 
     manifestReadyPromise
@@ -1260,54 +1829,80 @@ function updateFirmwareControls() {
         && window.currentFirmware.parts.length > 0
     );
 
+    const compatibility = getSerialCompatibilityState();
+    const actionsAllowed = isReady && !compatibility.mismatch;
+
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
-        downloadBtn.disabled = !isReady;
-        downloadBtn.classList.toggle('is-ready', isReady);
+        downloadBtn.disabled = !actionsAllowed;
+        downloadBtn.classList.toggle('is-ready', actionsAllowed);
     }
 
     const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
     if (copyUrlBtn) {
         const clipboardSupported = Boolean(navigator.clipboard);
-        const canCopy = clipboardSupported && isReady;
+        const canCopy = clipboardSupported && actionsAllowed;
         copyUrlBtn.disabled = !canCopy;
         copyUrlBtn.classList.toggle('is-ready', canCopy);
 
         if (!clipboardSupported) {
             copyUrlBtn.title = 'Copy requires Clipboard API support';
+        } else if (compatibility.mismatch) {
+            copyUrlBtn.title = 'Chip mismatch detected. Select compatible firmware before copying the link.';
         } else {
             copyUrlBtn.removeAttribute('title');
         }
     }
 
-    const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
-    if (installButton) {
-        installButton.classList.toggle('is-ready', isReady);
-    }
+    const installButtons = document.querySelectorAll('#compatible-firmware esp-web-install-button button[slot="activate"]');
+    installButtons.forEach(button => {
+        button.classList.toggle('is-ready', actionsAllowed);
+        button.disabled = !actionsAllowed;
+        if (actionsAllowed) {
+            button.removeAttribute('aria-disabled');
+        } else {
+            button.setAttribute('aria-disabled', 'true');
+        }
+    });
+
+    const readyMessage = actionsAllowed ? 'Ready to flash' : '';
+    const mismatchMessage = compatibility.mismatch
+        ? `Detected ${compatibility.detectedLabel || 'another device'} while the selected firmware targets ${compatibility.expectedLabel || 'a different chip'}.`
+        : '';
 
     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
     if (detailHelper) {
-        if (isReady) {
-            detailHelper.textContent = 'Ready to flash';
+        if (compatibility.mismatch) {
+            detailHelper.textContent = mismatchMessage;
+            detailHelper.classList.add('is-visible', 'is-warning');
+        } else if (actionsAllowed) {
+            detailHelper.textContent = readyMessage;
             detailHelper.classList.add('is-visible');
+            detailHelper.classList.remove('is-warning');
         } else {
             detailHelper.textContent = '';
-            detailHelper.classList.remove('is-visible');
+            detailHelper.classList.remove('is-visible', 'is-warning');
         }
     }
 
     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
     if (primaryHelper) {
-        if (isReady) {
-            if (primaryHelper.textContent !== 'Ready to flash') {
-                primaryHelper.textContent = 'Ready to flash';
+        if (compatibility.mismatch) {
+            primaryHelper.textContent = mismatchMessage;
+            primaryHelper.classList.add('is-visible', 'is-warning');
+        } else if (actionsAllowed) {
+            if (primaryHelper.textContent !== readyMessage) {
+                primaryHelper.textContent = readyMessage;
             }
             primaryHelper.classList.add('is-visible');
+            primaryHelper.classList.remove('is-warning');
         } else {
             primaryHelper.textContent = '';
-            primaryHelper.classList.remove('is-visible');
+            primaryHelper.classList.remove('is-visible', 'is-warning');
         }
     }
+
+    renderSerialDetectionInfo();
 }
 
 function groupBuildsByConfig(builds) {
@@ -1494,7 +2089,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                     ${descriptionHtml}
                 </div>
                 <div class="firmware-actions">
-                    <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
+                    <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-webflash-install>
                         <button slot="activate" class="btn btn-primary" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
                             Install Firmware
                         </button>
@@ -1820,6 +2415,8 @@ function renderSelectedFirmware() {
 
 async function findCompatibleFirmware() {
     clearFirmwareOptions();
+
+    refreshSerialDetection({ promptUser: false });
 
     if (!configuration.mounting || !configuration.power) {
         window.currentConfigString = null;

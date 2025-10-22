@@ -1,0 +1,19 @@
+{
+  "name": "Sense360 ESP32 Rescue Firmware",
+  "version": "1.0.0",
+  "home_assistant_domain": "esphome",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/rescue/Sense360-Rescue.bin",
+          "offset": 0,
+          "md5": "4c701b6c02ab3bbf922e4f7f4a041b43"
+        }
+      ],
+      "improv": false
+    }
+  ]
+}
