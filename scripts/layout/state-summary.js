@@ -744,6 +744,18 @@ import {
             params.set('presence', state.presence || 'none');
             params.set('comfort', state.comfort || 'none');
             params.set('fan', state.fan || 'none');
+
+            const presetApi = window.queryPresets || null;
+            if (presetApi && typeof presetApi.getMatchingPreset === 'function') {
+                try {
+                    const preset = presetApi.getMatchingPreset(state);
+                    if (preset && preset.name) {
+                        params.set('preset', preset.name);
+                    }
+                } catch (error) {
+                    console.warn('[state-summary] unable to resolve preset', error);
+                }
+            }
         }
 
         if (currentFirmware && currentFirmware.channel) {
