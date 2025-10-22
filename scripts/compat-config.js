@@ -1,52 +1,18 @@
 import { DEFAULT_CHANNEL_KEY, normalizeChannelKey } from './utils/channel-alias.js';
+import { parseConfigParams, REQUIRED_CONFIG_PARAMS } from './utils/url-config.js';
 
 const PARAM_ALIASES = {
-  mount: ['mount', 'mounting'],
-  power: ['power'],
-  airiq: ['airiq'],
-  presence: ['presence'],
-  comfort: ['comfort'],
-  fan: ['fan'],
   model: ['model'],
   variant: ['variant'],
   sensor_addon: ['sensor_addon', 'sensor-addon']
 };
 
-const OPTION_MAPPINGS = {
-  mount: new Map([
-    ['wall', 'Wall'],
-    ['ceiling', 'Ceiling']
-  ]),
-  power: new Map([
-    ['usb', 'USB'],
-    ['poe', 'POE'],
-    ['pwr', 'PWR']
-  ]),
-  airiq: new Map([
-    ['base', 'Base'],
-    ['pro', 'Pro']
-  ]),
-  presence: new Map([
-    ['base', 'Base'],
-    ['pro', 'Pro']
-  ]),
-  comfort: new Map([
-    ['base', 'Base']
-  ]),
-  fan: new Map([
-    ['pwm', 'PWM'],
-    ['analog', 'ANALOG']
-  ])
-};
-
-const OPTIONAL_KEYS = new Set(['airiq', 'presence', 'comfort', 'fan']);
-const REQUIRED_PARAM_KEYS = ['mount', 'power'];
-
 const DEFAULT_VALIDATION_ERROR = {
   title: 'Direct Install Link Incomplete',
   description: 'Direct install links must include the following query parameters:',
-  requiredParams: REQUIRED_PARAM_KEYS,
-  guidance: 'Check mount/power query parameters.'
+  requiredParams: REQUIRED_CONFIG_PARAMS,
+  guidance: 'Check mount/power query parameters.',
+  messages: []
 };
 
 const CHANNEL_PRIORITY_MAP = {
@@ -164,28 +130,6 @@ function readParam(params, key) {
   return null;
 }
 
-function normalizeValue(key, rawValue) {
-  if (rawValue === null || rawValue === undefined || rawValue === '') {
-    return null;
-  }
-
-  const normalized = String(rawValue).trim().toLowerCase();
-  if (normalized === '') {
-    return null;
-  }
-
-  if (OPTIONAL_KEYS.has(key) && normalized === 'none') {
-    return 'none';
-  }
-
-  const mapping = OPTION_MAPPINGS[key];
-  if (!mapping) {
-    return null;
-  }
-
-  return mapping.get(normalized) || null;
-}
-
 function normalizeRequestedChannel(rawChannel) {
   if (rawChannel === null || rawChannel === undefined) {
     return null;
@@ -209,75 +153,6 @@ function getChannelPriority(channel) {
 function readChannelFromParams(params = getCombinedSearchParams()) {
   const raw = readParam(params, 'channel');
   return normalizeRequestedChannel(raw);
-}
-
-function buildConfigResultFromParams(params = getCombinedSearchParams()) {
-  const mountValue = normalizeValue('mount', readParam(params, 'mount'));
-  const powerValue = normalizeValue('power', readParam(params, 'power'));
-
-  const missingRequired = [];
-  if (!mountValue) {
-    missingRequired.push('mount');
-  }
-
-  if (!powerValue) {
-    missingRequired.push('power');
-  }
-
-  if (missingRequired.length > 0) {
-    return {
-      configKey: null,
-      missingRequired,
-      invalidOptional: []
-    };
-  }
-
-  const segments = [`${mountValue}`, `${powerValue}`];
-  const invalidOptional = [];
-
-  const moduleKeys = [
-    { key: 'airiq', prefix: 'AirIQ' },
-    { key: 'presence', prefix: 'Presence' },
-    { key: 'comfort', prefix: 'Comfort' },
-    { key: 'fan', prefix: 'Fan', transform: (value) => value }
-  ];
-
-  for (const { key, prefix, transform } of moduleKeys) {
-    const raw = readParam(params, key);
-    const normalized = normalizeValue(key, raw);
-
-    if (normalized === null) {
-      if (raw) {
-        invalidOptional.push(key);
-        return {
-          configKey: null,
-          missingRequired,
-          invalidOptional
-        };
-      }
-      continue;
-    }
-
-    if (normalized === 'none') {
-      continue;
-    }
-
-    const formatted = typeof transform === 'function'
-      ? transform(normalized)
-      : normalized;
-    segments.push(`${prefix}${formatted}`);
-  }
-
-  return {
-    configKey: segments.join('-'),
-    missingRequired,
-    invalidOptional
-  };
-}
-
-function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
-  const { configKey } = buildConfigResultFromParams(params);
-  return configKey;
 }
 
 function normalizeModelLookupValue(raw) {
@@ -322,12 +197,11 @@ function buildModelLookupFromParams(params = getCombinedSearchParams()) {
   };
 }
 
-function buildInstallLookupFromParams(params = getCombinedSearchParams()) {
-  const configKey = buildConfigKeyFromParams(params);
-  if (configKey) {
+function buildInstallLookupFromParams(params = getCombinedSearchParams(), parsedConfig = parseConfigParams(params)) {
+  if (parsedConfig && parsedConfig.configKey) {
     return {
       type: 'config',
-      key: configKey
+      key: parsedConfig.configKey
     };
   }
 
@@ -336,20 +210,23 @@ function buildInstallLookupFromParams(params = getCombinedSearchParams()) {
 
 function readInstallQueryParams() {
   const params = getCombinedSearchParams();
-  const { configKey, missingRequired, invalidOptional } = buildConfigResultFromParams(params);
+  const parsedConfig = parseConfigParams(params);
 
   let validationError = null;
+  const lookup = buildInstallLookupFromParams(params, parsedConfig);
 
-  if (!configKey) {
-    if (missingRequired.length > 0) {
-      validationError = { ...DEFAULT_VALIDATION_ERROR };
-    } else if (invalidOptional.length > 0) {
-      const formatted = invalidOptional.map((key) => key.charAt(0).toUpperCase() + key.slice(1));
+  if (!lookup) {
+    const errorMessages = Array.isArray(parsedConfig.errors)
+      ? parsedConfig.errors.map((error) => error?.message).filter(Boolean)
+      : [];
+
+    if (errorMessages.length > 0) {
       validationError = {
-        title: 'Unsupported Module Parameters',
-        description: `Remove or correct unsupported values for: ${formatted.join(', ')}.`,
-        requiredParams: REQUIRED_PARAM_KEYS,
-        guidance: 'Check mount/power query parameters.'
+        title: 'Direct Install Link Incomplete',
+        description: 'Direct install links must include the following query parameters:',
+        requiredParams: REQUIRED_CONFIG_PARAMS,
+        guidance: 'Check mount/power query parameters.',
+        messages: errorMessages
       };
     } else {
       validationError = { ...DEFAULT_VALIDATION_ERROR };
@@ -357,7 +234,7 @@ function readInstallQueryParams() {
   }
 
   return {
-    lookup: buildInstallLookupFromParams(params),
+    lookup,
     channel: readChannelFromParams(params),
     validationError
   };
@@ -519,9 +396,26 @@ function renderParameterError(container, errorDetails) {
     errorBox.appendChild(description);
   }
 
+  const detailedMessages = Array.isArray(errorDetails?.messages)
+    ? errorDetails.messages.filter((message) => typeof message === 'string' && message.trim().length > 0)
+    : [];
+
+  if (detailedMessages.length > 0) {
+    const messageList = document.createElement('ul');
+    messageList.className = 'compat-config-error-messages';
+
+    for (const message of detailedMessages) {
+      const item = document.createElement('li');
+      item.textContent = message;
+      messageList.appendChild(item);
+    }
+
+    errorBox.appendChild(messageList);
+  }
+
   const requiredParams = Array.isArray(errorDetails?.requiredParams)
     ? errorDetails.requiredParams
-    : REQUIRED_PARAM_KEYS;
+    : REQUIRED_CONFIG_PARAMS;
 
   if (requiredParams.length > 0) {
     const list = document.createElement('ul');
@@ -851,10 +745,8 @@ window.addEventListener('beforeunload', () => {
 });
 
 export {
-  buildConfigKeyFromParams,
-  buildConfigResultFromParams,
   initializeCompatInstall,
   readInstallQueryParams,
   renderParameterError,
-  REQUIRED_PARAM_KEYS
+  REQUIRED_CONFIG_PARAMS
 };

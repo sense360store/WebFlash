@@ -45,6 +45,17 @@ describe('compat-config direct install validation', () => {
     ).map((item) => item.textContent);
 
     expect(requiredParams).toEqual(expect.arrayContaining(['mount', 'power']));
+
+    const errorMessages = Array.from(
+      container.querySelectorAll('.compat-config-error-messages li')
+    ).map((item) => item.textContent.trim());
+
+    expect(errorMessages).toEqual(
+      expect.arrayContaining([
+        'Missing required parameter: mount'
+      ])
+    );
+
     expect(container.textContent).toContain('Check mount/power query parameters');
     expect(global.fetch).not.toHaveBeenCalled();
 

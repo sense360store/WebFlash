@@ -12,6 +12,7 @@ import {
     didMandatoryChecksPass,
     firstBlockingCheck
 } from './support/preflight.js';
+import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -3784,15 +3785,26 @@ function downloadFirmware() {
 }
 
 function initializeFromUrl() {
-    const { parsedConfig, providedKeys, parsedStep, hasParams } = parseConfigurationFromLocation();
-
-    const shouldRestoreRememberedState = Boolean(rememberChoices && rememberedState && !hasParams);
-    const initialConfig = shouldRestoreRememberedState ? rememberedState.configuration : parsedConfig;
+    const searchParams = new URLSearchParams(window.location.search || '');
+    const parsed = parseConfigParams(searchParams);
+    const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
+    const hasAnySearchParams = parsed.paramCount > 0;
+    const shouldRestoreRememberedState = Boolean(rememberChoices && rememberedState && !hasAnySearchParams);
+    const initialConfig = shouldRestoreRememberedState ? rememberedState.configuration : sanitizedConfig;
 
     applyConfiguration(initialConfig);
 
     const maxStep = getMaxReachableStep();
     let targetStep;
+
+    let parsedStep = null;
+    const stepValue = searchParams.get('step');
+    if (stepValue) {
+        const numericStep = parseInt(stepValue, 10);
+        if (!Number.isNaN(numericStep) && numericStep >= 1 && numericStep <= totalSteps) {
+            parsedStep = numericStep;
+        }
+    }
 
     if (shouldRestoreRememberedState) {
         if (typeof rememberedState.currentStep === 'number') {
@@ -3810,13 +3822,17 @@ function initializeFromUrl() {
         targetStep = 1;
     } else if (!configuration.power) {
         targetStep = 2;
-    } else if (['airiq', 'presence', 'comfort', 'fan'].some(key => providedKeys.has(key))) {
+    } else if (MODULE_KEYS.some(key => parsed.providedKeys.has(key))) {
         targetStep = Math.min(4, maxStep);
     } else {
         targetStep = Math.min(3, maxStep);
     }
 
     setStep(targetStep, { skipUrlUpdate: true, animate: false });
+
+    if (!shouldRestoreRememberedState && parsed.isValid && parsed.forcedFanNone) {
+        showToast('Fan module not available for ceiling mount.');
+    }
 }
 
 function applyConfiguration(initialConfig) {
@@ -3870,49 +3886,11 @@ function getMaxReachableStep() {
     return 4;
 }
 
-function parseConfigurationFromLocation() {
-    const combinedParams = new URLSearchParams();
-    const searchParams = new URLSearchParams(window.location.search);
-    const hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
-    const hashParams = new URLSearchParams(hash);
-
-    hashParams.forEach((value, key) => {
-        combinedParams.set(key, value);
-    });
-
-    searchParams.forEach((value, key) => {
-        combinedParams.set(key, value);
-    });
-
-    const parsedConfig = { ...defaultConfiguration };
-    const providedKeys = new Set();
-    const hasParams = Array.from(combinedParams.keys()).length > 0;
-
-    Object.keys(allowedOptions).forEach(key => {
-        const value = combinedParams.get(key);
-        if (value && allowedOptions[key].includes(value)) {
-            parsedConfig[key] = value;
-            providedKeys.add(key);
-        }
-    });
-
-    let parsedStep = null;
-    const stepValue = combinedParams.get('step');
-    if (stepValue) {
-        const numericStep = parseInt(stepValue, 10);
-        if (!Number.isNaN(numericStep) && numericStep >= 1 && numericStep <= totalSteps) {
-            parsedStep = numericStep;
-        }
-    }
-
-    return { parsedConfig, providedKeys, parsedStep, hasParams };
-}
-
 function updateUrlFromConfiguration() {
     const params = new URLSearchParams();
 
     if (configuration.mounting) {
-        params.set('mounting', configuration.mounting);
+        params.set('mount', configuration.mounting);
     }
 
     if (configuration.power) {
