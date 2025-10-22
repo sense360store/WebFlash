@@ -542,7 +542,16 @@ async function initializeCompatInstall() {
         return normalizeManifestChannel(build.channel) === normalizedRequestedChannel;
       });
 
-      selectedBuild = channelMatches[0] || null;
+      let bestTimestamp = Number.NEGATIVE_INFINITY;
+
+      for (const build of channelMatches) {
+        const timestamp = getBuildTimestamp(build.build_date);
+
+        if (timestamp > bestTimestamp) {
+          bestTimestamp = timestamp;
+          selectedBuild = build;
+        }
+      }
 
       if (!selectedBuild) {
         renderNoMatch(container, configKey, requestedChannel);
