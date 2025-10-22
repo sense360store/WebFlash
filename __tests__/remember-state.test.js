@@ -45,16 +45,19 @@ const totalSteps = 4;
 async function loadRememberModule() {
     const storage = new MemoryStorage();
     global.window = { localStorage: storage };
+    globalThis.__rememberStateStorage = storage;
     const module = await import('../scripts/remember-state.js');
     return { module, storage };
 }
 
 beforeEach(() => {
     jest.resetModules();
+    delete globalThis.__rememberStateStorage;
 });
 
 afterEach(() => {
     delete global.window;
+    delete globalThis.__rememberStateStorage;
 });
 
 describe('remember-state persistence', () => {
