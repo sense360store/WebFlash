@@ -42,6 +42,9 @@ const MODULE_SEGMENT_FORMATTERS = {
     fan: value => `Fan${value.toUpperCase()}`
 };
 
+const HOME_ASSISTANT_APP_URL = 'homeassistant://config/integrations/dashboard';
+const HOME_ASSISTANT_WEB_FALLBACK_URL = 'https://my.home-assistant.io/redirect/integrations/';
+
 function formatConfigSegment(moduleKey, moduleValue) {
     const key = (moduleKey || '').toString().trim().toLowerCase();
     const value = (moduleValue || '').toString().trim().toLowerCase();
@@ -412,6 +415,63 @@ let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
 
+function getHomeAssistantIntegrationsButton() {
+    return document.getElementById('open-ha-integrations-btn');
+}
+
+function setHomeAssistantIntegrationsButtonEnabled(isEnabled) {
+    const button = getHomeAssistantIntegrationsButton();
+    if (!button) {
+        return;
+    }
+
+    button.disabled = !isEnabled;
+    button.classList.toggle('is-ready', isEnabled);
+
+    if (isEnabled) {
+        button.removeAttribute('title');
+    } else {
+        button.title = 'Available after firmware install completes';
+    }
+}
+
+function handleInstallStateEvent(event) {
+    const detail = event?.detail;
+    const state = typeof detail === 'string' ? detail : detail?.state;
+
+    if (!state) {
+        return;
+    }
+
+    if (state === 'finished') {
+        setHomeAssistantIntegrationsButtonEnabled(true);
+        return;
+    }
+
+    if (state !== 'idle') {
+        setHomeAssistantIntegrationsButtonEnabled(false);
+    }
+}
+
+function openHomeAssistantIntegrations(event) {
+    if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+    }
+
+    let openedApp = false;
+
+    try {
+        const target = window.open(HOME_ASSISTANT_APP_URL, '_blank', 'noopener,noreferrer');
+        openedApp = target !== null;
+    } catch (error) {
+        openedApp = false;
+    }
+
+    if (!openedApp) {
+        window.open(HOME_ASSISTANT_WEB_FALLBACK_URL, '_blank', 'noopener,noreferrer');
+    }
+}
+
 function syncChecklistCompletion() {
     const section = document.querySelector('.pre-flash-checklist');
     if (!section) return;
@@ -427,6 +487,10 @@ function syncChecklistCompletion() {
 function setChecklistCompletion(isComplete) {
     checklistCompleted = isComplete;
     syncChecklistCompletion();
+
+    if (!isComplete) {
+        setHomeAssistantIntegrationsButtonEnabled(false);
+    }
 }
 
 function attachInstallButtonListeners() {
@@ -441,6 +505,7 @@ function attachInstallButtonListeners() {
                 if (firmwareId) {
                     selectFirmwareById(firmwareId, { syncSelector: false });
                 }
+                setHomeAssistantIntegrationsButtonEnabled(false);
                 setChecklistCompletion(true);
             });
             activateButton.dataset.checklistBound = 'true';
@@ -491,7 +556,12 @@ function attachInstallButtonListeners() {
             // progresses. When a new session moves into the initializing/preparing
             // phase we reset the buffered log output so the bundle only contains the
             // latest attempt.
-            host.addEventListener('state-changed', resetSerialBuffer);
+            const handleStateChanged = (event) => {
+                resetSerialBuffer(event);
+                handleInstallStateEvent(event);
+            };
+
+            host.addEventListener('state-changed', handleStateChanged);
 
             host.dataset.serialLogBound = 'true';
         };
@@ -2527,6 +2597,7 @@ window.previousStep = previousStep;
 window.downloadFirmware = downloadFirmware;
 window.copyFirmwareUrl = copyFirmwareUrl;
 window.toggleReleaseNotes = toggleReleaseNotes;
+window.openHomeAssistantIntegrations = openHomeAssistantIntegrations;
 
 export const __testHooks = Object.freeze({
     initializeWizard,

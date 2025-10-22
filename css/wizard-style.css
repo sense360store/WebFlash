@@ -1138,6 +1138,21 @@ h1 {
     color: var(--color-text-secondary);
 }
 
+.post-flash-guidance {
+    margin-top: 24px;
+    max-width: 640px;
+}
+
+.post-flash-guidance a {
+    color: var(--brand-green-contrast);
+    text-decoration: none;
+}
+
+.post-flash-guidance a:hover {
+    color: var(--brand-green-contrast-hover);
+    text-decoration: underline;
+}
+
 /* Release notes styles */
 .firmware-info {
     flex: 1;

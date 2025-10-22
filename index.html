@@ -287,10 +287,18 @@
                             <button class="btn btn-copy" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
                                 Copy
                             </button>
+                            <button class="btn btn-secondary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
+                                Open Home Assistant Integrations
+                            </button>
                         </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     </div>
                 </div>
+                <p class="help-text post-flash-guidance">
+                    After the install finishes, keep the hub powered on and connected to the same network as Home Assistant. Discovery usually happens within a minute. If the device doesn&rsquo;t appear, open the integrations dashboard and follow the
+                    <a href="https://esphome.io/guides/getting_started_hassio/#connecting-your-device-to-home-assistant" target="_blank" rel="noopener noreferrer">ESPHome adoption steps</a>
+                    to add it manually.
+                </p>
                     </div>
                 </div>
 
