@@ -517,17 +517,24 @@ function persistWizardState() {
     rememberedState = stateToPersist;
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    // Check browser compatibility
+let wizardInitialized = false;
+
+function initializeWizard() {
+    if (wizardInitialized) {
+        return;
+    }
+    wizardInitialized = true;
+
     if (!navigator.serial) {
-        document.getElementById('browser-warning').style.display = 'block';
+        const warning = document.getElementById('browser-warning');
+        if (warning) {
+            warning.style.display = 'block';
+        }
     }
 
     syncChecklistCompletion();
     setupRememberPreferenceControls();
 
-    // Add event listeners
     document.querySelectorAll('input[name="mounting"]').forEach(input => {
         input.addEventListener('change', handleMountingChange);
     });
@@ -567,7 +574,13 @@ document.addEventListener('DOMContentLoaded', () => {
             resetOptionAvailability();
             updateModuleAvailabilityMessage();
         });
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeWizard, { once: true });
+} else {
+    initializeWizard();
+}
 
 function handleMountingChange(e) {
     configuration.mounting = e.target.value;
@@ -1926,3 +1939,11 @@ window.previousStep = previousStep;
 window.downloadFirmware = downloadFirmware;
 window.copyFirmwareUrl = copyFirmwareUrl;
 window.toggleReleaseNotes = toggleReleaseNotes;
+
+export const __testHooks = Object.freeze({
+    initializeWizard,
+    loadManifestData,
+    findCompatibleFirmware,
+    manifestReadyPromise: () => manifestReadyPromise,
+    isManifestReady
+});
