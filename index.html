@@ -466,35 +466,49 @@
                     </div>
                 </div>
 
-                <section class="hardware-detection" aria-labelledby="hardware-detection-title">
-                    <div class="hardware-detection__header">
-                        <h3 id="hardware-detection-title">Detected Device</h3>
-                        <button type="button" class="btn btn-secondary" id="serial-detection-refresh">Detect Device</button>
+                <section class="pre-flash-checklist" aria-labelledby="pre-flash-title" data-diagnostics-state="idle">
+                    <div class="checklist-header">
+                        <div class="checklist-header__text">
+                            <h3 class="checklist-heading" id="pre-flash-title">Connection Diagnostics</h3>
+                            <p class="checklist-subtitle" data-diagnostic-summary>We&apos;ll verify your browser and device before flashing firmware.</p>
+                        </div>
+                        <button type="button" class="checklist-refresh" data-diagnostic-refresh aria-live="polite" aria-label="Retry diagnostics" disabled>Retry checks</button>
                     </div>
-                    <div id="serial-detection" class="hardware-detection__body" role="status" aria-live="polite">
-                        <p id="serial-detection-summary" class="hardware-detection__summary">Connect your Sense360 hub and choose “Detect Device”.</p>
-                        <ul id="serial-detection-list" class="hardware-detection__list"></ul>
-                        <p id="serial-detection-guidance" class="hardware-detection__guidance"></p>
-                    </div>
-                </section>
-
-                <section class="pre-flash-checklist" aria-labelledby="pre-flash-title">
-                    <h3 class="checklist-heading" id="pre-flash-title">Pre-Flash Checklist</h3>
-                    <p class="checklist-subtitle">Follow these quick steps to prepare your device before installing firmware.</p>
-                    <ul class="checklist-items">
-                        <li data-checklist-item data-complete="false">
-                            <span class="status-icon" aria-hidden="true"></span>
-                            <span class="item-text">Connect the Sense360 hub to your computer with a USB-C cable.</span>
+                    <ul class="checklist-items" data-diagnostic-list>
+                        <li class="checklist-item" data-diagnostic-item="browser" data-status="pending">
+                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
+                            <div class="item-content">
+                                <span class="item-title">Browser support</span>
+                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                                <p class="item-tip" data-diagnostic-tip hidden></p>
+                            </div>
                         </li>
-                        <li data-checklist-item data-complete="false">
-                            <span class="status-icon" aria-hidden="true"></span>
-                            <span class="item-text">Hold the <strong>BOOT</strong> button on the hub.</span>
+                        <li class="checklist-item" data-diagnostic-item="webSerial" data-status="pending">
+                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
+                            <div class="item-content">
+                                <span class="item-title">Web Serial API</span>
+                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                                <p class="item-tip" data-diagnostic-tip hidden></p>
+                            </div>
                         </li>
-                        <li data-checklist-item data-complete="false">
-                            <span class="status-icon" aria-hidden="true"></span>
-                            <span class="item-text">While holding BOOT, press and release <strong>RESET</strong>, then release BOOT.</span>
+                        <li class="checklist-item" data-diagnostic-item="ports" data-status="pending">
+                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
+                            <div class="item-content">
+                                <span class="item-title">Connected devices</span>
+                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                                <p class="item-tip" data-diagnostic-tip hidden></p>
+                            </div>
+                        </li>
+                        <li class="checklist-item" data-diagnostic-item="battery" data-status="pending">
+                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
+                            <div class="item-content">
+                                <span class="item-title">Battery readiness</span>
+                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                                <p class="item-tip" data-diagnostic-tip hidden></p>
+                            </div>
                         </li>
                     </ul>
+                    <p class="diagnostic-error" data-diagnostic-error hidden></p>
                 </section>
 
                 <div class="firmware-section">
