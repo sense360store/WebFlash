@@ -241,6 +241,18 @@
                     </div>
                 </div>
 
+                <section class="hardware-detection" aria-labelledby="hardware-detection-title">
+                    <div class="hardware-detection__header">
+                        <h3 id="hardware-detection-title">Detected Device</h3>
+                        <button type="button" class="btn btn-secondary" id="serial-detection-refresh">Detect Device</button>
+                    </div>
+                    <div id="serial-detection" class="hardware-detection__body" role="status" aria-live="polite">
+                        <p id="serial-detection-summary" class="hardware-detection__summary">Connect your Sense360 hub and choose “Detect Device”.</p>
+                        <ul id="serial-detection-list" class="hardware-detection__list"></ul>
+                        <p id="serial-detection-guidance" class="hardware-detection__guidance"></p>
+                    </div>
+                </section>
+
                 <section class="pre-flash-checklist" aria-labelledby="pre-flash-title">
                     <h3 class="checklist-heading" id="pre-flash-title">Pre-Flash Checklist</h3>
                     <p class="checklist-subtitle">Follow these quick steps to prepare your device before installing firmware.</p>
