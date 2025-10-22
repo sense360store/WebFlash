@@ -6,7 +6,12 @@ import {
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
-import { generateEsphomeYaml } from './utils/esphome-yaml.js';
+import { MODULE_REQUIREMENT_MATRIX, getModuleMatrixEntry, getModuleVariantEntry } from './data/module-requirements.js';
+import {
+    runPreflightDiagnostics,
+    didMandatoryChecksPass,
+    firstBlockingCheck
+} from './support/preflight.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -43,8 +48,10 @@ const MODULE_SEGMENT_FORMATTERS = {
     fan: value => `Fan${value.toUpperCase()}`
 };
 
-const HOME_ASSISTANT_APP_URL = 'homeassistant://config/integrations/dashboard';
-const HOME_ASSISTANT_WEB_FALLBACK_URL = 'https://my.home-assistant.io/redirect/integrations/';
+let moduleDetailPanelElement = null;
+let moduleDetailPanelInitialized = false;
+let activeModuleDetailKey = null;
+let activeModuleDetailVariant = null;
 
 function formatConfigSegment(moduleKey, moduleValue) {
     const key = (moduleKey || '').toString().trim().toLowerCase();
@@ -65,6 +72,315 @@ function formatConfigSegment(moduleKey, moduleValue) {
     }
 
     return `-${segment}`;
+}
+
+function ensureModuleDetailPanelElement() {
+    if (moduleDetailPanelElement) {
+        return moduleDetailPanelElement;
+    }
+
+    moduleDetailPanelElement = document.getElementById('module-requirements-panel');
+    return moduleDetailPanelElement;
+}
+
+function formatHeaderList(headers = []) {
+    const items = headers.filter(item => typeof item === 'string' && item.trim().length > 0);
+    if (items.length === 0) {
+        return '';
+    }
+
+    if (items.length === 1) {
+        return items[0];
+    }
+
+    const initial = items.slice(0, -1);
+    const last = items[items.length - 1];
+    return `${initial.join(', ')} and ${last}`;
+}
+
+function isConflictActiveForConfig(conflict, state) {
+    if (!conflict || !conflict.module) {
+        return false;
+    }
+
+    const currentValue = state?.[conflict.module];
+    if (!currentValue || currentValue === 'none') {
+        return false;
+    }
+
+    if (Array.isArray(conflict.variants) && conflict.variants.length > 0) {
+        return conflict.variants.includes(currentValue);
+    }
+
+    return true;
+}
+
+function buildVariantConflictMarkup(moduleKey, variantKey, variant) {
+    const conflicts = Array.isArray(variant?.conflicts) ? variant.conflicts : [];
+    if (!conflicts.length) {
+        return '<span class="module-requirements-table__muted">None</span>';
+    }
+
+    return conflicts.map(conflict => {
+        const isActive = isConflictActiveForConfig(conflict, configuration);
+        const classes = ['module-conflict'];
+        if (isActive) {
+            classes.push('is-active');
+        }
+
+        let label = conflict.message;
+        if (!label) {
+            let targetVariant = configuration[conflict.module];
+            if (Array.isArray(conflict.variants) && conflict.variants.length === 1) {
+                targetVariant = conflict.variants[0];
+            }
+            label = `Incompatible with ${formatModuleSelectionLabel(conflict.module, targetVariant || 'none')}`;
+        }
+
+        const detail = conflict.detail ? `<span class="module-conflict__detail">${escapeHtml(conflict.detail)}</span>` : '';
+        return `<div class="${classes.join(' ')}"><span class="module-conflict__label">${escapeHtml(label)}</span>${detail}</div>`;
+    }).join('');
+}
+
+function renderModuleDetailPanel() {
+    const panel = ensureModuleDetailPanelElement();
+    if (!panel) {
+        return;
+    }
+
+    if (!activeModuleDetailKey || !MODULE_REQUIREMENT_MATRIX[activeModuleDetailKey]) {
+        panel.innerHTML = '<div class="module-requirements-panel__placeholder">Highlight a module option to see required core revisions, headers, and conflicts.</div>';
+        return;
+    }
+
+    const moduleEntry = getModuleMatrixEntry(activeModuleDetailKey);
+    if (!moduleEntry) {
+        panel.innerHTML = '<div class="module-requirements-panel__placeholder">Highlight a module option to see required core revisions, headers, and conflicts.</div>';
+        return;
+    }
+
+    const variants = moduleEntry.variants || {};
+    const selectedVariant = configuration[activeModuleDetailKey] || 'none';
+    const effectiveVariant = variants[activeModuleDetailVariant] ? activeModuleDetailVariant : selectedVariant;
+
+    const rowsHtml = Object.entries(variants).map(([variantKey, variant]) => {
+        const rowClasses = ['module-requirements-table__row'];
+        if (variantKey === effectiveVariant) {
+            rowClasses.push('is-highlighted');
+        }
+        if (variantKey === selectedVariant) {
+            rowClasses.push('is-selected');
+        }
+
+        const coreRevisionMarkup = variant.coreRevision
+            ? escapeHtml(variant.coreRevision)
+            : '<span class="module-requirements-table__muted">Not required</span>';
+
+        const headers = Array.isArray(variant.headers) && variant.headers.length > 0
+            ? variant.headers.map(header => `<div>${escapeHtml(header)}</div>`).join('')
+            : '<span class="module-requirements-table__muted">Not required</span>';
+
+        const conflictsMarkup = buildVariantConflictMarkup(activeModuleDetailKey, variantKey, variant);
+
+        const variantLabel = variant.label
+            ? variant.label
+            : formatModuleSelectionLabel(activeModuleDetailKey, variantKey);
+
+        return `
+            <tr class="${rowClasses.join(' ')}">
+                <th scope="row">${escapeHtml(variantLabel)}</th>
+                <td>${coreRevisionMarkup}</td>
+                <td>${headers}</td>
+                <td>${conflictsMarkup}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const summaryMarkup = moduleEntry.summary
+        ? `<p class="module-requirements-panel__summary">${escapeHtml(moduleEntry.summary)}</p>`
+        : '';
+
+    panel.innerHTML = `
+        <div class="module-requirements-panel__head">
+            <h4>${escapeHtml(moduleEntry.label || MODULE_LABELS[activeModuleDetailKey] || activeModuleDetailKey)}</h4>
+            ${summaryMarkup}
+        </div>
+        <div class="module-requirements-panel__body">
+            <table class="module-requirements-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Option</th>
+                        <th scope="col">Core Revision</th>
+                        <th scope="col">Required Headers</th>
+                        <th scope="col">Conflicts</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function setActiveModuleDetail(moduleKey, variantKey) {
+    if (!moduleKey || !MODULE_REQUIREMENT_MATRIX[moduleKey]) {
+        return;
+    }
+
+    const moduleEntry = getModuleMatrixEntry(moduleKey);
+    const variants = moduleEntry?.variants || {};
+
+    activeModuleDetailKey = moduleKey;
+    if (variantKey && variants[variantKey]) {
+        activeModuleDetailVariant = variantKey;
+    } else {
+        const selectedVariant = configuration[moduleKey] || 'none';
+        activeModuleDetailVariant = variants[selectedVariant] ? selectedVariant : Object.keys(variants)[0] || null;
+    }
+
+    renderModuleDetailPanel();
+}
+
+function syncModuleDetailPanelToSelection() {
+    if (!moduleDetailPanelInitialized) {
+        return;
+    }
+
+    const panel = ensureModuleDetailPanelElement();
+    if (!panel) {
+        return;
+    }
+
+    if (!activeModuleDetailKey || !MODULE_REQUIREMENT_MATRIX[activeModuleDetailKey]) {
+        const defaultModule = MODULE_KEYS.find(key => MODULE_REQUIREMENT_MATRIX[key]);
+        if (defaultModule) {
+            activeModuleDetailKey = defaultModule;
+        }
+    }
+
+    if (!activeModuleDetailKey) {
+        renderModuleDetailPanel();
+        return;
+    }
+
+    setActiveModuleDetail(activeModuleDetailKey, activeModuleDetailVariant);
+}
+
+function initializeModuleDetailPanel() {
+    if (moduleDetailPanelInitialized) {
+        return;
+    }
+
+    const panel = ensureModuleDetailPanelElement();
+    if (!panel) {
+        return;
+    }
+
+    moduleDetailPanelInitialized = true;
+
+    const handleHighlight = (event) => {
+        const input = event?.target;
+        if (!input || !input.name || !MODULE_REQUIREMENT_MATRIX[input.name]) {
+            return;
+        }
+        setActiveModuleDetail(input.name, input.value || configuration[input.name] || 'none');
+    };
+
+    document.querySelectorAll('.module-section input[type="radio"]').forEach(input => {
+        input.addEventListener('focus', handleHighlight);
+        input.addEventListener('change', handleHighlight);
+
+        const card = input.closest('.option-card');
+        if (card && card.dataset.moduleDetailBound !== 'true') {
+            card.addEventListener('mouseenter', () => {
+                setActiveModuleDetail(input.name, input.value || configuration[input.name] || 'none');
+            });
+            card.dataset.moduleDetailBound = 'true';
+        }
+    });
+
+    const defaultModule = MODULE_KEYS.find(key => MODULE_REQUIREMENT_MATRIX[key]);
+    if (defaultModule) {
+        setActiveModuleDetail(defaultModule, configuration[defaultModule] || 'none');
+    } else {
+        renderModuleDetailPanel();
+    }
+}
+
+function describeVariantRequirements(moduleKey, variantKey) {
+    const variant = getModuleVariantEntry(moduleKey, variantKey);
+    if (!variant || variantKey === 'none') {
+        return [];
+    }
+
+    const details = [];
+    const requirementParts = [];
+
+    if (variant.coreRevision) {
+        requirementParts.push(`requires ${variant.coreRevision}`);
+    }
+
+    if (Array.isArray(variant.headers) && variant.headers.length > 0) {
+        requirementParts.push(`needs ${formatHeaderList(variant.headers)}`);
+    }
+
+    if (requirementParts.length > 0) {
+        details.push(`${formatModuleSelectionLabel(moduleKey, variantKey)} ${requirementParts.join(' and ')}.`);
+    }
+
+    if (Array.isArray(variant.conflicts)) {
+        variant.conflicts.forEach(conflict => {
+            if (!isConflictActiveForConfig(conflict, configuration)) {
+                return;
+            }
+
+            if (conflict.message) {
+                details.push(conflict.message);
+            } else {
+                const otherValue = configuration[conflict.module];
+                details.push(`${formatModuleSelectionLabel(moduleKey, variantKey)} is incompatible with ${formatModuleSelectionLabel(conflict.module, otherValue)}.`);
+            }
+        });
+    }
+
+    return details;
+}
+
+function collectActiveConflictMessages(state) {
+    const messages = [];
+    const seen = new Set();
+
+    MODULE_KEYS.forEach(moduleKey => {
+        const variantKey = state[moduleKey];
+        if (!variantKey || variantKey === 'none') {
+            return;
+        }
+
+        const variant = getModuleVariantEntry(moduleKey, variantKey);
+        if (!variant || !Array.isArray(variant.conflicts)) {
+            return;
+        }
+
+        variant.conflicts.forEach(conflict => {
+            if (!isConflictActiveForConfig(conflict, state)) {
+                return;
+            }
+
+            let message = conflict.message;
+            if (!message) {
+                const otherValue = state[conflict.module];
+                message = `${formatModuleSelectionLabel(moduleKey, variantKey)} is incompatible with ${formatModuleSelectionLabel(conflict.module, otherValue)}.`;
+            }
+
+            if (!seen.has(message)) {
+                seen.add(message);
+                messages.push(message);
+            }
+        });
+    });
+
+    return messages;
 }
 
 let manifestLoadPromise = null;
@@ -1120,6 +1436,8 @@ function initializeWizard() {
         input.addEventListener('change', updateConfiguration);
     });
 
+    initializeModuleDetailPanel();
+
     attachInstallButtonListeners();
     initializeFromUrl();
 
@@ -1398,7 +1716,13 @@ function updateModuleAvailabilityMessage() {
             .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'error'))
             .join(' ');
         const scopeLabel = combinationLabel ? ` for ${escapeHtml(combinationLabel)}` : '';
-        hint.innerHTML = `<strong>Not available${scopeLabel}:</strong> ${unavailableTags}`;
+        const detailMessages = unsupportedModules
+            .flatMap(moduleKey => describeVariantRequirements(moduleKey, configuration[moduleKey]))
+            .filter(message => typeof message === 'string' && message.trim().length > 0);
+        const detailsHtml = detailMessages.length > 0
+            ? `<ul class="module-hint-details">${detailMessages.map(message => `<li>${escapeHtml(message)}</li>`).join('')}</ul>`
+            : '';
+        hint.innerHTML = `<strong>Not available${scopeLabel}:</strong> ${unavailableTags}${detailsHtml}`;
         return;
     }
 
@@ -1409,7 +1733,12 @@ function updateModuleAvailabilityMessage() {
             .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'info'))
             .join(' ') || createModuleTag('Core only', 'info');
         const label = combinationLabel ? escapeHtml(combinationLabel) : 'this selection';
-        hint.innerHTML = `<strong>Partial support.</strong> ${label} is supported, but not with this exact module mix. ${selectedTags}`;
+        const conflictMessages = collectActiveConflictMessages(configuration)
+            .filter(message => typeof message === 'string' && message.trim().length > 0);
+        const conflictDetails = conflictMessages.length > 0
+            ? `<ul class="module-hint-details">${conflictMessages.map(message => `<li>${escapeHtml(message)}</li>`).join('')}</ul>`
+            : '';
+        hint.innerHTML = `<strong>Partial support.</strong> ${label} is supported, but not with this exact module mix. ${selectedTags}${conflictDetails}`;
         return;
     }
 
@@ -1427,6 +1756,7 @@ function updateConfiguration(options = {}) {
     updateModuleOptionAvailability();
     syncConfigurationFromInputs();
     updateModuleAvailabilityMessage();
+    syncModuleDetailPanelToSelection();
 
     if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
@@ -1485,6 +1815,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         updateFanModuleVisibility();
         updateModuleOptionAvailability();
         updateModuleAvailabilityMessage();
+        syncModuleDetailPanelToSelection();
     }
 
     if (currentStep === 4) {

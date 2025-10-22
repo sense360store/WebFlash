@@ -177,252 +177,119 @@
                     Select a mounting and power option to see supported expansion modules.
                 </div>
 
-                <!-- AirIQ Module -->
-                <div class="module-section">
-                    <h3>AirIQ Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="airiq" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">None</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="airiq"
-                                        data-option-value="none"
-                                        aria-label="Details about selecting no AirIQ module"
-                                        aria-describedby="tooltip-text-airiq-none"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">No AirIQ module</div>
+                <div class="module-step-layout">
+                    <div class="module-step-layout__options">
+                        <!-- AirIQ Module -->
+                        <div class="module-section">
+                            <h3>AirIQ Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="airiq" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No AirIQ module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="airiq" value="base">
+                                    <div class="option-content">
+                                        <div class="option-title">Base</div>
+                                        <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="airiq" value="pro">
+                                    <div class="option-content">
+                                        <div class="option-title">Pro</div>
+                                        <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="airiq" value="base">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Base</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="airiq"
-                                        data-option-value="base"
-                                        aria-label="Details about AirIQ Base"
-                                        aria-describedby="tooltip-text-airiq-base"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
-                            </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="airiq" value="pro">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Pro</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="airiq"
-                                        data-option-value="pro"
-                                        aria-label="Details about AirIQ Pro"
-                                        aria-describedby="tooltip-text-airiq-pro"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Presence Module -->
-                <div class="module-section">
-                    <h3>Presence Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="presence" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">None</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="presence"
-                                        data-option-value="none"
-                                        aria-label="Details about selecting no Presence module"
-                                        aria-describedby="tooltip-text-presence-none"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">No Presence module</div>
+                        <!-- Presence Module -->
+                        <div class="module-section">
+                            <h3>Presence Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="presence" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No Presence module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="presence" value="base">
+                                    <div class="option-content">
+                                        <div class="option-title">Base</div>
+                                        <div class="option-description">SEN0609 mmWave sensor</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="presence" value="pro">
+                                    <div class="option-content">
+                                        <div class="option-title">Pro</div>
+                                        <div class="option-description">SEN0609 + LD2450 radar</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="presence" value="base">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Base</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="presence"
-                                        data-option-value="base"
-                                        aria-label="Details about Presence Base"
-                                        aria-describedby="tooltip-text-presence-base"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">SEN0609 mmWave sensor</div>
-                            </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="presence" value="pro">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Pro</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="presence"
-                                        data-option-value="pro"
-                                        aria-label="Details about Presence Pro"
-                                        aria-describedby="tooltip-text-presence-pro"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">SEN0609 + LD2450 radar</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Comfort Module -->
-                <div class="module-section">
-                    <h3>Comfort Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="comfort" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">None</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="comfort"
-                                        data-option-value="none"
-                                        aria-label="Details about selecting no Comfort module"
-                                        aria-describedby="tooltip-text-comfort-none"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">No Comfort module</div>
+                        <!-- Comfort Module -->
+                        <div class="module-section">
+                            <h3>Comfort Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="comfort" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No Comfort module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="comfort" value="base">
+                                    <div class="option-content">
+                                        <div class="option-title">Base</div>
+                                        <div class="option-description">SHT40 + LTR-303 sensors</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="comfort" value="base">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Base</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="comfort"
-                                        data-option-value="base"
-                                        aria-label="Details about Comfort Base"
-                                        aria-describedby="tooltip-text-comfort-base"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">SHT40 + LTR-303 sensors</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Fan Module (only for wall mount) -->
-                <div class="module-section" id="fan-module-section">
-                    <h3>Fan Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="fan" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">None</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="fan"
-                                        data-option-value="none"
-                                        aria-label="Details about selecting no Fan module"
-                                        aria-describedby="tooltip-text-fan-none"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">No Fan module</div>
+                        <!-- Fan Module (only for wall mount) -->
+                        <div class="module-section" id="fan-module-section">
+                            <h3>Fan Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="fan" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No Fan module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="fan" value="pwm">
+                                    <div class="option-content">
+                                        <div class="option-title">PWM</div>
+                                        <div class="option-description">Variable speed fan control</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="fan" value="analog">
+                                    <div class="option-content">
+                                        <div class="option-title">Analog</div>
+                                        <div class="option-description">0-10V analog fan control</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="fan" value="pwm">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">PWM</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="fan"
-                                        data-option-value="pwm"
-                                        aria-label="Details about PWM Fan Module"
-                                        aria-describedby="tooltip-text-fan-pwm"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">Variable speed fan control</div>
-                            </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="fan" value="analog">
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Analog</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="fan"
-                                        data-option-value="analog"
-                                        aria-label="Details about Analog Fan Module"
-                                        aria-describedby="tooltip-text-fan-analog"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">0-10V analog fan control</div>
-                            </div>
-                        </label>
+                        </div>
                     </div>
+
+                    <aside class="module-step-layout__details" id="module-requirements-panel" aria-live="polite" aria-label="Module requirements">
+                        <div class="module-requirements-panel__placeholder">
+                            Highlight a module option to see required core revisions, headers, and conflicts.
+                        </div>
+                    </aside>
                 </div>
 
                 <section class="preset-panel" id="preset-manager" aria-labelledby="preset-manager-title">
