@@ -1010,6 +1010,24 @@ function getSerialCompatibilityState() {
     };
 }
 
+function getSerialMismatchMessage({ asHtml = false } = {}) {
+    const compatibility = getSerialCompatibilityState();
+    if (!compatibility.mismatch) {
+        return '';
+    }
+
+    const expectedLabelRaw = compatibility.expectedLabel || 'selected firmware';
+    const detectedLabelRaw = compatibility.detectedLabel || 'connected device';
+
+    if (asHtml) {
+        const expectedLabel = escapeHtml(expectedLabelRaw);
+        const detectedLabel = escapeHtml(detectedLabelRaw);
+        return `<strong>Chip mismatch.</strong> Detected ${detectedLabel}, but the selected firmware targets ${expectedLabel}. Choose matching firmware or connect the appropriate hub.`;
+    }
+
+    return `Chip mismatch. Detected ${detectedLabelRaw}, but the selected firmware targets ${expectedLabelRaw}. Choose matching firmware or connect the appropriate hub.`;
+}
+
 function renderSerialDetectionInfo({ loading = false } = {}) {
     if (!serialDetectionSummary || !serialDetectionGuidance) {
         return;
@@ -1099,11 +1117,9 @@ function renderSerialDetectionInfo({ loading = false } = {}) {
         guidanceParts.push('Connect your Sense360 hub via USB and select “Detect Device”.');
     }
 
-    const compatibility = getSerialCompatibilityState();
-    if (compatibility.mismatch) {
-        const expectedLabel = escapeHtml(compatibility.expectedLabel || 'selected firmware');
-        const detectedLabel = escapeHtml(compatibility.detectedLabel || 'connected device');
-        guidanceParts.push(`<strong>Chip mismatch.</strong> Detected ${detectedLabel}, but the selected firmware targets ${expectedLabel}. Choose matching firmware or connect the appropriate hub.`);
+    const mismatchGuidance = getSerialMismatchMessage({ asHtml: true });
+    if (mismatchGuidance) {
+        guidanceParts.push(mismatchGuidance);
     }
 
     serialDetectionGuidance.innerHTML = guidanceParts.join(' ');
@@ -2033,8 +2049,10 @@ function updateFirmwareControls() {
     const actionsAllowed = isReady && !compatibility.mismatch;
 
     const diagnosticsReady = areDiagnosticsPassing();
-    const readyToFlash = isReady && diagnosticsReady;
-    const blockingMessage = diagnosticsReady ? '' : getDiagnosticsBlockingMessage();
+    const mismatchMessage = compatibility.mismatch ? getSerialMismatchMessage() : '';
+    const readyToFlash = actionsAllowed && diagnosticsReady;
+    const diagnosticsBlockingMessage = diagnosticsReady ? '' : getDiagnosticsBlockingMessage();
+    const blockingMessage = diagnosticsReady ? mismatchMessage : diagnosticsBlockingMessage;
 
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
@@ -2043,6 +2061,8 @@ function updateFirmwareControls() {
 
         if (!isReady) {
             downloadBtn.title = 'Select a firmware option to download.';
+        } else if (compatibility.mismatch && diagnosticsReady) {
+            downloadBtn.title = mismatchMessage;
         } else if (!diagnosticsReady) {
             downloadBtn.title = blockingMessage || 'Resolve diagnostics before downloading.';
         } else {
@@ -2061,6 +2081,8 @@ function updateFirmwareControls() {
             copyUrlBtn.title = 'Copy requires Clipboard API support';
         } else if (!isReady) {
             copyUrlBtn.title = 'Select a firmware option first';
+        } else if (compatibility.mismatch && diagnosticsReady) {
+            copyUrlBtn.title = mismatchMessage;
         } else if (!diagnosticsReady) {
             copyUrlBtn.title = blockingMessage || 'Resolve diagnostics before copying.';
         } else {
@@ -2101,9 +2123,14 @@ function updateFirmwareControls() {
         if (readyToFlash) {
             detailHelper.textContent = 'Ready to flash';
             detailHelper.classList.add('is-visible');
+            detailHelper.classList.remove('is-warning');
+        } else if (isReady && diagnosticsReady && mismatchMessage) {
+            detailHelper.textContent = mismatchMessage;
+            detailHelper.classList.add('is-visible', 'is-warning');
         } else if (isReady && !diagnosticsReady) {
             detailHelper.textContent = blockingMessage || 'Complete diagnostics to continue.';
             detailHelper.classList.add('is-visible');
+            detailHelper.classList.remove('is-warning');
         } else {
             detailHelper.textContent = '';
             detailHelper.classList.remove('is-visible', 'is-warning');
@@ -2118,9 +2145,14 @@ function updateFirmwareControls() {
                 primaryHelper.textContent = 'Ready to flash';
             }
             primaryHelper.classList.add('is-visible');
+            primaryHelper.classList.remove('is-warning');
+        } else if (isReady && diagnosticsReady && mismatchMessage) {
+            primaryHelper.textContent = mismatchMessage;
+            primaryHelper.classList.add('is-visible', 'is-warning');
         } else if (isReady && !diagnosticsReady) {
             primaryHelper.textContent = blockingMessage || 'Resolve diagnostics before flashing.';
             primaryHelper.classList.add('is-visible');
+            primaryHelper.classList.remove('is-warning');
         } else {
             primaryHelper.textContent = '';
             primaryHelper.classList.remove('is-visible', 'is-warning');
@@ -3630,6 +3662,12 @@ function handleYamlDownload(event) {
 }
 
 async function copyFirmwareUrl() {
+    const mismatchMessage = getSerialMismatchMessage();
+    if (mismatchMessage) {
+        showToast(mismatchMessage);
+        return;
+    }
+
     if (!areDiagnosticsPassing()) {
         const message = getDiagnosticsBlockingMessage() || 'Resolve diagnostics before copying firmware links.';
         showToast(message);
@@ -3737,6 +3775,12 @@ document.addEventListener('click', async event => {
 });
 
 function downloadFirmware() {
+    const mismatchMessage = getSerialMismatchMessage();
+    if (mismatchMessage) {
+        showToast(mismatchMessage);
+        return;
+    }
+
     if (!areDiagnosticsPassing()) {
         const message = getDiagnosticsBlockingMessage() || 'Resolve diagnostics before downloading firmware.';
         showToast(message);
