@@ -54,6 +54,53 @@ let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
 let activeModuleDetailVariant = null;
 
+function getDefaultState() {
+    return {
+        ...defaultConfiguration,
+        mount: defaultConfiguration.mounting
+    };
+}
+
+function getState() {
+    return {
+        ...configuration,
+        mount: configuration.mounting
+    };
+}
+
+function normalizeStateForConfiguration(state = {}) {
+    if (!state || typeof state !== 'object') {
+        return {};
+    }
+
+    const { mount, ...rest } = state;
+    const normalized = { ...rest };
+
+    if (mount !== undefined) {
+        normalized.mounting = mount;
+    }
+
+    return normalized;
+}
+
+function setState(newState = {}, options = {}) {
+    const normalizedState = normalizeStateForConfiguration(newState);
+    applyConfiguration(normalizedState);
+
+    if (options.skipUrlUpdate) {
+        persistWizardState();
+    } else {
+        updateUrlFromConfiguration();
+    }
+
+    return getState();
+}
+
+function replaceState(newState = {}, options = {}) {
+    const mergedOptions = { skipUrlUpdate: true, ...options };
+    return setState(newState, mergedOptions);
+}
+
 function formatConfigSegment(moduleKey, moduleValue) {
     const key = (moduleKey || '').toString().trim().toLowerCase();
     const value = (moduleValue || '').toString().trim().toLowerCase();
@@ -1799,6 +1846,10 @@ function previousStep() {
     if (currentStep > 1) {
         setStep(currentStep - 1, { animate: true });
     }
+}
+
+function getStep() {
+    return currentStep;
 }
 
 function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
@@ -3983,3 +4034,12 @@ export const __testHooks = Object.freeze({
     getFirmwarePartsMetadata,
     refreshPreflightDiagnostics
 });
+
+export {
+    getDefaultState,
+    getState,
+    setState,
+    replaceState,
+    getStep,
+    setStep
+};
