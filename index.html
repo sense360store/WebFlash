@@ -112,109 +112,119 @@
                     Select a mounting and power option to see supported expansion modules.
                 </div>
 
-                <!-- AirIQ Module -->
-                <div class="module-section">
-                    <h3>AirIQ Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="airiq" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-title">None</div>
-                                <div class="option-description">No AirIQ module</div>
+                <div class="module-step-layout">
+                    <div class="module-step-layout__options">
+                        <!-- AirIQ Module -->
+                        <div class="module-section">
+                            <h3>AirIQ Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="airiq" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No AirIQ module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="airiq" value="base">
+                                    <div class="option-content">
+                                        <div class="option-title">Base</div>
+                                        <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="airiq" value="pro">
+                                    <div class="option-content">
+                                        <div class="option-title">Pro</div>
+                                        <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="airiq" value="base">
-                            <div class="option-content">
-                                <div class="option-title">Base</div>
-                                <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
-                            </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="airiq" value="pro">
-                            <div class="option-content">
-                                <div class="option-title">Pro</div>
-                                <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Presence Module -->
-                <div class="module-section">
-                    <h3>Presence Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="presence" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-title">None</div>
-                                <div class="option-description">No Presence module</div>
+                        <!-- Presence Module -->
+                        <div class="module-section">
+                            <h3>Presence Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="presence" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No Presence module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="presence" value="base">
+                                    <div class="option-content">
+                                        <div class="option-title">Base</div>
+                                        <div class="option-description">SEN0609 mmWave sensor</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="presence" value="pro">
+                                    <div class="option-content">
+                                        <div class="option-title">Pro</div>
+                                        <div class="option-description">SEN0609 + LD2450 radar</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="presence" value="base">
-                            <div class="option-content">
-                                <div class="option-title">Base</div>
-                                <div class="option-description">SEN0609 mmWave sensor</div>
-                            </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="presence" value="pro">
-                            <div class="option-content">
-                                <div class="option-title">Pro</div>
-                                <div class="option-description">SEN0609 + LD2450 radar</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Comfort Module -->
-                <div class="module-section">
-                    <h3>Comfort Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="comfort" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-title">None</div>
-                                <div class="option-description">No Comfort module</div>
+                        <!-- Comfort Module -->
+                        <div class="module-section">
+                            <h3>Comfort Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="comfort" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No Comfort module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="comfort" value="base">
+                                    <div class="option-content">
+                                        <div class="option-title">Base</div>
+                                        <div class="option-description">SHT40 + LTR-303 sensors</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="comfort" value="base">
-                            <div class="option-content">
-                                <div class="option-title">Base</div>
-                                <div class="option-description">SHT40 + LTR-303 sensors</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
+                        </div>
 
-                <!-- Fan Module (only for wall mount) -->
-                <div class="module-section" id="fan-module-section">
-                    <h3>Fan Module</h3>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="fan" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-title">None</div>
-                                <div class="option-description">No Fan module</div>
+                        <!-- Fan Module (only for wall mount) -->
+                        <div class="module-section" id="fan-module-section">
+                            <h3>Fan Module</h3>
+                            <div class="option-grid">
+                                <label class="option-card">
+                                    <input type="radio" name="fan" value="none" checked>
+                                    <div class="option-content">
+                                        <div class="option-title">None</div>
+                                        <div class="option-description">No Fan module</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="fan" value="pwm">
+                                    <div class="option-content">
+                                        <div class="option-title">PWM</div>
+                                        <div class="option-description">Variable speed fan control</div>
+                                    </div>
+                                </label>
+                                <label class="option-card">
+                                    <input type="radio" name="fan" value="analog">
+                                    <div class="option-content">
+                                        <div class="option-title">Analog</div>
+                                        <div class="option-description">0-10V analog fan control</div>
+                                    </div>
+                                </label>
                             </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="fan" value="pwm">
-                            <div class="option-content">
-                                <div class="option-title">PWM</div>
-                                <div class="option-description">Variable speed fan control</div>
-                            </div>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="fan" value="analog">
-                            <div class="option-content">
-                                <div class="option-title">Analog</div>
-                                <div class="option-description">0-10V analog fan control</div>
-                            </div>
-                        </label>
+                        </div>
                     </div>
+
+                    <aside class="module-step-layout__details" id="module-requirements-panel" aria-live="polite" aria-label="Module requirements">
+                        <div class="module-requirements-panel__placeholder">
+                            Highlight a module option to see required core revisions, headers, and conflicts.
+                        </div>
+                    </aside>
                 </div>
 
                 <div class="remember-preference">
