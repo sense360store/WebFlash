@@ -189,6 +189,25 @@ describe('remember-state persistence', () => {
         });
     });
 
+    test('retains remembered step even when configuration is default', async () => {
+        const { module } = await loadRememberModule();
+        const { normalizeRememberedState } = module;
+
+        const normalized = normalizeRememberedState({
+            configuration: { ...defaultConfiguration },
+            currentStep: 3
+        }, {
+            defaultConfiguration,
+            allowedOptions,
+            totalSteps
+        });
+
+        expect(normalized).toEqual({
+            configuration: { ...defaultConfiguration },
+            currentStep: 3
+        });
+    });
+
     test('disabling remember clears stored configuration', async () => {
         const { module, storage } = await loadRememberModule();
         const { setRememberEnabled } = module;
