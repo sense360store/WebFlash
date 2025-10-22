@@ -309,10 +309,15 @@
     function handleReset(event) {
         event.preventDefault();
         try {
-            const storage = window.localStorage;
-            if (storage) {
-                storage.removeItem('sense360.lastWizardState');
-                storage.removeItem('lastWizardState');
+            const rememberApi = window.wizardRememberState;
+            if (rememberApi && typeof rememberApi.clear === 'function') {
+                rememberApi.clear();
+            } else {
+                const storage = window.localStorage;
+                if (storage) {
+                    storage.removeItem('sense360.lastWizardState');
+                    storage.removeItem('lastWizardState');
+                }
             }
         } catch (error) {
             console.warn('[state-summary] Unable to clear remembered state', error);
