@@ -47,8 +47,49 @@ function renderWizardDom() {
             <label><input type="checkbox" data-remember-toggle></label>
         </div>
         <div id="step-4" class="wizard-step">
-            <section class="pre-flash-checklist" data-complete="false">
-                <div data-checklist-item data-complete="false"></div>
+            <section class="pre-flash-checklist" data-diagnostics-state="idle">
+                <div class="checklist-header">
+                    <div class="checklist-header__text">
+                        <h3 class="checklist-heading" id="pre-flash-title">Connection Diagnostics</h3>
+                        <p class="checklist-subtitle" data-diagnostic-summary>Preparing diagnostics…</p>
+                    </div>
+                    <button type="button" class="checklist-refresh" data-diagnostic-refresh disabled>Retry checks</button>
+                </div>
+                <ul class="checklist-items">
+                    <li class="checklist-item" data-diagnostic-item="browser" data-status="pending">
+                        <span class="status-icon" data-diagnostic-status></span>
+                        <div class="item-content">
+                            <span class="item-title">Browser support</span>
+                            <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                            <p class="item-tip" data-diagnostic-tip hidden></p>
+                        </div>
+                    </li>
+                    <li class="checklist-item" data-diagnostic-item="webSerial" data-status="pending">
+                        <span class="status-icon" data-diagnostic-status></span>
+                        <div class="item-content">
+                            <span class="item-title">Web Serial API</span>
+                            <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                            <p class="item-tip" data-diagnostic-tip hidden></p>
+                        </div>
+                    </li>
+                    <li class="checklist-item" data-diagnostic-item="ports" data-status="pending">
+                        <span class="status-icon" data-diagnostic-status></span>
+                        <div class="item-content">
+                            <span class="item-title">Connected devices</span>
+                            <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                            <p class="item-tip" data-diagnostic-tip hidden></p>
+                        </div>
+                    </li>
+                    <li class="checklist-item" data-diagnostic-item="battery" data-status="pending">
+                        <span class="status-icon" data-diagnostic-status></span>
+                        <div class="item-content">
+                            <span class="item-title">Battery readiness</span>
+                            <p class="item-text" data-diagnostic-message>Preparing check…</p>
+                            <p class="item-tip" data-diagnostic-tip hidden></p>
+                        </div>
+                    </li>
+                </ul>
+                <p class="diagnostic-error" data-diagnostic-error hidden></p>
             </section>
             <div id="config-summary"></div>
             <div class="primary-action-group"><p data-ready-helper></p></div>
@@ -92,12 +133,31 @@ describe('firmware download interactions', () => {
             },
             configurable: true
         });
+        Object.defineProperty(window, 'isSecureContext', {
+            value: true,
+            configurable: true
+        });
+        Object.defineProperty(global.navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            configurable: true
+        });
+        Object.defineProperty(global.navigator, 'serial', {
+            value: {
+                getPorts: jest.fn(() => Promise.resolve([]))
+            },
+            configurable: true
+        });
+        Object.defineProperty(global.navigator, 'getBattery', {
+            value: jest.fn(() => Promise.resolve({ level: 0.9, charging: true })),
+            configurable: true
+        });
     });
 
     test('single-part firmware triggers direct download', async () => {
         const { __testHooks } = await import('../scripts/state.js');
         document.dispatchEvent(new Event('DOMContentLoaded'));
         await __testHooks.loadManifestData();
+        await __testHooks.refreshPreflightDiagnostics({ force: true });
 
         window.currentFirmware = {
             firmwareId: 'firmware-1',
@@ -133,6 +193,7 @@ describe('firmware download interactions', () => {
         const { __testHooks } = await import('../scripts/state.js');
         document.dispatchEvent(new Event('DOMContentLoaded'));
         await __testHooks.loadManifestData();
+        await __testHooks.refreshPreflightDiagnostics({ force: true });
 
         window.currentFirmware = {
             firmwareId: 'firmware-2',
@@ -165,6 +226,7 @@ describe('firmware download interactions', () => {
         const { __testHooks } = await import('../scripts/state.js');
         document.dispatchEvent(new Event('DOMContentLoaded'));
         await __testHooks.loadManifestData();
+        await __testHooks.refreshPreflightDiagnostics({ force: true });
 
         const firmware = {
             firmwareId: 'firmware-3',
@@ -196,6 +258,7 @@ describe('firmware download interactions', () => {
         const { __testHooks } = await import('../scripts/state.js');
         document.dispatchEvent(new Event('DOMContentLoaded'));
         await __testHooks.loadManifestData();
+        await __testHooks.refreshPreflightDiagnostics({ force: true });
 
         const firmware = {
             firmwareId: 'firmware-4',

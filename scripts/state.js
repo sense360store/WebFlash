@@ -6,6 +6,11 @@ import {
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
+import {
+    runPreflightDiagnostics,
+    didMandatoryChecksPass,
+    firstBlockingCheck
+} from './support/preflight.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -397,7 +402,6 @@ async function loadManifestData() {
 
 const manifestReadyPromise = loadManifestData().catch(() => null);
 
-let checklistCompleted = false;
 let rememberChoices = false;
 let rememberedState = null;
 
@@ -412,21 +416,217 @@ let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
 
-function syncChecklistCompletion() {
-    const section = document.querySelector('.pre-flash-checklist');
-    if (!section) return;
+const diagnosticsElements = new Map();
+let diagnosticsRefreshButton = null;
+let diagnosticsSummaryElement = null;
+let diagnosticsErrorElement = null;
+let diagnosticsState = {
+    status: 'idle',
+    result: null,
+    error: null,
+    promise: null,
+    lastRun: 0
+};
 
-    const completionValue = checklistCompleted ? 'true' : 'false';
-    section.dataset.complete = completionValue;
+const DIAGNOSTIC_DEFAULT_MESSAGE = 'Preparing check…';
+const DIAGNOSTIC_RUNNING_MESSAGE = 'Running diagnostics…';
 
-    section.querySelectorAll('[data-checklist-item]').forEach(item => {
-        item.dataset.complete = completionValue;
-    });
+function getDiagnosticsSection() {
+    return document.querySelector('.pre-flash-checklist');
 }
 
-function setChecklistCompletion(isComplete) {
-    checklistCompleted = isComplete;
-    syncChecklistCompletion();
+function initializeDiagnosticsUI() {
+    const section = getDiagnosticsSection();
+    if (!section) {
+        return;
+    }
+
+    if (diagnosticsElements.size === 0) {
+        section.querySelectorAll('[data-diagnostic-item]').forEach((item) => {
+            const key = item.getAttribute('data-diagnostic-item');
+            if (!key) {
+                return;
+            }
+
+            diagnosticsElements.set(key, {
+                item,
+                statusIcon: item.querySelector('[data-diagnostic-status]'),
+                messageElement: item.querySelector('[data-diagnostic-message]'),
+                tipElement: item.querySelector('[data-diagnostic-tip]')
+            });
+        });
+    }
+
+    diagnosticsSummaryElement = section.querySelector('[data-diagnostic-summary]') || diagnosticsSummaryElement;
+    diagnosticsErrorElement = section.querySelector('[data-diagnostic-error]') || diagnosticsErrorElement;
+
+    if (!diagnosticsRefreshButton) {
+        const refreshButton = section.querySelector('[data-diagnostic-refresh]');
+        if (refreshButton) {
+            diagnosticsRefreshButton = refreshButton;
+            refreshButton.addEventListener('click', () => {
+                refreshPreflightDiagnostics({ userInitiated: true, force: true });
+            });
+        }
+    }
+}
+
+function areDiagnosticsPassing() {
+    return didMandatoryChecksPass(diagnosticsState.result);
+}
+
+function getDiagnosticsBlockingMessage() {
+    if (diagnosticsState.status === 'running') {
+        return 'Diagnostics are running. Please wait…';
+    }
+
+    if (diagnosticsState.status === 'error') {
+        return 'Diagnostics could not complete. Retry the checks.';
+    }
+
+    if (!diagnosticsState.result) {
+        return 'Run diagnostics before continuing.';
+    }
+
+    const blocking = firstBlockingCheck(diagnosticsState.result);
+    if (!blocking) {
+        return '';
+    }
+
+    return blocking.tip || blocking.message || 'Resolve the diagnostics issues before continuing.';
+}
+
+function updateDiagnosticsSummary() {
+    if (!diagnosticsSummaryElement) {
+        return;
+    }
+
+    let summary = 'Run diagnostics to check your setup.';
+
+    if (diagnosticsState.status === 'running') {
+        summary = DIAGNOSTIC_RUNNING_MESSAGE;
+    } else if (diagnosticsState.status === 'error') {
+        summary = 'Diagnostics could not complete. Please retry.';
+    } else if (areDiagnosticsPassing()) {
+        summary = 'All required checks passed. Select firmware to continue.';
+    } else if (diagnosticsState.status === 'complete') {
+        summary = 'Some checks need attention before flashing.';
+    }
+
+    diagnosticsSummaryElement.textContent = summary;
+}
+
+function updateDiagnosticsUI() {
+    const section = getDiagnosticsSection();
+    if (!section || diagnosticsElements.size === 0) {
+        return;
+    }
+
+    section.dataset.diagnosticsState = diagnosticsState.status;
+
+    diagnosticsElements.forEach(({ item, messageElement, tipElement }, key) => {
+        let status = 'pending';
+        let message = DIAGNOSTIC_DEFAULT_MESSAGE;
+        let tip = '';
+
+        if (diagnosticsState.status === 'running') {
+            status = 'pending';
+            message = DIAGNOSTIC_RUNNING_MESSAGE;
+        } else if (diagnosticsState.status === 'error') {
+            status = 'fail';
+            message = 'Diagnostics did not finish.';
+            tip = 'Retry the checks or refresh the page.';
+        } else {
+            const check = diagnosticsState.result?.checks?.[key];
+            if (check) {
+                status = check.status || 'info';
+                message = check.message || DIAGNOSTIC_DEFAULT_MESSAGE;
+                tip = check.tip || '';
+            } else if (diagnosticsState.status === 'complete') {
+                status = 'info';
+                message = 'Check not available in this browser.';
+            }
+        }
+
+        item.dataset.status = status;
+
+        if (messageElement) {
+            messageElement.textContent = message;
+        }
+
+        if (tipElement) {
+            if (tip) {
+                tipElement.textContent = tip;
+                tipElement.hidden = false;
+            } else {
+                tipElement.textContent = '';
+                tipElement.hidden = true;
+            }
+        }
+    });
+
+    updateDiagnosticsSummary();
+
+    if (diagnosticsErrorElement) {
+        if (diagnosticsState.status === 'error' && diagnosticsState.error) {
+            diagnosticsErrorElement.textContent = diagnosticsState.error?.message || 'Diagnostics failed unexpectedly.';
+            diagnosticsErrorElement.hidden = false;
+        } else {
+            diagnosticsErrorElement.textContent = '';
+            diagnosticsErrorElement.hidden = true;
+        }
+    }
+
+    if (diagnosticsRefreshButton) {
+        diagnosticsRefreshButton.disabled = diagnosticsState.status === 'running';
+    }
+}
+
+function refreshPreflightDiagnostics({ userInitiated = false, force = false } = {}) {
+    initializeDiagnosticsUI();
+
+    const section = getDiagnosticsSection();
+    if (!section) {
+        return Promise.resolve(null);
+    }
+
+    if (diagnosticsState.status === 'running' && diagnosticsState.promise) {
+        return diagnosticsState.promise;
+    }
+
+    const now = Date.now();
+    const shouldReuse = !force && !userInitiated && diagnosticsState.result && (now - diagnosticsState.lastRun) < 15000;
+    if (shouldReuse) {
+        updateDiagnosticsUI();
+        updateFirmwareControls();
+        return Promise.resolve(diagnosticsState.result);
+    }
+
+    diagnosticsState.status = 'running';
+    diagnosticsState.error = null;
+    updateDiagnosticsUI();
+
+    const promise = runPreflightDiagnostics()
+        .then((result) => {
+            diagnosticsState.result = result;
+            diagnosticsState.status = 'complete';
+            diagnosticsState.lastRun = Date.now();
+            return result;
+        })
+        .catch((error) => {
+            console.error('Preflight diagnostics failed:', error);
+            diagnosticsState.status = 'error';
+            diagnosticsState.error = error;
+            return null;
+        })
+        .finally(() => {
+            diagnosticsState.promise = null;
+            updateDiagnosticsUI();
+            updateFirmwareControls();
+        });
+
+    diagnosticsState.promise = promise;
+    return promise;
 }
 
 function attachInstallButtonListeners() {
@@ -441,7 +641,6 @@ function attachInstallButtonListeners() {
                 if (firmwareId) {
                     selectFirmwareById(firmwareId, { syncSelector: false });
                 }
-                setChecklistCompletion(true);
             });
             activateButton.dataset.checklistBound = 'true';
         }
@@ -592,8 +791,11 @@ function initializeWizard() {
         }
     }
 
-    syncChecklistCompletion();
     setupRememberPreferenceControls();
+
+    initializeDiagnosticsUI();
+    updateDiagnosticsUI();
+    refreshPreflightDiagnostics({ force: true });
 
     document.querySelectorAll('input[name="mounting"]').forEach(input => {
         input.addEventListener('change', handleMountingChange);
@@ -989,6 +1191,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         updateConfiguration({ skipUrlUpdate: true });
         updateSummary();
         findCompatibleFirmware();
+        refreshPreflightDiagnostics();
     }
 
     if (!skipUrlUpdate) {
@@ -1190,21 +1393,37 @@ function updateFirmwareControls() {
         && window.currentFirmware.parts.length > 0
     );
 
+    const diagnosticsReady = areDiagnosticsPassing();
+    const readyToFlash = isReady && diagnosticsReady;
+    const blockingMessage = diagnosticsReady ? '' : getDiagnosticsBlockingMessage();
+
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
-        downloadBtn.disabled = !isReady;
-        downloadBtn.classList.toggle('is-ready', isReady);
+        downloadBtn.disabled = !readyToFlash;
+        downloadBtn.classList.toggle('is-ready', readyToFlash);
+
+        if (!isReady) {
+            downloadBtn.title = 'Select a firmware option to download.';
+        } else if (!diagnosticsReady) {
+            downloadBtn.title = blockingMessage || 'Resolve diagnostics before downloading.';
+        } else {
+            downloadBtn.removeAttribute('title');
+        }
     }
 
     const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
     if (copyUrlBtn) {
         const clipboardSupported = Boolean(navigator.clipboard);
-        const canCopy = clipboardSupported && isReady;
+        const canCopy = clipboardSupported && readyToFlash;
         copyUrlBtn.disabled = !canCopy;
         copyUrlBtn.classList.toggle('is-ready', canCopy);
 
         if (!clipboardSupported) {
             copyUrlBtn.title = 'Copy requires Clipboard API support';
+        } else if (!isReady) {
+            copyUrlBtn.title = 'Select a firmware option first';
+        } else if (!diagnosticsReady) {
+            copyUrlBtn.title = blockingMessage || 'Resolve diagnostics before copying.';
         } else {
             copyUrlBtn.removeAttribute('title');
         }
@@ -1212,13 +1431,22 @@ function updateFirmwareControls() {
 
     const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
     if (installButton) {
-        installButton.classList.toggle('is-ready', isReady);
+        installButton.classList.toggle('is-ready', readyToFlash);
+        installButton.disabled = !readyToFlash;
+        if (!readyToFlash && blockingMessage) {
+            installButton.title = blockingMessage;
+        } else {
+            installButton.removeAttribute('title');
+        }
     }
 
     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
     if (detailHelper) {
-        if (isReady) {
+        if (readyToFlash) {
             detailHelper.textContent = 'Ready to flash';
+            detailHelper.classList.add('is-visible');
+        } else if (isReady && !diagnosticsReady) {
+            detailHelper.textContent = blockingMessage || 'Complete diagnostics to continue.';
             detailHelper.classList.add('is-visible');
         } else {
             detailHelper.textContent = '';
@@ -1228,10 +1456,13 @@ function updateFirmwareControls() {
 
     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
     if (primaryHelper) {
-        if (isReady) {
+        if (readyToFlash) {
             if (primaryHelper.textContent !== 'Ready to flash') {
                 primaryHelper.textContent = 'Ready to flash';
             }
+            primaryHelper.classList.add('is-visible');
+        } else if (isReady && !diagnosticsReady) {
+            primaryHelper.textContent = blockingMessage || 'Resolve diagnostics before flashing.';
             primaryHelper.classList.add('is-visible');
         } else {
             primaryHelper.textContent = '';
@@ -1778,12 +2009,6 @@ async function findCompatibleFirmware() {
     configString += formatConfigSegment('comfort', configuration.comfort);
     configString += formatConfigSegment('fan', configuration.fan);
 
-    if (previousConfigString !== configString) {
-        setChecklistCompletion(false);
-    } else {
-        syncChecklistCompletion();
-    }
-
     window.currentConfigString = configString;
 
     // Load manifest to check if firmware exists
@@ -2271,6 +2496,12 @@ async function copyFirmwarePartsToClipboard(parts) {
 }
 
 async function copyFirmwareUrl() {
+    if (!areDiagnosticsPassing()) {
+        const message = getDiagnosticsBlockingMessage() || 'Resolve diagnostics before copying firmware links.';
+        showToast(message);
+        return;
+    }
+
     const firmware = window.currentFirmware;
     const parts = getFirmwarePartsMetadata(firmware);
 
@@ -2343,6 +2574,12 @@ function showToast(message, options = {}) {
 }
 
 function downloadFirmware() {
+    if (!areDiagnosticsPassing()) {
+        const message = getDiagnosticsBlockingMessage() || 'Resolve diagnostics before downloading firmware.';
+        showToast(message);
+        return;
+    }
+
     const firmware = window.currentFirmware;
     const parts = getFirmwarePartsMetadata(firmware);
 
@@ -2535,5 +2772,6 @@ export const __testHooks = Object.freeze({
     manifestReadyPromise: () => manifestReadyPromise,
     isManifestReady,
     renderSelectedFirmware,
-    getFirmwarePartsMetadata
+    getFirmwarePartsMetadata,
+    refreshPreflightDiagnostics
 });
