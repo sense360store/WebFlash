@@ -1232,52 +1232,59 @@ function attachInstallButtonListeners() {
                     const detail = event?.detail;
                     const state = typeof detail === 'string' ? detail : detail?.state;
                     if (!state) {
+                        return false;
+                    }
+
+                    const isInProgress = (state === 'initializing' || state === 'preparing') && (
+                        typeof detail !== 'object'
+                            ? true
+                            : detail.details?.done === false || detail.details === undefined
+                    );
+
+                    if (!isInProgress) {
+                        return false;
+                    }
+
+                    window.supportBundle?.clearSerial?.();
+
+                    return true;
+                };
+
+                const handleStateChanged = (event) => {
+                    const detail = event?.detail;
+                    const state = typeof detail === 'string' ? detail : detail?.state;
+                    if (!state) {
                         return;
-                    if (isInProgress) {
-                        window.supportBundle?.clearSerial?.();
-                        if (isRescueHost) {
-                            recordRescueInstallEvent('session-start', { state });
-                        }
                     }
-                }
 
-            // ESP Web Tools dispatches "log"/"console" events from the install button
-            // to expose console output. Forward the payload to the support bundle so
-            // that generated bundles include raw serial logs for troubleshooting.
-            host.addEventListener('log', forwardLogEvent);
-            host.addEventListener('console', forwardLogEvent);
+                    const didReset = resetSerialBuffer(event);
+                    handleInstallStateEvent(event);
 
-            // The flashing dialog also emits "state-changed" events as the install
-            // progresses. When a new session moves into the initializing/preparing
-            // phase we reset the buffered log output so the bundle only contains the
-            // latest attempt.
-            const handleStateChanged = (event) => {
-                resetSerialBuffer(event);
-                handleInstallStateEvent(event);
-            };
+                    if (!isRescueHost) {
+                        return;
+                    }
 
-            host.addEventListener('state-changed', handleStateChanged);
-                if (isRescueHost) {
                     const previousState = host.dataset.rescueLastState || '';
-                    if (previousState !== state) {
-                        host.dataset.rescueLastState = state;
-                        const summary = summariseRescueDetail(detail);
-                        recordRescueInstallEvent('state-changed', { state, ...summary });
-                        if (state === 'finished' || state === 'completed') {
-                            recordRescueInstallEvent('session-finished', summary);
-                        } else if (state === 'error' || state === 'failed') {
-                            recordRescueInstallEvent('session-error', summary);
-                        }
+                    if (previousState === state) {
+                        return;
                     }
 
-                    if (state === 'initializing' || state === 'preparing') {
-                        const isInProgress = typeof detail === 'object'
-                            ? detail.details?.done === false || detail.details === undefined
-                            : true;
+                    host.dataset.rescueLastState = state;
 
-                        if (isInProgress) {
-                            window.supportBundle?.clearSerial?.();
-                        }
+                    const summary = typeof detail === 'object' && typeof summariseRescueDetail === 'function'
+                        ? summariseRescueDetail(detail)
+                        : {};
+
+                    if (didReset) {
+                        recordRescueInstallEvent('session-start', { state, ...summary });
+                    }
+
+                    recordRescueInstallEvent('state-changed', { state, ...summary });
+
+                    if (state === 'finished' || state === 'completed') {
+                        recordRescueInstallEvent('session-finished', summary);
+                    } else if (state === 'error' || state === 'failed') {
+                        recordRescueInstallEvent('session-error', summary);
                     }
                 };
 
@@ -1291,7 +1298,7 @@ function attachInstallButtonListeners() {
                 // progresses. When a new session moves into the initializing/preparing
                 // phase we reset the buffered log output so the bundle only contains the
                 // latest attempt.
-                host.addEventListener('state-changed', resetSerialBuffer);
+                host.addEventListener('state-changed', handleStateChanged);
 
                 host.dataset.serialLogBound = 'true';
             };
