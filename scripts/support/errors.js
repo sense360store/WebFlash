@@ -7,18 +7,23 @@ const dedupeMap = new Map();
 function pushError(entry) {
     const key = `${entry.message}::${entry.stack ?? ''}`;
     const now = Date.now();
-    const lastTimestamp = dedupeMap.get(key) ?? 0;
+    const existing = dedupeMap.get(key);
 
-    if (now - lastTimestamp < DEDUPE_WINDOW_MS) {
-        return;
+    if (existing && now - existing.timestamp < DEDUPE_WINDOW_MS) {
+        existing.timestamp = now;
+        return existing.entry;
     }
 
-    dedupeMap.set(key, now);
-    errorBuffer.push(entry);
+    const storedEntry = entry;
+
+    dedupeMap.set(key, { timestamp: now, entry: storedEntry });
+    errorBuffer.push(storedEntry);
 
     if (errorBuffer.length > MAX_ERRORS) {
         errorBuffer.splice(0, errorBuffer.length - MAX_ERRORS);
     }
+
+    return storedEntry;
 }
 
 function normaliseError(error, fallbackMessage) {
@@ -74,6 +79,35 @@ function recordUnhandledRejection(event) {
     });
 }
 
+function logError(info = {}) {
+    const baseInfo = typeof info === 'object' && info !== null ? info : { error: info };
+    const {
+        error,
+        message,
+        stack,
+        cause,
+        fallbackMessage,
+        type = 'manual',
+        ...metadata
+    } = baseInfo;
+
+    const normalised = normaliseError(
+        error ?? { message, stack, cause },
+        fallbackMessage ?? (typeof message === 'string' ? message : undefined)
+    );
+
+    const entry = {
+        ts: new Date().toISOString(),
+        type,
+        message: normalised.message,
+        stack: normalised.stack,
+        cause: normalised.cause,
+        ...metadata
+    };
+
+    return pushError(entry);
+}
+
 const previousOnError = typeof window !== 'undefined' ? window.onerror : null;
 const previousOnUnhandled = typeof window !== 'undefined' ? window.onunhandledrejection : null;
 
@@ -117,10 +151,14 @@ if (typeof window !== 'undefined') {
 
         return undefined;
     };
+
+    window.supportErrors = window.supportErrors || {};
+    window.supportErrors.logError = logError;
+    window.supportErrors.getErrors = getErrors;
 }
 
 function getErrors() {
     return errorBuffer.slice();
 }
 
-export { getErrors };
+export { getErrors, logError };
