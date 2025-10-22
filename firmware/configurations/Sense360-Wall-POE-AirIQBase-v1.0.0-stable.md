@@ -1,4 +1,4 @@
-# Sense360 Wall Mount POE with AirIQ Base v1.0.0 (General)
+# Sense360 Wall Mount POE with AirIQ Base v1.0.0 (Stable)
 
 ## Configuration Details
 - **Mounting Type**: Wall
@@ -7,11 +7,11 @@
 - **Included Sensors**: SGP41, SCD41, MiCS4514, BMP390
 - **Chip Family**: ESP32-S3
 - **Version**: v1.0.0
-- **Channel**: general
+- **Channel**: stable
 - **Release Date**: 2025-07-25
 
 ## Description
-General availability firmware for wall-mounted Sense360 nodes powered over Ethernet with the AirIQ Base air quality module.
+Stable release firmware for wall-mounted Sense360 nodes powered over Ethernet with the AirIQ Base air quality module.
 
 ## Hardware Requirements
 - ESP32-S3 WROOM Core Module

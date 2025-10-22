@@ -1,4 +1,4 @@
-# Sense360 Ceiling Mount PWR with Full Sensor Suite v1.0.0 (General)
+# Sense360 Ceiling Mount PWR with Full Sensor Suite v1.0.0 (Stable)
 
 ## Configuration Details
 - **Mounting Type**: Ceiling
@@ -7,11 +7,11 @@
 - **Included Sensors**: SGP41, SCD41, MiCS4514, BMP390, SEN0321, SPS30, SFA40, LD2450, SEN0609, SHT40, LTR-303
 - **Chip Family**: ESP32-S3
 - **Version**: v1.0.0
-- **Channel**: general
+- **Channel**: stable
 - **Release Date**: 2025-07-25
 
 ## Description
-General availability firmware for ceiling-mounted Sense360 units with external power and the full AirIQ Pro + Presence + Comfort stack. Recommended for production deployments needing the complete sensor suite.
+Stable release firmware for ceiling-mounted Sense360 units with external power and the full AirIQ Pro + Presence + Comfort stack. Recommended for production deployments needing the complete sensor suite.
 
 ## Hardware Requirements
 - ESP32-S3 WROOM Core Module
