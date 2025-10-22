@@ -68,6 +68,11 @@
     --capability-note-dismiss-border: color-mix(in srgb, var(--danger) 55%, var(--border));
     --capability-note-dismiss-hover: color-mix(in srgb, var(--danger) 20%, transparent);
     --capability-note-focus-ring: color-mix(in srgb, var(--danger) 55%, var(--focus-ring));
+
+    /* Wizard brand overrides */
+    --brand-green-tint: color-mix(in srgb, var(--brand-green) 16%, var(--surface));
+    --brand-green-tint-strong: color-mix(in srgb, var(--brand-green) 24%, var(--surface));
+    --brand-green-border: color-mix(in srgb, var(--brand-green) 55%, var(--color-border));
 }
 
 :root[data-theme="light"] {

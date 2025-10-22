@@ -812,7 +812,7 @@ h1 {
     gap: 12px;
     padding: 12px 16px;
     border-radius: 10px;
-    background: rgba(var(--brand-green-rgb), 0.08);
+    background: color-mix(in srgb, var(--brand-green) 18%, var(--color-surface));
     transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
 }
 
