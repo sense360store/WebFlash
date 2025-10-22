@@ -5,6 +5,7 @@ import {
     persistRememberedState
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
+import { normalizeChannelKey } from './utils/channel-alias.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -69,28 +70,6 @@ let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
 
-const DEFAULT_CHANNEL_KEY = 'stable';
-
-const CHANNEL_ALIAS_MAP = {
-    general: 'stable',
-    stable: 'stable',
-    ga: 'stable',
-    release: 'stable',
-    prod: 'stable',
-    production: 'stable',
-    lts: 'stable',
-    beta: 'beta',
-    preview: 'preview',
-    prerelease: 'preview',
-    rc: 'beta',
-    candidate: 'beta',
-    dev: 'dev',
-    alpha: 'dev',
-    nightly: 'dev',
-    canary: 'dev',
-    experimental: 'dev'
-};
-
 const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
     stable: 'stable',
     general: 'stable',
@@ -151,13 +130,7 @@ const CHANNEL_PRIORITY_MAP = {
 };
 
 function normaliseChannelKey(channel) {
-    const normalised = (channel || '').toString().trim().toLowerCase();
-
-    if (!normalised) {
-        return DEFAULT_CHANNEL_KEY;
-    }
-
-    return CHANNEL_ALIAS_MAP[normalised] || normalised || DEFAULT_CHANNEL_KEY;
+    return normalizeChannelKey(channel);
 }
 
 function getChannelDisplayInfo(channel) {

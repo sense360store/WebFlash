@@ -1,3 +1,5 @@
+import { normalizeChannelKey } from '../utils/channel-alias.js';
+
 (function () {
     const FIELD_MAP = [
         { key: 'mount', name: 'mounting', label: 'Mount' },
@@ -8,43 +10,13 @@
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
 
-    const DEFAULT_CHANNEL_KEY = 'stable';
-    const CHANNEL_ALIAS_MAP = {
-        general: 'stable',
-        stable: 'stable',
-        ga: 'stable',
-        release: 'stable',
-        prod: 'stable',
-        production: 'stable',
-        lts: 'stable',
-        beta: 'beta',
-        preview: 'preview',
-        prerelease: 'preview',
-        rc: 'beta',
-        candidate: 'beta',
-        dev: 'dev',
-        alpha: 'dev',
-        nightly: 'dev',
-        canary: 'dev',
-        experimental: 'dev'
-    };
-
     const subscribers = new Set();
     let pending = false;
     let sidebarRefs = null;
     let copyResetTimer = null;
 
     function normaliseChannelKey(channel) {
-        const value = (channel ?? '').toString().trim().toLowerCase();
-        if (!value) {
-            return null;
-        }
-
-        if (CHANNEL_ALIAS_MAP[value]) {
-            return CHANNEL_ALIAS_MAP[value];
-        }
-
-        return value || DEFAULT_CHANNEL_KEY;
+        return normalizeChannelKey(channel, { allowNull: true });
     }
 
     function readFieldMeta(field) {
