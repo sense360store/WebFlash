@@ -23,6 +23,10 @@ body {
     --brand-green-tint: #e8f5e9;
     --brand-green-tint-strong: #d0ebd6;
     --brand-green-border: #a4d9b8;
+    --brand-green-selection-surface: var(--brand-green-tint);
+    --brand-green-selection-surface-strong: var(--brand-green-tint-strong);
+    --brand-green-selection-surface-subtle: color-mix(in srgb, var(--brand-green-selection-surface) 55%, var(--color-surface));
+    --brand-green-selection-border: var(--brand-green-border);
 }
 
 .container {
@@ -407,7 +411,7 @@ h1 {
 
 .option-card input[type="radio"]:checked + .option-content {
     border-color: var(--brand-green-contrast);
-    background: var(--brand-green-tint);
+    background: var(--brand-green-selection-surface);
 }
 
 .option-status {
@@ -523,7 +527,7 @@ h1 {
 
 .checkbox-card input[type="checkbox"]:checked + .checkbox-content {
     border-color: var(--brand-green-contrast);
-    background: var(--brand-green-tint);
+    background: var(--brand-green-selection-surface);
 }
 
 .checkbox-title {
@@ -765,8 +769,8 @@ h1 {
 
 /* Pre-Flash Checklist */
 .pre-flash-checklist {
-    background: var(--brand-green-tint);
-    border: 1px solid var(--brand-green-border);
+    background: var(--brand-green-selection-surface);
+    border: 1px solid var(--brand-green-selection-border);
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 32px;
@@ -775,8 +779,8 @@ h1 {
 }
 
 .pre-flash-checklist[data-complete="true"] {
-    background: var(--brand-green-tint-strong);
-    border-color: var(--brand-green-border);
+    background: var(--brand-green-selection-surface-strong);
+    border-color: var(--brand-green-selection-border);
     box-shadow: 0 4px 12px rgba(var(--brand-green-rgb), 0.14);
 }
 
@@ -850,8 +854,8 @@ h1 {
 }
 
 .pre-flash-checklist [data-checklist-item][data-complete="true"] {
-    background: rgba(var(--brand-green-rgb), 0.12);
-    border-color: var(--brand-green-border);
+    background: var(--brand-green-selection-surface-subtle);
+    border-color: var(--brand-green-selection-border);
 }
 
 .pre-flash-checklist [data-checklist-item][data-complete="true"] .status-icon {
