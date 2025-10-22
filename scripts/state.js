@@ -1,4 +1,9 @@
-import { getPref, setPref } from './prefs.js';
+import {
+    isRememberEnabled,
+    setRememberEnabled,
+    loadRememberedState,
+    persistRememberedState
+} from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 
 let currentStep = 1;
@@ -425,42 +430,6 @@ function attachInstallButtonListeners() {
     });
 }
 
-function sanitizeRememberedState(rawState) {
-    if (!rawState || typeof rawState !== 'object') {
-        return null;
-    }
-
-    const rawConfig = rawState.configuration;
-    if (!rawConfig || typeof rawConfig !== 'object') {
-        return null;
-    }
-
-    const sanitizedConfig = { ...defaultConfiguration };
-    Object.entries(allowedOptions).forEach(([key, values]) => {
-        const value = rawConfig[key];
-        if (value !== undefined && values.includes(value)) {
-            sanitizedConfig[key] = value;
-        }
-    });
-
-    if (sanitizedConfig.mounting !== 'wall') {
-        sanitizedConfig.fan = 'none';
-    }
-
-    let storedStep = null;
-    if ('currentStep' in rawState) {
-        const numericStep = Number.parseInt(rawState.currentStep, 10);
-        if (Number.isInteger(numericStep)) {
-            storedStep = Math.max(1, Math.min(totalSteps, numericStep));
-        }
-    }
-
-    return {
-        configuration: sanitizedConfig,
-        currentStep: storedStep
-    };
-}
-
 function syncRememberToggleElements(sourceToggle) {
     const toggles = document.querySelectorAll(REMEMBER_TOGGLE_SELECTOR);
     toggles.forEach(toggle => {
@@ -474,10 +443,9 @@ function handleRememberToggleChange(event) {
     rememberChoices = event.target.checked;
     syncRememberToggleElements(event.target);
 
-    setPref('rememberChoices', rememberChoices);
+    setRememberEnabled(rememberChoices);
 
     if (!rememberChoices) {
-        setPref('lastWizardState', null);
         rememberedState = null;
         return;
     }
@@ -486,8 +454,14 @@ function handleRememberToggleChange(event) {
 }
 
 function setupRememberPreferenceControls() {
-    rememberChoices = Boolean(getPref('rememberChoices'));
-    rememberedState = rememberChoices ? sanitizeRememberedState(getPref('lastWizardState')) : null;
+    rememberChoices = isRememberEnabled();
+    rememberedState = rememberChoices
+        ? loadRememberedState({
+            defaultConfiguration,
+            allowedOptions,
+            totalSteps
+        })
+        : null;
 
     const toggles = document.querySelectorAll(REMEMBER_TOGGLE_SELECTOR);
     toggles.forEach(toggle => {
@@ -501,19 +475,20 @@ function persistWizardState() {
         return;
     }
 
-    const stateToPersist = {
-        configuration: {
-            mounting: configuration.mounting,
-            power: configuration.power,
-            airiq: configuration.airiq,
-            presence: configuration.presence,
-            comfort: configuration.comfort,
-            fan: configuration.mounting === 'wall' ? configuration.fan : 'none'
-        },
+    const stateToPersist = persistRememberedState({
+        mounting: configuration.mounting,
+        power: configuration.power,
+        airiq: configuration.airiq,
+        presence: configuration.presence,
+        comfort: configuration.comfort,
+        fan: configuration.mounting === 'wall' ? configuration.fan : 'none'
+    }, {
+        defaultConfiguration,
+        allowedOptions,
+        totalSteps,
         currentStep
-    };
+    });
 
-    setPref('lastWizardState', stateToPersist);
     rememberedState = stateToPersist;
 }
 

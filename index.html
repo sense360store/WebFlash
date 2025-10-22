@@ -310,7 +310,15 @@
     <script type="module" src="scripts/state.js"></script>
     <script type="module" src="scripts/query-presets.js"></script>
     <script type="module" src="scripts/support/ui.js"></script>
-    <script>
+    <script type="module">
+        import {
+            isRememberEnabled,
+            setRememberEnabled,
+            loadRememberedState,
+            persistRememberedState,
+            clearRememberedState
+        } from './scripts/remember-state.js';
+
         let currentStep = 1;
         const totalSteps = 4;
         const defaultConfiguration = {
@@ -347,11 +355,6 @@
         let currentFirmwareOptions = [];
         let firmwareOptionsMap = new Map();
         let currentFirmwareSelectionId = null;
-        const PREF_KEYS = {
-            rememberChoices: 'sense360.rememberChoices',
-            lastWizardState: 'sense360.lastWizardState'
-        };
-
         let rememberToggleInputs = [];
         const allowedOptions = {
             mounting: ['wall', 'ceiling'],
@@ -393,102 +396,14 @@
         let checklistCompleted = false;
         let toastTimeoutId = null;
 
-        function getPreferenceStorage() {
-            try {
-                return window.localStorage;
-            } catch (error) {
-                console.warn('Local storage is not available:', error);
-                return null;
-            }
-        }
-
-        function getPreference(key, defaultValue = null) {
-            const storage = getPreferenceStorage();
-            if (!storage) {
-                return defaultValue;
-            }
-
-            try {
-                const rawValue = storage.getItem(key);
-                if (rawValue === null) {
-                    return defaultValue;
-                }
-                return JSON.parse(rawValue);
-            } catch (error) {
-                console.warn('Failed to read stored preference', key, error);
-                return defaultValue;
-            }
-        }
-
-        function setPreference(key, value) {
-            const storage = getPreferenceStorage();
-            if (!storage) {
-                return;
-            }
-
-            try {
-                if (value === null || value === undefined) {
-                    storage.removeItem(key);
-                } else {
-                    storage.setItem(key, JSON.stringify(value));
-                }
-            } catch (error) {
-                console.warn('Failed to persist preference', key, error);
-            }
-        }
-
-        function isRememberEnabled() {
-            return Boolean(getPreference(PREF_KEYS.rememberChoices, false));
-        }
-
-        function setRememberEnabled(enabled) {
-            setPreference(PREF_KEYS.rememberChoices, Boolean(enabled));
-        }
-
-        function normalizeRememberedConfiguration(rawConfig) {
-            if (!rawConfig || typeof rawConfig !== 'object' || Array.isArray(rawConfig)) {
-                return null;
-            }
-
-            const normalized = { ...defaultConfiguration };
-            let hasPersistedValue = false;
-
-            Object.keys(defaultConfiguration).forEach(key => {
-                if (!(key in rawConfig)) {
-                    return;
-                }
-
-                const value = rawConfig[key];
-                const defaultValue = defaultConfiguration[key];
-
-                if (value === null) {
-                    if (defaultValue === null) {
-                        normalized[key] = null;
-                    }
-                    return;
-                }
-
-                const allowed = allowedOptions[key];
-                if (allowed && allowed.includes(value)) {
-                    normalized[key] = value;
-                    if (value !== defaultValue) {
-                        hasPersistedValue = true;
-                    }
-                }
+        function loadRememberedConfiguration() {
+            const rememberedState = loadRememberedState({
+                defaultConfiguration,
+                allowedOptions,
+                totalSteps
             });
 
-            return hasPersistedValue ? normalized : null;
-        }
-
-        function loadRememberedConfiguration() {
-            const rawConfig = getPreference(PREF_KEYS.lastWizardState, null);
-            const normalized = normalizeRememberedConfiguration(rawConfig);
-
-            if (!normalized && rawConfig) {
-                clearRememberedConfiguration();
-            }
-
-            return normalized;
+            return rememberedState ? rememberedState.configuration : null;
         }
 
         function persistConfigurationSnapshot() {
@@ -501,11 +416,17 @@
                 const value = configuration[key];
                 snapshot[key] = value === undefined ? defaultConfiguration[key] : value;
             });
-            setPreference(PREF_KEYS.lastWizardState, snapshot);
+
+            persistRememberedState(snapshot, {
+                defaultConfiguration,
+                allowedOptions,
+                totalSteps,
+                currentStep
+            });
         }
 
         function clearRememberedConfiguration() {
-            setPreference(PREF_KEYS.lastWizardState, null);
+            clearRememberedState();
         }
 
         function syncRememberToggleState(enabled) {
