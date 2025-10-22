@@ -32,7 +32,7 @@ except Exception:  # pragma: no cover - packaging is optional
 DEFAULT_CHANNEL = "stable"
 DEFAULT_DEVICE_TYPE = "Core Module"
 
-CANONICAL_CHANNELS = {"stable", "preview", "beta", "dev"}
+CANONICAL_CHANNELS = {"stable", "preview", "beta", "dev", "rescue"}
 CHANNEL_ALIASES: Dict[str, str] = {}
 CHANNEL_ALIASES.update(
     {
@@ -58,6 +58,7 @@ CHANNEL_ORDER = {
     "preview": 1,
     "beta": 2,
     "dev": 3,
+    "rescue": 4,
 }
 
 
@@ -82,6 +83,11 @@ def _channel_descriptor(channel: str) -> Tuple[str, str]:
         return (
             "Development firmware",
             "Experimental build for internal testing only.",
+        )
+    if lowered == "rescue":
+        return (
+            "Rescue firmware",
+            "Known-good recovery build for unbricking Sense360 hubs.",
         )
     title = lowered.title() if lowered else "Firmware"
     return (f"{title} firmware", "")
@@ -205,11 +211,15 @@ class FirmwareMetadata:
     description: Optional[str] = None
     features: List[str] = field(default_factory=list)
     hardware_requirements: List[str] = field(default_factory=list)
+    improv: bool = True
+    custom_directory: Optional[str] = None
 
     def normalized_filename(self) -> str:
         return f"Sense360-{self.name_part}-v{self.version}-{self.channel}.bin"
 
     def target_path(self, firmware_dir: Path) -> Path:
+        if self.custom_directory:
+            return firmware_dir / self.custom_directory / self.normalized_filename()
         if self.is_configuration:
             return firmware_dir / "configurations" / self.normalized_filename()
         model_dir = _safe_segment(self.model, "Sense360")
@@ -252,6 +262,37 @@ def parse_firmware_metadata(
     if not tokens:
         raise ValueError(f"Unable to derive metadata from '{name}'")
     config_tokens, chip_hint = _normalise_config_tokens(tokens)
+    rescue_context = (
+        channel == "rescue"
+        or name_part.lower() == "rescue"
+        or any(part.lower() == "rescue" for part in path.parts)
+    )
+    if rescue_context:
+        description = (
+            "Known-good recovery firmware that bypasses configuration checks to "
+            "restore a bricked Sense360 hub."
+        )
+        metadata = FirmwareMetadata(
+            name_part="Rescue",
+            version=version,
+            channel=channel,
+            is_configuration=True,
+            config_string="Rescue",
+            mounting="Universal",
+            power="Universal",
+            modules=[],
+            model=None,
+            variant=None,
+            sensor_addon=None,
+            chip_family=chip_hint,
+            device_type=DEFAULT_DEVICE_TYPE,
+            description=description,
+            features=["rescue"],
+            hardware_requirements=[],
+            improv=False,
+            custom_directory="rescue",
+        )
+        return metadata
     first_token = config_tokens[0] if config_tokens else ""
     is_config = False
     if force_configuration is not None:
@@ -343,7 +384,7 @@ class FirmwareArtifact:
             ],
             "build_date": self.build_date,
             "file_size": self.file_size,
-            "improv": True,
+            "improv": self.metadata.improv,
             "md5": self.md5,
             "sha256": self.sha256,
             "signature": self.signature,
@@ -622,7 +663,7 @@ def write_individual_manifests(
                             "signature": artifact.signature,
                         }
                     ],
-                    "improv": True,
+                    "improv": artifact.metadata.improv,
                     "md5": artifact.md5,
                     "sha256": artifact.sha256,
                     "signature": artifact.signature,
