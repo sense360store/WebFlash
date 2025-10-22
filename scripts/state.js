@@ -87,10 +87,10 @@ const CHANNEL_ALIAS_MAP = {
 };
 
 const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
-    stable: 'general',
-    general: 'general',
-    preview: 'preview',
-    beta: 'beta'
+    stable: ['general'],
+    general: ['general'],
+    preview: ['preview'],
+    beta: ['beta', 'preview']
 };
 
 const CHANNEL_DISPLAY_MAP = {
@@ -154,13 +154,18 @@ function getChannelDisplayInfo(channel) {
     return { key, ...display };
 }
 
-function resolveReleaseNotesChannel(channel) {
+function resolveReleaseNotesChannels(channel) {
     if (!channel) {
-        return '';
+        return [''];
     }
 
-    const key = channel.toString().trim().toLowerCase();
-    return RELEASE_NOTES_CHANNEL_SUFFIX_MAP[key] || key;
+    const key = normaliseChannelKey(channel);
+    if (Object.prototype.hasOwnProperty.call(RELEASE_NOTES_CHANNEL_SUFFIX_MAP, key)) {
+        return RELEASE_NOTES_CHANNEL_SUFFIX_MAP[key];
+    }
+
+    const lowered = key.toString().trim().toLowerCase();
+    return lowered ? [lowered] : [''];
 }
 
 function getChannelPriority(channel) {
@@ -1863,30 +1868,32 @@ async function toggleReleaseNotes(event) {
     }
 }
 
-function buildReleaseNotesPathFromPart(partPath, channel) {
+function buildReleaseNotesPathsFromPart(partPath, channel) {
     if (!partPath) {
-        return '';
+        return [];
     }
 
-    const releaseNotesChannel = resolveReleaseNotesChannel(channel);
+    const releaseNotesChannels = resolveReleaseNotesChannels(channel);
     const lastSlashIndex = partPath.lastIndexOf('/');
     const directory = lastSlashIndex >= 0 ? partPath.substring(0, lastSlashIndex + 1) : '';
     const fileName = lastSlashIndex >= 0 ? partPath.substring(lastSlashIndex + 1) : partPath;
 
     if (!fileName.endsWith('.bin')) {
-        return '';
+        return [];
     }
 
     const baseName = fileName.substring(0, fileName.length - 4);
     const lastHyphenIndex = baseName.lastIndexOf('-');
     if (lastHyphenIndex === -1) {
-        return '';
+        return [];
     }
 
     const prefix = baseName.substring(0, lastHyphenIndex);
-    const channelSuffix = releaseNotesChannel ? `-${releaseNotesChannel}` : '';
 
-    return `${directory}${prefix}${channelSuffix}.md`;
+    return releaseNotesChannels.map(suffix => {
+        const channelSuffix = suffix ? `-${suffix}` : '';
+        return `${directory}${prefix}${channelSuffix}.md`;
+    });
 }
 
 async function loadReleaseNotes({ notesSection, firmwareId }) {
@@ -1919,16 +1926,35 @@ async function loadReleaseNotes({ notesSection, firmwareId }) {
         ? firmware.parts[0].path
         : '';
 
-    const notesPath = buildReleaseNotesPathFromPart(primaryPartPath, firmware.channel);
+    const candidateNotePaths = buildReleaseNotesPathsFromPart(primaryPartPath, firmware.channel);
 
-    if (!notesPath) {
+    if (candidateNotePaths.length === 0) {
         showFallbackMessage(channelInfo.notesFallback);
         notesSection.dataset.loaded = 'true';
         return;
     }
 
     try {
-        const response = await fetch(notesPath);
+        let response = null;
+
+        for (const potentialPath of candidateNotePaths) {
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                const attempt = await fetch(potentialPath);
+                if (attempt.ok) {
+                    response = attempt;
+                    break;
+                }
+            } catch (error) {
+                console.warn('[release-notes] failed to fetch candidate path', potentialPath, error);
+            }
+        }
+
+        if (!response) {
+            showFallbackMessage(channelInfo.notesFallback);
+            notesSection.dataset.loaded = 'true';
+            return;
+        }
 
         if (response.ok) {
             const markdown = await response.text();
