@@ -390,7 +390,8 @@
 
     const api = {
         getState,
-        onStateChange
+        onStateChange,
+        buildShareableUrl
     };
 
     Object.defineProperty(window, 'wizardStateSummary', {
