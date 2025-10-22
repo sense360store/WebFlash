@@ -35,6 +35,7 @@ const OPTION_MAPPINGS = {
 };
 
 const OPTIONAL_KEYS = new Set(['airiq', 'presence', 'comfort', 'fan']);
+const REQUIRED_PARAM_KEYS = ['mount', 'power'];
 
 const DEFAULT_CHANNEL_KEY = 'stable';
 const CHANNEL_ALIAS_MAP = {
@@ -214,15 +215,29 @@ function readChannelFromParams(params = getCombinedSearchParams()) {
   return normalizeRequestedChannel(raw);
 }
 
-function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
+function buildConfigResultFromParams(params = getCombinedSearchParams()) {
   const mountValue = normalizeValue('mount', readParam(params, 'mount'));
   const powerValue = normalizeValue('power', readParam(params, 'power'));
 
-  if (!mountValue || !powerValue) {
-    return null;
+  const missingRequired = [];
+  if (!mountValue) {
+    missingRequired.push('mount');
+  }
+
+  if (!powerValue) {
+    missingRequired.push('power');
+  }
+
+  if (missingRequired.length > 0) {
+    return {
+      configKey: null,
+      missingRequired,
+      invalidOptional: []
+    };
   }
 
   const segments = [`${mountValue}`, `${powerValue}`];
+  const invalidOptional = [];
 
   const moduleKeys = [
     { key: 'airiq', prefix: 'AirIQ' },
@@ -237,7 +252,12 @@ function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
 
     if (normalized === null) {
       if (raw) {
-        return null;
+        invalidOptional.push(key);
+        return {
+          configKey: null,
+          missingRequired,
+          invalidOptional
+        };
       }
       continue;
     }
@@ -252,14 +272,54 @@ function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
     segments.push(`${prefix}${formatted}`);
   }
 
-  return segments.join('-');
+  return {
+    configKey: segments.join('-'),
+    missingRequired,
+    invalidOptional
+  };
+}
+
+function buildConfigKeyFromParams(params = getCombinedSearchParams()) {
+  const { configKey } = buildConfigResultFromParams(params);
+  return configKey;
 }
 
 function readInstallQueryParams() {
   const params = getCombinedSearchParams();
+  const { configKey, missingRequired, invalidOptional } = buildConfigResultFromParams(params);
+
+  let validationError = null;
+
+  if (!configKey) {
+    if (missingRequired.length > 0) {
+      validationError = {
+        title: 'Direct Install Link Incomplete',
+        description: 'Direct install links must include the following query parameters:',
+        requiredParams: REQUIRED_PARAM_KEYS,
+        guidance: 'Check mount/power query parameters.'
+      };
+    } else if (invalidOptional.length > 0) {
+      const formatted = invalidOptional.map((key) => key.charAt(0).toUpperCase() + key.slice(1));
+      validationError = {
+        title: 'Unsupported Module Parameters',
+        description: `Remove or correct unsupported values for: ${formatted.join(', ')}.`,
+        requiredParams: REQUIRED_PARAM_KEYS,
+        guidance: 'Check mount/power query parameters.'
+      };
+    } else {
+      validationError = {
+        title: 'Direct Install Link Incomplete',
+        description: 'Direct install links must include the following query parameters:',
+        requiredParams: REQUIRED_PARAM_KEYS,
+        guidance: 'Check mount/power query parameters.'
+      };
+    }
+  }
+
   return {
-    configKey: buildConfigKeyFromParams(params),
-    channel: readChannelFromParams(params)
+    configKey,
+    channel: readChannelFromParams(params),
+    validationError
   };
 }
 
@@ -357,6 +417,56 @@ function renderError(container, errorMessage) {
   const message = document.createElement('p');
   message.textContent = errorMessage;
   errorBox.appendChild(message);
+
+  container.appendChild(errorBox);
+  container.style.display = '';
+}
+
+function renderParameterError(container, errorDetails) {
+  container.innerHTML = '';
+
+  const heading = document.createElement('h3');
+  heading.className = 'compat-config-title';
+  heading.textContent = 'Direct Install';
+  container.appendChild(heading);
+
+  const errorBox = document.createElement('div');
+  errorBox.className = 'firmware-error compat-config-parameter-error';
+
+  const title = document.createElement('h4');
+  title.textContent = errorDetails?.title || 'Direct Install Link Incomplete';
+  errorBox.appendChild(title);
+
+  if (errorDetails?.description) {
+    const description = document.createElement('p');
+    description.textContent = errorDetails.description;
+    errorBox.appendChild(description);
+  }
+
+  const requiredParams = Array.isArray(errorDetails?.requiredParams)
+    ? errorDetails.requiredParams
+    : REQUIRED_PARAM_KEYS;
+
+  if (requiredParams.length > 0) {
+    const list = document.createElement('ul');
+    list.className = 'compat-config-required-params';
+
+    for (const param of requiredParams) {
+      const item = document.createElement('li');
+      item.textContent = param;
+      list.appendChild(item);
+    }
+
+    errorBox.appendChild(list);
+  }
+
+  const guidanceText = errorDetails?.guidance || 'Check mount/power query parameters.';
+  if (guidanceText) {
+    const guidance = document.createElement('p');
+    guidance.className = 'compat-config-guidance';
+    guidance.textContent = guidanceText;
+    errorBox.appendChild(guidance);
+  }
 
   container.appendChild(errorBox);
   container.style.display = '';
@@ -510,12 +620,14 @@ async function loadManifest() {
 }
 
 async function initializeCompatInstall() {
-  const { configKey, channel: requestedChannel } = readInstallQueryParams();
+  const container = ensureContainer();
+  const { configKey, channel: requestedChannel, validationError } = readInstallQueryParams();
+
   if (!configKey) {
+    renderParameterError(container, validationError);
     return;
   }
 
-  const container = ensureContainer();
   renderStatus(container, 'Looking up firmware build…');
 
   try {
@@ -589,3 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('beforeunload', () => {
   cleanupManifestUrl();
 });
+
+export {
+  buildConfigKeyFromParams,
+  buildConfigResultFromParams,
+  initializeCompatInstall,
+  readInstallQueryParams,
+  renderParameterError,
+  REQUIRED_PARAM_KEYS
+};
