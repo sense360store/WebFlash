@@ -812,8 +812,9 @@ h1 {
     gap: 12px;
     padding: 12px 16px;
     border-radius: 10px;
-    background: color-mix(in srgb, var(--brand-green) 18%, var(--color-surface));
-    transition: background-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border-subtle);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
 }
 
 .pre-flash-checklist [data-checklist-item] .item-text {
@@ -831,14 +832,14 @@ h1 {
     flex: 0 0 22px;
     height: 22px;
     border-radius: 50%;
-    border: 2px solid var(--brand-green);
+    border: 2px solid var(--color-border);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--brand-green);
+    color: var(--color-text-secondary);
     font-size: 12px;
     background: var(--color-surface);
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .pre-flash-checklist [data-checklist-item] .status-icon::before {
@@ -850,10 +851,12 @@ h1 {
 
 .pre-flash-checklist [data-checklist-item][data-complete="true"] {
     background: rgba(var(--brand-green-rgb), 0.12);
+    border-color: var(--brand-green-border);
 }
 
 .pre-flash-checklist [data-checklist-item][data-complete="true"] .status-icon {
     background: var(--brand-green-contrast);
+    border-color: var(--brand-green-contrast);
     color: #fff;
 }
 
