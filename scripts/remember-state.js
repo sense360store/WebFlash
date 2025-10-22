@@ -85,10 +85,6 @@ export function normalizeRememberedState(rawState, options = {}) {
         }
     });
 
-    if (!hasPersistedValue) {
-        return null;
-    }
-
     if (normalizedConfiguration.mounting !== 'wall') {
         normalizedConfiguration.fan = 'none';
     }
@@ -97,6 +93,10 @@ export function normalizeRememberedState(rawState, options = {}) {
     const normalizedStep = storedStep !== null && storedStep !== undefined
         ? clampStep(storedStep, totalSteps)
         : null;
+
+    if (!hasPersistedValue && normalizedStep === null) {
+        return null;
+    }
 
     return {
         configuration: normalizedConfiguration,
