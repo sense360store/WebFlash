@@ -47,6 +47,9 @@ const MODULE_SEGMENT_FORMATTERS = {
     fan: value => `Fan${value.toUpperCase()}`
 };
 
+const HOME_ASSISTANT_APP_URL = 'homeassistant://config/integrations/dashboard';
+const HOME_ASSISTANT_WEB_FALLBACK_URL = 'https://my.home-assistant.io/redirect/integrations/';
+
 function formatConfigSegment(moduleKey, moduleValue) {
     const key = (moduleKey || '').toString().trim().toLowerCase();
     const value = (moduleValue || '').toString().trim().toLowerCase();
@@ -733,69 +736,66 @@ function setupPostInstallGuidancePanel() {
     panel.dataset.guidanceBound = 'true';
 }
 
-const diagnosticsElements = new Map();
-let diagnosticsRefreshButton = null;
-let diagnosticsSummaryElement = null;
-let diagnosticsErrorElement = null;
-let diagnosticsState = {
-    status: 'idle',
-    result: null,
-    error: null,
-    promise: null,
-    lastRun: 0
-};
-
-const DIAGNOSTIC_DEFAULT_MESSAGE = 'Preparing check…';
-const DIAGNOSTIC_RUNNING_MESSAGE = 'Running diagnostics…';
-
-function getDiagnosticsSection() {
-    return document.querySelector('.pre-flash-checklist');
+function getHomeAssistantIntegrationsButton() {
+    return document.getElementById('open-ha-integrations-btn');
 }
 
-function initializeDiagnosticsUI() {
-    const section = getDiagnosticsSection();
-    if (!section) {
+function setHomeAssistantIntegrationsButtonEnabled(isEnabled) {
+    const button = getHomeAssistantIntegrationsButton();
+    if (!button) {
         return;
     }
 
-    if (diagnosticsElements.size === 0) {
-        section.querySelectorAll('[data-diagnostic-item]').forEach((item) => {
-            const key = item.getAttribute('data-diagnostic-item');
-            if (!key) {
-                return;
-            }
+    button.disabled = !isEnabled;
+    button.classList.toggle('is-ready', isEnabled);
 
-            diagnosticsElements.set(key, {
-                item,
-                statusIcon: item.querySelector('[data-diagnostic-status]'),
-                messageElement: item.querySelector('[data-diagnostic-message]'),
-                tipElement: item.querySelector('[data-diagnostic-tip]')
-            });
-        });
-    }
-
-    diagnosticsSummaryElement = section.querySelector('[data-diagnostic-summary]') || diagnosticsSummaryElement;
-    diagnosticsErrorElement = section.querySelector('[data-diagnostic-error]') || diagnosticsErrorElement;
-
-    if (!diagnosticsRefreshButton) {
-        const refreshButton = section.querySelector('[data-diagnostic-refresh]');
-        if (refreshButton) {
-            diagnosticsRefreshButton = refreshButton;
-            refreshButton.addEventListener('click', () => {
-                refreshPreflightDiagnostics({ userInitiated: true, force: true });
-            });
-        }
+    if (isEnabled) {
+        button.removeAttribute('title');
+    } else {
+        button.title = 'Available after firmware install completes';
     }
 }
 
-function areDiagnosticsPassing() {
-    return didMandatoryChecksPass(diagnosticsState.result);
+function handleInstallStateEvent(event) {
+    const detail = event?.detail;
+    const state = typeof detail === 'string' ? detail : detail?.state;
+
+    if (!state) {
+        return;
+    }
+
+    if (state === 'finished') {
+        setHomeAssistantIntegrationsButtonEnabled(true);
+        return;
+    }
+
+    if (state !== 'idle') {
+        setHomeAssistantIntegrationsButtonEnabled(false);
+    }
 }
 
-function getDiagnosticsBlockingMessage() {
-    if (diagnosticsState.status === 'running') {
-        return 'Diagnostics are running. Please wait…';
+function openHomeAssistantIntegrations(event) {
+    if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
     }
+
+    let openedApp = false;
+
+    try {
+        const target = window.open(HOME_ASSISTANT_APP_URL, '_blank', 'noopener,noreferrer');
+        openedApp = target !== null;
+    } catch (error) {
+        openedApp = false;
+    }
+
+    if (!openedApp) {
+        window.open(HOME_ASSISTANT_WEB_FALLBACK_URL, '_blank', 'noopener,noreferrer');
+    }
+}
+
+function syncChecklistCompletion() {
+    const section = document.querySelector('.pre-flash-checklist');
+    if (!section) return;
 
     if (diagnosticsState.status === 'error') {
         return 'Diagnostics could not complete. Retry the checks.';
@@ -899,51 +899,13 @@ function updateDiagnosticsUI() {
     }
 }
 
-function refreshPreflightDiagnostics({ userInitiated = false, force = false } = {}) {
-    initializeDiagnosticsUI();
+function setChecklistCompletion(isComplete) {
+    checklistCompleted = isComplete;
+    syncChecklistCompletion();
 
-    const section = getDiagnosticsSection();
-    if (!section) {
-        return Promise.resolve(null);
+    if (!isComplete) {
+        setHomeAssistantIntegrationsButtonEnabled(false);
     }
-
-    if (diagnosticsState.status === 'running' && diagnosticsState.promise) {
-        return diagnosticsState.promise;
-    }
-
-    const now = Date.now();
-    const shouldReuse = !force && !userInitiated && diagnosticsState.result && (now - diagnosticsState.lastRun) < 15000;
-    if (shouldReuse) {
-        updateDiagnosticsUI();
-        updateFirmwareControls();
-        return Promise.resolve(diagnosticsState.result);
-    }
-
-    diagnosticsState.status = 'running';
-    diagnosticsState.error = null;
-    updateDiagnosticsUI();
-
-    const promise = runPreflightDiagnostics()
-        .then((result) => {
-            diagnosticsState.result = result;
-            diagnosticsState.status = 'complete';
-            diagnosticsState.lastRun = Date.now();
-            return result;
-        })
-        .catch((error) => {
-            console.error('Preflight diagnostics failed:', error);
-            diagnosticsState.status = 'error';
-            diagnosticsState.error = error;
-            return null;
-        })
-        .finally(() => {
-            diagnosticsState.promise = null;
-            updateDiagnosticsUI();
-            updateFirmwareControls();
-        });
-
-    diagnosticsState.promise = promise;
-    return promise;
 }
 
 function getFirmwareChipFamily(firmware = window.currentFirmware) {
@@ -1163,6 +1125,8 @@ function attachInstallButtonListeners() {
                 } else if (isRescueHost || activateButton.dataset.rescueInstall === 'true') {
                     recordRescueInstallEvent('launch-click');
                 }
+                setHomeAssistantIntegrationsButtonEnabled(false);
+                setChecklistCompletion(true);
             });
             activateButton.dataset.checklistBound = 'true';
         }
@@ -1211,6 +1175,22 @@ function attachInstallButtonListeners() {
                     }
                 }
 
+            // ESP Web Tools dispatches "log"/"console" events from the install button
+            // to expose console output. Forward the payload to the support bundle so
+            // that generated bundles include raw serial logs for troubleshooting.
+            host.addEventListener('log', forwardLogEvent);
+            host.addEventListener('console', forwardLogEvent);
+
+            // The flashing dialog also emits "state-changed" events as the install
+            // progresses. When a new session moves into the initializing/preparing
+            // phase we reset the buffered log output so the bundle only contains the
+            // latest attempt.
+            const handleStateChanged = (event) => {
+                resetSerialBuffer(event);
+                handleInstallStateEvent(event);
+            };
+
+            host.addEventListener('state-changed', handleStateChanged);
                 if (isRescueHost) {
                     const previousState = host.dataset.rescueLastState || '';
                     if (previousState !== state) {
@@ -3754,6 +3734,7 @@ window.previousStep = previousStep;
 window.downloadFirmware = downloadFirmware;
 window.copyFirmwareUrl = copyFirmwareUrl;
 window.toggleReleaseNotes = toggleReleaseNotes;
+window.openHomeAssistantIntegrations = openHomeAssistantIntegrations;
 
 export const __testHooks = Object.freeze({
     initializeWizard,
