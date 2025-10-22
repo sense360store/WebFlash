@@ -49,9 +49,25 @@
     --color-toggle-hover: var(--bg-elev-2);
     --capability-bar-bg: color-mix(in srgb, var(--bg-elev-1) 80%, transparent);
     --capability-bar-border: var(--border);
+    --capability-chip-bg: color-mix(in srgb, var(--accent) 16%, var(--bg-elev-1));
+    --capability-chip-border: color-mix(in srgb, var(--accent) 55%, var(--border));
+    --capability-chip-text: color-mix(in srgb, var(--accent) 70%, white);
+    --capability-chip-available-bg: color-mix(in srgb, var(--success) 20%, var(--bg-elev-1));
+    --capability-chip-available-border: color-mix(in srgb, var(--success) 55%, var(--border));
+    --capability-chip-available-text: color-mix(in srgb, var(--success) 70%, white);
+    --capability-chip-partial-bg: color-mix(in srgb, var(--warning) 20%, var(--bg-elev-1));
+    --capability-chip-partial-border: color-mix(in srgb, var(--warning) 55%, var(--border));
+    --capability-chip-partial-text: color-mix(in srgb, var(--warning) 65%, white);
+    --capability-chip-unavailable-bg: color-mix(in srgb, var(--danger) 20%, var(--bg-elev-1));
+    --capability-chip-unavailable-border: color-mix(in srgb, var(--danger) 55%, var(--border));
+    --capability-chip-unavailable-text: color-mix(in srgb, var(--danger) 70%, white);
+    --capability-copy-feedback: color-mix(in srgb, var(--accent) 60%, white);
     --capability-note-bg: color-mix(in srgb, var(--danger) 12%, var(--bg-elev-1));
     --capability-note-border: color-mix(in srgb, var(--danger) 55%, var(--border));
     --capability-note-text: color-mix(in srgb, var(--danger) 65%, white);
+    --capability-note-dismiss-border: color-mix(in srgb, var(--danger) 55%, var(--border));
+    --capability-note-dismiss-hover: color-mix(in srgb, var(--danger) 20%, transparent);
+    --capability-note-focus-ring: color-mix(in srgb, var(--danger) 55%, var(--focus-ring));
 }
 
 :root[data-theme="light"] {
@@ -101,9 +117,25 @@
     --color-toggle-hover: var(--bg-elev-2);
     --capability-bar-bg: color-mix(in srgb, var(--accent) 8%, var(--bg-elev-1));
     --capability-bar-border: color-mix(in srgb, var(--accent) 30%, var(--border));
+    --capability-chip-bg: color-mix(in srgb, var(--accent) 14%, var(--bg-elev-1));
+    --capability-chip-border: color-mix(in srgb, var(--accent) 55%, var(--border));
+    --capability-chip-text: color-mix(in srgb, var(--accent) 70%, var(--text));
+    --capability-chip-available-bg: color-mix(in srgb, var(--success) 22%, white);
+    --capability-chip-available-border: color-mix(in srgb, var(--success) 45%, var(--border));
+    --capability-chip-available-text: color-mix(in srgb, var(--success) 65%, var(--text));
+    --capability-chip-partial-bg: color-mix(in srgb, var(--warning) 30%, white);
+    --capability-chip-partial-border: color-mix(in srgb, var(--warning) 55%, var(--border));
+    --capability-chip-partial-text: color-mix(in srgb, var(--warning) 65%, var(--text));
+    --capability-chip-unavailable-bg: color-mix(in srgb, var(--danger) 18%, white);
+    --capability-chip-unavailable-border: color-mix(in srgb, var(--danger) 55%, var(--border));
+    --capability-chip-unavailable-text: color-mix(in srgb, var(--danger) 65%, var(--text));
+    --capability-copy-feedback: color-mix(in srgb, var(--accent) 70%, var(--text));
     --capability-note-bg: color-mix(in srgb, var(--danger) 12%, var(--bg-elev-2));
     --capability-note-border: color-mix(in srgb, var(--danger) 30%, var(--border));
     --capability-note-text: color-mix(in srgb, var(--danger) 70%, black);
+    --capability-note-dismiss-border: color-mix(in srgb, var(--danger) 55%, var(--border));
+    --capability-note-dismiss-hover: color-mix(in srgb, var(--danger) 15%, transparent);
+    --capability-note-focus-ring: color-mix(in srgb, var(--danger) 45%, var(--focus-ring));
 }
 
 html,
