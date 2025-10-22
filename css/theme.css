@@ -70,12 +70,27 @@
     --capability-note-focus-ring: color-mix(in srgb, var(--danger) 55%, var(--focus-ring));
 
     /* Wizard brand overrides */
-    --brand-green-contrast: color-mix(in srgb, var(--brand-green) 40%, white);
-    --brand-green-contrast-hover: color-mix(in srgb, var(--brand-green) 46%, white);
-    --brand-green-contrast-active: color-mix(in srgb, var(--brand-green) 52%, white);
-    --brand-green-tint: color-mix(in srgb, var(--brand-green) 18%, var(--color-surface-soft));
-    --brand-green-tint-strong: color-mix(in srgb, var(--brand-green) 26%, var(--color-surface-soft));
+    --brand-green-contrast: color-mix(in srgb, var(--brand-green) 35%, white);
+    --brand-green-contrast-hover: color-mix(in srgb, var(--brand-green) 40%, white);
+    --brand-green-contrast-active: color-mix(in srgb, var(--brand-green) 45%, white);
+    --brand-green-tint: color-mix(in srgb, var(--brand-green) 12%, var(--color-surface-soft));
+    --brand-green-tint-strong: color-mix(in srgb, var(--brand-green) 18%, var(--color-surface-soft));
     --brand-green-border: color-mix(in srgb, var(--brand-green) 38%, var(--color-border));
+}
+
+[data-theme="dark"] .pre-flash-checklist,
+[data-theme="dark"] .pre-flash-checklist[data-complete="true"] {
+    background-color: var(--brand-green-tint);
+}
+
+[data-theme="dark"] .pre-flash-checklist[data-complete="true"] {
+    background-color: var(--brand-green-tint-strong);
+}
+
+[data-theme="dark"] .pre-flash-checklist .checklist-heading,
+[data-theme="dark"] .pre-flash-checklist .checklist-subtitle,
+[data-theme="dark"] .pre-flash-checklist [data-checklist-item] .item-text {
+    color: var(--color-text-primary);
 }
 
 :root[data-theme="light"] {
