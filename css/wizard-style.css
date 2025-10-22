@@ -1075,7 +1075,8 @@ h1 {
     color: var(--color-text-secondary);
 }
 
-.firmware-channel-tag.is-general {
+.firmware-channel-tag.is-general,
+.firmware-channel-tag.is-stable {
     background: color-mix(in srgb, var(--success) 18%, transparent);
     color: color-mix(in srgb, var(--success) 55%, var(--color-text-primary));
 }

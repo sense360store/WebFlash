@@ -35,7 +35,7 @@ Firmware summary:
 
 ┌──────────────────────────────┬───────────┬─────────┬──────────┬──────────────┬────────────┐
 │ Name                         │ Version   │ Channel │ Chip     │ Last Updated │ Checksum   │
-│ Sense360-CO2Monitor-ESP32S3  │ 1.5.0     │ general │ ESP32-S3 │ ...          │ ...        │
+│ Sense360-CO2Monitor-ESP32S3  │ 1.5.0     │ stable  │ ESP32-S3 │ ...          │ ...        │
 └──────────────────────────────┴───────────┴─────────┴──────────┴──────────────┴────────────┘
 Generated manifest.json and firmware manifests.
 ```

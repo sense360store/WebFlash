@@ -45,7 +45,7 @@ The current workflow gets the job done, but we can make it even more welcoming f
 - **Guided deployment checklist** – add a collapsible sidebar or modal that walks through prerequisites (USB cable, browser support, power). Each item could animate to a “checked” state as the user completes it.
 - **Contextual highlight cues** – when the page prompts the user to click a button (e.g., *Download Firmware* or *Install Firmware*), briefly pulse or glow the button so it stands out on the screen.
 - **Progress timeline** – replace the plain text status messages with a horizontal timeline that fills step by step (detect device → erase → flash → verify → finish). Pair it with iconography to make successes/failures obvious.
-- **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (general = green, preview = amber) and hover animations that reveal checksum, release date, or changelog link.
+- **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (stable = green, preview = amber, beta = violet) and hover animations that reveal checksum, release date, or changelog link.
 - **Success animation & next steps** – celebrate a successful flash with a short checkmark animation and a clearly highlighted box that lists the next actions (e.g., “Press reset,” “Open provisioning app”).
 - **Inline troubleshooting callouts** – surface the most common issues right beneath the flashing controls using accordion callouts so help is one click away.
 - **Theming for dark/light modes** – allow the user to toggle between themes so the long flashing sessions are easier on the eyes.
@@ -64,7 +64,7 @@ The WebFlash wizard focuses on the Sense360 modular platform. Firmware is organi
 
 Each firmware build is grouped by a configuration string that concatenates the selected options (for example, `Wall-USB-AirIQPro` becomes Mount-Power-Modules). Current entries in `manifest.json` include `Ceiling-POE-AirIQBase`, `Ceiling-PWR-AirIQPro-Presence-Comfort`, `Wall-POE-AirIQBase`, and `Wall-USB`. The manifest also tracks Sense360-MS Standard binaries, which appear without a configuration string while the new modular catalogue matures.
 
-Availability depends on what firmware we publish. Always prefer **general** builds for production devices.
+Availability depends on what firmware we publish. Always prefer **stable** builds for production devices.
 
 ---
 
@@ -98,7 +98,7 @@ Availability depends on what firmware we publish. Always prefer **general** buil
 
 The WebFlash site rebuilds and deploys itself whenever fresh firmware is introduced. Two entry points feed the pipeline:
 
-1. **GitHub Releases** – Publish a release and attach `.bin` files. Pre-releases map to the **preview** channel, while the latest non-pre-release release becomes **general**. The workflow downloads the assets with `scripts/sync-from-releases.py` and normalises their filenames.
+1. **GitHub Releases** – Publish a release and attach `.bin` files. Pre-releases map to the **preview** channel, while the latest non-pre-release release becomes **stable**. The workflow downloads the assets with `scripts/sync-from-releases.py` and normalises their filenames.
 2. **Direct commits** – Push `.bin` files anywhere under `firmware/`. `scripts/gen-manifests.py` enforces the naming convention, regenerates `manifest.json`, and writes the `firmware-N.json` files that ESP Web Tools consumes.
 3. **Deployment** – After manifests are rebuilt, the workflow uploads the repository to GitHub Pages with the correct CORS headers.
 

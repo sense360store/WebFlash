@@ -15,7 +15,10 @@
         ga: 'stable',
         release: 'stable',
         beta: 'beta',
-        preview: 'beta',
+        preview: 'preview',
+        prerelease: 'preview',
+        rc: 'beta',
+        candidate: 'beta',
         dev: 'dev',
         nightly: 'dev',
         canary: 'dev'

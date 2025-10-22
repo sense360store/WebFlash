@@ -47,7 +47,10 @@ const CHANNEL_ALIAS_MAP = {
   ga: 'stable',
   release: 'stable',
   beta: 'beta',
-  preview: 'beta',
+  preview: 'preview',
+  prerelease: 'preview',
+  rc: 'beta',
+  candidate: 'beta',
   dev: 'dev',
   nightly: 'dev',
   canary: 'dev'
@@ -58,12 +61,15 @@ const CHANNEL_PRIORITY_MAP = {
   general: 0,
   ga: 0,
   release: 0,
-  beta: 1,
   preview: 1,
-  dev: 2,
-  nightly: 2,
-  canary: 2,
-  experimental: 2
+  prerelease: 1,
+  beta: 2,
+  rc: 2,
+  candidate: 2,
+  dev: 3,
+  nightly: 3,
+  canary: 3,
+  experimental: 3
 };
 
 let currentManifestUrl = null;
@@ -375,7 +381,8 @@ function readInstallQueryParams() {
 
   return {
     lookup: buildInstallLookupFromParams(params),
-    channel: readChannelFromParams(params)
+    channel: readChannelFromParams(params),
+    parameterError: validationError
   };
 }
 
@@ -772,8 +779,14 @@ async function loadManifest() {
 }
 
 async function initializeCompatInstall() {
-  const { lookup, channel: requestedChannel } = readInstallQueryParams();
+  const container = ensureContainer();
+  const { lookup, channel: requestedChannel, parameterError } = readInstallQueryParams();
+  if (parameterError) {
+    renderParameterError(container, parameterError);
+    return;
+  }
   if (!lookup) {
+    renderParameterError(container, null);
     return;
   }
 

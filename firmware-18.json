@@ -8,7 +8,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-beta.bin",
+          "path": "firmware/Sense360-MS/Standard/Sense360-MS-Standard-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "e97def6cc38584770512c0bb0ff6a32d"
         }

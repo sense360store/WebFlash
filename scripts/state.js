@@ -77,7 +77,10 @@ const CHANNEL_ALIAS_MAP = {
     ga: 'stable',
     release: 'stable',
     beta: 'beta',
-    preview: 'beta',
+    preview: 'preview',
+    prerelease: 'preview',
+    rc: 'beta',
+    candidate: 'beta',
     dev: 'dev',
     nightly: 'dev',
     canary: 'dev'
@@ -86,20 +89,25 @@ const CHANNEL_ALIAS_MAP = {
 const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
     stable: 'general',
     general: 'general',
-    beta: 'preview',
-    preview: 'preview'
+    preview: 'preview',
+    beta: 'beta'
 };
 
 const CHANNEL_DISPLAY_MAP = {
     stable: {
-        label: 'General Release',
+        label: 'Stable Release',
         description: 'Recommended for most installations and validated for production deployments.',
-        notesFallback: 'General release notes are not available for this firmware version yet.'
+        notesFallback: 'Stable release notes are not available for this firmware version yet.'
+    },
+    preview: {
+        label: 'Preview Release',
+        description: 'Early access builds to explore upcoming updates ahead of beta milestones.',
+        notesFallback: 'Preview release notes are not yet available for this firmware version.'
     },
     beta: {
-        label: 'Preview Release',
-        description: 'Preview upcoming capabilities with limited validation. Expect rapid updates.',
-        notesFallback: 'Preview release notes are not yet available for this firmware version.'
+        label: 'Beta Release',
+        description: 'Wider testing builds that are nearing general availability readiness.',
+        notesFallback: 'Beta release notes are not yet available for this firmware version.'
     },
     dev: {
         label: 'Development Build',
@@ -119,12 +127,15 @@ const CHANNEL_PRIORITY_MAP = {
     stable: 0,
     ga: 0,
     release: 0,
-    beta: 1,
     preview: 1,
-    dev: 2,
-    nightly: 2,
-    canary: 2,
-    experimental: 2
+    prerelease: 1,
+    beta: 2,
+    rc: 2,
+    candidate: 2,
+    dev: 3,
+    nightly: 3,
+    canary: 3,
+    experimental: 3
 };
 
 function normaliseChannelKey(channel) {

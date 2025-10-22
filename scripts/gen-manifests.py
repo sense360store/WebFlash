@@ -31,7 +31,7 @@ except Exception:  # pragma: no cover - packaging is optional
 DEFAULT_CHANNEL = "stable"
 DEFAULT_DEVICE_TYPE = "Core Module"
 
-CANONICAL_CHANNELS = {"stable", "beta", "dev"}
+CANONICAL_CHANNELS = {"stable", "preview", "beta", "dev"}
 CHANNEL_ALIASES: Dict[str, str] = {}
 CHANNEL_ALIASES.update(
     {
@@ -41,8 +41,7 @@ CHANNEL_ALIASES.update(
         "prod": "stable",
         "production": "stable",
         "lts": "stable",
-        "preview": "beta",
-        "prerelease": "beta",
+        "prerelease": "preview",
         "rc": "beta",
         "candidate": "beta",
         "alpha": "dev",
@@ -55,9 +54,9 @@ CHANNEL_ALIASES.update(
 CHANNEL_ORDER = {
     "stable": 0,
     "general": 0,
-    "beta": 1,
     "preview": 1,
-    "dev": 2,
+    "beta": 2,
+    "dev": 3,
 }
 
 
@@ -68,10 +67,15 @@ def _channel_descriptor(channel: str) -> Tuple[str, str]:
             "Stable firmware",
             "Recommended for production deployments.",
         )
+    if lowered == "preview":
+        return (
+            "Preview firmware",
+            "Preview upcoming features with limited validation before beta milestones.",
+        )
     if lowered == "beta":
         return (
             "Beta firmware",
-            "Use for broader testing ahead of production rollout.",
+            "For expanded testing ahead of general availability.",
         )
     if lowered == "dev":
         return (
