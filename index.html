@@ -271,6 +271,38 @@
                     </div>
                 </div>
 
+                <section class="post-install-guidance" data-post-install-guidance hidden aria-live="polite">
+                    <div class="post-install-guidance__header">
+                        <h3>Next steps</h3>
+                        <p>Firmware installed successfully. Finish setup by provisioning Wi‑Fi and assigning a friendly device name.</p>
+                        <p class="post-install-guidance__note" data-post-install-guidance-note hidden></p>
+                    </div>
+                    <ol class="post-install-guidance__list">
+                        <li class="post-install-guidance__item">
+                            <div class="post-install-guidance__item-heading">
+                                <h4>Provision Wi‑Fi</h4>
+                            </div>
+                            <p>Keep the hub connected and start the Improv Wi‑Fi workflow so it can join your network:</p>
+                            <div class="post-install-guidance__actions">
+                                <a class="btn btn-secondary post-install-guidance__action" href="https://web.esphome.io/improv/?autostart=1#device=serial" target="_blank" rel="noopener" data-guidance-link="improv">Open Improv Wi‑Fi</a>
+                                <button type="button" class="btn btn-copy post-install-guidance__action" data-copy-text="https://web.esphome.io/improv/?autostart=1#device=serial" data-copy-success="Improv link copied">Copy link</button>
+                            </div>
+                            <p class="post-install-guidance__pitfall"><strong>Common pitfall:</strong> Improv only works on 2.4&nbsp;GHz SSIDs without captive portals, VPN requirements, or MAC filtering. If provisioning stalls, double-check the network and leave BOOT/RESET alone until the flow finishes.</p>
+                        </li>
+                        <li class="post-install-guidance__item">
+                            <div class="post-install-guidance__item-heading">
+                                <h4>Name the device</h4>
+                            </div>
+                            <p>Apply the fleet naming convention before installation day. Use this template with the Sense360 CLI or Fleet Manager rename dialog.</p>
+                            <div class="post-install-guidance__actions post-install-guidance__actions--stacked">
+                                <code class="post-install-guidance__code" data-copy-source>sense360-cli device name --id &lt;device-id&gt; --name &quot;Building-Room-Device&quot;</code>
+                                <button type="button" class="btn btn-copy post-install-guidance__action" data-copy-text="sense360-cli device name --id &lt;device-id&gt; --name &quot;Building-Room-Device&quot;" data-copy-success="Command copied">Copy command</button>
+                            </div>
+                            <p class="post-install-guidance__pitfall"><strong>Common pitfall:</strong> Names with spaces, emojis, or punctuation are rejected. Stick to letters, numbers, and hyphens—for example <code>Lobby-01-East</code>.</p>
+                        </li>
+                    </ol>
+                </section>
+
                 <div class="remember-preference">
                     <label class="remember-toggle">
                         <input type="checkbox" data-remember-toggle>

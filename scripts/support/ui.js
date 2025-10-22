@@ -143,6 +143,13 @@ function gatherStateSnapshot() {
         ...gatherFirmwareContext()
     };
 
+    const guidanceState = typeof window !== 'undefined' ? window.webflashPostInstallGuidance : null;
+    if (guidanceState && typeof guidanceState === 'object') {
+        snapshot.postInstallGuidance = { ...guidanceState };
+    } else {
+        snapshot.postInstallGuidance = { seen: false };
+    }
+
     Object.keys(snapshot).forEach((key) => {
         if (snapshot[key] === undefined || snapshot[key] === null || snapshot[key] === '') {
             delete snapshot[key];
