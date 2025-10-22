@@ -86,6 +86,7 @@ fi
 - [ ] Verify `"improv": true` in all manifests
 - [ ] Run `python3 test-complete-workflow.py`
 - [ ] Step through the WebFlash wizard (local `python3 -m http.server 5000`) and confirm the firmware card appears
+- [ ] Start an install session and confirm the generated Support bundle captures live serial logs
 
 ### 📋 Before Removing Firmware
 - [ ] Note current number of builds

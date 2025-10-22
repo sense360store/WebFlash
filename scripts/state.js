@@ -434,19 +434,88 @@ function setChecklistCompletion(isComplete) {
 }
 
 function attachInstallButtonListeners() {
-    const installButtons = document.querySelectorAll('#compatible-firmware esp-web-install-button button[slot="activate"]');
-    installButtons.forEach(button => {
-        if (button.dataset.checklistBound === 'true') {
+    const installHosts = document.querySelectorAll('#compatible-firmware esp-web-install-button');
+
+    installHosts.forEach(host => {
+        const activateButton = host.querySelector('button[slot="activate"]');
+
+        if (activateButton && activateButton.dataset.checklistBound !== 'true') {
+            activateButton.addEventListener('click', () => {
+                const firmwareId = activateButton.dataset.firmwareId;
+                if (firmwareId) {
+                    selectFirmwareById(firmwareId, { syncSelector: false });
+                }
+                setChecklistCompletion(true);
+            });
+            activateButton.dataset.checklistBound = 'true';
+        }
+
+        if (host.dataset.serialLogBound === 'true') {
             return;
         }
-        button.addEventListener('click', () => {
-            const firmwareId = button.dataset.firmwareId;
-            if (firmwareId) {
-                selectFirmwareById(firmwareId, { syncSelector: false });
+
+        const bindLogForwarding = () => {
+            if (host.dataset.serialLogBound === 'true') {
+                return;
             }
-            setChecklistCompletion(true);
-        });
-        button.dataset.checklistBound = 'true';
+
+            const forwardLogEvent = (event) => {
+                const message = event?.detail?.message ?? event?.detail ?? '';
+                if (typeof message !== 'string' || message.length === 0) {
+                    return;
+                }
+                window.supportBundle?.pushSerial?.(message);
+            };
+
+            const resetSerialBuffer = (event) => {
+                const detail = event?.detail;
+                const state = typeof detail === 'string' ? detail : detail?.state;
+                if (!state) {
+                    return;
+                }
+
+                if (state === 'initializing' || state === 'preparing') {
+                    const isInProgress = typeof detail === 'object'
+                        ? detail.details?.done === false || detail.details === undefined
+                        : true;
+
+                    if (isInProgress) {
+                        window.supportBundle?.clearSerial?.();
+                    }
+                }
+            };
+
+            // ESP Web Tools dispatches "log"/"console" events from the install button
+            // to expose console output. Forward the payload to the support bundle so
+            // that generated bundles include raw serial logs for troubleshooting.
+            host.addEventListener('log', forwardLogEvent);
+            host.addEventListener('console', forwardLogEvent);
+
+            // The flashing dialog also emits "state-changed" events as the install
+            // progresses. When a new session moves into the initializing/preparing
+            // phase we reset the buffered log output so the bundle only contains the
+            // latest attempt.
+            host.addEventListener('state-changed', resetSerialBuffer);
+
+            host.dataset.serialLogBound = 'true';
+        };
+
+        if (isManifestReady()) {
+            bindLogForwarding();
+        } else if (host.dataset.serialLogPending !== 'true') {
+            host.dataset.serialLogPending = 'true';
+            manifestReadyPromise
+                .then(() => {
+                    delete host.dataset.serialLogPending;
+                    if (!document.body.contains(host)) {
+                        return;
+                    }
+                    bindLogForwarding();
+                })
+                .catch(() => {
+                    delete host.dataset.serialLogPending;
+                });
+        }
     });
 }
 
