@@ -11,6 +11,7 @@ const statusFlashTimers = new WeakMap();
 let currentBundle = null;
 let includeGzipByDefault = false;
 let lastActiveElement = null;
+const lifecycleEvents = [];
 
 function ensureStyle() {
     if (document.getElementById(STYLE_ID)) {
@@ -82,6 +83,47 @@ function pushSerialLog(line) {
     limitSerialBuffer();
 }
 
+function recordLifecycleEvent(type, payload = {}) {
+    if (!type) {
+        return null;
+    }
+
+    const entry = {
+        type: String(type),
+        timestamp: new Date().toISOString()
+    };
+
+    if (payload && typeof payload === 'object') {
+        const clean = {};
+        Object.entries(payload).forEach(([key, value]) => {
+            if (value === undefined || typeof value === 'function') {
+                return;
+            }
+
+            if (value && typeof value === 'object') {
+                try {
+                    clean[key] = JSON.parse(JSON.stringify(value));
+                } catch (error) {
+                    clean[key] = String(value);
+                }
+            } else {
+                clean[key] = value;
+            }
+        });
+
+        if (Object.keys(clean).length > 0) {
+            entry.detail = clean;
+        }
+    }
+
+    lifecycleEvents.push(entry);
+    if (lifecycleEvents.length > 100) {
+        lifecycleEvents.splice(0, lifecycleEvents.length - 100);
+    }
+
+    return entry;
+}
+
 function flushDownloadUrls() {
     downloadUrls.forEach((url) => URL.revokeObjectURL(url));
     downloadUrls.clear();
@@ -135,6 +177,7 @@ function gatherFirmwareContext() {
 function gatherStateSnapshot() {
     const state = getState ? getState() : {};
     const step = getStep ? getStep() : undefined;
+    const bundleApi = window.supportBundle;
 
     const snapshot = {
         ...state,
@@ -142,6 +185,21 @@ function gatherStateSnapshot() {
         createdAt: new Date().toISOString(),
         ...gatherFirmwareContext()
     };
+
+    const rescueHistory = Array.isArray(window.webflashRescueInstallHistory)
+        ? window.webflashRescueInstallHistory
+        : [];
+
+    if (rescueHistory.length > 0) {
+        snapshot.rescueInstallHistory = rescueHistory.map(entry => ({ ...entry }));
+        snapshot.rescueInstallCount = rescueHistory.length;
+        snapshot.lastRescueInstall = rescueHistory[rescueHistory.length - 1];
+    }
+
+    const events = typeof bundleApi?.getEvents === 'function' ? bundleApi.getEvents() : [];
+    if (Array.isArray(events) && events.length > 0) {
+        snapshot.supportEvents = events.map(event => ({ ...event }));
+    }
 
     Object.keys(snapshot).forEach((key) => {
         if (snapshot[key] === undefined || snapshot[key] === null || snapshot[key] === '') {
@@ -925,10 +983,14 @@ function initSupportUI() {
         clearSerial: () => {
             serialLogBuffer.length = 0;
         },
-        getSerialLogs: () => [...serialLogBuffer]
+        getSerialLogs: () => [...serialLogBuffer],
+        recordEvent: recordLifecycleEvent,
+        getEvents: () => [...lifecycleEvents]
     });
 
     window.addEventListener('beforeunload', flushDownloadUrls);
+
+    recordLifecycleEvent('support-ui-ready');
 }
 
 if (typeof document !== 'undefined') {

@@ -227,6 +227,23 @@
                     </aside>
                 </div>
 
+                <section class="preset-panel" id="preset-manager" aria-labelledby="preset-manager-title">
+                    <div class="preset-panel__header">
+                        <h3 class="preset-panel__title" id="preset-manager-title">Presets</h3>
+                        <p class="preset-panel__description">Save and reuse frequently used configurations.</p>
+                    </div>
+                    <ul class="preset-panel__list" data-preset-list role="list"></ul>
+                    <p class="preset-panel__empty" data-preset-empty>Save your first preset to get started.</p>
+                    <form class="preset-panel__form" data-preset-form>
+                        <label class="preset-panel__label" for="preset-name-input">Preset name</label>
+                        <div class="preset-panel__controls">
+                            <input id="preset-name-input" type="text" name="preset-name" data-preset-name placeholder="e.g. Wall • USB • Pro modules" autocomplete="off">
+                            <button type="submit" class="btn btn-secondary btn-small" data-preset-save disabled>Save preset</button>
+                        </div>
+                        <p class="preset-panel__hint">Presets capture your selections from steps 1–3.</p>
+                    </form>
+                </section>
+
                 <div class="remember-preference">
                     <label class="remember-toggle">
                         <input type="checkbox" data-remember-toggle>
@@ -250,6 +267,18 @@
                         <!-- Summary will be populated by JavaScript -->
                     </div>
                 </div>
+
+                <section class="hardware-detection" aria-labelledby="hardware-detection-title">
+                    <div class="hardware-detection__header">
+                        <h3 id="hardware-detection-title">Detected Device</h3>
+                        <button type="button" class="btn btn-secondary" id="serial-detection-refresh">Detect Device</button>
+                    </div>
+                    <div id="serial-detection" class="hardware-detection__body" role="status" aria-live="polite">
+                        <p id="serial-detection-summary" class="hardware-detection__summary">Connect your Sense360 hub and choose “Detect Device”.</p>
+                        <ul id="serial-detection-list" class="hardware-detection__list"></ul>
+                        <p id="serial-detection-guidance" class="hardware-detection__guidance"></p>
+                    </div>
+                </section>
 
                 <section class="pre-flash-checklist" aria-labelledby="pre-flash-title">
                     <h3 class="checklist-heading" id="pre-flash-title">Pre-Flash Checklist</h3>
@@ -280,6 +309,35 @@
                         <!-- Compatible firmware will be shown here -->
                     </div>
                 </div>
+
+                <section class="rescue-install" aria-labelledby="rescue-install-title">
+                    <h3 class="rescue-install__heading" id="rescue-install-title">Rescue Install</h3>
+                    <p class="rescue-install__intro">If the recommended firmware fails to boot or the hub is stuck in a flashing loop, use the rescue image to restore the bootloader before trying again.</p>
+                    <div class="firmware-card firmware-card--rescue" data-rescue-card>
+                        <div class="firmware-item">
+                            <div class="firmware-info">
+                                <div class="firmware-header">
+                                    <div class="firmware-name">Sense360 Rescue Firmware</div>
+                                    <span class="firmware-channel-tag is-rescue">Rescue Build</span>
+                                </div>
+                                <div class="firmware-details">
+                                    <span class="firmware-version">v1.0.0-rescue</span>
+                                    <span class="firmware-size">31 B</span>
+                                    <span class="firmware-date">Jan 1, 2024</span>
+                                </div>
+                                <p class="firmware-description">Launches a known-good recovery image that skips configuration matching to bring unresponsive devices back online.</p>
+                            </div>
+                            <div class="firmware-actions">
+                                <esp-web-install-button manifest="firmware-18.json" data-rescue-install data-webflash-install>
+                                    <button slot="activate" class="btn btn-secondary" type="button" data-rescue-install>
+                                        Launch Rescue Installer
+                                    </button>
+                                </esp-web-install-button>
+                                <p class="ready-helper" role="status" aria-live="polite">Always available for emergency recovery.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
 
                 <div class="remember-preference">
                     <label class="remember-toggle">
