@@ -271,6 +271,35 @@
                     </div>
                 </div>
 
+                <section class="rescue-install" aria-labelledby="rescue-install-title">
+                    <h3 class="rescue-install__heading" id="rescue-install-title">Rescue Install</h3>
+                    <p class="rescue-install__intro">If the recommended firmware fails to boot or the hub is stuck in a flashing loop, use the rescue image to restore the bootloader before trying again.</p>
+                    <div class="firmware-card firmware-card--rescue" data-rescue-card>
+                        <div class="firmware-item">
+                            <div class="firmware-info">
+                                <div class="firmware-header">
+                                    <div class="firmware-name">Sense360 Rescue Firmware</div>
+                                    <span class="firmware-channel-tag is-rescue">Rescue Build</span>
+                                </div>
+                                <div class="firmware-details">
+                                    <span class="firmware-version">v1.0.0-rescue</span>
+                                    <span class="firmware-size">31 B</span>
+                                    <span class="firmware-date">Jan 1, 2024</span>
+                                </div>
+                                <p class="firmware-description">Launches a known-good recovery image that skips configuration matching to bring unresponsive devices back online.</p>
+                            </div>
+                            <div class="firmware-actions">
+                                <esp-web-install-button manifest="firmware-18.json" data-rescue-install data-webflash-install>
+                                    <button slot="activate" class="btn btn-secondary" type="button" data-rescue-install>
+                                        Launch Rescue Installer
+                                    </button>
+                                </esp-web-install-button>
+                                <p class="ready-helper" role="status" aria-live="polite">Always available for emergency recovery.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <div class="remember-preference">
                     <label class="remember-toggle">
                         <input type="checkbox" data-remember-toggle>

@@ -100,6 +100,11 @@ const CHANNEL_DISPLAY_MAP = {
         label: 'Development Build',
         description: 'Cutting-edge development firmware intended for advanced testing only.',
         notesFallback: 'Development build notes are not available for this firmware version.'
+    },
+    rescue: {
+        label: 'Rescue Build',
+        description: 'Emergency recovery firmware for bringing devices back from failed installs.',
+        notesFallback: 'Rescue builds do not ship release notes.'
     }
 };
 
@@ -116,6 +121,7 @@ const CHANNEL_PRIORITY_MAP = {
     release: 0,
     prod: 0,
     production: 0,
+    rescue: -1,
     lts: 0,
     preview: 1,
     prerelease: 1,
@@ -412,6 +418,91 @@ let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
 
+const MAX_RESCUE_HISTORY = 20;
+const rescueInstallHistory = [];
+
+function summariseRescueDetail(detail) {
+    if (!detail || typeof detail !== 'object') {
+        return {};
+    }
+
+    const summary = {};
+    const source = typeof detail.details === 'object' && detail.details !== null
+        ? detail.details
+        : detail;
+
+    if (typeof detail.message === 'string' && detail.message.trim()) {
+        summary.message = detail.message.trim();
+    }
+
+    if (typeof source.stage === 'string' && source.stage.trim()) {
+        summary.stage = source.stage.trim();
+    }
+
+    if (typeof source.status === 'string' && source.status.trim()) {
+        summary.status = source.status.trim();
+    }
+
+    if (typeof source.error === 'string' && source.error.trim()) {
+        summary.error = source.error.trim();
+    }
+
+    if (typeof source.done === 'boolean') {
+        summary.done = source.done;
+    }
+
+    return summary;
+}
+
+function recordRescueInstallEvent(eventType, detail = {}) {
+    if (!eventType) {
+        return null;
+    }
+
+    const entry = {
+        type: String(eventType),
+        timestamp: new Date().toISOString(),
+        step: currentStep,
+        configString: window.currentConfigString || null
+    };
+
+    if (detail && typeof detail === 'object') {
+        const clean = {};
+        Object.entries(detail).forEach(([key, value]) => {
+            if (value === undefined || typeof value === 'function') {
+                return;
+            }
+
+            if (value && typeof value === 'object') {
+                try {
+                    clean[key] = JSON.parse(JSON.stringify(value));
+                } catch (error) {
+                    clean[key] = String(value);
+                }
+            } else {
+                clean[key] = value;
+            }
+        });
+
+        if (Object.keys(clean).length > 0) {
+            entry.detail = clean;
+        }
+    }
+
+    rescueInstallHistory.push(entry);
+    if (rescueInstallHistory.length > MAX_RESCUE_HISTORY) {
+        rescueInstallHistory.splice(0, rescueInstallHistory.length - MAX_RESCUE_HISTORY);
+    }
+
+    window.supportBundle?.recordEvent?.('rescue-install', entry);
+
+    return entry;
+}
+
+function getRescueInstallHistory() {
+    return rescueInstallHistory.slice();
+}
+
 function syncChecklistCompletion() {
     const section = document.querySelector('.pre-flash-checklist');
     if (!section) return;
@@ -430,16 +521,19 @@ function setChecklistCompletion(isComplete) {
 }
 
 function attachInstallButtonListeners() {
-    const installHosts = document.querySelectorAll('#compatible-firmware esp-web-install-button');
+    const installHosts = document.querySelectorAll('esp-web-install-button[data-webflash-install]');
 
     installHosts.forEach(host => {
         const activateButton = host.querySelector('button[slot="activate"]');
+        const isRescueHost = host.hasAttribute('data-rescue-install');
 
         if (activateButton && activateButton.dataset.checklistBound !== 'true') {
             activateButton.addEventListener('click', () => {
                 const firmwareId = activateButton.dataset.firmwareId;
                 if (firmwareId) {
                     selectFirmwareById(firmwareId, { syncSelector: false });
+                } else if (isRescueHost || activateButton.dataset.rescueInstall === 'true') {
+                    recordRescueInstallEvent('launch-click');
                 }
                 setChecklistCompletion(true);
             });
@@ -477,6 +571,23 @@ function attachInstallButtonListeners() {
 
                     if (isInProgress) {
                         window.supportBundle?.clearSerial?.();
+                        if (isRescueHost) {
+                            recordRescueInstallEvent('session-start', { state });
+                        }
+                    }
+                }
+
+                if (isRescueHost) {
+                    const previousState = host.dataset.rescueLastState || '';
+                    if (previousState !== state) {
+                        host.dataset.rescueLastState = state;
+                        const summary = summariseRescueDetail(detail);
+                        recordRescueInstallEvent('state-changed', { state, ...summary });
+                        if (state === 'finished' || state === 'completed') {
+                            recordRescueInstallEvent('session-finished', summary);
+                        } else if (state === 'error' || state === 'failed') {
+                            recordRescueInstallEvent('session-error', summary);
+                        }
                     }
                 }
             };
@@ -594,6 +705,7 @@ function initializeWizard() {
 
     syncChecklistCompletion();
     setupRememberPreferenceControls();
+    window.webflashRescueInstallHistory = rescueInstallHistory;
 
     document.querySelectorAll('input[name="mounting"]').forEach(input => {
         input.addEventListener('change', handleMountingChange);
@@ -619,6 +731,7 @@ function initializeWizard() {
         input.addEventListener('change', updateConfiguration);
     });
 
+    attachInstallButtonListeners();
     initializeFromUrl();
 
     manifestReadyPromise
@@ -1424,7 +1537,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                     ${descriptionHtml}
                 </div>
                 <div class="firmware-actions">
-                    <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
+                    <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-webflash-install>
                         <button slot="activate" class="btn btn-primary" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
                             Install Firmware
                         </button>
