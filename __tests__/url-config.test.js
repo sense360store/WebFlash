@@ -49,8 +49,18 @@ describe('config URL parser', () => {
     expect(result.sanitizedConfig.power).toBe('pwr');
   });
 
-  test('reports invalid fan values', () => {
+  test('parses analog fan selection', () => {
     const params = new URLSearchParams('mount=wall&power=usb&fan=analog');
+    const result = parseConfigParams(params);
+
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.configKey).toBe('Wall-USB-FanAnalog');
+    expect(result.sanitizedConfig.fan).toBe('analog');
+  });
+
+  test('reports invalid fan values', () => {
+    const params = new URLSearchParams('mount=wall&power=usb&fan=linear');
     const result = parseConfigParams(params);
 
     expect(result.isValid).toBe(false);
