@@ -1,3 +1,5 @@
+import { DEFAULT_CHANNEL_KEY, normalizeChannelKey } from './utils/channel-alias.js';
+
 const PARAM_ALIASES = {
   mount: ['mount', 'mounting'],
   power: ['power'],
@@ -45,27 +47,6 @@ const DEFAULT_VALIDATION_ERROR = {
   description: 'Direct install links must include the following query parameters:',
   requiredParams: REQUIRED_PARAM_KEYS,
   guidance: 'Check mount/power query parameters.'
-};
-
-const DEFAULT_CHANNEL_KEY = 'stable';
-const CHANNEL_ALIAS_MAP = {
-  general: 'stable',
-  stable: 'stable',
-  ga: 'stable',
-  release: 'stable',
-  prod: 'stable',
-  production: 'stable',
-  lts: 'stable',
-  beta: 'beta',
-  preview: 'preview',
-  prerelease: 'preview',
-  rc: 'beta',
-  candidate: 'beta',
-  dev: 'dev',
-  alpha: 'dev',
-  nightly: 'dev',
-  canary: 'dev',
-  experimental: 'dev'
 };
 
 const CHANNEL_PRIORITY_MAP = {
@@ -210,21 +191,11 @@ function normalizeRequestedChannel(rawChannel) {
     return null;
   }
 
-  const normalized = String(rawChannel).trim().toLowerCase();
-  if (!normalized) {
-    return null;
-  }
-
-  return CHANNEL_ALIAS_MAP[normalized] || normalized;
+  return normalizeChannelKey(rawChannel, { allowNull: true });
 }
 
 function normalizeManifestChannel(channel) {
-  const normalized = String(channel ?? '').trim().toLowerCase();
-  if (!normalized) {
-    return DEFAULT_CHANNEL_KEY;
-  }
-
-  return CHANNEL_ALIAS_MAP[normalized] || normalized || DEFAULT_CHANNEL_KEY;
+  return normalizeChannelKey(channel, { defaultKey: DEFAULT_CHANNEL_KEY });
 }
 
 function getChannelPriority(channel) {
