@@ -6,6 +6,11 @@ import {
 } from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
+import {
+    detectSerialDevices,
+    formatPortSummary,
+    isChipFamilyCompatible
+} from './support/serial-detection.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -405,12 +410,18 @@ const REMEMBER_TOGGLE_SELECTOR = '[data-remember-toggle]';
 
 const firmwareSelectorWrapper = document.getElementById('firmware-selector');
 const firmwareVersionSelect = document.getElementById('firmware-version-select');
+const SERIAL_DETECTION_DEFAULT_MESSAGE = 'Connect your Sense360 hub and choose “Detect Device”.';
+const serialDetectionSummary = document.getElementById('serial-detection-summary');
+const serialDetectionList = document.getElementById('serial-detection-list');
+const serialDetectionGuidance = document.getElementById('serial-detection-guidance');
+const serialDetectionRefreshButton = document.getElementById('serial-detection-refresh');
 let firmwareOptions = [];
 let firmwareOptionsMap = new Map();
 let currentFirmwareSelectionId = null;
 let toastTimeoutId = null;
 let additionalFirmwareBuckets = new Map();
 let firmwareStatusMessage = null;
+let serialDetectionPromise = null;
 
 function syncChecklistCompletion() {
     const section = document.querySelector('.pre-flash-checklist');
@@ -427,6 +438,208 @@ function syncChecklistCompletion() {
 function setChecklistCompletion(isComplete) {
     checklistCompleted = isComplete;
     syncChecklistCompletion();
+}
+
+function getFirmwareChipFamily(firmware = window.currentFirmware) {
+    if (!firmware || typeof firmware !== 'object') {
+        return '';
+    }
+
+    const family = firmware.chipFamily ?? firmware.chip_family ?? '';
+    return typeof family === 'string' ? family.trim() : '';
+}
+
+function getDetectedChipFamily() {
+    const detection = window.serialDetection;
+    if (!detection) {
+        return '';
+    }
+
+    const primary = typeof detection.chipFamily === 'string' ? detection.chipFamily.trim() : '';
+    if (primary) {
+        return primary;
+    }
+
+    if (Array.isArray(detection.chipFamilies) && detection.chipFamilies.length) {
+        const fallback = detection.chipFamilies.find(family => typeof family === 'string' && family.trim());
+        if (fallback) {
+            return fallback.trim();
+        }
+    }
+
+    if (Array.isArray(detection.ports)) {
+        const portMatch = detection.ports.find(port => typeof port?.chipFamily === 'string' && port.chipFamily.trim());
+        if (portMatch) {
+            return portMatch.chipFamily.trim();
+        }
+    }
+
+    return '';
+}
+
+function getSerialCompatibilityState() {
+    const expectedLabel = getFirmwareChipFamily();
+    const detectedLabel = getDetectedChipFamily();
+    const compatible = isChipFamilyCompatible(detectedLabel, expectedLabel);
+    const mismatch = Boolean(expectedLabel && detectedLabel && !compatible);
+
+    return {
+        mismatch,
+        isCompatible: !mismatch,
+        expectedLabel,
+        detectedLabel,
+        hasFirmwareFamily: Boolean(expectedLabel),
+        hasDetectedFamily: Boolean(detectedLabel)
+    };
+}
+
+function renderSerialDetectionInfo({ loading = false } = {}) {
+    if (!serialDetectionSummary || !serialDetectionGuidance) {
+        return;
+    }
+
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && 'serial' in navigator;
+
+    if (!hasSerialSupport) {
+        serialDetectionSummary.textContent = 'This browser does not support the Web Serial API.';
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.innerHTML = 'Use Chrome or Edge to flash firmware directly from the browser.';
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = true;
+        }
+        return;
+    }
+
+    if (loading) {
+        serialDetectionSummary.textContent = 'Checking for connected devices…';
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.textContent = '';
+        return;
+    }
+
+    const detection = window.serialDetection;
+
+    if (!detection) {
+        serialDetectionSummary.textContent = SERIAL_DETECTION_DEFAULT_MESSAGE;
+        if (serialDetectionList) {
+            serialDetectionList.innerHTML = '';
+            serialDetectionList.hidden = true;
+        }
+        serialDetectionGuidance.textContent = '';
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = false;
+        }
+        return;
+    }
+
+    const ports = Array.isArray(detection.ports) ? detection.ports : [];
+    const deviceCount = ports.length;
+
+    if (serialDetectionList) {
+        serialDetectionList.innerHTML = '';
+        if (deviceCount > 0) {
+            serialDetectionList.hidden = false;
+            ports.forEach(port => {
+                const item = document.createElement('li');
+                item.textContent = formatPortSummary(port);
+                serialDetectionList.appendChild(item);
+            });
+        } else {
+            serialDetectionList.hidden = false;
+            const item = document.createElement('li');
+            item.textContent = detection.requestError
+                ? 'Permission required to read connected devices.'
+                : 'No authorized devices detected yet.';
+            serialDetectionList.appendChild(item);
+        }
+    }
+
+    if (detection.error) {
+        serialDetectionSummary.textContent = 'Unable to access Web Serial devices.';
+    } else if (deviceCount > 0) {
+        const baseLabel = deviceCount === 1 ? 'Detected 1 device' : `Detected ${deviceCount} devices`;
+        const chipLabel = getDetectedChipFamily();
+        serialDetectionSummary.textContent = chipLabel ? `${baseLabel} · ${chipLabel}` : baseLabel;
+    } else if (detection.requestError) {
+        serialDetectionSummary.textContent = 'Permission required to read connected devices.';
+    } else {
+        serialDetectionSummary.textContent = SERIAL_DETECTION_DEFAULT_MESSAGE;
+    }
+
+    const guidanceParts = [];
+
+    if (detection.error) {
+        guidanceParts.push(escapeHtml(detection.error));
+    } else if (detection.requestError && !deviceCount) {
+        guidanceParts.push('Click “Detect Device” and authorize the Sense360 hub when prompted.');
+    } else if (!deviceCount) {
+        guidanceParts.push('Connect your Sense360 hub via USB and select “Detect Device”.');
+    }
+
+    const compatibility = getSerialCompatibilityState();
+    if (compatibility.mismatch) {
+        const expectedLabel = escapeHtml(compatibility.expectedLabel || 'selected firmware');
+        const detectedLabel = escapeHtml(compatibility.detectedLabel || 'connected device');
+        guidanceParts.push(`<strong>Chip mismatch.</strong> Detected ${detectedLabel}, but the selected firmware targets ${expectedLabel}. Choose matching firmware or connect the appropriate hub.`);
+    }
+
+    serialDetectionGuidance.innerHTML = guidanceParts.join(' ');
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.disabled = false;
+    }
+}
+
+async function refreshSerialDetection({ promptUser = false } = {}) {
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && 'serial' in navigator;
+
+    if (!hasSerialSupport) {
+        renderSerialDetectionInfo();
+        return null;
+    }
+
+    if (serialDetectionPromise) {
+        return serialDetectionPromise;
+    }
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.disabled = true;
+    }
+
+    renderSerialDetectionInfo({ loading: true });
+
+    serialDetectionPromise = detectSerialDevices({ promptUser })
+        .then(result => {
+            window.serialDetection = result;
+            return result;
+        })
+        .catch(error => {
+            console.error('Failed to detect serial devices:', error);
+            const message = error instanceof Error ? error.message : String(error);
+            window.serialDetection = {
+                supported: true,
+                ports: [],
+                chipFamily: null,
+                chipFamilies: [],
+                error: message,
+                requestError: null,
+                timestamp: Date.now()
+            };
+            return window.serialDetection;
+        })
+        .finally(() => {
+            serialDetectionPromise = null;
+            renderSerialDetectionInfo();
+            updateFirmwareControls();
+        });
+
+    return serialDetectionPromise;
 }
 
 function attachInstallButtonListeners() {
@@ -590,6 +803,17 @@ function initializeWizard() {
         if (warning) {
             warning.style.display = 'block';
         }
+        if (serialDetectionRefreshButton) {
+            serialDetectionRefreshButton.disabled = true;
+        }
+    }
+
+    renderSerialDetectionInfo();
+
+    if (serialDetectionRefreshButton) {
+        serialDetectionRefreshButton.addEventListener('click', () => {
+            refreshSerialDetection({ promptUser: true });
+        });
     }
 
     syncChecklistCompletion();
@@ -1190,54 +1414,80 @@ function updateFirmwareControls() {
         && window.currentFirmware.parts.length > 0
     );
 
+    const compatibility = getSerialCompatibilityState();
+    const actionsAllowed = isReady && !compatibility.mismatch;
+
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
-        downloadBtn.disabled = !isReady;
-        downloadBtn.classList.toggle('is-ready', isReady);
+        downloadBtn.disabled = !actionsAllowed;
+        downloadBtn.classList.toggle('is-ready', actionsAllowed);
     }
 
     const copyUrlBtn = document.getElementById('copy-firmware-url-btn');
     if (copyUrlBtn) {
         const clipboardSupported = Boolean(navigator.clipboard);
-        const canCopy = clipboardSupported && isReady;
+        const canCopy = clipboardSupported && actionsAllowed;
         copyUrlBtn.disabled = !canCopy;
         copyUrlBtn.classList.toggle('is-ready', canCopy);
 
         if (!clipboardSupported) {
             copyUrlBtn.title = 'Copy requires Clipboard API support';
+        } else if (compatibility.mismatch) {
+            copyUrlBtn.title = 'Chip mismatch detected. Select compatible firmware before copying the link.';
         } else {
             copyUrlBtn.removeAttribute('title');
         }
     }
 
-    const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
-    if (installButton) {
-        installButton.classList.toggle('is-ready', isReady);
-    }
+    const installButtons = document.querySelectorAll('#compatible-firmware esp-web-install-button button[slot="activate"]');
+    installButtons.forEach(button => {
+        button.classList.toggle('is-ready', actionsAllowed);
+        button.disabled = !actionsAllowed;
+        if (actionsAllowed) {
+            button.removeAttribute('aria-disabled');
+        } else {
+            button.setAttribute('aria-disabled', 'true');
+        }
+    });
+
+    const readyMessage = actionsAllowed ? 'Ready to flash' : '';
+    const mismatchMessage = compatibility.mismatch
+        ? `Detected ${compatibility.detectedLabel || 'another device'} while the selected firmware targets ${compatibility.expectedLabel || 'a different chip'}.`
+        : '';
 
     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
     if (detailHelper) {
-        if (isReady) {
-            detailHelper.textContent = 'Ready to flash';
+        if (compatibility.mismatch) {
+            detailHelper.textContent = mismatchMessage;
+            detailHelper.classList.add('is-visible', 'is-warning');
+        } else if (actionsAllowed) {
+            detailHelper.textContent = readyMessage;
             detailHelper.classList.add('is-visible');
+            detailHelper.classList.remove('is-warning');
         } else {
             detailHelper.textContent = '';
-            detailHelper.classList.remove('is-visible');
+            detailHelper.classList.remove('is-visible', 'is-warning');
         }
     }
 
     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
     if (primaryHelper) {
-        if (isReady) {
-            if (primaryHelper.textContent !== 'Ready to flash') {
-                primaryHelper.textContent = 'Ready to flash';
+        if (compatibility.mismatch) {
+            primaryHelper.textContent = mismatchMessage;
+            primaryHelper.classList.add('is-visible', 'is-warning');
+        } else if (actionsAllowed) {
+            if (primaryHelper.textContent !== readyMessage) {
+                primaryHelper.textContent = readyMessage;
             }
             primaryHelper.classList.add('is-visible');
+            primaryHelper.classList.remove('is-warning');
         } else {
             primaryHelper.textContent = '';
-            primaryHelper.classList.remove('is-visible');
+            primaryHelper.classList.remove('is-visible', 'is-warning');
         }
     }
+
+    renderSerialDetectionInfo();
 }
 
 function groupBuildsByConfig(builds) {
@@ -1750,6 +2000,8 @@ function renderSelectedFirmware() {
 
 async function findCompatibleFirmware() {
     clearFirmwareOptions();
+
+    refreshSerialDetection({ promptUser: false });
 
     if (!configuration.mounting || !configuration.power) {
         window.currentConfigString = null;
