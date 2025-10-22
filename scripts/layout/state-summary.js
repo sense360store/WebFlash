@@ -320,19 +320,33 @@
      */
     function buildShareableUrl(state) {
         const params = new URLSearchParams();
-        if (state.mount) {
-            params.set('mount', state.mount);
-        }
-        if (state.power) {
-            params.set('power', state.power);
-        }
-
-        params.set('airiq', state.airiq || 'none');
-        params.set('presence', state.presence || 'none');
-        params.set('comfort', state.comfort || 'none');
-        params.set('fan', state.fan || 'none');
-
         const currentFirmware = window.currentFirmware || null;
+        const firmwareConfig = (currentFirmware?.config_string || '').toString().trim();
+        const firmwareModel = (currentFirmware?.model || '').toString().trim();
+        const firmwareVariant = (currentFirmware?.variant || '').toString().trim();
+        const firmwareSensorAddon = (currentFirmware?.sensor_addon || '').toString().trim();
+        const useModelLookup = !firmwareConfig && firmwareModel && firmwareVariant;
+
+        if (useModelLookup) {
+            params.set('model', firmwareModel);
+            params.set('variant', firmwareVariant);
+            if (firmwareSensorAddon) {
+                params.set('sensor_addon', firmwareSensorAddon);
+            }
+        } else {
+            if (state.mount) {
+                params.set('mount', state.mount);
+            }
+            if (state.power) {
+                params.set('power', state.power);
+            }
+
+            params.set('airiq', state.airiq || 'none');
+            params.set('presence', state.presence || 'none');
+            params.set('comfort', state.comfort || 'none');
+            params.set('fan', state.fan || 'none');
+        }
+
         if (currentFirmware && currentFirmware.channel) {
             const channel = normaliseChannelKey(currentFirmware.channel);
             if (channel) {

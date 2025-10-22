@@ -115,3 +115,12 @@ The WebFlash site rebuilds and deploys itself whenever fresh firmware is introdu
   3. Commit the updated firmware plus regenerated JSON files. Pushing to `main` triggers an automatic deploy.
 
 Need a dry run? Append `--dry-run` to `scripts/gen-manifests.py` or `scripts/sync-from-releases.py` to inspect actions without writing files.
+
+#### Support share links
+
+Support and QA often rely on the **Copy sharable link** button in the sidebar to capture the current firmware recommendation. That helper now understands both modular and Sense360-MS devices:
+
+- **Modular hubs** – links continue to encode the wizard selections (`mount`, `power`, `airiq`, `presence`, `comfort`, `fan`) alongside the requested `channel`.
+- **Sense360-MS** – when a Sense360-MS build is active, links emit `model=Sense360-MS` and `variant=Standard`. The optional add-on firmware also adds `sensor_addon=sen55-hlk2450`. Include `channel` to target a specific release track (stable, beta, etc.).
+
+These query parameters also work when composing troubleshooting links manually.
