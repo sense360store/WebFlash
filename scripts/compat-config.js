@@ -40,6 +40,13 @@ const OPTION_MAPPINGS = {
 const OPTIONAL_KEYS = new Set(['airiq', 'presence', 'comfort', 'fan']);
 const REQUIRED_PARAM_KEYS = ['mount', 'power'];
 
+const DEFAULT_VALIDATION_ERROR = {
+  title: 'Direct Install Link Incomplete',
+  description: 'Direct install links must include the following query parameters:',
+  requiredParams: REQUIRED_PARAM_KEYS,
+  guidance: 'Check mount/power query parameters.'
+};
+
 const DEFAULT_CHANNEL_KEY = 'stable';
 const CHANNEL_ALIAS_MAP = {
   general: 'stable',
@@ -364,12 +371,7 @@ function readInstallQueryParams() {
 
   if (!configKey) {
     if (missingRequired.length > 0) {
-      validationError = {
-        title: 'Direct Install Link Incomplete',
-        description: 'Direct install links must include the following query parameters:',
-        requiredParams: REQUIRED_PARAM_KEYS,
-        guidance: 'Check mount/power query parameters.'
-      };
+      validationError = { ...DEFAULT_VALIDATION_ERROR };
     } else if (invalidOptional.length > 0) {
       const formatted = invalidOptional.map((key) => key.charAt(0).toUpperCase() + key.slice(1));
       validationError = {
@@ -379,18 +381,14 @@ function readInstallQueryParams() {
         guidance: 'Check mount/power query parameters.'
       };
     } else {
-      validationError = {
-        title: 'Direct Install Link Incomplete',
-        description: 'Direct install links must include the following query parameters:',
-        requiredParams: REQUIRED_PARAM_KEYS,
-        guidance: 'Check mount/power query parameters.'
-      };
+      validationError = { ...DEFAULT_VALIDATION_ERROR };
     }
   }
 
   return {
     lookup: buildInstallLookupFromParams(params),
-    channel: readChannelFromParams(params)
+    channel: readChannelFromParams(params),
+    validationError
   };
 }
 
@@ -787,8 +785,11 @@ async function loadManifest() {
 }
 
 async function initializeCompatInstall() {
-  const { lookup, channel: requestedChannel } = readInstallQueryParams();
+  const { lookup, channel: requestedChannel, validationError } = readInstallQueryParams();
+  const container = ensureContainer();
+
   if (!lookup) {
+    renderParameterError(container, validationError || DEFAULT_VALIDATION_ERROR);
     return;
   }
 
