@@ -74,9 +74,9 @@
     --brand-green-contrast: color-mix(in srgb, var(--brand-green) 70%, black);
     --brand-green-contrast-hover: color-mix(in srgb, var(--brand-green) 76%, black);
     --brand-green-contrast-active: color-mix(in srgb, var(--brand-green) 82%, black);
-    --brand-green-tint: color-mix(in srgb, var(--brand-green) 18%, var(--color-surface-soft));
-    --brand-green-tint-strong: color-mix(in srgb, var(--brand-green) 24%, var(--color-surface-soft));
-    --brand-green-border: color-mix(in srgb, var(--brand-green) 42%, var(--color-border));
+    --brand-green-tint: color-mix(in srgb, var(--brand-green) 28%, var(--bg-elev-1));
+    --brand-green-tint-strong: color-mix(in srgb, var(--brand-green) 40%, var(--surface));
+    --brand-green-border: color-mix(in srgb, var(--brand-green) 60%, var(--color-border));
 }
 
 [data-theme="dark"] .pre-flash-checklist {
