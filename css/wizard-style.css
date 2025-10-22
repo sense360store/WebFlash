@@ -430,7 +430,7 @@ h1 {
     transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-.option-info-button span {
+.option-info-button span[aria-hidden="true"] {
     display: inline-block;
     transform: translateY(1px);
 }
