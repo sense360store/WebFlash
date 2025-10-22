@@ -114,6 +114,56 @@ function getBuildTimestamp(dateLike) {
   return timestamp;
 }
 
+function parseVersionSegments(version) {
+  if (!version) {
+    return [];
+  }
+
+  const numericSegments = String(version).match(/\d+/g);
+
+  if (!numericSegments) {
+    return [];
+  }
+
+  return numericSegments.map((segment) => Number.parseInt(segment, 10));
+}
+
+function compareVersionsDesc(aVersion, bVersion) {
+  const aSegments = parseVersionSegments(aVersion);
+  const bSegments = parseVersionSegments(bVersion);
+  const maxLength = Math.max(aSegments.length, bSegments.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const aValue = aSegments[index] ?? 0;
+    const bValue = bSegments[index] ?? 0;
+
+    if (aValue !== bValue) {
+      return bValue - aValue;
+    }
+  }
+
+  const aLabel = aVersion || '';
+  const bLabel = bVersion || '';
+
+  return bLabel.localeCompare(aLabel);
+}
+
+function getBuildVersion(build) {
+  if (!build || typeof build !== 'object') {
+    return '';
+  }
+
+  if (typeof build.version === 'string') {
+    return build.version;
+  }
+
+  if (typeof build.app_version === 'string') {
+    return build.app_version;
+  }
+
+  return '';
+}
+
 function getCombinedSearchParams() {
   const params = new URLSearchParams();
   try {
@@ -543,12 +593,24 @@ async function initializeCompatInstall() {
       });
 
       let bestTimestamp = Number.NEGATIVE_INFINITY;
+      let bestVersion = '';
 
       for (const build of channelMatches) {
         const timestamp = getBuildTimestamp(build.build_date);
+        const version = getBuildVersion(build);
 
-        if (timestamp > bestTimestamp) {
+        if (!selectedBuild || timestamp > bestTimestamp) {
           bestTimestamp = timestamp;
+          bestVersion = version;
+          selectedBuild = build;
+          continue;
+        }
+
+        if (
+          timestamp === bestTimestamp &&
+          compareVersionsDesc(version, bestVersion) < 0
+        ) {
+          bestVersion = version;
           selectedBuild = build;
         }
       }
@@ -560,20 +622,34 @@ async function initializeCompatInstall() {
     } else {
       let bestPriority = Number.POSITIVE_INFINITY;
       let bestTimestamp = Number.NEGATIVE_INFINITY;
+      let bestVersion = '';
 
       for (const build of matchingBuilds) {
         const priority = getChannelPriority(build.channel);
         const timestamp = getBuildTimestamp(build.build_date);
+        const version = getBuildVersion(build);
 
         if (priority < bestPriority) {
           bestPriority = priority;
           bestTimestamp = timestamp;
+          bestVersion = version;
           selectedBuild = build;
           continue;
         }
 
         if (priority === bestPriority && timestamp > bestTimestamp) {
           bestTimestamp = timestamp;
+          bestVersion = version;
+          selectedBuild = build;
+          continue;
+        }
+
+        if (
+          priority === bestPriority &&
+          timestamp === bestTimestamp &&
+          compareVersionsDesc(version, bestVersion) < 0
+        ) {
+          bestVersion = version;
           selectedBuild = build;
         }
       }
