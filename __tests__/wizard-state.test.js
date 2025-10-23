@@ -217,4 +217,27 @@ describe('wizard state module', () => {
             }
         }
     });
+
+    test('wizard navigation handles text node targets and advances to the next step', async () => {
+        const stateModule = await import('../scripts/state.js');
+        await import('../scripts/navigation.js');
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+
+        const nextButton = document.querySelector('#step-1 .btn-next');
+        expect(nextButton).not.toBeNull();
+        nextButton.setAttribute('data-next', '');
+        nextButton.disabled = false;
+
+        const textNode = nextButton.firstChild;
+        expect(textNode).not.toBeNull();
+        textNode.closest = () => null;
+
+        stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
+
+        const clickEvent = new MouseEvent('click', { bubbles: true });
+
+        expect(() => textNode.dispatchEvent(clickEvent)).not.toThrow();
+        expect(stateModule.getStep()).toBe(2);
+    });
 });

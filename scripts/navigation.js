@@ -18,9 +18,29 @@ export function goToStep(index, options = {}) {
     return setStep(normalized + 1, options);
 }
 
+function resolveEventTarget(event) {
+    if (event.target instanceof Element) {
+        return event.target;
+    }
+
+    if (typeof event.composedPath === 'function') {
+        const elementTarget = event.composedPath().find(node => node instanceof Element);
+        if (elementTarget) {
+            return elementTarget;
+        }
+    }
+
+    return null;
+}
+
 function handleWizardNavigation(event) {
-    const nextTrigger = event.target.closest('[data-next]');
-    const backTrigger = event.target.closest('[data-back]');
+    const target = resolveEventTarget(event);
+    if (!target) {
+        return;
+    }
+
+    const nextTrigger = target.closest('[data-next]');
+    const backTrigger = target.closest('[data-back]');
 
     if (nextTrigger && !nextTrigger.disabled) {
         event.preventDefault();
