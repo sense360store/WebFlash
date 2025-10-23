@@ -1330,14 +1330,15 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 }
 
 function updateProgressSteps(targetStep) {
-    const maxReachableStep = getMaxReachableStep();
+    const maxReachable = getMaxReachableStep();
+    const safeTargetStep = Math.min(Math.max(targetStep, 1), totalSteps);
 
     for (let i = 1; i <= totalSteps; i++) {
         const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
         if (!progressElement) continue;
 
-        const isReachable = i <= maxReachableStep;
-        progressElement.dataset.reachable = isReachable ? 'true' : 'false';
+        const isReachable = i <= maxReachable;
+        progressElement.dataset.reachable = String(isReachable);
 
         if (isReachable) {
             progressElement.removeAttribute('aria-disabled');
@@ -1345,13 +1346,13 @@ function updateProgressSteps(targetStep) {
             progressElement.setAttribute('aria-disabled', 'true');
         }
 
-        if (i === targetStep) {
+        if (i === safeTargetStep) {
             progressElement.classList.add('active');
         } else {
             progressElement.classList.remove('active');
         }
 
-        if (i < targetStep) {
+        if (i < safeTargetStep) {
             progressElement.classList.add('completed');
         } else {
             progressElement.classList.remove('completed');

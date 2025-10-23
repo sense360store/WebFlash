@@ -313,4 +313,79 @@ describe('wizard state module', () => {
         expect(() => textNode.dispatchEvent(clickEvent)).not.toThrow();
         expect(stateModule.getStep()).toBe(2);
     });
+
+    test('progress steps reflect reachability when mounting and power change', async () => {
+        const stateModule = await import('../scripts/state.js');
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+
+        const steps = Array.from(document.querySelectorAll('.progress-step'));
+        expect(steps).toHaveLength(4);
+
+        const expectReachabilityMatchesState = () => {
+            const maxReachable = stateModule.getMaxReachableStep();
+
+            steps.forEach((step, index) => {
+                const stepNumber = index + 1;
+                const isReachable = stepNumber <= maxReachable;
+                expect(step.dataset.reachable).toBe(String(isReachable));
+
+                if (isReachable) {
+                    expect(step.hasAttribute('aria-disabled')).toBe(false);
+                } else {
+                    expect(step.getAttribute('aria-disabled')).toBe('true');
+                }
+            });
+        };
+
+        expectReachabilityMatchesState();
+
+        const mounting = document.querySelector('input[name="mounting"][value="wall"]');
+        mounting.checked = true;
+        mounting.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expectReachabilityMatchesState();
+
+        const power = document.querySelector('input[name="power"][value="usb"]');
+        power.checked = true;
+        power.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expectReachabilityMatchesState();
+    });
+
+    test('clicking progress steps respects reachability rules', async () => {
+        const stateModule = await import('../scripts/state.js');
+        await import('../scripts/navigation.js');
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+
+        stateModule.replaceState(stateModule.getDefaultState(), { skipUrlUpdate: true });
+        stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
+
+        expect(stateModule.getMaxReachableStep()).toBe(1);
+        const step3 = document.querySelector('.progress-step[data-step="3"]');
+        const step4 = document.querySelector('.progress-step[data-step="4"]');
+
+        expect(stateModule.getStep()).toBe(1);
+
+        step3.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(1);
+
+        const mounting = document.querySelector('input[name="mounting"][value="wall"]');
+        mounting.checked = true;
+        mounting.dispatchEvent(new Event('change', { bubbles: true }));
+
+        step4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(1);
+
+        const power = document.querySelector('input[name="power"][value="usb"]');
+        power.checked = true;
+        power.dispatchEvent(new Event('change', { bubbles: true }));
+
+        step3.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(3);
+
+        step4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(4);
+    });
 });

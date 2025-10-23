@@ -56,6 +56,7 @@ function handleWizardNavigation(event) {
 
     const nextTrigger = target.closest('[data-next]');
     const backTrigger = target.closest('[data-back]');
+    const progressTrigger = target.closest('.progress-step[data-step]');
 
     if (nextTrigger && !nextTrigger.disabled) {
         event.preventDefault();
@@ -68,6 +69,22 @@ function handleWizardNavigation(event) {
         event.preventDefault();
         const currentIndex = getStep() - 1;
         goToStep(currentIndex - 1, { animate: true });
+        return;
+    }
+
+    if (progressTrigger) {
+        const stepNumber = Number.parseInt(progressTrigger.dataset.step, 10);
+        if (Number.isNaN(stepNumber)) {
+            return;
+        }
+
+        const maxReachable = getMaxReachableStep();
+        if (stepNumber <= maxReachable) {
+            event.preventDefault();
+            setStep(stepNumber, { animate: true });
+        } else {
+            event.preventDefault();
+        }
     }
 }
 
