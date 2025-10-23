@@ -13,6 +13,7 @@ import {
     firstBlockingCheck
 } from './support/preflight.js';
 import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.js';
+import { generateEsphomeYaml } from './utils/esphome-yaml.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -52,6 +53,69 @@ const MODULE_SEGMENT_FORMATTERS = {
     comfort: value => `Comfort${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`
 };
+
+const DIAGNOSTIC_DEFAULT_MESSAGE = 'Preparing check…';
+const DIAGNOSTIC_RUNNING_MESSAGE = 'Running diagnostics…';
+
+const DIAGNOSTICS_SECTION_SELECTOR = '.pre-flash-checklist';
+const DIAGNOSTIC_LIST_SELECTOR = '[data-diagnostic-list]';
+const DIAGNOSTIC_ITEM_SELECTOR = '[data-diagnostic-item]';
+const DIAGNOSTIC_MESSAGE_SELECTOR = '[data-diagnostic-message]';
+const DIAGNOSTIC_TIP_SELECTOR = '[data-diagnostic-tip]';
+const DIAGNOSTIC_SUMMARY_SELECTOR = '[data-diagnostic-summary]';
+const DIAGNOSTIC_ERROR_SELECTOR = '[data-diagnostic-error]';
+const DIAGNOSTIC_REFRESH_SELECTOR = '[data-diagnostic-refresh]';
+
+function createEmptyDiagnosticsState() {
+    return {
+        status: 'idle',
+        result: null,
+        error: null,
+        timestamp: 0
+    };
+}
+
+let diagnosticsState = createEmptyDiagnosticsState();
+const diagnosticsElements = new Map();
+let diagnosticsSectionElement = null;
+let diagnosticsSummaryElement = null;
+let diagnosticsErrorElement = null;
+let diagnosticsRefreshButton = null;
+let diagnosticsInFlightPromise = null;
+let checklistCompleted = false;
+const rescueInstallHistory = [];
+
+function isLocalStorageAccessible() {
+    const candidates = [];
+
+    if (typeof globalThis !== 'undefined') {
+        candidates.push(globalThis);
+        if (globalThis.window && globalThis.window !== globalThis) {
+            candidates.push(globalThis.window);
+        }
+    }
+
+    if (typeof window !== 'undefined' && !candidates.includes(window)) {
+        candidates.push(window);
+    }
+
+    for (const candidate of candidates) {
+        if (!candidate) {
+            continue;
+        }
+
+        try {
+            const storage = candidate.localStorage;
+            if (storage && typeof storage.getItem === 'function') {
+                return true;
+            }
+        } catch (error) {
+            return false;
+        }
+    }
+
+    return false;
+}
 
 let moduleDetailPanelElement = null;
 let moduleDetailPanelInitialized = false;
@@ -804,6 +868,7 @@ const serialDetectionSummary = document.getElementById('serial-detection-summary
 const serialDetectionList = document.getElementById('serial-detection-list');
 const serialDetectionGuidance = document.getElementById('serial-detection-guidance');
 const serialDetectionRefreshButton = document.getElementById('serial-detection-refresh');
+let serialDetectionPromise = null;
 const POST_INSTALL_GUIDANCE_SELECTOR = '[data-post-install-guidance]';
 const POST_INSTALL_GUIDANCE_NOTE_SELECTOR = '[data-post-install-guidance-note]';
 const POST_INSTALL_GUIDANCE_ACTION_SELECTOR = '.post-install-guidance__action';
@@ -1028,6 +1093,7 @@ function setupPostInstallGuidancePanel() {
     postInstallGuidanceElements.actions = actions;
 
     hydratePostInstallGuidanceCopySources(panel);
+    bindPostInstallGuidanceCopyButtons(panel);
     postInstallGuidanceElements.toggles = hydratePostInstallGuidanceCollapseControls(panel);
     setPostInstallGuidanceActionsEnabled(false);
 
@@ -1165,10 +1231,86 @@ function openHomeAssistantIntegrations(event) {
     }
 }
 
-function syncChecklistCompletion() {
-    const section = document.querySelector('.pre-flash-checklist');
-    if (!section) return;
+function getDiagnosticsSection() {
+    if (diagnosticsSectionElement && document.body.contains(diagnosticsSectionElement)) {
+        return diagnosticsSectionElement;
+    }
 
+    diagnosticsSectionElement = document.querySelector(DIAGNOSTICS_SECTION_SELECTOR);
+    return diagnosticsSectionElement;
+}
+
+function initializeDiagnosticsUI() {
+    try {
+        const section = getDiagnosticsSection();
+        if (!section) {
+            console.warn('Diagnostics UI: checklist container not found.');
+            return;
+        }
+
+        diagnosticsSummaryElement = section.querySelector(DIAGNOSTIC_SUMMARY_SELECTOR) || null;
+        if (!diagnosticsSummaryElement) {
+            console.warn('Diagnostics UI: summary element not found.');
+        }
+
+        diagnosticsErrorElement = section.querySelector(DIAGNOSTIC_ERROR_SELECTOR) || null;
+        if (!diagnosticsErrorElement) {
+            console.warn('Diagnostics UI: error element not found.');
+        }
+
+        diagnosticsRefreshButton = section.querySelector(DIAGNOSTIC_REFRESH_SELECTOR) || null;
+        if (!diagnosticsRefreshButton) {
+            console.warn('Diagnostics UI: refresh control not found.');
+        } else if (diagnosticsRefreshButton.dataset.diagnosticsBound !== 'true') {
+            diagnosticsRefreshButton.addEventListener('click', event => {
+                event.preventDefault();
+                refreshPreflightDiagnostics({ force: true }).catch(error => {
+                    console.warn('Diagnostics refresh failed:', error);
+                });
+            });
+            diagnosticsRefreshButton.dataset.diagnosticsBound = 'true';
+        }
+
+        diagnosticsElements.clear();
+
+        let list = section.querySelector(DIAGNOSTIC_LIST_SELECTOR);
+        if (!list) {
+            list = section.querySelector('.checklist-items');
+            if (!list) {
+                console.warn('Diagnostics UI: list container not found.');
+            }
+        }
+
+        const items = list ? list.querySelectorAll(DIAGNOSTIC_ITEM_SELECTOR) : [];
+        if (!items || items.length === 0) {
+            console.warn('Diagnostics UI: no diagnostic items found.');
+        }
+
+        items.forEach(item => {
+            const key = item.getAttribute('data-diagnostic-item');
+            if (!key) {
+                return;
+            }
+
+            const messageElement = item.querySelector(DIAGNOSTIC_MESSAGE_SELECTOR) || null;
+            const tipElement = item.querySelector(DIAGNOSTIC_TIP_SELECTOR) || null;
+
+            diagnosticsElements.set(key, { item, messageElement, tipElement });
+        });
+    } catch (error) {
+        console.warn('Diagnostics UI initialization failed:', error);
+    }
+}
+
+function areDiagnosticsPassing() {
+    if (!diagnosticsState || diagnosticsState.status !== 'complete') {
+        return false;
+    }
+
+    return didMandatoryChecksPass(diagnosticsState.result);
+}
+
+function getDiagnosticsBlockingMessage() {
     if (diagnosticsState.status === 'error') {
         return 'Diagnostics could not complete. Retry the checks.';
     }
@@ -1183,6 +1325,15 @@ function syncChecklistCompletion() {
     }
 
     return blocking.tip || blocking.message || 'Resolve the diagnostics issues before continuing.';
+}
+
+function syncChecklistCompletion() {
+    const section = getDiagnosticsSection();
+    if (!section) {
+        return '';
+    }
+
+    return getDiagnosticsBlockingMessage();
 }
 
 function updateDiagnosticsSummary() {
@@ -1207,52 +1358,52 @@ function updateDiagnosticsSummary() {
 
 function updateDiagnosticsUI() {
     const section = getDiagnosticsSection();
-    if (!section || diagnosticsElements.size === 0) {
-        return;
+    if (section) {
+        section.dataset.diagnosticsState = diagnosticsState.status;
     }
 
-    section.dataset.diagnosticsState = diagnosticsState.status;
+    if (diagnosticsElements.size > 0) {
+        diagnosticsElements.forEach(({ item, messageElement, tipElement }, key) => {
+            let status = 'pending';
+            let message = DIAGNOSTIC_DEFAULT_MESSAGE;
+            let tip = '';
 
-    diagnosticsElements.forEach(({ item, messageElement, tipElement }, key) => {
-        let status = 'pending';
-        let message = DIAGNOSTIC_DEFAULT_MESSAGE;
-        let tip = '';
-
-        if (diagnosticsState.status === 'running') {
-            status = 'pending';
-            message = DIAGNOSTIC_RUNNING_MESSAGE;
-        } else if (diagnosticsState.status === 'error') {
-            status = 'fail';
-            message = 'Diagnostics did not finish.';
-            tip = 'Retry the checks or refresh the page.';
-        } else {
-            const check = diagnosticsState.result?.checks?.[key];
-            if (check) {
-                status = check.status || 'info';
-                message = check.message || DIAGNOSTIC_DEFAULT_MESSAGE;
-                tip = check.tip || '';
-            } else if (diagnosticsState.status === 'complete') {
-                status = 'info';
-                message = 'Check not available in this browser.';
-            }
-        }
-
-        item.dataset.status = status;
-
-        if (messageElement) {
-            messageElement.textContent = message;
-        }
-
-        if (tipElement) {
-            if (tip) {
-                tipElement.textContent = tip;
-                tipElement.hidden = false;
+            if (diagnosticsState.status === 'running') {
+                status = 'pending';
+                message = DIAGNOSTIC_RUNNING_MESSAGE;
+            } else if (diagnosticsState.status === 'error') {
+                status = 'fail';
+                message = 'Diagnostics did not finish.';
+                tip = 'Retry the checks or refresh the page.';
             } else {
-                tipElement.textContent = '';
-                tipElement.hidden = true;
+                const check = diagnosticsState.result?.checks?.[key];
+                if (check) {
+                    status = check.status || 'info';
+                    message = check.message || DIAGNOSTIC_DEFAULT_MESSAGE;
+                    tip = check.tip || '';
+                } else if (diagnosticsState.status === 'complete') {
+                    status = 'info';
+                    message = 'Check not available in this browser.';
+                }
             }
-        }
-    });
+
+            item.dataset.status = status;
+
+            if (messageElement) {
+                messageElement.textContent = message;
+            }
+
+            if (tipElement) {
+                if (tip) {
+                    tipElement.textContent = tip;
+                    tipElement.hidden = false;
+                } else {
+                    tipElement.textContent = '';
+                    tipElement.hidden = true;
+                }
+            }
+        });
+    }
 
     updateDiagnosticsSummary();
 
@@ -1278,6 +1429,62 @@ function setChecklistCompletion(isComplete) {
     if (!isComplete) {
         setHomeAssistantIntegrationsButtonEnabled(false);
     }
+}
+
+const DIAGNOSTICS_RESULT_CACHE_MS = 15000;
+
+function refreshPreflightDiagnostics({ force = false } = {}) {
+    if (diagnosticsInFlightPromise && !force) {
+        return diagnosticsInFlightPromise;
+    }
+
+    const now = Date.now();
+    const recentlyCompleted = diagnosticsState.status === 'complete'
+        && diagnosticsState.timestamp
+        && (now - diagnosticsState.timestamp) < DIAGNOSTICS_RESULT_CACHE_MS;
+
+    if (recentlyCompleted && !force) {
+        return Promise.resolve(diagnosticsState.result);
+    }
+
+    diagnosticsState = {
+        ...diagnosticsState,
+        status: 'running',
+        error: null
+    };
+    updateDiagnosticsUI();
+
+    const diagnosticsPromise = runPreflightDiagnostics()
+        .then(result => {
+            diagnosticsState = {
+                status: 'complete',
+                result,
+                error: null,
+                timestamp: Date.now()
+            };
+            updateDiagnosticsUI();
+            setChecklistCompletion(didMandatoryChecksPass(result));
+            return result;
+        })
+        .catch(error => {
+            const normalizedError = error instanceof Error ? error : new Error(String(error));
+            console.warn('Preflight diagnostics failed:', normalizedError);
+            diagnosticsState = {
+                status: 'error',
+                result: null,
+                error: normalizedError,
+                timestamp: Date.now()
+            };
+            updateDiagnosticsUI();
+            setChecklistCompletion(false);
+            return null;
+        })
+        .finally(() => {
+            diagnosticsInFlightPromise = null;
+        });
+
+    diagnosticsInFlightPromise = diagnosticsPromise;
+    return diagnosticsPromise;
 }
 
 function getFirmwareChipFamily(firmware = window.currentFirmware) {
@@ -1315,6 +1522,17 @@ function getDetectedChipFamily() {
     }
 
     return '';
+}
+
+function isChipFamilyCompatible(detected, expected) {
+    const detectedToken = (detected || '').toString().trim().toLowerCase();
+    const expectedToken = (expected || '').toString().trim().toLowerCase();
+
+    if (!expectedToken || !detectedToken) {
+        return true;
+    }
+
+    return detectedToken === expectedToken;
 }
 
 function getSerialCompatibilityState() {
@@ -1450,6 +1668,33 @@ function renderSerialDetectionInfo({ loading = false } = {}) {
     if (serialDetectionRefreshButton) {
         serialDetectionRefreshButton.disabled = false;
     }
+}
+
+async function detectSerialDevices({ promptUser = false } = {}) {
+    const hasSerialSupport = typeof navigator !== 'undefined' && navigator && typeof navigator.serial !== 'undefined';
+
+    const result = {
+        supported: hasSerialSupport,
+        ports: [],
+        chipFamily: null,
+        chipFamilies: [],
+        error: null,
+        requestError: null,
+        timestamp: Date.now()
+    };
+
+    if (!hasSerialSupport) {
+        return result;
+    }
+
+    try {
+        const ports = await navigator.serial.getPorts();
+        result.ports = Array.isArray(ports) ? ports : [];
+    } catch (error) {
+        result.error = error instanceof Error ? error.message : String(error);
+    }
+
+    return result;
 }
 
 async function refreshSerialDetection({ promptUser = false } = {}) {
@@ -1695,11 +1940,28 @@ function setupRememberPreferenceControls() {
         })
         : null;
 
+    const storageAccessible = isLocalStorageAccessible();
+    if (!storageAccessible) {
+        rememberChoices = false;
+        rememberedState = null;
+
+        if (typeof window !== 'undefined' && window?.history?.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }
+
     const toggles = document.querySelectorAll(REMEMBER_TOGGLE_SELECTOR);
     toggles.forEach(toggle => {
         toggle.checked = rememberChoices;
         toggle.addEventListener('change', handleRememberToggleChange);
     });
+
+    if (!storageAccessible) {
+        const nextButton = document.querySelector('#step-1 .btn-next');
+        if (nextButton) {
+            nextButton.disabled = true;
+        }
+    }
 }
 
 function persistWizardState() {
@@ -1763,33 +2025,162 @@ function initializeWizard() {
     }
 
     document.querySelectorAll('input[name="mounting"]').forEach(input => {
+        if (input.dataset.mountingBound === 'true') {
+            return;
+        }
         input.addEventListener('change', handleMountingChange);
+        input.dataset.mountingBound = 'true';
     });
 
     document.querySelectorAll('input[name="power"]').forEach(input => {
+        if (input.dataset.powerBound === 'true') {
+            return;
+        }
         input.addEventListener('change', handlePowerChange);
+        input.dataset.powerBound = 'true';
     });
 
     document.querySelectorAll('input[name="airiq"]').forEach(input => {
+        if (input.dataset.airiqBound === 'true') {
+            return;
+        }
         input.addEventListener('change', updateConfiguration);
+        input.dataset.airiqBound = 'true';
     });
 
     document.querySelectorAll('input[name="presence"]').forEach(input => {
+        if (input.dataset.presenceBound === 'true') {
+            return;
+        }
         input.addEventListener('change', updateConfiguration);
+        input.dataset.presenceBound = 'true';
     });
 
     document.querySelectorAll('input[name="comfort"]').forEach(input => {
+        if (input.dataset.comfortBound === 'true') {
+            return;
+        }
         input.addEventListener('change', updateConfiguration);
+        input.dataset.comfortBound = 'true';
     });
 
     document.querySelectorAll('input[name="fan"]').forEach(input => {
+        if (input.dataset.fanBound === 'true') {
+            return;
+        }
         input.addEventListener('change', updateConfiguration);
+        input.dataset.fanBound = 'true';
     });
 
-    initializeModuleDetailPanel();
+    if (serialDetectionRefreshButton && serialDetectionRefreshButton.dataset.serialRefreshBound !== 'true') {
+        serialDetectionRefreshButton.addEventListener('click', () => {
+            refreshSerialDetection({ promptUser: true });
+        });
+        serialDetectionRefreshButton.dataset.serialRefreshBound = 'true';
+    }
+}
 
-    attachInstallButtonListeners();
-    initializeFromUrl();
+function ensureSingleActiveWizardStep() {
+    const steps = Array.from(document.querySelectorAll('.wizard-step'));
+    if (!steps.length) {
+        return;
+    }
+
+    const targetStepElement = document.getElementById(`step-${currentStep}`) || steps.find(step => step.classList.contains('active')) || steps[0];
+
+    steps.forEach(step => {
+        if (step === targetStepElement) {
+            step.classList.add('active');
+            step.classList.remove('entering', 'leaving');
+        } else {
+            step.classList.remove('active', 'entering', 'leaving');
+        }
+    });
+}
+
+function initializeWizard() {
+    if (wizardInitialized) {
+        return;
+    }
+    wizardInitialized = true;
+
+    try {
+        if (!navigator.serial) {
+            const warning = document.getElementById('browser-warning');
+            if (warning) {
+                warning.style.display = 'block';
+            }
+            if (serialDetectionRefreshButton) {
+                serialDetectionRefreshButton.disabled = true;
+            }
+        }
+
+        renderSerialDetectionInfo();
+        setupRememberPreferenceControls();
+        setupPostInstallGuidancePanel();
+        window.webflashRescueInstallHistory = rescueInstallHistory;
+    } catch (error) {
+        console.error('Wizard initialization encountered an error during setup:', error);
+        Object.assign(configuration, defaultConfiguration);
+        rememberChoices = false;
+        rememberedState = null;
+
+        const nextButton = document.querySelector('#step-1 .btn-next');
+        if (nextButton) {
+            nextButton.disabled = true;
+        }
+
+        if (typeof window !== 'undefined' && window?.history?.replaceState) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }
+
+    try {
+        initializeDiagnosticsUI();
+        updateDiagnosticsUI();
+    } catch (error) {
+        console.warn('Diagnostics UI setup failed:', error);
+    }
+
+    refreshPreflightDiagnostics({ force: true }).catch(error => {
+        console.warn('Initial diagnostics run failed:', error);
+    });
+
+    let bindingError = null;
+    try {
+        bindWizardEventListeners();
+    } catch (error) {
+        bindingError = error;
+        console.error('Failed to bind wizard events:', error);
+    }
+    if (!bindingError) {
+        console.log('Binding events OK');
+    }
+
+    try {
+        initializeModuleDetailPanel();
+    } catch (error) {
+        console.error('Failed to initialize module detail panel:', error);
+    }
+
+    try {
+        attachInstallButtonListeners();
+    } catch (error) {
+        console.error('Failed to attach install button listeners:', error);
+    }
+
+    try {
+        initializeFromUrl();
+    } catch (error) {
+        console.error('Failed to initialize wizard from URL:', error);
+    }
+
+    try {
+        ensureSingleActiveWizardStep();
+        console.log('Wizard init OK');
+    } catch (error) {
+        console.error('Failed to finalize wizard initialization:', error);
+    }
 
     manifestReadyPromise
         .then(() => {
@@ -4315,7 +4706,8 @@ export const __testHooks = Object.freeze({
     isManifestReady,
     renderSelectedFirmware,
     getFirmwarePartsMetadata,
-    refreshPreflightDiagnostics
+    refreshPreflightDiagnostics,
+    setFirmwareVerificationState: setFirmwareVerificationStateForTests
 });
 
 export {
