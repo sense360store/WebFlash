@@ -1044,8 +1044,8 @@ h1 {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: #202124;
-    color: #fff;
+    background: color-mix(in srgb, var(--danger) 72%, black);
+    color: var(--surface);
     padding: 12px 16px;
     border-radius: 8px;
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
@@ -1633,26 +1633,50 @@ h1 {
 /* Firmware not available styles */
 .firmware-not-available,
 .firmware-error {
-    background-color: #fff3cd;
-    border: 1px solid #ffeaa7;
     border-radius: 8px;
     padding: 24px;
     text-align: center;
 }
 
+.firmware-not-available {
+    background-color: var(--warning-surface);
+    border: 1px solid var(--warning-border);
+    color: var(--warning-text);
+}
+
+.firmware-error {
+    background-color: var(--danger-surface);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-text);
+}
+
 .firmware-not-available h4,
 .firmware-error h4 {
-    color: #856404;
     margin-bottom: 12px;
     font-size: 18px;
     font-weight: 500;
 }
 
+.firmware-not-available h4 {
+    color: var(--warning-strong);
+}
+
+.firmware-error h4 {
+    color: var(--danger-strong);
+}
+
 .firmware-not-available p,
 .firmware-error p {
-    color: #856404;
     margin: 8px 0;
     font-size: 14px;
+}
+
+.firmware-not-available p {
+    color: var(--warning-text);
+}
+
+.firmware-error p {
+    color: var(--danger-text);
 }
 
 .config-string {
@@ -1820,15 +1844,16 @@ h1 {
 
 /* Browser Warning */
 .browser-warning {
-    background: #fef7e0;
-    border: 1px solid #f9ab00;
+    background: var(--warning-surface);
+    border: 1px solid var(--warning-border);
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 24px;
+    color: var(--warning-text);
 }
 
 .browser-warning h3 {
-    color: #f9ab00;
+    color: var(--warning-strong);
     margin-bottom: 8px;
 }
 

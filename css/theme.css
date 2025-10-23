@@ -19,6 +19,15 @@
     --warning: #f4b400;
     --danger: #ff5c5c;
 
+    --warning-surface: color-mix(in srgb, var(--warning) 20%, white);
+    --warning-border: color-mix(in srgb, var(--warning) 45%, white);
+    --warning-text: color-mix(in srgb, var(--warning) 55%, black);
+    --warning-strong: color-mix(in srgb, var(--warning) 70%, black);
+    --danger-surface: color-mix(in srgb, var(--danger) 18%, white);
+    --danger-border: color-mix(in srgb, var(--danger) 45%, white);
+    --danger-text: color-mix(in srgb, var(--danger) 65%, black);
+    --danger-strong: color-mix(in srgb, var(--danger) 75%, black);
+
     /* Components */
     --chip-bg: color-mix(in srgb, var(--accent) 12%, var(--bg-elev-1));
     --kbd-bg: var(--bg-elev-2);

@@ -133,7 +133,7 @@
 .sidebar-warning {
     margin: 0.5rem 0 0;
     font-size: 0.85rem;
-    color: var(--warning-fg, #8a5b00);
+    color: var(--warning-text);
 }
 
 .sidebar-fw-label {
