@@ -96,13 +96,93 @@ hr,
 }
 
 .btn {
-    background: var(--accent);
-    color: var(--accent-contrast);
-    border: 0;
+    --btn-bg: var(--accent);
+    --btn-fg: var(--accent-contrast);
+    --btn-border: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    min-height: 2.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--btn-border);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+        box-shadow 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
-.btn:hover {
-    background: var(--accent-hover);
+.btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-primary {
+    --btn-bg: var(--brand-green-contrast);
+    --btn-fg: #fff;
+    --btn-border: transparent;
+    box-shadow: 0 10px 24px rgba(var(--brand-green-contrast-rgb), 0.24);
+}
+
+.btn-primary:hover:not(:disabled) {
+    --btn-bg: var(--brand-green-contrast-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+    --btn-bg: var(--brand-green-contrast-active);
+}
+
+.btn-secondary {
+    --btn-bg: var(--color-surface);
+    --btn-fg: var(--color-text-secondary);
+    --btn-border: var(--color-border);
+    box-shadow: none;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    --btn-bg: var(--color-surface-muted);
+    --btn-border: color-mix(in srgb, var(--color-text-secondary) 35%, var(--color-border));
+    --btn-fg: var(--color-text-primary);
+}
+
+.btn-copy {
+    --btn-bg: var(--color-surface-muted);
+    --btn-fg: var(--color-text-primary);
+    --btn-border: var(--color-border);
+    font-size: 0.95rem;
+    padding: 0.65rem 1.25rem;
+    box-shadow: none;
+}
+
+.btn-copy:hover:not(:disabled) {
+    --btn-bg: color-mix(in srgb, var(--color-text-primary) 12%, var(--color-surface-muted));
+    --btn-border: color-mix(in srgb, var(--color-text-primary) 35%, var(--color-border));
+}
+
+.btn-small {
+    font-size: 0.9rem;
+    padding: 0.55rem 1rem;
+    min-height: 0;
+    box-shadow: none;
 }
 
 .chip {

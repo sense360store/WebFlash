@@ -690,6 +690,8 @@ h1 {
     .module-step-layout__details {
         position: relative;
     }
+}
+
 .preset-panel {
     margin-top: 32px;
     padding: 20px;
@@ -862,7 +864,10 @@ h1 {
 /* Wizard Actions */
 .wizard-actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
     margin-top: 32px;
     padding-top: 24px;
     border-top: 1px solid var(--color-border);
