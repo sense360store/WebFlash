@@ -16,6 +16,10 @@ import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.
 
 let currentStep = 1;
 const totalSteps = 4;
+
+function getTotalSteps() {
+    return totalSteps;
+}
 const defaultConfiguration = {
     mounting: null,
     power: null,
@@ -831,6 +835,7 @@ if (typeof window !== 'undefined') {
 }
 
 let postInstallGuidanceElements = null;
+const rescueInstallHistory = [];
 
 function hydratePostInstallGuidanceCopySources(panel) {
     if (!panel) {
@@ -1029,6 +1034,45 @@ function setupPostInstallGuidancePanel() {
     panel.hidden = true;
     panel.setAttribute('data-guidance-ready', 'true');
 
+    if (panel.dataset.guidanceBound !== 'true') {
+        const copyButtons = Array.from(panel.querySelectorAll('[data-copy-text]'));
+
+        copyButtons.forEach((button) => {
+            if (!button || button.dataset.guidanceCopyBound === 'true') {
+                return;
+            }
+
+            button.dataset.guidanceCopyBound = 'true';
+
+            button.addEventListener('click', async (event) => {
+                if (event) {
+                    event.preventDefault();
+                }
+
+                const text = button.dataset.copyText || '';
+                if (!text) {
+                    return;
+                }
+
+                if (!navigator.clipboard) {
+                    showToast('Copy not supported');
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const message = button.dataset.copySuccess || 'Copied';
+                    showToast(message);
+                } catch (error) {
+                    console.error('Failed to copy guidance text', error);
+                    showToast('Copy failed');
+                }
+            });
+        });
+
+        panel.dataset.guidanceBound = 'true';
+    }
+
     postInstallGuidanceElements.initialized = true;
     return postInstallGuidanceElements;
 }
@@ -1062,29 +1106,6 @@ function revealPostInstallGuidance(firmware) {
     }
 
     setPostInstallGuidanceActionsEnabled(true);
-}
-
-        const text = button.dataset.copyText || '';
-        if (!text) {
-            return;
-        }
-
-        if (!navigator.clipboard) {
-            showToast('Copy not supported');
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText(text);
-            const message = button.dataset.copySuccess || 'Copied';
-            showToast(message);
-        } catch (error) {
-            console.error('Failed to copy guidance text', error);
-            showToast('Copy failed');
-        }
-    });
-
-    panel.dataset.guidanceBound = 'true';
 }
 
 function getHomeAssistantIntegrationsButton() {
@@ -1733,9 +1754,13 @@ function initializeWizard() {
     setupPostInstallGuidancePanel();
     window.webflashRescueInstallHistory = rescueInstallHistory;
 
-    initializeDiagnosticsUI();
-    updateDiagnosticsUI();
-    refreshPreflightDiagnostics({ force: true });
+    try {
+        initializeDiagnosticsUI();
+        updateDiagnosticsUI();
+        refreshPreflightDiagnostics({ force: true });
+    } catch (error) {
+        console.warn('Diagnostics skipped', error);
+    }
 
     document.querySelectorAll('input[name="mounting"]').forEach(input => {
         input.addEventListener('change', handleMountingChange);
@@ -2130,10 +2155,10 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         document.querySelectorAll('.wizard-step').forEach(step => {
             const stepNumber = Number(step.id.replace('step-', ''));
             if (stepNumber === targetStep) {
-                step.classList.add('active');
+                step.classList.add('active', 'is-active');
                 step.classList.remove('entering', 'leaving');
             } else {
-                step.classList.remove('active', 'entering', 'leaving');
+                step.classList.remove('active', 'is-active', 'entering', 'leaving');
             }
         });
 
@@ -2151,7 +2176,11 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         updateConfiguration({ skipUrlUpdate: true });
         updateSummary();
         findCompatibleFirmware();
-        refreshPreflightDiagnostics();
+        try {
+            refreshPreflightDiagnostics();
+        } catch (error) {
+            console.warn('Diagnostics refresh skipped', error);
+        }
     }
 
     if (!skipUrlUpdate) {
@@ -2204,7 +2233,7 @@ function animateStepTransition(fromStep, toStep) {
         }, 450);
 
         fromElement.addEventListener('transitionend', handleLeave);
-        fromElement.classList.remove('active');
+        fromElement.classList.remove('active', 'is-active');
     }
 
     if (!toElement) {
@@ -2213,10 +2242,10 @@ function animateStepTransition(fromStep, toStep) {
 
     toElement.classList.remove('leaving');
     toElement.classList.add('entering');
-    toElement.classList.remove('active');
+    toElement.classList.remove('active', 'is-active');
 
     const activateStep = () => {
-        toElement.classList.add('active');
+        toElement.classList.add('active', 'is-active');
 
         const handleEnter = (event) => {
             if (event.target !== toElement || event.propertyName !== 'opacity') {
@@ -4295,5 +4324,6 @@ export {
     setState,
     replaceState,
     getStep,
+    getTotalSteps,
     setStep
 };
