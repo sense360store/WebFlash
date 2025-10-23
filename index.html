@@ -386,6 +386,18 @@
                     <p class="diagnostic-error" data-diagnostic-error hidden></p>
                 </section>
 
+                <section class="serial-detection-panel pre-flash-checklist" aria-labelledby="serial-detection-title">
+                    <div class="checklist-header">
+                        <div class="checklist-header__text">
+                            <h3 class="checklist-heading" id="serial-detection-title">Device Detection</h3>
+                            <p class="checklist-subtitle" id="serial-detection-summary">Connect your Sense360 hub and choose “Detect Device”.</p>
+                        </div>
+                        <button type="button" class="checklist-refresh" id="serial-detection-refresh" aria-label="Detect devices">Detect Device</button>
+                    </div>
+                    <ul class="serial-detection-list" id="serial-detection-list" hidden aria-live="polite"></ul>
+                    <p class="serial-detection-guidance" id="serial-detection-guidance"></p>
+                </section>
+
                 <div class="firmware-section">
                     <h3>Compatible Firmware</h3>
                     <div class="firmware-selector" id="firmware-selector" hidden>
