@@ -7,4 +7,5 @@ import './scripts/init-review.js';
 import './scripts/layout/state-summary.js';
 import './scripts/layout/firmware-note.js';
 import './scripts/layout/init-splitview.js';
+import './scripts/layout/option-info-popover.js';
 import './scripts/navigation.js';

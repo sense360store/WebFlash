@@ -459,6 +459,104 @@ h1 {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-green) 20%, transparent);
 }
 
+.option-info-popover {
+    position: absolute;
+    z-index: 80;
+    max-width: min(360px, calc(100vw - 32px));
+    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+    background: var(--color-surface, #fff);
+    box-shadow:
+        0 18px 45px -20px color-mix(in srgb, var(--color-shadow, rgba(15, 23, 42, 0.45)) 70%, transparent),
+        0 8px 24px -18px color-mix(in srgb, var(--color-shadow, rgba(15, 23, 42, 0.35)) 60%, transparent);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.option-info-popover[hidden] {
+    display: none;
+}
+
+.option-info-popover__inner {
+    position: relative;
+    padding: 1.25rem 1.5rem 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.option-info-popover__close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-text-secondary, #475569);
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.option-info-popover__close:hover,
+.option-info-popover__close:focus-visible {
+    background: var(--brand-green-selection-surface-subtle, #e6f4ff);
+    border-color: var(--brand-green-border, #93c5fd);
+    color: var(--brand-green-contrast, #004282);
+    outline: none;
+}
+
+.option-info-popover__title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #0f172a);
+}
+
+.option-info-popover__summary {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary, #475569);
+}
+
+.option-info-popover__summary[hidden] {
+    display: none;
+}
+
+.option-info-popover__sections {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.option-info-popover__section {
+    border-top: 1px solid color-mix(in srgb, var(--color-border-subtle, #e2e8f0) 85%, transparent);
+    padding-top: 0.85rem;
+}
+
+.option-info-popover__section-title {
+    margin: 0 0 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary, #64748b);
+}
+
+.option-info-popover__list {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: grid;
+    gap: 0.45rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--color-text-primary, #0f172a);
+}
+
 .option-card:hover .option-content {
     border-color: var(--brand-green);
     background: var(--color-surface-muted);

@@ -73,7 +73,8 @@
                                     data-option-group="mounting"
                                     data-option-value="wall"
                                     aria-label="Details about Wall Mount"
-                                    aria-describedby="tooltip-text-mounting-wall"
+                                    aria-controls="option-info-popover"
+                                    aria-describedby="option-info-popover-summary"
                                 >
                                     <span aria-hidden="true">i</span>
                                 </button>
@@ -93,7 +94,8 @@
                                     data-option-group="mounting"
                                     data-option-value="ceiling"
                                     aria-label="Details about Ceiling Mount"
-                                    aria-describedby="tooltip-text-mounting-ceiling"
+                                    aria-controls="option-info-popover"
+                                    aria-describedby="option-info-popover-summary"
                                 >
                                     <span aria-hidden="true">i</span>
                                 </button>
@@ -123,7 +125,8 @@
                                     data-option-group="power"
                                     data-option-value="usb"
                                     aria-label="Details about USB Power"
-                                    aria-describedby="tooltip-text-power-usb"
+                                    aria-controls="option-info-popover"
+                                    aria-describedby="option-info-popover-summary"
                                 >
                                     <span aria-hidden="true">i</span>
                                 </button>
@@ -143,7 +146,8 @@
                                     data-option-group="power"
                                     data-option-value="poe"
                                     aria-label="Details about POE Module"
-                                    aria-describedby="tooltip-text-power-poe"
+                                    aria-controls="option-info-popover"
+                                    aria-describedby="option-info-popover-summary"
                                 >
                                     <span aria-hidden="true">i</span>
                                 </button>
@@ -163,7 +167,8 @@
                                     data-option-group="power"
                                     data-option-value="pwr"
                                     aria-label="Details about PWR Module"
-                                    aria-describedby="tooltip-text-power-pwr"
+                                    aria-controls="option-info-popover"
+                                    aria-describedby="option-info-popover-summary"
                                 >
                                     <span aria-hidden="true">i</span>
                                 </button>
@@ -389,15 +394,37 @@
             </div>
         </div>
 
-        <div class="browser-check">
-        <div class="browser-warning" id="browser-warning" style="display: none;">
-            <h3>⚠️ Browser Not Supported</h3>
-            <p>
-                Web Serial works only in desktop Chrome or Edge. Safari, Firefox, and all iOS browsers are not
-                supported. <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more about the Web Serial API</a>.
-            </p>
+        <div id="option-info-popover" class="option-info-popover" role="dialog" aria-modal="false" aria-labelledby="option-info-popover-title" aria-describedby="option-info-popover-summary" tabindex="-1" hidden>
+            <div class="option-info-popover__inner">
+                <button type="button" class="option-info-popover__close" data-popover-close aria-label="Close details">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <div class="option-info-popover__header">
+                    <h3 id="option-info-popover-title" class="option-info-popover__title" data-popover-title></h3>
+                    <p id="option-info-popover-summary" class="option-info-popover__summary" data-popover-summary></p>
+                </div>
+                <div class="option-info-popover__sections">
+                    <section class="option-info-popover__section" data-popover-pros-section hidden>
+                        <h4 class="option-info-popover__section-title">Why choose it</h4>
+                        <ul class="option-info-popover__list" data-popover-pros></ul>
+                    </section>
+                    <section class="option-info-popover__section" data-popover-cons-section hidden>
+                        <h4 class="option-info-popover__section-title">Keep in mind</h4>
+                        <ul class="option-info-popover__list" data-popover-cons></ul>
+                    </section>
+                </div>
+            </div>
         </div>
-    </div>
+
+        <div class="browser-check">
+            <div class="browser-warning" id="browser-warning" style="display: none;">
+                <h3>⚠️ Browser Not Supported</h3>
+                <p>
+                    Web Serial works only in desktop Chrome or Edge. Safari, Firefox, and all iOS browsers are not
+                    supported. <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more about the Web Serial API</a>.
+                </p>
+            </div>
+        </div>
 </div>
 
 <script type="module" src="./app.js"></script>
