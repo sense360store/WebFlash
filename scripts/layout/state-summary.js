@@ -758,12 +758,9 @@ import {
     function handleReset(event) {
         event.preventDefault();
         try {
-            const rememberApi = window.wizardRememberState;
-            if (rememberApi && typeof rememberApi.clear === 'function') {
-                rememberApi.clear();
-            }
+            markPresetApplied(null, PRESET_STORAGE_OPTIONS);
         } catch (error) {
-            console.warn('[state-summary] Unable to clear remembered state', error);
+            console.warn('[state-summary] Unable to reset presets', error);
         }
 
         const base = `${window.location.origin}${window.location.pathname}`;

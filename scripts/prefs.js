@@ -1,5 +1,4 @@
 const PREF_KEYS = {
-    rememberChoices: 'sense360.rememberChoices',
     lastWizardState: 'sense360.lastWizardState'
 };
 

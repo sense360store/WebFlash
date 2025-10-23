@@ -20,25 +20,26 @@ const allowedOptions = {
 
 const totalSteps = 4;
 
-async function loadRememberModule() {
-    const module = await import('../scripts/remember-state.js');
-    return module;
+async function loadPresetModule() {
+    return import('../scripts/remember-state.js');
 }
 
 beforeEach(() => {
     jest.resetModules();
     delete window.wizardRememberState;
+    delete window.wizardPresetState;
 });
 
 afterEach(() => {
     delete window.wizardRememberState;
+    delete window.wizardPresetState;
 });
 
-describe('remember-state in-memory behavior', () => {
-    test('normalizes structured remember-state payloads', async () => {
-        const { normalizeRememberedState } = await loadRememberModule();
+describe('preset storage utilities', () => {
+    test('normalizes structured preset state payloads', async () => {
+        const { normalizePresetState } = await loadPresetModule();
 
-        const normalized = normalizeRememberedState({
+        const normalized = normalizePresetState({
             configuration: {
                 mounting: 'wall',
                 power: 'usb',
@@ -67,10 +68,10 @@ describe('remember-state in-memory behavior', () => {
         });
     });
 
-    test('migrates legacy flat configuration snapshots', async () => {
-        const { normalizeRememberedState } = await loadRememberModule();
+    test('migrates legacy flat preset snapshots', async () => {
+        const { normalizePresetState } = await loadPresetModule();
 
-        const normalized = normalizeRememberedState({
+        const normalized = normalizePresetState({
             mounting: 'wall',
             power: 'poe',
             airiq: 'pro',
@@ -95,10 +96,16 @@ describe('remember-state in-memory behavior', () => {
         });
     });
 
-    test('persists structured snapshots in memory', async () => {
-        const { persistRememberedState, loadRememberedState } = await loadRememberModule();
+    test('saves, lists, and clears presets without remember state', async () => {
+        const {
+            savePreset,
+            listPresets,
+            markPresetApplied,
+            deletePreset,
+            getPreset
+        } = await loadPresetModule();
 
-        persistRememberedState({
+        const preset = savePreset('  Test Preset  ', {
             mounting: 'wall',
             power: 'usb',
             airiq: 'pro',
@@ -112,13 +119,8 @@ describe('remember-state in-memory behavior', () => {
             currentStep: 4
         });
 
-        const remembered = loadRememberedState({
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps
-        });
-
-        expect(remembered).toEqual({
+        expect(preset.name).toBe('Test Preset');
+        expect(preset.state).toEqual({
             configuration: {
                 ...defaultConfiguration,
                 mounting: 'wall',
@@ -129,37 +131,18 @@ describe('remember-state in-memory behavior', () => {
             },
             currentStep: 4
         });
-    });
 
-    test('disabling remember clears stored configuration', async () => {
-        const {
-            persistRememberedState,
-            loadRememberedState,
-            setRememberEnabled,
-            isRememberEnabled
-        } = await loadRememberModule();
+        const presets = listPresets({ defaultConfiguration, allowedOptions, totalSteps });
+        expect(presets).toHaveLength(1);
+        expect(presets[0].id).toBe(preset.id);
 
-        persistRememberedState({
-            mounting: 'wall',
-            power: 'usb',
-            airiq: 'base',
-            presence: 'none',
-            comfort: 'none',
-            fan: 'none'
-        }, {
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps,
-            currentStep: 2
-        });
+        const applied = markPresetApplied(preset.id, { defaultConfiguration, allowedOptions, totalSteps });
+        expect(applied?.id).toBe(preset.id);
 
-        expect(loadRememberedState({ defaultConfiguration, allowedOptions, totalSteps })).not.toBeNull();
+        markPresetApplied(null, { defaultConfiguration, allowedOptions, totalSteps });
+        expect(getPreset(preset.id, { defaultConfiguration, allowedOptions, totalSteps })).not.toBeNull();
 
-        setRememberEnabled(true);
-        expect(isRememberEnabled()).toBe(true);
-
-        setRememberEnabled(false);
-        expect(isRememberEnabled()).toBe(false);
-        expect(loadRememberedState({ defaultConfiguration, allowedOptions, totalSteps })).toBeNull();
+        expect(deletePreset(preset.id)).toBe(true);
+        expect(listPresets({ defaultConfiguration, allowedOptions, totalSteps })).toHaveLength(0);
     });
 });

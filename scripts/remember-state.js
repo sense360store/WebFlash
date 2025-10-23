@@ -2,7 +2,6 @@ const STORAGE_VERSION = 2;
 
 const EMPTY_STORAGE = Object.freeze({
     version: STORAGE_VERSION,
-    lastState: null,
     presets: [],
     activePresetId: null
 });
@@ -10,14 +9,12 @@ const EMPTY_STORAGE = Object.freeze({
 function createEmptyStore() {
     return {
         version: STORAGE_VERSION,
-        lastState: null,
         presets: [],
         activePresetId: null
     };
 }
 
 let memoryStore = createEmptyStore();
-let rememberEnabled = false;
 
 function clampStep(step, totalSteps) {
     const numeric = Number.parseInt(step, 10);
@@ -108,7 +105,7 @@ function buildConfigurationSnapshot(configuration, defaultConfiguration = {}, al
     return snapshot;
 }
 
-export function normalizeRememberedState(rawState, options = {}) {
+export function normalizePresetState(rawState, options = {}) {
     if (!rawState || typeof rawState !== 'object' || Array.isArray(rawState)) {
         return null;
     }
@@ -186,7 +183,7 @@ function normalizePresetEntry(entry, options = {}) {
 
     const id = typeof entry.id === 'string' && entry.id ? entry.id : null;
     const name = sanitizePresetName(entry.name ?? '', null);
-    const state = normalizeRememberedState(entry.state, options);
+    const state = normalizePresetState(entry.state, options);
 
     if (!id || !name || !state) {
         return null;
@@ -209,34 +206,24 @@ function normalizeStoredPayload(rawPayload) {
         return { ...EMPTY_STORAGE };
     }
 
-    if (rawPayload.version >= 2 || Array.isArray(rawPayload.presets) || rawPayload.lastState) {
-        const presets = Array.isArray(rawPayload.presets)
-            ? rawPayload.presets
-                .filter(item => item && typeof item === 'object' && typeof item.id === 'string')
-                .map(item => ({
-                    id: item.id,
-                    name: sanitizePresetName(item.name ?? '', 'Preset'),
-                    state: cloneStatePayload(item.state),
-                    createdAt: Number.isFinite(item.createdAt) ? item.createdAt : Date.now(),
-                    updatedAt: Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now()
-                }))
-            : [];
-
-        return {
-            version: STORAGE_VERSION,
-            lastState: cloneStatePayload(rawPayload.lastState),
-            presets,
-            activePresetId: typeof rawPayload.activePresetId === 'string'
-                ? rawPayload.activePresetId
-                : null
-        };
-    }
+    const presets = Array.isArray(rawPayload.presets)
+        ? rawPayload.presets
+            .filter(item => item && typeof item === 'object' && typeof item.id === 'string')
+            .map(item => ({
+                id: item.id,
+                name: sanitizePresetName(item.name ?? '', 'Preset'),
+                state: cloneStatePayload(item.state),
+                createdAt: Number.isFinite(item.createdAt) ? item.createdAt : Date.now(),
+                updatedAt: Number.isFinite(item.updatedAt) ? item.updatedAt : Date.now()
+            }))
+        : [];
 
     return {
         version: STORAGE_VERSION,
-        lastState: cloneStatePayload(rawPayload),
-        presets: [],
-        activePresetId: null
+        presets,
+        activePresetId: typeof rawPayload.activePresetId === 'string'
+            ? rawPayload.activePresetId
+            : null
     };
 }
 
@@ -254,65 +241,6 @@ function generatePresetId() {
     }
 
     return `preset-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-export function isRememberEnabled() {
-    return rememberEnabled;
-}
-
-export function setRememberEnabled(enabled) {
-    rememberEnabled = Boolean(enabled);
-
-    if (!rememberEnabled) {
-        clearRememberedState();
-    }
-}
-
-export function loadRememberedState(options = {}) {
-    const payload = readStoredPayload();
-    const normalized = normalizeRememberedState(payload.lastState, options);
-
-    if (!normalized && payload.lastState) {
-        payload.lastState = null;
-        writeStoredPayload(payload);
-    }
-
-    return normalized;
-}
-
-export function persistRememberedState(configuration, options = {}) {
-    if (!configuration || typeof configuration !== 'object') {
-        return null;
-    }
-
-    const {
-        defaultConfiguration = {},
-        allowedOptions = {},
-        totalSteps,
-        currentStep
-    } = options;
-
-    const snapshot = buildConfigurationSnapshot(configuration, defaultConfiguration, allowedOptions);
-
-    const payload = { configuration: snapshot };
-    const normalizedStep = clampStep(currentStep, totalSteps);
-
-    if (normalizedStep !== null) {
-        payload.currentStep = normalizedStep;
-    }
-
-    const stored = readStoredPayload();
-    stored.lastState = payload;
-    stored.activePresetId = null;
-    writeStoredPayload(stored);
-    return payload;
-}
-
-export function clearRememberedState() {
-    const stored = readStoredPayload();
-    stored.lastState = null;
-    stored.activePresetId = null;
-    writeStoredPayload(stored);
 }
 
 export function listPresets(options = {}) {
@@ -353,7 +281,6 @@ export function savePreset(name, configuration, options = {}) {
     };
 
     stored.presets.push(presetEntry);
-    stored.lastState = payload;
     stored.activePresetId = presetEntry.id;
     writeStoredPayload(stored);
 
@@ -397,7 +324,7 @@ export function deletePreset(id) {
         stored.activePresetId = null;
     }
 
-    if (!stored.presets.length && !stored.lastState) {
+    if (!stored.presets.length) {
         memoryStore = createEmptyStore();
     } else {
         writeStoredPayload(stored);
@@ -436,20 +363,14 @@ export function markPresetApplied(id, options = {}) {
     const normalized = normalizePresetEntry(preset, options);
 
     stored.activePresetId = id;
-    stored.lastState = cloneStatePayload(preset.state);
     preset.updatedAt = Date.now();
     writeStoredPayload(stored);
 
     return normalized;
 }
 
-const rememberStateApi = {
-    isEnabled: isRememberEnabled,
-    setEnabled: setRememberEnabled,
-    load: loadRememberedState,
-    persist: persistRememberedState,
-    clear: clearRememberedState,
-    normalize: normalizeRememberedState,
+const presetStateApi = {
+    normalizePresetState,
     listPresets,
     savePreset,
     renamePreset,
@@ -458,12 +379,22 @@ const rememberStateApi = {
     markPresetApplied
 };
 
-if (typeof window !== 'undefined' && !window.wizardRememberState) {
-    Object.defineProperty(window, 'wizardRememberState', {
-        value: rememberStateApi,
-        configurable: true,
-        writable: false
-    });
+if (typeof window !== 'undefined') {
+    if (!window.wizardPresetState) {
+        Object.defineProperty(window, 'wizardPresetState', {
+            value: presetStateApi,
+            configurable: true,
+            writable: false
+        });
+    }
+
+    if (!window.wizardRememberState) {
+        Object.defineProperty(window, 'wizardRememberState', {
+            value: presetStateApi,
+            configurable: true,
+            writable: false
+        });
+    }
 }
 
-export default rememberStateApi;
+export default presetStateApi;
