@@ -99,22 +99,6 @@ function renderWizardDom() {
             <button id="copy-firmware-url-btn" disabled></button>
             <label><input type="checkbox" data-remember-toggle></label>
         </div>
-        <div id="multi-part-download-modal" class="multi-part-modal-backdrop" hidden>
-            <div class="multi-part-modal" role="dialog" aria-modal="true" aria-labelledby="multi-part-modal-title">
-                <header class="multi-part-modal__header">
-                    <h2 id="multi-part-modal-title">Multiple firmware files required</h2>
-                    <button type="button" class="multi-part-modal__close" data-multi-part-close>&times;</button>
-                </header>
-                <div class="multi-part-modal__body">
-                    <p class="multi-part-modal__intro"></p>
-                    <ul class="multi-part-modal__list" data-multi-part-list></ul>
-                </div>
-                <footer class="multi-part-modal__footer">
-                    <button type="button" data-multi-part-close></button>
-                    <button type="button" data-multi-part-copy></button>
-                </footer>
-            </div>
-        </div>
     `;
 }
 
@@ -218,18 +202,22 @@ describe('firmware download interactions', () => {
             parts: []
         });
 
+        const appendSpy = jest.spyOn(document.body, 'appendChild');
         const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
         window.downloadFirmware();
 
-        expect(clickSpy).not.toHaveBeenCalled();
+        expect(clickSpy).toHaveBeenCalledTimes(2);
+        const anchors = appendSpy.mock.calls
+            .map(call => call[0])
+            .filter(node => node instanceof HTMLAnchorElement);
+        expect(anchors).toHaveLength(2);
+        expect(anchors[0].href).toContain('/firmware/bootloader.bin');
+        expect(anchors[1].href).toContain('/firmware/application.bin');
 
-        const modal = document.getElementById('multi-part-download-modal');
-        expect(modal.hidden).toBe(false);
-        const items = modal.querySelectorAll('.multi-part-modal__item');
-        expect(items).toHaveLength(2);
-        expect(items[0].textContent).toContain('bootloader.bin');
-        expect(items[0].textContent).toContain('Offset 0x000000');
+        clickSpy.mockRestore();
+        appendSpy.mockRestore();
+        expect(document.getElementById('multi-part-download-modal')).toBeNull();
     });
 
     test('copyFirmwareUrl copies all part URLs for multi-part builds', async () => {
@@ -265,8 +253,7 @@ describe('firmware download interactions', () => {
         expect(copiedText).toContain('boot.bin @ 0x000000 ->');
         expect(copiedText).toContain('app.bin @ 0x010000 ->');
 
-        const modal = document.getElementById('multi-part-download-modal');
-        expect(modal.hidden).toBe(false);
+        expect(document.getElementById('multi-part-download-modal')).toBeNull();
     });
 
     test('renderSelectedFirmware lists firmware parts with offsets', async () => {

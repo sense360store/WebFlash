@@ -32,6 +32,19 @@ function cloneStatePayload(state) {
 
     if (state.configuration && typeof state.configuration === 'object') {
         cloned.configuration = { ...state.configuration };
+    } else {
+        const configKeys = ['mounting', 'power', 'airiq', 'presence', 'comfort', 'fan'];
+        const legacyConfig = {};
+        let hasLegacyValue = false;
+        configKeys.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(state, key)) {
+                legacyConfig[key] = state[key];
+                hasLegacyValue = true;
+            }
+        });
+        if (hasLegacyValue) {
+            cloned.configuration = legacyConfig;
+        }
     }
 
     if (Number.isFinite(state.currentStep)) {
