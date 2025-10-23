@@ -7,7 +7,7 @@ import {
     deletePreset,
     getPreset,
     markPresetApplied
-} from '../remember-state.js';
+} from '../preset-storage.js';
 
 (function () {
     const FIELD_MAP = [
