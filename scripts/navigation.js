@@ -18,29 +18,15 @@ export function goToStep(index, options = {}) {
     return setStep(normalized + 1, options);
 }
 
-function resolveEventTargetElement(event) {
-    const { target } = event;
-
-    if (target instanceof Element) {
-        return target;
+function resolveEventTarget(event) {
+    if (event.target instanceof Element) {
+        return event.target;
     }
 
     if (typeof event.composedPath === 'function') {
-        const path = event.composedPath();
-        for (const entry of path) {
-            if (entry instanceof Element) {
-                return entry;
-            }
-        }
-    }
-
-    if (target && typeof target === 'object' && 'parentElement' in target) {
-        let parent = target.parentElement;
-        while (parent) {
-            if (parent instanceof Element) {
-                return parent;
-            }
-            parent = parent.parentElement;
+        const elementTarget = event.composedPath().find(node => node instanceof Element);
+        if (elementTarget) {
+            return elementTarget;
         }
     }
 
@@ -48,13 +34,13 @@ function resolveEventTargetElement(event) {
 }
 
 function handleWizardNavigation(event) {
-    const elementTarget = resolveEventTargetElement(event);
-    if (!elementTarget) {
+    const target = resolveEventTarget(event);
+    if (!target) {
         return;
     }
 
-    const nextTrigger = elementTarget.closest('[data-next]');
-    const backTrigger = elementTarget.closest('[data-back]');
+    const nextTrigger = target.closest('[data-next]');
+    const backTrigger = target.closest('[data-back]');
 
     if (nextTrigger && !nextTrigger.disabled) {
         event.preventDefault();
