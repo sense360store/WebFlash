@@ -12,12 +12,12 @@ function renderWizardDom() {
             <div class="progress-step" data-step="4"></div>
         </div>
         <div id="step-1" class="wizard-step">
-            <button class="btn-next" disabled>Next</button>
+            <button class="btn-next" data-next disabled>Next</button>
             <input type="radio" name="mounting" value="wall">
             <input type="radio" name="mounting" value="ceiling">
         </div>
         <div id="step-2" class="wizard-step">
-            <button class="btn-next" disabled>Next</button>
+            <button class="btn-next" data-next disabled>Next</button>
             <input type="radio" name="power" value="usb">
             <input type="radio" name="power" value="poe">
             <input type="radio" name="power" value="pwr">
@@ -216,5 +216,29 @@ describe('wizard state module', () => {
                 delete window.localStorage;
             }
         }
+    });
+
+    test('wizard navigation handles text node click targets', async () => {
+        const stateModule = await import('../scripts/state.js');
+        await import('../scripts/navigation.js');
+
+        expect(stateModule.getStep()).toBe(1);
+
+        const nextButton = document.querySelector('#step-1 .btn-next');
+        nextButton.disabled = false;
+        const textNode = nextButton.firstChild;
+        expect(textNode).not.toBeNull();
+
+        if (textNode && typeof textNode.closest !== 'function') {
+            Object.defineProperty(textNode, 'closest', {
+                value: () => null,
+                configurable: true
+            });
+        }
+
+        const clickEvent = new MouseEvent('click', { bubbles: true });
+        expect(() => textNode.dispatchEvent(clickEvent)).not.toThrow();
+
+        expect(stateModule.getStep()).toBe(2);
     });
 });
