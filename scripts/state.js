@@ -1988,98 +1988,6 @@ function persistWizardState() {
 
 let wizardInitialized = false;
 
-function initializeWizard() {
-    if (wizardInitialized) {
-        return;
-    }
-    wizardInitialized = true;
-
-    if (!navigator.serial) {
-        const warning = document.getElementById('browser-warning');
-        if (warning) {
-            warning.style.display = 'block';
-        }
-        if (serialDetectionRefreshButton) {
-            serialDetectionRefreshButton.disabled = true;
-        }
-    }
-
-    renderSerialDetectionInfo();
-
-    if (serialDetectionRefreshButton) {
-        serialDetectionRefreshButton.addEventListener('click', () => {
-            refreshSerialDetection({ promptUser: true });
-        });
-    }
-
-    setupRememberPreferenceControls();
-    setupPostInstallGuidancePanel();
-    window.webflashRescueInstallHistory = rescueInstallHistory;
-
-    try {
-        initializeDiagnosticsUI();
-        updateDiagnosticsUI();
-        refreshPreflightDiagnostics({ force: true });
-    } catch (error) {
-        console.warn('Diagnostics skipped', error);
-    }
-
-    document.querySelectorAll('input[name="mounting"]').forEach(input => {
-        if (input.dataset.mountingBound === 'true') {
-            return;
-        }
-        input.addEventListener('change', handleMountingChange);
-        input.dataset.mountingBound = 'true';
-    });
-
-    document.querySelectorAll('input[name="power"]').forEach(input => {
-        if (input.dataset.powerBound === 'true') {
-            return;
-        }
-        input.addEventListener('change', handlePowerChange);
-        input.dataset.powerBound = 'true';
-    });
-
-    document.querySelectorAll('input[name="airiq"]').forEach(input => {
-        if (input.dataset.airiqBound === 'true') {
-            return;
-        }
-        input.addEventListener('change', updateConfiguration);
-        input.dataset.airiqBound = 'true';
-    });
-
-    document.querySelectorAll('input[name="presence"]').forEach(input => {
-        if (input.dataset.presenceBound === 'true') {
-            return;
-        }
-        input.addEventListener('change', updateConfiguration);
-        input.dataset.presenceBound = 'true';
-    });
-
-    document.querySelectorAll('input[name="comfort"]').forEach(input => {
-        if (input.dataset.comfortBound === 'true') {
-            return;
-        }
-        input.addEventListener('change', updateConfiguration);
-        input.dataset.comfortBound = 'true';
-    });
-
-    document.querySelectorAll('input[name="fan"]').forEach(input => {
-        if (input.dataset.fanBound === 'true') {
-            return;
-        }
-        input.addEventListener('change', updateConfiguration);
-        input.dataset.fanBound = 'true';
-    });
-
-    if (serialDetectionRefreshButton && serialDetectionRefreshButton.dataset.serialRefreshBound !== 'true') {
-        serialDetectionRefreshButton.addEventListener('click', () => {
-            refreshSerialDetection({ promptUser: true });
-        });
-        serialDetectionRefreshButton.dataset.serialRefreshBound = 'true';
-    }
-}
-
 function ensureSingleActiveWizardStep() {
     const steps = Array.from(document.querySelectorAll('.wizard-step'));
     if (!steps.length) {
@@ -2096,6 +2004,34 @@ function ensureSingleActiveWizardStep() {
             step.classList.remove('active', 'entering', 'leaving');
         }
     });
+}
+
+function bindWizardEventListeners() {
+    const inputBindings = [
+        { selector: 'input[name="mounting"]', datasetKey: 'mountingBound', handler: handleMountingChange },
+        { selector: 'input[name="power"]', datasetKey: 'powerBound', handler: handlePowerChange },
+        { selector: 'input[name="airiq"]', datasetKey: 'airiqBound', handler: updateConfiguration },
+        { selector: 'input[name="presence"]', datasetKey: 'presenceBound', handler: updateConfiguration },
+        { selector: 'input[name="comfort"]', datasetKey: 'comfortBound', handler: updateConfiguration },
+        { selector: 'input[name="fan"]', datasetKey: 'fanBound', handler: updateConfiguration }
+    ];
+
+    inputBindings.forEach(({ selector, datasetKey, handler }) => {
+        document.querySelectorAll(selector).forEach(input => {
+            if (input.dataset[datasetKey] === 'true') {
+                return;
+            }
+            input.addEventListener('change', handler);
+            input.dataset[datasetKey] = 'true';
+        });
+    });
+
+    if (serialDetectionRefreshButton && serialDetectionRefreshButton.dataset.serialRefreshBound !== 'true') {
+        serialDetectionRefreshButton.addEventListener('click', () => {
+            refreshSerialDetection({ promptUser: true });
+        });
+        serialDetectionRefreshButton.dataset.serialRefreshBound = 'true';
+    }
 }
 
 function initializeWizard() {
@@ -2146,15 +2082,10 @@ function initializeWizard() {
         console.warn('Initial diagnostics run failed:', error);
     });
 
-    let bindingError = null;
     try {
         bindWizardEventListeners();
     } catch (error) {
-        bindingError = error;
         console.error('Failed to bind wizard events:', error);
-    }
-    if (!bindingError) {
-        console.log('Binding events OK');
     }
 
     try {
@@ -2177,7 +2108,6 @@ function initializeWizard() {
 
     try {
         ensureSingleActiveWizardStep();
-        console.log('Wizard init OK');
     } catch (error) {
         console.error('Failed to finalize wizard initialization:', error);
     }
