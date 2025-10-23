@@ -986,7 +986,7 @@ h1 {
 }
 
 .ready-helper.is-warning {
-    color: var(--color-danger, #d32f2f);
+    color: var(--danger);
 }
 
 .remember-preference {
@@ -1001,7 +1001,7 @@ h1 {
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    color: #37474f;
+    color: var(--color-text-secondary);
     font-weight: 500;
 }
 
@@ -1149,7 +1149,7 @@ h1 {
 }
 
 .hardware-detection__guidance strong {
-    color: var(--color-danger, #d32f2f);
+    color: var(--danger);
     font-weight: 600;
 }
 
