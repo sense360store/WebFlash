@@ -7,7 +7,7 @@ function resolveKey(key) {
     return PREF_KEYS[key] || key;
 }
 
-function resolveStorageCandidate(source) {
+function resolveStorageCandidate(source, options = {}) {
     if (!source) {
         return null;
     }
@@ -17,9 +17,16 @@ function resolveStorageCandidate(source) {
         return injected;
     }
 
-    const storage = source.localStorage;
-    if (storage && typeof storage.getItem === 'function') {
-        return storage;
+    try {
+        const storage = source.localStorage;
+        if (storage && typeof storage.getItem === 'function') {
+            return storage;
+        }
+    } catch (error) {
+        if (typeof options.onError === 'function') {
+            options.onError(error, source);
+        }
+        return null;
     }
 
     return null;
@@ -48,8 +55,26 @@ function getStorage() {
         sources.push(window);
     }
 
+    let candidateErrorLogged = false;
+    const warnCandidateError = (error, candidate) => {
+        if (candidateErrorLogged) {
+            return;
+        }
+
+        candidateErrorLogged = true;
+        console.warn('Local storage is not available: encountered an error while probing storage candidates', error, candidate);
+    };
+
     for (const candidate of sources) {
-        const storage = resolveStorageCandidate(candidate);
+        let storage = null;
+
+        try {
+            storage = resolveStorageCandidate(candidate, { onError: warnCandidateError });
+        } catch (error) {
+            warnCandidateError(error, candidate);
+            storage = null;
+        }
+
         if (storage) {
             return storage;
         }
