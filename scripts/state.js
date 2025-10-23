@@ -966,6 +966,7 @@ function handleMountingChange(e) {
     updateFanModuleVisibility();
 
     updateConfiguration({ skipUrlUpdate: true });
+    updateProgressSteps(getStep());
     updateUrlFromConfiguration();
 }
 
@@ -973,6 +974,7 @@ function handlePowerChange(e) {
     configuration.power = e.target.value;
     document.querySelector('#step-2 .btn-next').disabled = false;
     updateConfiguration({ skipUrlUpdate: true });
+    updateProgressSteps(getStep());
     updateUrlFromConfiguration();
 }
 
@@ -1328,17 +1330,29 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 }
 
 function updateProgressSteps(targetStep) {
+    const maxReachable = getMaxReachableStep();
+    const safeTargetStep = Math.min(Math.max(targetStep, 1), totalSteps);
+
     for (let i = 1; i <= totalSteps; i++) {
         const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
         if (!progressElement) continue;
 
-        if (i === targetStep) {
+        const isReachable = i <= maxReachable;
+        progressElement.dataset.reachable = String(isReachable);
+
+        if (isReachable) {
+            progressElement.removeAttribute('aria-disabled');
+        } else {
+            progressElement.setAttribute('aria-disabled', 'true');
+        }
+
+        if (i === safeTargetStep) {
             progressElement.classList.add('active');
         } else {
             progressElement.classList.remove('active');
         }
 
-        if (i < targetStep) {
+        if (i < safeTargetStep) {
             progressElement.classList.add('completed');
         } else {
             progressElement.classList.remove('completed');
@@ -3085,6 +3099,7 @@ function applyConfiguration(initialConfig) {
 
     updateFanModuleVisibility();
     updateConfiguration({ skipUrlUpdate: true });
+    updateProgressSteps(getStep());
 }
 
 function getMaxReachableStep() {
@@ -3153,5 +3168,6 @@ export {
     replaceState,
     getStep,
     getTotalSteps,
-    setStep
+    setStep,
+    getMaxReachableStep
 };
