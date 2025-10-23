@@ -1,6 +1,5 @@
 import './scripts/wizard-state-observer.js';
 import './scripts/state.js';
-import './scripts/query-presets.js';
 import './scripts/recommended-bundle.js';
 import './scripts/compat-config.js';
 import './scripts/init-review.js';

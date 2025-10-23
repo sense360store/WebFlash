@@ -53,11 +53,11 @@
                     <!-- Step 1: Mounting Type -->
                     <div class="wizard-step step" id="step-1">
                 <h2>Step 1: Where is this unit being installed?</h2>
-                <div class="preset-callout" data-recommended-bundle>
+                <div class="recommended-bundle-callout" data-recommended-bundle>
                     <button class="btn btn-secondary" type="button" data-recommended-bundle-button>
                         Recommended bundle
                     </button>
-                    <p class="preset-callout__description" data-recommended-bundle-description>
+                    <p class="recommended-bundle-callout__description" data-recommended-bundle-description>
                         Start with our most popular setup: wall mount hardware with USB power plus AirIQ Base and Presence Base modules for balanced air quality and occupancy insights.
                     </p>
                 </div>
@@ -306,23 +306,7 @@
                     </aside>
                 </div>
 
-                <section class="preset-panel" id="preset-manager" aria-labelledby="preset-manager-title">
-                    <div class="preset-panel__header">
-                        <h3 class="preset-panel__title" id="preset-manager-title">Presets</h3>
-                        <p class="preset-panel__description">Save and reuse frequently used configurations.</p>
-                    </div>
-                    <ul class="preset-panel__list" data-preset-list role="list"></ul>
-                    <p class="preset-panel__empty" data-preset-empty>Save your first preset to get started.</p>
-                    <form class="preset-panel__form" data-preset-form>
-                        <label class="preset-panel__label" for="preset-name-input">Preset name</label>
-                        <div class="preset-panel__controls">
-                            <input id="preset-name-input" type="text" name="preset-name" data-preset-name placeholder="e.g. Wall • USB • Pro modules" autocomplete="off">
-                            <button type="submit" class="btn btn-secondary btn-small" data-preset-save disabled>Save preset</button>
-                        </div>
-                        <p class="preset-panel__hint">Presets capture your selections from steps 1–3.</p>
-                    </form>
-                </section>
-
+                
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <button class="btn btn-primary btn-next" type="button" data-next>Next</button>

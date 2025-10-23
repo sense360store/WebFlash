@@ -1,4 +1,52 @@
-import { applyPreset, getMatchingPreset, recommendedPreset } from './query-presets.js';
+import { getState as getWizardState, setState, setStep, getMaxReachableStep } from './state.js';
+
+const RECOMMENDED_STATE = Object.freeze({
+    mount: 'wall',
+    power: 'usb',
+    airiq: 'base',
+    presence: 'base',
+    comfort: 'none',
+    fan: 'none'
+});
+
+function normaliseStateShape(state) {
+    if (!state || typeof state !== 'object') {
+        return {
+            mount: null,
+            power: null,
+            airiq: 'none',
+            presence: 'none',
+            comfort: 'none',
+            fan: 'none'
+        };
+    }
+
+    return {
+        mount: state.mount || null,
+        power: state.power || null,
+        airiq: state.airiq || 'none',
+        presence: state.presence || 'none',
+        comfort: state.comfort || 'none',
+        fan: state.fan || 'none'
+    };
+}
+
+function isRecommendedSelection(state) {
+    const current = normaliseStateShape(state);
+    return Object.entries(RECOMMENDED_STATE).every(([key, value]) => current[key] === value);
+}
+
+function applyRecommendedSelection() {
+    try {
+        setState(RECOMMENDED_STATE);
+        const reachableStep = getMaxReachableStep();
+        if (Number.isFinite(reachableStep) && reachableStep >= 4) {
+            setStep(4);
+        }
+    } catch (error) {
+        console.error('[recommended-bundle] Failed to apply recommended configuration', error);
+    }
+}
 
 function initialiseRecommendedBundleCallout() {
     const callout = document.querySelector('[data-recommended-bundle]');
@@ -13,27 +61,12 @@ function initialiseRecommendedBundleCallout() {
         return;
     }
 
-    const applyRecommendedPreset = () => {
-        try {
-            applyPreset(recommendedPreset.state, { step: 4 });
-        } catch (error) {
-            console.error('[recommended-bundle] Failed to apply preset', error);
-        }
-    };
-
     const updateVisualState = (state) => {
         if (!state) {
             return;
         }
 
-        let presetMatch = null;
-        try {
-            presetMatch = getMatchingPreset(state);
-        } catch (error) {
-            console.warn('[recommended-bundle] Unable to determine preset match', error);
-        }
-
-        const isActive = Boolean(presetMatch && presetMatch.name === recommendedPreset.name);
+        const isActive = isRecommendedSelection(state);
         button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         button.classList.toggle('is-active', isActive);
 
@@ -44,7 +77,7 @@ function initialiseRecommendedBundleCallout() {
 
     button.addEventListener('click', (event) => {
         event.preventDefault();
-        applyRecommendedPreset();
+        applyRecommendedSelection();
     });
 
     button.setAttribute('aria-pressed', 'false');
@@ -55,10 +88,17 @@ function initialiseRecommendedBundleCallout() {
         try {
             if (typeof summary.getState === 'function') {
                 updateVisualState(summary.getState());
+                return;
             }
         } catch (error) {
-            console.warn('[recommended-bundle] Unable to read initial state', error);
+            console.warn('[recommended-bundle] Unable to read initial state from summary', error);
         }
+    }
+
+    try {
+        updateVisualState(getWizardState());
+    } catch (error) {
+        console.warn('[recommended-bundle] Unable to read initial state', error);
     }
 }
 
