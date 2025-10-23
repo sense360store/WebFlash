@@ -2453,9 +2453,26 @@ h1 {
     display: flex;
     justify-content: space-between;
     gap: 16px;
-    align-items: baseline;
+    align-items: flex-start;
     font-size: 13px;
     color: var(--color-text-secondary);
+    flex-wrap: wrap;
+    row-gap: 4px;
+}
+
+.firmware-part-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.firmware-part-code {
+    font-family: 'Roboto Mono', 'Menlo', 'Consolas', monospace;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    flex: 1 1 200px;
 }
 
 .firmware-part-name {
