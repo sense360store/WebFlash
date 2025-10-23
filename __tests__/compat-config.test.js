@@ -28,6 +28,15 @@ describe('compat-config direct install validation', () => {
     URL.revokeObjectURL = originalRevokeObjectURL;
   });
 
+  test('does not render direct install UI when no parameters provided', async () => {
+    window.history.replaceState(null, '', '/');
+
+    const module = await import('../scripts/compat-config.js');
+    await module.initializeCompatInstall();
+
+    expect(document.getElementById('compat-config-installer')).toBeNull();
+  });
+
   test('renders required parameter guidance for malformed links', async () => {
     window.history.replaceState(null, '', '?power=usb');
     const module = await import('../scripts/compat-config.js');
