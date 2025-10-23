@@ -26,12 +26,10 @@ async function loadPresetModule() {
 
 beforeEach(() => {
     jest.resetModules();
-    delete window.wizardRememberState;
     delete window.wizardPresetState;
 });
 
 afterEach(() => {
-    delete window.wizardRememberState;
     delete window.wizardPresetState;
 });
 

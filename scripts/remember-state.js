@@ -379,22 +379,12 @@ const presetStateApi = {
     markPresetApplied
 };
 
-if (typeof window !== 'undefined') {
-    if (!window.wizardPresetState) {
-        Object.defineProperty(window, 'wizardPresetState', {
-            value: presetStateApi,
-            configurable: true,
-            writable: false
-        });
-    }
-
-    if (!window.wizardRememberState) {
-        Object.defineProperty(window, 'wizardRememberState', {
-            value: presetStateApi,
-            configurable: true,
-            writable: false
-        });
-    }
+if (typeof window !== 'undefined' && !window.wizardPresetState) {
+    Object.defineProperty(window, 'wizardPresetState', {
+        value: presetStateApi,
+        configurable: true,
+        writable: false
+    });
 }
 
 export default presetStateApi;
