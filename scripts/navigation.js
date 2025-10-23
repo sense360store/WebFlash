@@ -1,4 +1,4 @@
-import { getStep, setStep, getTotalSteps } from './state.js';
+import { getStep, setStep, getTotalSteps, getMaxReachableStep } from './state.js';
 
 function normalizeIndex(index) {
     if (typeof index !== 'number') {
@@ -36,6 +36,21 @@ function resolveEventTarget(event) {
 function handleWizardNavigation(event) {
     const target = resolveEventTarget(event);
     if (!target) {
+        return;
+    }
+
+    const progressTrigger = target.closest('.progress-step');
+    if (progressTrigger) {
+        const stepValue = Number.parseInt(progressTrigger.getAttribute('data-step'), 10);
+        if (!Number.isNaN(stepValue)) {
+            const maxReachable = getMaxReachableStep();
+            if (stepValue <= maxReachable) {
+                event.preventDefault();
+                setStep(stepValue, { animate: true });
+            } else {
+                event.preventDefault();
+            }
+        }
         return;
     }
 
