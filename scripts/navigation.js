@@ -39,7 +39,7 @@ function handleWizardNavigation(event) {
         return;
     }
 
-    const progressTrigger = target.closest('.progress-step');
+    let progressTrigger = target.closest('.progress-step');
     if (progressTrigger) {
         const stepValue = Number.parseInt(progressTrigger.getAttribute('data-step'), 10);
         if (!Number.isNaN(stepValue)) {
@@ -56,7 +56,7 @@ function handleWizardNavigation(event) {
 
     const nextTrigger = target.closest('[data-next]');
     const backTrigger = target.closest('[data-back]');
-    const progressTrigger = target.closest('.progress-step[data-step]');
+    progressTrigger = target.closest('.progress-step[data-step]');
 
     if (nextTrigger && !nextTrigger.disabled) {
         event.preventDefault();
