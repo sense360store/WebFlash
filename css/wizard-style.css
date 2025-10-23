@@ -187,10 +187,10 @@ h1 {
 }
 
 .wizard-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 32px;
-    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(24px, 4vw, 32px);
+    align-items: stretch;
 }
 
 .wizard-main {
