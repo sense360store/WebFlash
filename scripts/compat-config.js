@@ -211,6 +211,22 @@ function buildInstallLookupFromParams(params = getCombinedSearchParams(), parsed
 function readInstallQueryParams() {
   const params = getCombinedSearchParams();
   const parsedConfig = parseConfigParams(params);
+  const channel = readChannelFromParams(params);
+
+  const hasConfigParams = parsedConfig?.presentKeys instanceof Set && parsedConfig.presentKeys.size > 0;
+  const hasModelParams = Boolean(
+    readParam(params, 'model') || readParam(params, 'variant') || readParam(params, 'sensor_addon')
+  );
+  const hasInstallParams = hasConfigParams || hasModelParams;
+
+  if (!hasInstallParams) {
+    return {
+      lookup: null,
+      channel,
+      validationError: null,
+      hasInstallParams: false
+    };
+  }
 
   let validationError = null;
   const lookup = buildInstallLookupFromParams(params, parsedConfig);
@@ -235,8 +251,9 @@ function readInstallQueryParams() {
 
   return {
     lookup,
-    channel: readChannelFromParams(params),
-    validationError
+    channel,
+    validationError,
+    hasInstallParams: true
   };
 }
 
@@ -650,7 +667,12 @@ async function loadManifest() {
 }
 
 async function initializeCompatInstall() {
-  const { lookup, channel: requestedChannel, validationError } = readInstallQueryParams();
+  const { lookup, channel: requestedChannel, validationError, hasInstallParams } = readInstallQueryParams();
+
+  if (!hasInstallParams) {
+    return;
+  }
+
   const container = ensureContainer();
 
   if (!lookup) {
