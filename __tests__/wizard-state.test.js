@@ -174,28 +174,23 @@ describe('wizard state module', () => {
         });
     });
 
-    test('wizard continues initializing when localStorage throws a SecurityError', async () => {
-        const securityError = new Error('Blocked by browser settings');
-        securityError.name = 'SecurityError';
-
+    test('wizard initializes without accessing localStorage', async () => {
         const originalGlobalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
         const originalWindowDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
 
-        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const failingGetter = jest.fn(() => {
+            throw new Error('localStorage should not be accessed');
+        });
 
         try {
             Object.defineProperty(globalThis, 'localStorage', {
                 configurable: true,
-                get() {
-                    throw securityError;
-                }
+                get: failingGetter
             });
 
             Object.defineProperty(window, 'localStorage', {
                 configurable: true,
-                get() {
-                    throw securityError;
-                }
+                get: failingGetter
             });
 
             await import('../scripts/state.js');
@@ -203,21 +198,14 @@ describe('wizard state module', () => {
 
             const mountingWall = document.querySelector('input[name="mounting"][value="wall"]');
             const nextButton = document.querySelector('#step-1 .btn-next');
-
-            expect(nextButton.disabled).toBe(true);
+            expect(nextButton).not.toBeNull();
 
             mountingWall.checked = true;
             mountingWall.dispatchEvent(new Event('change', { bubbles: true }));
 
             expect(nextButton.disabled).toBe(false);
-
-            const candidateWarnings = warnSpy.mock.calls.filter(([message]) =>
-                typeof message === 'string' && message.includes('encountered an error while probing storage candidates')
-            );
-            expect(candidateWarnings).toHaveLength(1);
+            expect(failingGetter).not.toHaveBeenCalled();
         } finally {
-            warnSpy.mockRestore();
-
             if (originalGlobalDescriptor) {
                 Object.defineProperty(globalThis, 'localStorage', originalGlobalDescriptor);
             } else {

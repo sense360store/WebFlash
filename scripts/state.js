@@ -1,9 +1,3 @@
-import {
-    isRememberEnabled,
-    setRememberEnabled,
-    loadRememberedState,
-    persistRememberedState
-} from './remember-state.js';
 import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
 import { MODULE_REQUIREMENT_MATRIX, getModuleMatrixEntry, getModuleVariantEntry } from './data/module-requirements.js';
@@ -48,38 +42,6 @@ const MODULE_SEGMENT_FORMATTERS = {
     fan: value => `Fan${value.toUpperCase()}`
 };
 
-function isLocalStorageAccessible() {
-    const candidates = [];
-
-    if (typeof globalThis !== 'undefined') {
-        candidates.push(globalThis);
-        if (globalThis.window && globalThis.window !== globalThis) {
-            candidates.push(globalThis.window);
-        }
-    }
-
-    if (typeof window !== 'undefined' && !candidates.includes(window)) {
-        candidates.push(window);
-    }
-
-    for (const candidate of candidates) {
-        if (!candidate) {
-            continue;
-        }
-
-        try {
-            const storage = candidate.localStorage;
-            if (storage && typeof storage.getItem === 'function') {
-                return true;
-            }
-        } catch (error) {
-            return false;
-        }
-    }
-
-    return false;
-}
-
 let moduleDetailPanelElement = null;
 let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
@@ -118,9 +80,7 @@ function setState(newState = {}, options = {}) {
     const normalizedState = normalizeStateForConfiguration(newState);
     applyConfiguration(normalizedState);
 
-    if (options.skipUrlUpdate) {
-        persistWizardState();
-    } else {
+    if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
     }
 
@@ -813,11 +773,6 @@ async function loadManifestData() {
 
 const manifestReadyPromise = loadManifestData().catch(() => null);
 
-let rememberChoices = false;
-let rememberedState = null;
-
-const REMEMBER_TOGGLE_SELECTOR = '[data-remember-toggle]';
-
 const firmwareSelectorWrapper = document.getElementById('firmware-selector');
 const firmwareVersionSelect = document.getElementById('firmware-version-select');
 let firmwareOptions = [];
@@ -884,85 +839,6 @@ function openHomeAssistantIntegrations(event) {
     }
 }
 
-function syncRememberToggleElements(sourceToggle) {
-    const toggles = document.querySelectorAll(REMEMBER_TOGGLE_SELECTOR);
-    toggles.forEach(toggle => {
-        if (toggle !== sourceToggle) {
-            toggle.checked = rememberChoices;
-        }
-    });
-}
-
-function handleRememberToggleChange(event) {
-    rememberChoices = event.target.checked;
-    syncRememberToggleElements(event.target);
-
-    setRememberEnabled(rememberChoices);
-
-    if (!rememberChoices) {
-        rememberedState = null;
-        return;
-    }
-
-    persistWizardState();
-}
-
-function setupRememberPreferenceControls() {
-    rememberChoices = isRememberEnabled();
-    rememberedState = rememberChoices
-        ? loadRememberedState({
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps
-        })
-        : null;
-
-    const storageAccessible = isLocalStorageAccessible();
-    if (!storageAccessible) {
-        rememberChoices = false;
-        rememberedState = null;
-
-        if (typeof window !== 'undefined' && window?.history?.replaceState) {
-            window.history.replaceState(null, '', window.location.pathname);
-        }
-    }
-
-    const toggles = document.querySelectorAll(REMEMBER_TOGGLE_SELECTOR);
-    toggles.forEach(toggle => {
-        toggle.checked = rememberChoices;
-        toggle.addEventListener('change', handleRememberToggleChange);
-    });
-
-    if (!storageAccessible) {
-        const nextButton = document.querySelector('#step-1 .btn-next');
-        if (nextButton) {
-            nextButton.disabled = true;
-        }
-    }
-}
-
-function persistWizardState() {
-    if (!rememberChoices) {
-        return;
-    }
-
-    const stateToPersist = persistRememberedState({
-        mounting: configuration.mounting,
-        power: configuration.power,
-        airiq: configuration.airiq,
-        presence: configuration.presence,
-        comfort: configuration.comfort,
-        fan: configuration.mounting === 'wall' ? configuration.fan : 'none'
-    }, {
-        defaultConfiguration,
-        allowedOptions,
-        totalSteps,
-        currentStep
-    });
-
-    rememberedState = stateToPersist;
-}
-
 let wizardInitialized = false;
 
 function ensureSingleActiveWizardStep() {
@@ -1016,12 +892,9 @@ function initializeWizard() {
         if (warning && (!navigator || !navigator.serial)) {
             warning.style.display = 'block';
         }
-        setupRememberPreferenceControls();
     } catch (error) {
         console.error('Wizard initialization encountered an error during setup:', error);
         Object.assign(configuration, defaultConfiguration);
-        rememberChoices = false;
-        rememberedState = null;
 
         const nextButton = document.querySelector('#step-1 .btn-next');
         if (nextButton) {
@@ -1383,8 +1256,6 @@ function updateConfiguration(options = {}) {
 
     if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
-    } else {
-        persistWizardState();
     }
 }
 
@@ -1453,8 +1324,6 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 
     if (!skipUrlUpdate) {
         updateUrlFromConfiguration();
-    } else {
-        persistWizardState();
     }
 }
 
@@ -3145,11 +3014,8 @@ function initializeFromUrl() {
     const searchParams = new URLSearchParams(window.location.search || '');
     const parsed = parseConfigParams(searchParams);
     const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
-    const hasAnySearchParams = parsed.paramCount > 0;
-    const shouldRestoreRememberedState = Boolean(rememberChoices && rememberedState && !hasAnySearchParams);
-    const initialConfig = shouldRestoreRememberedState ? rememberedState.configuration : sanitizedConfig;
 
-    applyConfiguration(initialConfig);
+    applyConfiguration(sanitizedConfig);
 
     const maxStep = getMaxReachableStep();
     let targetStep;
@@ -3163,17 +3029,7 @@ function initializeFromUrl() {
         }
     }
 
-    if (shouldRestoreRememberedState) {
-        if (typeof rememberedState.currentStep === 'number') {
-            targetStep = Math.min(rememberedState.currentStep, maxStep);
-        } else if (!configuration.mounting) {
-            targetStep = 1;
-        } else if (!configuration.power) {
-            targetStep = 2;
-        } else {
-            targetStep = Math.min(4, maxStep);
-        }
-    } else if (parsedStep) {
+    if (parsedStep) {
         targetStep = Math.min(parsedStep, maxStep);
     } else if (!configuration.mounting) {
         targetStep = 1;
@@ -3187,7 +3043,7 @@ function initializeFromUrl() {
 
     setStep(targetStep, { skipUrlUpdate: true, animate: false });
 
-    if (!shouldRestoreRememberedState && parsed.isValid && parsed.forcedFanNone) {
+    if (parsed.isValid && parsed.forcedFanNone) {
         showToast('Fan module not available for ceiling mount.');
     }
 }
@@ -3269,7 +3125,6 @@ function updateUrlFromConfiguration() {
     const paramString = params.toString();
     const newUrl = paramString ? `${window.location.pathname}?${paramString}` : window.location.pathname;
     history.replaceState(null, '', newUrl);
-    persistWizardState();
 }
 
 window.nextStep = nextStep;

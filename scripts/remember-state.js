@@ -1,5 +1,3 @@
-import { getPref, setPref, PREF_KEYS } from './prefs.js';
-
 const STORAGE_VERSION = 2;
 
 const EMPTY_STORAGE = Object.freeze({
@@ -8,6 +6,18 @@ const EMPTY_STORAGE = Object.freeze({
     presets: [],
     activePresetId: null
 });
+
+function createEmptyStore() {
+    return {
+        version: STORAGE_VERSION,
+        lastState: null,
+        presets: [],
+        activePresetId: null
+    };
+}
+
+let memoryStore = createEmptyStore();
+let rememberEnabled = false;
 
 function clampStep(step, totalSteps) {
     const numeric = Number.parseInt(step, 10);
@@ -231,27 +241,11 @@ function normalizeStoredPayload(rawPayload) {
 }
 
 function readStoredPayload() {
-    const raw = getPref(PREF_KEYS.lastWizardState, null);
-    return normalizeStoredPayload(raw);
+    return normalizeStoredPayload(memoryStore);
 }
 
 function writeStoredPayload(payload) {
-    const normalized = normalizeStoredPayload(payload);
-
-    const hasState = Boolean(normalized.lastState);
-    const hasPresets = normalized.presets.length > 0;
-
-    if (!hasState && !hasPresets) {
-        setPref(PREF_KEYS.lastWizardState, null);
-        return;
-    }
-
-    setPref(PREF_KEYS.lastWizardState, {
-        version: STORAGE_VERSION,
-        lastState: cloneStatePayload(normalized.lastState),
-        presets: normalized.presets.map(clonePresetEntry).filter(Boolean),
-        activePresetId: normalized.activePresetId || null
-    });
+    memoryStore = normalizeStoredPayload(payload);
 }
 
 function generatePresetId() {
@@ -263,14 +257,13 @@ function generatePresetId() {
 }
 
 export function isRememberEnabled() {
-    return Boolean(getPref(PREF_KEYS.rememberChoices, false));
+    return rememberEnabled;
 }
 
 export function setRememberEnabled(enabled) {
-    const normalized = Boolean(enabled);
-    setPref(PREF_KEYS.rememberChoices, normalized);
+    rememberEnabled = Boolean(enabled);
 
-    if (!normalized) {
+    if (!rememberEnabled) {
         clearRememberedState();
     }
 }
@@ -405,7 +398,7 @@ export function deletePreset(id) {
     }
 
     if (!stored.presets.length && !stored.lastState) {
-        setPref(PREF_KEYS.lastWizardState, null);
+        memoryStore = createEmptyStore();
     } else {
         writeStoredPayload(stored);
     }
