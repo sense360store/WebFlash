@@ -18,9 +18,43 @@ export function goToStep(index, options = {}) {
     return setStep(normalized + 1, options);
 }
 
+function resolveEventTargetElement(event) {
+    const { target } = event;
+
+    if (target instanceof Element) {
+        return target;
+    }
+
+    if (typeof event.composedPath === 'function') {
+        const path = event.composedPath();
+        for (const entry of path) {
+            if (entry instanceof Element) {
+                return entry;
+            }
+        }
+    }
+
+    if (target && typeof target === 'object' && 'parentElement' in target) {
+        let parent = target.parentElement;
+        while (parent) {
+            if (parent instanceof Element) {
+                return parent;
+            }
+            parent = parent.parentElement;
+        }
+    }
+
+    return null;
+}
+
 function handleWizardNavigation(event) {
-    const nextTrigger = event.target.closest('[data-next]');
-    const backTrigger = event.target.closest('[data-back]');
+    const elementTarget = resolveEventTargetElement(event);
+    if (!elementTarget) {
+        return;
+    }
+
+    const nextTrigger = elementTarget.closest('[data-next]');
+    const backTrigger = elementTarget.closest('[data-back]');
 
     if (nextTrigger && !nextTrigger.disabled) {
         event.preventDefault();
