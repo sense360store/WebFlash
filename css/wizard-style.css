@@ -486,15 +486,15 @@ h1 {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: white;
-    background: #6b7280;
+    color: var(--color-text-primary);
+    background: var(--color-surface-muted);
     margin-bottom: 8px;
 }
 
 /* None module badge */
 .option-card input[value="none"] + .option-content .option-title {
-    background: #6b7280;
-    color: white;
+    background: var(--color-surface-muted);
+    color: var(--color-text-primary);
 }
 
 /* Base module badge */
