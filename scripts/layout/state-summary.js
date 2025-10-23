@@ -1,13 +1,5 @@
 import { normalizeChannelKey } from '../utils/channel-alias.js';
 import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
-import {
-    listPresets,
-    savePreset,
-    renamePreset,
-    deletePreset,
-    getPreset,
-    markPresetApplied
-} from '../remember-state.js';
 
 (function () {
     const FIELD_MAP = [
@@ -18,32 +10,9 @@ import {
         { key: 'comfort', name: 'comfort', label: 'Comfort' },
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
-
-    const PRESET_STORAGE_OPTIONS = Object.freeze({
-        defaultConfiguration: {
-            mounting: null,
-            power: null,
-            airiq: 'none',
-            presence: 'none',
-            comfort: 'none',
-            fan: 'none'
-        },
-        allowedOptions: {
-            mounting: ['wall', 'ceiling'],
-            power: ['usb', 'poe', 'pwr'],
-            airiq: ['none', 'base', 'pro'],
-            presence: ['none', 'base', 'pro'],
-            comfort: ['none', 'base'],
-            fan: ['none', 'pwm', 'analog']
-        },
-        totalSteps: 4
-    });
-
     const subscribers = new Set();
     let pending = false;
     let sidebarRefs = null;
-    let presetManagerRefs = null;
-    const presetCache = new Map();
     let copyResetTimer = null;
 
     function normaliseChannelKey(channel) {
@@ -143,138 +112,6 @@ import {
         };
     }
 
-    function generatePresetName(state) {
-        const segments = [];
-
-        if (state.mount) {
-            segments.push(state.mount === 'wall' ? 'Wall mount' : 'Ceiling mount');
-        }
-
-        if (state.power) {
-            segments.push(`${state.power.toUpperCase()} power`);
-        }
-
-        const moduleSegments = [];
-        if (state.airiq && state.airiq !== 'none') {
-            moduleSegments.push(`AirIQ ${formatValue(state.airiq)}`);
-        }
-        if (state.presence && state.presence !== 'none') {
-            moduleSegments.push(`Presence ${formatValue(state.presence)}`);
-        }
-        if (state.comfort && state.comfort !== 'none') {
-            moduleSegments.push(`Comfort ${formatValue(state.comfort)}`);
-        }
-        if (state.fan && state.fan !== 'none') {
-            moduleSegments.push(`Fan ${state.fan.toUpperCase()}`);
-        }
-
-        if (moduleSegments.length) {
-            segments.push(moduleSegments.join(' + '));
-        }
-
-        if (!segments.length) {
-            return `Preset ${presetCache.size + 1}`;
-        }
-
-        return segments.join(' • ');
-    }
-
-    function clampPresetStep(step) {
-        const numeric = Number.parseInt(step, 10);
-        if (!Number.isFinite(numeric) || numeric < 1) {
-            return null;
-        }
-
-        return Math.min(PRESET_STORAGE_OPTIONS.totalSteps, numeric);
-    }
-
-    function getCurrentWizardStep() {
-        const active = document.querySelector('.progress-step.active');
-        if (!active) {
-            return null;
-        }
-
-        const value = Number.parseInt(active.getAttribute('data-step'), 10);
-        return Number.isFinite(value) ? value : null;
-    }
-
-    function setWizardStep(targetStep) {
-        const normalized = clampPresetStep(targetStep);
-        const current = getCurrentWizardStep();
-
-        if (!normalized || !current || normalized === current) {
-            return;
-        }
-
-        const stepFn = normalized > current ? window.nextStep : window.previousStep;
-        if (typeof stepFn !== 'function') {
-            return;
-        }
-
-        let safety = 0;
-        let updatedCurrent = current;
-        const limit = PRESET_STORAGE_OPTIONS.totalSteps * 2;
-
-        while (updatedCurrent !== normalized && safety < limit) {
-            stepFn();
-            safety += 1;
-            const nextValue = getCurrentWizardStep();
-            if (!Number.isFinite(nextValue) || nextValue === updatedCurrent) {
-                break;
-            }
-            updatedCurrent = nextValue;
-        }
-    }
-
-    function applyRadioSelection(name, value) {
-        if (value === null || value === undefined) {
-            return;
-        }
-
-        const selector = `input[name="${name}"][value="${value}"]`;
-        const input = document.querySelector(selector);
-
-        if (!input) {
-            return;
-        }
-
-        if (!input.checked) {
-            input.checked = true;
-        }
-
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    function applyPresetStateToWizard(presetState) {
-        if (!presetState || typeof presetState !== 'object') {
-            return;
-        }
-
-        const configuration = presetState.configuration || {};
-        const mount = configuration.mounting || null;
-        const power = configuration.power || null;
-        const airiq = configuration.airiq || 'none';
-        const presence = configuration.presence || 'none';
-        const comfort = configuration.comfort || 'none';
-        const fan = mount === 'wall' ? (configuration.fan || 'none') : 'none';
-
-        if (mount) {
-            applyRadioSelection('mounting', mount);
-        }
-        if (power) {
-            applyRadioSelection('power', power);
-        }
-
-        applyRadioSelection('airiq', airiq);
-        applyRadioSelection('presence', presence);
-        applyRadioSelection('comfort', comfort);
-        applyRadioSelection('fan', fan);
-
-        if (presetState.currentStep) {
-            setWizardStep(presetState.currentStep);
-        }
-    }
-
     function onStateChange(callback) {
         if (typeof callback !== 'function') {
             return () => {};
@@ -309,7 +146,6 @@ import {
         });
 
         renderSidebar(meta, state);
-        updatePresetSaveState(state);
     }
 
     function scheduleScan() {
@@ -892,18 +728,6 @@ import {
             params.set('presence', state.presence || 'none');
             params.set('comfort', state.comfort || 'none');
             params.set('fan', state.fan || 'none');
-
-            const presetApi = window.queryPresets || null;
-            if (presetApi && typeof presetApi.getMatchingPreset === 'function') {
-                try {
-                    const preset = presetApi.getMatchingPreset(state);
-                    if (preset && preset.name) {
-                        params.set('preset', preset.name);
-                    }
-                } catch (error) {
-                    console.warn('[state-summary] unable to resolve preset', error);
-                }
-            }
         }
 
         if (currentFirmware && currentFirmware.channel) {
@@ -920,12 +744,6 @@ import {
 
     function handleReset(event) {
         event.preventDefault();
-        try {
-            markPresetApplied(null, PRESET_STORAGE_OPTIONS);
-        } catch (error) {
-            console.warn('[state-summary] Unable to clear preset selection', error);
-        }
-
         const base = `${window.location.origin}${window.location.pathname}`;
         window.location.href = base;
     }
@@ -952,7 +770,6 @@ import {
     });
 
     function handleDomReady() {
-        initializePresetManager();
         scheduleScan();
     }
 

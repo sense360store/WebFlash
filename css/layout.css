@@ -101,7 +101,7 @@
     outline-offset: 2px;
 }
 
-.preset-callout {
+.recommended-bundle-callout {
     margin: 1rem 0 1.5rem;
     padding: 1rem 1.25rem;
     border-radius: 0.75rem;
@@ -109,23 +109,23 @@
     border: 1px solid var(--border-subtle, #d6dee6);
 }
 
-.preset-callout .btn {
+.recommended-bundle-callout .btn {
     margin: 0 0 0.5rem;
 }
 
-.preset-callout .btn.is-active {
+.recommended-bundle-callout .btn.is-active {
     background: var(--accent-strong, #0059c9);
     color: var(--accent-contrast, #fff);
 }
 
-.preset-callout__description {
+.recommended-bundle-callout__description {
     margin: 0;
     font-size: 0.95rem;
     line-height: 1.45;
     color: var(--text-muted, #475569);
 }
 
-.preset-callout__description[data-active="true"] {
+.recommended-bundle-callout__description[data-active="true"] {
     color: var(--text-strong, #0f172a);
     font-weight: 500;
 }
