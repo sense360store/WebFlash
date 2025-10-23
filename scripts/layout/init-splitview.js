@@ -112,6 +112,10 @@
 
         createSidebar(sidebar);
 
+        if (document.body) {
+            document.body.classList.add('has-wizard-sidebar');
+        }
+
         document.dispatchEvent(new CustomEvent('wizardSidebarReady', {
             detail: { sidebar }
         }));
