@@ -2000,7 +2000,7 @@ h1 {
 
 .firmware-parts {
     border-top: 1px solid var(--color-border);
-    padding-top: 16px;
+    padding: 16px 24px 0 24px;
     margin-top: 8px;
 }
 
