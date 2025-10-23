@@ -59,8 +59,8 @@ function detectBrowserSupport() {
     }
 
     if (matchesUnsupportedPattern || safariOnly) {
-        return buildResult('fail', 'This browser does not support Web Serial.', {
-            tip: 'Switch to the latest Chrome or Edge and reload this page.'
+        return buildResult('fail', 'Web Serial works only in desktop Chrome or Edge. Safari, Firefox, and all iOS browsers are unsupported.', {
+            tip: 'Open this page in the latest Chrome or Edge on Windows, macOS, or Linux and try again.'
         });
     }
 
@@ -90,8 +90,8 @@ function detectWebSerialSupport() {
     }
 
     if (!nav || typeof nav.serial === 'undefined') {
-        return buildResult('fail', 'Web Serial API is not available in this browser.', {
-            tip: 'Use Chrome or Edge 89+ and ensure experimental flags are enabled if needed.'
+        return buildResult('fail', 'Web Serial works only in desktop Chrome or Edge. Safari, Firefox, and all iOS browsers are unsupported.', {
+            tip: 'Use Chrome or Edge 89+ on Windows, macOS, or Linux (not iOS) and ensure experimental flags are enabled if needed.'
         });
     }
 
