@@ -218,6 +218,79 @@ describe('wizard state module', () => {
         }
     });
 
+    test('progress steps reflect max reachable step after configuration changes', async () => {
+        const stateModule = await import('../scripts/state.js');
+        await import('../scripts/navigation.js');
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+
+        stateModule.setState(stateModule.getDefaultState(), { skipUrlUpdate: true });
+        stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
+
+        expect(stateModule.getState().mounting).toBeNull();
+        expect(stateModule.getState().power).toBeNull();
+
+        const step1 = document.querySelector('.progress-step[data-step="1"]');
+        const step2 = document.querySelector('.progress-step[data-step="2"]');
+        const step3 = document.querySelector('.progress-step[data-step="3"]');
+        const step4 = document.querySelector('.progress-step[data-step="4"]');
+
+        expect(step1.dataset.reachable).toBe('true');
+        expect(step2.dataset.reachable).toBe('false');
+        expect(step2.getAttribute('aria-disabled')).toBe('true');
+        expect(step3.dataset.reachable).toBe('false');
+        expect(step4.dataset.reachable).toBe('false');
+
+        const mountingWall = document.querySelector('input[name="mounting"][value="wall"]');
+        mountingWall.checked = true;
+        mountingWall.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(step2.dataset.reachable).toBe('true');
+        expect(step2.hasAttribute('aria-disabled')).toBe(false);
+        expect(step3.dataset.reachable).toBe('false');
+        expect(step4.dataset.reachable).toBe('false');
+
+        const powerUsb = document.querySelector('input[name="power"][value="usb"]');
+        powerUsb.checked = true;
+        powerUsb.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(step3.dataset.reachable).toBe('true');
+        expect(step4.dataset.reachable).toBe('true');
+        expect(step3.hasAttribute('aria-disabled')).toBe(false);
+        expect(step4.hasAttribute('aria-disabled')).toBe(false);
+    });
+
+    test('clicking progress steps only navigates to reachable steps', async () => {
+        const stateModule = await import('../scripts/state.js');
+        await import('../scripts/navigation.js');
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+
+        stateModule.setState(stateModule.getDefaultState(), { skipUrlUpdate: true });
+        stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
+
+        const step3Progress = document.querySelector('.progress-step[data-step="3"]');
+        expect(step3Progress).not.toBeNull();
+
+        expect(stateModule.getState().mounting).toBeNull();
+        expect(stateModule.getState().power).toBeNull();
+
+        step3Progress.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(1);
+
+        const mountingWall = document.querySelector('input[name="mounting"][value="wall"]');
+        const powerUsb = document.querySelector('input[name="power"][value="usb"]');
+
+        mountingWall.checked = true;
+        mountingWall.dispatchEvent(new Event('change', { bubbles: true }));
+
+        powerUsb.checked = true;
+        powerUsb.dispatchEvent(new Event('change', { bubbles: true }));
+
+        step3Progress.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(3);
+    });
+
     test('wizard navigation handles text node targets and advances to the next step', async () => {
         const stateModule = await import('../scripts/state.js');
         await import('../scripts/navigation.js');

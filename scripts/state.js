@@ -966,6 +966,7 @@ function handleMountingChange(e) {
     updateFanModuleVisibility();
 
     updateConfiguration({ skipUrlUpdate: true });
+    updateProgressSteps(getStep());
     updateUrlFromConfiguration();
 }
 
@@ -973,6 +974,7 @@ function handlePowerChange(e) {
     configuration.power = e.target.value;
     document.querySelector('#step-2 .btn-next').disabled = false;
     updateConfiguration({ skipUrlUpdate: true });
+    updateProgressSteps(getStep());
     updateUrlFromConfiguration();
 }
 
@@ -1328,9 +1330,20 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 }
 
 function updateProgressSteps(targetStep) {
+    const maxReachableStep = getMaxReachableStep();
+
     for (let i = 1; i <= totalSteps; i++) {
         const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
         if (!progressElement) continue;
+
+        const isReachable = i <= maxReachableStep;
+        progressElement.dataset.reachable = isReachable ? 'true' : 'false';
+
+        if (isReachable) {
+            progressElement.removeAttribute('aria-disabled');
+        } else {
+            progressElement.setAttribute('aria-disabled', 'true');
+        }
 
         if (i === targetStep) {
             progressElement.classList.add('active');
@@ -3085,6 +3098,7 @@ function applyConfiguration(initialConfig) {
 
     updateFanModuleVisibility();
     updateConfiguration({ skipUrlUpdate: true });
+    updateProgressSteps(getStep());
 }
 
 function getMaxReachableStep() {
@@ -3153,5 +3167,6 @@ export {
     replaceState,
     getStep,
     getTotalSteps,
-    setStep
+    setStep,
+    getMaxReachableStep
 };
