@@ -1203,6 +1203,30 @@ h1 {
     cursor: not-allowed;
 }
 
+.serial-detection-panel .serial-detection-list {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.serial-detection-panel .serial-detection-list[hidden] {
+    display: none;
+}
+
+.serial-detection-panel .serial-detection-list li + li {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--brand-green-selection-border) 65%, transparent);
+}
+
+.serial-detection-panel .serial-detection-guidance {
+    margin: 0;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+}
+
 .pre-flash-checklist .checklist-items {
     list-style: none;
     margin: 0;
