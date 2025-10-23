@@ -2429,9 +2429,65 @@ h1 {
 }
 
 .firmware-parts {
-    border-top: 1px solid var(--color-border);
-    padding: 16px 24px 0 24px;
     margin-top: 8px;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.firmware-parts-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+}
+
+.firmware-parts-toggle:hover,
+.firmware-parts-toggle:focus-visible {
+    background: color-mix(in srgb, var(--color-text-primary) 8%, var(--color-surface-muted));
+    border-color: color-mix(in srgb, var(--color-text-primary) 12%, var(--color-border));
+}
+
+.firmware-parts-toggle:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.firmware-parts-toggle.is-expanded,
+.firmware-parts-toggle[aria-expanded="true"] {
+    background: color-mix(in srgb, var(--brand-green-contrast) 10%, var(--color-surface-muted));
+    border-color: color-mix(in srgb, var(--brand-green-contrast) 35%, var(--color-border));
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.firmware-parts-toggle-icon {
+    font-size: 16px;
+    line-height: 1;
+    width: 1.25em;
+    text-align: center;
+}
+
+.firmware-parts-toggle-label {
+    display: inline-block;
+}
+
+.firmware-parts-content[hidden] {
+    display: none;
+}
+
+.firmware-parts-content:not([hidden]) {
+    border-top: 1px solid var(--color-border);
+    padding: 16px 0 0;
 }
 
 .firmware-parts h4 {
