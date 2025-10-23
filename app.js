@@ -1,11 +1,7 @@
-import './scripts/support/errors.js';
-import './scripts/support/boundary.js';
 import './scripts/wizard-state-observer.js';
 import './scripts/state.js';
 import './scripts/query-presets.js';
 import './scripts/recommended-bundle.js';
-import './scripts/support/ui.js';
-import './scripts/support/option-tooltips.js';
 import './scripts/compat-config.js';
 import './scripts/init-review.js';
 import './scripts/layout/state-summary.js';

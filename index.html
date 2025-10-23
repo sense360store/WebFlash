@@ -330,73 +330,20 @@
                 </div>
                     </div>
 
-                    <!-- Step 4: Review & Download -->
+                    <!-- Step 4: Review & Install -->
                     <div class="wizard-step step" id="step-4">
-                <h2>Step 4: Review & Download</h2>
-                
+                <h2>Step 4: Review & Install</h2>
+
+                <p class="step-intro">
+                    Use desktop Chrome or Edge to connect your Sense360 hub, confirm the summary below, and start the Web Serial installer.
+                </p>
+
                 <div class="configuration-summary">
                     <h3>Your Configuration</h3>
                     <div id="config-summary">
                         <!-- Summary will be populated by JavaScript -->
                     </div>
                 </div>
-
-                <section class="pre-flash-checklist" aria-labelledby="pre-flash-title" data-diagnostics-state="idle">
-                    <div class="checklist-header">
-                        <div class="checklist-header__text">
-                            <h3 class="checklist-heading" id="pre-flash-title">Connection Diagnostics</h3>
-                            <p class="checklist-subtitle" data-diagnostic-summary>We&apos;ll verify your browser and device before flashing firmware.</p>
-                        </div>
-                        <button type="button" class="checklist-refresh" data-diagnostic-refresh aria-live="polite" aria-label="Retry diagnostics" disabled>Retry checks</button>
-                    </div>
-                    <ul class="checklist-items" data-diagnostic-list>
-                        <li class="checklist-item" data-diagnostic-item="browser" data-status="pending">
-                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
-                            <div class="item-content">
-                                <span class="item-title">Browser support</span>
-                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
-                                <p class="item-tip" data-diagnostic-tip hidden></p>
-                            </div>
-                        </li>
-                        <li class="checklist-item" data-diagnostic-item="webSerial" data-status="pending">
-                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
-                            <div class="item-content">
-                                <span class="item-title">Web Serial API</span>
-                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
-                                <p class="item-tip" data-diagnostic-tip hidden></p>
-                            </div>
-                        </li>
-                        <li class="checklist-item" data-diagnostic-item="ports" data-status="pending">
-                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
-                            <div class="item-content">
-                                <span class="item-title">Connected devices</span>
-                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
-                                <p class="item-tip" data-diagnostic-tip hidden></p>
-                            </div>
-                        </li>
-                        <li class="checklist-item" data-diagnostic-item="battery" data-status="pending">
-                            <span class="status-icon" data-diagnostic-status aria-hidden="true"></span>
-                            <div class="item-content">
-                                <span class="item-title">Battery readiness</span>
-                                <p class="item-text" data-diagnostic-message>Preparing check…</p>
-                                <p class="item-tip" data-diagnostic-tip hidden></p>
-                            </div>
-                        </li>
-                    </ul>
-                    <p class="diagnostic-error" data-diagnostic-error hidden></p>
-                </section>
-
-                <section class="serial-detection-panel pre-flash-checklist" aria-labelledby="serial-detection-title">
-                    <div class="checklist-header">
-                        <div class="checklist-header__text">
-                            <h3 class="checklist-heading" id="serial-detection-title">Device Detection</h3>
-                            <p class="checklist-subtitle" id="serial-detection-summary">Connect your Sense360 hub and choose “Detect Device”.</p>
-                        </div>
-                        <button type="button" class="checklist-refresh" id="serial-detection-refresh" aria-label="Detect devices">Detect Device</button>
-                    </div>
-                    <ul class="serial-detection-list" id="serial-detection-list" hidden aria-live="polite"></ul>
-                    <p class="serial-detection-guidance" id="serial-detection-guidance"></p>
-                </section>
 
                 <div class="firmware-section">
                     <h3>Compatible Firmware</h3>
@@ -408,65 +355,6 @@
                         <!-- Compatible firmware will be shown here -->
                     </div>
                 </div>
-
-                <section class="post-install-guidance" data-post-install-guidance hidden aria-live="polite">
-                    <div class="post-install-guidance__header">
-                        <h3>Next steps</h3>
-                        <p>Firmware installed successfully. Finish setup by provisioning Wi‑Fi and assigning a friendly device name.</p>
-                        <p class="post-install-guidance__note" data-post-install-guidance-note hidden></p>
-                    </div>
-                    <ol class="post-install-guidance__list">
-                        <li class="post-install-guidance__item">
-                            <div class="post-install-guidance__item-heading">
-                                <h4>Provision Wi‑Fi</h4>
-                            </div>
-                            <p>Keep the hub connected and start the Improv Wi‑Fi workflow so it can join your network:</p>
-                            <div class="post-install-guidance__actions">
-                                <a class="btn btn-secondary post-install-guidance__action" href="https://web.esphome.io/" target="_blank" rel="noopener" data-guidance-link="improv">Open Improv Wi‑Fi</a>
-                                <button type="button" class="btn btn-copy post-install-guidance__action" data-copy-text="https://web.esphome.io/" data-copy-success="Improv link copied">Copy link</button>
-                            </div>
-                            <p class="post-install-guidance__pitfall"><strong>Common pitfall:</strong> Improv only works on 2.4&nbsp;GHz SSIDs without captive portals, VPN requirements, or MAC filtering. If provisioning stalls, double-check the network and leave BOOT/RESET alone until the flow finishes.</p>
-                        </li>
-                        <li class="post-install-guidance__item">
-                            <div class="post-install-guidance__item-heading">
-                                <h4>Name the device</h4>
-                            </div>
-                            <p>Apply the fleet naming convention before installation day. Use this template with the Sense360 CLI or Fleet Manager rename dialog.</p>
-                            <div class="post-install-guidance__actions post-install-guidance__actions--stacked">
-                                <code class="post-install-guidance__code" data-copy-source>sense360-cli device name --id &lt;device-id&gt; --name &quot;Building-Room-Device&quot;</code>
-                                <button type="button" class="btn btn-copy post-install-guidance__action" data-copy-text="sense360-cli device name --id &lt;device-id&gt; --name &quot;Building-Room-Device&quot;" data-copy-success="Command copied">Copy command</button>
-                            </div>
-                            <p class="post-install-guidance__pitfall"><strong>Common pitfall:</strong> Names with spaces, emojis, or punctuation are rejected. Stick to letters, numbers, and hyphens—for example <code>Lobby-01-East</code>.</p>
-                        </li>
-                    </ol>
-                <section class="rescue-install" aria-labelledby="rescue-install-title">
-                    <h3 class="rescue-install__heading" id="rescue-install-title">Rescue Install</h3>
-                    <p class="rescue-install__intro">If the recommended firmware fails to boot or the hub is stuck in a flashing loop, use the rescue image to restore the bootloader before trying again.</p>
-                    <div class="firmware-card firmware-card--rescue" data-rescue-card>
-                        <div class="firmware-item">
-                            <div class="firmware-info">
-                                <div class="firmware-header">
-                                    <div class="firmware-name">Sense360 Rescue Firmware</div>
-                                    <span class="firmware-channel-tag is-rescue">Rescue Build</span>
-                                </div>
-                                <div class="firmware-details">
-                                    <span class="firmware-version">v1.0.0-rescue</span>
-                                    <span class="firmware-size">512 KB</span>
-                                    <span class="firmware-date">Oct 23, 2025</span>
-                                </div>
-                                <p class="firmware-description">Launches a known-good recovery image that skips configuration matching to bring unresponsive devices back online.</p>
-                            </div>
-                            <div class="firmware-actions">
-                                <esp-web-install-button manifest="./firmware-18.json" data-rescue-install data-webflash-install>
-                                    <button slot="activate" class="btn btn-secondary" type="button" data-rescue-install>
-                                        Launch Rescue Installer
-                                    </button>
-                                </esp-web-install-button>
-                                <p class="ready-helper" role="status" aria-live="polite">Always available for emergency recovery.</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
 
                 <div class="remember-preference">
                     <label class="remember-toggle">
@@ -480,7 +368,6 @@
                     <div class="primary-action-group">
                         <div class="primary-action-controls">
                             <button class="btn btn-primary" id="download-btn" type="button" onclick="downloadFirmware()" disabled>Download Firmware</button>
-                            <button class="btn btn-primary" type="button" onclick="window.supportBundle?.open()">Support &amp; Logs</button>
                             <button class="btn btn-copy" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
                                 Copy
                             </button>
@@ -510,23 +397,6 @@
                 supported. <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more about the Web Serial API</a>.
             </p>
         </div>
-    </div>
-</div>
-
-<div id="multi-part-download-modal" class="multi-part-modal-backdrop" hidden>
-    <div class="multi-part-modal" role="dialog" aria-modal="true" aria-labelledby="multi-part-modal-title">
-        <header class="multi-part-modal__header">
-            <h2 id="multi-part-modal-title">Multiple firmware files required</h2>
-            <button type="button" class="multi-part-modal__close" data-multi-part-close aria-label="Close multi-part firmware details">&times;</button>
-        </header>
-        <div class="multi-part-modal__body">
-            <p class="multi-part-modal__intro">Download each binary and flash it at the listed offset. Files are also linked below for quick access.</p>
-            <ul class="multi-part-modal__list" data-multi-part-list></ul>
-        </div>
-        <footer class="multi-part-modal__footer">
-            <button type="button" class="btn btn-secondary" data-multi-part-close>Close</button>
-            <button type="button" class="btn btn-primary" data-multi-part-copy>Copy all URLs</button>
-        </footer>
     </div>
 </div>
 

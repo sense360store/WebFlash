@@ -145,15 +145,20 @@ describe('remember-state persistence', () => {
         expect(raw).not.toBeNull();
         const parsed = JSON.parse(raw);
         expect(parsed).toEqual({
-            configuration: {
-                ...defaultConfiguration,
-                mounting: 'wall',
-                power: 'usb',
-                airiq: 'pro',
-                presence: 'base',
-                fan: 'analog'
+            version: 2,
+            lastState: {
+                configuration: {
+                    ...defaultConfiguration,
+                    mounting: 'wall',
+                    power: 'usb',
+                    airiq: 'pro',
+                    presence: 'base',
+                    fan: 'analog'
+                },
+                currentStep: 4
             },
-            currentStep: 4
+            presets: [],
+            activePresetId: null
         });
     });
 
