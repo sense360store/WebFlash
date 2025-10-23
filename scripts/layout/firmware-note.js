@@ -1,3 +1,5 @@
+import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
+
 (function () {
     let observedButton = null;
     let buttonObserver = null;
@@ -103,28 +105,12 @@
 
     async function handleCopy(url, button) {
         try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(url);
-            } else {
-                fallbackCopy(url);
-            }
+            await copyTextToClipboard(url);
             showCopyStatus(button, 'Copied');
         } catch (error) {
             console.error('[firmware-note] Failed to copy firmware link', error);
             showCopyStatus(button, 'Copy failed');
         }
-    }
-
-    function fallbackCopy(text) {
-        const temp = document.createElement('textarea');
-        temp.value = text;
-        temp.setAttribute('readonly', 'true');
-        temp.style.position = 'absolute';
-        temp.style.left = '-9999px';
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand('copy');
-        document.body.removeChild(temp);
     }
 
     function showCopyStatus(button, message) {

@@ -1,4 +1,5 @@
 import { normalizeChannelKey } from '../utils/channel-alias.js';
+import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 import {
     listPresets,
     savePreset,
@@ -671,28 +672,12 @@ import {
         const url = buildShareableUrl(state);
 
         try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(url);
-            } else {
-                fallbackCopy(url);
-            }
+            await copyTextToClipboard(url);
             showCopyFeedback(copyButton, 'Copied');
         } catch (error) {
             console.error('[state-summary] Failed to copy link', error);
             showCopyFeedback(copyButton, 'Copy failed');
         }
-    }
-
-    function fallbackCopy(text) {
-        const temp = document.createElement('textarea');
-        temp.value = text;
-        temp.setAttribute('readonly', 'true');
-        temp.style.position = 'absolute';
-        temp.style.left = '-9999px';
-        document.body.appendChild(temp);
-        temp.select();
-        document.execCommand('copy');
-        document.body.removeChild(temp);
     }
 
     function showCopyFeedback(button, message) {
