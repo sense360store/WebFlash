@@ -1,4 +1,4 @@
-# Sense360 Ceiling Mount PWR with Full Sensor Suite v1.0.0
+# Sense360 Ceiling Mount PWR with Full Sensor Suite v1.0.0 (Stable)
 
 ## Configuration Details
 - **Mounting Type**: Ceiling
@@ -11,31 +11,18 @@
 - **Release Date**: 2025-07-25
 
 ## Description
-Ceiling-mounted Sense360 with external power module and complete sensor suite including AirIQ Pro, dual presence detection, and comfort sensors.
+Stable release firmware for ceiling-mounted Sense360 units with external power and the full AirIQ Pro + Presence + Comfort stack. Recommended for production deployments needing the complete sensor suite.
 
 ## Hardware Requirements
 - ESP32-S3 WROOM Core Module
 - PWR Module for external power
 - AirIQ Pro Module (all sensors)
 - Presence Module with LD2450 and SEN0609
-- Comfort Module with SHT40 and LTR-303
-- Ceiling mounting bracket
+- Comfort Module sensors (SHT40, LTR-303)
 
 ## Features
-- Professional-grade air quality monitoring with particulate matter
-- Dual radar presence detection (24GHz + mmWave)
-- Environmental comfort monitoring (temperature, humidity, light)
-- Formaldehyde detection (SFA40)
-- PM1.0, PM2.5, PM4.0, PM10 measurements (SPS30)
-- Differential pressure sensing (SEN0321)
-- Multi-zone presence tracking
-
-## Known Issues
-- Ceiling mount does not support Fan Module
-- Requires 5V 2A power supply minimum
-- Initial sensor calibration takes 72 hours
-
-## Changelog
-- Initial release with full sensor configuration
-- Ceiling mount optimizations for coverage
-- Multi-sensor fusion algorithms
+- Aggregated air quality monitoring across VOC, particulate, and gas sensors
+- Dual presence detection through LD2450 radar and SEN0609 IR sensor
+- Comfort metrics delivered via temperature, humidity, and light sensors
+- Improv Wi-Fi provisioning compatible with ESP Web Tools
+- MQTT telemetry structured for Home Assistant dashboards

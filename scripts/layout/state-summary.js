@@ -1,3 +1,13 @@
+import { normalizeChannelKey } from '../utils/channel-alias.js';
+import {
+    listPresets,
+    savePreset,
+    renamePreset,
+    deletePreset,
+    getPreset,
+    markPresetApplied
+} from '../remember-state.js';
+
 (function () {
     const FIELD_MAP = [
         { key: 'mount', name: 'mounting', label: 'Mount' },
@@ -8,10 +18,36 @@
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
 
+    const PRESET_STORAGE_OPTIONS = Object.freeze({
+        defaultConfiguration: {
+            mounting: null,
+            power: null,
+            airiq: 'none',
+            presence: 'none',
+            comfort: 'none',
+            fan: 'none'
+        },
+        allowedOptions: {
+            mounting: ['wall', 'ceiling'],
+            power: ['usb', 'poe', 'pwr'],
+            airiq: ['none', 'base', 'pro'],
+            presence: ['none', 'base', 'pro'],
+            comfort: ['none', 'base'],
+            fan: ['none', 'pwm', 'analog']
+        },
+        totalSteps: 4
+    });
+
     const subscribers = new Set();
     let pending = false;
     let sidebarRefs = null;
+    let presetManagerRefs = null;
+    const presetCache = new Map();
     let copyResetTimer = null;
+
+    function normaliseChannelKey(channel) {
+        return normalizeChannelKey(channel, { allowNull: true });
+    }
 
     function readFieldMeta(field) {
         const { name } = field;
@@ -95,6 +131,149 @@
         return state;
     }
 
+    function mapSummaryStateToConfiguration(state) {
+        return {
+            mounting: state.mount || null,
+            power: state.power || null,
+            airiq: state.airiq || 'none',
+            presence: state.presence || 'none',
+            comfort: state.comfort || 'none',
+            fan: state.mount === 'wall' ? (state.fan || 'none') : 'none'
+        };
+    }
+
+    function generatePresetName(state) {
+        const segments = [];
+
+        if (state.mount) {
+            segments.push(state.mount === 'wall' ? 'Wall mount' : 'Ceiling mount');
+        }
+
+        if (state.power) {
+            segments.push(`${state.power.toUpperCase()} power`);
+        }
+
+        const moduleSegments = [];
+        if (state.airiq && state.airiq !== 'none') {
+            moduleSegments.push(`AirIQ ${formatValue(state.airiq)}`);
+        }
+        if (state.presence && state.presence !== 'none') {
+            moduleSegments.push(`Presence ${formatValue(state.presence)}`);
+        }
+        if (state.comfort && state.comfort !== 'none') {
+            moduleSegments.push(`Comfort ${formatValue(state.comfort)}`);
+        }
+        if (state.fan && state.fan !== 'none') {
+            moduleSegments.push(`Fan ${state.fan.toUpperCase()}`);
+        }
+
+        if (moduleSegments.length) {
+            segments.push(moduleSegments.join(' + '));
+        }
+
+        if (!segments.length) {
+            return `Preset ${presetCache.size + 1}`;
+        }
+
+        return segments.join(' • ');
+    }
+
+    function clampPresetStep(step) {
+        const numeric = Number.parseInt(step, 10);
+        if (!Number.isFinite(numeric) || numeric < 1) {
+            return null;
+        }
+
+        return Math.min(PRESET_STORAGE_OPTIONS.totalSteps, numeric);
+    }
+
+    function getCurrentWizardStep() {
+        const active = document.querySelector('.progress-step.active');
+        if (!active) {
+            return null;
+        }
+
+        const value = Number.parseInt(active.getAttribute('data-step'), 10);
+        return Number.isFinite(value) ? value : null;
+    }
+
+    function setWizardStep(targetStep) {
+        const normalized = clampPresetStep(targetStep);
+        const current = getCurrentWizardStep();
+
+        if (!normalized || !current || normalized === current) {
+            return;
+        }
+
+        const stepFn = normalized > current ? window.nextStep : window.previousStep;
+        if (typeof stepFn !== 'function') {
+            return;
+        }
+
+        let safety = 0;
+        let updatedCurrent = current;
+        const limit = PRESET_STORAGE_OPTIONS.totalSteps * 2;
+
+        while (updatedCurrent !== normalized && safety < limit) {
+            stepFn();
+            safety += 1;
+            const nextValue = getCurrentWizardStep();
+            if (!Number.isFinite(nextValue) || nextValue === updatedCurrent) {
+                break;
+            }
+            updatedCurrent = nextValue;
+        }
+    }
+
+    function applyRadioSelection(name, value) {
+        if (value === null || value === undefined) {
+            return;
+        }
+
+        const selector = `input[name="${name}"][value="${value}"]`;
+        const input = document.querySelector(selector);
+
+        if (!input) {
+            return;
+        }
+
+        if (!input.checked) {
+            input.checked = true;
+        }
+
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function applyPresetStateToWizard(presetState) {
+        if (!presetState || typeof presetState !== 'object') {
+            return;
+        }
+
+        const configuration = presetState.configuration || {};
+        const mount = configuration.mounting || null;
+        const power = configuration.power || null;
+        const airiq = configuration.airiq || 'none';
+        const presence = configuration.presence || 'none';
+        const comfort = configuration.comfort || 'none';
+        const fan = mount === 'wall' ? (configuration.fan || 'none') : 'none';
+
+        if (mount) {
+            applyRadioSelection('mounting', mount);
+        }
+        if (power) {
+            applyRadioSelection('power', power);
+        }
+
+        applyRadioSelection('airiq', airiq);
+        applyRadioSelection('presence', presence);
+        applyRadioSelection('comfort', comfort);
+        applyRadioSelection('fan', fan);
+
+        if (presetState.currentStep) {
+            setWizardStep(presetState.currentStep);
+        }
+    }
+
     function onStateChange(callback) {
         if (typeof callback !== 'function') {
             return () => {};
@@ -129,6 +308,7 @@
         });
 
         renderSidebar(meta, state);
+        updatePresetSaveState(state);
     }
 
     function scheduleScan() {
@@ -201,6 +381,251 @@
             resetButton.dataset.bound = 'true';
             resetButton.addEventListener('click', handleReset);
         }
+    }
+
+    function ensurePresetManagerRefs() {
+        if (presetManagerRefs && document.body.contains(presetManagerRefs.root)) {
+            return presetManagerRefs;
+        }
+
+        const root = document.getElementById('preset-manager');
+        if (!root) {
+            presetManagerRefs = null;
+            return null;
+        }
+
+        const list = root.querySelector('[data-preset-list]');
+        const empty = root.querySelector('[data-preset-empty]');
+        const form = root.querySelector('[data-preset-form]');
+        const nameInput = root.querySelector('[data-preset-name]');
+        const saveButton = root.querySelector('[data-preset-save]');
+
+        if (!list || !empty || !form || !nameInput || !saveButton) {
+            presetManagerRefs = null;
+            return null;
+        }
+
+        presetManagerRefs = { root, list, empty, form, nameInput, saveButton };
+        bindPresetManager(presetManagerRefs);
+        return presetManagerRefs;
+    }
+
+    function bindPresetManager(refs) {
+        const { list, form, nameInput } = refs;
+
+        if (form.dataset.presetBound !== 'true') {
+            form.addEventListener('submit', handlePresetSave);
+            form.dataset.presetBound = 'true';
+        }
+
+        if (nameInput.dataset.presetBound !== 'true') {
+            nameInput.addEventListener('input', () => updatePresetSaveState(getState()));
+            nameInput.dataset.presetBound = 'true';
+        }
+
+        if (list.dataset.presetBound !== 'true') {
+            list.addEventListener('click', handlePresetListClick);
+            list.dataset.presetBound = 'true';
+        }
+    }
+
+    function updatePresetEmptyState(presets) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        refs.empty.hidden = presets.length > 0;
+        refs.list.hidden = presets.length === 0;
+    }
+
+    function renderPresetList() {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        const presets = listPresets(PRESET_STORAGE_OPTIONS);
+        presetCache.clear();
+
+        while (refs.list.firstChild) {
+            refs.list.removeChild(refs.list.firstChild);
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        presets.forEach(preset => {
+            presetCache.set(preset.id, preset);
+
+            const item = document.createElement('li');
+            item.className = 'preset-panel__item';
+            item.dataset.presetId = preset.id;
+
+            const name = document.createElement('span');
+            name.className = 'preset-panel__item-name';
+            name.textContent = preset.name;
+            item.appendChild(name);
+
+            const actions = document.createElement('div');
+            actions.className = 'preset-panel__actions';
+
+            const applyButton = document.createElement('button');
+            applyButton.type = 'button';
+            applyButton.className = 'preset-panel__action-button';
+            applyButton.dataset.presetAction = 'apply';
+            applyButton.textContent = 'Apply';
+            actions.appendChild(applyButton);
+
+            const renameButton = document.createElement('button');
+            renameButton.type = 'button';
+            renameButton.className = 'preset-panel__action-button';
+            renameButton.dataset.presetAction = 'rename';
+            renameButton.textContent = 'Rename';
+            actions.appendChild(renameButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'preset-panel__action-button';
+            deleteButton.dataset.presetAction = 'delete';
+            deleteButton.textContent = 'Delete';
+            actions.appendChild(deleteButton);
+
+            item.appendChild(actions);
+            fragment.appendChild(item);
+        });
+
+        refs.list.appendChild(fragment);
+        updatePresetEmptyState(presets);
+    }
+
+    function updatePresetSaveState(state) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        const hasMount = Boolean(state.mount);
+        const hasPower = Boolean(state.power);
+        refs.saveButton.disabled = !(hasMount && hasPower);
+    }
+
+    function handlePresetSave(event) {
+        event.preventDefault();
+
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        const state = getState();
+        if (!state.mount || !state.power) {
+            return;
+        }
+
+        const configuration = mapSummaryStateToConfiguration(state);
+        const rawName = refs.nameInput.value;
+        const trimmedName = typeof rawName === 'string' ? rawName.trim() : '';
+        const presetName = trimmedName || generatePresetName(state);
+        const currentStep = getCurrentWizardStep();
+
+        const saved = savePreset(presetName, configuration, {
+            ...PRESET_STORAGE_OPTIONS,
+            currentStep
+        });
+
+        if (saved) {
+            markPresetApplied(saved.id, PRESET_STORAGE_OPTIONS);
+        }
+
+        refs.nameInput.value = '';
+        renderPresetList();
+        updatePresetSaveState(state);
+        refs.nameInput.focus();
+    }
+
+    function handlePresetListClick(event) {
+        const actionElement = event.target.closest('[data-preset-action]');
+        if (!actionElement) {
+            return;
+        }
+
+        const item = actionElement.closest('[data-preset-id]');
+        if (!item) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const presetId = item.dataset.presetId;
+        const action = actionElement.dataset.presetAction;
+
+        if (!presetId || !action) {
+            return;
+        }
+
+        if (action === 'apply') {
+            applyPresetById(presetId);
+        } else if (action === 'rename') {
+            handlePresetRename(presetId);
+        } else if (action === 'delete') {
+            handlePresetDelete(presetId);
+        }
+    }
+
+    function applyPresetById(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        applyPresetStateToWizard(preset.state);
+        markPresetApplied(preset.id, PRESET_STORAGE_OPTIONS);
+        renderPresetList();
+    }
+
+    function handlePresetRename(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        const result = window.prompt('Rename preset', preset.name);
+        if (result === null) {
+            return;
+        }
+
+        const trimmed = result.trim();
+        if (!trimmed) {
+            return;
+        }
+
+        renamePreset(presetId, trimmed, PRESET_STORAGE_OPTIONS);
+        renderPresetList();
+    }
+
+    function handlePresetDelete(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Delete preset "${preset.name}"?`);
+        if (!confirmed) {
+            return;
+        }
+
+        deletePreset(presetId);
+        renderPresetList();
+    }
+
+    function initializePresetManager() {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        renderPresetList();
+        updatePresetSaveState(getState());
     }
 
     function renderSidebar(meta, state) {
@@ -287,19 +712,58 @@
         }, 1200);
     }
 
+    /**
+     * Builds a shareable URL containing the current wizard selections.
+     * The optional `channel` query parameter targets a specific firmware channel
+     * so support can generate links that open directly to the desired release.
+     */
     function buildShareableUrl(state) {
         const params = new URLSearchParams();
-        if (state.mount) {
-            params.set('mount', state.mount);
-        }
-        if (state.power) {
-            params.set('power', state.power);
+        const currentFirmware = window.currentFirmware || null;
+        const firmwareConfig = (currentFirmware?.config_string || '').toString().trim();
+        const firmwareModel = (currentFirmware?.model || '').toString().trim();
+        const firmwareVariant = (currentFirmware?.variant || '').toString().trim();
+        const firmwareSensorAddon = (currentFirmware?.sensor_addon || '').toString().trim();
+        const useModelLookup = !firmwareConfig && firmwareModel && firmwareVariant;
+
+        if (useModelLookup) {
+            params.set('model', firmwareModel);
+            params.set('variant', firmwareVariant);
+            if (firmwareSensorAddon) {
+                params.set('sensor_addon', firmwareSensorAddon);
+            }
+        } else {
+            if (state.mount) {
+                params.set('mount', state.mount);
+            }
+            if (state.power) {
+                params.set('power', state.power);
+            }
+
+            params.set('airiq', state.airiq || 'none');
+            params.set('presence', state.presence || 'none');
+            params.set('comfort', state.comfort || 'none');
+            params.set('fan', state.fan || 'none');
+
+            const presetApi = window.queryPresets || null;
+            if (presetApi && typeof presetApi.getMatchingPreset === 'function') {
+                try {
+                    const preset = presetApi.getMatchingPreset(state);
+                    if (preset && preset.name) {
+                        params.set('preset', preset.name);
+                    }
+                } catch (error) {
+                    console.warn('[state-summary] unable to resolve preset', error);
+                }
+            }
         }
 
-        params.set('airiq', state.airiq || 'none');
-        params.set('presence', state.presence || 'none');
-        params.set('comfort', state.comfort || 'none');
-        params.set('fan', state.fan || 'none');
+        if (currentFirmware && currentFirmware.channel) {
+            const channel = normaliseChannelKey(currentFirmware.channel);
+            if (channel) {
+                params.set('channel', channel);
+            }
+        }
 
         const base = `${window.location.origin}${window.location.pathname}`;
         const query = params.toString();
@@ -309,10 +773,15 @@
     function handleReset(event) {
         event.preventDefault();
         try {
-            const storage = window.localStorage;
-            if (storage) {
-                storage.removeItem('sense360.lastWizardState');
-                storage.removeItem('lastWizardState');
+            const rememberApi = window.wizardRememberState;
+            if (rememberApi && typeof rememberApi.clear === 'function') {
+                rememberApi.clear();
+            } else {
+                const storage = window.localStorage;
+                if (storage) {
+                    storage.removeItem('sense360.lastWizardState');
+                    storage.removeItem('lastWizardState');
+                }
             }
         } catch (error) {
             console.warn('[state-summary] Unable to clear remembered state', error);
@@ -332,7 +801,8 @@
 
     const api = {
         getState,
-        onStateChange
+        onStateChange,
+        buildShareableUrl
     };
 
     Object.defineProperty(window, 'wizardStateSummary', {
@@ -341,9 +811,14 @@
         configurable: false
     });
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', scheduleScan);
-    } else {
+    function handleDomReady() {
+        initializePresetManager();
         scheduleScan();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', handleDomReady);
+    } else {
+        handleDomReady();
     }
 })();

@@ -9,6 +9,22 @@ const allowedOptions = Object.freeze({
     fan: ['none', 'pwm', 'analog']
 });
 
+const recommendedPreset = Object.freeze({
+    name: 'recommended',
+    label: 'Recommended bundle',
+    description: 'Wall mount with USB power plus AirIQ Base and Presence Base modules—our go-to starter bundle.',
+    state: Object.freeze({
+        mount: 'wall',
+        power: 'usb',
+        airiq: 'base',
+        presence: 'base',
+        comfort: 'none',
+        fan: 'none'
+    })
+});
+
+const presetRegistry = new Map([[recommendedPreset.name, recommendedPreset]]);
+
 const keyAliases = new Map([
     ['mounting', 'mount'],
     ['mount', 'mount'],
@@ -50,6 +66,40 @@ function sanitiseState(partialState = {}) {
     return cleanState;
 }
 
+function sanitisePresetState(state = {}) {
+    return sanitiseState(state);
+}
+
+const presetStates = new Map(
+    Array.from(presetRegistry.entries()).map(([name, preset]) => [
+        name,
+        sanitisePresetState(preset.state)
+    ])
+);
+
+function getPresetByName(name) {
+    if (!name) {
+        return null;
+    }
+
+    const key = name.toString().trim().toLowerCase();
+    return presetRegistry.get(key) || null;
+}
+
+function getMatchingPreset(state = getState()) {
+    const target = sanitiseState(state);
+    const keys = Object.keys(allowedOptions);
+
+    for (const [name, presetState] of presetStates.entries()) {
+        const matches = keys.every((key) => (target[key] || 'none') === (presetState[key] || 'none'));
+        if (matches) {
+            return presetRegistry.get(name) || null;
+        }
+    }
+
+    return null;
+}
+
 function parseFromLocation() {
     const combinedParams = new URLSearchParams();
     const searchParams = new URLSearchParams(window.location.search);
@@ -64,8 +114,11 @@ function parseFromLocation() {
     });
 
     const defaults = getDefaultState();
+    const presetParam = combinedParams.get('preset');
+    const preset = getPresetByName(presetParam);
     const providedKeys = new Set();
-    const parsed = { ...defaults };
+    const baseState = preset ? { ...defaults, ...sanitisePresetState(preset.state) } : { ...defaults };
+    const parsed = { ...baseState };
 
     combinedParams.forEach((value, key) => {
         const normalisedKey = normaliseKey(key);
@@ -98,17 +151,18 @@ function parseFromLocation() {
     return {
         state: parsed,
         providedKeys,
-        step: parsedStep
+        step: parsedStep,
+        preset: preset ? preset.name : null
     };
 }
 
 function updateFromLocation(options = {}) {
-    const { state, providedKeys, step } = parseFromLocation();
+    const { state, providedKeys, step, preset } = parseFromLocation();
     replaceState(state, options);
     if (typeof step === 'number') {
         setStep(step, options);
     }
-    return { state, providedKeys, step };
+    return { state, providedKeys, step, preset };
 }
 
 function getMaxReachableStep(state = getState()) {
@@ -144,6 +198,11 @@ function stateToSearchParams(state = getState(), step = getStep()) {
         params.set('fan', 'none');
     }
 
+    const preset = getMatchingPreset(state);
+    if (preset) {
+        params.set('preset', preset.name);
+    }
+
     if (Number.isFinite(step)) {
         params.set('step', String(Math.max(1, Math.min(4, Math.floor(step)))));
     }
@@ -166,18 +225,26 @@ function createSharableLink(baseUrl, state = getState(), step = getStep()) {
     return query ? `${urlBase}?${query}` : urlBase;
 }
 
-function applyPreset(statePatch = {}) {
+function applyPreset(statePatch = {}, options = {}) {
     const cleanState = sanitiseState(statePatch);
     setState(cleanState);
+    const targetStep = options && Number.isFinite(options.step) ? options.step : null;
+    if (Number.isFinite(targetStep)) {
+        setStep(targetStep);
+    }
     updateUrl(cleanState, getStep());
+    return cleanState;
 }
 
 const api = {
     allowedOptions,
     applyPreset,
     createSharableLink,
+    getMatchingPreset,
     getMaxReachableStep,
+    getPresetByName,
     parseFromLocation,
+    recommendedPreset,
     stateToSearchParams,
     updateFromLocation,
     updateUrl
@@ -191,8 +258,11 @@ export {
     allowedOptions,
     applyPreset,
     createSharableLink,
+    getMatchingPreset,
     getMaxReachableStep,
+    getPresetByName,
     parseFromLocation,
+    recommendedPreset,
     stateToSearchParams,
     updateFromLocation,
     updateUrl

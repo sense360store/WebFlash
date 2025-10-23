@@ -1,4 +1,4 @@
-# Sense360 Wall Mount USB Configuration v1.0.0
+# Sense360 Wall Mount USB + AirIQ Pro v1.0.0 (Stable)
 
 ## Configuration Details
 - **Mounting Type**: Wall
@@ -10,25 +10,15 @@
 - **Release Date**: 2025-07-25
 
 ## Description
-Base firmware for Sense360 wall-mounted units with USB power. This is the minimal configuration with no expansion modules.
+Stable release firmware for USB-powered wall installations with the AirIQ Pro module attached.
 
 ## Hardware Requirements
 - ESP32-S3 WROOM Core Module
 - USB-C power connection
+- AirIQ Pro Module
 - Wall mounting bracket
 
 ## Features
-- Core module functionality
-- Wi-Fi connectivity with Improv Serial
-- Home Assistant integration
-- OTA updates support
-- Web dashboard
-
-## Known Issues
-- Initial Wi-Fi setup requires 60 seconds
-- First boot takes 2 minutes for calibration
-
-## Changelog
-- Initial release with core functionality
-- Wall mount specific optimizations
-- USB power management
+- Production-ready particulate and gas telemetry
+- Stable USB power management profiles
+- Improv Wi-Fi provisioning compatible with ESP Web Tools

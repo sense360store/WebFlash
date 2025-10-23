@@ -13,8 +13,8 @@
 
 ### ✅ Zero Manual Editing Required
 - ❌ **Never edit**: `manifest.json`, `firmware-*.json`, `index.html`
-- ✅ **Always run**: `python3 deploy-automation.py` after file changes
-- ✅ **Auto-generated**: All ESP Web Tools configuration
+- ✅ **Always run**: `python3 scripts/gen-manifests.py --summary` after file changes
+- ✅ **Auto-generated**: All ESP Web Tools configuration surfaced in the wizard
 
 ### ✅ Complete Workflow Verification
 
@@ -24,8 +24,8 @@
 mkdir -p firmware/TestDevice/ESP32/stable
 echo "test firmware" > firmware/TestDevice/ESP32/stable/Sense360-TestDevice-ESP32-v1.0.0-stable.bin
 
-# Run automation
-python3 deploy-automation.py
+# Regenerate manifests and preview summary table
+python3 scripts/gen-manifests.py --summary
 
 # Verify results
 python3 -c "
@@ -40,7 +40,7 @@ with open('manifest.json') as f:
 
 # Cleanup
 rm -rf firmware/TestDevice
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 #### Removing Firmware Test
@@ -53,8 +53,8 @@ FIRMWARE_FILE=$(find firmware -name "*.bin" | head -1)
 if [ -n "$FIRMWARE_FILE" ]; then
     mv "$FIRMWARE_FILE" "$FIRMWARE_FILE.backup"
     
-    # Run automation
-    python3 deploy-automation.py
+    # Regenerate manifests
+    python3 scripts/gen-manifests.py --summary
     
     # Check count decreased
     AFTER=$(python3 -c "import json; print(len(json.load(open('manifest.json'))['builds']))")
@@ -67,7 +67,7 @@ if [ -n "$FIRMWARE_FILE" ]; then
     
     # Restore file
     mv "$FIRMWARE_FILE.backup" "$FIRMWARE_FILE"
-    python3 deploy-automation.py
+    python3 scripts/gen-manifests.py --summary
 fi
 ```
 
@@ -79,25 +79,26 @@ fi
 - [ ] ESPHome config includes `improv_serial:`
 
 ### 📋 After Adding Firmware
-- [ ] Run `python3 deploy-automation.py`
-- [ ] Verify success message in output
+- [ ] Run `python3 scripts/gen-manifests.py --summary`
+- [ ] Verify summary table output includes new build
 - [ ] Check `manifest.json` includes new build
 - [ ] Check individual manifest created (`firmware-N.json`)
 - [ ] Verify `"improv": true` in all manifests
 - [ ] Run `python3 test-complete-workflow.py`
-- [ ] Test on website after deployment
+- [ ] Step through the WebFlash wizard (local `python3 -m http.server 5000`) and confirm the firmware card appears
+- [ ] Start an install session and confirm the generated Support bundle captures live serial logs
 
 ### 📋 Before Removing Firmware
 - [ ] Note current number of builds
 - [ ] Identify which individual manifest will be removed
 
 ### 📋 After Removing Firmware
-- [ ] Run `python3 deploy-automation.py`
-- [ ] Verify build count decreased
+- [ ] Run `python3 scripts/gen-manifests.py --summary`
+- [ ] Verify build count decreased in summary output
 - [ ] Check corresponding individual manifest removed
 - [ ] Verify remaining manifests renumbered correctly
 - [ ] Run `python3 test-complete-workflow.py`
-- [ ] Test on website after deployment
+- [ ] Step through the WebFlash wizard locally and confirm the firmware card is gone
 
 ## Automated Tests
 
@@ -187,7 +188,7 @@ open http://localhost:5000
 # Check GitHub Actions status
 # Visit: https://github.com/your-username/your-repo/actions
 
-# Test production site
+# Test production site with the WebFlash wizard
 open https://your-username.github.io/your-repo/
 ```
 

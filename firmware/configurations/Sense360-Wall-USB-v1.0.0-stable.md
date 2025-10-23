@@ -1,4 +1,4 @@
-# Sense360 Wall Mount USB Configuration v1.0.0
+# Sense360 Wall Mount USB Configuration v1.0.0 (Stable)
 
 ## Configuration Details
 - **Mounting Type**: Wall
@@ -10,7 +10,7 @@
 - **Release Date**: 2025-07-25
 
 ## Description
-Base firmware for Sense360 wall-mounted units with USB power. This is the minimal configuration with no expansion modules.
+Stable release firmware for wall-mounted Sense360 base units powered by USB. Intended for production deployments using the minimal sensor set.
 
 ## Hardware Requirements
 - ESP32-S3 WROOM Core Module
@@ -18,17 +18,6 @@ Base firmware for Sense360 wall-mounted units with USB power. This is the minima
 - Wall mounting bracket
 
 ## Features
-- Core module functionality
-- Wi-Fi connectivity with Improv Serial
-- Home Assistant integration
-- OTA updates support
-- Web dashboard
-
-## Known Issues
-- Initial Wi-Fi setup requires 60 seconds
-- First boot takes 2 minutes for calibration
-
-## Changelog
-- Initial release with core functionality
-- Wall mount specific optimizations
-- USB power management
+- Stable environmental telemetry for Home Assistant dashboards
+- Optimized power consumption for USB-powered installations
+- Improv Wi-Fi provisioning compatible with ESP Web Tools

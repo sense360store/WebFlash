@@ -1,60 +1,4 @@
 :root {
-    color-scheme: light dark;
-}
-
-:root[data-theme="dark"] {
-    color-scheme: dark;
-
-    /* Base */
-    --bg: #0b0f14;
-    --bg-elev-1: #10161d;
-    --bg-elev-2: #16202a;
-    --surface: #0f141a;
-    --text: #e6edf3;
-    --text-muted: #9fb0c3;
-    --border: #27323d;
-
-    /* Brand & states */
-    --accent: #2ea6ff;
-    --accent-hover: #1990ea;
-    --accent-contrast: #001b2b;
-
-    --success: #2ecc71;
-    --warning: #f4b400;
-    --danger: #ff5c5c;
-
-    /* Components */
-    --chip-bg: color-mix(in srgb, var(--accent) 12%, var(--bg-elev-1));
-    --kbd-bg: var(--bg-elev-2);
-    --input-bg: var(--bg-elev-1);
-    --input-text: var(--text);
-    --focus-ring: #66b3ff;
-
-    /* Legacy variable bridge */
-    --color-background: var(--bg);
-    --color-surface: var(--surface);
-    --color-surface-muted: var(--bg-elev-1);
-    --color-surface-soft: var(--bg-elev-2);
-    --color-border: var(--border);
-    --color-border-subtle: color-mix(in srgb, var(--border) 65%, transparent);
-    --color-border-strong: color-mix(in srgb, var(--border) 80%, black);
-    --color-text-primary: var(--text);
-    --color-text-secondary: var(--text-muted);
-    --color-text-tertiary: color-mix(in srgb, var(--text) 75%, var(--text-muted));
-    --color-progress-line: var(--border);
-    --color-step-inactive-bg: var(--bg-elev-2);
-    --color-toggle-bg: var(--bg-elev-1);
-    --color-toggle-border: var(--border);
-    --color-toggle-text: var(--text);
-    --color-toggle-hover: var(--bg-elev-2);
-    --capability-bar-bg: color-mix(in srgb, var(--bg-elev-1) 80%, transparent);
-    --capability-bar-border: var(--border);
-    --capability-note-bg: color-mix(in srgb, var(--danger) 12%, var(--bg-elev-1));
-    --capability-note-border: color-mix(in srgb, var(--danger) 55%, var(--border));
-    --capability-note-text: color-mix(in srgb, var(--danger) 65%, white);
-}
-
-:root[data-theme="light"] {
     color-scheme: light;
 
     /* Base */
@@ -91,6 +35,7 @@
     --color-border-subtle: color-mix(in srgb, var(--border) 45%, transparent);
     --color-border-strong: color-mix(in srgb, var(--border) 80%, black);
     --color-text-primary: var(--text);
+    --color-text-strong: var(--text);
     --color-text-secondary: var(--text-muted);
     --color-text-tertiary: color-mix(in srgb, var(--text-muted) 75%, var(--text));
     --color-progress-line: var(--border);
@@ -101,9 +46,25 @@
     --color-toggle-hover: var(--bg-elev-2);
     --capability-bar-bg: color-mix(in srgb, var(--accent) 8%, var(--bg-elev-1));
     --capability-bar-border: color-mix(in srgb, var(--accent) 30%, var(--border));
+    --capability-chip-bg: color-mix(in srgb, var(--accent) 14%, var(--bg-elev-1));
+    --capability-chip-border: color-mix(in srgb, var(--accent) 55%, var(--border));
+    --capability-chip-text: color-mix(in srgb, var(--accent) 70%, var(--text));
+    --capability-chip-available-bg: color-mix(in srgb, var(--success) 22%, white);
+    --capability-chip-available-border: color-mix(in srgb, var(--success) 45%, var(--border));
+    --capability-chip-available-text: color-mix(in srgb, var(--success) 65%, var(--text));
+    --capability-chip-partial-bg: color-mix(in srgb, var(--warning) 30%, white);
+    --capability-chip-partial-border: color-mix(in srgb, var(--warning) 55%, var(--border));
+    --capability-chip-partial-text: color-mix(in srgb, var(--warning) 65%, var(--text));
+    --capability-chip-unavailable-bg: color-mix(in srgb, var(--danger) 18%, white);
+    --capability-chip-unavailable-border: color-mix(in srgb, var(--danger) 55%, var(--border));
+    --capability-chip-unavailable-text: color-mix(in srgb, var(--danger) 65%, var(--text));
+    --capability-copy-feedback: color-mix(in srgb, var(--accent) 70%, var(--text));
     --capability-note-bg: color-mix(in srgb, var(--danger) 12%, var(--bg-elev-2));
     --capability-note-border: color-mix(in srgb, var(--danger) 30%, var(--border));
     --capability-note-text: color-mix(in srgb, var(--danger) 70%, black);
+    --capability-note-dismiss-border: color-mix(in srgb, var(--danger) 55%, var(--border));
+    --capability-note-dismiss-hover: color-mix(in srgb, var(--danger) 15%, transparent);
+    --capability-note-focus-ring: color-mix(in srgb, var(--danger) 45%, var(--focus-ring));
 }
 
 html,
@@ -180,70 +141,8 @@ header {
     position: relative;
 }
 
-.header-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 16px;
-}
-
-header .header-toolbar {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    margin-top: 0;
-    width: auto;
-}
-
-.theme-toggle {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.4rem 0.75rem;
-    border-radius: 999px;
-    background: var(--bg-elev-1);
-    color: var(--text);
-    border: 1px solid var(--border);
-    font-size: 0.85rem;
-    line-height: 1;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.theme-toggle:hover,
-.theme-toggle:focus-visible {
-    background: var(--bg-elev-2);
-    color: var(--text);
-}
-
-.theme-toggle svg {
-    width: 1em;
-    height: 1em;
-    fill: currentColor;
-}
-
-.theme-toggle__label {
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-@media (max-width: 720px) {
-    .header-toolbar {
-        justify-content: center;
-    }
-
-    header .header-toolbar {
-        position: static;
-        margin-top: 12px;
-        width: 100%;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .btn,
-    .theme-toggle {
+    .btn {
         transition: none;
     }
 }
@@ -252,10 +151,6 @@ header .header-toolbar {
     :root {
         --border: color-mix(in srgb, var(--border) 85%, #000000);
     }
-}
-
-:root[data-theme="dark"][data-density="compact"] .wizard-layout {
-    gap: 24px;
 }
 
 :root[data-density="compact"] .wizard-container {

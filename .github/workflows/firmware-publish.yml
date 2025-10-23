@@ -1,0 +1,100 @@
+name: Firmware publish
+
+on:
+  push:
+    paths:
+      - 'firmware/**'
+      - 'scripts/**'
+      - 'manifest.json'
+      - 'firmware-*.json'
+      - '.github/workflows/firmware-publish.yml'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Sync firmware assets from release
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python scripts/sync-from-releases.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --release-id "${{ github.event.release.id }}" \
+            --target-dir firmware
+
+      - name: Generate firmware manifests
+        run: |
+          set -euo pipefail
+          python scripts/gen-manifests.py \
+            --firmware-dir firmware \
+            --manifest-path manifest.json \
+            --manifest-prefix firmware- \
+            --summary
+
+      - name: List firmware & dry-run summary
+        run: |
+          set -euo pipefail
+          echo "== .bin files =="
+          find firmware -type f -name '*.bin' -printf '%p\n' | sort
+          echo "== gen-manifests dry-run summary =="
+          python scripts/gen-manifests.py \
+            --firmware-dir firmware \
+            --manifest-path manifest.json \
+            --manifest-prefix firmware- \
+            --summary --dry-run
+
+      - name: Assert required configs present
+        run: |
+          set -euo pipefail
+          for k in "Ceiling-POE-AirIQBase" "Ceiling-POE-AirIQPro"; do
+            if ! grep -qi "\"config_string\": *\"$k\"" manifest.json; then
+              echo "❌ Missing $k in manifest.json" >&2
+              exit 1
+            fi
+          done
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload repo root so the fresh manifest.json is included
+          path: ./
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

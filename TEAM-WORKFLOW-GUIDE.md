@@ -23,20 +23,21 @@ cp co2-monitor.bin firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S
 cp temp-sensor.bin firmware/TempSensor/ESP32/beta/Sense360-TempSensor-ESP32-v2.0.0-beta.bin
 ```
 
-### Step 2: Run Automation
+### Step 2: Run the Manifest Generator
 ```bash
 cd WebFlash
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 **Expected output:**
 ```
-🧹 Cleaning up X existing manifest files...
-📦 Found: Sense360-CO2Monitor-ESP32S3-v1.5.0-stable.bin
-📅 Using git commit date: 2025-07-13T14:25:36Z
-✓ Created manifest.json with X builds
-✓ Created firmware-N.json for CO2Monitor v1.5.0
-✅ CLEAN STATE AUTOMATION COMPLETED
+Firmware summary:
+
+┌──────────────────────────────┬───────────┬─────────┬──────────┬──────────────┬────────────┐
+│ Name                         │ Version   │ Channel │ Chip     │ Last Updated │ Checksum   │
+│ Sense360-CO2Monitor-ESP32S3  │ 1.5.0     │ stable  │ ESP32-S3 │ ...          │ ...        │
+└──────────────────────────────┴───────────┴─────────┴──────────┴──────────────┴────────────┘
+Generated manifest.json and firmware manifests.
 ```
 
 ### Step 3: Deploy
@@ -47,9 +48,9 @@ git push origin main
 ```
 
 ### Step 4: Verify (2 minutes)
-1. Open https://your-repo.github.io/
-2. Check new firmware appears in dropdown
-3. Click install button to test ESP Web Tools
+1. Run `python3 -m http.server 5000`
+2. Open http://localhost:5000/ and walk through the WebFlash wizard
+3. Confirm the recommended firmware card shows the new build and Install Firmware launches ESP Web Tools
 
 **✅ Done! No manual editing required.**
 
@@ -60,18 +61,21 @@ git push origin main
 rm firmware/CO2Monitor/ESP32S3/stable/Sense360-CO2Monitor-ESP32S3-v1.4.0-stable.bin
 ```
 
-### Step 2: Run Automation
+### Step 2: Run the Manifest Generator
 ```bash
 cd WebFlash
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 **Expected output:**
 ```
-🧹 Cleaning up X existing manifest files...
-📦 Found: X builds (1 fewer than before)
-✅ CLEAN STATE AUTOMATION COMPLETED
-✓ Perfect synchronization between firmware/ directory and manifests
+Firmware summary:
+
+┌──────────────────────────────┬───────────┬─────────┬──────────┬──────────────┬────────────┐
+│ Name                         │ Version   │ Channel │ Chip     │ Last Updated │ Checksum   │
+│ ...                          │ ...       │ ...     │ ...      │ ...          │ ...        │
+└──────────────────────────────┴───────────┴─────────┴──────────┴──────────────┴────────────┘
+Generated manifest.json and firmware manifests.
 ```
 
 ### Step 3: Deploy
@@ -111,7 +115,8 @@ firmware/
 
 ### Channels
 - `stable` - Production firmware
-- `beta` - Pre-release firmware
+- `preview` - Early-access firmware for upcoming updates
+- `beta` - Release candidate firmware for broader testing
 - `alpha` - Development firmware
 
 ## 🚨 Common Mistakes to Avoid
@@ -142,8 +147,8 @@ manifest.json
 firmware-*.json
 index.html
 
-# DO run automation instead
-python3 deploy-automation.py
+# DO run the manifest generator instead
+python3 scripts/gen-manifests.py --summary
 ```
 
 ### ❌ Forgetting to Run Automation
@@ -152,8 +157,8 @@ python3 deploy-automation.py
 git add firmware/
 git commit -m "Add firmware"
 
-# DO run automation first
-python3 deploy-automation.py
+# DO regenerate manifests first
+python3 scripts/gen-manifests.py --summary
 git add .
 git commit -m "Add firmware"
 ```
@@ -186,7 +191,7 @@ python3 test-clean-state-automation.py
 
 ### If Something Goes Wrong
 
-1. **Check the error message** from automation script
+1. **Check the error message** from the manifest generator
 2. **Verify file naming** follows exact convention
 3. **Check directory structure** matches requirements
 4. **Run test script** to identify issues:
@@ -206,13 +211,13 @@ python3 test-clean-state-automation.py
 - Verify directory structure depth (4 levels)
 
 **"Manifest validation failed"**
-- Re-run automation script
+- Re-run the manifest generator
 - Check for JSON syntax errors (automation should prevent this)
 
 ## 🎯 Success Criteria
 
 Your workflow is working correctly when:
-- ✅ Automation script runs without errors
+- ✅ Manifest generator runs without errors
 - ✅ Orphaned manifest files are cleaned up automatically
 - ✅ Build dates show accurate git commit or file timestamps
 - ✅ Test script passes all checks
@@ -235,13 +240,13 @@ firmware/CO2Monitor/ESP32S3/beta/Sense360-CO2Monitor-ESP32S3-v1.2.0-beta.bin
 ```bash
 # Add multiple firmware files at once
 cp *.bin firmware/CO2Monitor/ESP32S3/stable/
-python3 deploy-automation.py  # Processes all files
+python3 scripts/gen-manifests.py --summary  # Processes all files
 ```
 
 ### Development Workflow
 ```bash
-# For active development
-python3 watch-firmware.py  # Auto-runs automation on file changes
+# For iterative validation without writing files
+python3 scripts/gen-manifests.py --summary --dry-run
 ```
 
 ## 📊 Team Responsibilities
@@ -249,12 +254,12 @@ python3 watch-firmware.py  # Auto-runs automation on file changes
 ### Firmware Developer
 1. Build firmware binary
 2. Place in correct directory with proper naming
-3. Run automation script
-4. Test on website
+3. Run the manifest generator
+4. Walk the WebFlash wizard locally to confirm availability
 5. Commit and push
 
 ### QA Tester
-1. Verify firmware appears on website
+1. Verify firmware appears in the wizard
 2. Test ESP Web Tools installation
 3. Test Wi-Fi setup functionality
 4. Validate device behavior
@@ -262,14 +267,14 @@ python3 watch-firmware.py  # Auto-runs automation on file changes
 ### DevOps/Deployment
 1. Monitor GitHub Actions
 2. Verify GitHub Pages deployment
-3. Check automation script health
+3. Check manifest generator health
 4. Update documentation as needed
 
 ## 🔄 Continuous Integration
 
 ### GitHub Actions Workflow
 - Automatically runs on every push
-- Executes `python3 deploy-automation.py`
+- Executes `python3 scripts/gen-manifests.py --summary`
 - Deploys to GitHub Pages
 - No manual intervention required
 

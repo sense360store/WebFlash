@@ -1,0 +1,24 @@
+{
+  "name": "Sense360 ESP32 Firmware - Core Module",
+  "version": "1.0.0",
+  "home_assistant_domain": "esphome",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-AirIQPro-v1.0.0-beta.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+    }
+  ]
+}

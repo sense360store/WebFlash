@@ -1,4 +1,4 @@
-# Sense360 Wall Mount POE with AirIQ Base v1.0.0
+# Sense360 Wall Mount POE with AirIQ Base v1.0.0 (Stable)
 
 ## Configuration Details
 - **Mounting Type**: Wall
@@ -11,7 +11,7 @@
 - **Release Date**: 2025-07-25
 
 ## Description
-Wall-mounted Sense360 with Power over Ethernet and AirIQ Base module for comprehensive air quality monitoring.
+Stable release firmware for wall-mounted Sense360 nodes powered over Ethernet with the AirIQ Base air quality module.
 
 ## Hardware Requirements
 - ESP32-S3 WROOM Core Module
@@ -20,17 +20,7 @@ Wall-mounted Sense360 with Power over Ethernet and AirIQ Base module for compreh
 - Wall mounting bracket
 
 ## Features
-- Advanced air quality monitoring (VOC, CO2, gas detection)
-- Atmospheric pressure sensing
-- Power over Ethernet for single cable solution
-- Home Assistant integration with air quality entities
-- Real-time air quality index calculation
-
-## Known Issues
-- POE module requires 802.3af compliant switch
-- Air quality sensors need 48-hour burn-in period
-
-## Changelog
-- Initial release with AirIQ Base support
-- POE power management implementation
-- Air quality calibration algorithms
+- Production-ready VOC and gas monitoring
+- Stable POE power management profiles
+- Improv Wi-Fi provisioning compatible with ESP Web Tools
+- MQTT telemetry formatted for Home Assistant integrations

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This system provides **100% automated firmware lifecycle management** with zero manual editing required. Simply add or remove firmware files and run the automation script - all manifests and UI updates happen automatically.
+This system provides **100% automated firmware lifecycle management** with zero manual editing required. Simply add or remove firmware files and run the manifest generator — all manifests and UI updates happen automatically.
 
 ## 🚀 Adding New Firmware
 
@@ -25,11 +25,11 @@ firmware/TempSensor/ESP32/beta/Sense360-TempSensor-ESP32-v1.0.0-beta.bin
 firmware/EnvMonitor/ESP32S2/stable/Sense360-EnvMonitor-ESP32S2-v2.0.0-stable.bin
 ```
 
-### Step 2: Run Automation
+### Step 2: Regenerate Manifests
 
 ```bash
 cd WebFlash
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 **What happens automatically:**
@@ -38,8 +38,8 @@ python3 deploy-automation.py
 - Updates manifest.json with new firmware entry
 - Creates individual manifest file (firmware-N.json) for ESP Web Tools
 - Adds "improv": true to all manifests for Wi-Fi setup
-- Updates web interface with new firmware option
-- Validates all files and URLs
+- Surfaces updated firmware cards in the WebFlash wizard
+- Validates filenames, channels, and duplicate builds
 
 ### Step 3: Deploy to GitHub Pages
 
@@ -50,7 +50,7 @@ git push origin main
 ```
 
 **GitHub Actions automatically:**
-- Runs deploy-automation.py on push
+- Runs the manifest generator on push (`python3 scripts/gen-manifests.py`)
 - Updates GitHub Pages with new firmware
 - Serves updated manifests and UI
 
@@ -89,10 +89,10 @@ python3 test-improv-serial.py
 ```
 
 ✅ **Web Interface Check:**
-- Open https://your-repo.github.io/
-- Verify new firmware appears in dropdown
-- Verify install button works
-- Verify ESP Web Tools loads correct manifest
+- Start a local server (`python3 -m http.server 5000`)
+- Open http://localhost:5000 and walk through the wizard
+- Verify the recommended firmware card shows the new build and manifest metadata
+- Confirm Install Firmware launches ESP Web Tools with the regenerated manifest
 
 ## 🗑️ Removing Firmware
 
@@ -102,18 +102,18 @@ python3 test-improv-serial.py
 rm firmware/[DeviceType]/[ChipFamily]/[Channel]/[FileName].bin
 ```
 
-### Step 2: Run Automation
+### Step 2: Regenerate Manifests
 
 ```bash
 cd WebFlash
-python3 deploy-automation.py
+python3 scripts/gen-manifests.py --summary
 ```
 
 **What happens automatically:**
 - Scans firmware/ directory (missing file not found)
 - Removes entry from manifest.json
 - Removes corresponding individual manifest file
-- Updates web interface (firmware no longer appears)
+- Updates the WebFlash wizard to hide the removed firmware
 - Renumbers remaining individual manifests
 
 ### Step 3: Deploy Changes
@@ -149,8 +149,8 @@ ls -la firmware-*.json
 ```
 
 ✅ **Web Interface Check:**
-- Verify removed firmware no longer appears
-- Verify remaining firmware still works
+- Step through the local wizard and confirm the firmware card is gone
+- Verify remaining firmware cards still install correctly
 
 ## 🔄 Directory Structure Examples
 
@@ -200,19 +200,19 @@ firmware/
 ### ✅ Adding Firmware Checklist
 1. [ ] Place .bin file in correct directory structure
 2. [ ] Use proper naming convention
-3. [ ] Run `python3 deploy-automation.py`
-4. [ ] Verify automation output shows new firmware
+3. [ ] Run `python3 scripts/gen-manifests.py --summary`
+4. [ ] Verify summary output shows new firmware
 5. [ ] Run `python3 test-complete-workflow.py`
 6. [ ] Commit and push to GitHub
-7. [ ] Verify on GitHub Pages site
+7. [ ] Verify via the WebFlash wizard (local or production)
 
 ### ✅ Removing Firmware Checklist
 1. [ ] Delete .bin file from firmware directory
-2. [ ] Run `python3 deploy-automation.py`
-3. [ ] Verify automation output shows removal
+2. [ ] Run `python3 scripts/gen-manifests.py --summary`
+3. [ ] Verify summary output shows removal
 4. [ ] Run `python3 test-complete-workflow.py`
 5. [ ] Commit and push to GitHub
-6. [ ] Verify removed from GitHub Pages site
+6. [ ] Verify removal in the WebFlash wizard
 
 ### ✅ Automation Verification Checklist
 1. [ ] All tests pass: `python3 test-complete-workflow.py`
@@ -230,14 +230,14 @@ firmware/
 - ✅ Any UI components - All data comes from manifests
 
 ### Files That CAN Be Edited:
-- ✅ `deploy-automation.py` - Automation script improvements
+- ✅ `scripts/gen-manifests.py` - Manifest generator improvements
 - ✅ `create-individual-manifests.py` - Individual manifest generation
 - ✅ `README.md` - Documentation updates
-- ✅ `css/style.css` - UI styling changes
+- ✅ `css/wizard-style.css` - UI styling updates for the configurator
 - ✅ ESPHome YAML files - Firmware configuration
 
 ### If Manual Editing Seems Necessary:
-1. **Check automation**: Run `python3 deploy-automation.py`
+1. **Check automation**: Run `python3 scripts/gen-manifests.py --summary`
 2. **Check tests**: Run `python3 test-complete-workflow.py`
 3. **Check naming**: Verify directory structure and filename
 4. **Check logs**: Look for error messages in automation output
@@ -265,12 +265,12 @@ firmware/
 
 **For any team member to add firmware:**
 1. Drop .bin file in correct directory
-2. Run automation script
+2. Run the manifest generator (`python3 scripts/gen-manifests.py --summary`)
 3. Commit and push
 
 **For any team member to remove firmware:**
 1. Delete .bin file
-2. Run automation script
+2. Run the manifest generator (`python3 scripts/gen-manifests.py --summary`)
 3. Commit and push
 
 **No special knowledge required:**
@@ -301,13 +301,13 @@ firmware/
 **Issue:** Multiple firmware versions
 **Solution:** Use different version numbers in filenames
 
-**Issue:** Automation script fails
+**Issue:** Manifest generator fails
 **Solution:** Check firmware directory exists and contains .bin files
 
 ### Debug Commands
 ```bash
-# Check automation output
-python3 deploy-automation.py
+# Check manifest generator output
+python3 scripts/gen-manifests.py --summary
 
 # Validate complete workflow
 python3 test-complete-workflow.py
