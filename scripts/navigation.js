@@ -39,6 +39,21 @@ function handleWizardNavigation(event) {
         return;
     }
 
+    const progressTrigger = target.closest('.progress-step');
+    if (progressTrigger) {
+        const stepValue = Number.parseInt(progressTrigger.getAttribute('data-step'), 10);
+        if (!Number.isNaN(stepValue)) {
+            const maxReachable = getMaxReachableStep();
+            if (stepValue <= maxReachable) {
+                event.preventDefault();
+                setStep(stepValue, { animate: true });
+            } else {
+                event.preventDefault();
+            }
+        }
+        return;
+    }
+
     const nextTrigger = target.closest('[data-next]');
     const backTrigger = target.closest('[data-back]');
     const progressTrigger = target.closest('.progress-step[data-step]');
