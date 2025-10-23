@@ -20,126 +20,87 @@ const allowedOptions = {
 
 const totalSteps = 4;
 
-async function loadRememberModule() {
+const storageOptions = Object.freeze({
+    defaultConfiguration,
+    allowedOptions,
+    totalSteps
+});
+
+async function loadPresetModule() {
     const module = await import('../scripts/remember-state.js');
     return module;
 }
 
-beforeEach(() => {
-    jest.resetModules();
-    delete window.wizardRememberState;
-});
+describe('preset storage helpers', () => {
+    beforeEach(() => {
+        jest.resetModules();
+    });
 
-afterEach(() => {
-    delete window.wizardRememberState;
-});
+    test('normalizes preset state snapshots with allowed values', async () => {
+        const { normalizePresetState } = await loadPresetModule();
 
-describe('remember-state in-memory behavior', () => {
-    test('normalizes structured remember-state payloads', async () => {
-        const { normalizeRememberedState } = await loadRememberModule();
-
-        const normalized = normalizeRememberedState({
+        const normalized = normalizePresetState({
             configuration: {
-                mounting: 'wall',
-                power: 'usb',
+                mounting: 'ceiling',
+                power: 'poe',
                 airiq: 'base',
                 presence: 'pro',
                 comfort: 'none',
                 fan: 'analog'
             },
-            currentStep: 3
-        }, {
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps
-        });
+            currentStep: 5
+        }, storageOptions);
 
         expect(normalized).toEqual({
             configuration: {
                 ...defaultConfiguration,
-                mounting: 'wall',
-                power: 'usb',
+                mounting: 'ceiling',
+                power: 'poe',
                 airiq: 'base',
                 presence: 'pro',
-                fan: 'analog'
+                fan: 'none'
             },
-            currentStep: 3
+            currentStep: 4
         });
     });
 
-    test('migrates legacy flat configuration snapshots', async () => {
-        const { normalizeRememberedState } = await loadRememberModule();
+    test('saving presets trims names and snapshots configuration', async () => {
+        const { savePreset, listPresets } = await loadPresetModule();
 
-        const normalized = normalizeRememberedState({
-            mounting: 'wall',
-            power: 'poe',
-            airiq: 'pro',
-            presence: 'none',
-            comfort: 'none',
-            fan: 'pwm'
-        }, {
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps
-        });
-
-        expect(normalized).toEqual({
-            configuration: {
-                ...defaultConfiguration,
-                mounting: 'wall',
-                power: 'poe',
-                airiq: 'pro',
-                fan: 'pwm'
-            },
-            currentStep: null
-        });
-    });
-
-    test('persists structured snapshots in memory', async () => {
-        const { persistRememberedState, loadRememberedState } = await loadRememberModule();
-
-        persistRememberedState({
+        const saved = savePreset('  Lobby install  ', {
             mounting: 'wall',
             power: 'usb',
             airiq: 'pro',
             presence: 'base',
             comfort: 'none',
-            fan: 'analog'
+            fan: 'pwm'
         }, {
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps,
-            currentStep: 4
+            ...storageOptions,
+            currentStep: 3
         });
 
-        const remembered = loadRememberedState({
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps
-        });
-
-        expect(remembered).toEqual({
+        expect(saved?.name).toBe('Lobby install');
+        expect(saved?.state).toEqual({
             configuration: {
                 ...defaultConfiguration,
                 mounting: 'wall',
                 power: 'usb',
                 airiq: 'pro',
                 presence: 'base',
-                fan: 'analog'
+                fan: 'pwm'
             },
-            currentStep: 4
+            currentStep: 3
         });
+
+        const presets = listPresets(storageOptions);
+        expect(presets).toHaveLength(1);
+        expect(presets[0].id).toBe(saved.id);
     });
 
-    test('disabling remember clears stored configuration', async () => {
-        const {
-            persistRememberedState,
-            loadRememberedState,
-            setRememberEnabled,
-            isRememberEnabled
-        } = await loadRememberModule();
+    test('renaming and deleting presets updates the store', async () => {
+        const { savePreset, renamePreset, listPresets, deletePreset } = await loadPresetModule();
 
-        persistRememberedState({
+        const saved = savePreset('Preset A', {
             mounting: 'wall',
             power: 'usb',
             airiq: 'base',
@@ -147,19 +108,45 @@ describe('remember-state in-memory behavior', () => {
             comfort: 'none',
             fan: 'none'
         }, {
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps,
+            ...storageOptions,
             currentStep: 2
         });
 
-        expect(loadRememberedState({ defaultConfiguration, allowedOptions, totalSteps })).not.toBeNull();
+        renamePreset(saved.id, ' Updated name ', storageOptions);
+        let presets = listPresets(storageOptions);
+        expect(presets).toHaveLength(1);
+        expect(presets[0].name).toBe('Updated name');
 
-        setRememberEnabled(true);
-        expect(isRememberEnabled()).toBe(true);
+        const deleted = deletePreset(saved.id);
+        expect(deleted).toBe(true);
 
-        setRememberEnabled(false);
-        expect(isRememberEnabled()).toBe(false);
-        expect(loadRememberedState({ defaultConfiguration, allowedOptions, totalSteps })).toBeNull();
+        presets = listPresets(storageOptions);
+        expect(presets).toHaveLength(0);
+    });
+
+    test('markPresetApplied toggles the active preset selection', async () => {
+        const { savePreset, markPresetApplied, listPresets } = await loadPresetModule();
+
+        const saved = savePreset('Preset B', {
+            mounting: 'wall',
+            power: 'pwr',
+            airiq: 'base',
+            presence: 'base',
+            comfort: 'none',
+            fan: 'pwm'
+        }, {
+            ...storageOptions,
+            currentStep: 4
+        });
+
+        const applied = markPresetApplied(saved.id, storageOptions);
+        expect(applied?.id).toBe(saved.id);
+        expect(applied?.state.configuration.power).toBe('pwr');
+
+        const cleared = markPresetApplied(null, storageOptions);
+        expect(cleared).toBeNull();
+
+        const presets = listPresets(storageOptions);
+        expect(presets).toHaveLength(1);
     });
 });

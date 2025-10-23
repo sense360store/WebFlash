@@ -44,7 +44,6 @@ function renderWizardDom() {
                 <input type="radio" name="fan" value="pwm">
                 <input type="radio" name="fan" value="analog">
             </div>
-            <label><input type="checkbox" data-remember-toggle></label>
         </div>
         <div id="step-4" class="wizard-step">
             <section class="pre-flash-checklist" data-diagnostics-state="idle">
@@ -97,7 +96,6 @@ function renderWizardDom() {
             <div id="compatible-firmware"></div>
             <button id="download-btn" disabled></button>
             <button id="copy-firmware-url-btn" disabled></button>
-            <label><input type="checkbox" data-remember-toggle></label>
         </div>
     `;
 }

@@ -1087,32 +1087,6 @@ h1 {
     color: var(--danger);
 }
 
-.remember-preference {
-    margin-top: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.remember-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-}
-
-.remember-toggle input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--brand-green);
-}
-
-.remember-label {
-    font-size: 0.95rem;
-}
-
 @keyframes readyPulse {
     0% {
         box-shadow: 0 0 0 0 rgba(var(--brand-green-contrast-rgb), 0.45);
