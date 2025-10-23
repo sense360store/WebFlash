@@ -154,31 +154,84 @@ function isConflictActiveForConfig(conflict, state) {
     return true;
 }
 
-function buildVariantConflictMarkup(moduleKey, variantKey, variant) {
+function formatConflictBadgeLabel(conflict) {
+    const moduleKey = (conflict?.module || '').toString().trim();
+    if (!moduleKey) {
+        return 'Conflict';
+    }
+
+    const moduleLabel = MODULE_LABELS[moduleKey] || moduleKey;
+    const variants = Array.isArray(conflict?.variants) ? conflict.variants.filter(Boolean) : [];
+
+    if (!variants.length) {
+        return moduleLabel;
+    }
+
+    const variantLabels = variants.map(variant => {
+        if (moduleKey === 'fan') {
+            return variant.toUpperCase();
+        }
+        if (variant === 'none') {
+            return 'None';
+        }
+        return variant.charAt(0).toUpperCase() + variant.slice(1);
+    });
+
+    const uniqueLabels = Array.from(new Set(variantLabels));
+    return `${moduleLabel} ${uniqueLabels.join('/')}`;
+}
+
+function collectVariantConflictMeta(moduleKey, variantKey, variant) {
     const conflicts = Array.isArray(variant?.conflicts) ? variant.conflicts : [];
     if (!conflicts.length) {
-        return '<span class="module-requirements-table__muted">None</span>';
+        return [];
     }
 
     return conflicts.map(conflict => {
         const isActive = isConflictActiveForConfig(conflict, configuration);
-        const classes = ['module-conflict'];
-        if (isActive) {
-            classes.push('is-active');
-        }
+        const badgeLabel = formatConflictBadgeLabel(conflict);
 
-        let label = conflict.message;
-        if (!label) {
+        let defaultMessage = conflict.message;
+        if (!defaultMessage) {
             let targetVariant = configuration[conflict.module];
             if (Array.isArray(conflict.variants) && conflict.variants.length === 1) {
                 targetVariant = conflict.variants[0];
             }
-            label = `Incompatible with ${formatModuleSelectionLabel(conflict.module, targetVariant || 'none')}`;
+            defaultMessage = `Incompatible with ${formatModuleSelectionLabel(conflict.module, targetVariant || 'none')}.`;
         }
 
-        const detail = conflict.detail ? `<span class="module-conflict__detail">${escapeHtml(conflict.detail)}</span>` : '';
-        return `<div class="${classes.join(' ')}"><span class="module-conflict__label">${escapeHtml(label)}</span>${detail}</div>`;
-    }).join('');
+        const detail = conflict.detail || defaultMessage;
+        const tooltip = conflict.detail || conflict.message || defaultMessage;
+
+        return {
+            badgeLabel,
+            detail,
+            tooltip,
+            isActive,
+            message: defaultMessage
+        };
+    });
+}
+
+function updateModuleConflictBadges() {
+    const badges = document.querySelectorAll('[data-conflict-badge]');
+    badges.forEach(badge => {
+        const moduleKey = badge.getAttribute('data-conflict-module');
+        if (!moduleKey) {
+            return;
+        }
+
+        const variantsAttr = badge.getAttribute('data-conflict-variants') || '';
+        const variants = variantsAttr.split(/\s+/).map(value => value.trim()).filter(Boolean);
+        const conflict = { module: moduleKey };
+
+        if (variants.length > 0) {
+            conflict.variants = variants;
+        }
+
+        const isActive = isConflictActiveForConfig(conflict, configuration);
+        badge.classList.toggle('is-active', isActive);
+    });
 }
 
 function renderModuleDetailPanel() {
@@ -202,63 +255,86 @@ function renderModuleDetailPanel() {
     const selectedVariant = configuration[activeModuleDetailKey] || 'none';
     const effectiveVariant = variants[activeModuleDetailVariant] ? activeModuleDetailVariant : selectedVariant;
 
-    const rowsHtml = Object.entries(variants).map(([variantKey, variant]) => {
-        const rowClasses = ['module-requirements-table__row'];
+    const variantsHtml = Object.entries(variants).map(([variantKey, variant]) => {
+        const cardClasses = ['module-variant-card'];
         if (variantKey === effectiveVariant) {
-            rowClasses.push('is-highlighted');
+            cardClasses.push('is-highlighted');
         }
         if (variantKey === selectedVariant) {
-            rowClasses.push('is-selected');
+            cardClasses.push('is-selected');
         }
 
-        const coreRevisionMarkup = variant.coreRevision
+        const coreRevision = variant.coreRevision
             ? escapeHtml(variant.coreRevision)
-            : '<span class="module-requirements-table__muted">Not required</span>';
+            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">Not required</span>';
 
         const headers = Array.isArray(variant.headers) && variant.headers.length > 0
-            ? variant.headers.map(header => `<div>${escapeHtml(header)}</div>`).join('')
-            : '<span class="module-requirements-table__muted">Not required</span>';
+            ? escapeHtml(formatHeaderList(variant.headers))
+            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">Not required</span>';
 
-        const conflictsMarkup = buildVariantConflictMarkup(activeModuleDetailKey, variantKey, variant);
+        const conflictMeta = collectVariantConflictMeta(activeModuleDetailKey, variantKey, variant);
+
+        const badgesHtml = conflictMeta.length > 0
+            ? `<div class="module-variant-card__badges">${conflictMeta.map(meta => `
+                <span class="module-variant-card__badge${meta.isActive ? ' is-active' : ''}" title="${escapeHtml(meta.tooltip)}">
+                    ${escapeHtml(meta.badgeLabel)}
+                </span>
+            `).join('')}</div>`
+            : '';
+
+        const detailItems = [];
+        if (variant.coreRevision) {
+            detailItems.push(`Requires ${escapeHtml(variant.coreRevision)}.`);
+        }
+        if (Array.isArray(variant.headers) && variant.headers.length > 0) {
+            detailItems.push(`Needs ${escapeHtml(formatHeaderList(variant.headers))}.`);
+        }
+        conflictMeta.forEach(meta => {
+            if (meta.detail) {
+                detailItems.push(escapeHtml(meta.detail));
+            }
+        });
+
+        const hasDetails = detailItems.length > 0;
+        const detailId = `module-variant-details-${activeModuleDetailKey}-${variantKey}`;
+        const accordionHtml = hasDetails
+            ? `<button type="button" class="module-variant-card__accordion" data-variant-accordion aria-expanded="false" aria-controls="${detailId}">Advanced details</button>`
+            : '';
+
+        const detailsHtml = hasDetails
+            ? `<div class="module-variant-card__panel" id="${detailId}" hidden><ul class="module-variant-card__panel-list">${detailItems.map(item => `<li>${item}</li>`).join('')}</ul></div>`
+            : '';
 
         const variantLabel = variant.label
             ? variant.label
             : formatModuleSelectionLabel(activeModuleDetailKey, variantKey);
 
         return `
-            <tr class="${rowClasses.join(' ')}">
-                <th scope="row">${escapeHtml(variantLabel)}</th>
-                <td>${coreRevisionMarkup}</td>
-                <td>${headers}</td>
-                <td>${conflictsMarkup}</td>
-            </tr>
+            <article class="${cardClasses.join(' ')}">
+                <div class="module-variant-card__header">
+                    <span class="module-variant-card__title">${escapeHtml(variantLabel)}</span>
+                </div>
+                <div class="module-variant-card__meta">
+                    <span><strong>Core</strong><span class="module-variant-card__meta-value">${coreRevision}</span></span>
+                    <span><strong>Headers</strong><span class="module-variant-card__meta-value">${headers}</span></span>
+                </div>
+                ${badgesHtml}
+                ${accordionHtml}
+                ${detailsHtml}
+            </article>
         `;
     }).join('');
 
     const summaryMarkup = moduleEntry.summary
-        ? `<p class="module-requirements-panel__summary">${escapeHtml(moduleEntry.summary)}</p>`
+        ? `<p class="module-detail__summary">${escapeHtml(moduleEntry.summary)}</p>`
         : '';
 
     panel.innerHTML = `
-        <div class="module-requirements-panel__head">
-            <h4>${escapeHtml(moduleEntry.label || MODULE_LABELS[activeModuleDetailKey] || activeModuleDetailKey)}</h4>
+        <div class="module-detail__header">
+            <h4 class="module-detail__title">${escapeHtml(moduleEntry.label || MODULE_LABELS[activeModuleDetailKey] || activeModuleDetailKey)}</h4>
             ${summaryMarkup}
         </div>
-        <div class="module-requirements-panel__body">
-            <table class="module-requirements-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Option</th>
-                        <th scope="col">Core Revision</th>
-                        <th scope="col">Required Headers</th>
-                        <th scope="col">Conflicts</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${rowsHtml}
-                </tbody>
-            </table>
-        </div>
+        <div class="module-detail__variants">${variantsHtml}</div>
     `;
 }
 
@@ -326,7 +402,24 @@ function initializeModuleDetailPanel() {
         setActiveModuleDetail(input.name, input.value || configuration[input.name] || 'none');
     };
 
-    document.querySelectorAll('.module-section input[type="radio"]').forEach(input => {
+    panel.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-variant-accordion]');
+        if (!button || !panel.contains(button)) {
+            return;
+        }
+
+        const controlsId = button.getAttribute('aria-controls');
+        const details = controlsId ? document.getElementById(controlsId) : null;
+        if (!details) {
+            return;
+        }
+
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        details.hidden = expanded;
+    });
+
+    document.querySelectorAll('[data-module-card] input[type="radio"]').forEach(input => {
         input.addEventListener('focus', handleHighlight);
         input.addEventListener('change', handleHighlight);
 
@@ -1013,7 +1106,7 @@ function getOptionStatusElement(card) {
 
     let status = card.querySelector('[data-option-status]');
     if (!status) {
-        const container = card.querySelector('.option-content') || card;
+        const container = card.querySelector('.module-card__inner') || card.querySelector('.option-content') || card;
         status = document.createElement('p');
         status.className = 'option-status';
         status.setAttribute('data-option-status', 'true');
@@ -1255,6 +1348,7 @@ function updateConfiguration(options = {}) {
     syncConfigurationFromInputs();
     updateModuleAvailabilityMessage();
     syncModuleDetailPanelToSelection();
+    updateModuleConflictBadges();
 
     if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
@@ -1598,6 +1692,19 @@ function updateFirmwareControls() {
         }
         return { text: 'Awaiting verification…', isError: false };
     })();
+
+    const summaryInstallButton = document.querySelector('[data-module-summary-install]');
+    if (summaryInstallButton) {
+        summaryInstallButton.disabled = !readyToFlash;
+        if (!hasFirmware) {
+            summaryInstallButton.title = 'Select a firmware option to install.';
+        } else if (!isVerified) {
+            const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+            summaryInstallButton.title = message;
+        } else {
+            summaryInstallButton.removeAttribute('title');
+        }
+    }
 
     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
     if (detailHelper) {
@@ -2571,6 +2678,31 @@ function attachInstallButtonListeners() {
             host.addEventListener('install-complete', handleInstallStateChange);
 
             host.dataset.installStateBound = 'true';
+        }
+    });
+
+    bindSummaryInstallButton();
+}
+
+function bindSummaryInstallButton() {
+    const summaryButton = document.querySelector('[data-module-summary-install]');
+    if (!summaryButton || summaryButton.dataset.installRelay === 'true') {
+        return;
+    }
+
+    summaryButton.dataset.installRelay = 'true';
+    summaryButton.addEventListener('click', event => {
+        event.preventDefault();
+        const primaryInstall = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
+
+        if (primaryInstall && !primaryInstall.disabled) {
+            primaryInstall.click();
+            return;
+        }
+
+        const stepFour = document.getElementById('step-4');
+        if (stepFour) {
+            stepFour.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     });
 }

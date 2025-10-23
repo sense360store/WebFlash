@@ -363,18 +363,20 @@ import {
                 resetButton
             };
 
-            bindSidebarButtons(sidebarRefs);
+            bindSummaryButtons(sidebarRefs);
         }
 
         return sidebarRefs;
     }
 
-    function bindSidebarButtons(refs) {
+    function bindSummaryButtons(refs) {
         const { copyButton, resetButton } = refs;
 
         if (copyButton && copyButton.dataset.bound !== 'true') {
             copyButton.dataset.bound = 'true';
-            copyButton.dataset.defaultLabel = copyButton.textContent || 'Copy sharable link';
+            if (!copyButton.dataset.defaultLabel) {
+                copyButton.dataset.defaultLabel = copyButton.textContent || 'Copy sharable link';
+            }
             copyButton.addEventListener('click', handleCopyLink);
         }
 
@@ -382,6 +384,51 @@ import {
             resetButton.dataset.bound = 'true';
             resetButton.addEventListener('click', handleReset);
         }
+    }
+
+    function ensureModuleSummaryRefs() {
+        const root = document.querySelector('[data-module-summary]');
+        if (!root || !document.body.contains(root)) {
+            moduleSummaryRefs = null;
+            return null;
+        }
+
+        if (moduleSummaryRefs && moduleSummaryRefs.root === root) {
+            return moduleSummaryRefs;
+        }
+
+        const list = root.querySelector('[data-module-summary-list]');
+        const warning = root.querySelector('[data-module-summary-warning]');
+        const copyButton = root.querySelector('[data-module-summary-copy]');
+        const resetButton = root.querySelector('[data-module-summary-reset]');
+        const firmwareRoot = root.querySelector('[data-module-summary-firmware]');
+        const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
+        const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
+        const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
+        const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
+        const installButton = root.querySelector('[data-module-summary-install]');
+
+        if (list && !list.hasAttribute('aria-live')) {
+            list.setAttribute('aria-live', 'polite');
+        }
+
+        moduleSummaryRefs = {
+            root,
+            list,
+            warning,
+            copyButton,
+            resetButton,
+            firmwareRoot,
+            firmwareEmpty,
+            firmwareMeta,
+            firmwareName,
+            firmwareSize,
+            installButton
+        };
+
+        bindSummaryButtons(moduleSummaryRefs);
+
+        return moduleSummaryRefs;
     }
 
     function ensurePresetManagerRefs() {
@@ -629,54 +676,170 @@ import {
         updatePresetSaveState(getState());
     }
 
-    function renderSidebar(meta, state) {
-        const refs = ensureSidebarRefs();
-        if (!refs) {
+    function renderSummaryList(list, meta, variant = 'sidebar') {
+        if (!list) {
             return;
         }
 
-        const { list, warning } = refs;
         while (list.firstChild) {
             list.removeChild(list.firstChild);
         }
 
-        const fragment = document.createDocumentFragment();
         FIELD_MAP.forEach(field => {
-            const item = document.createElement('li');
-            const label = document.createElement('strong');
-            label.textContent = field.label;
-            item.appendChild(label);
-            item.appendChild(document.createTextNode(`: ${meta[field.key].display}`));
-            fragment.appendChild(item);
+            if (variant === 'module') {
+                const item = document.createElement('div');
+                item.className = 'module-summary-card__item';
+                item.setAttribute('role', 'listitem');
+
+                const label = document.createElement('span');
+                label.className = 'module-summary-card__item-label';
+                label.textContent = field.label;
+
+                const value = document.createElement('span');
+                value.className = 'module-summary-card__item-value';
+                value.textContent = meta[field.key].display;
+
+                item.appendChild(label);
+                item.appendChild(value);
+                list.appendChild(item);
+            } else {
+                const item = document.createElement('li');
+                const label = document.createElement('strong');
+                label.textContent = field.label;
+                item.appendChild(label);
+                item.appendChild(document.createTextNode(`: ${meta[field.key].display}`));
+                list.appendChild(item);
+            }
         });
+    }
 
-        list.appendChild(fragment);
-
-        if (state.mount === 'ceiling' && state.fan && state.fan !== 'none') {
-            warning.textContent = 'Fan Module is not available on Ceiling mounts.';
-            warning.hidden = false;
-        } else {
-            warning.hidden = true;
+    function formatFirmwareName(firmware) {
+        if (!firmware) {
+            return '';
         }
+
+        const versionSegment = firmware.version ? `-v${firmware.version}` : '';
+        const channelSegment = firmware.channel ? `-${firmware.channel}` : '';
+        const configString = (firmware.config_string || '').toString().trim();
+
+        if (configString) {
+            return `Sense360-${configString}${versionSegment}${channelSegment}.bin`;
+        }
+
+        const model = (firmware.model || 'Sense360').toString().trim() || 'Sense360';
+        const variant = (firmware.variant || '').toString().trim();
+        const sensorAddon = (firmware.sensor_addon || '').toString().trim();
+        const variantSegment = variant ? `-${variant}` : '';
+        const sensorSegment = sensorAddon ? `-${sensorAddon}` : '';
+
+        return `${model}${variantSegment}${sensorSegment}${versionSegment}${channelSegment}.bin`;
+    }
+
+    function formatFirmwareSize(firmware) {
+        const raw = Number(firmware?.file_size);
+        if (!Number.isFinite(raw) || raw <= 0) {
+            return '';
+        }
+
+        if (raw >= 1024 * 1024) {
+            return `${(raw / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        return `${(raw / 1024).toFixed(1)} KB`;
+    }
+
+    function renderFirmwareSummary(refs) {
+        if (!refs || !refs.firmwareRoot) {
+            return;
+        }
+
+        const { firmwareEmpty, firmwareMeta, firmwareName, firmwareSize } = refs;
+        const firmware = window.currentFirmware || null;
+
+        if (!firmware || !firmwareName) {
+            if (firmwareEmpty) {
+                firmwareEmpty.hidden = false;
+            }
+            if (firmwareMeta) {
+                firmwareMeta.hidden = true;
+            }
+            if (firmwareName) {
+                firmwareName.textContent = '';
+            }
+            if (firmwareSize) {
+                firmwareSize.textContent = '';
+            }
+            return;
+        }
+
+        if (firmwareEmpty) {
+            firmwareEmpty.hidden = true;
+        }
+        if (firmwareMeta) {
+            firmwareMeta.hidden = false;
+        }
+
+        const displayName = formatFirmwareName(firmware);
+        const sizeLabel = formatFirmwareSize(firmware);
+
+        if (firmwareName) {
+            firmwareName.textContent = displayName;
+        }
+
+        if (firmwareSize) {
+            firmwareSize.textContent = sizeLabel ? `Size: ${sizeLabel}` : '';
+        }
+    }
+
+    function renderSidebar(meta, state) {
+        const sidebar = ensureSidebarRefs();
+        const summary = ensureModuleSummaryRefs();
+        const targets = [];
+
+        if (sidebar) {
+            targets.push({ refs: sidebar, variant: 'sidebar' });
+        }
+        if (summary) {
+            targets.push({ refs: summary, variant: 'module' });
+        }
+
+        if (!targets.length) {
+            return;
+        }
+
+        targets.forEach(({ refs, variant }) => {
+            const { list, warning } = refs;
+            renderSummaryList(list, meta, variant);
+
+            if (warning) {
+                if (state.mount === 'ceiling' && state.fan && state.fan !== 'none') {
+                    warning.textContent = 'Fan Module is not available on Ceiling mounts.';
+                    warning.hidden = false;
+                } else {
+                    warning.hidden = true;
+                }
+            }
+
+            renderFirmwareSummary(refs);
+        });
     }
 
     async function handleCopyLink(event) {
         event.preventDefault();
-        const refs = ensureSidebarRefs();
-        if (!refs) {
+        const button = event.currentTarget;
+        if (!button) {
             return;
         }
 
-        const { copyButton } = refs;
         const state = getState();
         const url = buildShareableUrl(state);
 
         try {
             await copyTextToClipboard(url);
-            showCopyFeedback(copyButton, 'Copied');
+            showCopyFeedback(button, 'Copied');
         } catch (error) {
             console.error('[state-summary] Failed to copy link', error);
-            showCopyFeedback(copyButton, 'Copy failed');
+            showCopyFeedback(button, 'Copy failed');
         }
     }
 
@@ -772,6 +935,7 @@ import {
 
     document.addEventListener('wizardSidebarReady', () => {
         sidebarRefs = null;
+        moduleSummaryRefs = null;
         scheduleScan();
     });
 
