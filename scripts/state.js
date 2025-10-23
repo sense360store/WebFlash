@@ -2151,6 +2151,13 @@ function renderFirmwarePartsSection(firmware) {
         return '';
     }
 
+    const firmwareId = (firmware?.firmwareId || 'firmware').toString();
+    const normalisedId = firmwareId.replace(/[^a-zA-Z0-9_-]+/g, '-');
+    const contentId = `${normalisedId}-parts`;
+    const collapsedIcon = '+';
+    const expandedIcon = '−';
+    const collapsedLabel = 'Show firmware file details';
+    const expandedLabel = 'Hide firmware file details';
     const overallStatus = normaliseVerificationStatus(firmwareVerificationState.status);
     const overallMessage = (() => {
         if (overallStatus === 'pending') {
@@ -2221,10 +2228,26 @@ function renderFirmwarePartsSection(firmware) {
 
     return `
         <section class="firmware-parts" data-multi-part="${parts.length > 1}" data-verification-status="${escapeHtml(overallStatus)}">
-            <h4>${parts.length > 1 ? 'Firmware files' : 'Firmware file'}</h4>
-            <ul class="firmware-parts-list">${listItems}</ul>
-            ${hint}
-            ${statusNotice}
+            <button
+                type="button"
+                class="firmware-parts-toggle"
+                data-firmware-parts-toggle
+                data-collapsed-icon="${escapeHtml(collapsedIcon)}"
+                data-expanded-icon="${escapeHtml(expandedIcon)}"
+                data-collapsed-label="${escapeHtml(collapsedLabel)}"
+                data-expanded-label="${escapeHtml(expandedLabel)}"
+                aria-controls="${escapeHtml(contentId)}"
+                aria-expanded="false"
+            >
+                <span class="firmware-parts-toggle-icon" aria-hidden="true">${escapeHtml(collapsedIcon)}</span>
+                <span class="firmware-parts-toggle-label">${escapeHtml(collapsedLabel)}</span>
+            </button>
+            <div id="${escapeHtml(contentId)}" class="firmware-parts-content" hidden>
+                <h4>${parts.length > 1 ? 'Firmware files' : 'Firmware file'}</h4>
+                <ul class="firmware-parts-list">${listItems}</ul>
+                ${hint}
+                ${statusNotice}
+            </div>
         </section>
     `;
 }
@@ -3080,6 +3103,55 @@ function showToast(message, options = {}) {
         toast.classList.remove('is-visible');
     }, duration);
 }
+
+document.addEventListener('click', event => {
+    const toggle = event.target.closest('[data-firmware-parts-toggle]');
+    if (!toggle) {
+        return;
+    }
+
+    event.preventDefault();
+
+    const controlsId = toggle.getAttribute('aria-controls');
+    if (!controlsId) {
+        return;
+    }
+
+    const content = document.getElementById(controlsId);
+    if (!content) {
+        return;
+    }
+
+    const shouldExpand = content.hasAttribute('hidden');
+    const collapsedIcon = toggle.getAttribute('data-collapsed-icon') || '+';
+    const expandedIcon = toggle.getAttribute('data-expanded-icon') || '−';
+    const collapsedLabel = toggle.getAttribute('data-collapsed-label') || 'Show firmware file details';
+    const expandedLabel = toggle.getAttribute('data-expanded-label') || 'Hide firmware file details';
+
+    if (shouldExpand) {
+        content.removeAttribute('hidden');
+        toggle.setAttribute('aria-expanded', 'true');
+    } else {
+        content.setAttribute('hidden', '');
+        toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    const iconElement = toggle.querySelector('.firmware-parts-toggle-icon');
+    if (iconElement) {
+        iconElement.textContent = shouldExpand ? expandedIcon : collapsedIcon;
+    } else {
+        toggle.textContent = shouldExpand ? `${expandedIcon} ${expandedLabel}` : `${collapsedIcon} ${collapsedLabel}`;
+    }
+
+    const labelElement = toggle.querySelector('.firmware-parts-toggle-label');
+    if (labelElement) {
+        labelElement.textContent = shouldExpand ? expandedLabel : collapsedLabel;
+    } else if (!iconElement) {
+        toggle.textContent = shouldExpand ? `${expandedIcon} ${expandedLabel}` : `${collapsedIcon} ${collapsedLabel}`;
+    }
+
+    toggle.classList.toggle('is-expanded', shouldExpand);
+});
 
 document.addEventListener('click', async event => {
     const trigger = event.target.closest('[data-copy-text]');
