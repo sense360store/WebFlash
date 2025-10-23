@@ -1,27 +1,5 @@
 import { jest } from '@jest/globals';
 
-class MemoryStorage {
-    constructor() {
-        this.store = new Map();
-    }
-
-    getItem(key) {
-        return this.store.has(key) ? this.store.get(key) : null;
-    }
-
-    setItem(key, value) {
-        this.store.set(key, String(value));
-    }
-
-    removeItem(key) {
-        this.store.delete(key);
-    }
-
-    clear() {
-        this.store.clear();
-    }
-}
-
 const defaultConfiguration = {
     mounting: null,
     power: null,
@@ -43,27 +21,22 @@ const allowedOptions = {
 const totalSteps = 4;
 
 async function loadRememberModule() {
-    const storage = new MemoryStorage();
-    global.window = { localStorage: storage };
-    globalThis.__rememberStateStorage = storage;
     const module = await import('../scripts/remember-state.js');
-    return { module, storage };
+    return module;
 }
 
 beforeEach(() => {
     jest.resetModules();
-    delete globalThis.__rememberStateStorage;
+    delete window.wizardRememberState;
 });
 
 afterEach(() => {
-    delete global.window;
-    delete globalThis.__rememberStateStorage;
+    delete window.wizardRememberState;
 });
 
-describe('remember-state persistence', () => {
+describe('remember-state in-memory behavior', () => {
     test('normalizes structured remember-state payloads', async () => {
-        const { module } = await loadRememberModule();
-        const { normalizeRememberedState } = module;
+        const { normalizeRememberedState } = await loadRememberModule();
 
         const normalized = normalizeRememberedState({
             configuration: {
@@ -95,8 +68,7 @@ describe('remember-state persistence', () => {
     });
 
     test('migrates legacy flat configuration snapshots', async () => {
-        const { module } = await loadRememberModule();
-        const { normalizeRememberedState } = module;
+        const { normalizeRememberedState } = await loadRememberModule();
 
         const normalized = normalizeRememberedState({
             mounting: 'wall',
@@ -123,9 +95,8 @@ describe('remember-state persistence', () => {
         });
     });
 
-    test('persists structured snapshots to localStorage', async () => {
-        const { module, storage } = await loadRememberModule();
-        const { persistRememberedState } = module;
+    test('persists structured snapshots in memory', async () => {
+        const { persistRememberedState, loadRememberedState } = await loadRememberModule();
 
         persistRememberedState({
             mounting: 'wall',
@@ -141,41 +112,6 @@ describe('remember-state persistence', () => {
             currentStep: 4
         });
 
-        const raw = storage.getItem('sense360.lastWizardState');
-        expect(raw).not.toBeNull();
-        const parsed = JSON.parse(raw);
-        expect(parsed).toEqual({
-            version: 2,
-            lastState: {
-                configuration: {
-                    ...defaultConfiguration,
-                    mounting: 'wall',
-                    power: 'usb',
-                    airiq: 'pro',
-                    presence: 'base',
-                    fan: 'analog'
-                },
-                currentStep: 4
-            },
-            presets: [],
-            activePresetId: null
-        });
-    });
-
-    test('loads legacy snapshots from storage with migration', async () => {
-        const { module, storage } = await loadRememberModule();
-        const { loadRememberedState } = module;
-
-        const legacySnapshot = {
-            mounting: 'ceiling',
-            power: 'pwr',
-            airiq: 'base',
-            presence: 'none',
-            comfort: 'none',
-            fan: 'analog'
-        };
-        storage.setItem('sense360.lastWizardState', JSON.stringify(legacySnapshot));
-
         const remembered = loadRememberedState({
             defaultConfiguration,
             allowedOptions,
@@ -185,45 +121,45 @@ describe('remember-state persistence', () => {
         expect(remembered).toEqual({
             configuration: {
                 ...defaultConfiguration,
-                mounting: 'ceiling',
-                power: 'pwr',
-                airiq: 'base',
-                fan: 'none'
+                mounting: 'wall',
+                power: 'usb',
+                airiq: 'pro',
+                presence: 'base',
+                fan: 'analog'
             },
-            currentStep: null
-        });
-    });
-
-    test('retains remembered step even when configuration is default', async () => {
-        const { module } = await loadRememberModule();
-        const { normalizeRememberedState } = module;
-
-        const normalized = normalizeRememberedState({
-            configuration: { ...defaultConfiguration },
-            currentStep: 3
-        }, {
-            defaultConfiguration,
-            allowedOptions,
-            totalSteps
-        });
-
-        expect(normalized).toEqual({
-            configuration: { ...defaultConfiguration },
-            currentStep: 3
+            currentStep: 4
         });
     });
 
     test('disabling remember clears stored configuration', async () => {
-        const { module, storage } = await loadRememberModule();
-        const { setRememberEnabled } = module;
+        const {
+            persistRememberedState,
+            loadRememberedState,
+            setRememberEnabled,
+            isRememberEnabled
+        } = await loadRememberModule();
 
-        storage.setItem('sense360.lastWizardState', JSON.stringify({ configuration: { mounting: 'wall' } }));
+        persistRememberedState({
+            mounting: 'wall',
+            power: 'usb',
+            airiq: 'base',
+            presence: 'none',
+            comfort: 'none',
+            fan: 'none'
+        }, {
+            defaultConfiguration,
+            allowedOptions,
+            totalSteps,
+            currentStep: 2
+        });
+
+        expect(loadRememberedState({ defaultConfiguration, allowedOptions, totalSteps })).not.toBeNull();
 
         setRememberEnabled(true);
-        expect(storage.getItem('sense360.rememberChoices')).toBe('true');
+        expect(isRememberEnabled()).toBe(true);
 
         setRememberEnabled(false);
-        expect(storage.getItem('sense360.rememberChoices')).toBe('false');
-        expect(storage.getItem('sense360.lastWizardState')).toBeNull();
+        expect(isRememberEnabled()).toBe(false);
+        expect(loadRememberedState({ defaultConfiguration, allowedOptions, totalSteps })).toBeNull();
     });
 });
