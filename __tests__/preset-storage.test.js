@@ -27,7 +27,7 @@ const storageOptions = Object.freeze({
 });
 
 async function loadPresetModule() {
-    const module = await import('../scripts/remember-state.js');
+    const module = await import('../scripts/preset-storage.js');
     return module;
 }
 
