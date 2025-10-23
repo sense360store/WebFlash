@@ -212,6 +212,14 @@ h1 {
 }
 
 /* Wizard Steps */
+.step {
+    display: none;
+}
+
+.step.is-active {
+    display: block;
+}
+
 .wizard-step {
     display: none;
     opacity: 0;
@@ -220,12 +228,14 @@ h1 {
 }
 
 .wizard-step.active,
+.wizard-step.is-active,
 .wizard-step.entering,
 .wizard-step.leaving {
     display: block;
 }
 
-.wizard-step.active {
+.wizard-step.active,
+.wizard-step.is-active {
     opacity: 1;
     transform: translateY(0);
 }

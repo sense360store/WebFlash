@@ -8,17 +8,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/wizard-style.css?v=1753432000">
-    <link rel="stylesheet" href="css/capability-bar.css">
-    <link rel="stylesheet" href="css/theme.css">
-    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=1753432000">
+    <link rel="stylesheet" href="./css/capability-bar.css">
+    <link rel="stylesheet" href="./css/theme.css">
+    <link rel="stylesheet" href="./css/layout.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <div class="logo-container">
-                <img src="sense360-logo-new.png" alt="Sense360 Logo" class="logo">
+                <img src="./sense360-logo-new.png" alt="Sense360 Logo" class="logo">
                 <div class="header-text">
                     <h1>Sense360 Firmware Configuration Tool</h1>
                     <p class="subtitle">Configure and download the correct firmware for your modular hardware</p>
@@ -50,7 +50,7 @@
                     </div>
 
                     <!-- Step 1: Mounting Type -->
-                    <div class="wizard-step active" id="step-1">
+                    <div class="wizard-step step" id="step-1">
                 <h2>Step 1: Where is this unit being installed?</h2>
                 <div class="preset-callout" data-recommended-bundle>
                     <button class="btn btn-secondary" type="button" data-recommended-bundle-button>
@@ -103,12 +103,12 @@
                     </label>
                 </div>
                 <div class="wizard-actions">
-                    <button class="btn btn-primary btn-next" onclick="nextStep()" disabled>Next</button>
+                    <button class="btn btn-primary btn-next" type="button" data-next disabled>Next</button>
                 </div>
                     </div>
 
                     <!-- Step 2: Power Option -->
-                    <div class="wizard-step" id="step-2">
+                    <div class="wizard-step step" id="step-2">
                 <h2>Step 2: Select Power Option</h2>
                 <div class="option-grid">
                     <label class="option-card">
@@ -173,13 +173,13 @@
                     </label>
                 </div>
                 <div class="wizard-actions">
-                    <button class="btn btn-secondary" onclick="previousStep()">Back</button>
-                    <button class="btn btn-primary btn-next" onclick="nextStep()" disabled>Next</button>
+                    <button class="btn btn-secondary" type="button" data-back>Back</button>
+                    <button class="btn btn-primary btn-next" type="button" data-next disabled>Next</button>
                 </div>
                     </div>
 
                 <!-- Step 3: Expansion Modules -->
-                <div class="wizard-step" id="step-3">
+                <div class="wizard-step step" id="step-3">
                 <h2>Step 3: Add Expansion Modules</h2>
                 <div class="module-availability-hint" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
@@ -325,13 +325,13 @@
                 </div>
 
                 <div class="wizard-actions">
-                    <button class="btn btn-secondary" onclick="previousStep()">Back</button>
-                    <button class="btn btn-primary btn-next" onclick="nextStep()">Next</button>
+                    <button class="btn btn-secondary" type="button" data-back>Back</button>
+                    <button class="btn btn-primary btn-next" type="button" data-next>Next</button>
                 </div>
                     </div>
 
                     <!-- Step 4: Review & Download -->
-                    <div class="wizard-step" id="step-4">
+                    <div class="wizard-step step" id="step-4">
                 <h2>Step 4: Review & Download</h2>
                 
                 <div class="configuration-summary">
@@ -457,7 +457,7 @@
                                 <p class="firmware-description">Launches a known-good recovery image that skips configuration matching to bring unresponsive devices back online.</p>
                             </div>
                             <div class="firmware-actions">
-                                <esp-web-install-button manifest="firmware/rescue/manifest.json" data-rescue-install data-webflash-install>
+                                <esp-web-install-button manifest="./firmware-18.json" data-rescue-install data-webflash-install>
                                     <button slot="activate" class="btn btn-secondary" type="button" data-rescue-install>
                                         Launch Rescue Installer
                                     </button>
@@ -476,10 +476,10 @@
                 </div>
 
                 <div class="wizard-actions">
-                    <button class="btn btn-secondary" onclick="previousStep()">Back</button>
+                    <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <div class="primary-action-group">
                         <div class="primary-action-controls">
-                            <button class="btn btn-primary" id="download-btn" onclick="downloadFirmware()" disabled>Download Firmware</button>
+                            <button class="btn btn-primary" id="download-btn" type="button" onclick="downloadFirmware()" disabled>Download Firmware</button>
                             <button class="btn btn-primary" type="button" onclick="window.supportBundle?.open()">Support &amp; Logs</button>
                             <button class="btn btn-copy" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
                                 Copy
@@ -530,19 +530,6 @@
     </div>
 </div>
 
-<script src="scripts/support/errors.js"></script>
-<script src="scripts/support/boundary.js"></script>
-<script src="scripts/wizard-state-observer.js"></script>
-<script type="module" src="scripts/state.js"></script>
-    <script type="module" src="scripts/query-presets.js"></script>
-    <script type="module" src="scripts/recommended-bundle.js"></script>
-    <script type="module" src="scripts/support/ui.js"></script>
-    <script type="module" src="scripts/support/option-tooltips.js"></script>
-
-    <script type="module" src="scripts/compat-config.js"></script>
-    <script type="module" src="scripts/init-review.js"></script>
-    <script type="module" src="scripts/layout/state-summary.js"></script>
-    <script src="scripts/layout/firmware-note.js"></script>
-    <script src="scripts/layout/init-splitview.js"></script>
+<script type="module" src="./app.js"></script>
 </body>
 </html>
