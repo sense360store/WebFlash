@@ -173,4 +173,62 @@ describe('wizard state module', () => {
             expect(changeCalls).toHaveLength(1);
         });
     });
+
+    test('wizard continues initializing when localStorage throws a SecurityError', async () => {
+        const securityError = new Error('Blocked by browser settings');
+        securityError.name = 'SecurityError';
+
+        const originalGlobalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+        const originalWindowDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+        try {
+            Object.defineProperty(globalThis, 'localStorage', {
+                configurable: true,
+                get() {
+                    throw securityError;
+                }
+            });
+
+            Object.defineProperty(window, 'localStorage', {
+                configurable: true,
+                get() {
+                    throw securityError;
+                }
+            });
+
+            await import('../scripts/state.js');
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+
+            const mountingWall = document.querySelector('input[name="mounting"][value="wall"]');
+            const nextButton = document.querySelector('#step-1 .btn-next');
+
+            expect(nextButton.disabled).toBe(true);
+
+            mountingWall.checked = true;
+            mountingWall.dispatchEvent(new Event('change', { bubbles: true }));
+
+            expect(nextButton.disabled).toBe(false);
+
+            const candidateWarnings = warnSpy.mock.calls.filter(([message]) =>
+                typeof message === 'string' && message.includes('encountered an error while probing storage candidates')
+            );
+            expect(candidateWarnings).toHaveLength(1);
+        } finally {
+            warnSpy.mockRestore();
+
+            if (originalGlobalDescriptor) {
+                Object.defineProperty(globalThis, 'localStorage', originalGlobalDescriptor);
+            } else {
+                delete globalThis.localStorage;
+            }
+
+            if (originalWindowDescriptor) {
+                Object.defineProperty(window, 'localStorage', originalWindowDescriptor);
+            } else {
+                delete window.localStorage;
+            }
+        }
+    });
 });
