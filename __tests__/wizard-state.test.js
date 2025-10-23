@@ -12,12 +12,12 @@ function renderWizardDom() {
             <div class="progress-step" data-step="4"></div>
         </div>
         <div id="step-1" class="wizard-step">
-            <button class="btn-next" disabled>Next</button>
+            <button class="btn-next" data-next disabled>Next</button>
             <input type="radio" name="mounting" value="wall">
             <input type="radio" name="mounting" value="ceiling">
         </div>
         <div id="step-2" class="wizard-step">
-            <button class="btn-next" disabled>Next</button>
+            <button class="btn-next" data-next disabled>Next</button>
             <input type="radio" name="power" value="usb">
             <input type="radio" name="power" value="poe">
             <input type="radio" name="power" value="pwr">
