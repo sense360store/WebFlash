@@ -187,121 +187,375 @@
                 <!-- Step 3: Expansion Modules -->
                 <div class="wizard-step step" id="step-3">
                 <h2>Step 3: Add Expansion Modules</h2>
-                <div class="module-availability-hint" id="module-availability-hint" role="status" aria-live="polite">
+                <div class="module-status-bar" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
                 </div>
 
-                <div class="module-step-layout">
-                    <div class="module-step-layout__options">
-                        <!-- AirIQ Module -->
-                        <div class="module-section">
-                            <h3>AirIQ Module</h3>
-                            <div class="option-grid">
-                                <label class="option-card">
-                                    <input type="radio" name="airiq" value="none" checked>
-                                    <div class="option-content">
-                                        <div class="option-title">None</div>
-                                        <div class="option-description">No AirIQ module</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="airiq" value="base">
-                                    <div class="option-content">
-                                        <div class="option-title">Base</div>
-                                        <div class="option-description">SGP41, SCD41, MiCS4514, BMP390</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="airiq" value="pro">
-                                    <div class="option-content">
-                                        <div class="option-title">Pro</div>
-                                        <div class="option-description">All Base + SEN0321, SPS30, SFA40</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
+                <div class="module-step-grid" role="region" aria-label="Expansion module selection">
+                    <div class="module-step-grid__main">
+                        <section class="module-collection" aria-label="Expansion module groups">
+                            <section class="module-group" data-module-group="airiq">
+                                <div class="module-group__header">
+                                    <h3 class="module-group__title">AirIQ Module</h3>
+                                    <p class="module-group__description">Air quality stack for particulate, VOC, and CO₂ sensors.</p>
+                                </div>
+                                <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="airiq" data-variant="none">
+                                        <input type="radio" name="airiq" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Core only, no AirIQ sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Not required</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>None</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="airiq" data-variant="base">
+                                        <input type="radio" name="airiq" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Balanced air quality sensing with VOC, CO₂, and particulate coverage.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev B core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J4 sensor bus · J7 auxiliary power</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ Base module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ Base module to free the DAC bus.">Fan Analog</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="airiq" data-variant="pro">
+                                        <input type="radio" name="airiq" value="pro">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Pro</div>
+                                                    <p class="option-description module-card__description">Full particulate insights plus advanced gas and flow monitoring.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev C core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J4 sensor bus · J6 particulate harness · J7 auxiliary power</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support." aria-label="Conflicts with Fan Analog: Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="presence" data-conflict-variants="pro" title="Use Presence Base or remove one of the modules to avoid UART contention." aria-label="Conflicts with Presence Pro: Use Presence Base or remove one of the modules to avoid UART contention.">Presence Pro</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </section>
 
-                        <!-- Presence Module -->
-                        <div class="module-section">
-                            <h3>Presence Module</h3>
-                            <div class="option-grid">
-                                <label class="option-card">
-                                    <input type="radio" name="presence" value="none" checked>
-                                    <div class="option-content">
-                                        <div class="option-title">None</div>
-                                        <div class="option-description">No Presence module</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="presence" value="base">
-                                    <div class="option-content">
-                                        <div class="option-title">Base</div>
-                                        <div class="option-description">SEN0609 mmWave sensor</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="presence" value="pro">
-                                    <div class="option-content">
-                                        <div class="option-title">Pro</div>
-                                        <div class="option-description">SEN0609 + LD2450 radar</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
+                            <section class="module-group" data-module-group="presence">
+                                <div class="module-group__header">
+                                    <h3 class="module-group__title">Presence Module</h3>
+                                    <p class="module-group__description">mmWave radar options for occupancy detection.</p>
+                                </div>
+                                <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="presence" data-variant="none">
+                                        <input type="radio" name="presence" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Skip presence sensing.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Not required</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>None</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="presence" data-variant="base">
+                                        <input type="radio" name="presence" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Single-zone mmWave radar coverage.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev B core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J2 radar slot</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="presence" data-variant="pro">
+                                        <input type="radio" name="presence" value="pro">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Pro</div>
+                                                    <p class="option-description module-card__description">Dual-zone radar with LD2450 secondary coverage.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev D core</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J2 radar slot · J8 secondary UART</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="pro" title="Select AirIQ Base or remove one of the modules." aria-label="Conflicts with AirIQ Pro: Select AirIQ Base or remove one of the modules.">AirIQ Pro</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </section>
 
-                        <!-- Comfort Module -->
-                        <div class="module-section">
-                            <h3>Comfort Module</h3>
-                            <div class="option-grid">
-                                <label class="option-card">
-                                    <input type="radio" name="comfort" value="none" checked>
-                                    <div class="option-content">
-                                        <div class="option-title">None</div>
-                                        <div class="option-description">No Comfort module</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="comfort" value="base">
-                                    <div class="option-content">
-                                        <div class="option-title">Base</div>
-                                        <div class="option-description">SHT40 + LTR-303 sensors</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
+                            <section class="module-group" data-module-group="comfort">
+                                <div class="module-group__header">
+                                    <h3 class="module-group__title">Comfort Module</h3>
+                                    <p class="module-group__description">Environmental sensing for comfort tuning.</p>
+                                </div>
+                                <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="comfort" data-variant="none">
+                                        <input type="radio" name="comfort" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Skip comfort sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Not required</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>None</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="comfort" data-variant="base">
+                                        <input type="radio" name="comfort" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Humidity and ambient light monitoring.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev A core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J3 environmental header</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </section>
 
-                        <!-- Fan Module (only for wall mount) -->
-                        <div class="module-section" id="fan-module-section">
-                            <h3>Fan Module</h3>
-                            <div class="option-grid">
-                                <label class="option-card">
-                                    <input type="radio" name="fan" value="none" checked>
-                                    <div class="option-content">
-                                        <div class="option-title">None</div>
-                                        <div class="option-description">No Fan module</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="fan" value="pwm">
-                                    <div class="option-content">
-                                        <div class="option-title">PWM</div>
-                                        <div class="option-description">Variable speed fan control</div>
-                                    </div>
-                                </label>
-                                <label class="option-card">
-                                    <input type="radio" name="fan" value="analog">
-                                    <div class="option-content">
-                                        <div class="option-title">Analog</div>
-                                        <div class="option-description">0-10V analog fan control</div>
-                                    </div>
-                                </label>
+                            <section class="module-group" data-module-group="fan" id="fan-module-section">
+                                <div class="module-group__header">
+                                    <h3 class="module-group__title">Fan Module</h3>
+                                    <p class="module-group__description">Output driver choices for external fan control.</p>
+                                </div>
+                                <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="fan" data-variant="none">
+                                        <input type="radio" name="fan" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">No fan control hardware.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Not required</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>None</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="fan" data-variant="pwm">
+                                        <input type="radio" name="fan" value="pwm">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">PWM</div>
+                                                    <p class="option-description module-card__description">Variable speed fan control via PWM driver.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev A core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J9 PWM driver</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="fan" data-variant="analog">
+                                        <input type="radio" name="fan" value="analog">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Analog</div>
+                                                    <p class="option-description module-card__description">0–10V analog fan control with isolation harness.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev C core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J4 analog DAC · J10 isolation harness</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ Base/Pro: Disable AirIQ or switch the fan output to PWM mode.">AirIQ Base/Pro</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </section>
+                        </section>
+
+                        <section class="module-detail" id="module-requirements-panel" aria-live="polite" aria-label="Module requirements">
+                            <div class="module-requirements-panel__placeholder">
+                                Highlight a module option to see required core revisions, headers, and conflicts.
                             </div>
-                        </div>
+                        </section>
                     </div>
 
-                    <aside class="module-step-layout__details" id="module-requirements-panel" aria-live="polite" aria-label="Module requirements">
-                        <div class="module-requirements-panel__placeholder">
-                            Highlight a module option to see required core revisions, headers, and conflicts.
+                    <aside class="module-step-grid__summary" data-module-summary aria-label="Configuration summary">
+                        <div class="module-summary-card">
+                            <header class="module-summary-card__header">
+                                <h3 class="module-summary-card__title">Your configuration</h3>
+                                <p class="module-summary-card__subtitle">Selections across mounting, power, and modules.</p>
+                            </header>
+                            <div class="module-summary-card__body" data-module-summary-list role="list"></div>
+                            <p class="module-summary-card__warning" data-module-summary-warning hidden></p>
+                            <section class="module-summary-card__firmware" aria-label="Firmware" data-module-summary-firmware>
+                                <div class="module-summary-card__firmware-header">
+                                    <h4>Firmware</h4>
+                                    <p class="module-summary-card__firmware-empty" data-module-summary-firmware-empty>No build selected yet.</p>
+                                </div>
+                                <div class="module-summary-card__firmware-meta" data-module-summary-firmware-meta hidden>
+                                    <p class="module-summary-card__firmware-name" data-module-summary-firmware-name></p>
+                                    <p class="module-summary-card__firmware-size" data-module-summary-firmware-size></p>
+                                </div>
+                                <button type="button" class="btn btn-primary module-summary-card__install" data-module-summary-install disabled>Install</button>
+                            </section>
+                            <div class="module-summary-card__actions">
+                                <button type="button" class="btn btn-secondary" data-module-summary-copy data-default-label="Copy link">Copy link</button>
+                                <button type="button" class="btn btn-tertiary" data-module-summary-reset>Start over</button>
+                            </div>
                         </div>
                     </aside>
                 </div>

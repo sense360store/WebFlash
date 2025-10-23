@@ -199,18 +199,20 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
                 resetButton
             };
 
-            bindSidebarButtons(sidebarRefs);
+            bindSummaryButtons(sidebarRefs);
         }
 
         return sidebarRefs;
     }
 
-    function bindSidebarButtons(refs) {
+    function bindSummaryButtons(refs) {
         const { copyButton, resetButton } = refs;
 
         if (copyButton && copyButton.dataset.bound !== 'true') {
             copyButton.dataset.bound = 'true';
-            copyButton.dataset.defaultLabel = copyButton.textContent || 'Copy sharable link';
+            if (!copyButton.dataset.defaultLabel) {
+                copyButton.dataset.defaultLabel = copyButton.textContent || 'Copy sharable link';
+            }
             copyButton.addEventListener('click', handleCopyLink);
         }
 
@@ -220,54 +222,460 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
         }
     }
 
-    function renderSidebar(meta, state) {
-        const refs = ensureSidebarRefs();
+    function ensureModuleSummaryRefs() {
+        const root = document.querySelector('[data-module-summary]');
+        if (!root || !document.body.contains(root)) {
+            moduleSummaryRefs = null;
+            return null;
+        }
+
+        if (moduleSummaryRefs && moduleSummaryRefs.root === root) {
+            return moduleSummaryRefs;
+        }
+
+        const list = root.querySelector('[data-module-summary-list]');
+        const warning = root.querySelector('[data-module-summary-warning]');
+        const copyButton = root.querySelector('[data-module-summary-copy]');
+        const resetButton = root.querySelector('[data-module-summary-reset]');
+        const firmwareRoot = root.querySelector('[data-module-summary-firmware]');
+        const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
+        const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
+        const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
+        const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
+        const installButton = root.querySelector('[data-module-summary-install]');
+
+        if (list && !list.hasAttribute('aria-live')) {
+            list.setAttribute('aria-live', 'polite');
+        }
+
+        moduleSummaryRefs = {
+            root,
+            list,
+            warning,
+            copyButton,
+            resetButton,
+            firmwareRoot,
+            firmwareEmpty,
+            firmwareMeta,
+            firmwareName,
+            firmwareSize,
+            installButton
+        };
+
+        bindSummaryButtons(moduleSummaryRefs);
+
+        return moduleSummaryRefs;
+    }
+
+    function ensurePresetManagerRefs() {
+        if (presetManagerRefs && document.body.contains(presetManagerRefs.root)) {
+            return presetManagerRefs;
+        }
+
+        const root = document.getElementById('preset-manager');
+        if (!root) {
+            presetManagerRefs = null;
+            return null;
+        }
+
+        const list = root.querySelector('[data-preset-list]');
+        const empty = root.querySelector('[data-preset-empty]');
+        const form = root.querySelector('[data-preset-form]');
+        const nameInput = root.querySelector('[data-preset-name]');
+        const saveButton = root.querySelector('[data-preset-save]');
+
+        if (!list || !empty || !form || !nameInput || !saveButton) {
+            presetManagerRefs = null;
+            return null;
+        }
+
+        presetManagerRefs = { root, list, empty, form, nameInput, saveButton };
+        bindPresetManager(presetManagerRefs);
+        return presetManagerRefs;
+    }
+
+    function bindPresetManager(refs) {
+        const { list, form, nameInput } = refs;
+
+        if (form.dataset.presetBound !== 'true') {
+            form.addEventListener('submit', handlePresetSave);
+            form.dataset.presetBound = 'true';
+        }
+
+        if (nameInput.dataset.presetBound !== 'true') {
+            nameInput.addEventListener('input', () => updatePresetSaveState(getState()));
+            nameInput.dataset.presetBound = 'true';
+        }
+
+        if (list.dataset.presetBound !== 'true') {
+            list.addEventListener('click', handlePresetListClick);
+            list.dataset.presetBound = 'true';
+        }
+    }
+
+    function updatePresetEmptyState(presets) {
+        const refs = ensurePresetManagerRefs();
         if (!refs) {
             return;
         }
 
-        const { list, warning } = refs;
+        refs.empty.hidden = presets.length > 0;
+        refs.list.hidden = presets.length === 0;
+    }
+
+    function renderPresetList() {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        const presets = listPresets(PRESET_STORAGE_OPTIONS);
+        presetCache.clear();
+
+        while (refs.list.firstChild) {
+            refs.list.removeChild(refs.list.firstChild);
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        presets.forEach(preset => {
+            presetCache.set(preset.id, preset);
+
+            const item = document.createElement('li');
+            item.className = 'preset-panel__item';
+            item.dataset.presetId = preset.id;
+
+            const name = document.createElement('span');
+            name.className = 'preset-panel__item-name';
+            name.textContent = preset.name;
+            item.appendChild(name);
+
+            const actions = document.createElement('div');
+            actions.className = 'preset-panel__actions';
+
+            const applyButton = document.createElement('button');
+            applyButton.type = 'button';
+            applyButton.className = 'preset-panel__action-button';
+            applyButton.dataset.presetAction = 'apply';
+            applyButton.textContent = 'Apply';
+            actions.appendChild(applyButton);
+
+            const renameButton = document.createElement('button');
+            renameButton.type = 'button';
+            renameButton.className = 'preset-panel__action-button';
+            renameButton.dataset.presetAction = 'rename';
+            renameButton.textContent = 'Rename';
+            actions.appendChild(renameButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'preset-panel__action-button';
+            deleteButton.dataset.presetAction = 'delete';
+            deleteButton.textContent = 'Delete';
+            actions.appendChild(deleteButton);
+
+            item.appendChild(actions);
+            fragment.appendChild(item);
+        });
+
+        refs.list.appendChild(fragment);
+        updatePresetEmptyState(presets);
+    }
+
+    function updatePresetSaveState(state) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        const hasMount = Boolean(state.mount);
+        const hasPower = Boolean(state.power);
+        refs.saveButton.disabled = !(hasMount && hasPower);
+    }
+
+    function handlePresetSave(event) {
+        event.preventDefault();
+
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        const state = getState();
+        if (!state.mount || !state.power) {
+            return;
+        }
+
+        const configuration = mapSummaryStateToConfiguration(state);
+        const rawName = refs.nameInput.value;
+        const trimmedName = typeof rawName === 'string' ? rawName.trim() : '';
+        const presetName = trimmedName || generatePresetName(state);
+        const currentStep = getCurrentWizardStep();
+
+        const saved = savePreset(presetName, configuration, {
+            ...PRESET_STORAGE_OPTIONS,
+            currentStep
+        });
+
+        if (saved) {
+            markPresetApplied(saved.id, PRESET_STORAGE_OPTIONS);
+        }
+
+        refs.nameInput.value = '';
+        renderPresetList();
+        updatePresetSaveState(state);
+        refs.nameInput.focus();
+    }
+
+    function handlePresetListClick(event) {
+        const actionElement = event.target.closest('[data-preset-action]');
+        if (!actionElement) {
+            return;
+        }
+
+        const item = actionElement.closest('[data-preset-id]');
+        if (!item) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const presetId = item.dataset.presetId;
+        const action = actionElement.dataset.presetAction;
+
+        if (!presetId || !action) {
+            return;
+        }
+
+        if (action === 'apply') {
+            applyPresetById(presetId);
+        } else if (action === 'rename') {
+            handlePresetRename(presetId);
+        } else if (action === 'delete') {
+            handlePresetDelete(presetId);
+        }
+    }
+
+    function applyPresetById(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        applyPresetStateToWizard(preset.state);
+        markPresetApplied(preset.id, PRESET_STORAGE_OPTIONS);
+        renderPresetList();
+    }
+
+    function handlePresetRename(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        const result = window.prompt('Rename preset', preset.name);
+        if (result === null) {
+            return;
+        }
+
+        const trimmed = result.trim();
+        if (!trimmed) {
+            return;
+        }
+
+        renamePreset(presetId, trimmed, PRESET_STORAGE_OPTIONS);
+        renderPresetList();
+    }
+
+    function handlePresetDelete(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        const confirmed = window.confirm(`Delete preset "${preset.name}"?`);
+        if (!confirmed) {
+            return;
+        }
+
+        deletePreset(presetId);
+        renderPresetList();
+    }
+
+    function initializePresetManager() {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+
+        renderPresetList();
+        updatePresetSaveState(getState());
+    }
+
+    function renderSummaryList(list, meta, variant = 'sidebar') {
+        if (!list) {
+            return;
+        }
+
         while (list.firstChild) {
             list.removeChild(list.firstChild);
         }
 
-        const fragment = document.createDocumentFragment();
         FIELD_MAP.forEach(field => {
-            const item = document.createElement('li');
-            const label = document.createElement('strong');
-            label.textContent = field.label;
-            item.appendChild(label);
-            item.appendChild(document.createTextNode(`: ${meta[field.key].display}`));
-            fragment.appendChild(item);
+            if (variant === 'module') {
+                const item = document.createElement('div');
+                item.className = 'module-summary-card__item';
+                item.setAttribute('role', 'listitem');
+
+                const label = document.createElement('span');
+                label.className = 'module-summary-card__item-label';
+                label.textContent = field.label;
+
+                const value = document.createElement('span');
+                value.className = 'module-summary-card__item-value';
+                value.textContent = meta[field.key].display;
+
+                item.appendChild(label);
+                item.appendChild(value);
+                list.appendChild(item);
+            } else {
+                const item = document.createElement('li');
+                const label = document.createElement('strong');
+                label.textContent = field.label;
+                item.appendChild(label);
+                item.appendChild(document.createTextNode(`: ${meta[field.key].display}`));
+                list.appendChild(item);
+            }
         });
+    }
 
-        list.appendChild(fragment);
-
-        if (state.mount === 'ceiling' && state.fan && state.fan !== 'none') {
-            warning.textContent = 'Fan Module is not available on Ceiling mounts.';
-            warning.hidden = false;
-        } else {
-            warning.hidden = true;
+    function formatFirmwareName(firmware) {
+        if (!firmware) {
+            return '';
         }
+
+        const versionSegment = firmware.version ? `-v${firmware.version}` : '';
+        const channelSegment = firmware.channel ? `-${firmware.channel}` : '';
+        const configString = (firmware.config_string || '').toString().trim();
+
+        if (configString) {
+            return `Sense360-${configString}${versionSegment}${channelSegment}.bin`;
+        }
+
+        const model = (firmware.model || 'Sense360').toString().trim() || 'Sense360';
+        const variant = (firmware.variant || '').toString().trim();
+        const sensorAddon = (firmware.sensor_addon || '').toString().trim();
+        const variantSegment = variant ? `-${variant}` : '';
+        const sensorSegment = sensorAddon ? `-${sensorAddon}` : '';
+
+        return `${model}${variantSegment}${sensorSegment}${versionSegment}${channelSegment}.bin`;
+    }
+
+    function formatFirmwareSize(firmware) {
+        const raw = Number(firmware?.file_size);
+        if (!Number.isFinite(raw) || raw <= 0) {
+            return '';
+        }
+
+        if (raw >= 1024 * 1024) {
+            return `${(raw / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        return `${(raw / 1024).toFixed(1)} KB`;
+    }
+
+    function renderFirmwareSummary(refs) {
+        if (!refs || !refs.firmwareRoot) {
+            return;
+        }
+
+        const { firmwareEmpty, firmwareMeta, firmwareName, firmwareSize } = refs;
+        const firmware = window.currentFirmware || null;
+
+        if (!firmware || !firmwareName) {
+            if (firmwareEmpty) {
+                firmwareEmpty.hidden = false;
+            }
+            if (firmwareMeta) {
+                firmwareMeta.hidden = true;
+            }
+            if (firmwareName) {
+                firmwareName.textContent = '';
+            }
+            if (firmwareSize) {
+                firmwareSize.textContent = '';
+            }
+            return;
+        }
+
+        if (firmwareEmpty) {
+            firmwareEmpty.hidden = true;
+        }
+        if (firmwareMeta) {
+            firmwareMeta.hidden = false;
+        }
+
+        const displayName = formatFirmwareName(firmware);
+        const sizeLabel = formatFirmwareSize(firmware);
+
+        if (firmwareName) {
+            firmwareName.textContent = displayName;
+        }
+
+        if (firmwareSize) {
+            firmwareSize.textContent = sizeLabel ? `Size: ${sizeLabel}` : '';
+        }
+    }
+
+    function renderSidebar(meta, state) {
+        const sidebar = ensureSidebarRefs();
+        const summary = ensureModuleSummaryRefs();
+        const targets = [];
+
+        if (sidebar) {
+            targets.push({ refs: sidebar, variant: 'sidebar' });
+        }
+        if (summary) {
+            targets.push({ refs: summary, variant: 'module' });
+        }
+
+        if (!targets.length) {
+            return;
+        }
+
+        targets.forEach(({ refs, variant }) => {
+            const { list, warning } = refs;
+            renderSummaryList(list, meta, variant);
+
+            if (warning) {
+                if (state.mount === 'ceiling' && state.fan && state.fan !== 'none') {
+                    warning.textContent = 'Fan Module is not available on Ceiling mounts.';
+                    warning.hidden = false;
+                } else {
+                    warning.hidden = true;
+                }
+            }
+
+            renderFirmwareSummary(refs);
+        });
     }
 
     async function handleCopyLink(event) {
         event.preventDefault();
-        const refs = ensureSidebarRefs();
-        if (!refs) {
+        const button = event.currentTarget;
+        if (!button) {
             return;
         }
 
-        const { copyButton } = refs;
         const state = getState();
         const url = buildShareableUrl(state);
 
         try {
             await copyTextToClipboard(url);
-            showCopyFeedback(copyButton, 'Copied');
+            showCopyFeedback(button, 'Copied');
         } catch (error) {
             console.error('[state-summary] Failed to copy link', error);
-            showCopyFeedback(copyButton, 'Copy failed');
+            showCopyFeedback(button, 'Copy failed');
         }
     }
 
@@ -345,6 +753,7 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 
     document.addEventListener('wizardSidebarReady', () => {
         sidebarRefs = null;
+        moduleSummaryRefs = null;
         scheduleScan();
     });
 
