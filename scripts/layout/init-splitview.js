@@ -1,4 +1,8 @@
 (function () {
+    document.addEventListener('wizardSidebarReady', () => {
+        window.renderSidebar?.(1);
+    });
+
     function findWizardRoot() {
         const direct = document.querySelector('.wizard-container');
         if (direct) {
@@ -109,6 +113,7 @@
 
         const sidebar = document.createElement('aside');
         sidebar.className = 'wizard-sidebar';
+        sidebar.dataset.wizardSummary = '';
         sidebar.setAttribute('aria-label', 'Quick summary and actions');
 
         parent.insertBefore(shell, root);
@@ -117,6 +122,18 @@
         shell.appendChild(sidebar);
 
         createSidebar(sidebar);
+
+        function renderSidebar(step) {
+            if (!sidebar) {
+                return;
+            }
+
+            const shouldShow = Number(step) === 4;
+            sidebar.style.display = shouldShow ? '' : 'none';
+        }
+
+        window.renderSidebar = renderSidebar;
+        renderSidebar(1);
 
         if (document.body) {
             document.body.classList.add('has-wizard-sidebar');

@@ -1738,6 +1738,8 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
     if (!skipUrlUpdate) {
         updateUrlFromConfiguration();
     }
+
+    window.renderSidebar?.(currentStep);
 }
 
 function updateProgressSteps(targetStep) {
