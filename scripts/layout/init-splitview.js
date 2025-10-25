@@ -40,6 +40,12 @@
         configCard.innerHTML = `
             <h4>Your configuration</h4>
             <ul class="sidebar-list" id="sb-config-list"></ul>
+            <section class="sidebar-hardware" aria-label="Hardware requirements" data-hardware-summary>
+                <h5 class="sidebar-hardware__title">Hardware requirements</h5>
+                <p class="sidebar-hardware__empty sidebar-muted" data-hardware-summary-empty>None yet</p>
+                <p class="sidebar-hardware__core" data-hardware-summary-core hidden></p>
+                <ul class="sidebar-hardware__headers" data-hardware-summary-headers hidden></ul>
+            </section>
             <div class="sidebar-actions">
                 <button class="btn primary" id="sb-copy-link" type="button">Copy sharable link</button>
                 <button class="btn" id="sb-reset" type="button">Start over</button>

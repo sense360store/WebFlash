@@ -1000,6 +1000,49 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     padding: 12px 16px;
 }
 
+.module-summary-card__hardware {
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+    background: var(--color-surface-soft);
+}
+
+.module-summary-card__hardware-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.module-summary-card__hardware-empty {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.module-summary-card__hardware-core {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.5;
+}
+
+.module-summary-card__hardware-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.module-summary-card__hardware-list li {
+    line-height: 1.4;
+}
+
 .module-summary-card__firmware {
     border: 1px solid var(--color-border);
     border-radius: 12px;
