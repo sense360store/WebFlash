@@ -18,6 +18,8 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     let pending = false;
     let sidebarRefs = null;
     let moduleSummaryRefs = null;
+    let mobileSummaryRefs = null;
+    let mobileSummaryMediaQuery = null;
     let presetManagerRefs = null;
     let copyResetTimer = null;
 
