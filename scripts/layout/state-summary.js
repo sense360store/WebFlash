@@ -436,8 +436,14 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         if (root) {
             ensureModuleSummaryRefs();
         }
+        const toggle = container.querySelector('[data-mobile-summary-toggle]');
+        const drawer = container.querySelector('[data-mobile-summary-drawer]');
+        const closeButton = container.querySelector('[data-mobile-summary-close]');
+        const label = container.querySelector('[data-mobile-summary-label]');
 
-        if (!toggle || !drawer) {
+        if (!drawer) {
+            body.classList.remove('is-mobile-summary-open');
+            mobileSummaryRefs = createEmptyMobileSummaryRefs();
             return null;
         }
 
@@ -445,11 +451,13 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             mobileSummaryRefs = {
                 ...createEmptyMobileSummaryRefs(),
                 container,
-                toggle,
+                toggle: toggle || null,
                 drawer,
                 closeButton,
                 label,
                 summaryRefs: root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : null
+                closeButton: closeButton || null,
+                label: label || null
             };
 
             bindMobileSummaryControls(mobileSummaryRefs);
@@ -458,6 +466,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         } else {
             mobileSummaryRefs.toggle = toggle || mobileSummaryRefs.toggle || null;
             mobileSummaryRefs.drawer = drawer || mobileSummaryRefs.drawer || null;
+            mobileSummaryRefs.drawer = drawer;
             mobileSummaryRefs.closeButton = closeButton || mobileSummaryRefs.closeButton || null;
             mobileSummaryRefs.label = label || mobileSummaryRefs.label || null;
             mobileSummaryRefs.summaryRefs = root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : mobileSummaryRefs.summaryRefs || null;
