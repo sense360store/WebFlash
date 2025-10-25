@@ -2,6 +2,22 @@ import { normalizeChannelKey } from '../utils/channel-alias.js';
 import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 import { getModuleVariantEntry } from '../data/module-requirements.js';
 
+const moduleSummaryRefs = new Map();
+
+function createEmptyMobileSummaryRefs() {
+    return {
+        container: null,
+        toggle: null,
+        drawer: null,
+        closeButton: null,
+        label: null,
+        summaryRefs: null
+    };
+}
+
+let mobileSummaryRefs = createEmptyMobileSummaryRefs();
+let mobileSummaryMediaQuery = null;
+
 (function () {
     const FIELD_MAP = [
         { key: 'mount', name: 'mounting', label: 'Mount' },
@@ -17,26 +33,10 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
     let pending = false;
     let sidebarRefs = null;
-    let moduleSummaryRefs = new Map();
-
-    // Prevent ReferenceError on first load if mobile summary UI isn't present yet
-    function createEmptyMobileSummaryRefs() {
-        return {
-            container: null,
-            toggle: null,
-            drawer: null,
-            closeButton: null,
-            label: null,
-            summaryRefs: null
-        };
-    }
-
     const MOBILE_SUMMARY_TOGGLE_HANDLER = Symbol('mobileSummaryToggleHandler');
     const MOBILE_SUMMARY_CLOSE_HANDLER = Symbol('mobileSummaryCloseHandler');
     const MOBILE_SUMMARY_KEYDOWN_HANDLER = Symbol('mobileSummaryKeydownHandler');
 
-    let mobileSummaryRefs = createEmptyMobileSummaryRefs();
-    let mobileSummaryMediaQuery = null;
     let presetManagerRefs = null;
     let copyResetTimer = null;
 
@@ -351,19 +351,14 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     function ensureModuleSummaryRefs() {
         const body = document.body;
         if (!body) {
+            moduleSummaryRefs.clear();
             return [];
-        }
-
-        if (!moduleSummaryRefs || typeof moduleSummaryRefs.clear !== 'function') {
-            moduleSummaryRefs = new Map();
         }
 
         const nodes = Array.from(document.querySelectorAll('[data-module-summary]')).filter(node => body.contains(node));
 
         if (!nodes.length) {
-            if (moduleSummaryRefs) {
-                moduleSummaryRefs.clear();
-            }
+            moduleSummaryRefs.clear();
             return [];
         }
 
@@ -456,7 +451,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         let summaryRefs = null;
         if (summaryRoot) {
             ensureModuleSummaryRefs();
-            summaryRefs = moduleSummaryRefs?.get(summaryRoot) || null;
+            summaryRefs = moduleSummaryRefs.get(summaryRoot) || null;
         }
 
         const nextRefs = {
@@ -1179,13 +1174,14 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
     document.addEventListener('wizardSidebarReady', () => {
         sidebarRefs = null;
-        if (moduleSummaryRefs) {
-            moduleSummaryRefs.clear();
-        }
+        moduleSummaryRefs.clear();
         if (mobileSummaryRefs) {
             setMobileSummaryOpen(false, mobileSummaryRefs);
         }
-        mobileSummaryRefs = createEmptyMobileSummaryRefs();
+        const refs = ensureMobileSummaryRefs();
+        if (refs) {
+            bindMobileSummaryControls(refs);
+        }
         scheduleScan();
     });
 
