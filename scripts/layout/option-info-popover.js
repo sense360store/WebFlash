@@ -10,6 +10,8 @@ if (infoButtons.length && popover) {
     const prosList = popover.querySelector('[data-popover-pros]');
     const consSection = popover.querySelector('[data-popover-cons-section]');
     const consList = popover.querySelector('[data-popover-cons]');
+    const advancedSection = popover.querySelector('[data-popover-advanced-section]');
+    const advancedList = popover.querySelector('[data-popover-advanced]');
     const closeButton = popover.querySelector('[data-popover-close]');
 
     let activeTrigger = null;
@@ -135,6 +137,7 @@ if (infoButtons.length && popover) {
 
         populateList(prosList, prosSection, tooltip.pros);
         populateList(consList, consSection, tooltip.cons);
+        populateList(advancedList, advancedSection, tooltip.measurements || tooltip.advanced);
     }
 
     function populateList(listElement, sectionElement, items) {
