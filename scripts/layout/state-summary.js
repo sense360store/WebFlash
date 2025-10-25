@@ -18,7 +18,19 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     let pending = false;
     let sidebarRefs = null;
     let moduleSummaryRefs = null;
-    let mobileSummaryRefs = null;
+
+    // Prevent ReferenceError on first load if mobile summary UI isn't present yet
+    function createEmptyMobileSummaryRefs() {
+        return {
+            container: null,
+            toggle: null,
+            drawer: null,
+            closeButton: null,
+            label: null
+        };
+    }
+
+    let mobileSummaryRefs = createEmptyMobileSummaryRefs();
     let mobileSummaryMediaQuery = null;
     let presetManagerRefs = null;
     let copyResetTimer = null;
@@ -405,7 +417,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             if (mobileSummaryRefs && body) {
                 body.classList.remove('is-mobile-summary-open');
             }
-            mobileSummaryRefs = null;
+            mobileSummaryRefs = createEmptyMobileSummaryRefs();
             return null;
         }
 
@@ -456,6 +468,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
         if (!mobileSummaryRefs || mobileSummaryRefs.container !== container) {
             mobileSummaryRefs = {
+                ...createEmptyMobileSummaryRefs(),
                 container,
                 toggle,
                 drawer,
@@ -1156,7 +1169,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         if (mobileSummaryRefs) {
             setMobileSummaryOpen(false, mobileSummaryRefs);
         }
-        mobileSummaryRefs = null;
+        mobileSummaryRefs = createEmptyMobileSummaryRefs();
         scheduleScan();
     });
 
