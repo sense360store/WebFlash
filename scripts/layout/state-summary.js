@@ -31,6 +31,10 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         };
     }
 
+    const MOBILE_SUMMARY_TOGGLE_HANDLER = Symbol('mobileSummaryToggleHandler');
+    const MOBILE_SUMMARY_CLOSE_HANDLER = Symbol('mobileSummaryCloseHandler');
+    const MOBILE_SUMMARY_KEYDOWN_HANDLER = Symbol('mobileSummaryKeydownHandler');
+
     let mobileSummaryRefs = createEmptyMobileSummaryRefs();
     let mobileSummaryMediaQuery = null;
     let presetManagerRefs = null;
@@ -418,59 +422,60 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
     function ensureMobileSummaryRefs() {
         const body = document.body;
-        const container = document.querySelector('[data-mobile-summary]');
-        const toggle = container ? container.querySelector('[data-mobile-summary-toggle]') : null;
-        const drawer = container ? container.querySelector('[data-mobile-summary-drawer]') : null;
-        const closeButton = container ? container.querySelector('[data-mobile-summary-close]') : null;
-        const label = container ? container.querySelector('[data-mobile-summary-label]') : null;
-        const root = container ? container.querySelector('[data-module-summary]') : null;
 
-        if (!container || !body || !body.contains(container)) {
-            if (mobileSummaryRefs && body) {
-                body.classList.remove('is-mobile-summary-open');
-            }
+        if (!body) {
             mobileSummaryRefs = createEmptyMobileSummaryRefs();
             return null;
         }
 
-        if (root) {
-            ensureModuleSummaryRefs();
-        }
-        const toggle = container.querySelector('[data-mobile-summary-toggle]');
-        const drawer = container.querySelector('[data-mobile-summary-drawer]');
-        const closeButton = container.querySelector('[data-mobile-summary-close]');
-        const label = container.querySelector('[data-mobile-summary-label]');
+        const container = document.querySelector('[data-mobile-summary]');
 
-        if (!drawer) {
+        if (!container || !body.contains(container)) {
+            if (mobileSummaryRefs?.container) {
+                setMobileSummaryOpen(false, mobileSummaryRefs);
+            }
             body.classList.remove('is-mobile-summary-open');
             mobileSummaryRefs = createEmptyMobileSummaryRefs();
             return null;
         }
 
-        if (!mobileSummaryRefs || mobileSummaryRefs.container !== container) {
-            mobileSummaryRefs = {
-                ...createEmptyMobileSummaryRefs(),
-                container,
-                toggle: toggle || null,
-                drawer,
-                closeButton,
-                label,
-                summaryRefs: root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : null
-                closeButton: closeButton || null,
-                label: label || null
-            };
+        const drawer = container.querySelector('[data-mobile-summary-drawer]') || null;
 
-            bindMobileSummaryControls(mobileSummaryRefs);
-            updateMobileSummaryLabel(mobileSummaryRefs, false);
-            setMobileSummaryOpen(false, mobileSummaryRefs);
-        } else {
-            mobileSummaryRefs.toggle = toggle || mobileSummaryRefs.toggle || null;
-            mobileSummaryRefs.drawer = drawer || mobileSummaryRefs.drawer || null;
-            mobileSummaryRefs.drawer = drawer;
-            mobileSummaryRefs.closeButton = closeButton || mobileSummaryRefs.closeButton || null;
-            mobileSummaryRefs.label = label || mobileSummaryRefs.label || null;
-            mobileSummaryRefs.summaryRefs = root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : mobileSummaryRefs.summaryRefs || null;
+        if (!drawer) {
+            container.classList.remove('is-open');
+            body.classList.remove('is-mobile-summary-open');
+            mobileSummaryRefs = createEmptyMobileSummaryRefs();
+            return null;
         }
+
+        const toggle = container.querySelector('[data-mobile-summary-toggle]') || null;
+        const closeButton = container.querySelector('[data-mobile-summary-close]') || null;
+        const label = container.querySelector('[data-mobile-summary-label]') || null;
+        const summaryRoot = container.querySelector('[data-module-summary]') || null;
+
+        let summaryRefs = null;
+        if (summaryRoot) {
+            ensureModuleSummaryRefs();
+            summaryRefs = moduleSummaryRefs?.get(summaryRoot) || null;
+        }
+
+        const nextRefs = {
+            ...createEmptyMobileSummaryRefs(),
+            container,
+            toggle,
+            drawer,
+            closeButton,
+            label,
+            summaryRefs
+        };
+
+        mobileSummaryRefs = nextRefs;
+
+        bindMobileSummaryControls(nextRefs);
+
+        const drawerOpenState = drawer.dataset.open;
+        const isOpen = drawerOpenState ? drawerOpenState === 'true' : container.classList.contains('is-open');
+        setMobileSummaryOpen(isOpen, nextRefs);
 
         return mobileSummaryRefs;
     }
@@ -482,19 +487,34 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
         const { toggle, closeButton, drawer } = refs;
 
-        if (toggle && toggle.dataset.mobileSummaryBound !== 'true') {
-            toggle.addEventListener('click', handleMobileSummaryToggle);
-            toggle.dataset.mobileSummaryBound = 'true';
+        if (toggle) {
+            if (toggle[MOBILE_SUMMARY_TOGGLE_HANDLER]) {
+                toggle.removeEventListener('click', toggle[MOBILE_SUMMARY_TOGGLE_HANDLER]);
+            }
+
+            const toggleHandler = event => handleMobileSummaryToggle(event, refs);
+            toggle.addEventListener('click', toggleHandler);
+            toggle[MOBILE_SUMMARY_TOGGLE_HANDLER] = toggleHandler;
         }
 
-        if (closeButton && closeButton.dataset.mobileSummaryBound !== 'true') {
-            closeButton.addEventListener('click', handleMobileSummaryClose);
-            closeButton.dataset.mobileSummaryBound = 'true';
+        if (closeButton) {
+            if (closeButton[MOBILE_SUMMARY_CLOSE_HANDLER]) {
+                closeButton.removeEventListener('click', closeButton[MOBILE_SUMMARY_CLOSE_HANDLER]);
+            }
+
+            const closeHandler = event => handleMobileSummaryClose(event, refs);
+            closeButton.addEventListener('click', closeHandler);
+            closeButton[MOBILE_SUMMARY_CLOSE_HANDLER] = closeHandler;
         }
 
-        if (drawer && drawer.dataset.mobileSummaryBound !== 'true') {
-            drawer.addEventListener('keydown', handleMobileSummaryKeydown);
-            drawer.dataset.mobileSummaryBound = 'true';
+        if (drawer) {
+            if (drawer[MOBILE_SUMMARY_KEYDOWN_HANDLER]) {
+                drawer.removeEventListener('keydown', drawer[MOBILE_SUMMARY_KEYDOWN_HANDLER]);
+            }
+
+            const keydownHandler = event => handleMobileSummaryKeydown(event, refs);
+            drawer.addEventListener('keydown', keydownHandler);
+            drawer[MOBILE_SUMMARY_KEYDOWN_HANDLER] = keydownHandler;
         }
     }
 
@@ -541,12 +561,19 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     }
 
     function isMobileSummaryOpen(refs = ensureMobileSummaryRefs()) {
-        return Boolean(refs?.container?.classList.contains('is-open'));
+        if (!refs) {
+            return false;
+        }
+
+        if (refs.drawer && refs.drawer.dataset.open) {
+            return refs.drawer.dataset.open === 'true';
+        }
+
+        return Boolean(refs.container?.classList.contains('is-open'));
     }
 
-    function handleMobileSummaryToggle(event) {
+    function handleMobileSummaryToggle(event, refs) {
         event.preventDefault();
-        const refs = ensureMobileSummaryRefs();
         if (!refs) {
             return;
         }
@@ -563,9 +590,8 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         }
     }
 
-    function handleMobileSummaryClose(event) {
+    function handleMobileSummaryClose(event, refs) {
         event.preventDefault();
-        const refs = ensureMobileSummaryRefs();
         if (!refs) {
             return;
         }
@@ -580,12 +606,11 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
         }
     }
 
-    function handleMobileSummaryKeydown(event) {
+    function handleMobileSummaryKeydown(event, refs) {
         if (event.key !== 'Escape' && event.key !== 'Esc') {
             return;
         }
 
-        const refs = ensureMobileSummaryRefs();
         if (!refs) {
             return;
         }
