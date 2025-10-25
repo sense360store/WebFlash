@@ -67,6 +67,42 @@
     font-weight: 600;
 }
 
+.sidebar-hardware {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border, #d0d7de);
+    display: grid;
+    gap: 0.4rem;
+}
+
+.sidebar-hardware__title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.sidebar-hardware__empty {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.sidebar-hardware__core {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.sidebar-hardware__headers {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
 .sidebar-actions {
     display: flex;
     flex-wrap: wrap;
