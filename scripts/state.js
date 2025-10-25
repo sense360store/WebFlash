@@ -298,7 +298,46 @@ function renderModuleDetailPanel() {
     const selectedVariant = configuration[activeModuleDetailKey] || 'none';
     const effectiveVariant = variants[activeModuleDetailVariant] ? activeModuleDetailVariant : selectedVariant;
 
-    const variantsHtml = Object.entries(variants).map(([variantKey, variant]) => {
+    let header = panel.querySelector('.module-detail__header');
+    let variantsContainer = panel.querySelector('.module-detail__variants');
+
+    if (!header || !variantsContainer) {
+        panel.innerHTML = '';
+
+        header = document.createElement('div');
+        header.className = 'module-detail__header';
+
+        const titleElement = document.createElement('h4');
+        titleElement.className = 'module-detail__title';
+        header.appendChild(titleElement);
+
+        panel.appendChild(header);
+
+        variantsContainer = document.createElement('div');
+        variantsContainer.className = 'module-detail__variants';
+        panel.appendChild(variantsContainer);
+    }
+
+    const titleElement = header.querySelector('.module-detail__title');
+    if (titleElement) {
+        titleElement.textContent = moduleEntry.label || MODULE_LABELS[activeModuleDetailKey] || activeModuleDetailKey;
+    }
+
+    let summaryElement = header.querySelector('.module-detail__summary');
+    if (moduleEntry.summary) {
+        if (!summaryElement) {
+            summaryElement = document.createElement('p');
+            summaryElement.className = 'module-detail__summary';
+            header.appendChild(summaryElement);
+        }
+        summaryElement.textContent = moduleEntry.summary;
+    } else if (summaryElement) {
+        summaryElement.remove();
+    }
+
+    variantsContainer.innerHTML = '';
+
+    Object.entries(variants).forEach(([variantKey, variant]) => {
         const cardClasses = ['module-variant-card'];
         if (variantKey === effectiveVariant) {
             cardClasses.push('is-highlighted');
@@ -352,7 +391,7 @@ function renderModuleDetailPanel() {
             ? variant.label
             : formatModuleSelectionLabel(activeModuleDetailKey, variantKey);
 
-        return `
+        const cardHtml = `
             <article class="${cardClasses.join(' ')}">
                 <div class="module-variant-card__header">
                     <span class="module-variant-card__title">${escapeHtml(variantLabel)}</span>
@@ -366,19 +405,9 @@ function renderModuleDetailPanel() {
                 ${detailsHtml}
             </article>
         `;
-    }).join('');
 
-    const summaryMarkup = moduleEntry.summary
-        ? `<p class="module-detail__summary">${escapeHtml(moduleEntry.summary)}</p>`
-        : '';
-
-    panel.innerHTML = `
-        <div class="module-detail__header">
-            <h4 class="module-detail__title">${escapeHtml(moduleEntry.label || MODULE_LABELS[activeModuleDetailKey] || activeModuleDetailKey)}</h4>
-            ${summaryMarkup}
-        </div>
-        <div class="module-detail__variants">${variantsHtml}</div>
-    `;
+        variantsContainer.insertAdjacentHTML('beforeend', cardHtml);
+    });
 }
 
 function setActiveModuleDetail(moduleKey, variantKey) {
