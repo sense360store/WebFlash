@@ -1859,6 +1859,12 @@ function focusStep(stepElement) {
 }
 
 function updateSummary() {
+    const summaryContainer = document.getElementById('config-summary');
+
+    if (!summaryContainer) {
+        return;
+    }
+
     let summaryHtml = '<div class="summary-grid">';
 
     // Mounting
@@ -1934,7 +1940,7 @@ function updateSummary() {
     }
 
     summaryHtml += '</div>';
-    document.getElementById('config-summary').innerHTML = summaryHtml;
+    summaryContainer.innerHTML = summaryHtml;
 }
 
 function updateFirmwareControls() {
