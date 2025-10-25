@@ -13,6 +13,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 label: 'Base',
                 coreRevision: 'Rev B core or newer',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
+                recommended: true,
                 conflicts: [
                     {
                         module: 'fan',
@@ -57,6 +58,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 label: 'Base',
                 coreRevision: 'Rev B core or newer',
                 headers: ['J2 radar slot'],
+                recommended: true,
                 conflicts: []
             },
             pro: {
@@ -82,7 +84,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 label: 'None',
                 coreRevision: null,
                 headers: [],
-                conflicts: []
+                conflicts: [],
+                recommended: true
             },
             base: {
                 label: 'Base',
@@ -100,7 +103,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 label: 'None',
                 coreRevision: null,
                 headers: [],
-                conflicts: []
+                conflicts: [],
+                recommended: true
             },
             pwm: {
                 label: 'PWM',

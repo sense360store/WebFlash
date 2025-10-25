@@ -49,6 +49,47 @@ let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
 let activeModuleDetailVariant = null;
 
+function applyModuleRecommendations() {
+    Object.entries(MODULE_REQUIREMENT_MATRIX).forEach(([moduleKey, moduleEntry]) => {
+        if (!moduleEntry || !moduleEntry.variants) {
+            return;
+        }
+
+        Object.entries(moduleEntry.variants).forEach(([variantKey, variantEntry]) => {
+            if (!variantEntry?.recommended) {
+                return;
+            }
+
+            const selector = `label[data-module-card="${moduleKey}"][data-variant="${variantKey}"]`;
+            const moduleCard = document.querySelector(selector);
+            if (!moduleCard) {
+                return;
+            }
+
+            if (moduleCard.querySelector('[data-recommended-chip]')) {
+                return;
+            }
+
+            const header = moduleCard.querySelector('.module-card__header');
+            if (!header) {
+                return;
+            }
+
+            const chip = document.createElement('span');
+            chip.className = 'module-card__chip';
+            chip.dataset.recommendedChip = '';
+            chip.textContent = 'Recommended';
+
+            const stateElement = header.querySelector('.module-card__state');
+            if (stateElement?.parentNode === header) {
+                header.insertBefore(chip, stateElement);
+            } else {
+                header.appendChild(chip);
+            }
+        });
+    });
+}
+
 function getDefaultState() {
     return {
         ...defaultConfiguration,
@@ -1007,6 +1048,12 @@ function initializeWizard() {
         updateModuleGroupSummaries();
     } catch (error) {
         console.error('Failed to bind wizard events:', error);
+    }
+
+    try {
+        applyModuleRecommendations();
+    } catch (error) {
+        console.error('Failed to apply module recommendations:', error);
     }
 
     try {
