@@ -984,7 +984,8 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 }
 
 .module-card__badge {
-    display: inline-flex;
+    display: none;
+    visibility: hidden;
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
@@ -998,6 +999,8 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 }
 
 .module-card__badge.is-active {
+    display: inline-flex;
+    visibility: visible;
     background: color-mix(in srgb, var(--danger) 35%, #fff);
     border-color: color-mix(in srgb, var(--danger) 65%, var(--danger-border));
     color: color-mix(in srgb, var(--danger) 85%, #000);
