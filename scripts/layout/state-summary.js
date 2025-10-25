@@ -1,5 +1,6 @@
 import { normalizeChannelKey } from '../utils/channel-alias.js';
 import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
+import { getModuleVariantEntry } from '../data/module-requirements.js';
 
 (function () {
     const FIELD_MAP = [
@@ -10,13 +11,14 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
         { key: 'comfort', name: 'comfort', label: 'Comfort' },
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
+    const MODULE_VARIANT_KEYS = ['airiq', 'presence', 'comfort', 'fan'];
+    const CORE_REVISION_PATTERN = /rev\s*([a-z])/i;
     const subscribers = new Set();
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
     let pending = false;
     let sidebarRefs = null;
-    const moduleSummaryRefs = new Map();
-    let mobileSummaryRefs = null;
-    let mobileSummaryMediaQuery = null;
+    let moduleSummaryRefs = null;
+    let presetManagerRefs = null;
     let copyResetTimer = null;
 
     function normaliseChannelKey(channel) {
@@ -116,6 +118,98 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
         };
     }
 
+    function getCoreRevisionRank(label) {
+        if (!label) {
+            return 0;
+        }
+
+        const match = CORE_REVISION_PATTERN.exec(label);
+        if (!match) {
+            return 0;
+        }
+
+        const letter = match[1].toLowerCase();
+        if (!letter || letter.length !== 1) {
+            return 0;
+        }
+
+        const code = letter.charCodeAt(0);
+        if (code < 97 || code > 122) {
+            return 0;
+        }
+
+        return code - 96;
+    }
+
+    function isStrictCoreRevision(label) {
+        if (!label) {
+            return false;
+        }
+
+        return !/or\s+newer/i.test(label);
+    }
+
+    function computeHardwareRequirements(state) {
+        const requirements = {
+            coreRevision: null,
+            headers: []
+        };
+
+        let bestRank = 0;
+        let bestLabel = null;
+        let bestStrict = false;
+        const headerSet = new Set();
+
+        MODULE_VARIANT_KEYS.forEach(moduleKey => {
+            const variantKey = state[moduleKey];
+            if (!variantKey || variantKey === 'none') {
+                return;
+            }
+
+            const entry = getModuleVariantEntry(moduleKey, variantKey);
+            if (!entry) {
+                return;
+            }
+
+            const label = entry.coreRevision || null;
+            if (label) {
+                const candidateRank = getCoreRevisionRank(label);
+                const candidateStrict = isStrictCoreRevision(label);
+
+                if (!bestLabel) {
+                    bestLabel = label;
+                    bestRank = candidateRank;
+                    bestStrict = candidateStrict;
+                } else if (candidateRank > bestRank) {
+                    bestLabel = label;
+                    bestRank = candidateRank;
+                    bestStrict = candidateStrict;
+                } else if (candidateRank === bestRank) {
+                    if (candidateStrict && !bestStrict) {
+                        bestLabel = label;
+                        bestStrict = true;
+                    } else if (candidateStrict === bestStrict && label.length < bestLabel.length) {
+                        bestLabel = label;
+                    }
+                }
+            }
+
+            const headers = Array.isArray(entry.headers) ? entry.headers : [];
+            headers.forEach(header => {
+                const normalized = typeof header === 'string' ? header.trim() : '';
+                if (!normalized || headerSet.has(normalized)) {
+                    return;
+                }
+
+                headerSet.add(normalized);
+                requirements.headers.push(normalized);
+            });
+        });
+
+        requirements.coreRevision = bestLabel;
+        return requirements;
+    }
+
     function onStateChange(callback) {
         if (typeof callback !== 'function') {
             return () => {};
@@ -195,10 +289,19 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
                 list.setAttribute('aria-live', 'polite');
             }
 
+            const hardwareRoot = card.querySelector('[data-hardware-summary]');
+            const hardwareEmpty = card.querySelector('[data-hardware-summary-empty]');
+            const hardwareCore = card.querySelector('[data-hardware-summary-core]');
+            const hardwareHeaders = card.querySelector('[data-hardware-summary-headers]');
+
             sidebarRefs = {
                 card,
                 list,
                 warning,
+                hardwareRoot,
+                hardwareEmpty,
+                hardwareCore,
+                hardwareHeaders,
                 copyButton,
                 resetButton
             };
@@ -304,10 +407,46 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
             return null;
         }
 
-        const toggle = container.querySelector('[data-mobile-summary-toggle]');
-        const drawer = container.querySelector('[data-mobile-summary-drawer]');
-        const closeButton = container.querySelector('[data-mobile-summary-close]');
-        const label = container.querySelector('[data-mobile-summary-toggle-label]');
+        if (moduleSummaryRefs && moduleSummaryRefs.root === root) {
+            return moduleSummaryRefs;
+        }
+
+        const list = root.querySelector('[data-module-summary-list]');
+        const warning = root.querySelector('[data-module-summary-warning]');
+        const copyButton = root.querySelector('[data-module-summary-copy]');
+        const resetButton = root.querySelector('[data-module-summary-reset]');
+        const firmwareRoot = root.querySelector('[data-module-summary-firmware]');
+        const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
+        const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
+        const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
+        const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
+        const installButton = root.querySelector('[data-module-summary-install]');
+        const hardwareRoot = root.querySelector('[data-hardware-summary]');
+        const hardwareEmpty = root.querySelector('[data-hardware-summary-empty]');
+        const hardwareCore = root.querySelector('[data-hardware-summary-core]');
+        const hardwareHeaders = root.querySelector('[data-hardware-summary-headers]');
+
+        if (list && !list.hasAttribute('aria-live')) {
+            list.setAttribute('aria-live', 'polite');
+        }
+
+        moduleSummaryRefs = {
+            root,
+            list,
+            warning,
+            copyButton,
+            resetButton,
+            hardwareRoot,
+            hardwareEmpty,
+            hardwareCore,
+            hardwareHeaders,
+            firmwareRoot,
+            firmwareEmpty,
+            firmwareMeta,
+            firmwareName,
+            firmwareSize,
+            installButton
+        };
 
         if (!toggle || !drawer) {
             return null;
@@ -749,6 +888,60 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
         });
     }
 
+    function renderHardwareSummary(refs, requirements) {
+        if (!refs) {
+            return;
+        }
+
+        const { hardwareRoot, hardwareEmpty, hardwareCore, hardwareHeaders } = refs;
+        if (!hardwareRoot) {
+            return;
+        }
+
+        const coreRevision = requirements?.coreRevision || null;
+        const headers = Array.isArray(requirements?.headers) ? requirements.headers : [];
+        const hasCore = Boolean(coreRevision);
+        const hasHeaders = headers.length > 0;
+        const hasContent = hasCore || hasHeaders;
+
+        if (hardwareEmpty) {
+            hardwareEmpty.hidden = hasContent;
+        }
+
+        if (hardwareCore) {
+            if (hasCore) {
+                hardwareCore.textContent = coreRevision;
+                hardwareCore.hidden = false;
+            } else {
+                hardwareCore.textContent = '';
+                hardwareCore.hidden = true;
+            }
+        }
+
+        if (hardwareHeaders) {
+            while (hardwareHeaders.firstChild) {
+                hardwareHeaders.removeChild(hardwareHeaders.firstChild);
+            }
+
+            if (hasHeaders) {
+                const fragment = document.createDocumentFragment();
+                headers.forEach(header => {
+                    const item = document.createElement('li');
+                    item.textContent = header;
+                    fragment.appendChild(item);
+                });
+                hardwareHeaders.appendChild(fragment);
+                hardwareHeaders.hidden = false;
+            } else {
+                hardwareHeaders.hidden = true;
+            }
+        }
+
+        if (hardwareRoot) {
+            hardwareRoot.dataset.hardwareState = hasContent ? 'ready' : 'empty';
+        }
+    }
+
     function formatFirmwareName(firmware) {
         if (!firmware) {
             return '';
@@ -844,6 +1037,8 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
             return;
         }
 
+        const hardwareRequirements = computeHardwareRequirements(state);
+
         targets.forEach(({ refs, variant }) => {
             const { list, warning } = refs;
             renderSummaryList(list, meta, variant);
@@ -857,6 +1052,7 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
                 }
             }
 
+            renderHardwareSummary(refs, hardwareRequirements);
             renderFirmwareSummary(refs);
         });
     }
