@@ -421,48 +421,14 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             return null;
         }
 
-        if (moduleSummaryRefs && moduleSummaryRefs.root === root) {
-            return moduleSummaryRefs;
-        }
+        const toggle = container.querySelector('[data-mobile-summary-toggle]');
+        const drawer = container.querySelector('[data-mobile-summary-drawer]');
+        const closeButton = container.querySelector('[data-mobile-summary-close]');
+        const label = container.querySelector('[data-mobile-summary-label]');
 
-        const list = root.querySelector('[data-module-summary-list]');
-        const warning = root.querySelector('[data-module-summary-warning]');
-        const copyButton = root.querySelector('[data-module-summary-copy]');
-        const resetButton = root.querySelector('[data-module-summary-reset]');
-        const firmwareRoot = root.querySelector('[data-module-summary-firmware]');
-        const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
-        const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
-        const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
-        const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
-        const installButton = root.querySelector('[data-module-summary-install]');
-        const hardwareRoot = root.querySelector('[data-hardware-summary]');
-        const hardwareEmpty = root.querySelector('[data-hardware-summary-empty]');
-        const hardwareCore = root.querySelector('[data-hardware-summary-core]');
-        const hardwareHeaders = root.querySelector('[data-hardware-summary-headers]');
-
-        if (list && !list.hasAttribute('aria-live')) {
-            list.setAttribute('aria-live', 'polite');
-        }
-
-        moduleSummaryRefs = {
-            root,
-            list,
-            warning,
-            copyButton,
-            resetButton,
-            hardwareRoot,
-            hardwareEmpty,
-            hardwareCore,
-            hardwareHeaders,
-            firmwareRoot,
-            firmwareEmpty,
-            firmwareMeta,
-            firmwareName,
-            firmwareSize,
-            installButton
-        };
-
-        if (!toggle || !drawer) {
+        if (!drawer) {
+            body.classList.remove('is-mobile-summary-open');
+            mobileSummaryRefs = createEmptyMobileSummaryRefs();
             return null;
         }
 
@@ -470,16 +436,19 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             mobileSummaryRefs = {
                 ...createEmptyMobileSummaryRefs(),
                 container,
-                toggle,
+                toggle: toggle || null,
                 drawer,
-                closeButton,
-                label
+                closeButton: closeButton || null,
+                label: label || null
             };
 
             bindMobileSummaryControls(mobileSummaryRefs);
             updateMobileSummaryLabel(mobileSummaryRefs, false);
             setMobileSummaryOpen(false, mobileSummaryRefs);
         } else {
+            mobileSummaryRefs.toggle = toggle || mobileSummaryRefs.toggle || null;
+            mobileSummaryRefs.drawer = drawer;
+            mobileSummaryRefs.closeButton = closeButton || mobileSummaryRefs.closeButton || null;
             mobileSummaryRefs.label = label || mobileSummaryRefs.label || null;
         }
 
