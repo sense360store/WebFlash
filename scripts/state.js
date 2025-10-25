@@ -1051,9 +1051,54 @@ if (document.readyState === 'loading') {
     initializeWizard();
 }
 
+function resolveElementForStepNavigation(source) {
+    if (!source) {
+        return null;
+    }
+
+    if (typeof source === 'string') {
+        try {
+            return document.querySelector(source);
+        } catch (error) {
+            return null;
+        }
+    }
+
+    if (typeof Element !== 'undefined' && source instanceof Element) {
+        return source;
+    }
+
+    if (source?.target) {
+        return resolveElementForStepNavigation(source.target);
+    }
+
+    return null;
+}
+
+function findStepNextButton(source) {
+    const element = resolveElementForStepNavigation(source);
+    if (!element) {
+        return null;
+    }
+
+    const stepElement = element?.classList?.contains('wizard-step') ? element : element.closest?.('.wizard-step');
+    if (!stepElement) {
+        return null;
+    }
+
+    return stepElement.querySelector('.btn-next[data-next]');
+}
+
+function setStepNextButtonDisabled(source, disabled) {
+    const nextButton = findStepNextButton(source);
+    if (nextButton) {
+        nextButton.disabled = disabled;
+    }
+}
+
 function handleMountingChange(e) {
     configuration.mounting = e.target.value;
-    document.querySelector('#step-1 .btn-next').disabled = false;
+    setStepNextButtonDisabled(e, false);
 
     // Show/hide fan module based on mounting type
     updateFanModuleVisibility();
@@ -1065,7 +1110,7 @@ function handleMountingChange(e) {
 
 function handlePowerChange(e) {
     configuration.power = e.target.value;
-    document.querySelector('#step-2 .btn-next').disabled = false;
+    setStepNextButtonDisabled(e, false);
     updateConfiguration({ skipUrlUpdate: true });
     updateProgressSteps(getStep());
     updateUrlFromConfiguration();
@@ -3277,20 +3322,20 @@ function applyConfiguration(initialConfig) {
         const mountingInput = document.querySelector(`input[name="mounting"][value="${configuration.mounting}"]`);
         if (mountingInput) {
             mountingInput.checked = true;
-            document.querySelector('#step-1 .btn-next').disabled = false;
+            setStepNextButtonDisabled(mountingInput, false);
         }
     } else {
-        document.querySelector('#step-1 .btn-next').disabled = true;
+        setStepNextButtonDisabled('#step-1', true);
     }
 
     if (configuration.power) {
         const powerInput = document.querySelector(`input[name="power"][value="${configuration.power}"]`);
         if (powerInput) {
             powerInput.checked = true;
-            document.querySelector('#step-2 .btn-next').disabled = false;
+            setStepNextButtonDisabled(powerInput, false);
         }
     } else {
-        document.querySelector('#step-2 .btn-next').disabled = true;
+        setStepNextButtonDisabled('#step-2', true);
     }
 
     ['airiq', 'presence', 'comfort', 'fan'].forEach(key => {
