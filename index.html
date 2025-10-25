@@ -194,12 +194,26 @@
                 <div class="module-step-grid" role="region" aria-label="Expansion module selection">
                     <div class="module-step-grid__main">
                         <section class="module-collection" aria-label="Expansion module groups">
-                            <section class="module-group" data-module-group="airiq">
-                                <div class="module-group__header">
-                                    <h3 class="module-group__title">AirIQ Module</h3>
-                                    <p class="module-group__description">Air quality stack for particulate, VOC, and CO₂ sensors.</p>
+                            <section class="module-group" data-module-group="airiq" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">AirIQ Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: AirIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="airiq"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-airiq"
+                                    >
+                                        Change
+                                    </button>
                                 </div>
-                                <div class="module-card-grid">
+                                <div class="module-group__body" id="module-group-airiq" data-module-group-body hidden>
+                                    <p class="module-group__description">Air quality stack for particulate, VOC, and CO₂ sensors.</p>
+                                    <div class="module-card-grid">
                                     <label class="module-card option-card" data-module-card="airiq" data-variant="none">
                                         <input type="radio" name="airiq" value="none" checked>
                                         <div class="module-card__inner">
@@ -283,15 +297,30 @@
                                             </div>
                                         </div>
                                     </label>
+                                    </div>
                                 </div>
-                            </section>
+                                </section>
 
-                            <section class="module-group" data-module-group="presence">
-                                <div class="module-group__header">
-                                    <h3 class="module-group__title">Presence Module</h3>
-                                    <p class="module-group__description">mmWave radar options for occupancy detection.</p>
+                            <section class="module-group" data-module-group="presence" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Presence Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Presence None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="presence"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-presence"
+                                    >
+                                        Change
+                                    </button>
                                 </div>
-                                <div class="module-card-grid">
+                                <div class="module-group__body" id="module-group-presence" data-module-group-body hidden>
+                                    <p class="module-group__description">mmWave radar options for occupancy detection.</p>
+                                    <div class="module-card-grid">
                                     <label class="module-card option-card" data-module-card="presence" data-variant="none">
                                         <input type="radio" name="presence" value="none" checked>
                                         <div class="module-card__inner">
@@ -372,15 +401,30 @@
                                             </div>
                                         </div>
                                     </label>
+                                    </div>
                                 </div>
                             </section>
 
-                            <section class="module-group" data-module-group="comfort">
-                                <div class="module-group__header">
-                                    <h3 class="module-group__title">Comfort Module</h3>
-                                    <p class="module-group__description">Environmental sensing for comfort tuning.</p>
+                            <section class="module-group" data-module-group="comfort" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Comfort Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Comfort None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="comfort"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-comfort"
+                                    >
+                                        Change
+                                    </button>
                                 </div>
-                                <div class="module-card-grid">
+                                <div class="module-group__body" id="module-group-comfort" data-module-group-body hidden>
+                                    <p class="module-group__description">Environmental sensing for comfort tuning.</p>
+                                    <div class="module-card-grid">
                                     <label class="module-card option-card" data-module-card="comfort" data-variant="none">
                                         <input type="radio" name="comfort" value="none" checked>
                                         <div class="module-card__inner">
@@ -433,15 +477,30 @@
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
+                                    </div>
                                 </div>
                             </section>
 
-                            <section class="module-group" data-module-group="fan" id="fan-module-section">
-                                <div class="module-group__header">
-                                    <h3 class="module-group__title">Fan Module</h3>
-                                    <p class="module-group__description">Output driver choices for external fan control.</p>
+                            <section class="module-group" data-module-group="fan" id="fan-module-section" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Fan Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Fan None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="fan"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-fan"
+                                    >
+                                        Change
+                                    </button>
                                 </div>
-                                <div class="module-card-grid">
+                                <div class="module-group__body" id="module-group-fan" data-module-group-body hidden>
+                                    <p class="module-group__description">Output driver choices for external fan control.</p>
+                                    <div class="module-card-grid">
                                     <label class="module-card option-card" data-module-card="fan" data-variant="none">
                                         <input type="radio" name="fan" value="none" checked>
                                         <div class="module-card__inner">
@@ -522,6 +581,7 @@
                                             </div>
                                         </div>
                                     </label>
+                                    </div>
                                 </div>
                             </section>
                         </section>
