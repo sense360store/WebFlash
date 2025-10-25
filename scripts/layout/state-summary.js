@@ -17,7 +17,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
     let pending = false;
     let sidebarRefs = null;
-    let moduleSummaryRefs = null;
+    let moduleSummaryRefs = new Map();
 
     // Prevent ReferenceError on first load if mobile summary UI isn't present yet
     function createEmptyMobileSummaryRefs() {
@@ -26,7 +26,8 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             toggle: null,
             drawer: null,
             closeButton: null,
-            label: null
+            label: null,
+            summaryRefs: null
         };
     }
 
@@ -349,10 +350,16 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             return [];
         }
 
+        if (!moduleSummaryRefs || typeof moduleSummaryRefs.clear !== 'function') {
+            moduleSummaryRefs = new Map();
+        }
+
         const nodes = Array.from(document.querySelectorAll('[data-module-summary]')).filter(node => body.contains(node));
 
         if (!nodes.length) {
-            moduleSummaryRefs.clear();
+            if (moduleSummaryRefs) {
+                moduleSummaryRefs.clear();
+            }
             return [];
         }
 
@@ -412,6 +419,11 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     function ensureMobileSummaryRefs() {
         const body = document.body;
         const container = document.querySelector('[data-mobile-summary]');
+        const toggle = container ? container.querySelector('[data-mobile-summary-toggle]') : null;
+        const drawer = container ? container.querySelector('[data-mobile-summary-drawer]') : null;
+        const closeButton = container ? container.querySelector('[data-mobile-summary-close]') : null;
+        const label = container ? container.querySelector('[data-mobile-summary-label]') : null;
+        const root = container ? container.querySelector('[data-module-summary]') : null;
 
         if (!container || !body || !body.contains(container)) {
             if (mobileSummaryRefs && body) {
@@ -421,46 +433,9 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             return null;
         }
 
-        if (moduleSummaryRefs && moduleSummaryRefs.root === root) {
-            return moduleSummaryRefs;
+        if (root) {
+            ensureModuleSummaryRefs();
         }
-
-        const list = root.querySelector('[data-module-summary-list]');
-        const warning = root.querySelector('[data-module-summary-warning]');
-        const copyButton = root.querySelector('[data-module-summary-copy]');
-        const resetButton = root.querySelector('[data-module-summary-reset]');
-        const firmwareRoot = root.querySelector('[data-module-summary-firmware]');
-        const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
-        const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
-        const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
-        const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
-        const installButton = root.querySelector('[data-module-summary-install]');
-        const hardwareRoot = root.querySelector('[data-hardware-summary]');
-        const hardwareEmpty = root.querySelector('[data-hardware-summary-empty]');
-        const hardwareCore = root.querySelector('[data-hardware-summary-core]');
-        const hardwareHeaders = root.querySelector('[data-hardware-summary-headers]');
-
-        if (list && !list.hasAttribute('aria-live')) {
-            list.setAttribute('aria-live', 'polite');
-        }
-
-        moduleSummaryRefs = {
-            root,
-            list,
-            warning,
-            copyButton,
-            resetButton,
-            hardwareRoot,
-            hardwareEmpty,
-            hardwareCore,
-            hardwareHeaders,
-            firmwareRoot,
-            firmwareEmpty,
-            firmwareMeta,
-            firmwareName,
-            firmwareSize,
-            installButton
-        };
 
         if (!toggle || !drawer) {
             return null;
@@ -473,14 +448,19 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
                 toggle,
                 drawer,
                 closeButton,
-                label
+                label,
+                summaryRefs: root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : null
             };
 
             bindMobileSummaryControls(mobileSummaryRefs);
             updateMobileSummaryLabel(mobileSummaryRefs, false);
             setMobileSummaryOpen(false, mobileSummaryRefs);
         } else {
+            mobileSummaryRefs.toggle = toggle || mobileSummaryRefs.toggle || null;
+            mobileSummaryRefs.drawer = drawer || mobileSummaryRefs.drawer || null;
+            mobileSummaryRefs.closeButton = closeButton || mobileSummaryRefs.closeButton || null;
             mobileSummaryRefs.label = label || mobileSummaryRefs.label || null;
+            mobileSummaryRefs.summaryRefs = root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : mobileSummaryRefs.summaryRefs || null;
         }
 
         return mobileSummaryRefs;
@@ -1165,7 +1145,9 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
     document.addEventListener('wizardSidebarReady', () => {
         sidebarRefs = null;
-        moduleSummaryRefs.clear();
+        if (moduleSummaryRefs) {
+            moduleSummaryRefs.clear();
+        }
         if (mobileSummaryRefs) {
             setMobileSummaryOpen(false, mobileSummaryRefs);
         }
