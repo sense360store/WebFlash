@@ -17,7 +17,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
     let pending = false;
     let sidebarRefs = null;
-    let moduleSummaryRefs = null;
+    let moduleSummaryRefs = new Map();
 
     // Prevent ReferenceError on first load if mobile summary UI isn't present yet
     function createEmptyMobileSummaryRefs() {
@@ -26,7 +26,8 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             toggle: null,
             drawer: null,
             closeButton: null,
-            label: null
+            label: null,
+            summaryRefs: null
         };
     }
 
@@ -349,10 +350,16 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             return [];
         }
 
+        if (!moduleSummaryRefs || typeof moduleSummaryRefs.clear !== 'function') {
+            moduleSummaryRefs = new Map();
+        }
+
         const nodes = Array.from(document.querySelectorAll('[data-module-summary]')).filter(node => body.contains(node));
 
         if (!nodes.length) {
-            moduleSummaryRefs.clear();
+            if (moduleSummaryRefs) {
+                moduleSummaryRefs.clear();
+            }
             return [];
         }
 
@@ -412,6 +419,11 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     function ensureMobileSummaryRefs() {
         const body = document.body;
         const container = document.querySelector('[data-mobile-summary]');
+        const toggle = container ? container.querySelector('[data-mobile-summary-toggle]') : null;
+        const drawer = container ? container.querySelector('[data-mobile-summary-drawer]') : null;
+        const closeButton = container ? container.querySelector('[data-mobile-summary-close]') : null;
+        const label = container ? container.querySelector('[data-mobile-summary-label]') : null;
+        const root = container ? container.querySelector('[data-module-summary]') : null;
 
         if (!container || !body || !body.contains(container)) {
             if (mobileSummaryRefs && body) {
@@ -421,6 +433,9 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             return null;
         }
 
+        if (root) {
+            ensureModuleSummaryRefs();
+        }
         const toggle = container.querySelector('[data-mobile-summary-toggle]');
         const drawer = container.querySelector('[data-mobile-summary-drawer]');
         const closeButton = container.querySelector('[data-mobile-summary-close]');
@@ -438,6 +453,9 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
                 container,
                 toggle: toggle || null,
                 drawer,
+                closeButton,
+                label,
+                summaryRefs: root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : null
                 closeButton: closeButton || null,
                 label: label || null
             };
@@ -447,9 +465,11 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             setMobileSummaryOpen(false, mobileSummaryRefs);
         } else {
             mobileSummaryRefs.toggle = toggle || mobileSummaryRefs.toggle || null;
+            mobileSummaryRefs.drawer = drawer || mobileSummaryRefs.drawer || null;
             mobileSummaryRefs.drawer = drawer;
             mobileSummaryRefs.closeButton = closeButton || mobileSummaryRefs.closeButton || null;
             mobileSummaryRefs.label = label || mobileSummaryRefs.label || null;
+            mobileSummaryRefs.summaryRefs = root && moduleSummaryRefs ? moduleSummaryRefs.get(root) || null : mobileSummaryRefs.summaryRefs || null;
         }
 
         return mobileSummaryRefs;
@@ -1134,7 +1154,9 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
     document.addEventListener('wizardSidebarReady', () => {
         sidebarRefs = null;
-        moduleSummaryRefs.clear();
+        if (moduleSummaryRefs) {
+            moduleSummaryRefs.clear();
+        }
         if (mobileSummaryRefs) {
             setMobileSummaryOpen(false, mobileSummaryRefs);
         }
