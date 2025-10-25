@@ -285,6 +285,7 @@ function updateModuleConflictBadges() {
 
         const isActive = isConflictActiveForConfig(conflict, configuration);
         badge.classList.toggle('is-active', isActive);
+        badge.setAttribute('aria-hidden', String(!isActive));
     });
 }
 
