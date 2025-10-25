@@ -6,6 +6,17 @@ import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.
 let currentStep = 1;
 const totalSteps = 4;
 
+function updateBottomDetailsVisibility(step) {
+    const bottomDetails = document.querySelector('[data-option-details-bottom]');
+    if (!bottomDetails) {
+        return;
+    }
+
+    const shouldShow = step === 4;
+    bottomDetails.hidden = !shouldShow;
+    bottomDetails.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+}
+
 function getTotalSteps() {
     return totalSteps;
 }
@@ -1703,6 +1714,8 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
     if (previousStep !== targetStep) {
         currentStep = targetStep;
     }
+
+    updateBottomDetailsVisibility(currentStep);
 
     updateProgressSteps(targetStep);
 
