@@ -42,6 +42,8 @@ const MODULE_SEGMENT_FORMATTERS = {
     fan: value => `Fan${value.toUpperCase()}`
 };
 
+let activeModuleGroupKey = null;
+
 let moduleDetailPanelElement = null;
 let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
@@ -1001,6 +1003,8 @@ function initializeWizard() {
 
     try {
         bindWizardEventListeners();
+        bindModuleGroupToggleListeners();
+        updateModuleGroupSummaries();
     } catch (error) {
         console.error('Failed to bind wizard events:', error);
     }
@@ -1118,14 +1122,29 @@ function handlePowerChange(e) {
 
 function updateFanModuleVisibility() {
     const fanSection = document.getElementById('fan-module-section');
-    if (configuration.mounting === 'ceiling') {
+    if (!fanSection) {
+        return;
+    }
+
+    const shouldHideFanModule = configuration.mounting === 'ceiling';
+
+    if (shouldHideFanModule) {
         fanSection.style.display = 'none';
-        // Reset fan selection if ceiling mount
-        document.querySelector('input[name="fan"][value="none"]').checked = true;
+        closeModuleGroup('fan');
+
+        const fanNoneInput = document.querySelector('input[name="fan"][value="none"]');
+        if (fanNoneInput && !fanNoneInput.checked) {
+            fanNoneInput.checked = true;
+        }
+
         configuration.fan = 'none';
     } else {
-        fanSection.style.display = 'block';
+        fanSection.style.display = '';
+        const isExpanded = fanSection.dataset.expanded === 'true';
+        setModuleGroupExpanded(fanSection, isExpanded);
     }
+
+    updateModuleGroupSummaries();
 }
 
 function syncConfigurationFromInputs() {
@@ -1227,6 +1246,182 @@ function formatModuleSelectionLabel(key, value) {
     }
 
     return `${label} ${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+}
+
+function updateModuleGroupSummaries() {
+    const groups = document.querySelectorAll('[data-module-group]');
+    groups.forEach(group => {
+        const key = group.getAttribute('data-module-group');
+        if (!key) {
+            return;
+        }
+
+        const summary = group.querySelector('[data-module-group-summary]');
+        if (!summary) {
+            return;
+        }
+
+        const value = configuration[key] || 'none';
+        summary.textContent = `Selected: ${formatModuleSelectionLabel(key, value || 'none')}`;
+    });
+}
+
+function setModuleGroupExpanded(groupElement, expanded) {
+    if (!groupElement) {
+        return;
+    }
+
+    const body = groupElement.querySelector('[data-module-group-body]');
+    const toggle = groupElement.querySelector('[data-module-group-toggle]');
+    groupElement.dataset.expanded = expanded ? 'true' : 'false';
+
+    if (body) {
+        body.hidden = !expanded;
+    }
+
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', String(expanded));
+    }
+}
+
+function focusModuleGroupSelection(groupElement) {
+    if (!groupElement) {
+        return;
+    }
+
+    const body = groupElement.querySelector('[data-module-group-body]');
+    if (!body || body.hidden) {
+        return;
+    }
+
+    let target = body.querySelector('input[type="radio"]:checked:not(:disabled)');
+    if (!target) {
+        target = body.querySelector('input[type="radio"]:not(:disabled)');
+    }
+
+    if (target) {
+        requestAnimationFrame(() => {
+            try {
+                target.focus();
+            } catch (error) {
+                // Ignore focus errors
+            }
+        });
+    }
+}
+
+function openModuleGroup(key, { focus = false } = {}) {
+    if (!key) {
+        return;
+    }
+
+    const target = document.querySelector(`[data-module-group="${key}"]`);
+    if (!target) {
+        return;
+    }
+
+    const groups = document.querySelectorAll('[data-module-group]');
+    groups.forEach(group => {
+        setModuleGroupExpanded(group, group === target);
+    });
+
+    activeModuleGroupKey = key;
+
+    if (focus) {
+        focusModuleGroupSelection(target);
+    }
+}
+
+function closeModuleGroup(key) {
+    if (!key) {
+        return;
+    }
+
+    const group = document.querySelector(`[data-module-group="${key}"]`);
+    if (!group) {
+        return;
+    }
+
+    setModuleGroupExpanded(group, false);
+
+    if (activeModuleGroupKey === key) {
+        activeModuleGroupKey = null;
+    }
+}
+
+function bindModuleGroupToggleListeners() {
+    activeModuleGroupKey = null;
+
+    document.querySelectorAll('[data-module-group-body]').forEach(body => {
+        const group = body.closest('[data-module-group]');
+        if (!group) {
+            return;
+        }
+
+        const expanded = group.dataset.expanded === 'true';
+        body.hidden = expanded ? false : true;
+
+        if (expanded) {
+            const key = group.getAttribute('data-module-group');
+            if (key) {
+                activeModuleGroupKey = key;
+            }
+        }
+    });
+
+    document.querySelectorAll('[data-module-group-toggle]').forEach(toggle => {
+        const group = toggle.closest('[data-module-group]');
+        if (!group) {
+            return;
+        }
+
+        if (!toggle.getAttribute('data-module-group-key')) {
+            const key = group.getAttribute('data-module-group');
+            if (key) {
+                toggle.setAttribute('data-module-group-key', key);
+            }
+        }
+
+        const expanded = group.dataset.expanded === 'true';
+        toggle.setAttribute('aria-expanded', String(expanded));
+
+        if (toggle.dataset.moduleGroupToggleBound === 'true') {
+            return;
+        }
+
+        toggle.addEventListener('click', event => {
+            event.preventDefault();
+
+            const key = toggle.getAttribute('data-module-group-key');
+            if (!key) {
+                return;
+            }
+
+            const parentGroup = toggle.closest('[data-module-group]');
+            const isExpanded = parentGroup?.dataset?.expanded === 'true';
+
+            if (isExpanded) {
+                closeModuleGroup(key);
+            } else {
+                openModuleGroup(key, { focus: true });
+            }
+        });
+
+        toggle.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+
+            event.preventDefault();
+            const key = toggle.getAttribute('data-module-group-key');
+            if (!key) {
+                return;
+            }
+            openModuleGroup(key, { focus: true });
+        });
+
+        toggle.dataset.moduleGroupToggleBound = 'true';
+    });
 }
 
 function formatOptionUnavailableReason(baseState, moduleKey, value) {
@@ -1394,6 +1589,7 @@ function updateConfiguration(options = {}) {
     updateModuleAvailabilityMessage();
     syncModuleDetailPanelToSelection();
     updateModuleConflictBadges();
+    updateModuleGroupSummaries();
 
     if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
@@ -3349,6 +3545,7 @@ function applyConfiguration(initialConfig) {
     updateFanModuleVisibility();
     updateConfiguration({ skipUrlUpdate: true });
     updateProgressSteps(getStep());
+    updateModuleGroupSummaries();
 }
 
 function getMaxReachableStep() {

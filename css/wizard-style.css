@@ -731,13 +731,27 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 .module-group {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
-.module-group__header {
+.module-group__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--color-surface) 94%, var(--color-border) 6%);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.module-group__summary-text {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .module-group__title {
@@ -751,6 +765,62 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     font-size: 16px;
     color: var(--color-text-secondary);
     line-height: 1.5;
+}
+
+.module-group__summary-label {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+.module-group__summary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    padding: 10px 20px;
+}
+
+.module-group__body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-surface);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+[data-module-group-body][hidden] {
+    display: none !important;
+}
+
+.module-group[data-expanded="true"] .module-group__summary {
+    border-color: var(--brand-green-contrast);
+    box-shadow: 0 10px 28px rgba(var(--brand-green-contrast-rgb), 0.16);
+    background: var(--brand-green-selection-surface-subtle);
+}
+
+.module-group[data-expanded="true"] .module-group__summary-label {
+    color: var(--brand-green-contrast);
+}
+
+.module-group[data-expanded="true"] .module-group__summary-button {
+    border-color: color-mix(in srgb, var(--brand-green-contrast) 35%, var(--color-border));
+}
+
+@media (max-width: 720px) {
+    .module-group__summary {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .module-group__summary-button {
+        width: 100%;
+        padding: 12px 18px;
+    }
 }
 
 .module-card-grid {
