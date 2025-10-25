@@ -533,7 +533,7 @@
                         </section>
                     </div>
 
-                    <aside class="module-step-grid__summary module-step-grid__summary--inline" data-module-summary aria-label="Configuration summary">
+                    <aside class="module-step-grid__summary module-step-grid__summary--inline" data-module-summary data-module-summary-variant="module" aria-label="Configuration summary">
                         <div class="module-summary-card">
                             <header class="module-summary-card__header">
                                 <h3 class="module-summary-card__title">Your configuration</h3>
@@ -616,6 +616,74 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <div class="wizard-summary" data-mobile-summary>
+            <button
+                type="button"
+                class="wizard-summary__toggle"
+                data-mobile-summary-toggle
+                aria-expanded="false"
+                aria-controls="wizard-summary-drawer"
+            >
+                <span
+                    class="wizard-summary__toggle-label"
+                    data-mobile-summary-toggle-label
+                    data-open-label="Hide summary"
+                    data-closed-label="View summary"
+                >
+                    View summary
+                </span>
+            </button>
+            <div
+                class="wizard-summary__drawer"
+                id="wizard-summary-drawer"
+                data-mobile-summary-drawer
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="wizard-summary-drawer-title"
+                aria-hidden="true"
+                tabindex="-1"
+                data-open="false"
+            >
+                <div class="wizard-summary__drawer-surface">
+                    <div class="wizard-summary__drawer-header">
+                        <h2 class="wizard-summary__drawer-title" id="wizard-summary-drawer-title">Your configuration</h2>
+                        <button
+                            type="button"
+                            class="wizard-summary__close"
+                            data-mobile-summary-close
+                        >
+                            Close summary
+                        </button>
+                    </div>
+                    <aside class="wizard-summary__card" data-module-summary data-module-summary-variant="module" aria-label="Configuration summary">
+                        <div class="module-summary-card">
+                            <header class="module-summary-card__header">
+                                <h3 class="module-summary-card__title">Your configuration</h3>
+                                <p class="module-summary-card__subtitle">Selections across mounting, power, and modules.</p>
+                            </header>
+                            <div class="module-summary-card__body" data-module-summary-list role="list"></div>
+                            <p class="module-summary-card__warning" data-module-summary-warning hidden></p>
+                            <section class="module-summary-card__firmware" aria-label="Firmware" data-module-summary-firmware>
+                                <div class="module-summary-card__firmware-header">
+                                    <h4>Firmware</h4>
+                                    <p class="module-summary-card__firmware-empty" data-module-summary-firmware-empty>No build selected yet.</p>
+                                </div>
+                                <div class="module-summary-card__firmware-meta" data-module-summary-firmware-meta hidden>
+                                    <p class="module-summary-card__firmware-name" data-module-summary-firmware-name></p>
+                                    <p class="module-summary-card__firmware-size" data-module-summary-firmware-size></p>
+                                </div>
+                                <button type="button" class="btn btn-primary module-summary-card__install" data-module-summary-install disabled>Install</button>
+                            </section>
+                            <div class="module-summary-card__actions">
+                                <button type="button" class="btn btn-secondary" data-module-summary-copy data-default-label="Copy link">Copy link</button>
+                                <button type="button" class="btn btn-tertiary" data-module-summary-reset>Start over</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
             </div>
         </div>
 
