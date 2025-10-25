@@ -1105,9 +1105,26 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     min-width: 120px;
 }
 
+.wizard-summary__drawer .module-summary-card {
+    box-shadow: none;
+}
+
+.wizard-summary__drawer .module-summary-card__actions {
+    gap: 10px;
+}
+
+.wizard-summary__drawer .module-summary-card__actions .btn {
+    flex: 1 1 45%;
+}
+
 @media (max-width: 480px) {
     .module-summary-card__actions {
         flex-direction: column;
+    }
+
+    .wizard-summary__drawer .module-summary-card__actions .btn {
+        flex: 1 1 auto;
+        width: 100%;
     }
 
     .module-card__spec {

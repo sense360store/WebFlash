@@ -14,6 +14,7 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     const MODULE_VARIANT_KEYS = ['airiq', 'presence', 'comfort', 'fan'];
     const CORE_REVISION_PATTERN = /rev\s*([a-z])/i;
     const subscribers = new Set();
+    const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
     let pending = false;
     let sidebarRefs = null;
     let moduleSummaryRefs = null;
@@ -329,9 +330,80 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     }
 
     function ensureModuleSummaryRefs() {
-        const root = document.querySelector('[data-module-summary]');
-        if (!root || !document.body.contains(root)) {
-            moduleSummaryRefs = null;
+        const body = document.body;
+        if (!body) {
+            return [];
+        }
+
+        const nodes = Array.from(document.querySelectorAll('[data-module-summary]')).filter(node => body.contains(node));
+
+        if (!nodes.length) {
+            moduleSummaryRefs.clear();
+            return [];
+        }
+
+        const active = [];
+
+        nodes.forEach(root => {
+            let refs = moduleSummaryRefs.get(root);
+            if (!refs) {
+                const list = root.querySelector('[data-module-summary-list]');
+                const warning = root.querySelector('[data-module-summary-warning]');
+                const copyButton = root.querySelector('[data-module-summary-copy]');
+                const resetButton = root.querySelector('[data-module-summary-reset]');
+                const firmwareRoot = root.querySelector('[data-module-summary-firmware]');
+                const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
+                const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
+                const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
+                const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
+                const installButton = root.querySelector('[data-module-summary-install]');
+
+                if (list && !list.hasAttribute('aria-live')) {
+                    list.setAttribute('aria-live', 'polite');
+                }
+
+                refs = {
+                    root,
+                    list,
+                    warning,
+                    copyButton,
+                    resetButton,
+                    firmwareRoot,
+                    firmwareEmpty,
+                    firmwareMeta,
+                    firmwareName,
+                    firmwareSize,
+                    installButton,
+                    variant: root.dataset.moduleSummaryVariant || 'module'
+                };
+
+                moduleSummaryRefs.set(root, refs);
+            } else {
+                refs.variant = root.dataset.moduleSummaryVariant || 'module';
+            }
+
+            bindSummaryButtons(refs);
+            active.push(refs);
+        });
+
+        Array.from(moduleSummaryRefs.keys()).forEach(root => {
+            if (!nodes.includes(root)) {
+                moduleSummaryRefs.delete(root);
+            }
+        });
+
+        return active;
+    }
+
+    function ensureMobileSummaryRefs() {
+        const body = document.body;
+        const container = document.querySelector('[data-mobile-summary]');
+
+        if (!container || !body || !body.contains(container)) {
+            if (mobileSummaryRefs && body) {
+                body.classList.remove('is-mobile-summary-open');
+            }
+            mobileSummaryRefs = null;
             return null;
         }
 
@@ -376,9 +448,162 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
             installButton
         };
 
-        bindSummaryButtons(moduleSummaryRefs);
+        if (!toggle || !drawer) {
+            return null;
+        }
 
-        return moduleSummaryRefs;
+        if (!mobileSummaryRefs || mobileSummaryRefs.container !== container) {
+            mobileSummaryRefs = {
+                container,
+                toggle,
+                drawer,
+                closeButton,
+                label
+            };
+
+            bindMobileSummaryControls(mobileSummaryRefs);
+            updateMobileSummaryLabel(mobileSummaryRefs, false);
+            setMobileSummaryOpen(false, mobileSummaryRefs);
+        } else {
+            mobileSummaryRefs.label = label || mobileSummaryRefs.label || null;
+        }
+
+        return mobileSummaryRefs;
+    }
+
+    function bindMobileSummaryControls(refs) {
+        if (!refs) {
+            return;
+        }
+
+        const { toggle, closeButton, drawer } = refs;
+
+        if (toggle && toggle.dataset.mobileSummaryBound !== 'true') {
+            toggle.addEventListener('click', handleMobileSummaryToggle);
+            toggle.dataset.mobileSummaryBound = 'true';
+        }
+
+        if (closeButton && closeButton.dataset.mobileSummaryBound !== 'true') {
+            closeButton.addEventListener('click', handleMobileSummaryClose);
+            closeButton.dataset.mobileSummaryBound = 'true';
+        }
+
+        if (drawer && drawer.dataset.mobileSummaryBound !== 'true') {
+            drawer.addEventListener('keydown', handleMobileSummaryKeydown);
+            drawer.dataset.mobileSummaryBound = 'true';
+        }
+    }
+
+    function updateMobileSummaryLabel(refs, open) {
+        if (!refs || !refs.label) {
+            return;
+        }
+
+        const openLabel = refs.label.getAttribute('data-open-label') || 'Hide summary';
+        const closedLabel = refs.label.getAttribute('data-closed-label') || 'View summary';
+        refs.label.textContent = open ? openLabel : closedLabel;
+    }
+
+    function setMobileSummaryOpen(open, refs = ensureMobileSummaryRefs()) {
+        if (!refs) {
+            return;
+        }
+
+        const { container, toggle, drawer } = refs;
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        if (drawer) {
+            drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+            drawer.dataset.open = open ? 'true' : 'false';
+        }
+
+        updateMobileSummaryLabel(refs, open);
+
+        if (container) {
+            container.classList.toggle('is-open', Boolean(open));
+        }
+
+        const body = document.body;
+        if (body) {
+            if (open) {
+                body.classList.add('is-mobile-summary-open');
+            } else {
+                body.classList.remove('is-mobile-summary-open');
+            }
+        }
+    }
+
+    function isMobileSummaryOpen(refs = ensureMobileSummaryRefs()) {
+        return Boolean(refs?.container?.classList.contains('is-open'));
+    }
+
+    function handleMobileSummaryToggle(event) {
+        event.preventDefault();
+        const refs = ensureMobileSummaryRefs();
+        if (!refs) {
+            return;
+        }
+
+        const nextState = !isMobileSummaryOpen(refs);
+        setMobileSummaryOpen(nextState, refs);
+
+        if (nextState) {
+            requestAnimationFrame(() => {
+                if (refs.drawer) {
+                    refs.drawer.focus();
+                }
+            });
+        }
+    }
+
+    function handleMobileSummaryClose(event) {
+        event.preventDefault();
+        const refs = ensureMobileSummaryRefs();
+        if (!refs) {
+            return;
+        }
+
+        if (!isMobileSummaryOpen(refs)) {
+            return;
+        }
+
+        setMobileSummaryOpen(false, refs);
+        if (refs.toggle) {
+            refs.toggle.focus();
+        }
+    }
+
+    function handleMobileSummaryKeydown(event) {
+        if (event.key !== 'Escape' && event.key !== 'Esc') {
+            return;
+        }
+
+        const refs = ensureMobileSummaryRefs();
+        if (!refs) {
+            return;
+        }
+
+        if (!isMobileSummaryOpen(refs)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        setMobileSummaryOpen(false, refs);
+        if (refs.toggle) {
+            refs.toggle.focus();
+        }
+    }
+
+    function handleMobileSummaryMediaChange(event) {
+        if (!event || event.matches) {
+            return;
+        }
+
+        setMobileSummaryOpen(false);
     }
 
     function ensurePresetManagerRefs() {
@@ -797,15 +1022,16 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
     function renderSidebar(meta, state) {
         const sidebar = ensureSidebarRefs();
-        const summary = ensureModuleSummaryRefs();
+        const summaries = ensureModuleSummaryRefs();
+        ensureMobileSummaryRefs();
         const targets = [];
 
         if (sidebar) {
             targets.push({ refs: sidebar, variant: 'sidebar' });
         }
-        if (summary) {
-            targets.push({ refs: summary, variant: 'module' });
-        }
+        summaries.forEach(refs => {
+            targets.push({ refs, variant: refs.variant || 'module' });
+        });
 
         if (!targets.length) {
             return;
@@ -924,7 +1150,11 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
 
     document.addEventListener('wizardSidebarReady', () => {
         sidebarRefs = null;
-        moduleSummaryRefs = null;
+        moduleSummaryRefs.clear();
+        if (mobileSummaryRefs) {
+            setMobileSummaryOpen(false, mobileSummaryRefs);
+        }
+        mobileSummaryRefs = null;
         scheduleScan();
     });
 
@@ -941,6 +1171,21 @@ import { getModuleVariantEntry } from '../data/module-requirements.js';
     });
 
     function handleDomReady() {
+        if (typeof window.matchMedia === 'function') {
+            mobileSummaryMediaQuery = window.matchMedia(MOBILE_SUMMARY_BREAKPOINT);
+            if (mobileSummaryMediaQuery) {
+                if (typeof mobileSummaryMediaQuery.addEventListener === 'function') {
+                    mobileSummaryMediaQuery.addEventListener('change', handleMobileSummaryMediaChange);
+                } else if (typeof mobileSummaryMediaQuery.addListener === 'function') {
+                    mobileSummaryMediaQuery.addListener(handleMobileSummaryMediaChange);
+                }
+            }
+        }
+
+        ensureMobileSummaryRefs();
+        if (mobileSummaryMediaQuery) {
+            handleMobileSummaryMediaChange(mobileSummaryMediaQuery);
+        }
         scheduleScan();
     }
 
