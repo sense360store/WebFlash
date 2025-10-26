@@ -1597,7 +1597,7 @@ function updateModuleAvailabilityMessage() {
 
     if (manifestLoadError) {
         hint.classList.add('is-error');
-        hint.innerHTML = '<strong>Unable to load firmware manifest.</strong> Module availability cannot be determined right now.';
+        hint.innerHTML = '<strong>Unable to load compatibility data.</strong> Module availability cannot be determined right now.';
         return;
     }
 
@@ -1607,7 +1607,7 @@ function updateModuleAvailabilityMessage() {
     }
 
     if (!isManifestReady()) {
-        hint.innerHTML = 'Checking firmware coverage…';
+        hint.innerHTML = 'Checking module support…';
         return;
     }
 
@@ -1622,7 +1622,7 @@ function updateModuleAvailabilityMessage() {
     if (!availability) {
         hint.classList.add('is-warning');
         const label = combinationLabel ? escapeHtml(combinationLabel) : 'this selection';
-        hint.innerHTML = `<strong>No firmware coverage yet.</strong> We don't have builds for ${label}.`;
+        hint.innerHTML = `<strong>No compatibility data yet.</strong> Module support for ${label} is still being mapped.`;
         return;
     }
 
@@ -1667,7 +1667,7 @@ function updateModuleAvailabilityMessage() {
         .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'success'))
         .join(' ') || createModuleTag('Core only', 'success');
     const label = combinationLabel ? escapeHtml(combinationLabel) : 'this configuration';
-    hint.innerHTML = `<strong>Firmware available!</strong> ${label} is ready for flashing. ${selectedTags}`;
+    hint.innerHTML = `<strong>Fully supported.</strong> ${label} supports this module selection. ${selectedTags}`;
 }
 
 function updateConfiguration(options = {}) {
