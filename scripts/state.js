@@ -360,11 +360,11 @@ function renderModuleDetailPanel() {
 
         const coreRevision = variant.coreRevision
             ? escapeHtml(variant.coreRevision)
-            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">Not required</span>';
+            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">No additional requirement</span>';
 
         const headers = Array.isArray(variant.headers) && variant.headers.length > 0
             ? escapeHtml(formatHeaderList(variant.headers))
-            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">Not required</span>';
+            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">No additional headers</span>';
 
         const conflictMeta = collectVariantConflictMeta(activeModuleDetailKey, variantKey, variant);
 
