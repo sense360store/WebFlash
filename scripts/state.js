@@ -3160,33 +3160,68 @@ function slugifyFirmwareHeadingSource(value) {
         .replace(/^-+|-+$/g, '');
 }
 
+function ensureSense360Prefix(value) {
+    const trimmed = (value || '').toString().trim();
+    if (!trimmed) {
+        return '';
+    }
+
+    if (/^sense360[-_\s]/i.test(trimmed)) {
+        return trimmed;
+    }
+
+    return `Sense360-${trimmed.replace(/^[-_\s]+/, '')}`;
+}
+
+function deriveFirmwareIdentifierSlug(firmware) {
+    const releaseTag = (firmware.release_tag || '').toString().trim();
+    if (releaseTag) {
+        return slugifyFirmwareHeadingSource(releaseTag);
+    }
+
+    const configString = (firmware.config_string || '').toString().trim();
+    if (configString) {
+        return slugifyFirmwareHeadingSource(ensureSense360Prefix(configString));
+    }
+
+    const deviceType = (firmware.device_type || firmware.deviceType || '').toString().trim();
+    if (deviceType) {
+        return slugifyFirmwareHeadingSource(ensureSense360Prefix(deviceType));
+    }
+
+    const parts = Array.isArray(firmware.parts) ? firmware.parts : [];
+    if (parts.length > 0) {
+        const firstPart = parts[0];
+        let partPath = '';
+        if (firstPart && typeof firstPart === 'object') {
+            partPath = (firstPart.path || firstPart.name || firstPart.filename || '').toString();
+        } else if (firstPart) {
+            partPath = firstPart.toString();
+        }
+
+        const trimmedPath = partPath.trim();
+        if (trimmedPath) {
+            const filename = trimmedPath.split('/').pop() || trimmedPath;
+            const withoutExtension = filename.replace(/\.[^.]+$/, '');
+            const withoutVersion = withoutExtension.replace(/[-_]?v\d[\w.-]*$/i, '');
+            const normalized = ensureSense360Prefix(withoutVersion || withoutExtension);
+            return slugifyFirmwareHeadingSource(normalized);
+        }
+    }
+
+    return 'sense360-firmware';
+}
+
 function getCompatibleFirmwareHeadingText(firmware) {
     if (!firmware) {
         return '';
     }
 
-    const releaseTag = (firmware.release_tag || '').toString().trim();
     const versionRaw = (firmware.version || '').toString().trim();
     const version = versionRaw ? `v${versionRaw.replace(/^v+/i, '')}` : '';
+    const slug = deriveFirmwareIdentifierSlug(firmware);
 
-    let slug = '';
-    if (releaseTag) {
-        slug = releaseTag;
-    } else {
-        const source = (firmware.config_string || firmware.model || '').toString().trim();
-        if (source) {
-            slug = slugifyFirmwareHeadingSource(source);
-        }
-    }
-
-    const parts = [];
-    if (slug) {
-        parts.push(slug);
-    }
-    if (version) {
-        parts.push(version);
-    }
-
+    const parts = [slug, version].filter(Boolean);
     return parts.join(' ').trim();
 }
 
@@ -3197,20 +3232,19 @@ function updateCompatibleFirmwareHeading() {
         return;
     }
 
-    if (compatibleFirmwareHeadingLabel) {
-        const labelText = defaultCompatibleFirmwareHeadingLabel || 'Compatible Firmware';
-        compatibleFirmwareHeadingLabel.textContent = labelText;
-    }
-
     const hasBlockingStatus = firmwareStatusMessage?.type === 'not-available'
         || firmwareStatusMessage?.type === 'error';
 
-    if (!window.currentFirmware || hasBlockingStatus) {
-        compatibleFirmwareHeadingSelection.textContent = '';
-        return;
+    let selectionText = '';
+    if (window.currentFirmware && !hasBlockingStatus) {
+        selectionText = getCompatibleFirmwareHeadingText(window.currentFirmware);
     }
 
-    const selectionText = getCompatibleFirmwareHeadingText(window.currentFirmware);
+    const labelText = defaultCompatibleFirmwareHeadingLabel || 'Compatible Firmware';
+    if (compatibleFirmwareHeadingLabel) {
+        compatibleFirmwareHeadingLabel.textContent = selectionText ? `${labelText}:` : labelText;
+    }
+
     compatibleFirmwareHeadingSelection.textContent = selectionText;
 }
 

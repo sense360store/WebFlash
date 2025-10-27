@@ -398,8 +398,11 @@ describe('wizard state module', () => {
         const { __testHooks } = await import('../scripts/state.js');
 
         const headingSelection = document.querySelector('[data-compatible-firmware-selection]');
+        const headingLabel = document.querySelector('[data-compatible-firmware-label]');
         expect(headingSelection).not.toBeNull();
+        expect(headingLabel).not.toBeNull();
         expect(headingSelection.textContent.trim()).toBe('');
+        expect(headingLabel.textContent.trim()).toBe('Compatible Firmware');
 
         window.currentFirmware = {
             firmwareId: 'firmware-123',
@@ -414,11 +417,29 @@ describe('wizard state module', () => {
         __testHooks.renderSelectedFirmware();
 
         expect(headingSelection.textContent.trim()).toBe('core-wall-usb v0.3.1');
+        expect(headingLabel.textContent.trim()).toBe('Compatible Firmware:');
+
+        window.currentFirmware = {
+            firmwareId: 'firmware-456',
+            manifestIndex: 124,
+            release_tag: '',
+            config_string: 'Wall-USB-AirIQPro',
+            version: '1.2.3',
+            channel: 'beta',
+            parts: []
+        };
+
+        __testHooks.setFirmwareStatusMessage(null);
+        __testHooks.renderSelectedFirmware();
+
+        expect(headingSelection.textContent.trim()).toBe('sense360-wall-usb-airiqpro v1.2.3');
+        expect(headingLabel.textContent.trim()).toBe('Compatible Firmware:');
 
         window.currentFirmware = null;
         __testHooks.setFirmwareStatusMessage(null);
         __testHooks.renderSelectedFirmware();
 
         expect(headingSelection.textContent.trim()).toBe('');
+        expect(headingLabel.textContent.trim()).toBe('Compatible Firmware');
     });
 });
