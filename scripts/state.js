@@ -136,6 +136,18 @@ function setPreFlashAcknowledgement(value) {
 }
 
 function resetPreFlashAcknowledgement() {
+    const control = document.querySelector('[data-preflash-acknowledge]');
+
+    if (control) {
+        if ('checked' in control) {
+            control.checked = false;
+        }
+
+        if (control.hasAttribute('aria-pressed')) {
+            control.setAttribute('aria-pressed', 'false');
+        }
+    }
+
     setPreFlashAcknowledgement(false);
 }
 
@@ -3030,6 +3042,7 @@ function clearFirmwareOptions() {
     }
 
     renderSelectedFirmware();
+    resetPreFlashAcknowledgement();
     updateFirmwareControls();
     updateCompatibleFirmwareHeading();
 }
@@ -3079,6 +3092,9 @@ function setFirmwareOptions(builds, configString, modelBuckets = new Map()) {
 
     renderFirmwareSelector();
     renderSelectedFirmware();
+    if (!firmwareOptions.length) {
+        resetPreFlashAcknowledgement();
+    }
     updateFirmwareControls();
 }
 
@@ -3290,6 +3306,7 @@ function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelecto
         updateCompatibleFirmwareHeading();
     }
 
+    resetPreFlashAcknowledgement();
     updateFirmwareControls();
     verifyCurrentFirmwareIntegrity();
 }
@@ -3301,6 +3318,7 @@ function selectDefaultFirmware() {
         firmwareVerificationToken += 1;
         firmwareVerificationState = createEmptyVerificationState();
         renderSelectedFirmware();
+        resetPreFlashAcknowledgement();
         updateFirmwareControls();
         return;
     }
