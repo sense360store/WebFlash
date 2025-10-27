@@ -1971,6 +1971,9 @@ function updateFirmwareControls() {
         && Array.isArray(window.currentFirmware.parts)
         && window.currentFirmware.parts.length > 0
     );
+    const canWebSerial = Boolean(navigator?.serial);
+    const onReviewStep = currentStep === 4;
+    const shouldShowInstallControls = canWebSerial && onReviewStep;
     const verificationStatus = (firmwareVerificationState.status || '').toString().toLowerCase();
     const isVerified = verificationStatus === 'verified';
     const isPending = verificationStatus === 'pending';
@@ -1979,14 +1982,23 @@ function updateFirmwareControls() {
 
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
-        downloadBtn.disabled = !readyToFlash;
-        downloadBtn.classList.toggle('is-ready', readyToFlash);
+        downloadBtn.hidden = !onReviewStep;
+        downloadBtn.setAttribute('aria-hidden', onReviewStep ? 'false' : 'true');
 
-        if (!hasFirmware) {
-            downloadBtn.title = 'Select a firmware option to download.';
-        } else if (!isVerified) {
-            downloadBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+        if (onReviewStep) {
+            downloadBtn.disabled = !readyToFlash;
+            downloadBtn.classList.toggle('is-ready', readyToFlash);
+
+            if (!hasFirmware) {
+                downloadBtn.title = 'Select a firmware option to download.';
+            } else if (!isVerified) {
+                downloadBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+            } else {
+                downloadBtn.removeAttribute('title');
+            }
         } else {
+            downloadBtn.disabled = true;
+            downloadBtn.classList.remove('is-ready');
             downloadBtn.removeAttribute('title');
         }
     }
@@ -2011,12 +2023,21 @@ function updateFirmwareControls() {
 
     const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
     if (installButton) {
-        installButton.classList.toggle('is-ready', readyToFlash);
-        installButton.disabled = !readyToFlash;
-        if (!readyToFlash && hasFirmware) {
-            const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
-            installButton.title = message;
+        installButton.hidden = !shouldShowInstallControls;
+        installButton.setAttribute('aria-hidden', shouldShowInstallControls ? 'false' : 'true');
+
+        if (shouldShowInstallControls) {
+            installButton.classList.toggle('is-ready', readyToFlash);
+            installButton.disabled = !readyToFlash;
+            if (!readyToFlash && hasFirmware) {
+                const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+                installButton.title = message;
+            } else {
+                installButton.removeAttribute('title');
+            }
         } else {
+            installButton.classList.remove('is-ready');
+            installButton.disabled = true;
             installButton.removeAttribute('title');
         }
     }
@@ -2040,13 +2061,21 @@ function updateFirmwareControls() {
 
     const summaryInstallButton = document.querySelector('[data-module-summary-install]');
     if (summaryInstallButton) {
-        summaryInstallButton.disabled = !readyToFlash;
-        if (!hasFirmware) {
-            summaryInstallButton.title = 'Select a firmware option to install.';
-        } else if (!isVerified) {
-            const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
-            summaryInstallButton.title = message;
+        summaryInstallButton.hidden = !shouldShowInstallControls;
+        summaryInstallButton.setAttribute('aria-hidden', shouldShowInstallControls ? 'false' : 'true');
+
+        if (shouldShowInstallControls) {
+            summaryInstallButton.disabled = !readyToFlash;
+            if (!hasFirmware) {
+                summaryInstallButton.title = 'Select a firmware option to install.';
+            } else if (!isVerified) {
+                const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+                summaryInstallButton.title = message;
+            } else {
+                summaryInstallButton.removeAttribute('title');
+            }
         } else {
+            summaryInstallButton.disabled = true;
             summaryInstallButton.removeAttribute('title');
         }
     }
