@@ -2054,7 +2054,15 @@ function updateFirmwareControls() {
         }
     }
 
-    const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
+    const installHost = document.querySelector('#compatible-firmware esp-web-install-button[data-webflash-install]');
+    if (installHost) {
+        installHost.hidden = !shouldShowInstallControls;
+        installHost.setAttribute('aria-hidden', shouldShowInstallControls ? 'false' : 'true');
+        installHost.classList.toggle('is-ready', shouldShowInstallControls && readyToFlash);
+    }
+
+    const installButton = installHost?.querySelector('button[slot="activate"]')
+        || document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
     if (installButton) {
         installButton.hidden = !shouldShowInstallControls;
         installButton.setAttribute('aria-hidden', shouldShowInstallControls ? 'false' : 'true');
