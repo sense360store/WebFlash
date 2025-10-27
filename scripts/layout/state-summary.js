@@ -885,7 +885,7 @@ let mobileSummaryMediaQuery = null;
         }
 
         FIELD_MAP.forEach(field => {
-            if (variant === 'module') {
+            if (variant === 'module' || variant === 'review') {
                 const item = document.createElement('div');
                 item.className = 'module-summary-card__item';
                 item.setAttribute('role', 'listitem');
@@ -1006,7 +1006,29 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        const { firmwareEmpty, firmwareMeta, firmwareName, firmwareSize } = refs;
+        const { variant, firmwareEmpty, firmwareMeta, firmwareName, firmwareSize, installButton } = refs;
+
+        if (variant === 'module') {
+            if (firmwareEmpty) {
+                firmwareEmpty.hidden = false;
+            }
+            if (firmwareMeta) {
+                firmwareMeta.hidden = true;
+            }
+            if (firmwareName) {
+                firmwareName.textContent = '';
+            }
+            if (firmwareSize) {
+                firmwareSize.textContent = '';
+            }
+            if (installButton) {
+                installButton.disabled = true;
+                installButton.classList.remove('is-ready');
+                installButton.removeAttribute('title');
+            }
+            return;
+        }
+
         const firmware = window.currentFirmware || null;
 
         if (!firmware || !firmwareName) {
