@@ -1038,9 +1038,12 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        const { variant, firmwareEmpty, firmwareMeta, firmwareName, firmwareVersion, firmwareSize, installButton } = refs;
+        const { variant, firmwareRoot, firmwareEmpty, firmwareMeta, firmwareName, firmwareVersion, firmwareSize, installButton } = refs;
 
         if (variant === 'module') {
+            if (firmwareRoot) {
+                firmwareRoot.hidden = true;
+            }
             if (firmwareEmpty) {
                 firmwareEmpty.hidden = false;
             }
@@ -1063,6 +1066,10 @@ let mobileSummaryMediaQuery = null;
                 installButton.removeAttribute('title');
             }
             return;
+        }
+
+        if (firmwareRoot) {
+            firmwareRoot.hidden = false;
         }
 
         const firmware = window.currentFirmware || null;
