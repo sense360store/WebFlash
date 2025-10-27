@@ -633,7 +633,13 @@ let mobileSummaryMediaQuery = null;
     }
 
     function ensurePresetManagerRefs() {
-        if (presetManagerRefs && document.body.contains(presetManagerRefs.root)) {
+        const body = document.body;
+        if (!body) {
+            presetManagerRefs = null;
+            return null;
+        }
+
+        if (presetManagerRefs && body.contains(presetManagerRefs.root)) {
             return presetManagerRefs;
         }
 
