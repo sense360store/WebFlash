@@ -89,6 +89,7 @@ h1 {
     min-width: 0;
     position: relative;
     padding: 8px 0;
+    z-index: 1;
 }
 
 .progress-step::after {
@@ -102,6 +103,7 @@ h1 {
     background: var(--color-border);
     transform: translateY(-50%);
     opacity: 0.6;
+    z-index: -1;
 }
 
 .progress-step:last-child::after {
