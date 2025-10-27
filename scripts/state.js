@@ -981,6 +981,10 @@ const manifestReadyPromise = loadManifestData().catch(() => null);
 
 const firmwareSelectorWrapper = document.getElementById('firmware-selector');
 const firmwareVersionSelect = document.getElementById('firmware-version-select');
+let compatibleFirmwareHeading = document.querySelector('.compatible-firmware-heading');
+let compatibleFirmwareHeadingLabel = compatibleFirmwareHeading?.querySelector('[data-compatible-firmware-label]') || null;
+let compatibleFirmwareHeadingSelection = compatibleFirmwareHeading?.querySelector('[data-compatible-firmware-selection]') || null;
+let defaultCompatibleFirmwareHeadingLabel = compatibleFirmwareHeadingLabel?.textContent.trim() || '';
 let firmwareOptions = [];
 let firmwareOptionsMap = new Map();
 let currentFirmwareSelectionId = null;
@@ -2903,6 +2907,7 @@ function clearFirmwareOptions() {
 
     renderSelectedFirmware();
     updateFirmwareControls();
+    updateCompatibleFirmwareHeading();
 }
 
 function setFirmwareOptions(builds, configString, modelBuckets = new Map()) {
@@ -3002,6 +3007,93 @@ function renderFirmwareSelector() {
     }
 }
 
+function ensureCompatibleFirmwareHeadingRefs() {
+    if (compatibleFirmwareHeadingSelection && compatibleFirmwareHeadingLabel) {
+        return;
+    }
+
+    const heading = document.querySelector('.compatible-firmware-heading');
+    if (!heading) {
+        return;
+    }
+
+    compatibleFirmwareHeading = heading;
+    compatibleFirmwareHeadingLabel = heading.querySelector('[data-compatible-firmware-label]') || compatibleFirmwareHeadingLabel;
+    compatibleFirmwareHeadingSelection = heading.querySelector('[data-compatible-firmware-selection]') || compatibleFirmwareHeadingSelection;
+
+    if (!defaultCompatibleFirmwareHeadingLabel && compatibleFirmwareHeadingLabel) {
+        const labelText = compatibleFirmwareHeadingLabel.textContent?.trim();
+        defaultCompatibleFirmwareHeadingLabel = labelText || 'Compatible Firmware';
+    }
+}
+
+function slugifyFirmwareHeadingSource(value) {
+    return value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function getCompatibleFirmwareHeadingText(firmware) {
+    if (!firmware) {
+        return '';
+    }
+
+    const releaseTag = (firmware.release_tag || '').toString().trim();
+    const versionRaw = (firmware.version || '').toString().trim();
+    const version = versionRaw ? `v${versionRaw.replace(/^v+/i, '')}` : '';
+
+    let slug = '';
+    if (releaseTag) {
+        slug = releaseTag;
+    } else {
+        const source = (firmware.config_string || firmware.model || '').toString().trim();
+        if (source) {
+            slug = slugifyFirmwareHeadingSource(source);
+        }
+    }
+
+    const parts = [];
+    if (slug) {
+        parts.push(slug);
+    }
+    if (version) {
+        parts.push(version);
+    }
+
+    return parts.join(' ').trim();
+}
+
+function updateCompatibleFirmwareHeading() {
+    ensureCompatibleFirmwareHeadingRefs();
+
+    if (!compatibleFirmwareHeadingSelection) {
+        return;
+    }
+
+    if (compatibleFirmwareHeadingLabel) {
+        const labelText = defaultCompatibleFirmwareHeadingLabel || 'Compatible Firmware';
+        compatibleFirmwareHeadingLabel.textContent = labelText;
+    }
+
+    const hasBlockingStatus = firmwareStatusMessage?.type === 'not-available'
+        || firmwareStatusMessage?.type === 'error';
+
+    if (!window.currentFirmware || hasBlockingStatus) {
+        compatibleFirmwareHeadingSelection.textContent = '';
+        return;
+    }
+
+    const selectionText = getCompatibleFirmwareHeadingText(window.currentFirmware);
+    compatibleFirmwareHeadingSelection.textContent = selectionText;
+}
+
+function setFirmwareStatusMessageForTests(message) {
+    firmwareStatusMessage = message;
+}
+
 function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelector = true, renderDetails = true } = {}) {
     if (!firmwareId || !firmwareOptionsMap.has(firmwareId)) {
         return;
@@ -3036,6 +3128,8 @@ function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelecto
 
     if (renderDetails) {
         renderSelectedFirmware();
+    } else {
+        updateCompatibleFirmwareHeading();
     }
 
     updateFirmwareControls();
@@ -3106,6 +3200,7 @@ function renderSelectedFirmware() {
     container.innerHTML = sections.join('');
 
     attachInstallButtonListeners();
+    updateCompatibleFirmwareHeading();
 }
 
 function attachInstallButtonListeners() {
@@ -3192,6 +3287,7 @@ async function findCompatibleFirmware() {
         `;
         updateFirmwareControls();
         attachInstallButtonListeners();
+        updateCompatibleFirmwareHeading();
         return;
     }
 
@@ -3809,7 +3905,8 @@ export const __testHooks = Object.freeze({
     renderSelectedFirmware,
     getFirmwarePartsMetadata,
     refreshPreflightDiagnostics,
-    setFirmwareVerificationState: setFirmwareVerificationStateForTests
+    setFirmwareVerificationState: setFirmwareVerificationStateForTests,
+    setFirmwareStatusMessage: setFirmwareStatusMessageForTests
 });
 
 export {
