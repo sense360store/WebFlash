@@ -1172,6 +1172,12 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: var(--color-text-primary);
 }
 
+.module-summary-card__firmware-version {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
 .module-summary-card__firmware-size {
     margin: 0;
     font-size: 14px;
