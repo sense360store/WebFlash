@@ -375,6 +375,7 @@ let mobileSummaryMediaQuery = null;
                 const firmwareEmpty = root.querySelector('[data-module-summary-firmware-empty]');
                 const firmwareMeta = root.querySelector('[data-module-summary-firmware-meta]');
                 const firmwareName = root.querySelector('[data-module-summary-firmware-name]');
+                const firmwareVersion = root.querySelector('[data-module-summary-firmware-version]');
                 const firmwareSize = root.querySelector('[data-module-summary-firmware-size]');
                 const installButton = root.querySelector('[data-module-summary-install]');
 
@@ -392,6 +393,7 @@ let mobileSummaryMediaQuery = null;
                     firmwareEmpty,
                     firmwareMeta,
                     firmwareName,
+                    firmwareVersion,
                     firmwareSize,
                     installButton,
                     variant: root.dataset.moduleSummaryVariant || 'module'
@@ -1001,12 +1003,42 @@ let mobileSummaryMediaQuery = null;
         return `${(raw / 1024).toFixed(1)} KB`;
     }
 
+    function formatFirmwareVersionLabel(firmware) {
+        if (!firmware) {
+            return '';
+        }
+
+        const configLabel = (firmware.config_string || window.currentConfigString || '').toString().trim();
+        const versionLabelRaw = (firmware.version || '').toString().trim();
+        const channelLabel = (firmware.channel || '').toString().trim();
+        const parts = [];
+
+        if (configLabel) {
+            parts.push(configLabel);
+        }
+
+        if (versionLabelRaw) {
+            const normalisedVersion = versionLabelRaw.toLowerCase().startsWith('v')
+                ? versionLabelRaw
+                : `v${versionLabelRaw}`;
+            parts.push(normalisedVersion);
+        }
+
+        let label = parts.join(' ').trim();
+
+        if (channelLabel) {
+            label = label ? `${label} (${channelLabel})` : `(${channelLabel})`;
+        }
+
+        return label;
+    }
+
     function renderFirmwareSummary(refs) {
         if (!refs || !refs.firmwareRoot) {
             return;
         }
 
-        const { variant, firmwareEmpty, firmwareMeta, firmwareName, firmwareSize, installButton } = refs;
+        const { variant, firmwareEmpty, firmwareMeta, firmwareName, firmwareVersion, firmwareSize, installButton } = refs;
 
         if (variant === 'module') {
             if (firmwareEmpty) {
@@ -1017,6 +1049,10 @@ let mobileSummaryMediaQuery = null;
             }
             if (firmwareName) {
                 firmwareName.textContent = '';
+            }
+            if (firmwareVersion) {
+                firmwareVersion.textContent = '';
+                firmwareVersion.hidden = true;
             }
             if (firmwareSize) {
                 firmwareSize.textContent = '';
@@ -1041,6 +1077,10 @@ let mobileSummaryMediaQuery = null;
             if (firmwareName) {
                 firmwareName.textContent = '';
             }
+            if (firmwareVersion) {
+                firmwareVersion.textContent = '';
+                firmwareVersion.hidden = true;
+            }
             if (firmwareSize) {
                 firmwareSize.textContent = '';
             }
@@ -1056,9 +1096,15 @@ let mobileSummaryMediaQuery = null;
 
         const displayName = formatFirmwareName(firmware);
         const sizeLabel = formatFirmwareSize(firmware);
+        const versionLabel = formatFirmwareVersionLabel(firmware);
 
         if (firmwareName) {
             firmwareName.textContent = displayName;
+        }
+
+        if (firmwareVersion) {
+            firmwareVersion.textContent = versionLabel;
+            firmwareVersion.hidden = !versionLabel;
         }
 
         if (firmwareSize) {
