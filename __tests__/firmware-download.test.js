@@ -47,9 +47,22 @@ function renderWizardDom() {
         </div>
         <div id="step-4" class="wizard-step">
             <section class="pre-flash-checklist" data-diagnostics-state="idle">
+                <div class="pre-flash-checklist__header">
+                    <h3 class="checklist-heading" id="pre-flash-title">Before you flash</h3>
+                    <p>Review these essentials to keep your hub safe during the update.</p>
+                </div>
+                <ul class="pre-flash-checklist__items">
+                    <li>Verify the Sense360 hub is powered and connected to your computer.</li>
+                    <li>Keep this browser tab open until the flashing process finishes.</li>
+                    <li><strong>Do not disconnect power/USB during flashing.</strong></li>
+                </ul>
+                <label class="pre-flash-checklist__acknowledgement">
+                    <input type="checkbox" data-preflash-acknowledge>
+                    <span>I understand and will keep the hub powered and connected throughout flashing.</span>
+                </label>
                 <div class="checklist-header">
                     <div class="checklist-header__text">
-                        <h3 class="checklist-heading" id="pre-flash-title">Connection Diagnostics</h3>
+                        <h3 class="checklist-heading" id="pre-flash-diagnostics">Connection Diagnostics</h3>
                         <p class="checklist-subtitle" data-diagnostic-summary>Preparing diagnostics…</p>
                     </div>
                     <button type="button" class="checklist-refresh" data-diagnostic-refresh disabled>Retry checks</button>
@@ -251,6 +264,50 @@ describe('firmware download interactions', () => {
         expect(copiedText).toContain('app.bin @ 0x010000 ->');
 
         expect(document.getElementById('multi-part-download-modal')).toBeNull();
+    });
+
+    test('firmware actions require acknowledgement before enabling', async () => {
+        const stateModule = await import('../scripts/state.js');
+        const { __testHooks, setStep } = stateModule;
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+        await __testHooks.loadManifestData();
+        await __testHooks.refreshPreflightDiagnostics({ force: true });
+
+        setStep(4, { animate: false, skipUrlUpdate: true });
+
+        window.currentFirmware = {
+            firmwareId: 'firmware-ack',
+            manifestIndex: 5,
+            version: '5.0.0',
+            channel: 'stable',
+            config_string: 'Wall-USB',
+            parts: [
+                { path: '/firmware/application.bin', offset: 0 }
+            ]
+        };
+        window.currentConfigString = 'Wall-USB';
+
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Ready to flash',
+            parts: []
+        });
+
+        __testHooks.updateFirmwareControls();
+
+        const downloadBtn = document.getElementById('download-btn');
+        const copyBtn = document.getElementById('copy-firmware-url-btn');
+
+        expect(downloadBtn.disabled).toBe(true);
+        expect(copyBtn.disabled).toBe(true);
+
+        const acknowledgementControl = document.querySelector('[data-preflash-acknowledge]');
+        acknowledgementControl.checked = true;
+        acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(downloadBtn.disabled).toBe(false);
+        expect(copyBtn.disabled).toBe(false);
     });
 
     test('renderSelectedFirmware lists firmware parts with offsets', async () => {

@@ -88,6 +88,16 @@ let moduleDetailPanelElement = null;
 let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
 let activeModuleDetailVariant = null;
+let preFlashAcknowledged = false;
+
+function setPreFlashAcknowledgement(value) {
+    preFlashAcknowledged = Boolean(value);
+    updateFirmwareControls();
+}
+
+function resetPreFlashAcknowledgement() {
+    setPreFlashAcknowledgement(false);
+}
 
 function applyModuleRecommendations() {
     Object.entries(MODULE_REQUIREMENT_MATRIX).forEach(([moduleKey, moduleEntry]) => {
@@ -1051,6 +1061,39 @@ function openHomeAssistantIntegrations(event) {
 
 let wizardInitialized = false;
 
+function bindPreFlashAcknowledgementControl() {
+    const control = document.querySelector('[data-preflash-acknowledge]');
+
+    if (!control) {
+        resetPreFlashAcknowledgement();
+        return;
+    }
+
+    if (control.dataset.preflashAcknowledgeBound === 'true') {
+        setPreFlashAcknowledgement('checked' in control ? control.checked : control.getAttribute('aria-pressed') === 'true');
+        return;
+    }
+
+    const deriveState = () => {
+        if ('checked' in control) {
+            return Boolean(control.checked);
+        }
+
+        const ariaPressed = control.getAttribute('aria-pressed');
+        return ariaPressed === 'true';
+    };
+
+    const syncState = () => {
+        setPreFlashAcknowledgement(deriveState());
+    };
+
+    const eventName = 'checked' in control ? 'change' : 'click';
+    control.addEventListener(eventName, syncState);
+    control.dataset.preflashAcknowledgeBound = 'true';
+
+    syncState();
+}
+
 function ensureSingleActiveWizardStep() {
     const steps = Array.from(document.querySelectorAll('.wizard-step'));
     if (!steps.length) {
@@ -1140,6 +1183,12 @@ function initializeWizard() {
         attachInstallButtonListeners();
     } catch (error) {
         console.error('Failed to attach install button listeners:', error);
+    }
+
+    try {
+        bindPreFlashAcknowledgementControl();
+    } catch (error) {
+        console.error('Failed to bind pre-flash acknowledgement control:', error);
     }
 
     try {
@@ -2011,7 +2060,8 @@ function updateFirmwareControls() {
     const isVerified = verificationStatus === 'verified';
     const isPending = verificationStatus === 'pending';
     const isFailed = verificationStatus === 'failed';
-    const readyToFlash = hasFirmware && isVerified;
+    const isAcknowledged = Boolean(preFlashAcknowledged);
+    const readyToFlash = hasFirmware && isVerified && isAcknowledged;
 
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
@@ -2026,6 +2076,8 @@ function updateFirmwareControls() {
                 downloadBtn.title = 'Select a firmware option to download.';
             } else if (!isVerified) {
                 downloadBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+            } else if (!isAcknowledged) {
+                downloadBtn.title = 'Acknowledge the pre-flash checklist to continue.';
             } else {
                 downloadBtn.removeAttribute('title');
             }
@@ -2049,6 +2101,8 @@ function updateFirmwareControls() {
             copyUrlBtn.title = 'Select a firmware option first';
         } else if (!isVerified) {
             copyUrlBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+        } else if (!isAcknowledged) {
+            copyUrlBtn.title = 'Acknowledge the pre-flash checklist to continue.';
         } else {
             copyUrlBtn.removeAttribute('title');
         }
@@ -2071,8 +2125,14 @@ function updateFirmwareControls() {
             installButton.classList.toggle('is-ready', readyToFlash);
             installButton.disabled = !readyToFlash;
             if (!readyToFlash && hasFirmware) {
-                const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
-                installButton.title = message;
+                if (!isVerified) {
+                    const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
+                    installButton.title = message;
+                } else if (!isAcknowledged) {
+                    installButton.title = 'Acknowledge the pre-flash checklist to continue.';
+                } else {
+                    installButton.removeAttribute('title');
+                }
             } else {
                 installButton.removeAttribute('title');
             }
@@ -2085,19 +2145,22 @@ function updateFirmwareControls() {
 
     const helperContext = (() => {
         if (!hasFirmware) {
-            return { text: '', isError: false };
+            return { text: '', isError: false, isWarning: false };
         }
         if (isPending) {
-            return { text: 'Verifying firmware…', isError: false };
+            return { text: 'Verifying firmware…', isError: false, isWarning: false };
         }
         if (isFailed) {
             const message = firmwareVerificationState.message || 'Verification failed';
-            return { text: message, isError: true };
+            return { text: message, isError: true, isWarning: false };
+        }
+        if (isVerified && !isAcknowledged) {
+            return { text: 'Review the pre-flash checklist and acknowledge before continuing.', isError: false, isWarning: true };
         }
         if (isVerified) {
-            return { text: 'Ready to flash', isError: false };
+            return { text: 'Ready to flash', isError: false, isWarning: false };
         }
-        return { text: 'Awaiting verification…', isError: false };
+        return { text: 'Awaiting verification…', isError: false, isWarning: false };
     })();
 
     const summaryInstallButton = document.querySelector('[data-module-summary-install]');
@@ -2112,6 +2175,8 @@ function updateFirmwareControls() {
             } else if (!isVerified) {
                 const message = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
                 summaryInstallButton.title = message;
+            } else if (!isAcknowledged) {
+                summaryInstallButton.title = 'Acknowledge the pre-flash checklist to continue.';
             } else {
                 summaryInstallButton.removeAttribute('title');
             }
@@ -2131,7 +2196,7 @@ function updateFirmwareControls() {
             detailHelper.classList.remove('is-visible');
         }
         detailHelper.classList.toggle('is-error', helperContext.isError);
-        detailHelper.classList.remove('is-warning');
+        detailHelper.classList.toggle('is-warning', helperContext.isWarning);
     }
 
     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
@@ -2144,7 +2209,7 @@ function updateFirmwareControls() {
             primaryHelper.classList.remove('is-visible');
         }
         primaryHelper.classList.toggle('is-error', helperContext.isError);
-        primaryHelper.classList.remove('is-warning');
+        primaryHelper.classList.toggle('is-warning', helperContext.isWarning);
     }
 
     const installAssumptions = document.querySelector('[data-install-assumptions]');
@@ -3914,7 +3979,9 @@ export const __testHooks = Object.freeze({
     getFirmwarePartsMetadata,
     refreshPreflightDiagnostics,
     setFirmwareVerificationState: setFirmwareVerificationStateForTests,
-    setFirmwareStatusMessage: setFirmwareStatusMessageForTests
+    setFirmwareStatusMessage: setFirmwareStatusMessageForTests,
+    updateFirmwareControls,
+    setPreFlashAcknowledgement
 });
 
 export {
