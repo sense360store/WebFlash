@@ -117,6 +117,7 @@ describe('firmware download interactions', () => {
         jest.resetModules();
         jest.clearAllMocks();
         renderWizardDom();
+        minimalManifest.builds = [];
         global.fetch = jest.fn(() => Promise.resolve({
             ok: true,
             json: () => Promise.resolve(minimalManifest)
@@ -143,6 +144,10 @@ describe('firmware download interactions', () => {
         });
         Object.defineProperty(global.navigator, 'getBattery', {
             value: jest.fn(() => Promise.resolve({ level: 0.9, charging: true })),
+            configurable: true
+        });
+        Object.defineProperty(window, 'crypto', {
+            value: undefined,
             configurable: true
         });
     });
@@ -303,6 +308,80 @@ describe('firmware download interactions', () => {
         expect(copyBtn.disabled).toBe(true);
 
         const acknowledgementControl = document.querySelector('[data-preflash-acknowledge]');
+        acknowledgementControl.checked = true;
+        acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(downloadBtn.disabled).toBe(false);
+        expect(copyBtn.disabled).toBe(false);
+    });
+
+    test('pre-flash acknowledgement resets when firmware selection changes', async () => {
+        minimalManifest.builds = [
+            {
+                config_string: 'Wall-USB',
+                version: '1.2.3',
+                channel: 'stable',
+                parts: [
+                    { path: '/firmware/test-stable.bin', offset: 0 }
+                ]
+            },
+            {
+                config_string: 'Wall-USB',
+                version: '1.2.4',
+                channel: 'beta',
+                parts: [
+                    { path: '/firmware/test-beta.bin', offset: 0 }
+                ]
+            }
+        ];
+
+        const stateModule = await import('../scripts/state.js');
+        const { __testHooks, setStep, setState } = stateModule;
+
+        document.dispatchEvent(new Event('DOMContentLoaded'));
+
+        setState({ mounting: 'wall', power: 'usb' }, { skipUrlUpdate: true });
+        setStep(4, { animate: false, skipUrlUpdate: true });
+
+        await __testHooks.loadManifestData();
+        await __testHooks.refreshPreflightDiagnostics({ force: true });
+        await __testHooks.findCompatibleFirmware();
+
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Ready to flash',
+            parts: []
+        });
+        __testHooks.updateFirmwareControls();
+
+        const acknowledgementControl = document.querySelector('[data-preflash-acknowledge]');
+        const downloadBtn = document.getElementById('download-btn');
+        const copyBtn = document.getElementById('copy-firmware-url-btn');
+
+        acknowledgementControl.checked = true;
+        acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(downloadBtn.disabled).toBe(false);
+        expect(copyBtn.disabled).toBe(false);
+
+        const firmwareSelect = document.getElementById('firmware-version-select');
+        const options = Array.from(firmwareSelect.options);
+        expect(options.length).toBeGreaterThan(1);
+
+        firmwareSelect.value = options[1].value;
+        firmwareSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Ready to flash again',
+            parts: []
+        });
+        __testHooks.updateFirmwareControls();
+
+        expect(acknowledgementControl.checked).toBe(false);
+        expect(downloadBtn.disabled).toBe(true);
+        expect(copyBtn.disabled).toBe(true);
+
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
