@@ -92,6 +92,12 @@ function renderWizardDom() {
             </section>
             <div class="primary-action-group"><p data-ready-helper></p></div>
             <div id="firmware-selector"><select id="firmware-version-select"></select></div>
+            <div class="firmware-section">
+                <h3 class="compatible-firmware-heading">
+                    <span data-compatible-firmware-label>Compatible Firmware</span>
+                    <span data-compatible-firmware-selection></span>
+                </h3>
+            </div>
             <div id="compatible-firmware"></div>
             <button id="download-btn" disabled></button>
             <button id="copy-firmware-url-btn" disabled></button>
@@ -386,5 +392,33 @@ describe('wizard state module', () => {
 
         step4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(stateModule.getStep()).toBe(4);
+    });
+
+    test('compatible firmware heading reflects active selection', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+
+        const headingSelection = document.querySelector('[data-compatible-firmware-selection]');
+        expect(headingSelection).not.toBeNull();
+        expect(headingSelection.textContent.trim()).toBe('');
+
+        window.currentFirmware = {
+            firmwareId: 'firmware-123',
+            manifestIndex: 123,
+            release_tag: 'core-wall-usb',
+            version: '0.3.1',
+            channel: 'stable',
+            parts: []
+        };
+
+        __testHooks.setFirmwareStatusMessage(null);
+        __testHooks.renderSelectedFirmware();
+
+        expect(headingSelection.textContent.trim()).toBe('core-wall-usb v0.3.1');
+
+        window.currentFirmware = null;
+        __testHooks.setFirmwareStatusMessage(null);
+        __testHooks.renderSelectedFirmware();
+
+        expect(headingSelection.textContent.trim()).toBe('');
     });
 });
