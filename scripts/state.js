@@ -3083,7 +3083,14 @@ async function findCompatibleFirmware() {
         if (firmwareSelectorWrapper) {
             firmwareSelectorWrapper.hidden = true;
         }
-        document.getElementById('compatible-firmware').innerHTML = `
+
+        const compatibleFirmwareElement = document.getElementById('compatible-firmware');
+        if (!compatibleFirmwareElement) {
+            console.warn('Compatible firmware container not found.');
+            return;
+        }
+
+        compatibleFirmwareElement.innerHTML = `
             <div class="firmware-error">
                 <h4>Incomplete Configuration</h4>
                 <p>Please select both a mounting location and power option before checking firmware compatibility.</p>
