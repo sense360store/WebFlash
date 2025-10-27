@@ -90,6 +90,46 @@ let activeModuleDetailKey = null;
 let activeModuleDetailVariant = null;
 let preFlashAcknowledged = false;
 
+function setWizardStepVisibility(stepElement, isVisible) {
+    if (!stepElement) {
+        return;
+    }
+
+    stepElement.hidden = !isVisible;
+    stepElement.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+}
+
+function updateWizardStepVisibility(activeStepNumber, { exclude = null } = {}) {
+    const steps = Array.from(document.querySelectorAll('.wizard-step'));
+
+    if (!steps.length) {
+        return;
+    }
+
+    const excludedSteps = Array.isArray(exclude)
+        ? exclude.filter(Boolean)
+        : exclude
+            ? [exclude]
+            : [];
+
+    steps.forEach(step => {
+        const stepId = step.id || '';
+        const stepNumber = Number(stepId.replace('step-', ''));
+        const isActive = stepNumber === activeStepNumber;
+
+        if (isActive) {
+            setWizardStepVisibility(step, true);
+            return;
+        }
+
+        if (excludedSteps.includes(step)) {
+            return;
+        }
+
+        setWizardStepVisibility(step, false);
+    });
+}
+
 function setPreFlashAcknowledgement(value) {
     preFlashAcknowledged = Boolean(value);
     updateFirmwareControls();
@@ -1110,6 +1150,10 @@ function ensureSingleActiveWizardStep() {
             step.classList.remove('active', 'entering', 'leaving');
         }
     });
+
+    const targetStepId = targetStepElement?.id || '';
+    const targetStepNumber = Number(targetStepId.replace('step-', '')) || currentStep;
+    updateWizardStepVisibility(targetStepNumber);
 }
 
 function bindWizardEventListeners() {
@@ -1802,6 +1846,9 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 
     updateProgressSteps(targetStep);
 
+    const previousStepElement = previousStep !== targetStep ? document.getElementById(`step-${previousStep}`) : null;
+    updateWizardStepVisibility(targetStep, { exclude: animate ? previousStepElement : null });
+
     if (animate && previousStep !== targetStep) {
         animateStepTransition(previousStep, targetStep);
     } else {
@@ -1815,6 +1862,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
             }
         });
 
+        setWizardStepVisibility(targetStepElement, true);
         focusStep(targetStepElement);
     }
 
@@ -1891,11 +1939,13 @@ function animateStepTransition(fromStep, toStep) {
             clearTimeout(leaveFallback);
             fromElement.removeEventListener('transitionend', handleLeave);
             fromElement.classList.remove('leaving');
+            setWizardStepVisibility(fromElement, false);
         };
 
         const leaveFallback = setTimeout(() => {
             fromElement.removeEventListener('transitionend', handleLeave);
             fromElement.classList.remove('leaving');
+            setWizardStepVisibility(fromElement, false);
         }, 450);
 
         fromElement.addEventListener('transitionend', handleLeave);
@@ -1909,6 +1959,7 @@ function animateStepTransition(fromStep, toStep) {
     toElement.classList.remove('leaving');
     toElement.classList.add('entering');
     toElement.classList.remove('active', 'is-active');
+    setWizardStepVisibility(toElement, true);
 
     const activateStep = () => {
         toElement.classList.add('active', 'is-active');
