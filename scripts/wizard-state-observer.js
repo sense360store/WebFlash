@@ -18,10 +18,10 @@
   // Try to infer from typical controls in each step
   function scan() {
     // Mounting
-    state.mount = pick('#step1, [data-step="1"], section:has(h2:contains("Mounting"))',
+    state.mount = pick('#step-1, .wizard-step[data-step="1"], .wizard-step:has(h2:contains("Mounting"))',
       { 'Wall': 'wall', 'Ceiling': 'ceiling' });
     // Power
-    state.power = pick('#step2, [data-step="2"], section:has(h2:contains("Power"))',
+    state.power = pick('#step-2, .wizard-step[data-step="2"], .wizard-step:has(h2:contains("Power"))',
       { 'USB': 'usb', 'POE': 'poe', 'PWR': 'pwr' });
     // Modules
     state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Base':'base','Pro':'pro' });
@@ -62,10 +62,26 @@
       const selectors = sel.split(',').map(s => s.trim()).filter(Boolean);
       for (const selector of selectors) {
         const found = querySelectorWithHasContains(selector);
-        if (found) return found;
+        if (found) {
+          const step = resolveWizardStep(found);
+          if (step) return step;
+          return found;
+        }
       }
     } catch {
       // ignore selector parsing issues
+    }
+    return null;
+  }
+
+  function resolveWizardStep(element) {
+    if (!element) return null;
+    if (element.classList && element.classList.contains('wizard-step')) return element;
+    const fromClosest = element.closest ? element.closest('.wizard-step') : null;
+    if (fromClosest) return fromClosest;
+    if (element.querySelector) {
+      const nested = element.querySelector('.wizard-step');
+      if (nested) return nested;
     }
     return null;
   }
