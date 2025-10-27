@@ -1,8 +1,21 @@
 import { normalizeChannelKey } from '../utils/channel-alias.js';
 import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 import { getModuleVariantEntry } from '../data/module-requirements.js';
+import {
+    listPresets,
+    getPreset,
+    savePreset,
+    renamePreset,
+    deletePreset,
+    markPresetApplied,
+    generatePresetName,
+    getCurrentWizardStep,
+    applyPresetStateToWizard,
+    PRESET_STORAGE_OPTIONS
+} from '../utils/preset-storage.js';
 
 const moduleSummaryRefs = new Map();
+const presetCache = new Map();
 
 function createEmptyMobileSummaryRefs() {
     return {
@@ -785,6 +798,7 @@ let mobileSummaryMediaQuery = null;
 
         const saved = savePreset(presetName, configuration, {
             ...PRESET_STORAGE_OPTIONS,
+            state,
             currentStep
         });
 
@@ -869,7 +883,7 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        deletePreset(presetId);
+        deletePreset(presetId, PRESET_STORAGE_OPTIONS);
         renderPresetList();
     }
 
