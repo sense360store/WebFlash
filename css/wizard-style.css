@@ -1143,6 +1143,10 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     background: var(--color-surface-soft);
 }
 
+[data-module-summary][data-module-summary-variant="module"] .module-summary-card__firmware {
+    display: none;
+}
+
 .module-summary-card__firmware-header h4 {
     margin: 0;
     font-size: 16px;

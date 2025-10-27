@@ -1753,6 +1753,12 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         updateUrlFromConfiguration();
     }
 
+    const mobileSummaryRoot = document.querySelector('[data-mobile-summary] [data-module-summary]');
+    if (mobileSummaryRoot) {
+        const targetVariant = currentStep === 4 ? 'review' : 'module';
+        mobileSummaryRoot.dataset.moduleSummaryVariant = targetVariant;
+    }
+
     window.renderSidebar?.(currentStep);
 }
 
