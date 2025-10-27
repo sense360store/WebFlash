@@ -800,7 +800,12 @@
         </div>
 </div>
 
-    <!-- Load app.js once via a relative path so GitHub Pages serves it correctly -->
-    <script type="module" src="./app.js"></script>
+    <!-- Dynamically load app.js so it works from both / and /WebFlash/ -->
+    <script type="module">
+        const { pathname } = window.location;
+        const inRepoSubpath = pathname === '/WebFlash' || pathname.startsWith('/WebFlash/');
+        const scriptPath = inRepoSubpath ? '/WebFlash/app.js' : '/app.js';
+        import(scriptPath);
+    </script>
 </body>
 </html>
