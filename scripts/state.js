@@ -38,6 +38,35 @@ const allowedOptions = {
     fan: ['none', 'pwm', 'analog']
 };
 
+const MOUNT_LABELS = Object.freeze({
+    wall: 'Wall mount',
+    ceiling: 'Ceiling mount'
+});
+
+const POWER_LABELS = Object.freeze({
+    usb: 'USB power',
+    poe: 'PoE module',
+    pwr: 'PWR module'
+});
+
+const MODULE_VARIANT_LABELS = Object.freeze({
+    airiq: Object.freeze({
+        base: 'AirIQ Base module',
+        pro: 'AirIQ Pro module'
+    }),
+    presence: Object.freeze({
+        base: 'Presence Base module',
+        pro: 'Presence Pro module'
+    }),
+    comfort: Object.freeze({
+        base: 'Comfort Base module'
+    }),
+    fan: Object.freeze({
+        pwm: 'Fan PWM module',
+        analog: 'Fan Analog module'
+    })
+});
+
 const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan'];
 const MODULE_LABELS = {
     airiq: 'AirIQ',
@@ -2104,6 +2133,37 @@ function updateFirmwareControls() {
         }
         primaryHelper.classList.toggle('is-error', helperContext.isError);
         primaryHelper.classList.remove('is-warning');
+    }
+
+    const installAssumptions = document.querySelector('[data-install-assumptions]');
+    if (installAssumptions) {
+        const mountValue = (configuration.mounting || '').toString().trim().toLowerCase();
+        const powerValue = (configuration.power || '').toString().trim().toLowerCase();
+        const mountLabel = MOUNT_LABELS[mountValue];
+        const powerLabel = POWER_LABELS[powerValue];
+
+        const moduleSegments = MODULE_KEYS
+            .map(moduleKey => {
+                const variant = (configuration[moduleKey] || '').toString().trim().toLowerCase();
+                if (!variant || variant === 'none') {
+                    return '';
+                }
+                const moduleLabelMap = MODULE_VARIANT_LABELS[moduleKey];
+                return moduleLabelMap ? moduleLabelMap[variant] : '';
+            })
+            .filter(Boolean);
+
+        const shouldShowAssumptions = onReviewStep && Boolean(mountLabel && powerLabel);
+
+        if (shouldShowAssumptions) {
+            const parts = [mountLabel, powerLabel, ...moduleSegments];
+            installAssumptions.textContent = `This firmware expects: ${parts.join(', ')}.`;
+        } else {
+            installAssumptions.textContent = '';
+        }
+
+        installAssumptions.hidden = !shouldShowAssumptions;
+        installAssumptions.setAttribute('aria-hidden', shouldShowAssumptions ? 'false' : 'true');
     }
 }
 
