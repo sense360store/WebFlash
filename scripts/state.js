@@ -3055,7 +3055,12 @@ function attachInstallButtonListeners() {
         const activateButton = host.querySelector('button[slot="activate"]');
 
         if (activateButton && activateButton.dataset.installBound !== 'true') {
-            activateButton.addEventListener('click', () => {
+            activateButton.addEventListener('click', event => {
+                if (!window.confirm('Keep the device connected and powered during flashing. Continue?')) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    return;
+                }
                 const firmwareId = activateButton.dataset.firmwareId;
                 if (firmwareId) {
                     selectFirmwareById(firmwareId, { syncSelector: false });
