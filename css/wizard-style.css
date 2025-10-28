@@ -1718,6 +1718,13 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     text-align: right;
 }
 
+.primary-action-group .ready-helper,
+.firmware-actions .ready-helper {
+    align-self: stretch;
+    width: min(100%, 22rem);
+    white-space: normal;
+}
+
 .ready-helper.is-visible {
     opacity: 1;
     transform: translateY(0);
