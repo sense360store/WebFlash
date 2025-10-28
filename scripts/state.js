@@ -2287,11 +2287,22 @@ function updateFirmwareControls() {
         const moduleSegments = MODULE_KEYS
             .map(moduleKey => {
                 const variant = (configuration[moduleKey] || '').toString().trim().toLowerCase();
-                if (!variant || variant === 'none') {
+                if (!variant) {
                     return '';
                 }
-                const moduleLabelMap = MODULE_VARIANT_LABELS[moduleKey];
-                return moduleLabelMap ? moduleLabelMap[variant] : '';
+
+                const moduleLabelMap = MODULE_VARIANT_LABELS[moduleKey] || {};
+                const mappedLabel = moduleLabelMap[variant];
+                if (mappedLabel) {
+                    return mappedLabel;
+                }
+
+                const moduleLabel = MODULE_LABELS[moduleKey] || moduleKey;
+                if (variant === 'none') {
+                    return `${moduleLabel} None`;
+                }
+
+                return `${moduleLabel} ${variant.charAt(0).toUpperCase() + variant.slice(1)}`;
             })
             .filter(Boolean);
 
