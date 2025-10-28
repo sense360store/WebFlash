@@ -2302,25 +2302,30 @@ function updateFirmwareControls() {
                 const moduleLabelMap = MODULE_VARIANT_LABELS[moduleKey] || {};
                 const mappedLabel = moduleLabelMap[variant];
                 if (mappedLabel) {
-                    return mappedLabel;
+                    return escapeHtml(mappedLabel);
                 }
 
                 const moduleLabel = MODULE_LABELS[moduleKey] || moduleKey;
                 if (variant === 'none') {
-                    return `${moduleLabel} None`;
+                    const safeModuleLabel = escapeHtml(moduleLabel);
+                    const missingCopy = escapeHtml('not connected');
+                    return `${safeModuleLabel} <span class="install-assumptions__missing">${missingCopy}</span>`;
                 }
 
-                return `${moduleLabel} ${variant.charAt(0).toUpperCase() + variant.slice(1)}`;
+                const formattedVariant = `${variant.charAt(0).toUpperCase() + variant.slice(1)}`;
+                return escapeHtml(`${moduleLabel} ${formattedVariant}`);
             })
             .filter(Boolean);
 
         const shouldShowAssumptions = onReviewStep && Boolean(mountLabel && powerLabel);
 
         if (shouldShowAssumptions) {
-            const parts = [mountLabel, powerLabel, ...moduleSegments];
-            installAssumptions.textContent = `This firmware expects: ${parts.join(', ')}.`;
+            const safeMountLabel = mountLabel ? escapeHtml(mountLabel) : '';
+            const safePowerLabel = powerLabel ? escapeHtml(powerLabel) : '';
+            const parts = [safeMountLabel, safePowerLabel, ...moduleSegments].filter(Boolean);
+            installAssumptions.innerHTML = `This firmware expects: ${parts.join(', ')}.`;
         } else {
-            installAssumptions.textContent = '';
+            installAssumptions.innerHTML = '';
         }
 
         installAssumptions.hidden = !shouldShowAssumptions;
