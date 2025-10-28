@@ -97,4 +97,9 @@ function ensureInitialStep() {
 }
 
 document.addEventListener('click', handleWizardNavigation);
-document.addEventListener('DOMContentLoaded', ensureInitialStep, { once: true });
+
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    ensureInitialStep();
+} else {
+    document.addEventListener('DOMContentLoaded', ensureInitialStep, { once: true });
+}
