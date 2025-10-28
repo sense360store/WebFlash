@@ -2593,8 +2593,8 @@ async function verifyCurrentFirmwareIntegrity() {
 
     if (!firmware) {
         firmwareVerificationState = createEmptyVerificationState();
-        updateFirmwareControls();
         renderSelectedFirmware();
+        updateFirmwareControls();
         return;
     }
 
@@ -2606,8 +2606,8 @@ async function verifyCurrentFirmwareIntegrity() {
             parts: new Map(),
             firmwareId: firmware.firmwareId || null
         };
-        updateFirmwareControls();
         renderSelectedFirmware();
+        updateFirmwareControls();
         return;
     }
 
@@ -2627,8 +2627,8 @@ async function verifyCurrentFirmwareIntegrity() {
             parts: failureMap,
             firmwareId: firmware.firmwareId || null
         };
-        updateFirmwareControls();
         renderSelectedFirmware();
+        updateFirmwareControls();
         return;
     }
 
@@ -2646,8 +2646,8 @@ async function verifyCurrentFirmwareIntegrity() {
         parts: pendingMap,
         firmwareId: firmware.firmwareId || null
     };
-    updateFirmwareControls();
     renderSelectedFirmware();
+    updateFirmwareControls();
 
     try {
         const results = await Promise.all(parts.map(part => verifyFirmwarePart(part)));
@@ -2702,8 +2702,8 @@ async function verifyCurrentFirmwareIntegrity() {
         };
     } finally {
         if (token === firmwareVerificationToken) {
-            updateFirmwareControls();
             renderSelectedFirmware();
+            updateFirmwareControls();
         }
     }
 }
