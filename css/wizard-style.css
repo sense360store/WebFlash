@@ -1725,6 +1725,13 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     overflow-wrap: anywhere;
 }
 
+.firmware-info .ready-helper {
+    text-align: left;
+    margin-bottom: 8px;
+    width: 100%;
+    align-self: stretch;
+}
+
 .primary-action-group .ready-helper,
 .firmware-actions .ready-helper {
     align-self: stretch;

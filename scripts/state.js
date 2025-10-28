@@ -2931,6 +2931,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
         <div class="${cardClassName}" data-firmware-detail data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-channel="${escapeHtml(channelInfo.key)}">
             <div class="firmware-item">
                 <div class="firmware-info">
+                    <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     <div class="firmware-header">
                         <div class="firmware-name">${escapeHtml(firmwareName)}</div>
                         <span class="firmware-channel-tag is-${escapeHtml(channelInfo.key)}">${escapeHtml(channelInfo.label)}</span>
@@ -2946,7 +2947,6 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                             Install Firmware
                         </button>
                     </esp-web-install-button>
-                    <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                 </div>
             </div>
             ${partsSectionHtml}
