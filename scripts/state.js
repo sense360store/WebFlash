@@ -7,14 +7,22 @@ let currentStep = 1;
 const totalSteps = 4;
 
 function updateBottomDetailsVisibility(step) {
-    const bottomDetails = document.querySelector('[data-option-details-bottom]');
-    if (!bottomDetails) {
+    const summaryElements = [
+        document.querySelector('.module-step-grid__summary'),
+        document.querySelector('[data-option-details-bottom]')
+    ].filter(Boolean);
+
+    if (!summaryElements.length) {
         return;
     }
 
     const shouldShow = step === 4;
-    bottomDetails.hidden = !shouldShow;
-    bottomDetails.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+    const ariaHiddenValue = shouldShow ? 'false' : 'true';
+
+    summaryElements.forEach(element => {
+        element.hidden = !shouldShow;
+        element.setAttribute('aria-hidden', ariaHiddenValue);
+    });
 }
 
 function getTotalSteps() {
