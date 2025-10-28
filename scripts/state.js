@@ -1255,6 +1255,7 @@ function initializeWizard() {
 
     try {
         ensureSingleActiveWizardStep();
+        updateFirmwareControls();
     } catch (error) {
         console.error('Failed to finalize wizard initialization:', error);
     }
@@ -1854,6 +1855,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         currentStep = targetStep;
     }
 
+    updateFirmwareControls();
     updateBottomDetailsVisibility(currentStep);
 
     updateProgressSteps(targetStep);
