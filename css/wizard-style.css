@@ -1700,6 +1700,12 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     gap: 8px;
 }
 
+.firmware-actions {
+    flex: 0 1 22rem;
+    max-width: 22rem;
+    width: 100%;
+}
+
 .primary-action-controls {
     display: flex;
     align-items: center;
@@ -1716,6 +1722,7 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     pointer-events: none;
     min-height: 1em;
     text-align: right;
+    overflow-wrap: anywhere;
 }
 
 .primary-action-group .ready-helper,
@@ -2624,6 +2631,8 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     .firmware-actions {
         width: 100%;
         align-items: stretch;
+        max-width: none;
+        flex: 1 1 100%;
     }
 
 .primary-action-group .ready-helper,
