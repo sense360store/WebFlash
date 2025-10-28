@@ -1601,6 +1601,16 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     border-top: 1px solid var(--color-border);
 }
 
+.install-assumptions {
+    font-size: 14px;
+    color: var(--color-text-secondary, #475569);
+}
+
+.install-assumptions__missing {
+    color: var(--accent, #2563eb);
+    font-weight: 600;
+}
+
 /* Buttons */
 .btn {
     padding: 12px 24px;
