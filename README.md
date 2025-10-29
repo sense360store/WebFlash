@@ -16,8 +16,10 @@ WebFlash is a guided wizard for building the exact Sense360 firmware your hardwa
 
 - **Step-by-step configuration** — Mounting → Power → Modules → Review keeps choices focused and easy to follow.
 - **Context-aware firmware filtering** — Shows only builds that match the selected mount type, power module, and expansion modules.
+- **Rich firmware review** — Step 4 surfaces per-build release notes, hardware requirements, multi-part details, and links to documentation before you flash.
+- **Verification-gated flashing** — Firmware signatures are checked automatically; download/install buttons only unlock after the cryptographic verification succeeds and you acknowledge the safety reminders.
+- **Shareable support tools** — Copy firmware URLs, sharable configuration links, and the capability/status bar contents for fast troubleshooting with the support team.
 - **Integrated flashing options** — Download Firmware for offline installs or click **Install Firmware** in the embedded ESP Web Tools panel to flash in the browser.
-- **Pre-flash checklist** — Confirms the hub is connected, in bootloader mode, and ready before installing.
 - **Hosted on GitHub Pages** — Always available without extra software.
 
 > **Browser support:** Use a Chromium‑based browser (Chrome, Edge) on Windows, macOS, or Linux. (Firefox and Safari currently have limited Web Serial support.)
@@ -31,17 +33,16 @@ WebFlash is a guided wizard for building the exact Sense360 firmware your hardwa
    - **Mounting** — choose **Wall Mount** or **Ceiling Mount**.
    - **Power** — pick **USB Power**, **POE Module**, or **PWR Module**.
    - **Modules** — enable the **AirIQ Module**, **Presence Module**, **Comfort Module**, and **Fan Module** that match your hardware (options include **None**, **Base**, **Pro**, plus **PWM** or **Analog** for the Fan Module on wall mounts).
-3. Review the summary and Pre-Flash Checklist. When ready, use the recommended firmware card to either click **Download Firmware** for a `.bin` file or **Install Firmware** to launch the ESP Web Tools installer directly in the browser.
-4. Follow the installer prompts to finish flashing; the hub will reboot with your selected configuration.
+3. Review the tailored firmware card. Step 4 now displays the selected build’s release notes, hardware requirements, any multi-part install steps, and a safety checklist. Wait for the on-page verification to finish, check the acknowledgement box, and then choose **Download Firmware** or **Install Firmware** when they unlock.
+4. Optional shortcuts in Step 4 let you copy the firmware URL, share a pre-filled configuration link, or open related Home Assistant integrations. When you are ready, follow the ESP Web Tools prompts to finish flashing; the hub will reboot with your selected configuration.
 
 > **Tip:** If your device does not appear, try a different USB cable/port, or close other serial tools (Arduino, esptool, etc.) that may have the port open.
 
-### Rescue installer
+### Support utilities in the review step
 
-- Step 4 now includes a dedicated **Rescue Install** card that stays visible regardless of the configuration you pick.
-- Use the rescue build when the normal firmware refuses to boot, crashes midway through flashing, or the hub is stuck in download mode.
-- The rescue image is a known-good bootloader that brings the device back online so you can immediately re-run the standard firmware installer.
-- When you trigger the rescue installer, the support bundle records the attempt (including timestamps and state transitions) to help engineering diagnose stubborn failures.
+- The capability/status bar shows device detection, browser support, and configuration context. Use the **Copy Support Info** shortcut to send these details to QA or engineering.
+- **Copy sharable link** encodes your current mount, power, and module selections so others can reproduce the same firmware recommendation instantly.
+- A **Home Assistant integrations** shortcut provides quick access to downstream setup resources after a successful flash.
 
 ---
 
