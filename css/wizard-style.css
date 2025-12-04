@@ -3156,3 +3156,115 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 .customize-callout__text a:focus-visible {
     text-decoration: underline;
 }
+
+/* Path Selector - Unified Landing */
+.path-selector {
+    margin-bottom: 24px;
+}
+
+.path-selector__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.path-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    position: relative;
+}
+
+.path-card:hover {
+    border-color: var(--brand-green-border);
+    box-shadow: 0 4px 12px rgba(var(--brand-green-rgb), 0.12);
+    transform: translateY(-2px);
+}
+
+.path-card--active {
+    border-color: var(--brand-green-contrast);
+    background: var(--brand-green-selection-surface-subtle);
+}
+
+.path-card__icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--brand-green-tint);
+    border-radius: 10px;
+    color: var(--brand-green-contrast);
+}
+
+.path-card[data-path="custom"] .path-card__icon {
+    background: var(--color-surface-muted);
+    color: var(--color-text-secondary);
+}
+
+.path-card__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.path-card__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 4px;
+}
+
+.path-card__description {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.path-card__badge {
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 4px 10px;
+    background: var(--brand-green-contrast);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+}
+
+.path-card__external {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    align-self: center;
+}
+
+@media (max-width: 600px) {
+    .path-selector__options {
+        grid-template-columns: 1fr;
+    }
+
+    .path-card {
+        padding: 16px;
+    }
+
+    .path-card__icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .path-card__icon svg {
+        width: 24px;
+        height: 24px;
+    }
+}
