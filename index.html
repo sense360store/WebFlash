@@ -26,6 +26,39 @@
             </div>
         </header>
 
+        <nav class="path-selector" aria-label="Choose your firmware path">
+            <div class="path-selector__options">
+                <a href="#step-1" class="path-card path-card--active" data-path="prebuilt">
+                    <div class="path-card__icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                        </svg>
+                    </div>
+                    <div class="path-card__content">
+                        <h3 class="path-card__title">Flash Pre-built Firmware</h3>
+                        <p class="path-card__description">Quick setup with our tested configurations. No coding required.</p>
+                    </div>
+                    <span class="path-card__badge">Recommended</span>
+                </a>
+                <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer" class="path-card" data-path="custom">
+                    <div class="path-card__icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+                        </svg>
+                    </div>
+                    <div class="path-card__content">
+                        <h3 class="path-card__title">Build Custom Firmware</h3>
+                        <p class="path-card__description">Full control with ESPHome YAML configs. For advanced users.</p>
+                    </div>
+                    <span class="path-card__external">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+                        </svg>
+                    </span>
+                </a>
+            </div>
+        </nav>
+
         <div class="wizard-container">
             <!-- Sidebar is injected by scripts/layout/init-splitview.js via the outer .wizard-shell -->
             <div class="wizard-layout" data-layout="single-column">
@@ -707,6 +740,12 @@
                     <a href="https://esphome.io/guides/getting_started_hassio/#connecting-your-device-to-home-assistant" target="_blank" rel="noopener noreferrer">ESPHome adoption steps</a>
                     to add it manually.
                 </p>
+                <aside class="customize-callout">
+                    <p class="customize-callout__text">
+                        <strong>Want full customization?</strong> Build your own firmware with our
+                        <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer">ESPHome configuration files</a>.
+                    </p>
+                </aside>
                     </div>
                 </div>
 

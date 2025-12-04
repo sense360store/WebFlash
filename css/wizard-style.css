@@ -1008,6 +1008,25 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: color-mix(in srgb, var(--danger) 85%, #000);
 }
 
+/* Progressive visual feedback for cards with active conflicts */
+.module-card:has(.module-card__badge.is-active) .module-card__inner {
+    border-color: color-mix(in srgb, var(--warning) 50%, var(--color-border));
+    background: color-mix(in srgb, var(--warning) 8%, var(--color-surface));
+}
+
+.module-card:has(.module-card__badge.is-active) .module-card__title {
+    color: var(--warning-strong);
+}
+
+.module-card:has(.module-card__badge.is-active)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--warning) 5%, transparent);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
 .option-card.is-unavailable .module-card__inner {
     border-style: dashed;
     opacity: 0.6;
@@ -3104,5 +3123,148 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     .quick-start-presets__buttons .btn-preset {
         width: 100%;
         text-align: center;
+    }
+}
+
+/* Customize Callout - Link to esphome-public */
+.customize-callout {
+    margin-top: 24px;
+    padding: 14px 18px;
+    background: var(--color-surface-alt, #f8f9fa);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.customize-callout__text {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.customize-callout__text strong {
+    color: var(--color-text-primary);
+}
+
+.customize-callout__text a {
+    color: var(--brand-green-contrast);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.customize-callout__text a:hover,
+.customize-callout__text a:focus-visible {
+    text-decoration: underline;
+}
+
+/* Path Selector - Unified Landing */
+.path-selector {
+    margin-bottom: 24px;
+}
+
+.path-selector__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.path-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    position: relative;
+}
+
+.path-card:hover {
+    border-color: var(--brand-green-border);
+    box-shadow: 0 4px 12px rgba(var(--brand-green-rgb), 0.12);
+    transform: translateY(-2px);
+}
+
+.path-card--active {
+    border-color: var(--brand-green-contrast);
+    background: var(--brand-green-selection-surface-subtle);
+}
+
+.path-card__icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: var(--brand-green-tint);
+    border-radius: 10px;
+    color: var(--brand-green-contrast);
+}
+
+.path-card[data-path="custom"] .path-card__icon {
+    background: var(--color-surface-muted);
+    color: var(--color-text-secondary);
+}
+
+.path-card__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.path-card__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 4px;
+}
+
+.path-card__description {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.path-card__badge {
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 4px 10px;
+    background: var(--brand-green-contrast);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+}
+
+.path-card__external {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    align-self: center;
+}
+
+@media (max-width: 600px) {
+    .path-selector__options {
+        grid-template-columns: 1fr;
+    }
+
+    .path-card {
+        padding: 16px;
+    }
+
+    .path-card__icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .path-card__icon svg {
+        width: 24px;
+        height: 24px;
     }
 }
