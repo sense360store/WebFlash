@@ -1008,6 +1008,25 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: color-mix(in srgb, var(--danger) 85%, #000);
 }
 
+/* Progressive visual feedback for cards with active conflicts */
+.module-card:has(.module-card__badge.is-active) .module-card__inner {
+    border-color: color-mix(in srgb, var(--warning) 50%, var(--color-border));
+    background: color-mix(in srgb, var(--warning) 8%, var(--color-surface));
+}
+
+.module-card:has(.module-card__badge.is-active) .module-card__title {
+    color: var(--warning-strong);
+}
+
+.module-card:has(.module-card__badge.is-active)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--warning) 5%, transparent);
+    border-radius: inherit;
+    pointer-events: none;
+}
+
 .option-card.is-unavailable .module-card__inner {
     border-style: dashed;
     opacity: 0.6;
@@ -3105,4 +3124,35 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
         width: 100%;
         text-align: center;
     }
+}
+
+/* Customize Callout - Link to esphome-public */
+.customize-callout {
+    margin-top: 24px;
+    padding: 14px 18px;
+    background: var(--color-surface-alt, #f8f9fa);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.customize-callout__text {
+    margin: 0;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.customize-callout__text strong {
+    color: var(--color-text-primary);
+}
+
+.customize-callout__text a {
+    color: var(--brand-green-contrast);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.customize-callout__text a:hover,
+.customize-callout__text a:focus-visible {
+    text-decoration: underline;
 }
