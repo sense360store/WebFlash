@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
     <link rel="stylesheet" href="./css/layout.css">
-    <script type="module" src="https://unpkg.com/esp-web-tools@9/dist/web/install-button.js"></script>
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
     <div class="container">
@@ -53,13 +53,32 @@
                     <!-- Step 1: Mounting Type -->
                     <div class="wizard-step step" id="step-1">
                 <h2>Step 1: Where is this unit being installed?</h2>
-                <div class="recommended-bundle-callout" data-recommended-bundle>
-                    <button class="btn btn-secondary" type="button" data-recommended-bundle-button>
-                        Recommended bundle
-                    </button>
-                    <p class="recommended-bundle-callout__description" data-recommended-bundle-description>
-                        Start with our most popular setup: wall mount hardware with USB power plus AirIQ Base and Presence Base modules for balanced air quality and occupancy insights.
-                    </p>
+
+                <aside class="safety-notice" aria-label="Important safety information">
+                    <div class="safety-notice__icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="safety-notice__content">
+                        <strong>Before you begin:</strong> Use desktop Chrome or Edge. During flashing, <strong>do not disconnect power</strong> and keep this browser tab open.
+                    </div>
+                </aside>
+
+                <div class="quick-start-presets" data-quick-start-presets>
+                    <p class="quick-start-presets__label">Quick start:</p>
+                    <div class="quick-start-presets__buttons">
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"wall","power":"usb","airiq":"base","presence":"base","comfort":"none","fan":"none"}'>
+                            Popular: Wall + AirIQ &amp; Presence
+                        </button>
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="ceiling" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"base","presence":"none","comfort":"none","fan":"none"}'>
+                            Ceiling + POE
+                        </button>
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"wall","power":"usb","airiq":"none","presence":"none","comfort":"none","fan":"none"}'>
+                            Minimal: Wall + USB only
+                        </button>
+                    </div>
+                    <p class="quick-start-presets__hint">Or configure step-by-step below</p>
                 </div>
                 <div class="option-grid">
                     <label class="option-card">
