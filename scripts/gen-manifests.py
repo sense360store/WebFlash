@@ -613,6 +613,7 @@ def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
         "version": determine_manifest_version(artifacts),
         "home_assistant_domain": "esphome",
         "new_install_prompt_erase": True,
+        "new_install_improv_wait_time": 15,
         "builds": [artifact.manifest_entry() for artifact in artifacts],
     }
 
@@ -651,6 +652,7 @@ def write_individual_manifests(
             "version": artifact.metadata.version,
             "home_assistant_domain": "esphome",
             "new_install_prompt_erase": True,
+            "new_install_improv_wait_time": 15,
             "builds": [
                 {
                     "chipFamily": artifact.chip_family,

@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "home_assistant_domain": "esphome",
   "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 15,
   "builds": [
     {
       "device_type": "Core Module",
@@ -19,7 +20,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -51,7 +52,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -83,7 +84,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -115,7 +116,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -147,7 +148,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -179,7 +180,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -211,7 +212,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -243,7 +244,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -275,7 +276,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -307,7 +308,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -341,7 +342,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -370,17 +371,17 @@
         {
           "path": "firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin",
           "offset": 0,
-          "md5": "4c701b6c02ab3bbf922e4f7f4a041b43",
-          "sha256": "48d1239e199fe886f4046708c42059197f8227f23c92cb621a4f6892b8d27b0d",
-          "signature": "BNPfYyIy/W9uePK8VpUB84x9iI9EdLexJ+KiZ4aWDAg="
+          "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+          "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+          "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM="
         }
       ],
-      "build_date": "2025-10-22T21:22:45.840767+00:00",
-      "file_size": 31,
+      "build_date": "2025-12-04T19:56:15+00:00",
+      "file_size": 524288,
       "improv": false,
-      "md5": "4c701b6c02ab3bbf922e4f7f4a041b43",
-      "sha256": "48d1239e199fe886f4046708c42059197f8227f23c92cb621a4f6892b8d27b0d",
-      "signature": "BNPfYyIy/W9uePK8VpUB84x9iI9EdLexJ+KiZ4aWDAg=",
+      "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+      "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+      "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
       "features": [
         "rescue"
       ],
@@ -407,7 +408,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -439,7 +440,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -471,7 +472,7 @@
           "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.891220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 1032016,
       "improv": true,
       "md5": "e02ba33bea0997b543ddac28af33fc2f",
@@ -501,7 +502,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.879220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -531,7 +532,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -561,7 +562,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
+      "build_date": "2025-12-04T19:56:15+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -588,17 +589,17 @@
         {
           "path": "firmware/configurations/Sense360-Wall-USB-AirIQPro-v1.0.0-beta.bin",
           "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+          "md5": "e02ba33bea0997b543ddac28af33fc2f",
+          "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
+          "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2025-10-22T19:14:49.875220+00:00",
-      "file_size": 18,
+      "build_date": "2025-12-04T19:56:15+00:00",
+      "file_size": 1032016,
       "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "md5": "e02ba33bea0997b543ddac28af33fc2f",
+      "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
+      "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE=",
       "features": [],
       "hardware_requirements": [],
       "known_issues": [],
