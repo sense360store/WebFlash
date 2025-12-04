@@ -245,3 +245,46 @@ header {
 :root[data-density="compact"] .wizard-container {
     padding: 36px;
 }
+
+/* ESP Web Tools button theming
+ * Uses official CSS variables from https://esphome.github.io/esp-web-tools/
+ */
+esp-web-install-button {
+    --esp-tools-button-color: var(--brand-green-contrast, #16a34a);
+    --esp-tools-button-text-color: #ffffff;
+    --esp-tools-button-border-radius: 0.75rem;
+}
+
+esp-web-install-button::part(button) {
+    font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem 1.5rem;
+    min-height: 2.75rem;
+    box-shadow: 0 10px 24px rgba(22, 163, 74, 0.24);
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+esp-web-install-button::part(button):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(22, 163, 74, 0.32);
+}
+
+esp-web-install-button::part(button):active {
+    transform: translateY(0);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
+}
+
+esp-web-install-button[disabled]::part(button),
+esp-web-install-button::part(button):disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    esp-web-install-button::part(button) {
+        transition: none;
+    }
+}
