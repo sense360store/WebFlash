@@ -31,26 +31,102 @@ function normaliseStateShape(state) {
     };
 }
 
-function isRecommendedSelection(state) {
+function isMatchingPreset(state, preset) {
     const current = normaliseStateShape(state);
-    return Object.entries(RECOMMENDED_STATE).every(([key, value]) => current[key] === value);
+    return Object.entries(preset).every(([key, value]) => current[key] === value);
 }
 
-function applyRecommendedSelection() {
+function isRecommendedSelection(state) {
+    return isMatchingPreset(state, RECOMMENDED_STATE);
+}
+
+function applyPreset(preset) {
     try {
-        setState(RECOMMENDED_STATE);
+        setState(preset);
         const reachableStep = getMaxReachableStep();
         if (Number.isFinite(reachableStep) && reachableStep >= 4) {
             setStep(4);
         }
     } catch (error) {
-        console.error('[recommended-bundle] Failed to apply recommended configuration', error);
+        console.error('[recommended-bundle] Failed to apply preset configuration', error);
+    }
+}
+
+function applyRecommendedSelection() {
+    applyPreset(RECOMMENDED_STATE);
+}
+
+function initialiseQuickStartPresets() {
+    const container = document.querySelector('[data-quick-start-presets]');
+    if (!container) {
+        return;
+    }
+
+    const presetButtons = container.querySelectorAll('[data-preset-config]');
+    if (!presetButtons.length) {
+        return;
+    }
+
+    const updateButtonStates = (state) => {
+        if (!state) return;
+
+        presetButtons.forEach((button) => {
+            try {
+                const configStr = button.dataset.presetConfig;
+                if (!configStr) return;
+
+                const preset = JSON.parse(configStr);
+                const isActive = isMatchingPreset(state, preset);
+                button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                button.classList.toggle('is-active', isActive);
+            } catch (err) {
+                console.warn('[quick-start] Failed to parse preset config', err);
+            }
+        });
+    };
+
+    presetButtons.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            try {
+                const configStr = button.dataset.presetConfig;
+                if (!configStr) return;
+
+                const preset = JSON.parse(configStr);
+                applyPreset(preset);
+            } catch (err) {
+                console.error('[quick-start] Failed to apply preset', err);
+            }
+        });
+        button.setAttribute('aria-pressed', 'false');
+    });
+
+    const summary = window.wizardStateSummary || null;
+    if (summary && typeof summary.onStateChange === 'function') {
+        summary.onStateChange(updateButtonStates);
+        try {
+            if (typeof summary.getState === 'function') {
+                updateButtonStates(summary.getState());
+                return;
+            }
+        } catch (error) {
+            console.warn('[quick-start] Unable to read initial state from summary', error);
+        }
+    }
+
+    try {
+        updateButtonStates(getWizardState());
+    } catch (error) {
+        console.warn('[quick-start] Unable to read initial state', error);
     }
 }
 
 function initialiseRecommendedBundleCallout() {
+    // Legacy support for old markup
     const callout = document.querySelector('[data-recommended-bundle]');
     if (!callout) {
+        // Try new quick-start presets instead
+        initialiseQuickStartPresets();
         return;
     }
 
