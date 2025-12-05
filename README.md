@@ -1,131 +1,156 @@
-# WebFlash — Sense360 ESP32 Firmware Installer
+# WebFlash - Sense360 ESP32 Firmware Installer
 
-A simple, browser‑based way to flash Sense360 ESP32 firmware using **ESP Web Tools**. No drivers or local toolchains required for most users.
+Browser-based firmware installation for Sense360 ESP32 devices using ESP Web Tools.
 
-**Live site:** https://sense360store.github.io/WebFlash/
+**Live Site:** https://sense360store.github.io/WebFlash/
 
----
+## Overview
 
-## What is WebFlash?
+WebFlash provides a step-by-step wizard for configuring and flashing Sense360 firmware to ESP32 devices directly from your browser. No drivers or local toolchains required.
 
-WebFlash is a guided wizard for building the exact Sense360 firmware your hardware needs. Start by picking how the hub will be mounted, choose the power option, toggle the expansion modules you have installed, and then review a tailored firmware recommendation. The final step provides an instant download plus an embedded ESP Web Tools installer so you can flash the hub from the browser.
+## Requirements
 
----
+- Chromium-based browser (Chrome, Edge, Opera)
+- Windows, macOS, or Linux
+- USB data cable
+- Sense360 ESP32 device
 
-## Key features
+Note: Firefox and Safari have limited Web Serial support and may not work.
 
-- **Step-by-step configuration** — Mounting → Power → Modules → Review keeps choices focused and easy to follow.
-- **Context-aware firmware filtering** — Shows only builds that match the selected mount type, power module, and expansion modules.
-- **Rich firmware review** — Step 4 surfaces per-build release notes, hardware requirements, multi-part details, and links to documentation before you flash.
-- **Verification-gated flashing** — Firmware signatures are checked automatically; download/install buttons only unlock after the cryptographic verification succeeds and you acknowledge the safety reminders.
-- **Shareable support tools** — Copy firmware URLs, sharable configuration links, and the capability/status bar contents for fast troubleshooting with the support team.
-- **Integrated flashing options** — Download Firmware for offline installs or click **Install Firmware** in the embedded ESP Web Tools panel to flash in the browser.
-- **Hosted on GitHub Pages** — Always available without extra software.
+## Quick Start
 
-> **Browser support:** Use a Chromium‑based browser (Chrome, Edge) on Windows, macOS, or Linux. (Firefox and Safari currently have limited Web Serial support.)
+1. Navigate to https://sense360store.github.io/WebFlash/
+2. Configure your device:
+   - Select mounting type (Wall or Ceiling)
+   - Choose power source (USB, POE, or PWR Module)
+   - Enable required modules (AirIQ, Presence, Comfort, Fan)
+3. Review the recommended firmware configuration
+4. Wait for firmware verification to complete
+5. Acknowledge safety warnings
+6. Click "Install Firmware" to flash via browser
+7. Follow ESP Web Tools prompts to complete installation
 
----
+## Configuration Options
 
-## Quick start (for users)
+### Mounting Type
+- **Wall Mount**: Supports all power and module combinations
+- **Ceiling Mount**: Excludes fan module options
 
-1. Go to **WebFlash**: https://sense360store.github.io/WebFlash/
-2. Step through the wizard:
-   - **Mounting** — choose **Wall Mount** or **Ceiling Mount**.
-   - **Power** — pick **USB Power**, **POE Module**, or **PWR Module**.
-   - **Modules** — enable the **AirIQ Module**, **Presence Module**, **Comfort Module**, and **Fan Module** that match your hardware (options include **None**, **Base**, **Pro**, plus **PWM** or **Analog** for the Fan Module on wall mounts).
-3. Review the tailored firmware card. Step 4 now displays the selected build’s release notes, hardware requirements, any multi-part install steps, and a safety checklist. Wait for the on-page verification to finish, check the acknowledgement box, and then choose **Download Firmware** or **Install Firmware** when they unlock.
-4. Optional shortcuts in Step 4 let you copy the firmware URL, share a pre-filled configuration link, or open related Home Assistant integrations. When you are ready, follow the ESP Web Tools prompts to finish flashing; the hub will reboot with your selected configuration.
+### Power Source
+- **USB Power**: USB-C connection
+- **POE Module**: Power over Ethernet backplate
+- **PWR Module**: External power supply module
 
-> **Tip:** If your device does not appear, try a different USB cable/port, or close other serial tools (Arduino, esptool, etc.) that may have the port open.
+### Expansion Modules
+- **AirIQ Module**: None, Base, Pro
+- **Presence Module**: None, Base, Pro
+- **Comfort Module**: None, Base
+- **Fan Module**: None, PWM, Analog (Wall mount only)
 
-### Support utilities in the review step
+### Release Channels
+- **Stable**: Production-ready firmware
+- **Preview**: Early access to upcoming features
+- **Beta**: Testing releases (not recommended for production)
 
-- The capability/status bar shows device detection, browser support, and configuration context. Use the **Copy Support Info** shortcut to send these details to QA or engineering.
-- **Copy sharable link** encodes your current mount, power, and module selections so others can reproduce the same firmware recommendation instantly.
-- A **Home Assistant integrations** shortcut provides quick access to downstream setup resources after a successful flash.
+## Installation Process
 
----
+1. **Connect Device**: Plug device into computer via USB
+2. **Select Configuration**: Choose mounting, power, and modules
+3. **Review Firmware**: Verify selected firmware matches your hardware
+4. **Verification**: Wait for cryptographic signature check
+5. **Acknowledge**: Check safety warning acknowledgment
+6. **Flash**: Click "Install Firmware" button
+7. **Device Selection**: Choose correct serial port in browser dialog
+8. **Wait**: Installation takes 1-2 minutes
+9. **Complete**: Device reboots automatically when finished
 
-## Ideas to improve the flashing experience
+## Wi-Fi Configuration
 
-The current workflow gets the job done, but we can make it even more welcoming for first-time installers. A few ideas that balance functionality with visual polish:
+After flashing, the device will prompt for Wi-Fi credentials via Improv Serial protocol:
 
-- **Guided deployment checklist** – add a collapsible sidebar or modal that walks through prerequisites (USB cable, browser support, power). Each item could animate to a “checked” state as the user completes it.
-- **Contextual highlight cues** – when the page prompts the user to click a button (e.g., *Download Firmware* or *Install Firmware*), briefly pulse or glow the button so it stands out on the screen.
-- **Progress timeline** – replace the plain text status messages with a horizontal timeline that fills step by step (detect device → erase → flash → verify → finish). Pair it with iconography to make successes/failures obvious.
-- **Firmware cards with quick info** – show each firmware entry as a card with color-coded channel tags (stable = green, preview = amber, beta = violet) and hover animations that reveal checksum, release date, or changelog link.
-- **Success animation & next steps** – celebrate a successful flash with a short checkmark animation and a clearly highlighted box that lists the next actions (e.g., “Press reset,” “Open provisioning app”).
-- **Inline troubleshooting callouts** – surface the most common issues right beneath the flashing controls using accordion callouts so help is one click away.
-- **Theming for dark/light modes** – allow the user to toggle between themes so the long flashing sessions are easier on the eyes.
+1. Keep browser window open after flashing
+2. Enter Wi-Fi SSID when prompted
+3. Enter Wi-Fi password
+4. Device connects automatically
 
-Implementing even a few of these ideas should reduce friction, build confidence, and make the tool feel more polished.
+No manual hotspot connection required.
 
----
+## Safety Information
 
-## Supported devices
+- Only flash firmware from trusted sources
+- Ensure correct firmware configuration matches your hardware
+- Do not disconnect device during flashing
+- Wi-Fi credentials are sent directly to device (not uploaded)
+- All operations occur in your browser
 
-The WebFlash wizard focuses on the Sense360 modular platform. Firmware is organised around the options surfaced in the configurator:
+## Support Features
 
-- **Mounting** – Wall and Ceiling installations are supported. Ceiling builds exclude the fan module, matching the behaviour in the wizard.
-- **Power** – Select from USB power, a POE backplate, or the external PWR supply module.
-- **Modules** – AirIQ (None/Base/Pro), Presence (None/Base/Pro), Comfort (None/Base), and Fan (None/PWM/Analog, wall-only).
+The Review step includes utilities for troubleshooting:
 
-Each firmware build is grouped by a configuration string that concatenates the selected options (for example, `Wall-USB-AirIQPro` becomes Mount-Power-Modules). Current entries in `manifest.json` include `Ceiling-POE-AirIQBase`, `Ceiling-PWR-AirIQPro-Presence-Comfort`, `Wall-POE-AirIQBase`, and `Wall-USB`.
+- **Copy Support Info**: Captures device detection, browser support, and configuration
+- **Copy Sharable Link**: Creates URL with your current configuration
+- **Copy Firmware URL**: Direct link to firmware file
 
-Availability depends on what firmware we publish. Always prefer **stable** builds for production devices.
-
----
-
-## Safety & privacy
-
-- Only flash firmware you trust.  
-- WebFlash runs fully in your browser; it does **not** upload device secrets.  
-- Your Wi‑Fi credentials are sent directly to the device using the Improv workflow.
-
----
+These can be shared with support teams for faster issue resolution.
 
 ## Troubleshooting
 
-- **“Failed to fetch” during flashing**  
-  Refresh the page and try again. If the issue persists, use Chrome/Edge and ensure you’re on the official site:  
-  https://sense360store.github.io/WebFlash/
+### Device Not Detected
 
-- **No device ports listed**  
-  Use a data‑capable USB cable, try a different port, and close other serial tools. On Linux, you may need to add your user to the `dialout` group and re‑login.
+- Use a data-capable USB cable (not charge-only)
+- Try different USB port
+- Close other programs using serial ports (Arduino IDE, PlatformIO, etc.)
+- On Linux: Add user to `dialout` group and re-login
 
-- **CORS or manifest errors**  
-  Clear cache (hard reload) and try again. If it continues, open an issue with details (device, OS, browser, steps).
+### Failed to Fetch Error
 
----
+- Refresh page and try again
+- Clear browser cache (Ctrl+Shift+R / Cmd+Shift+R)
+- Verify using official site URL
+- Check internet connection
 
-## For maintainers (project team)
+### Installation Fails
 
-> These notes are for engineers publishing new firmware to the site.
+- Ensure device is in bootloader mode (press BOOT button if available)
+- Try different USB cable or port
+- Restart browser
+- Check USB cable supports data transfer
 
-### Automated publishing
+### Wrong Firmware Installed
 
-The WebFlash site rebuilds and deploys itself whenever fresh firmware is introduced. Two entry points feed the pipeline:
+- Device will not function correctly with wrong configuration
+- Flash correct firmware matching your hardware
+- Contact support if unsure of configuration
 
-1. **GitHub Releases** – Publish a release and attach `.bin` files. Pre-releases map to the **preview** channel, while the latest non-pre-release release becomes **stable**. The workflow downloads the assets with `scripts/sync-from-releases.py` and normalises their filenames.
-2. **Direct commits** – Push `.bin` files anywhere under `firmware/`. `scripts/gen-manifests.py` enforces the naming convention, regenerates `manifest.json`, and writes the `firmware-N.json` files that ESP Web Tools consumes.
-3. **Deployment** – After manifests are rebuilt, the workflow uploads the repository to GitHub Pages with the correct CORS headers.
+For additional help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
-#### Add a new device or firmware build
+## Documentation
 
-- **Using Releases**
-  1. Build your firmware and name each binary `Sense360-<Model>-vX.Y.Z-<channel>.bin`.
-  2. Draft a GitHub Release and upload the binaries as assets. Mark the release as pre-release for beta/dev builds.
-  3. Publish the release — the workflow mirrors the assets into `firmware/`, regenerates manifests, and deploys the site.
+- **README.md** (this file): User guide for flashing devices
+- **DEVELOPER.md**: Maintainer guide for publishing firmware
+- **TROUBLESHOOTING.md**: Detailed troubleshooting steps
 
-- **Using direct commits**
-  1. Copy the binary into `firmware/`, following the directory and filename convention above.
-  2. Run `python3 scripts/gen-manifests.py --summary` locally to preview naming, checksums, and generated manifests.
-  3. Commit the updated firmware plus regenerated JSON files. Pushing to `main` triggers an automatic deploy.
+## Project Structure
 
-Need a dry run? Append `--dry-run` to `scripts/gen-manifests.py` or `scripts/sync-from-releases.py` to inspect actions without writing files.
+```
+WebFlash/
+├── index.html              # Web interface
+├── app.js                  # Application logic
+├── ui.js                   # UI components
+├── manifest.json           # Firmware catalog (auto-generated)
+├── firmware-*.json         # Individual firmware manifests (auto-generated)
+├── firmware/               # Firmware binaries and configurations
+├── scripts/                # Automation and deployment scripts
+└── css/                    # Stylesheets
+```
 
-#### Support share links
+## License
 
-Support and QA often rely on the **Copy sharable link** button in the sidebar to capture the current firmware recommendation. Links encode the wizard selections (`mount`, `power`, `airiq`, `presence`, `comfort`, `fan`) alongside the requested `channel`.
+This project is for Sense360 device owners and authorized distributors.
 
-These query parameters also work when composing troubleshooting links manually.
+## Support
+
+For issues or questions:
+- Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- Review firmware configuration requirements
+- Contact Sense360 support with device details and configuration
