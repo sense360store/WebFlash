@@ -5,6 +5,16 @@
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
   Access-Control-Allow-Headers: Content-Type, Authorization
+  # Content Security Policy - allows ESP Web Tools and Google Fonts
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob:; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  # Prevent clickjacking
+  X-Frame-Options: DENY
+  # Prevent MIME type sniffing
+  X-Content-Type-Options: nosniff
+  # Enable XSS filter in older browsers
+  X-XSS-Protection: 1; mode=block
+  # Referrer policy for privacy
+  Referrer-Policy: strict-origin-when-cross-origin
 
 # Specific headers for manifest files
 *.json
