@@ -69,12 +69,91 @@ jobs:
       - name: Assert required configs present
         run: |
           set -euo pipefail
-          for k in "Ceiling-POE-AirIQBase" "Ceiling-POE-AirIQPro"; do
+          # =============================================================
+          # Test Configuration Matrix
+          # =============================================================
+          # Valid combinations based on hardware ruleset:
+          #   Core: CORE-C, CORE-V-C (Ceiling) | CORE-W, CORE-V-W (Wall)
+          #   Power: USB, POE, PWR
+          #   Modules: AirIQ, Bathroom (Ceiling only), Comfort, Presence, Fan
+          #   Constraint: AirIQ and Bathroom cannot be combined
+          # =============================================================
+
+          REQUIRED_CONFIGS=(
+            # ---------------------------------------------------------
+            # CEILING (non-voice) - All power types + module variations
+            # ---------------------------------------------------------
+            "Ceiling-USB"                              # Core-C + USB (no modules)
+            "Ceiling-USB-AirIQ"                        # Core-C + USB + AirIQ
+            "Ceiling-POE-AirIQBase"                    # Core-C + POE + AirIQ (base)
+            "Ceiling-POE-AirIQPro"                     # Core-C + POE + AirIQ (pro)
+            "Ceiling-POE-Bathroom"                     # Core-C + POE + Bathroom
+            "Ceiling-PWR-AirIQ"                        # Core-C + PWR + AirIQ
+            "Ceiling-PWR-AirIQ-Comfort"                # Core-C + PWR + AirIQ + Comfort
+            "Ceiling-PWR-AirIQ-Presence"               # Core-C + PWR + AirIQ + Presence
+            "Ceiling-PWR-AirIQ-Comfort-Presence"       # Core-C + PWR + AirIQ + Comfort + Presence
+            "Ceiling-PWR-AirIQ-Comfort-Presence-Fan"   # Core-C + PWR + full module stack
+            "Ceiling-PWR-Bathroom-Comfort-Presence"    # Core-C + PWR + Bathroom + modules
+            "Ceiling-POE-Comfort"                      # Core-C + POE + Comfort only
+            "Ceiling-POE-Presence"                     # Core-C + POE + Presence only
+            "Ceiling-USB-Fan"                          # Core-C + USB + Fan only
+
+            # ---------------------------------------------------------
+            # CEILING (voice) - Voice variants with LED+MIC
+            # ---------------------------------------------------------
+            "Ceiling-Voice-USB"                        # Core-V-C + USB
+            "Ceiling-Voice-POE-AirIQ"                  # Core-V-C + POE + AirIQ
+            "Ceiling-Voice-PWR-AirIQ-Comfort-Presence" # Core-V-C + PWR + full stack
+
+            # ---------------------------------------------------------
+            # WALL/DESK (non-voice) - All power types + module variations
+            # ---------------------------------------------------------
+            "Wall-USB"                                 # Core-W + USB (no modules)
+            "Wall-USB-AirIQ"                           # Core-W + USB + AirIQ
+            "Wall-USB-AirIQPro"                        # Core-W + USB + AirIQ (pro)
+            "Wall-POE-AirIQBase"                       # Core-W + POE + AirIQ (base)
+            "Wall-POE-AirIQ"                           # Core-W + POE + AirIQ
+            "Wall-PWR"                                 # Core-W + PWR (no modules)
+            "Wall-PWR-AirIQ"                           # Core-W + PWR + AirIQ
+            "Wall-PWR-AirIQ-Comfort"                   # Core-W + PWR + AirIQ + Comfort
+            "Wall-PWR-AirIQ-Presence"                  # Core-W + PWR + AirIQ + Presence
+            "Wall-PWR-AirIQ-Comfort-Presence"          # Core-W + PWR + AirIQ + Comfort + Presence
+            "Wall-PWR-AirIQ-Comfort-Presence-Fan"      # Core-W + PWR + full module stack
+            "Wall-POE-Comfort"                         # Core-W + POE + Comfort only
+            "Wall-POE-Presence"                        # Core-W + POE + Presence only
+            "Wall-USB-Fan"                             # Core-W + USB + Fan only
+
+            # ---------------------------------------------------------
+            # WALL/DESK (voice) - Voice variants with LED+MIC
+            # ---------------------------------------------------------
+            "Wall-Voice-USB"                           # Core-V-W + USB
+            "Wall-Voice-POE-AirIQ"                     # Core-V-W + POE + AirIQ
+            "Wall-Voice-PWR-AirIQ-Comfort-Presence"    # Core-V-W + PWR + full stack
+
+            # ---------------------------------------------------------
+            # SPECIAL
+            # ---------------------------------------------------------
+            "Rescue"                                   # Universal rescue firmware
+          )
+
+          missing=0
+          for k in "${REQUIRED_CONFIGS[@]}"; do
             if ! grep -qi "\"config_string\": *\"$k\"" manifest.json; then
-              echo "❌ Missing $k in manifest.json" >&2
-              exit 1
+              echo "❌ Missing config: $k" >&2
+              missing=$((missing + 1))
+            else
+              echo "✓ Found: $k"
             fi
           done
+
+          if [ $missing -gt 0 ]; then
+            echo ""
+            echo "❌ $missing required config(s) missing from manifest.json" >&2
+            exit 1
+          fi
+
+          echo ""
+          echo "✅ All ${#REQUIRED_CONFIGS[@]} required configurations present"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
