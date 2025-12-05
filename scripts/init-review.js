@@ -1,14 +1,45 @@
+/**
+ * @fileoverview Review step initialization with browser capability detection.
+ * @module init-review
+ */
+
 import { detectCapabilities } from './capabilities.js';
 import { renderCapabilityBar } from './ui-capability-bar.js';
 
-function createCapabilityNote(stepHeading) {
+/**
+ * Browser-specific messages for unsupported browsers.
+ * @type {Object<string, string>}
+ */
+const BROWSER_MESSAGES = {
+    firefox: 'Firefox does not support Web Serial API. Please open this page in <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a> to flash firmware.',
+    safari: 'Safari does not support Web Serial API. Please open this page in <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a> to flash firmware.',
+    other: 'Web Serial is not available in this browser. For the best experience, switch to <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a>.'
+};
+
+/**
+ * Creates a capability warning note for unsupported browsers.
+ * @param {HTMLElement|null} stepHeading - The heading element to focus after dismissal
+ * @param {Object} capabilities - Browser capabilities from detectCapabilities()
+ * @returns {HTMLElement} The warning note element
+ * @private
+ */
+function createCapabilityNote(stepHeading, capabilities = {}) {
     const note = document.createElement('div');
     note.className = 'capability-note';
     note.setAttribute('role', 'alert');
     note.setAttribute('aria-live', 'assertive');
 
     const message = document.createElement('p');
-    message.innerHTML = `Web Serial is not available in this browser. For the best experience, switch to <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a>.`;
+    const browserMessage = BROWSER_MESSAGES[capabilities.browser] || BROWSER_MESSAGES.other;
+    message.innerHTML = browserMessage;
+
+    // Add detected browser info for context
+    if (capabilities.browserName && capabilities.browser !== 'other') {
+        const browserInfo = document.createElement('p');
+        browserInfo.className = 'capability-note__browser';
+        browserInfo.textContent = `Detected browser: ${capabilities.browserName}`;
+        note.appendChild(browserInfo);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'capability-note__actions';
@@ -57,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!capabilities.webSerial) {
-        const warning = createCapabilityNote(heading);
+        const warning = createCapabilityNote(heading, capabilities);
         step.insertBefore(warning, capabilityBar.nextSibling);
     }
 });

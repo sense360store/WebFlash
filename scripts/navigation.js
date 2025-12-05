@@ -1,5 +1,16 @@
+/**
+ * @fileoverview Wizard navigation controller for step-based UI flow.
+ * @module navigation
+ */
+
 import { getStep, setStep, getTotalSteps, getMaxReachableStep } from './state.js';
 
+/**
+ * Normalizes a step index to be within valid bounds.
+ * @param {number|string} index - The step index to normalize
+ * @returns {number} A valid step index between 0 and totalSteps - 1
+ * @private
+ */
 function normalizeIndex(index) {
     if (typeof index !== 'number') {
         index = Number.parseInt(index, 10);
@@ -13,6 +24,17 @@ function normalizeIndex(index) {
     return Math.min(total - 1, Math.max(0, index));
 }
 
+/**
+ * Navigates to a specific wizard step.
+ * @param {number} index - Zero-based step index to navigate to
+ * @param {Object} [options={}] - Navigation options
+ * @param {boolean} [options.animate=false] - Whether to animate the transition
+ * @param {boolean} [options.skipUrlUpdate=false] - Whether to skip URL state sync
+ * @returns {number} The actual step number navigated to (1-based)
+ * @example
+ * goToStep(0); // Go to first step
+ * goToStep(2, { animate: true }); // Animate to third step
+ */
 export function goToStep(index, options = {}) {
     const normalized = normalizeIndex(index);
     return setStep(normalized + 1, options);

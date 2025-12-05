@@ -1,5 +1,24 @@
+/**
+ * @fileoverview URL parameter parsing and validation for firmware configuration.
+ * @module utils/url-config
+ */
+
+/**
+ * Order of configuration parameters for consistent URL generation.
+ * @type {readonly string[]}
+ */
 const CONFIG_PARAM_ORDER = Object.freeze(['mount', 'power', 'airiq', 'presence', 'comfort', 'fan']);
+
+/**
+ * Keys for optional module configuration parameters.
+ * @type {readonly string[]}
+ */
 const CONFIG_MODULE_KEYS = Object.freeze(['airiq', 'presence', 'comfort', 'fan']);
+
+/**
+ * Required configuration parameters that must be present for a valid config.
+ * @type {readonly string[]}
+ */
 const REQUIRED_CONFIG_PARAMS = Object.freeze(['mount', 'power']);
 
 const DEFAULT_SANITIZED_CONFIG = Object.freeze({
@@ -98,6 +117,37 @@ function ensureSearchParams(input) {
     }
 }
 
+/**
+ * @typedef {Object} ParsedConfig
+ * @property {Object} sanitizedConfig - Validated configuration values
+ * @property {Object} canonicalValues - Canonical (normalized) values for each param
+ * @property {Set<string>} providedKeys - Set of parameter keys that were provided
+ * @property {Set<string>} presentKeys - Set of parameter keys present in input
+ * @property {Object} rawValues - Original raw values from input
+ * @property {Array<{type: string, field: string, message: string}>} errors - Validation errors
+ * @property {boolean} isValid - Whether the configuration is valid
+ * @property {string|null} configKey - Generated config key for firmware lookup
+ * @property {boolean} forcedFanNone - Whether fan was forced to 'none' (ceiling mount)
+ * @property {number} paramCount - Total number of parameters in input
+ */
+
+/**
+ * Parses and validates URL configuration parameters.
+ *
+ * Handles:
+ * - Required parameters (mount, power)
+ * - Optional module parameters (airiq, presence, comfort, fan)
+ * - Legacy value aliases (e.g., 'pwr' → 'ac')
+ * - Ceiling mount restrictions (fan forced to 'none')
+ *
+ * @param {URLSearchParams|string|Object} inputParams - Input parameters to parse
+ * @returns {ParsedConfig} Parsed and validated configuration
+ * @example
+ * const result = parseConfigParams('mount=wall&power=usb&airiq=base');
+ * if (result.isValid) {
+ *   console.log(result.configKey); // 'Wall-USB-AirIQBase'
+ * }
+ */
 function parseConfigParams(inputParams) {
     const params = ensureSearchParams(inputParams);
 
@@ -272,6 +322,15 @@ function parseConfigParams(inputParams) {
     };
 }
 
+/**
+ * Maps a sanitized configuration to wizard state format.
+ *
+ * @param {Object} [sanitizedConfig] - Sanitized config from parseConfigParams
+ * @returns {Object} Configuration in wizard state format
+ * @example
+ * const wizardConfig = mapToWizardConfiguration({ mount: 'wall', power: 'usb' });
+ * // Returns: { mounting: 'wall', power: 'usb', airiq: 'none', ... }
+ */
 function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
     const safeConfig = sanitizedConfig && typeof sanitizedConfig === 'object'
         ? sanitizedConfig
