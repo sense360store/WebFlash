@@ -62,7 +62,7 @@ describe('wizard navigation interactions', () => {
         expect(setStepMock).toHaveBeenLastCalledWith(1, { animate: true });
     });
 
-    test('initial wizard step is activated on DOMContentLoaded', async () => {
+    test('initial wizard step is activated on module load when no step is active', async () => {
         document.body.innerHTML = `
             <div id="step-1" class="wizard-step"></div>
             <div id="step-2" class="wizard-step"></div>
@@ -72,9 +72,19 @@ describe('wizard navigation interactions', () => {
 
         await loadNavigationModule();
 
-        setStepMock.mockClear();
-        document.dispatchEvent(new Event('DOMContentLoaded'));
-
         expect(setStepMock).toHaveBeenCalledWith(1, { animate: false, skipUrlUpdate: true });
+    });
+
+    test('initial wizard step is not set if a step is already active', async () => {
+        document.body.innerHTML = `
+            <div id="step-1" class="wizard-step"></div>
+            <div id="step-2" class="wizard-step is-active"></div>
+        `;
+
+        getTotalStepsMock.mockReturnValue(4);
+
+        await loadNavigationModule();
+
+        expect(setStepMock).not.toHaveBeenCalled();
     });
 });
