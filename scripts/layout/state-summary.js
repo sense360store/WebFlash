@@ -1,6 +1,7 @@
 import { normalizeChannelKey } from '../utils/channel-alias.js';
 import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 import { getModuleVariantEntry } from '../data/module-requirements.js';
+import { openQRCodeModal } from './qr-code-modal.js';
 import {
     listPresets,
     getPreset,
@@ -295,6 +296,7 @@ let mobileSummaryMediaQuery = null;
         const card = document.getElementById('sb-config');
         const list = document.getElementById('sb-config-list');
         const copyButton = document.getElementById('sb-copy-link');
+        const qrButton = document.getElementById('sb-show-qr');
         const resetButton = document.getElementById('sb-reset');
 
         if (!card || !list || !copyButton || !resetButton) {
@@ -335,6 +337,7 @@ let mobileSummaryMediaQuery = null;
                 hardwareCore,
                 hardwareHeaders,
                 copyButton,
+                qrButton,
                 resetButton
             };
 
@@ -345,7 +348,7 @@ let mobileSummaryMediaQuery = null;
     }
 
     function bindSummaryButtons(refs) {
-        const { copyButton, resetButton } = refs;
+        const { copyButton, qrButton, resetButton } = refs;
 
         if (copyButton && copyButton.dataset.bound !== 'true') {
             copyButton.dataset.bound = 'true';
@@ -353,6 +356,11 @@ let mobileSummaryMediaQuery = null;
                 copyButton.dataset.defaultLabel = copyButton.textContent || 'Copy sharable link';
             }
             copyButton.addEventListener('click', handleCopyLink);
+        }
+
+        if (qrButton && qrButton.dataset.bound !== 'true') {
+            qrButton.dataset.bound = 'true';
+            qrButton.addEventListener('click', handleShowQRCode);
         }
 
         if (resetButton && resetButton.dataset.bound !== 'true') {
@@ -1193,6 +1201,13 @@ let mobileSummaryMediaQuery = null;
             console.error('[state-summary] Failed to copy link', error);
             showCopyFeedback(button, 'Copy failed');
         }
+    }
+
+    function handleShowQRCode(event) {
+        event.preventDefault();
+        const state = getState();
+        const url = buildShareableUrl(state);
+        openQRCodeModal(url);
     }
 
     function showCopyFeedback(button, message) {

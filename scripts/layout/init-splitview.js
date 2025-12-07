@@ -52,6 +52,18 @@
             </section>
             <div class="sidebar-actions">
                 <button class="btn primary" id="sb-copy-link" type="button">Copy sharable link</button>
+                <button class="btn btn-qr" id="sb-show-qr" type="button" aria-label="Show QR code">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="3" height="3"/>
+                        <rect x="18" y="14" width="3" height="3"/>
+                        <rect x="14" y="18" width="3" height="3"/>
+                        <rect x="18" y="18" width="3" height="3"/>
+                    </svg>
+                    <span class="btn-qr__label">QR Code</span>
+                </button>
                 <button class="btn" id="sb-reset" type="button">Start over</button>
             </div>
         `;

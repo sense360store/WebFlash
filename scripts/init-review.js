@@ -5,6 +5,7 @@
 
 import { detectCapabilities } from './capabilities.js';
 import { renderCapabilityBar } from './ui-capability-bar.js';
+import { renderDeviceInfoPanel } from './layout/device-info-panel.js';
 
 /**
  * Browser-specific messages for unsupported browsers.
@@ -90,5 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!capabilities.webSerial) {
         const warning = createCapabilityNote(heading, capabilities);
         step.insertBefore(warning, capabilityBar.nextSibling);
+    }
+
+    // Initialize device info panel
+    const deviceInfoContainer = document.querySelector('[data-device-info-mount]');
+    if (deviceInfoContainer) {
+        renderDeviceInfoPanel(deviceInfoContainer);
     }
 });
