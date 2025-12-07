@@ -1,3 +1,5 @@
+import { exportFlashHistoryText } from './utils/flash-history.js';
+
 const STATUS_TEXT = {
     available: 'Available',
     unavailable: 'Unavailable',
@@ -37,7 +39,9 @@ function createCopyButton(capabilities) {
         `User agent: ${capabilities.ua || 'Unknown'}`,
         `Web Serial: ${capabilities.webSerial ? 'Available' : 'Unavailable'}`,
         `WebUSB: ${capabilities.webUSB ? 'Available' : 'Unavailable'}`,
-        `Detected browser: ${capabilities.browser}`
+        `Detected browser: ${capabilities.browser}`,
+        '',
+        exportFlashHistoryText()
     ];
     const supportInfo = supportInfoLines.join('\n');
 
