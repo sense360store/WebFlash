@@ -29,26 +29,16 @@
         <nav class="path-selector" aria-label="Choose your firmware path">
             <div class="path-selector__options">
                 <a href="#step-1" class="path-card path-card--active" data-path="prebuilt">
-                    <div class="path-card__icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                        </svg>
-                    </div>
                     <div class="path-card__content">
                         <h3 class="path-card__title">Flash Pre-built Firmware</h3>
-                        <p class="path-card__description">Quick setup with tested configurations. Select your hardware, click install, done.</p>
+                        <p class="path-card__description">Install tested configurations for your hardware. Select your device type and install directly from your browser.</p>
                     </div>
                     <span class="path-card__badge">Recommended</span>
                 </a>
                 <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer" class="path-card" data-path="custom">
-                    <div class="path-card__icon">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
-                        </svg>
-                    </div>
                     <div class="path-card__content">
                         <h3 class="path-card__title">Build Custom Firmware</h3>
-                        <p class="path-card__description">Full control with ESPHome YAML configs. Customize sensors, automations, and more.</p>
+                        <p class="path-card__description">Configure custom firmware using ESPHome YAML. Adjust sensors, update intervals, and integration settings.</p>
                     </div>
                     <span class="path-card__external">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -850,7 +840,7 @@
 
         <div class="browser-check">
             <div class="browser-warning" id="browser-warning" style="display: none;">
-                <h3>⚠️ Browser Not Supported</h3>
+                <h3>Browser Not Supported</h3>
                 <p>
                     Web Serial works only in desktop Chrome or Edge. Safari, Firefox, and all iOS browsers are not
                     supported. <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more about the Web Serial API</a>.
