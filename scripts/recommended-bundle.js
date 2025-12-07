@@ -22,7 +22,7 @@ function normaliseStateShape(state) {
     }
 
     return {
-        mount: state.mount || null,
+        mount: state.mounting || null,
         power: state.power || null,
         airiq: state.airiq || 'none',
         presence: state.presence || 'none',
