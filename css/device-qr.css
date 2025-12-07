@@ -1,0 +1,485 @@
+/**
+ * Styles for Device Info Panel and QR Code Modal components
+ */
+
+/* ==========================================================================
+   QR Code Modal
+   ========================================================================== */
+
+.qr-code-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.qr-code-modal[hidden] {
+    display: none;
+}
+
+.qr-code-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.qr-code-modal__content {
+    position: relative;
+    background: var(--surface, #ffffff);
+    border-radius: 16px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.qr-code-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 0;
+}
+
+.qr-code-modal__title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text, #0b1220);
+    margin: 0;
+}
+
+.qr-code-modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, #4b5563);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.qr-code-modal__close:hover {
+    background: var(--bg-elev-1, #f6f8fa);
+    color: var(--text, #0b1220);
+}
+
+.qr-code-modal__body {
+    padding: 24px;
+}
+
+.qr-code-modal__qr-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border, #d0d7de);
+}
+
+.qr-code-modal__qr-container svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.qr-code-modal__loading {
+    text-align: center;
+    color: var(--text-muted, #4b5563);
+    padding: 40px;
+}
+
+.qr-code-modal__error {
+    text-align: center;
+    color: var(--danger-text, #b91c1c);
+    padding: 24px;
+}
+
+.qr-code-modal__error-detail {
+    font-size: 0.875rem;
+    margin-top: 8px;
+}
+
+.qr-code-modal__instructions {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-muted, #4b5563);
+    margin-bottom: 16px;
+}
+
+.qr-code-modal__url-container {
+    display: flex;
+    gap: 8px;
+}
+
+.qr-code-modal__url-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    font-size: 0.8125rem;
+    font-family: monospace;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d0d7de);
+    background: var(--bg-elev-1, #f6f8fa);
+    color: var(--text-muted, #4b5563);
+}
+
+.qr-code-modal__copy-btn {
+    flex-shrink: 0;
+}
+
+/* Prevent body scroll when modal is open */
+body.qr-modal-open {
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   QR Code Button
+   ========================================================================== */
+
+.btn-qr {
+    --btn-bg: var(--color-surface-muted, #f6f8fa);
+    --btn-fg: var(--color-text-secondary, #4b5563);
+    --btn-border: var(--color-border, #d0d7de);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    min-height: 2.5rem;
+    box-shadow: none;
+}
+
+.btn-qr:hover:not(:disabled) {
+    --btn-bg: var(--color-surface-soft, #eef2f6);
+    --btn-fg: var(--color-text-primary, #0b1220);
+}
+
+.btn-qr svg {
+    flex-shrink: 0;
+}
+
+.btn-qr__label {
+    font-size: 0.875rem;
+}
+
+/* Hide label on smaller screens in sidebar */
+@media (max-width: 1200px) {
+    .sidebar-actions .btn-qr__label {
+        display: none;
+    }
+
+    .sidebar-actions .btn-qr {
+        padding: 0.65rem;
+    }
+}
+
+/* ==========================================================================
+   Device Info Panel
+   ========================================================================== */
+
+.device-info-container {
+    margin-top: 24px;
+}
+
+.device-info-panel {
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--border, #d0d7de);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.device-info-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--bg-elev-1, #f6f8fa);
+    border-bottom: 1px solid var(--border, #d0d7de);
+}
+
+.device-info-panel__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text, #0b1220);
+    margin: 0;
+}
+
+.device-info-panel__icon {
+    flex-shrink: 0;
+    color: var(--text-muted, #4b5563);
+}
+
+.device-info-panel__status {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-muted, #4b5563);
+    padding: 4px 10px;
+    background: var(--bg-elev-2, #eef2f6);
+    border-radius: 100px;
+}
+
+.device-info-panel__status--reading {
+    color: var(--accent, #2ea6ff);
+    background: color-mix(in srgb, var(--accent, #2ea6ff) 12%, var(--bg-elev-1, #f6f8fa));
+}
+
+.device-info-panel__status--connected {
+    color: var(--success, #2ecc71);
+    background: color-mix(in srgb, var(--success, #2ecc71) 15%, var(--bg-elev-1, #f6f8fa));
+}
+
+.device-info-panel__status--detected {
+    color: var(--brand-green-contrast, #008631);
+    background: var(--brand-green-tint, #e8f5e9);
+}
+
+.device-info-panel__status--partial {
+    color: var(--warning-text, #b45309);
+    background: var(--warning-surface, #fff7ed);
+}
+
+.device-info-panel__status--error {
+    color: var(--danger-text, #b91c1c);
+    background: var(--danger-surface, #fef2f2);
+}
+
+.device-info-panel__body {
+    padding: 20px;
+}
+
+/* Placeholder state */
+.device-info-panel__placeholder {
+    text-align: center;
+    padding: 8px 0;
+}
+
+.device-info-panel__placeholder p {
+    color: var(--text-muted, #4b5563);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+}
+
+.device-info-panel__read-btn {
+    margin: 0 auto;
+}
+
+.device-info-panel__read-btn svg {
+    flex-shrink: 0;
+}
+
+/* Loading state */
+.device-info-panel__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+}
+
+.device-info-panel__loading p {
+    color: var(--text-muted, #4b5563);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.device-info-panel__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border, #d0d7de);
+    border-top-color: var(--accent, #2ea6ff);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Content state */
+.device-info-panel__content[hidden] {
+    display: none;
+}
+
+.device-info-panel__details {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px 16px;
+    margin: 0;
+}
+
+.device-info-panel__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.device-info-panel__detail dt {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted, #4b5563);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.device-info-panel__detail dd {
+    font-size: 0.9375rem;
+    color: var(--text, #0b1220);
+    margin: 0;
+}
+
+.device-info-panel__detail code {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 0.8125rem;
+    background: var(--bg-elev-2, #eef2f6);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.device-info-panel__detail--firmware dd {
+    color: var(--brand-green-contrast, #008631);
+    font-weight: 500;
+}
+
+.device-info-panel__detail--info dd {
+    color: var(--text-muted, #4b5563);
+    font-style: italic;
+}
+
+.device-info-panel__no-data {
+    text-align: center;
+    color: var(--text-muted, #4b5563);
+    font-size: 0.875rem;
+    padding: 8px 0;
+}
+
+/* Warning */
+.device-info-panel__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--warning-surface, #fff7ed);
+    border: 1px solid var(--warning-border, #fed7aa);
+    border-radius: 8px;
+    color: var(--warning-text, #b45309);
+    font-size: 0.875rem;
+}
+
+.device-info-panel__warning svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.device-info-panel__warning[hidden] {
+    display: none;
+}
+
+/* Actions */
+.device-info-panel__actions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border, #d0d7de);
+    display: flex;
+    justify-content: flex-start;
+}
+
+.device-info-panel__actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Error state */
+.device-info-panel__error {
+    text-align: center;
+    padding: 8px 0;
+}
+
+.device-info-panel__error[hidden] {
+    display: none;
+}
+
+.device-info-panel__error-message {
+    color: var(--danger-text, #b91c1c);
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+}
+
+/* Unsupported state */
+.device-info-panel__unsupported {
+    text-align: center;
+    padding: 8px 0;
+}
+
+.device-info-panel__unsupported p {
+    color: var(--text-muted, #4b5563);
+    font-size: 0.875rem;
+}
+
+/* Tertiary button style for device panel */
+.btn-tertiary {
+    --btn-bg: transparent;
+    --btn-fg: var(--text-muted, #4b5563);
+    --btn-border: transparent;
+    padding: 0.5rem 0.75rem;
+    min-height: auto;
+    font-size: 0.875rem;
+    box-shadow: none;
+}
+
+.btn-tertiary:hover:not(:disabled) {
+    --btn-bg: var(--bg-elev-1, #f6f8fa);
+    --btn-fg: var(--text, #0b1220);
+}
+
+/* ==========================================================================
+   Responsive adjustments
+   ========================================================================== */
+
+@media (max-width: 600px) {
+    .qr-code-modal__content {
+        max-width: none;
+        margin: 0 16px;
+    }
+
+    .device-info-panel__details {
+        grid-template-columns: 1fr;
+    }
+
+    .device-info-panel__header {
+        flex-wrap: wrap;
+    }
+}
+
+/* ==========================================================================
+   Accessibility: Reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .device-info-panel__spinner {
+        animation: none;
+    }
+
+    .qr-code-modal__backdrop {
+        backdrop-filter: none;
+    }
+}
