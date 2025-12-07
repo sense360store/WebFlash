@@ -2,6 +2,7 @@ import { escapeHtml } from './utils/escape-html.js';
 import { normalizeChannelKey } from './utils/channel-alias.js';
 import { MODULE_REQUIREMENT_MATRIX, getModuleMatrixEntry, getModuleVariantEntry } from './data/module-requirements.js';
 import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.js';
+import { recordFlashStart, recordFlashSuccess, recordFlashError, exportFlashHistoryText } from './utils/flash-history.js';
 
 let currentStep = 1;
 const totalSteps = 4;
@@ -97,6 +98,8 @@ let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
 let activeModuleDetailVariant = null;
 let preFlashAcknowledged = false;
+let currentFlashEntryId = null;
+let flashStartTime = null;
 
 function setWizardStepVisibility(stepElement, isVisible) {
     if (!stepElement) {
@@ -1092,7 +1095,24 @@ function handleInstallStateEvent(event) {
 
     if (state === 'finished') {
         setHomeAssistantIntegrationsButtonEnabled(true);
+        // Record successful flash
+        if (currentFlashEntryId) {
+            const duration = flashStartTime ? Date.now() - flashStartTime : 0;
+            recordFlashSuccess(currentFlashEntryId, duration);
+            currentFlashEntryId = null;
+            flashStartTime = null;
+        }
         return;
+    }
+
+    if (state === 'error') {
+        // Record failed flash
+        if (currentFlashEntryId) {
+            const errorMsg = detail?.message || 'Installation failed';
+            recordFlashError(currentFlashEntryId, errorMsg);
+            currentFlashEntryId = null;
+            flashStartTime = null;
+        }
     }
 
     if (state !== 'idle') {
@@ -3423,6 +3443,17 @@ function attachInstallButtonListeners() {
                     selectFirmwareById(firmwareId, { syncSelector: false });
                 }
                 setHomeAssistantIntegrationsButtonEnabled(false);
+
+                // Record flash start in history
+                const firmware = selectedFirmware || firmwareList.find(f => f.firmwareId === firmwareId);
+                if (firmware) {
+                    flashStartTime = Date.now();
+                    currentFlashEntryId = recordFlashStart({
+                        configString: firmware.config_string || window.currentConfigString || 'Unknown',
+                        firmwareVersion: firmware.version || 'Unknown',
+                        channel: firmware.channel || 'Unknown'
+                    });
+                }
             });
             activateButton.dataset.installBound = 'true';
         }

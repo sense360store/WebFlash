@@ -47,6 +47,7 @@ const SCRIPT_MODULES = [
     './scripts/utils/channel-alias.js',
     './scripts/utils/copy-to-clipboard.js',
     './scripts/utils/escape-html.js',
+    './scripts/utils/flash-history.js',
     './scripts/utils/preset-storage.js',
     './scripts/utils/url-config.js'
 ];
