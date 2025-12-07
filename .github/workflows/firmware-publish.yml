@@ -8,6 +8,12 @@ on:
       - 'manifest.json'
       - 'firmware-*.json'
       - '.github/workflows/firmware-publish.yml'
+      # Web interface files
+      - 'index.html'
+      - '*.js'
+      - 'css/**'
+      - '*.png'
+      - '_headers'
   release:
     types: [published]
 
