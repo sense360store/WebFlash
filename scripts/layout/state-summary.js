@@ -147,7 +147,7 @@ let mobileSummaryMediaQuery = null;
             airiq: state.airiq || 'none',
             presence: state.presence || 'none',
             comfort: state.comfort || 'none',
-            fan: state.mount === 'wall' ? (state.fan || 'none') : 'none'
+            fan: state.fan || 'none'
         };
     }
 
@@ -1171,12 +1171,7 @@ let mobileSummaryMediaQuery = null;
             renderSummaryList(list, meta, variant);
 
             if (warning) {
-                if (state.mount === 'ceiling' && state.fan && state.fan !== 'none') {
-                    warning.textContent = 'Fan Module is not available on Ceiling mounts.';
-                    warning.hidden = false;
-                } else {
-                    warning.hidden = true;
-                }
+                warning.hidden = true;
             }
 
             renderHardwareSummary(refs, hardwareRequirements);

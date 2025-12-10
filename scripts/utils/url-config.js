@@ -138,7 +138,7 @@ function ensureSearchParams(input) {
  * @property {Array<{type: string, field: string, message: string}>} errors - Validation errors
  * @property {boolean} isValid - Whether the configuration is valid
  * @property {string|null} configKey - Generated config key for firmware lookup
- * @property {boolean} forcedFanNone - Whether fan was forced to 'none' (ceiling mount)
+ * @property {boolean} forcedFanNone - Reserved for future use (always false)
  * @property {number} paramCount - Total number of parameters in input
  */
 
@@ -149,7 +149,7 @@ function ensureSearchParams(input) {
  * - Required parameters (mount, power)
  * - Optional module parameters (airiq, presence, comfort, fan)
  * - Legacy value aliases (e.g., 'pwr' → 'ac')
- * - Ceiling mount restrictions (fan forced to 'none')
+ * - Optional module parameters with defaults
  *
  * @param {URLSearchParams|string|Object} inputParams - Input parameters to parse
  * @returns {ParsedConfig} Parsed and validated configuration
@@ -277,14 +277,7 @@ function parseConfigParams(inputParams) {
         }
     }
 
-    let forcedFanNone = false;
-    if (sanitizedConfig.mount === 'ceiling') {
-        if (fanCanonicalValue && fanCanonicalValue !== 'none') {
-            forcedFanNone = true;
-        }
-        sanitizedConfig.fan = 'none';
-        configSegments.set('fan', null);
-    }
+    const forcedFanNone = false;
 
     let forcedBathroomAirIQNone = false;
     if (sanitizedConfig.mount === 'wall') {

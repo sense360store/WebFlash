@@ -30,14 +30,14 @@ describe('config URL parser', () => {
     );
   });
 
-  test('forces fan to none when ceiling mount is specified', () => {
+  test('allows fan selection with ceiling mount', () => {
     const params = new URLSearchParams('mount=ceiling&power=usb&fan=base');
     const result = parseConfigParams(params);
 
     expect(result.isValid).toBe(true);
-    expect(result.forcedFanNone).toBe(true);
-    expect(result.sanitizedConfig.fan).toBe('none');
-    expect(result.configKey).toBe('Ceiling-USB');
+    expect(result.forcedFanNone).toBe(false);
+    expect(result.sanitizedConfig.fan).toBe('pwm');
+    expect(result.configKey).toBe('Ceiling-USB-FanPWM');
   });
 
   test('supports legacy power alias', () => {
