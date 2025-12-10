@@ -20,7 +20,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -52,7 +52,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -84,7 +84,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -116,7 +116,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -148,7 +148,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -180,7 +180,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -212,7 +212,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -231,6 +231,269 @@
     },
     {
       "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-POE-Bathroom configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-Bathroom-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.038501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-Bathroom",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "Bathroom"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-POE-Comfort configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-Comfort-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.040501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-Comfort",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "Comfort"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-POE-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.040501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-Presence",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.038501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-AirIQ",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ-Comfort configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-Comfort-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.039501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-AirIQ-Comfort",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Comfort"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ-Comfort-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-Comfort-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.039501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-AirIQ-Comfort-Presence",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Comfort",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ-Comfort-Presence-Fan configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-Comfort-Presence-Fan-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.040501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-AirIQ-Comfort-Presence-Fan",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Comfort",
+        "Presence",
+        "Fan"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.039501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-AirIQ-Presence",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
       "version": "1.0.1",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQPro configuration. Recommended for production deployments.",
@@ -244,7 +507,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -276,7 +539,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -308,7 +571,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -342,7 +605,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -364,6 +627,237 @@
     {
       "device_type": "Core Module",
       "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-Bathroom-Comfort-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-Bathroom-Comfort-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.040501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-Bathroom-Comfort-Presence",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "Bathroom",
+        "Comfort",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.037501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": []
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.038501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB-AirIQ",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": [
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB-Fan configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-Fan-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.041501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB-Fan",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": [
+        "Fan"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-Voice-POE-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-Voice-POE-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.041501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-Voice-POE-AirIQ",
+      "mounting": "Ceiling",
+      "power": null,
+      "modules": [
+        "Voice",
+        "POE",
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-Voice-PWR-AirIQ-Comfort-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-Voice-PWR-AirIQ-Comfort-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.041501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-Voice-PWR-AirIQ-Comfort-Presence",
+      "mounting": "Ceiling",
+      "power": null,
+      "modules": [
+        "Voice",
+        "PWR",
+        "AirIQ",
+        "Comfort",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-Voice-USB configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-Voice-USB-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.041501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-Voice-USB",
+      "mounting": "Ceiling",
+      "power": null,
+      "modules": [
+        "Voice",
+        "USB"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
       "channel": "rescue",
       "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
       "chipFamily": "ESP32-S3",
@@ -376,7 +870,7 @@
           "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 524288,
       "improv": false,
       "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
@@ -397,6 +891,38 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-POE-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-POE-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.042501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-POE-AirIQ",
+      "mounting": "Wall",
+      "power": "POE",
+      "modules": [
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
       "description": "Stable firmware for Sense360 Wall-POE-AirIQBase configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
@@ -408,7 +934,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -440,7 +966,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -459,6 +985,267 @@
     },
     {
       "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-POE-Comfort configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-POE-Comfort-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.043501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-POE-Comfort",
+      "mounting": "Wall",
+      "power": "POE",
+      "modules": [
+        "Comfort"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-POE-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-POE-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.044501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-POE-Presence",
+      "mounting": "Wall",
+      "power": "POE",
+      "modules": [
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-PWR configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-PWR-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.042501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-PWR",
+      "mounting": "Wall",
+      "power": "PWR",
+      "modules": []
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-PWR-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-PWR-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.042501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-PWR-AirIQ",
+      "mounting": "Wall",
+      "power": "PWR",
+      "modules": [
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-PWR-AirIQ-Comfort configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-PWR-AirIQ-Comfort-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.042501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-PWR-AirIQ-Comfort",
+      "mounting": "Wall",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Comfort"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-PWR-AirIQ-Comfort-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-PWR-AirIQ-Comfort-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.043501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-PWR-AirIQ-Comfort-Presence",
+      "mounting": "Wall",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Comfort",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-PWR-AirIQ-Comfort-Presence-Fan configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-PWR-AirIQ-Comfort-Presence-Fan-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.043501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-PWR-AirIQ-Comfort-Presence-Fan",
+      "mounting": "Wall",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Comfort",
+        "Presence",
+        "Fan"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-PWR-AirIQ-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-PWR-AirIQ-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.043501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-PWR-AirIQ-Presence",
+      "mounting": "Wall",
+      "power": "PWR",
+      "modules": [
+        "AirIQ",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
       "version": "1.1.0",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Wall-USB configuration. Recommended for production deployments.",
@@ -472,7 +1259,7 @@
           "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 1032016,
       "improv": true,
       "md5": "e02ba33bea0997b543ddac28af33fc2f",
@@ -502,7 +1289,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -532,7 +1319,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -551,6 +1338,38 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-USB-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.041501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-USB-AirIQ",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": [
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
       "description": "Stable firmware for Sense360 Wall-USB-AirIQPro configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
@@ -562,7 +1381,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -594,7 +1413,7 @@
           "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2025-12-04T19:56:15+00:00",
+      "build_date": "2025-12-10T09:28:56+00:00",
       "file_size": 1032016,
       "improv": true,
       "md5": "e02ba33bea0997b543ddac28af33fc2f",
@@ -609,6 +1428,141 @@
       "power": "USB",
       "modules": [
         "AirIQPro"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-USB-Fan configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-USB-Fan-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.044501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-USB-Fan",
+      "mounting": "Wall",
+      "power": "USB",
+      "modules": [
+        "Fan"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-Voice-POE-AirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-Voice-POE-AirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.044501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-Voice-POE-AirIQ",
+      "mounting": "Wall",
+      "power": null,
+      "modules": [
+        "Voice",
+        "POE",
+        "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-Voice-PWR-AirIQ-Comfort-Presence configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-Voice-PWR-AirIQ-Comfort-Presence-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.045501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-Voice-PWR-AirIQ-Comfort-Presence",
+      "mounting": "Wall",
+      "power": null,
+      "modules": [
+        "Voice",
+        "PWR",
+        "AirIQ",
+        "Comfort",
+        "Presence"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Wall-Voice-USB configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Wall-Voice-USB-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.044501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Wall-Voice-USB",
+      "mounting": "Wall",
+      "power": null,
+      "modules": [
+        "Voice",
+        "USB"
       ]
     }
   ]
