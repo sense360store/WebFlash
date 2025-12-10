@@ -1381,23 +1381,9 @@ function updateFanModuleVisibility() {
         return;
     }
 
-    const shouldHideFanModule = configuration.mounting === 'ceiling';
-
-    if (shouldHideFanModule) {
-        fanSection.style.display = 'none';
-        closeModuleGroup('fan');
-
-        const fanNoneInput = document.querySelector('input[name="fan"][value="none"]');
-        if (fanNoneInput && !fanNoneInput.checked) {
-            fanNoneInput.checked = true;
-        }
-
-        configuration.fan = 'none';
-    } else {
-        fanSection.style.display = '';
-        const isExpanded = fanSection.dataset.expanded === 'true';
-        setModuleGroupExpanded(fanSection, isExpanded);
-    }
+    fanSection.style.display = '';
+    const isExpanded = fanSection.dataset.expanded === 'true';
+    setModuleGroupExpanded(fanSection, isExpanded);
 
     updateModuleGroupSummaries();
 }
@@ -4035,18 +4021,10 @@ function initializeFromUrl() {
     }
 
     setStep(targetStep, { skipUrlUpdate: true, animate: false });
-
-    if (parsed.isValid && parsed.forcedFanNone) {
-        showToast('Fan module not available for ceiling mount.');
-    }
 }
 
 function applyConfiguration(initialConfig) {
     Object.assign(configuration, defaultConfiguration, initialConfig);
-
-    if (configuration.mounting !== 'wall') {
-        configuration.fan = 'none';
-    }
 
     if (configuration.mounting) {
         const mountingInput = document.querySelector(`input[name="mounting"][value="${configuration.mounting}"]`);
