@@ -265,6 +265,72 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-POE-Bathroom-BathroomAirIQBase configuration. Bathroom installation with base air quality sensing including humidity, pressure, and VOC/NOx monitoring.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-Bathroom-BathroomAirIQBase-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-Bathroom-BathroomAirIQBase",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "Bathroom",
+        "BathroomAirIQBase"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-POE-Bathroom-BathroomAirIQPro configuration. Bathroom installation with full sensor suite including IR surface temperature, condensation detection, and particulate monitoring.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-Bathroom-BathroomAirIQPro-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-POE-Bathroom-BathroomAirIQPro",
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "Bathroom",
+        "BathroomAirIQPro"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
       "description": "Stable firmware for Sense360 Ceiling-POE-Comfort configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
@@ -688,6 +754,170 @@
         "BathroomAirIQ",
         "Presence",
         "Comfort"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-Bathroom-BathroomAirIQBase configuration. Bathroom installation with base air quality sensing including humidity, pressure, and VOC/NOx monitoring.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-Bathroom-BathroomAirIQBase-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-Bathroom-BathroomAirIQBase",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "Bathroom",
+        "BathroomAirIQBase"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-Bathroom-BathroomAirIQPro configuration. Bathroom installation with full sensor suite including IR surface temperature, condensation detection, and particulate monitoring.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-Bathroom-BathroomAirIQPro-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-Bathroom-BathroomAirIQPro",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "Bathroom",
+        "BathroomAirIQPro"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB-Bathroom configuration. Bathroom installation for ceiling mount with USB power.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-Bathroom-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB-Bathroom",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": [
+        "Bathroom"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB-Bathroom-BathroomAirIQBase configuration. Bathroom installation with base air quality sensing.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-Bathroom-BathroomAirIQBase-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB-Bathroom-BathroomAirIQBase",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": [
+        "Bathroom",
+        "BathroomAirIQBase"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB-Bathroom-BathroomAirIQPro configuration. Bathroom installation with full sensor suite.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-Bathroom-BathroomAirIQPro-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T10:00:00.000000+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB-Bathroom-BathroomAirIQPro",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": [
+        "Bathroom",
+        "BathroomAirIQPro"
       ]
     },
     {

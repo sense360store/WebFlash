@@ -65,9 +65,20 @@ Sense360-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 **Modules** (optional): Combination of:
 - `AirIQBase`, `AirIQPro`, `AirIQProv`
+- `Bathroom` (Ceiling only)
+- `BathroomAirIQBase`, `BathroomAirIQPro` (Ceiling + Bathroom only)
 - `Presence`, `PresencePro`
 - `Comfort`
 - `FanPWM`, `FanAnalog`
+
+**Module Constraints:**
+- `Bathroom` is only available for Ceiling installations
+- `BathroomAirIQ` requires `Bathroom` to be enabled
+- `AirIQ` and `Bathroom` cannot be combined
+
+**BathroomAirIQ Sensors:**
+- Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
+- Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
@@ -80,6 +91,9 @@ Sense360-Wall-USB-v1.0.0-stable.bin
 Sense360-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
 Sense360-Wall-PWR-AirIQPro-Presence-Comfort-v1.2.0-preview.bin
 Sense360-Ceiling-POE-AirIQPro-v2.0.0-beta.bin
+Sense360-Ceiling-POE-Bathroom-v1.0.0-stable.bin
+Sense360-Ceiling-POE-Bathroom-BathroomAirIQBase-v1.0.0-stable.bin
+Sense360-Ceiling-PWR-Bathroom-BathroomAirIQPro-v1.0.0-stable.bin
 ```
 
 ## Release Notes

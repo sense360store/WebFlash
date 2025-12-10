@@ -252,6 +252,19 @@
 
                 <div class="module-step-grid" role="region" aria-label="Expansion module selection">
                     <div class="module-step-grid__main">
+                        <!-- Bathroom toggle - only visible for ceiling installations -->
+                        <section class="bathroom-toggle-section" id="bathroom-toggle-section" style="display: none;">
+                            <div class="bathroom-toggle">
+                                <label class="bathroom-toggle__label">
+                                    <input type="checkbox" name="bathroom" class="bathroom-toggle__checkbox">
+                                    <span class="bathroom-toggle__text">
+                                        <strong>Bathroom Installation</strong>
+                                        <span class="bathroom-toggle__description">Enable bathroom-specific features and optional Bathroom AirIQ module (ceiling only)</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </section>
+
                         <section class="module-collection" aria-label="Expansion module groups">
                             <section class="module-group" data-module-group="airiq" data-expanded="false">
                                 <div class="module-group__summary">
@@ -718,6 +731,116 @@
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ Base/Pro: Disable AirIQ or switch the fan output to PWM mode.">AirIQ Base/Pro</span>
                                             </div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="module-group" data-module-group="bathroomairiq" id="bathroomairiq-module-section" data-expanded="false" style="display: none;">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Bathroom AirIQ Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Bathroom AirIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="bathroomairiq"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-bathroomairiq"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-bathroomairiq" data-module-group-body hidden>
+                                    <p class="module-group__description">Bathroom-optimized air quality sensing with humidity, pressure, VOC/NOx, and optional condensation detection.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="none">
+                                        <input type="radio" name="bathroomairiq" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Bathroom configuration without AirIQ sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="base">
+                                        <input type="radio" name="bathroomairiq" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Humidity, pressure, and VOC/NOx sensing for bathroom environments.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>To be added</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>To be added</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Sensors</dt>
+                                                    <dd>SHT4x (temp/humidity) · BMP390 (pressure) · SGP41 (VOC/NOx)</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="pro">
+                                        <input type="radio" name="bathroomairiq" value="pro">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Pro</div>
+                                                    <p class="option-description module-card__description">Full sensor suite with IR surface temperature, condensation risk detection, and particulate monitoring.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>To be added</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>To be added</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Sensors</dt>
+                                                    <dd>SHT4x · BMP390 · SGP41 · MLX90614 (IR/condensation) · SPS30 (PM1.0/2.5/10)</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
                                     </div>

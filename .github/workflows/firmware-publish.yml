@@ -81,8 +81,14 @@ jobs:
           # Valid combinations based on hardware ruleset:
           #   Core: CORE-C, CORE-V-C (Ceiling) | CORE-W, CORE-V-W (Wall)
           #   Power: USB, POE, PWR
-          #   Modules: AirIQ, Bathroom (Ceiling only), Comfort, Presence, Fan
-          #   Constraint: AirIQ and Bathroom cannot be combined
+          #   Modules: AirIQ, Bathroom (Ceiling only), BathroomAirIQ (Ceiling + Bathroom only), Comfort, Presence, Fan
+          #   Constraints:
+          #     - AirIQ and Bathroom cannot be combined
+          #     - BathroomAirIQ requires Bathroom to be enabled
+          #     - BathroomAirIQ is ceiling-only
+          #   BathroomAirIQ Sensors:
+          #     - Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
+          #     - Pro: Base sensors + MLX90614 (IR/condensation), SPS30 (PM1.0/2.5/10)
           # =============================================================
 
           REQUIRED_CONFIGS=(
@@ -94,12 +100,19 @@ jobs:
             "Ceiling-POE-AirIQBase"                    # Core-C + POE + AirIQ (base)
             "Ceiling-POE-AirIQPro"                     # Core-C + POE + AirIQ (pro)
             "Ceiling-POE-Bathroom"                     # Core-C + POE + Bathroom
+            "Ceiling-POE-Bathroom-BathroomAirIQBase"   # Core-C + POE + Bathroom + BathroomAirIQ (base)
+            "Ceiling-POE-Bathroom-BathroomAirIQPro"    # Core-C + POE + Bathroom + BathroomAirIQ (pro)
             "Ceiling-PWR-AirIQ"                        # Core-C + PWR + AirIQ
             "Ceiling-PWR-AirIQ-Comfort"                # Core-C + PWR + AirIQ + Comfort
             "Ceiling-PWR-AirIQ-Presence"               # Core-C + PWR + AirIQ + Presence
             "Ceiling-PWR-AirIQ-Comfort-Presence"       # Core-C + PWR + AirIQ + Comfort + Presence
             "Ceiling-PWR-AirIQ-Comfort-Presence-Fan"   # Core-C + PWR + full module stack
             "Ceiling-PWR-Bathroom-Comfort-Presence"    # Core-C + PWR + Bathroom + modules
+            "Ceiling-PWR-Bathroom-BathroomAirIQBase"   # Core-C + PWR + Bathroom + BathroomAirIQ (base)
+            "Ceiling-PWR-Bathroom-BathroomAirIQPro"    # Core-C + PWR + Bathroom + BathroomAirIQ (pro)
+            "Ceiling-USB-Bathroom"                     # Core-C + USB + Bathroom
+            "Ceiling-USB-Bathroom-BathroomAirIQBase"   # Core-C + USB + Bathroom + BathroomAirIQ (base)
+            "Ceiling-USB-Bathroom-BathroomAirIQPro"    # Core-C + USB + Bathroom + BathroomAirIQ (pro)
             "Ceiling-POE-Comfort"                      # Core-C + POE + Comfort only
             "Ceiling-POE-Presence"                     # Core-C + POE + Presence only
             "Ceiling-USB-Fan"                          # Core-C + USB + Fan only
