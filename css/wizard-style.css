@@ -3199,7 +3199,7 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     display: flex;
     align-items: flex-start;
     gap: 16px;
-    padding: 20px;
+    padding: clamp(24px, 3vw, 32px);
     background: var(--color-surface);
     border: 2px solid var(--color-border);
     border-radius: 12px;
@@ -3279,10 +3279,6 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 @media (max-width: 600px) {
     .path-selector__options {
         grid-template-columns: 1fr;
-    }
-
-    .path-card {
-        padding: 16px;
     }
 
     .path-card__icon {

@@ -208,6 +208,8 @@ hr,
 .wizard-step {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: clamp(24px, 4vw, 32px);
 }
 
 .btn {
