@@ -1,0 +1,25 @@
+{
+  "name": "Sense360 ESP32 Firmware - Core Module",
+  "version": "1.0.0",
+  "home_assistant_domain": "esphome",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 15,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin",
+          "offset": 0,
+          "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+          "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+          "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM="
+        }
+      ],
+      "improv": false,
+      "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+      "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+      "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM="
+    }
+  ]
+}
