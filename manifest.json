@@ -233,11 +233,11 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-POE-Bathroom configuration. Recommended for production deployments.",
+      "description": "Stable firmware for Sense360 Ceiling-POE-BathroomAirIQ configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-Bathroom-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-BathroomAirIQ-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "1eb1fea3994bbbeea11080159dbbe611",
           "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
@@ -254,11 +254,11 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "config_string": "Ceiling-POE-Bathroom",
+      "config_string": "Ceiling-POE-BathroomAirIQ",
       "mounting": "Ceiling",
       "power": "POE",
       "modules": [
-        "Bathroom"
+        "BathroomAirIQ"
       ]
     },
     {
@@ -355,6 +355,38 @@
       "power": "PWR",
       "modules": [
         "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-BathroomAirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-BathroomAirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.038501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-PWR-BathroomAirIQ",
+      "mounting": "Ceiling",
+      "power": "PWR",
+      "modules": [
+        "BathroomAirIQ"
       ]
     },
     {
@@ -628,11 +660,11 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-PWR-Bathroom-Comfort-Presence configuration. Recommended for production deployments.",
+      "description": "Stable firmware for Sense360 Ceiling-PWR-BathroomAirIQ-Presence-Comfort configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-PWR-Bathroom-Comfort-Presence-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-PWR-BathroomAirIQ-Presence-Comfort-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "1eb1fea3994bbbeea11080159dbbe611",
           "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
@@ -649,13 +681,13 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "config_string": "Ceiling-PWR-Bathroom-Comfort-Presence",
+      "config_string": "Ceiling-PWR-BathroomAirIQ-Presence-Comfort",
       "mounting": "Ceiling",
       "power": "PWR",
       "modules": [
-        "Bathroom",
-        "Comfort",
-        "Presence"
+        "BathroomAirIQ",
+        "Presence",
+        "Comfort"
       ]
     },
     {
@@ -718,6 +750,38 @@
       "power": "USB",
       "modules": [
         "AirIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-USB-BathroomAirIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-USB-BathroomAirIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "1eb1fea3994bbbeea11080159dbbe611",
+          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+        }
+      ],
+      "build_date": "2025-12-10T09:52:47.038501+00:00",
+      "file_size": 18,
+      "improv": true,
+      "md5": "1eb1fea3994bbbeea11080159dbbe611",
+      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
+      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Ceiling-USB-BathroomAirIQ",
+      "mounting": "Ceiling",
+      "power": "USB",
+      "modules": [
+        "BathroomAirIQ"
       ]
     },
     {

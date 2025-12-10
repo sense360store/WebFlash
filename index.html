@@ -324,6 +324,7 @@
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ Base module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ Base module to free the DAC bus.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or Bathroom AirIQ, not both." aria-label="Conflicts with Bathroom AirIQ: Choose either standard AirIQ or Bathroom AirIQ, not both.">Bathroom AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
@@ -353,12 +354,91 @@
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support." aria-label="Conflicts with Fan Analog: Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.">Fan Analog</span>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="presence" data-conflict-variants="pro" title="Use Presence Base or remove one of the modules to avoid UART contention." aria-label="Conflicts with Presence Pro: Use Presence Base or remove one of the modules to avoid UART contention.">Presence Pro</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or Bathroom AirIQ, not both." aria-label="Conflicts with Bathroom AirIQ: Choose either standard AirIQ or Bathroom AirIQ, not both.">Bathroom AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
                                     </div>
                                 </div>
                                 </section>
+
+                            <section class="module-group" data-module-group="bathroomairiq" id="bathroomairiq-module-section" data-expanded="false" style="display: none;">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Bathroom AirIQ Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Bathroom AirIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="bathroomairiq"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-bathroomairiq"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-bathroomairiq" data-module-group-body hidden>
+                                    <p class="module-group__description">Ceiling-mounted air quality sensors optimized for bathroom environments.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="none">
+                                        <input type="radio" name="bathroomairiq" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Core only, no Bathroom AirIQ sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="base">
+                                        <input type="radio" name="bathroomairiq" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Humidity, temperature, and air quality monitoring optimized for bathroom environments.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev B core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J4 sensor bus · J7 auxiliary power</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Choose either Bathroom AirIQ or standard AirIQ, not both." aria-label="Conflicts with AirIQ Base/Pro: Choose either Bathroom AirIQ or standard AirIQ, not both.">AirIQ Base/Pro</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
 
                             <section class="module-group" data-module-group="presence" data-expanded="false">
                                 <div class="module-group__summary">
