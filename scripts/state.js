@@ -1267,36 +1267,69 @@ function isManifestReady() {
     return manifestData !== null;
 }
 
-async function loadManifestData() {
-    if (manifestData) {
+async function loadManifestData(options = {}) {
+    const { forceReload = false, maxRetries = 3 } = options;
+
+    if (manifestData && !forceReload) {
         return manifestData;
     }
 
-    if (manifestLoadPromise) {
+    if (manifestLoadPromise && !forceReload) {
         return manifestLoadPromise;
     }
 
-    manifestLoadPromise = fetch('manifest.json', { cache: 'no-store' })
-        .then(response => {
+    // Reset state for fresh load attempt
+    if (forceReload) {
+        manifestLoadPromise = null;
+        manifestLoadError = null;
+    }
+
+    const attemptFetch = async (attempt = 1) => {
+        try {
+            const response = await fetch('manifest.json', { cache: 'no-store' });
             if (!response.ok) {
                 throw new Error(`Manifest request failed with status ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
+            const data = await response.json();
             manifestData = data;
             manifestLoadError = null;
             buildManifestContext(data);
             return data;
-        })
-        .catch(error => {
+        } catch (error) {
+            if (attempt < maxRetries) {
+                const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000);
+                console.warn(`Manifest load attempt ${attempt} failed, retrying in ${delay}ms...`, error);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return attemptFetch(attempt + 1);
+            }
             manifestLoadError = error;
             manifestLoadPromise = null;
-            console.error('Failed to load manifest:', error);
+            console.error('Failed to load manifest after all retries:', error);
             throw error;
-        });
+        }
+    };
 
+    manifestLoadPromise = attemptFetch();
     return manifestLoadPromise;
+}
+
+async function handleRetryManifestLoad() {
+    const hint = document.getElementById('module-availability-hint');
+    if (hint) {
+        hint.classList.remove('is-error');
+        hint.innerHTML = 'Retrying compatibility data load…';
+    }
+
+    try {
+        await loadManifestData({ forceReload: true });
+        updateModuleOptionAvailability();
+        updateModuleAvailabilityMessage();
+        if (currentStep === 4) {
+            findCompatibleFirmware();
+        }
+    } catch (error) {
+        updateModuleAvailabilityMessage();
+    }
 }
 
 const manifestReadyPromise = loadManifestData().catch(() => null);
@@ -2095,7 +2128,11 @@ function updateModuleAvailabilityMessage() {
 
     if (manifestLoadError) {
         hint.classList.add('is-error');
-        hint.innerHTML = '<strong>Unable to load compatibility data.</strong> Module availability cannot be determined right now.';
+        hint.innerHTML = '<strong>Unable to load compatibility data.</strong> Module availability cannot be determined right now. <button type="button" class="btn-retry-manifest">Retry</button>';
+        const retryButton = hint.querySelector('.btn-retry-manifest');
+        if (retryButton) {
+            retryButton.addEventListener('click', handleRetryManifestLoad, { once: true });
+        }
         return;
     }
 

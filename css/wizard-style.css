@@ -378,6 +378,29 @@ h2 {
     background: var(--danger);
 }
 
+.btn-retry-manifest {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-retry-manifest:hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.btn-retry-manifest:active {
+    opacity: 0.8;
+}
+
 .module-tag {
     display: inline-flex;
     align-items: center;
