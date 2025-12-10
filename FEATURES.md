@@ -64,9 +64,9 @@ This document tracks implemented and planned features for the WebFlash firmware 
 - [x] Voice firmware configuration
 
 ### Firmware Management
-- [ ] Firmware update checker (compare installed vs available)
+- [x] Firmware update checker (compare installed vs available)
 - [ ] OTA (Over-the-Air) update support
-- [ ] Firmware changelog viewer
+- [x] Firmware changelog viewer
 - [ ] Custom firmware upload option
 
 ### Device Management
@@ -83,7 +83,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 ### Diagnostics
 - [ ] Device diagnostic mode
-- [ ] Sensor health check
+- [x] Sensor health check
 - [ ] Connection quality indicator
 - [ ] Error log viewer
 
@@ -97,6 +97,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 | Version | Key Features Added |
 |---------|-------------------|
+| 2.1.0   | Firmware changelog viewer, Firmware update checker, Sensor health check |
 | 2.0.0   | Bathroom AirIQ, Flash progress indicator, Ceiling fan support, Theme toggle |
 | 1.0.0   | Initial release with core wizard, module support, safety features |
 

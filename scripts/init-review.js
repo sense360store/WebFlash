@@ -6,6 +6,8 @@
 import { detectCapabilities } from './capabilities.js';
 import { renderCapabilityBar } from './ui-capability-bar.js';
 import { renderDeviceInfoPanel } from './layout/device-info-panel.js';
+import { createChangelogButton, initChangelogModal } from './layout/changelog-modal.js';
+import { renderSensorHealthPanel } from './layout/sensor-health-panel.js';
 
 /**
  * Browser-specific messages for unsupported browsers.
@@ -97,5 +99,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const deviceInfoContainer = document.querySelector('[data-device-info-mount]');
     if (deviceInfoContainer) {
         renderDeviceInfoPanel(deviceInfoContainer);
+    }
+
+    // Initialize changelog modal
+    initChangelogModal();
+
+    // Add changelog button to firmware section
+    const firmwareHeading = step.querySelector('.compatible-firmware-heading');
+    if (firmwareHeading) {
+        const changelogBtn = createChangelogButton();
+        changelogBtn.classList.add('compatible-firmware-changelog-btn');
+        firmwareHeading.appendChild(changelogBtn);
+    }
+
+    // Initialize sensor health panel after device info container
+    if (deviceInfoContainer) {
+        const healthPanelContainer = document.createElement('div');
+        healthPanelContainer.className = 'sensor-health-container';
+        healthPanelContainer.setAttribute('data-sensor-health-mount', '');
+        deviceInfoContainer.after(healthPanelContainer);
+        renderSensorHealthPanel(healthPanelContainer);
     }
 });

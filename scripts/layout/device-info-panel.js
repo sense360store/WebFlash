@@ -10,6 +10,7 @@ import {
     checkConfigCompatibility,
     closePort
 } from '../services/device-info.js';
+import { checkForUpdates, createUpdateNotification } from '../services/update-checker.js';
 
 /** @type {HTMLElement|null} */
 let panelElement = null;
@@ -204,7 +205,7 @@ function showLoadingState() {
  * Shows the device info content.
  * @param {Object} info - Device info object
  */
-function showDeviceInfo(info) {
+async function showDeviceInfo(info) {
     if (!panelElement) return;
 
     const placeholder = panelElement.querySelector('[data-device-placeholder]');
@@ -262,10 +263,54 @@ function showDeviceInfo(info) {
         }
     }
 
+    // Check for firmware updates if device has existing firmware
+    if (info.hasExistingFirmware && info.firmwareVersion) {
+        await checkAndShowUpdateStatus(info);
+    }
+
     // Dispatch event for other components
     document.dispatchEvent(new CustomEvent('deviceInfoRead', {
         detail: { deviceInfo: info }
     }));
+}
+
+/**
+ * Checks for firmware updates and shows status notification.
+ * @param {Object} info - Device info object
+ */
+async function checkAndShowUpdateStatus(info) {
+    if (!panelElement) return;
+
+    const actionsContainer = panelElement.querySelector('.device-info-panel__actions');
+    if (!actionsContainer) return;
+
+    // Remove any existing update notification
+    const existingNotification = panelElement.querySelector('.update-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    try {
+        const configString = window.currentConfigString || '';
+        const updateResult = await checkForUpdates(info, configString);
+        const notification = createUpdateNotification(updateResult);
+
+        // Insert notification before actions
+        actionsContainer.parentNode.insertBefore(notification, actionsContainer);
+
+        // If update is available, add click handler to scroll to firmware section
+        const actionBtn = notification.querySelector('[data-update-action]');
+        if (actionBtn) {
+            actionBtn.addEventListener('click', () => {
+                const firmwareSection = document.querySelector('.firmware-section');
+                if (firmwareSection) {
+                    firmwareSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+    } catch (error) {
+        console.warn('[device-info-panel] Could not check for updates:', error);
+    }
 }
 
 /**
