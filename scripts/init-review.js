@@ -8,6 +8,8 @@ import { renderCapabilityBar } from './ui-capability-bar.js';
 import { renderDeviceInfoPanel } from './layout/device-info-panel.js';
 import { createChangelogButton, initChangelogModal } from './layout/changelog-modal.js';
 import { renderSensorHealthPanel } from './layout/sensor-health-panel.js';
+import { createErrorLogButton, initErrorLogModal } from './layout/error-log-modal.js';
+import { initGlobalErrorHandlers } from './services/error-log.js';
 
 /**
  * Browser-specific messages for unsupported browsers.
@@ -104,12 +106,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize changelog modal
     initChangelogModal();
 
+    // Initialize error log modal and global error handlers
+    initGlobalErrorHandlers();
+    initErrorLogModal();
+
     // Add changelog button to firmware section
     const firmwareHeading = step.querySelector('.compatible-firmware-heading');
     if (firmwareHeading) {
         const changelogBtn = createChangelogButton();
         changelogBtn.classList.add('compatible-firmware-changelog-btn');
         firmwareHeading.appendChild(changelogBtn);
+
+        // Add error log button
+        const errorLogBtn = createErrorLogButton();
+        errorLogBtn.classList.add('compatible-firmware-changelog-btn');
+        firmwareHeading.appendChild(errorLogBtn);
     }
 
     // Initialize sensor health panel after device info container

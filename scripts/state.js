@@ -3,6 +3,8 @@ import { normalizeChannelKey } from './utils/channel-alias.js';
 import { MODULE_REQUIREMENT_MATRIX, getModuleMatrixEntry, getModuleVariantEntry } from './data/module-requirements.js';
 import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.js';
 import { recordFlashStart, recordFlashSuccess, recordFlashError, exportFlashHistoryText } from './utils/flash-history.js';
+// Import error logging service early to capture all errors including manifest load failures
+import './services/error-log.js';
 
 let currentStep = 1;
 const totalSteps = 4;

@@ -85,7 +85,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 - [ ] Device diagnostic mode
 - [x] Sensor health check
 - [ ] Connection quality indicator
-- [ ] Error log viewer
+- [x] Error log viewer
 
 ### Localization
 - [ ] Multi-language support
@@ -97,6 +97,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 | Version | Key Features Added |
 |---------|-------------------|
+| 2.1.1   | Error log viewer |
 | 2.1.0   | Firmware changelog viewer, Firmware update checker, Sensor health check |
 | 2.0.0   | Bathroom AirIQ, Flash progress indicator, Ceiling fan support, Theme toggle |
 | 1.0.0   | Initial release with core wizard, module support, safety features |

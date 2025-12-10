@@ -761,3 +761,405 @@
         flex-direction: column;
     }
 }
+
+/* ============================================
+   Error Log Modal
+   ============================================ */
+
+.error-log-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.error-log-modal[hidden] {
+    display: none;
+}
+
+.error-log-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.error-log-modal__container {
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+    max-height: 80vh;
+    background: var(--color-surface, #fff);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.error-log-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.error-log-modal__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.error-log-modal__title-icon {
+    color: #ef4444;
+}
+
+.error-log-modal__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #ef4444;
+    color: white;
+    border-radius: 10px;
+}
+
+.error-log-modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    color: var(--color-text-secondary, #6b7280);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.error-log-modal__close:hover {
+    background: var(--color-surface-hover, #f3f4f6);
+    color: var(--color-text, #1f2937);
+}
+
+.error-log-modal__filters {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-surface-alt, #f9fafb);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.error-log-modal__filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.error-log-modal__filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.error-log-modal__filter-label {
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.error-log-modal__filter-select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--color-surface, #fff);
+    color: var(--color-text, #1f2937);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.error-log-modal__filter-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.error-log-modal__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 1.5rem;
+}
+
+.error-log-modal__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #16a34a;
+}
+
+.error-log-modal__empty p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--color-text, #1f2937);
+}
+
+.error-log-modal__empty-hint {
+    font-size: 0.875rem !important;
+    color: var(--color-text-secondary, #6b7280) !important;
+}
+
+/* Error Log List */
+.error-log-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.error-log-item {
+    background: var(--color-surface-alt, #f9fafb);
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+    overflow: hidden;
+}
+
+.error-log-item--error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.error-log-item--warning {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.error-log-item--info {
+    border-left-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.error-log-item__main {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+}
+
+.error-log-item__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.error-log-item--error .error-log-item__icon {
+    color: #ef4444;
+}
+
+.error-log-item--warning .error-log-item__icon {
+    color: #f59e0b;
+}
+
+.error-log-item--info .error-log-item__icon {
+    color: #3b82f6;
+}
+
+.error-log-item__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.error-log-item__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.error-log-item__source {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-secondary, #6b7280);
+    background: var(--color-surface, #fff);
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+}
+
+.error-log-item__time {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #6b7280);
+    font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.error-log-item__message {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text, #1f2937);
+    word-break: break-word;
+}
+
+.error-log-item__expand {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    color: var(--color-text-secondary, #6b7280);
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.error-log-item__expand:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.error-log-item--expanded .error-log-item__expand {
+    transform: rotate(180deg);
+}
+
+.error-log-item__details {
+    display: none;
+    padding: 0 1rem 1rem;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+}
+
+.error-log-item--expanded .error-log-item__details {
+    display: block;
+}
+
+.error-log-item__stack,
+.error-log-item__context {
+    margin-bottom: 0.75rem;
+}
+
+.error-log-item__stack:last-child,
+.error-log-item__context:last-child {
+    margin-bottom: 0;
+}
+
+.error-log-item__stack strong,
+.error-log-item__context strong {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--color-text-secondary, #6b7280);
+    margin-bottom: 0.375rem;
+}
+
+.error-log-item__stack pre,
+.error-log-item__context pre {
+    margin: 0;
+    padding: 0.75rem;
+    background: #1f2937;
+    color: #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Error Log Trigger Button */
+.error-log-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    position: relative;
+}
+
+.error-log-trigger__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: #ef4444;
+    color: white;
+    border-radius: 9px;
+}
+
+/* Error Log Modal Dark Theme */
+[data-theme="dark"] .error-log-modal__backdrop {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .error-log-modal__container {
+    background: var(--color-surface, #1f2937);
+}
+
+[data-theme="dark"] .error-log-item--error {
+    background: #450a0a;
+}
+
+[data-theme="dark"] .error-log-item--warning {
+    background: #451a03;
+}
+
+[data-theme="dark"] .error-log-item--info {
+    background: #1e3a5f;
+}
+
+[data-theme="dark"] .error-log-item__source {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .error-log-item__expand:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Error Log Modal Responsive */
+@media (max-width: 640px) {
+    .error-log-modal {
+        padding: 0;
+    }
+
+    .error-log-modal__container {
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .error-log-modal__filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .error-log-modal__filter-actions {
+        justify-content: flex-end;
+    }
+
+    .error-log-item__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
