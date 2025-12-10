@@ -1239,6 +1239,7 @@ function buildManifestContext(manifest) {
                             presence: new Set(),
                             comfort: new Set(),
                             fan: new Set(),
+                            voice: new Set(),
                             bathroomairiq: new Set()
                         },
                         combos: new Set()
@@ -4396,7 +4397,7 @@ function applyConfiguration(initialConfig) {
         setStepNextButtonDisabled('#step-2', true);
     }
 
-    ['airiq', 'bathroomairiq', 'presence', 'comfort', 'fan'].forEach(key => {
+    ['airiq', 'bathroomairiq', 'presence', 'comfort', 'fan', 'voice'].forEach(key => {
         const value = configuration[key];
         const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
         if (input) {
