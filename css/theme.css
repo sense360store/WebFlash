@@ -1,19 +1,20 @@
 :root {
     color-scheme: light dark;
 
-    /* Base */
-    --bg: #ffffff;
-    --bg-elev-1: #f6f8fa;
-    --bg-elev-2: #eef2f6;
-    --surface: #ffffff;
-    --text: #0b1220;
-    --text-muted: #4b5563;
-    --border: #d0d7de;
+    /* Base - Updated color palette */
+    --bg: #F8FAFC;
+    --bg-elev-1: #F1F5F9;
+    --bg-elev-2: #E2E8F0;
+    --surface: #FFFFFF;
+    --text: #0F172A;
+    --text-muted: #64748B;
+    --text-body: #475569;
+    --border: #E2E8F0;
 
-    /* Brand & states */
-    --accent: #2ea6ff;
-    --accent-hover: #1990ea;
-    --accent-contrast: #001b2b;
+    /* Brand & states - Teal primary */
+    --accent: #0D9488;
+    --accent-hover: #0F766E;
+    --accent-contrast: #FFFFFF;
 
     --success: #2ecc71;
     --warning: #f4b400;
@@ -33,7 +34,7 @@
     --kbd-bg: var(--bg-elev-2);
     --input-bg: #ffffff;
     --input-text: var(--text);
-    --focus-ring: #1990ea;
+    --focus-ring: #0D9488;
 
     /* Legacy variable bridge */
     --color-background: var(--bg);
@@ -163,7 +164,7 @@ html[data-theme="dark"] {
         --kbd-bg: var(--bg-elev-2);
         --input-bg: var(--bg-elev-1);
         --input-text: var(--text);
-        --focus-ring: #58a6ff;
+        --focus-ring: #2DD4BF;
 
         /* Legacy variable bridge updates for dark mode */
         --capability-chip-available-bg: color-mix(in srgb, var(--success) 18%, var(--bg-elev-1));
@@ -219,7 +220,7 @@ hr,
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
     min-height: 2.75rem;
-    border-radius: 0.75rem;
+    border-radius: 8px;
     border: 1px solid var(--btn-border);
     background: var(--btn-bg);
     color: var(--btn-fg);
@@ -251,18 +252,18 @@ hr,
 }
 
 .btn-primary {
-    --btn-bg: var(--brand-green-contrast);
-    --btn-fg: #fff;
+    --btn-bg: var(--accent);
+    --btn-fg: var(--accent-contrast);
     --btn-border: transparent;
-    box-shadow: 0 10px 24px rgba(var(--brand-green-contrast-rgb), 0.24);
+    box-shadow: 0 10px 24px rgba(13, 148, 136, 0.24);
 }
 
 .btn-primary:hover:not(:disabled) {
-    --btn-bg: var(--brand-green-contrast-hover);
+    --btn-bg: var(--accent-hover);
 }
 
 .btn-primary:active:not(:disabled) {
-    --btn-bg: var(--brand-green-contrast-active);
+    --btn-bg: #115E59;
 }
 
 .btn-secondary {
@@ -498,29 +499,29 @@ html[data-theme="light"] .theme-toggle__icon--sun {
  * Uses official CSS variables from https://esphome.github.io/esp-web-tools/
  */
 esp-web-install-button {
-    --esp-tools-button-color: var(--brand-green-contrast, #16a34a);
-    --esp-tools-button-text-color: #ffffff;
-    --esp-tools-button-border-radius: 0.75rem;
+    --esp-tools-button-color: var(--accent, #0D9488);
+    --esp-tools-button-text-color: var(--accent-contrast, #ffffff);
+    --esp-tools-button-border-radius: 8px;
 }
 
 esp-web-install-button::part(button) {
-    font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 600;
     font-size: 1rem;
     padding: 0.75rem 1.5rem;
     min-height: 2.75rem;
-    box-shadow: 0 10px 24px rgba(22, 163, 74, 0.24);
+    box-shadow: 0 10px 24px rgba(13, 148, 136, 0.24);
     transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 esp-web-install-button::part(button):hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 28px rgba(22, 163, 74, 0.32);
+    box-shadow: 0 12px 28px rgba(13, 148, 136, 0.32);
 }
 
 esp-web-install-button::part(button):active {
     transform: translateY(0);
-    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.28);
+    box-shadow: 0 6px 16px rgba(13, 148, 136, 0.28);
 }
 
 esp-web-install-button[disabled]::part(button),

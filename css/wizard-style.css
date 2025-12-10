@@ -6,23 +6,24 @@
 }
 
 body {
-    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.5;
-    color: var(--color-text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text-body, var(--color-text-primary));
     background-color: var(--color-background);
     font-size: 16px;
 }
 
 :root {
-    --brand-green: #00c853;
-    --brand-green-rgb: 0, 200, 83;
-    --brand-green-contrast: #008631;
-    --brand-green-contrast-rgb: 0, 134, 49;
-    --brand-green-contrast-hover: #00742a;
-    --brand-green-contrast-active: #006221;
-    --brand-green-tint: #e8f5e9;
-    --brand-green-tint-strong: #d0ebd6;
-    --brand-green-border: #a4d9b8;
+    /* Brand colors - Teal primary */
+    --brand-green: #14B8A6;
+    --brand-green-rgb: 13, 148, 136;
+    --brand-green-contrast: #0D9488;
+    --brand-green-contrast-rgb: 13, 148, 136;
+    --brand-green-contrast-hover: #0F766E;
+    --brand-green-contrast-active: #115E59;
+    --brand-green-tint: #F0FDFA;
+    --brand-green-tint-strong: #CCFBF1;
+    --brand-green-border: #5EEAD4;
     --brand-green-selection-surface: var(--brand-green-tint);
     --brand-green-selection-surface-strong: var(--brand-green-tint-strong);
     --brand-green-selection-surface-subtle: color-mix(in srgb, var(--brand-green-selection-surface) 55%, var(--color-surface));
@@ -32,7 +33,13 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 96px 24px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 64px 16px;
+    }
 }
 
 /* Header */
@@ -40,7 +47,7 @@ header {
     text-align: center;
     margin-bottom: 32px;
     background: var(--color-surface);
-    padding: 24px;
+    padding: 32px;
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
@@ -60,15 +67,34 @@ header {
 }
 
 h1 {
-    font-size: 28px;
-    font-weight: 400;
-    color: var(--color-text-primary);
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text, var(--color-text-primary));
     margin-bottom: 8px;
+}
+
+h2 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text, var(--color-text-primary));
 }
 
 .subtitle {
     font-size: 16px;
-    color: var(--color-text-secondary);
+    line-height: 1.6;
+    color: var(--text-muted, var(--color-text-secondary));
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 32px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
 }
 
 /* Progress Bar */
@@ -138,10 +164,10 @@ h1 {
 }
 
 .progress-step.active .step-number {
-    border-color: var(--brand-green-contrast);
-    background: var(--brand-green-contrast);
-    color: #fff;
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-green-contrast) 20%, transparent);
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .step-label {
@@ -177,7 +203,7 @@ h1 {
 .wizard-container {
     background: var(--color-surface);
     border-radius: 12px;
-    padding: 48px;
+    padding: 32px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
@@ -233,10 +259,11 @@ h1 {
 }
 
 .wizard-step h2 {
-    font-size: 24px;
-    font-weight: 400;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.2;
     margin-bottom: 32px;
-    color: var(--color-text-primary);
+    color: var(--text, var(--color-text-primary));
 }
 
 .wizard-step__content {
@@ -3183,14 +3210,14 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 }
 
 .path-card:hover {
-    border-color: var(--brand-green-border);
-    box-shadow: 0 4px 12px rgba(var(--brand-green-rgb), 0.12);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.12);
     transform: translateY(-2px);
 }
 
 .path-card--active {
-    border-color: var(--brand-green-contrast);
-    background: var(--brand-green-selection-surface-subtle);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
 .path-card__icon {
@@ -3200,9 +3227,9 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     justify-content: center;
     width: 48px;
     height: 48px;
-    background: var(--brand-green-tint);
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
     border-radius: 10px;
-    color: var(--brand-green-contrast);
+    color: var(--accent);
 }
 
 .path-card[data-path="custom"] .path-card__icon {
