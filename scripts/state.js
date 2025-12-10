@@ -1165,6 +1165,7 @@ function parseConfigStringState(configString) {
         presence: 'none',
         comfort: 'none',
         fan: 'none',
+        voice: 'none',
         bathroomairiq: 'none'
     };
 
@@ -1192,6 +1193,9 @@ function parseConfigStringState(configString) {
         } else if (segment.startsWith('Fan')) {
             const suffix = segment.substring('Fan'.length);
             moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
+        } else if (segment.startsWith('Voice')) {
+            const suffix = segment.substring('Voice'.length);
+            moduleState.voice = normaliseModuleValue('voice', suffix ? suffix.toLowerCase() : 'base');
         }
     }
 
