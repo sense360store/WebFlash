@@ -20,6 +20,12 @@ const MODULE_REQUIREMENT_MATRIX = {
                         variants: ['analog'],
                         message: 'Conflicts with Fan Analog — analog control uses the shared DAC header.',
                         detail: 'Select PWM fan control or remove the AirIQ Base module to free the DAC bus.'
+                    },
+                    {
+                        module: 'bathroomairiq',
+                        variants: ['base'],
+                        message: 'Conflicts with Bathroom AirIQ — only one air quality module can be active at a time.',
+                        detail: 'Choose either standard AirIQ or Bathroom AirIQ, not both.'
                     }
                 ]
             },
@@ -39,6 +45,38 @@ const MODULE_REQUIREMENT_MATRIX = {
                         variants: ['pro'],
                         message: 'Conflicts with Presence Pro — both modules require the secondary UART header.',
                         detail: 'Use Presence Base or remove one of the modules to avoid UART contention.'
+                    },
+                    {
+                        module: 'bathroomairiq',
+                        variants: ['base'],
+                        message: 'Conflicts with Bathroom AirIQ — only one air quality module can be active at a time.',
+                        detail: 'Choose either standard AirIQ or Bathroom AirIQ, not both.'
+                    }
+                ]
+            }
+        }
+    },
+    bathroomairiq: {
+        label: 'Bathroom AirIQ Module',
+        summary: 'Ceiling-mounted air quality sensors optimized for bathroom environments.',
+        variants: {
+            none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                conflicts: []
+            },
+            base: {
+                label: 'Base',
+                coreRevision: 'Rev B core or newer',
+                headers: ['J4 sensor bus', 'J7 auxiliary power'],
+                recommended: true,
+                conflicts: [
+                    {
+                        module: 'airiq',
+                        variants: ['base', 'pro'],
+                        message: 'Conflicts with AirIQ — only one air quality module can be active at a time.',
+                        detail: 'Choose either Bathroom AirIQ or standard AirIQ, not both.'
                     }
                 ]
             }
