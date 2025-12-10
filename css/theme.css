@@ -81,17 +81,17 @@
 :root[data-theme="dark"],
 html[data-theme="dark"] {
     /* Base */
-    --bg: #0d1117;
-    --bg-elev-1: #161b22;
-    --bg-elev-2: #21262d;
-    --surface: #161b22;
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --border: #30363d;
+    --bg: #0F172A;
+    --bg-elev-1: #111827;
+    --bg-elev-2: #1F2937;
+    --surface: #0F172A;
+    --text: #E2E8F0;
+    --text-muted: #94A3B8;
+    --border: #1E293B;
 
-    /* Brand & states - slightly brighter for dark mode */
-    --accent: #58a6ff;
-    --accent-hover: #79b8ff;
+    /* Brand & states - Teal emphasis */
+    --accent: #2DD4BF;
+    --accent-hover: #14B8A6;
     --accent-contrast: #ffffff;
 
     --success: #3fb950;
@@ -112,7 +112,7 @@ html[data-theme="dark"] {
     --kbd-bg: var(--bg-elev-2);
     --input-bg: var(--bg-elev-1);
     --input-text: var(--text);
-    --focus-ring: #58a6ff;
+    --focus-ring: var(--accent);
 
     /* Brand accents tuned for dark surfaces */
     --brand-green-selection-surface: color-mix(in srgb, var(--brand-green) 22%, var(--bg-elev-1));
@@ -138,17 +138,17 @@ html[data-theme="dark"] {
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]):not([data-theme="dark"]) {
         /* Base */
-        --bg: #0d1117;
-        --bg-elev-1: #161b22;
-        --bg-elev-2: #21262d;
-        --surface: #161b22;
-        --text: #e6edf3;
-        --text-muted: #8b949e;
-        --border: #30363d;
+        --bg: #0F172A;
+        --bg-elev-1: #111827;
+        --bg-elev-2: #1F2937;
+        --surface: #0F172A;
+        --text: #E2E8F0;
+        --text-muted: #94A3B8;
+        --border: #1E293B;
 
-        /* Brand & states - slightly brighter for dark mode */
-        --accent: #58a6ff;
-        --accent-hover: #79b8ff;
+        /* Brand & states - Teal emphasis */
+        --accent: #2DD4BF;
+        --accent-hover: #14B8A6;
         --accent-contrast: #ffffff;
 
         --success: #3fb950;
@@ -169,7 +169,7 @@ html[data-theme="dark"] {
         --kbd-bg: var(--bg-elev-2);
         --input-bg: var(--bg-elev-1);
         --input-text: var(--text);
-        --focus-ring: #2DD4BF;
+        --focus-ring: var(--accent);
 
         /* Brand accents tuned for dark surfaces */
         --brand-green-selection-surface: color-mix(in srgb, var(--brand-green) 22%, var(--bg-elev-1));
