@@ -3309,3 +3309,55 @@ html[data-theme="dark"] .quick-start-presets {
         height: 24px;
     }
 }
+
+/* Bathroom toggle section */
+.bathroom-toggle-section {
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+}
+
+.bathroom-toggle__label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.bathroom-toggle__checkbox {
+    margin-top: 4px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-green-contrast);
+    cursor: pointer;
+}
+
+.bathroom-toggle__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bathroom-toggle__text strong {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.bathroom-toggle__description {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+.bathroom-toggle__label:hover .bathroom-toggle__text strong {
+    color: var(--brand-green-contrast);
+}
+
+/* When bathroom is checked, highlight the section */
+.bathroom-toggle-section:has(.bathroom-toggle__checkbox:checked) {
+    border-color: var(--brand-green-border);
+    background: var(--brand-green-selection-surface-subtle);
+}

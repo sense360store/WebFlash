@@ -44,6 +44,46 @@ const MODULE_REQUIREMENT_MATRIX = {
             }
         }
     },
+    bathroomairiq: {
+        label: 'Bathroom AirIQ Module',
+        summary: 'Bathroom-optimized air quality sensing with humidity, pressure, VOC/NOx, and optional condensation detection.',
+        ceilingOnly: true,
+        requiresBathroom: true,
+        variants: {
+            none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                conflicts: [],
+                sensors: []
+            },
+            base: {
+                label: 'Base',
+                coreRevision: 'To be added',
+                headers: ['To be added'],
+                recommended: true,
+                conflicts: [],
+                sensors: [
+                    'SHT4x (temperature, humidity)',
+                    'BMP390 (pressure)',
+                    'SGP41 (VOC / NOx)'
+                ]
+            },
+            pro: {
+                label: 'Pro',
+                coreRevision: 'To be added',
+                headers: ['To be added'],
+                conflicts: [],
+                sensors: [
+                    'SHT4x (temperature, humidity)',
+                    'BMP390 (pressure)',
+                    'SGP41 (VOC / NOx)',
+                    'MLX90614 (IR surface temperature / condensation risk)',
+                    'SPS30 (PM1.0 / PM2.5 / PM10)'
+                ]
+            }
+        }
+    },
     presence: {
         label: 'Presence Module',
         summary: 'mmWave radar for occupancy detection.',
