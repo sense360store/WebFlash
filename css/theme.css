@@ -420,9 +420,9 @@ html[data-theme="dark"] esp-web-install-button::part(button):active {
 /* Theme toggle button */
 .theme-toggle {
     position: absolute;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
+    top: 16px;
+    right: 16px;
+    transform: none;
     display: flex;
     align-items: center;
     justify-content: center;
