@@ -3111,6 +3111,13 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     border-radius: 10px;
 }
 
+:root[data-theme="dark"] .quick-start-presets,
+html[data-theme="dark"] .quick-start-presets {
+    background: var(--brand-green-selection-surface-subtle);
+    border-color: var(--brand-green-selection-border);
+    color: var(--text);
+}
+
 .quick-start-presets__label {
     font-size: 14px;
     font-weight: 600;
