@@ -76,9 +76,61 @@
     --capability-note-focus-ring: color-mix(in srgb, var(--danger) 45%, var(--focus-ring));
 }
 
-/* Dark mode - follows system preference */
+/* Dark mode variables - shared between system preference and manual toggle */
+:root[data-theme="dark"],
+html[data-theme="dark"] {
+    /* Base */
+    --bg: #0d1117;
+    --bg-elev-1: #161b22;
+    --bg-elev-2: #21262d;
+    --surface: #161b22;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --border: #30363d;
+
+    /* Brand & states - slightly brighter for dark mode */
+    --accent: #58a6ff;
+    --accent-hover: #79b8ff;
+    --accent-contrast: #ffffff;
+
+    --success: #3fb950;
+    --warning: #d29922;
+    --danger: #f85149;
+
+    --warning-surface: color-mix(in srgb, var(--warning) 15%, var(--bg-elev-1));
+    --warning-border: color-mix(in srgb, var(--warning) 40%, var(--border));
+    --warning-text: color-mix(in srgb, var(--warning) 85%, white);
+    --warning-strong: color-mix(in srgb, var(--warning) 90%, white);
+    --danger-surface: color-mix(in srgb, var(--danger) 12%, var(--bg-elev-1));
+    --danger-border: color-mix(in srgb, var(--danger) 40%, var(--border));
+    --danger-text: color-mix(in srgb, var(--danger) 85%, white);
+    --danger-strong: color-mix(in srgb, var(--danger) 90%, white);
+
+    /* Components */
+    --chip-bg: color-mix(in srgb, var(--accent) 15%, var(--bg-elev-1));
+    --kbd-bg: var(--bg-elev-2);
+    --input-bg: var(--bg-elev-1);
+    --input-text: var(--text);
+    --focus-ring: #58a6ff;
+
+    /* Legacy variable bridge updates for dark mode */
+    --capability-chip-available-bg: color-mix(in srgb, var(--success) 18%, var(--bg-elev-1));
+    --capability-chip-available-border: color-mix(in srgb, var(--success) 50%, var(--border));
+    --capability-chip-available-text: color-mix(in srgb, var(--success) 85%, white);
+    --capability-chip-partial-bg: color-mix(in srgb, var(--warning) 18%, var(--bg-elev-1));
+    --capability-chip-partial-border: color-mix(in srgb, var(--warning) 50%, var(--border));
+    --capability-chip-partial-text: color-mix(in srgb, var(--warning) 85%, white);
+    --capability-chip-unavailable-bg: color-mix(in srgb, var(--danger) 15%, var(--bg-elev-1));
+    --capability-chip-unavailable-border: color-mix(in srgb, var(--danger) 50%, var(--border));
+    --capability-chip-unavailable-text: color-mix(in srgb, var(--danger) 85%, white);
+    --capability-note-bg: color-mix(in srgb, var(--danger) 10%, var(--bg-elev-2));
+    --capability-note-border: color-mix(in srgb, var(--danger) 35%, var(--border));
+    --capability-note-text: color-mix(in srgb, var(--danger) 85%, white);
+}
+
+/* Dark mode - follows system preference (only when no explicit theme is set) */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
         /* Base */
         --bg: #0d1117;
         --bg-elev-1: #161b22;
@@ -295,34 +347,146 @@ header {
     }
 }
 
-/* Dark mode button shadows */
+/* Dark mode button shadows - manual toggle */
+:root[data-theme="dark"] .btn,
+html[data-theme="dark"] .btn {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="dark"] .btn:hover:not(:disabled),
+html[data-theme="dark"] .btn:hover:not(:disabled) {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="dark"] .btn:active:not(:disabled),
+html[data-theme="dark"] .btn:active:not(:disabled) {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .btn-primary {
+    box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
+}
+
+:root[data-theme="dark"] esp-web-install-button::part(button),
+html[data-theme="dark"] esp-web-install-button::part(button) {
+    box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
+}
+
+:root[data-theme="dark"] esp-web-install-button::part(button):hover,
+html[data-theme="dark"] esp-web-install-button::part(button):hover {
+    box-shadow: 0 12px 28px rgba(22, 163, 74, 0.4);
+}
+
+:root[data-theme="dark"] esp-web-install-button::part(button):active,
+html[data-theme="dark"] esp-web-install-button::part(button):active {
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+}
+
+/* Dark mode button shadows - system preference fallback */
 @media (prefers-color-scheme: dark) {
-    .btn {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) .btn {
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     }
 
-    .btn:hover:not(:disabled) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) .btn:hover:not(:disabled) {
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
     }
 
-    .btn:active:not(:disabled) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) .btn:active:not(:disabled) {
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
     }
 
-    .btn-primary {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) .btn-primary {
         box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
     }
 
-    esp-web-install-button::part(button) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) esp-web-install-button::part(button) {
         box-shadow: 0 10px 24px rgba(22, 163, 74, 0.3);
     }
 
-    esp-web-install-button::part(button):hover {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) esp-web-install-button::part(button):hover {
         box-shadow: 0 12px 28px rgba(22, 163, 74, 0.4);
     }
 
-    esp-web-install-button::part(button):active {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) esp-web-install-button::part(button):active {
         box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
+    }
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--bg-elev-1);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--bg-elev-2);
+    color: var(--text);
+    border-color: var(--text-muted);
+}
+
+.theme-toggle:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.theme-toggle svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.theme-toggle__icon--sun,
+.theme-toggle__icon--moon {
+    display: none;
+}
+
+/* Show sun icon in dark mode (click to switch to light) */
+:root[data-theme="dark"] .theme-toggle__icon--sun,
+html[data-theme="dark"] .theme-toggle__icon--sun {
+    display: block;
+}
+
+:root[data-theme="dark"] .theme-toggle__icon--moon,
+html[data-theme="dark"] .theme-toggle__icon--moon {
+    display: none;
+}
+
+/* Show moon icon in light mode (click to switch to dark) */
+:root[data-theme="light"] .theme-toggle__icon--moon,
+html[data-theme="light"] .theme-toggle__icon--moon {
+    display: block;
+}
+
+:root[data-theme="light"] .theme-toggle__icon--sun,
+html[data-theme="light"] .theme-toggle__icon--sun {
+    display: none;
+}
+
+/* System preference: show moon in light, sun in dark */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) .theme-toggle__icon--moon {
+        display: block;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .theme-toggle__icon--sun {
+        display: block;
     }
 }
 
