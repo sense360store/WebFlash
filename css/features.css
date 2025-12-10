@@ -1,0 +1,763 @@
+/**
+ * Styles for new features:
+ * - Firmware Changelog Modal
+ * - Firmware Update Checker
+ * - Sensor Health Check Panel
+ */
+
+/* ============================================
+   Changelog Modal
+   ============================================ */
+
+.changelog-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.changelog-modal[hidden] {
+    display: none;
+}
+
+.changelog-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.changelog-modal__container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    max-height: 80vh;
+    background: var(--color-surface, #fff);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.changelog-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.changelog-modal__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.changelog-modal__title-icon {
+    color: var(--color-primary, #3b82f6);
+}
+
+.changelog-modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    color: var(--color-text-secondary, #6b7280);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.changelog-modal__close:hover {
+    background: var(--color-surface-hover, #f3f4f6);
+    color: var(--color-text, #1f2937);
+}
+
+.changelog-modal__filters {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-surface-alt, #f9fafb);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.changelog-modal__filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.changelog-modal__filter-label {
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.changelog-modal__filter-select {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 6px;
+    background: var(--color-surface, #fff);
+    color: var(--color-text, #1f2937);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.changelog-modal__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+}
+
+.changelog-modal__loading,
+.changelog-modal__empty,
+.changelog-modal__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.changelog-modal__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border, #e5e7eb);
+    border-top-color: var(--color-primary, #3b82f6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Changelog Entry */
+.changelog-entry {
+    padding: 1.25rem;
+    background: var(--color-surface-alt, #f9fafb);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.changelog-entry:last-child {
+    margin-bottom: 0;
+}
+
+.changelog-entry__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.changelog-entry__version-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.changelog-entry__version {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.changelog-entry__channel {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    border-radius: 4px;
+}
+
+.changelog-entry__channel--stable {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.changelog-entry__channel--beta {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.changelog-entry__channel--preview {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.changelog-entry__date {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.changelog-entry__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.changelog-entry__section {
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--color-border, #e5e7eb);
+}
+
+.changelog-entry__section--warning {
+    border-left-color: #f59e0b;
+}
+
+.changelog-entry__section-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.changelog-entry__list {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text, #1f2937);
+}
+
+.changelog-entry__list li {
+    margin-bottom: 0.25rem;
+}
+
+.changelog-entry__footer {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.changelog-entry__configs-label {
+    font-weight: 500;
+}
+
+/* Changelog Trigger Button */
+.changelog-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+/* Changelog button in firmware section heading */
+.compatible-firmware-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.compatible-firmware-changelog-btn {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* ============================================
+   Update Notification
+   ============================================ */
+
+.update-notification {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-top: 0.75rem;
+}
+
+.update-notification--available {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+}
+
+.update-notification--current {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+}
+
+.update-notification--newer {
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+}
+
+.update-notification--unknown {
+    background: var(--color-surface-alt, #f9fafb);
+    border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.update-notification__icon {
+    flex-shrink: 0;
+}
+
+.update-notification--available .update-notification__icon {
+    color: #2563eb;
+}
+
+.update-notification--current .update-notification__icon {
+    color: #16a34a;
+}
+
+.update-notification--newer .update-notification__icon {
+    color: #d97706;
+}
+
+.update-notification__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.update-notification__title {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.update-notification__message {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.update-notification__action {
+    flex-shrink: 0;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+/* ============================================
+   Sensor Health Panel
+   ============================================ */
+
+.sensor-health-panel {
+    background: var(--color-surface, #fff);
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: 8px;
+    margin-top: 1.5rem;
+}
+
+.sensor-health-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.sensor-health-panel__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.sensor-health-panel__icon {
+    color: var(--color-primary, #3b82f6);
+}
+
+.sensor-health-panel__status {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+    background: var(--color-surface-alt, #f3f4f6);
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.sensor-health-panel__status--checking {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.sensor-health-panel__status--healthy {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.sensor-health-panel__status--degraded {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sensor-health-panel__status--unhealthy,
+.sensor-health-panel__status--error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.sensor-health-panel__status--no-sensors {
+    background: var(--color-surface-alt, #f3f4f6);
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.sensor-health-panel__description {
+    margin: 0;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary, #6b7280);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.sensor-health-panel__body {
+    padding: 1.25rem;
+}
+
+.sensor-health-panel__placeholder,
+.sensor-health-panel__unsupported {
+    text-align: center;
+    padding: 1.5rem 1rem;
+}
+
+.sensor-health-panel__placeholder p,
+.sensor-health-panel__unsupported p {
+    margin: 0 0 1rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.sensor-health-panel__check-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sensor-health-panel__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.sensor-health-panel__loading p {
+    margin: 0;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.sensor-health-panel__loading-hint {
+    font-size: 0.8125rem;
+    opacity: 0.7;
+}
+
+.sensor-health-panel__spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border, #e5e7eb);
+    border-top-color: var(--color-primary, #3b82f6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.sensor-health-panel__error {
+    text-align: center;
+    padding: 1.5rem 1rem;
+}
+
+.sensor-health-panel__error-message {
+    margin: 0 0 1rem;
+    color: #991b1b;
+}
+
+.sensor-health-panel__actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Health Summary */
+.sensor-health-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.sensor-health-summary--healthy {
+    background: #dcfce7;
+}
+
+.sensor-health-summary--degraded {
+    background: #fef3c7;
+}
+
+.sensor-health-summary--unhealthy {
+    background: #fee2e2;
+}
+
+.sensor-health-summary--empty {
+    background: var(--color-surface-alt, #f9fafb);
+    flex-direction: column;
+    text-align: center;
+}
+
+.sensor-health-summary__icon {
+    flex-shrink: 0;
+}
+
+.sensor-health-summary--healthy .sensor-health-summary__icon {
+    color: #16a34a;
+}
+
+.sensor-health-summary--degraded .sensor-health-summary__icon {
+    color: #d97706;
+}
+
+.sensor-health-summary--unhealthy .sensor-health-summary__icon {
+    color: #dc2626;
+}
+
+.sensor-health-summary--empty .sensor-health-summary__icon {
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.sensor-health-summary__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.sensor-health-summary__count {
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.sensor-health-summary__warnings {
+    font-size: 0.875rem;
+    color: #92400e;
+}
+
+.sensor-health-summary__errors {
+    font-size: 0.875rem;
+    color: #991b1b;
+}
+
+.sensor-health-summary--empty p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+/* Sensor List */
+.sensor-health-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.sensor-health-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--color-surface-alt, #f9fafb);
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+}
+
+.sensor-health-item--ok {
+    border-left-color: #22c55e;
+}
+
+.sensor-health-item--warning {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.sensor-health-item--error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.sensor-health-item__type-icon {
+    flex-shrink: 0;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.sensor-health-item__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.sensor-health-item__name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text, #1f2937);
+}
+
+.sensor-health-item__value {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary, #6b7280);
+    font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.sensor-health-item__status-icon {
+    flex-shrink: 0;
+}
+
+.sensor-health-item--ok .sensor-health-item__status-icon {
+    color: #22c55e;
+}
+
+.sensor-health-item--warning .sensor-health-item__status-icon {
+    color: #f59e0b;
+}
+
+.sensor-health-item--error .sensor-health-item__status-icon {
+    color: #ef4444;
+}
+
+/* Raw Output */
+.sensor-health-raw {
+    margin: 0;
+    padding: 1rem;
+    background: #1f2937;
+    color: #e5e7eb;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* ============================================
+   Shared Animations
+   ============================================ */
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   Dark Theme Overrides
+   ============================================ */
+
+[data-theme="dark"] .changelog-modal__backdrop {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .changelog-modal__container {
+    background: var(--color-surface, #1f2937);
+}
+
+[data-theme="dark"] .changelog-entry {
+    background: var(--color-surface-alt, #374151);
+}
+
+[data-theme="dark"] .changelog-entry__channel--stable {
+    background: #166534;
+    color: #dcfce7;
+}
+
+[data-theme="dark"] .changelog-entry__channel--beta {
+    background: #92400e;
+    color: #fef3c7;
+}
+
+[data-theme="dark"] .changelog-entry__channel--preview {
+    background: #1e40af;
+    color: #dbeafe;
+}
+
+[data-theme="dark"] .update-notification--available {
+    background: #1e3a5f;
+    border-color: #2563eb;
+}
+
+[data-theme="dark"] .update-notification--current {
+    background: #14532d;
+    border-color: #16a34a;
+}
+
+[data-theme="dark"] .update-notification--newer {
+    background: #451a03;
+    border-color: #d97706;
+}
+
+[data-theme="dark"] .sensor-health-summary--healthy {
+    background: #14532d;
+}
+
+[data-theme="dark"] .sensor-health-summary--degraded {
+    background: #451a03;
+}
+
+[data-theme="dark"] .sensor-health-summary--unhealthy {
+    background: #450a0a;
+}
+
+[data-theme="dark"] .sensor-health-item--warning {
+    background: #451a03;
+}
+
+[data-theme="dark"] .sensor-health-item--error {
+    background: #450a0a;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 640px) {
+    .changelog-modal {
+        padding: 0;
+    }
+
+    .changelog-modal__container {
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .changelog-entry__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sensor-health-panel__header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .sensor-health-panel__actions {
+        flex-direction: column;
+    }
+}
