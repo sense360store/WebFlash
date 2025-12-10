@@ -38,6 +38,7 @@ const defaultConfiguration = {
     presence: 'none',
     comfort: 'none',
     fan: 'none',
+    voice: 'none',
     bathroomairiq: 'none'
 };
 const configuration = { ...defaultConfiguration };
@@ -50,6 +51,7 @@ const allowedOptions = {
     presence: ['none', 'base', 'pro'],
     comfort: ['none', 'base'],
     fan: ['none', 'pwm', 'analog'],
+    voice: ['none', 'base'],
     bathroomairiq: ['none', 'base', 'pro']
 };
 
@@ -83,19 +85,23 @@ const MODULE_VARIANT_LABELS = Object.freeze({
         pwm: 'Fan PWM module',
         analog: 'Fan Analog module'
     }),
+    voice: Object.freeze({
+        base: 'Voice Base module'
+    }),
     bathroomairiq: Object.freeze({
         base: 'Bathroom AirIQ Base module',
         pro: 'Bathroom AirIQ Pro module'
     })
 });
 
-const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
+const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan', 'voice', 'bathroomairiq'];
 const MODULE_LABELS = {
     airiq: 'AirIQ',
     bathroomairiq: 'Bathroom AirIQ',
     presence: 'Presence',
     comfort: 'Comfort',
     fan: 'Fan',
+    voice: 'Voice',
     bathroomairiq: 'Bathroom AirIQ'
 };
 
@@ -105,6 +111,7 @@ const MODULE_SEGMENT_FORMATTERS = {
     presence: value => `Presence${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     comfort: value => `Comfort${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
+    voice: value => 'Voice',
     bathroomairiq: value => `BathroomAirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`
 };
 
@@ -1627,33 +1634,6 @@ function updateFanModuleVisibility() {
     fanSection.style.display = '';
     const isExpanded = fanSection.dataset.expanded === 'true';
     setModuleGroupExpanded(fanSection, isExpanded);
-
-    updateModuleGroupSummaries();
-}
-
-function updateBathroomAirIQModuleVisibility() {
-    const bathroomAirIQSection = document.getElementById('bathroomairiq-module-section');
-    if (!bathroomAirIQSection) {
-        return;
-    }
-
-    const shouldHideBathroomAirIQModule = configuration.mounting === 'wall';
-
-    if (shouldHideBathroomAirIQModule) {
-        bathroomAirIQSection.style.display = 'none';
-        closeModuleGroup('bathroomairiq');
-
-        const bathroomAirIQNoneInput = document.querySelector('input[name="bathroomairiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
-        }
-
-        configuration.bathroomairiq = 'none';
-    } else {
-        bathroomAirIQSection.style.display = '';
-        const isExpanded = bathroomAirIQSection.dataset.expanded === 'true';
-        setModuleGroupExpanded(bathroomAirIQSection, isExpanded);
-    }
 
     updateModuleGroupSummaries();
 }

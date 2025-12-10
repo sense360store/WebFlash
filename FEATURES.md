@@ -59,9 +59,9 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ## Planned Features
 
 ### Voice Control
-- [ ] Voice module UI support in wizard
-- [ ] Voice assistant integration options
-- [ ] Voice firmware configuration
+- [x] Voice module UI support in wizard
+- [x] Voice assistant integration options
+- [x] Voice firmware configuration
 
 ### Firmware Management
 - [ ] Firmware update checker (compare installed vs available)
