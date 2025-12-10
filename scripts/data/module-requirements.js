@@ -58,32 +58,6 @@ const MODULE_REQUIREMENT_MATRIX = {
     },
     bathroomairiq: {
         label: 'Bathroom AirIQ Module',
-        summary: 'Ceiling-mounted air quality sensors optimized for bathroom environments.',
-        variants: {
-            none: {
-                label: 'None',
-                coreRevision: null,
-                headers: [],
-                conflicts: []
-            },
-            base: {
-                label: 'Base',
-                coreRevision: 'Rev B core or newer',
-                headers: ['J4 sensor bus', 'J7 auxiliary power'],
-                recommended: true,
-                conflicts: [
-                    {
-                        module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ — only one air quality module can be active at a time.',
-                        detail: 'Choose either Bathroom AirIQ or standard AirIQ, not both.'
-                    }
-                ]
-            }
-        }
-    },
-    bathroomairiq: {
-        label: 'Bathroom AirIQ Module',
         summary: 'Bathroom-optimized air quality sensing with humidity, pressure, VOC/NOx, and optional condensation detection.',
         ceilingOnly: true,
         requiresBathroom: true,
