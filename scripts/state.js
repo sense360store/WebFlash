@@ -101,6 +101,215 @@ let preFlashAcknowledged = false;
 let currentFlashEntryId = null;
 let flashStartTime = null;
 
+// Flash progress state
+let currentFlashPhase = null;
+const FLASH_PHASES = ['connect', 'erase', 'write', 'verify'];
+const FLASH_PHASE_PROGRESS = {
+    idle: 0,
+    initializing: 5,
+    manifest: 10,
+    preparing: 15,
+    connect: 20,
+    erasing: 40,
+    writing: 70,
+    verifying: 90,
+    finished: 100,
+    error: 0
+};
+const FLASH_PHASE_STATUS = {
+    idle: 'Ready to install',
+    initializing: 'Initializing...',
+    manifest: 'Loading firmware manifest...',
+    preparing: 'Preparing device...',
+    connect: 'Connecting to device...',
+    erasing: 'Erasing flash memory...',
+    writing: 'Writing firmware...',
+    verifying: 'Verifying installation...',
+    finished: 'Installation complete!',
+    error: 'Installation failed'
+};
+const FLASH_STATE_TO_PHASE = {
+    initializing: 'connect',
+    manifest: 'connect',
+    preparing: 'connect',
+    erasing: 'erase',
+    writing: 'write',
+    verifying: 'verify',
+    finished: 'verify'
+};
+
+/**
+ * Updates the flash progress indicator UI
+ * @param {Object} options - Progress options
+ * @param {number} options.percentage - Progress percentage (0-100)
+ * @param {string} options.status - Status message to display
+ * @param {string} options.phase - Current phase (connect, erase, write, verify)
+ * @param {string} options.state - Overall state (active, success, error)
+ */
+function updateFlashProgress({ percentage, status, phase, state }) {
+    const container = document.getElementById('flash-progress');
+    if (!container) return;
+
+    const fillEl = container.querySelector('[data-flash-fill]');
+    const percentageEl = container.querySelector('[data-flash-percentage]');
+    const statusEl = container.querySelector('[data-flash-status]');
+    const titleEl = container.querySelector('[data-flash-title]');
+    const spinnerEl = container.querySelector('[data-flash-spinner]');
+
+    // Update progress bar
+    if (fillEl && percentage !== undefined) {
+        fillEl.style.width = `${percentage}%`;
+        fillEl.classList.remove('is-indeterminate');
+    }
+
+    // Update percentage text
+    if (percentageEl && percentage !== undefined) {
+        percentageEl.textContent = `${Math.round(percentage)}%`;
+    }
+
+    // Update ARIA value
+    if (percentage !== undefined) {
+        container.setAttribute('aria-valuenow', Math.round(percentage));
+    }
+
+    // Update status text
+    if (statusEl && status) {
+        statusEl.textContent = status;
+    }
+
+    // Update phase indicators
+    if (phase) {
+        currentFlashPhase = phase;
+        const phaseIndex = FLASH_PHASES.indexOf(phase);
+
+        FLASH_PHASES.forEach((phaseName, index) => {
+            const phaseEl = container.querySelector(`[data-phase="${phaseName}"]`);
+            const labelEl = container.querySelector(`[data-phase-label="${phaseName}"]`);
+
+            if (phaseEl) {
+                phaseEl.classList.remove('is-complete', 'is-active');
+                if (index < phaseIndex) {
+                    phaseEl.classList.add('is-complete');
+                } else if (index === phaseIndex) {
+                    phaseEl.classList.add('is-active');
+                }
+            }
+
+            if (labelEl) {
+                labelEl.classList.remove('is-complete', 'is-active');
+                if (index < phaseIndex) {
+                    labelEl.classList.add('is-complete');
+                } else if (index === phaseIndex) {
+                    labelEl.classList.add('is-active');
+                }
+            }
+        });
+    }
+
+    // Update overall state
+    container.classList.remove('is-active', 'is-success', 'is-error');
+    if (state === 'active') {
+        container.classList.add('is-active');
+        if (spinnerEl) spinnerEl.classList.add('is-spinning');
+    } else if (state === 'success') {
+        container.classList.add('is-active', 'is-success');
+        if (spinnerEl) spinnerEl.classList.remove('is-spinning');
+        if (titleEl) titleEl.textContent = 'Installation Complete';
+        // Mark all phases complete
+        FLASH_PHASES.forEach(phaseName => {
+            const phaseEl = container.querySelector(`[data-phase="${phaseName}"]`);
+            const labelEl = container.querySelector(`[data-phase-label="${phaseName}"]`);
+            if (phaseEl) {
+                phaseEl.classList.remove('is-active');
+                phaseEl.classList.add('is-complete');
+            }
+            if (labelEl) {
+                labelEl.classList.remove('is-active');
+                labelEl.classList.add('is-complete');
+            }
+        });
+    } else if (state === 'error') {
+        container.classList.add('is-active', 'is-error');
+        if (spinnerEl) spinnerEl.classList.remove('is-spinning');
+        if (titleEl) titleEl.textContent = 'Installation Failed';
+    }
+}
+
+/**
+ * Shows the flash progress indicator
+ */
+function showFlashProgress() {
+    const container = document.getElementById('flash-progress');
+    if (!container) return;
+
+    // Reset to initial state
+    const titleEl = container.querySelector('[data-flash-title]');
+    if (titleEl) titleEl.textContent = 'Installing Firmware';
+
+    updateFlashProgress({
+        percentage: 0,
+        status: 'Preparing...',
+        phase: null,
+        state: 'active'
+    });
+
+    // Reset all phases
+    FLASH_PHASES.forEach(phaseName => {
+        const phaseEl = container.querySelector(`[data-phase="${phaseName}"]`);
+        const labelEl = container.querySelector(`[data-phase-label="${phaseName}"]`);
+        if (phaseEl) phaseEl.classList.remove('is-complete', 'is-active');
+        if (labelEl) labelEl.classList.remove('is-complete', 'is-active');
+    });
+
+    container.classList.add('is-active');
+}
+
+/**
+ * Hides the flash progress indicator
+ */
+function hideFlashProgress() {
+    const container = document.getElementById('flash-progress');
+    if (!container) return;
+
+    container.classList.remove('is-active', 'is-success', 'is-error');
+    currentFlashPhase = null;
+}
+
+/**
+ * Handles ESP Web Tools state changes and updates progress
+ * @param {string} state - The flash state from ESP Web Tools
+ * @param {string} [message] - Optional message from the event
+ */
+function handleFlashStateProgress(state, message) {
+    if (!state) return;
+
+    const percentage = FLASH_PHASE_PROGRESS[state] ?? 0;
+    const status = message || FLASH_PHASE_STATUS[state] || `${state}...`;
+    const phase = FLASH_STATE_TO_PHASE[state] || null;
+
+    if (state === 'finished') {
+        updateFlashProgress({
+            percentage: 100,
+            status: 'Installation complete!',
+            phase: 'verify',
+            state: 'success'
+        });
+    } else if (state === 'error') {
+        updateFlashProgress({
+            percentage: FLASH_PHASE_PROGRESS[currentFlashPhase] || 0,
+            status: message || 'Installation failed',
+            state: 'error'
+        });
+    } else if (state !== 'idle') {
+        updateFlashProgress({
+            percentage,
+            status,
+            phase,
+            state: 'active'
+        });
+    }
+}
+
 function setWizardStepVisibility(stepElement, isVisible) {
     if (!stepElement) {
         return;
@@ -1088,10 +1297,14 @@ function setHomeAssistantIntegrationsButtonEnabled(isEnabled) {
 function handleInstallStateEvent(event) {
     const detail = event?.detail;
     const state = typeof detail === 'string' ? detail : detail?.state;
+    const message = detail?.message;
 
     if (!state) {
         return;
     }
+
+    // Update flash progress indicator
+    handleFlashStateProgress(state, message);
 
     if (state === 'finished') {
         setHomeAssistantIntegrationsButtonEnabled(true);
@@ -1108,7 +1321,7 @@ function handleInstallStateEvent(event) {
     if (state === 'error') {
         // Record failed flash
         if (currentFlashEntryId) {
-            const errorMsg = detail?.message || 'Installation failed';
+            const errorMsg = message || 'Installation failed';
             recordFlashError(currentFlashEntryId, errorMsg);
             currentFlashEntryId = null;
             flashStartTime = null;
@@ -3443,6 +3656,9 @@ function attachInstallButtonListeners() {
                     selectFirmwareById(firmwareId, { syncSelector: false });
                 }
                 setHomeAssistantIntegrationsButtonEnabled(false);
+
+                // Show flash progress indicator
+                showFlashProgress();
 
                 // Record flash start in history
                 const firmware = selectedFirmware || firmwareList.find(f => f.firmwareId === firmwareId);
