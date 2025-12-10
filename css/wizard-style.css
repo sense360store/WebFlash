@@ -438,7 +438,7 @@ h2 {
 
 .option-content {
     border: 2px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 24px;
     text-align: center;
     transition: all 0.2s ease;
