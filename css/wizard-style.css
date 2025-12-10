@@ -47,7 +47,7 @@ header {
     text-align: center;
     margin-bottom: 32px;
     background: var(--color-surface);
-    padding: 32px;
+    padding: 24px;
     border-radius: 12px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
     position: relative;
@@ -68,9 +68,9 @@ header {
 }
 
 h1 {
-    font-size: 48px;
+    font-size: clamp(32px, 4vw + 8px, 36px);
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.15;
     color: var(--text, var(--color-text-primary));
     margin-bottom: 8px;
 }
@@ -89,6 +89,10 @@ h2 {
 }
 
 @media (max-width: 768px) {
+    header {
+        padding: 20px;
+    }
+
     h1 {
         font-size: 32px;
     }
