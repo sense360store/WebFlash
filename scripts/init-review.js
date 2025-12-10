@@ -6,6 +6,7 @@
 import { detectCapabilities } from './capabilities.js';
 import { renderCapabilityBar } from './ui-capability-bar.js';
 import { renderDeviceInfoPanel } from './layout/device-info-panel.js';
+import { initSerialConsolePanel } from './layout/serial-console-panel.js';
 
 /**
  * Browser-specific messages for unsupported browsers.
@@ -97,5 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const deviceInfoContainer = document.querySelector('[data-device-info-mount]');
     if (deviceInfoContainer) {
         renderDeviceInfoPanel(deviceInfoContainer);
+    }
+
+    // Initialize serial console panel
+    const serialConsoleContainer = document.querySelector('[data-serial-console-mount]');
+    if (serialConsoleContainer) {
+        initSerialConsolePanel(serialConsoleContainer);
     }
 });

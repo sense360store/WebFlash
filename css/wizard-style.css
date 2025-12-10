@@ -3490,3 +3490,243 @@ html[data-theme="dark"] .quick-start-presets {
 .flash-progress.is-error .flash-progress__fill {
     background: var(--error-text, #dc2626);
 }
+
+/* Serial Console Panel */
+.serial-console-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    margin-top: 16px;
+    overflow: hidden;
+}
+
+.serial-console-panel.is-expanded {
+    border-color: var(--brand-green-border);
+}
+
+.serial-console-panel__header {
+    display: flex;
+}
+
+.serial-console-panel__toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 16px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--color-text-primary);
+    transition: background 0.2s ease;
+}
+
+.serial-console-panel__toggle:hover {
+    background: var(--color-surface-muted);
+}
+
+.serial-console-panel__toggle:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: -3px;
+}
+
+.serial-console-panel__icon {
+    flex-shrink: 0;
+    color: var(--brand-green-contrast);
+}
+
+.serial-console-panel__title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+}
+
+.serial-console-panel__status {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--color-surface-muted);
+    color: var(--color-text-secondary);
+}
+
+.serial-console-panel__status--connected {
+    background: var(--brand-green-tint);
+    color: var(--brand-green-contrast-hover);
+}
+
+.serial-console-panel__status--connecting {
+    background: var(--warning-surface, #fef3c7);
+    color: var(--warning-text, #d97706);
+}
+
+.serial-console-panel__status--error {
+    background: var(--error-surface, #fef2f2);
+    color: var(--error-text, #dc2626);
+}
+
+.serial-console-panel__chevron {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s ease;
+}
+
+.serial-console-panel.is-expanded .serial-console-panel__chevron {
+    transform: rotate(180deg);
+}
+
+.serial-console-panel__body {
+    border-top: 1px solid var(--color-border);
+}
+
+.serial-console-panel__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--color-surface-muted);
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.serial-console-panel__toolbar-left,
+.serial-console-panel__toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.serial-console-panel__autoscroll {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.serial-console-panel__autoscroll input {
+    margin: 0;
+    cursor: pointer;
+}
+
+.serial-console-panel__viewport {
+    height: 300px;
+    overflow-y: auto;
+    background: var(--color-surface-code, #1e1e1e);
+}
+
+.serial-console-panel__output {
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-text-console, #d4d4d4);
+    min-height: 100%;
+}
+
+.serial-console-panel__placeholder-text {
+    color: var(--color-text-console-muted, #808080);
+    font-style: italic;
+}
+
+.serial-console-panel__line {
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding: 1px 0;
+}
+
+.serial-console-panel__line--error {
+    color: var(--color-console-error, #f87171);
+}
+
+.serial-console-panel__line--warning {
+    color: var(--color-console-warning, #fbbf24);
+}
+
+.serial-console-panel__line--info {
+    color: var(--color-console-info, #60a5fa);
+}
+
+.serial-console-panel__line--debug {
+    color: var(--color-console-debug, #a78bfa);
+}
+
+.serial-console-panel__line--verbose {
+    color: var(--color-console-verbose, #6b7280);
+}
+
+.serial-console-panel__line--system {
+    color: var(--color-console-system, #34d399);
+    font-style: italic;
+}
+
+.serial-console-panel__unsupported {
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.serial-console-panel__unsupported p {
+    margin: 0 0 8px;
+}
+
+.serial-console-panel__unsupported p:last-child {
+    margin-bottom: 0;
+}
+
+/* Small button variant */
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    gap: 4px;
+}
+
+.btn-sm svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Console theme variables */
+:root {
+    --color-surface-code: #1e1e1e;
+    --color-text-console: #d4d4d4;
+    --color-text-console-muted: #808080;
+    --color-console-error: #f87171;
+    --color-console-warning: #fbbf24;
+    --color-console-info: #60a5fa;
+    --color-console-debug: #a78bfa;
+    --color-console-verbose: #6b7280;
+    --color-console-system: #34d399;
+}
+
+/* Light mode adjustments for console */
+@media (prefers-color-scheme: light) {
+    .serial-console-panel__viewport {
+        background: #1e1e1e;
+    }
+}
+
+/* Dark mode - keep dark console */
+[data-theme="dark"] .serial-console-panel__viewport {
+    background: #0d0d0d;
+}
+
+@media (max-width: 600px) {
+    .serial-console-panel__toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .serial-console-panel__toolbar-left,
+    .serial-console-panel__toolbar-right {
+        justify-content: center;
+    }
+
+    .serial-console-panel__viewport {
+        height: 200px;
+    }
+}
