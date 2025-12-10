@@ -5,6 +5,7 @@
  */
 
 // Import each wizard module exactly once to avoid duplicate initialization.
+import "./scripts/theme-toggle.js";
 import "./scripts/wizard-state-observer.js";
 import "./scripts/state.js";
 import "./scripts/recommended-bundle.js";
