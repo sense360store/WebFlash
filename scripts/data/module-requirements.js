@@ -178,6 +178,29 @@ const MODULE_REQUIREMENT_MATRIX = {
                 ]
             }
         }
+    },
+    voice: {
+        label: 'Voice Module',
+        summary: 'Voice assistant integration for hands-free control and feedback.',
+        variants: {
+            none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                conflicts: [],
+                recommended: true
+            },
+            base: {
+                label: 'Base',
+                coreRevision: 'Rev B core or newer',
+                headers: ['J5 audio interface'],
+                conflicts: [],
+                sensors: [
+                    'I2S microphone array',
+                    'Audio DAC output'
+                ]
+            }
+        }
     }
 };
 
