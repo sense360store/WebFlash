@@ -114,6 +114,11 @@ html[data-theme="dark"] {
     --input-text: var(--text);
     --focus-ring: #58a6ff;
 
+    /* Brand accents tuned for dark surfaces */
+    --brand-green-selection-surface: color-mix(in srgb, var(--brand-green) 22%, var(--bg-elev-1));
+    --brand-green-selection-surface-subtle: color-mix(in srgb, var(--brand-green) 16%, var(--bg-elev-1));
+    --brand-green-selection-border: color-mix(in srgb, var(--brand-green) 55%, var(--border));
+
     /* Legacy variable bridge updates for dark mode */
     --capability-chip-available-bg: color-mix(in srgb, var(--success) 18%, var(--bg-elev-1));
     --capability-chip-available-border: color-mix(in srgb, var(--success) 50%, var(--border));
@@ -165,6 +170,11 @@ html[data-theme="dark"] {
         --input-bg: var(--bg-elev-1);
         --input-text: var(--text);
         --focus-ring: #2DD4BF;
+
+        /* Brand accents tuned for dark surfaces */
+        --brand-green-selection-surface: color-mix(in srgb, var(--brand-green) 22%, var(--bg-elev-1));
+        --brand-green-selection-surface-subtle: color-mix(in srgb, var(--brand-green) 16%, var(--bg-elev-1));
+        --brand-green-selection-border: color-mix(in srgb, var(--brand-green) 55%, var(--border));
 
         /* Legacy variable bridge updates for dark mode */
         --capability-chip-available-bg: color-mix(in srgb, var(--success) 18%, var(--bg-elev-1));
