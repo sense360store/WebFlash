@@ -7,13 +7,13 @@
  * Order of configuration parameters for consistent URL generation.
  * @type {readonly string[]}
  */
-const CONFIG_PARAM_ORDER = Object.freeze(['mount', 'power', 'airiq', 'presence', 'comfort', 'fan']);
+const CONFIG_PARAM_ORDER = Object.freeze(['mount', 'power', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
 
 /**
  * Keys for optional module configuration parameters.
  * @type {readonly string[]}
  */
-const CONFIG_MODULE_KEYS = Object.freeze(['airiq', 'presence', 'comfort', 'fan']);
+const CONFIG_MODULE_KEYS = Object.freeze(['airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
 
 /**
  * Required configuration parameters that must be present for a valid config.
@@ -25,6 +25,7 @@ const DEFAULT_SANITIZED_CONFIG = Object.freeze({
     mount: null,
     power: null,
     airiq: 'none',
+    bathroomairiq: 'none',
     presence: 'none',
     comfort: 'none',
     fan: 'none'
@@ -63,6 +64,16 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
             ['pro', { wizardValue: 'pro', configSegment: 'AirIQPro' }]
         ]),
         allowedValues: Object.freeze(['none', 'base', 'pro'])
+    }),
+    bathroomairiq: Object.freeze({
+        required: false,
+        aliases: Object.freeze(['bathroomairiq']),
+        defaultOption: 'none',
+        options: new Map([
+            ['none', { wizardValue: 'none', configSegment: null }],
+            ['base', { wizardValue: 'base', configSegment: 'BathroomAirIQ' }]
+        ]),
+        allowedValues: Object.freeze(['none', 'base'])
     }),
     presence: Object.freeze({
         required: false,
@@ -127,7 +138,7 @@ function ensureSearchParams(input) {
  * @property {Array<{type: string, field: string, message: string}>} errors - Validation errors
  * @property {boolean} isValid - Whether the configuration is valid
  * @property {string|null} configKey - Generated config key for firmware lookup
- * @property {boolean} forcedFanNone - Whether fan was forced to 'none' (ceiling mount)
+ * @property {boolean} forcedFanNone - Reserved for future use (always false)
  * @property {number} paramCount - Total number of parameters in input
  */
 
@@ -138,7 +149,7 @@ function ensureSearchParams(input) {
  * - Required parameters (mount, power)
  * - Optional module parameters (airiq, presence, comfort, fan)
  * - Legacy value aliases (e.g., 'pwr' → 'ac')
- * - Ceiling mount restrictions (fan forced to 'none')
+ * - Optional module parameters with defaults
  *
  * @param {URLSearchParams|string|Object} inputParams - Input parameters to parse
  * @returns {ParsedConfig} Parsed and validated configuration
@@ -266,13 +277,15 @@ function parseConfigParams(inputParams) {
         }
     }
 
-    let forcedFanNone = false;
-    if (sanitizedConfig.mount === 'ceiling') {
-        if (fanCanonicalValue && fanCanonicalValue !== 'none') {
-            forcedFanNone = true;
+    const forcedFanNone = false;
+
+    let forcedBathroomAirIQNone = false;
+    if (sanitizedConfig.mount === 'wall') {
+        if (sanitizedConfig.bathroomairiq && sanitizedConfig.bathroomairiq !== 'none') {
+            forcedBathroomAirIQNone = true;
         }
-        sanitizedConfig.fan = 'none';
-        configSegments.set('fan', null);
+        sanitizedConfig.bathroomairiq = 'none';
+        configSegments.set('bathroomairiq', null);
     }
 
     const isValid = errors.length === 0 && Boolean(sanitizedConfig.mount) && Boolean(sanitizedConfig.power);
@@ -318,6 +331,7 @@ function parseConfigParams(inputParams) {
         isValid,
         configKey,
         forcedFanNone,
+        forcedBathroomAirIQNone,
         paramCount: paramKeys.size
     };
 }
@@ -340,6 +354,7 @@ function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
         mounting: safeConfig.mount ?? DEFAULT_SANITIZED_CONFIG.mount,
         power: safeConfig.power ?? DEFAULT_SANITIZED_CONFIG.power,
         airiq: safeConfig.airiq ?? DEFAULT_SANITIZED_CONFIG.airiq,
+        bathroomairiq: safeConfig.bathroomairiq ?? DEFAULT_SANITIZED_CONFIG.bathroomairiq,
         presence: safeConfig.presence ?? DEFAULT_SANITIZED_CONFIG.presence,
         comfort: safeConfig.comfort ?? DEFAULT_SANITIZED_CONFIG.comfort,
         fan: safeConfig.fan ?? DEFAULT_SANITIZED_CONFIG.fan

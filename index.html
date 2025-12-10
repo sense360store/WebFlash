@@ -160,7 +160,7 @@
                                     <span aria-hidden="true">i</span>
                                 </button>
                             </div>
-                            <div class="option-description">Ceiling installation (Fan Module not available)</div>
+                            <div class="option-description">Ceiling installation</div>
                         </div>
                     </label>
                 </div>
@@ -337,6 +337,7 @@
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ Base module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ Base module to free the DAC bus.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or Bathroom AirIQ, not both." aria-label="Conflicts with Bathroom AirIQ: Choose either standard AirIQ or Bathroom AirIQ, not both.">Bathroom AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
@@ -366,12 +367,91 @@
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support." aria-label="Conflicts with Fan Analog: Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.">Fan Analog</span>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="presence" data-conflict-variants="pro" title="Use Presence Base or remove one of the modules to avoid UART contention." aria-label="Conflicts with Presence Pro: Use Presence Base or remove one of the modules to avoid UART contention.">Presence Pro</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or Bathroom AirIQ, not both." aria-label="Conflicts with Bathroom AirIQ: Choose either standard AirIQ or Bathroom AirIQ, not both.">Bathroom AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
                                     </div>
                                 </div>
                                 </section>
+
+                            <section class="module-group" data-module-group="bathroomairiq" id="bathroomairiq-module-section" data-expanded="false" style="display: none;">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Bathroom AirIQ Module</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Bathroom AirIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="bathroomairiq"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-bathroomairiq"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-bathroomairiq" data-module-group-body hidden>
+                                    <p class="module-group__description">Ceiling-mounted air quality sensors optimized for bathroom environments.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="none">
+                                        <input type="radio" name="bathroomairiq" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Core only, no Bathroom AirIQ sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="base">
+                                        <input type="radio" name="bathroomairiq" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Humidity, temperature, and air quality monitoring optimized for bathroom environments.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev B core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J4 sensor bus · J7 auxiliary power</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Choose either Bathroom AirIQ or standard AirIQ, not both." aria-label="Conflicts with AirIQ Base/Pro: Choose either Bathroom AirIQ or standard AirIQ, not both.">AirIQ Base/Pro</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
 
                             <section class="module-group" data-module-group="presence" data-expanded="false">
                                 <div class="module-group__summary">
@@ -848,6 +928,40 @@
                     </div>
                     <div id="compatible-firmware">
                         <!-- Compatible firmware will be shown here -->
+                    </div>
+
+                    <!-- Flash Progress Indicator -->
+                    <div class="flash-progress" id="flash-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Firmware installation progress">
+                        <div class="flash-progress__header">
+                            <span class="flash-progress__title">
+                                <svg class="flash-progress__title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                                </svg>
+                                <span data-flash-title>Installing Firmware</span>
+                            </span>
+                            <span class="flash-progress__percentage" data-flash-percentage>0%</span>
+                        </div>
+                        <div class="flash-progress__track">
+                            <div class="flash-progress__fill" data-flash-fill></div>
+                        </div>
+                        <div class="flash-progress__status">
+                            <svg class="flash-progress__status-icon is-spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-flash-spinner>
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                            </svg>
+                            <span data-flash-status>Preparing...</span>
+                        </div>
+                        <div class="flash-progress__phases" aria-hidden="true">
+                            <div class="flash-progress__phase" data-phase="connect"></div>
+                            <div class="flash-progress__phase" data-phase="erase"></div>
+                            <div class="flash-progress__phase" data-phase="write"></div>
+                            <div class="flash-progress__phase" data-phase="verify"></div>
+                        </div>
+                        <div class="flash-progress__phase-labels" aria-hidden="true">
+                            <span class="flash-progress__phase-label" data-phase-label="connect">Connect</span>
+                            <span class="flash-progress__phase-label" data-phase-label="erase">Erase</span>
+                            <span class="flash-progress__phase-label" data-phase-label="write">Write</span>
+                            <span class="flash-progress__phase-label" data-phase-label="verify">Verify</span>
+                        </div>
                     </div>
                 </div>
 
