@@ -48,7 +48,7 @@ describe('wizard navigation interactions', () => {
         `;
 
         getStepMock.mockReturnValue(2);
-        getTotalStepsMock.mockReturnValue(4);
+        getTotalStepsMock.mockReturnValue(5);
 
         await loadNavigationModule();
 
@@ -68,7 +68,7 @@ describe('wizard navigation interactions', () => {
             <div id="step-2" class="wizard-step"></div>
         `;
 
-        getTotalStepsMock.mockReturnValue(4);
+        getTotalStepsMock.mockReturnValue(5);
 
         await loadNavigationModule();
 
@@ -81,7 +81,7 @@ describe('wizard navigation interactions', () => {
             <div id="step-2" class="wizard-step is-active"></div>
         `;
 
-        getTotalStepsMock.mockReturnValue(4);
+        getTotalStepsMock.mockReturnValue(5);
 
         await loadNavigationModule();
 

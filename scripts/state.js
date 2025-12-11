@@ -7,7 +7,7 @@ import { recordFlashStart, recordFlashSuccess, recordFlashError, exportFlashHist
 import './services/error-log.js';
 
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 5;
 
 function updateBottomDetailsVisibility(step) {
     const summaryElements = [
@@ -19,7 +19,7 @@ function updateBottomDetailsVisibility(step) {
         return;
     }
 
-    const shouldShow = step === 4;
+    const shouldShow = step === 5;
     const ariaHiddenValue = shouldShow ? 'false' : 'true';
 
     summaryElements.forEach(element => {
@@ -96,7 +96,7 @@ const MODULE_VARIANT_LABELS = Object.freeze({
     })
 });
 
-const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan', 'voice', 'bathroomairiq'];
+const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
 const MODULE_LABELS = {
     airiq: 'AirIQ',
     bathroomairiq: 'Bathroom AirIQ',
@@ -1521,7 +1521,7 @@ function initializeWizard() {
         console.error('Wizard initialization encountered an error during setup:', error);
         Object.assign(configuration, defaultConfiguration);
 
-        const nextButton = document.querySelector('#step-1 .btn-next');
+        const nextButton = document.querySelector('#step-2 .btn-next');
         if (nextButton) {
             nextButton.disabled = true;
         }
@@ -2276,7 +2276,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         focusStep(targetStepElement);
     }
 
-    if (currentStep === 3) {
+    if (currentStep === 4) {
         updateFanModuleVisibility();
         updateBathroomVisibility();
         updateModuleOptionAvailability();
@@ -2284,7 +2284,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         syncModuleDetailPanelToSelection();
     }
 
-    if (currentStep === 4) {
+    if (currentStep === 5) {
         updateConfiguration({ skipUrlUpdate: true });
         updateSummary();
         findCompatibleFirmware();
@@ -2296,7 +2296,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 
     const mobileSummaryRoot = document.querySelector('[data-mobile-summary] [data-module-summary]');
     if (mobileSummaryRoot) {
-        const targetVariant = currentStep === 4 ? 'review' : 'module';
+        const targetVariant = currentStep === 5 ? 'review' : 'module';
         mobileSummaryRoot.dataset.moduleSummaryVariant = targetVariant;
     }
 
@@ -4427,7 +4427,7 @@ function applyConfiguration(initialConfig) {
             setStepNextButtonDisabled(mountingInput, false);
         }
     } else {
-        setStepNextButtonDisabled('#step-1', true);
+        setStepNextButtonDisabled('#step-2', true);
     }
 
     if (configuration.power) {
@@ -4437,7 +4437,7 @@ function applyConfiguration(initialConfig) {
             setStepNextButtonDisabled(powerInput, false);
         }
     } else {
-        setStepNextButtonDisabled('#step-2', true);
+        setStepNextButtonDisabled('#step-3', true);
     }
 
     ['airiq', 'bathroomairiq', 'presence', 'comfort', 'fan', 'voice'].forEach(key => {
@@ -4457,14 +4457,14 @@ function applyConfiguration(initialConfig) {
 
 function getMaxReachableStep() {
     if (!configuration.mounting) {
-        return 1;
-    }
-
-    if (!configuration.power) {
         return 2;
     }
 
-    return 4;
+    if (!configuration.power) {
+        return 3;
+    }
+
+    return 5;
 }
 
 function updateUrlFromConfiguration() {
@@ -4478,6 +4478,7 @@ function updateUrlFromConfiguration() {
         params.set('power', configuration.power);
     }
 
+    params.set('voice', configuration.voice || 'none');
     params.set('airiq', configuration.airiq || 'none');
     params.set('presence', configuration.presence || 'none');
     params.set('comfort', configuration.comfort || 'none');

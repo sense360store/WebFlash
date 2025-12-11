@@ -10,19 +10,25 @@ function renderWizardDom() {
             <div class="progress-step" data-step="2"></div>
             <div class="progress-step" data-step="3"></div>
             <div class="progress-step" data-step="4"></div>
+            <div class="progress-step" data-step="5"></div>
         </div>
         <div id="step-1" class="wizard-step">
+            <button class="btn-next" data-next>Next</button>
+            <input type="radio" name="voice" value="none" checked>
+            <input type="radio" name="voice" value="base">
+        </div>
+        <div id="step-2" class="wizard-step">
             <button class="btn-next" data-next disabled>Next</button>
             <input type="radio" name="mounting" value="wall">
             <input type="radio" name="mounting" value="ceiling">
         </div>
-        <div id="step-2" class="wizard-step">
+        <div id="step-3" class="wizard-step">
             <button class="btn-next" data-next disabled>Next</button>
             <input type="radio" name="power" value="usb">
             <input type="radio" name="power" value="poe">
             <input type="radio" name="power" value="pwr">
         </div>
-        <div id="step-3" class="wizard-step">
+        <div id="step-4" class="wizard-step">
             <div class="module-availability-hint" id="module-availability-hint"></div>
             <div id="fan-module-section"></div>
             <div class="module-group">
@@ -45,7 +51,7 @@ function renderWizardDom() {
                 <input type="radio" name="fan" value="analog">
             </div>
         </div>
-        <div id="step-4" class="wizard-step">
+        <div id="step-5" class="wizard-step">
             <section class="pre-flash-checklist" data-diagnostics-state="idle">
                 <div class="checklist-header">
                     <div class="checklist-header__text">
@@ -239,30 +245,35 @@ describe('wizard state module', () => {
         const step2 = document.querySelector('.progress-step[data-step="2"]');
         const step3 = document.querySelector('.progress-step[data-step="3"]');
         const step4 = document.querySelector('.progress-step[data-step="4"]');
+        const step5 = document.querySelector('.progress-step[data-step="5"]');
 
+        // Without mounting/power: can reach Core (1) and Mounting (2)
         expect(step1.dataset.reachable).toBe('true');
-        expect(step2.dataset.reachable).toBe('false');
-        expect(step2.getAttribute('aria-disabled')).toBe('true');
+        expect(step2.dataset.reachable).toBe('true');
         expect(step3.dataset.reachable).toBe('false');
+        expect(step3.getAttribute('aria-disabled')).toBe('true');
         expect(step4.dataset.reachable).toBe('false');
+        expect(step5.dataset.reachable).toBe('false');
 
         const mountingWall = document.querySelector('input[name="mounting"][value="wall"]');
         mountingWall.checked = true;
         mountingWall.dispatchEvent(new Event('change', { bubbles: true }));
 
-        expect(step2.dataset.reachable).toBe('true');
-        expect(step2.hasAttribute('aria-disabled')).toBe(false);
-        expect(step3.dataset.reachable).toBe('false');
+        // After mounting selected: can reach up to Power (3)
+        expect(step3.dataset.reachable).toBe('true');
+        expect(step3.hasAttribute('aria-disabled')).toBe(false);
         expect(step4.dataset.reachable).toBe('false');
+        expect(step5.dataset.reachable).toBe('false');
 
         const powerUsb = document.querySelector('input[name="power"][value="usb"]');
         powerUsb.checked = true;
         powerUsb.dispatchEvent(new Event('change', { bubbles: true }));
 
-        expect(step3.dataset.reachable).toBe('true');
+        // After power selected: can reach all steps
         expect(step4.dataset.reachable).toBe('true');
-        expect(step3.hasAttribute('aria-disabled')).toBe(false);
+        expect(step5.dataset.reachable).toBe('true');
         expect(step4.hasAttribute('aria-disabled')).toBe(false);
+        expect(step5.hasAttribute('aria-disabled')).toBe(false);
     });
 
     test('clicking progress steps only navigates to reachable steps', async () => {
@@ -274,13 +285,14 @@ describe('wizard state module', () => {
         stateModule.setState(stateModule.getDefaultState(), { skipUrlUpdate: true });
         stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
 
-        const step3Progress = document.querySelector('.progress-step[data-step="3"]');
-        expect(step3Progress).not.toBeNull();
+        const step4Progress = document.querySelector('.progress-step[data-step="4"]');
+        expect(step4Progress).not.toBeNull();
 
         expect(stateModule.getState().mounting).toBeNull();
         expect(stateModule.getState().power).toBeNull();
 
-        step3Progress.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        // Step 4 (Modules) is not reachable without mounting and power
+        step4Progress.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(stateModule.getStep()).toBe(1);
 
         const mountingWall = document.querySelector('input[name="mounting"][value="wall"]');
@@ -292,8 +304,9 @@ describe('wizard state module', () => {
         powerUsb.checked = true;
         powerUsb.dispatchEvent(new Event('change', { bubbles: true }));
 
-        step3Progress.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        expect(stateModule.getStep()).toBe(3);
+        // Now step 4 (Modules) should be reachable
+        step4Progress.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(4);
     });
 
     test('wizard navigation handles text node targets and advances to the next step', async () => {
@@ -325,7 +338,7 @@ describe('wizard state module', () => {
         document.dispatchEvent(new Event('DOMContentLoaded'));
 
         const steps = Array.from(document.querySelectorAll('.progress-step'));
-        expect(steps).toHaveLength(4);
+        expect(steps).toHaveLength(5);
 
         const expectReachabilityMatchesState = () => {
             const maxReachable = stateModule.getMaxReachableStep();
@@ -367,31 +380,35 @@ describe('wizard state module', () => {
         stateModule.replaceState(stateModule.getDefaultState(), { skipUrlUpdate: true });
         stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
 
-        expect(stateModule.getMaxReachableStep()).toBe(1);
-        const step3 = document.querySelector('.progress-step[data-step="3"]');
+        // Without mounting/power, max reachable is 2 (Core + Mounting)
+        expect(stateModule.getMaxReachableStep()).toBe(2);
         const step4 = document.querySelector('.progress-step[data-step="4"]');
+        const step5 = document.querySelector('.progress-step[data-step="5"]');
 
         expect(stateModule.getStep()).toBe(1);
 
-        step3.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        // Step 4 (Modules) not reachable yet
+        step4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(stateModule.getStep()).toBe(1);
 
         const mounting = document.querySelector('input[name="mounting"][value="wall"]');
         mounting.checked = true;
         mounting.dispatchEvent(new Event('change', { bubbles: true }));
 
-        step4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        // After mounting, max reachable is 3, step 5 still not reachable
+        step5.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(stateModule.getStep()).toBe(1);
 
         const power = document.querySelector('input[name="power"][value="usb"]');
         power.checked = true;
         power.dispatchEvent(new Event('change', { bubbles: true }));
 
-        step3.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        expect(stateModule.getStep()).toBe(3);
-
+        // After power, all steps reachable
         step4.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         expect(stateModule.getStep()).toBe(4);
+
+        step5.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(stateModule.getStep()).toBe(5);
     });
 
     test('compatible firmware heading reflects active selection', async () => {

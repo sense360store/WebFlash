@@ -321,6 +321,29 @@ h2 {
     margin-bottom: 32px;
 }
 
+/* Core Configuration Section */
+.core-config-section {
+    margin-bottom: 32px;
+}
+
+.core-config-section__title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 8px;
+}
+
+.core-config-section__description {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.core-config-section .option-grid {
+    margin-bottom: 0;
+}
+
 .module-status-bar {
     margin-bottom: 24px;
     padding: 12px 16px;

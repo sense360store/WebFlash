@@ -75,25 +75,29 @@
                     <div class="progress-bar">
                 <div class="progress-step active" data-step="1">
                     <div class="step-number">1</div>
-                    <div class="step-label">Mounting</div>
+                    <div class="step-label">Core</div>
                 </div>
                 <div class="progress-step" data-step="2">
                     <div class="step-number">2</div>
-                    <div class="step-label">Power</div>
+                    <div class="step-label">Mounting</div>
                 </div>
                 <div class="progress-step" data-step="3">
                     <div class="step-number">3</div>
-                    <div class="step-label">Modules</div>
+                    <div class="step-label">Power</div>
                 </div>
                 <div class="progress-step" data-step="4">
                     <div class="step-number">4</div>
+                    <div class="step-label">Modules</div>
+                </div>
+                <div class="progress-step" data-step="5">
+                    <div class="step-number">5</div>
                     <div class="step-label">Review</div>
                 </div>
                     </div>
 
-                    <!-- Step 1: Mounting Type -->
+                    <!-- Step 1: Core Configuration -->
                     <div class="wizard-step step" id="step-1">
-                <h2>Step 1: Where is this unit being installed?</h2>
+                <h2>Step 1: Configure Core Features</h2>
 
                 <aside class="safety-notice" aria-label="Important safety information">
                     <div class="safety-notice__icon" aria-hidden="true">
@@ -105,6 +109,40 @@
                         <strong>Before you begin:</strong> Use desktop Chrome or Edge. During flashing, <strong>do not disconnect power</strong> and keep this browser tab open.
                     </div>
                 </aside>
+
+                <section class="core-config-section" aria-label="Voice assistant configuration">
+                    <h3 class="core-config-section__title">Voice Assistant</h3>
+                    <p class="core-config-section__description">Enable voice control for hands-free operation and audio feedback.</p>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="radio" name="voice" value="none" checked>
+                            <div class="option-content">
+                                <div class="option-header">
+                                    <div class="option-title">None</div>
+                                </div>
+                                <div class="option-description">No voice control hardware</div>
+                            </div>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="voice" value="base">
+                            <div class="option-content">
+                                <div class="option-header">
+                                    <div class="option-title">Voice Assistant</div>
+                                </div>
+                                <div class="option-description">I2S microphone array and audio output. Requires Rev B core or newer, J5 audio interface header.</div>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="wizard-actions">
+                    <button class="btn btn-primary btn-next" type="button" data-next>Next</button>
+                </div>
+                    </div>
+
+                    <!-- Step 2: Mounting Type -->
+                    <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
+                <h2>Step 2: Where is this unit being installed?</h2>
 
                 <div class="quick-start-presets" data-quick-start-presets>
                     <p class="quick-start-presets__label">Quick start:</p>
@@ -166,13 +204,14 @@
                     </label>
                 </div>
                 <div class="wizard-actions">
+                    <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <button class="btn btn-primary btn-next" type="button" data-next disabled>Next</button>
                 </div>
                     </div>
 
-                    <!-- Step 2: Power Option -->
-                    <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
-                <h2>Step 2: Select Power Option</h2>
+                    <!-- Step 3: Power Option -->
+                    <div class="wizard-step step" id="step-3" hidden aria-hidden="true">
+                <h2>Step 3: Select Power Option</h2>
                 <div class="option-grid">
                     <label class="option-card">
                         <input type="radio" name="power" value="usb">
@@ -244,9 +283,9 @@
                 </div>
                     </div>
 
-                <!-- Step 3: Expansion Modules -->
-                <div class="wizard-step step" id="step-3" hidden aria-hidden="true">
-                <h2>Step 3: Add Expansion Modules</h2>
+                <!-- Step 4: Expansion Modules -->
+                <div class="wizard-step step" id="step-4" hidden aria-hidden="true">
+                <h2>Step 4: Add Expansion Modules</h2>
                 <div class="module-status-bar" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
                 </div>
@@ -738,82 +777,6 @@
                                 </div>
                             </section>
 
-                            <section class="module-group" data-module-group="voice" id="voice-module-section" data-expanded="false">
-                                <div class="module-group__summary">
-                                    <div class="module-group__summary-text">
-                                        <h3 class="module-group__title">Voice Module</h3>
-                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Voice None</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="btn btn-tertiary module-group__summary-button"
-                                        data-module-group-toggle
-                                        data-module-group-key="voice"
-                                        aria-expanded="false"
-                                        aria-controls="module-group-voice"
-                                    >
-                                        Change
-                                    </button>
-                                </div>
-                                <div class="module-group__body" id="module-group-voice" data-module-group-body hidden>
-                                    <p class="module-group__description">Voice assistant integration for hands-free control and feedback.</p>
-                                    <div class="module-card-grid">
-                                    <label class="module-card option-card" data-module-card="voice" data-variant="none">
-                                        <input type="radio" name="voice" value="none" checked>
-                                        <div class="module-card__inner">
-                                            <div class="module-card__header">
-                                                <div class="module-card__titles">
-                                                    <div class="option-title module-card__title">None</div>
-                                                    <p class="option-description module-card__description">No voice control hardware.</p>
-                                                </div>
-                                                <span class="module-card__state" aria-hidden="true">
-                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
-                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
-                                                </span>
-                                            </div>
-                                            <dl class="module-card__specs">
-                                                <div class="module-card__spec">
-                                                    <dt>Core</dt>
-                                                    <dd>No additional requirement</dd>
-                                                </div>
-                                                <div class="module-card__spec">
-                                                    <dt>Headers</dt>
-                                                    <dd>No additional headers</dd>
-                                                </div>
-                                            </dl>
-                                            <div class="module-card__badges" aria-hidden="true"></div>
-                                        </div>
-                                    </label>
-                                    <label class="module-card option-card" data-module-card="voice" data-variant="base">
-                                        <input type="radio" name="voice" value="base">
-                                        <div class="module-card__inner">
-                                            <div class="module-card__header">
-                                                <div class="module-card__titles">
-                                                    <div class="option-title module-card__title">Base</div>
-                                                    <p class="option-description module-card__description">Voice assistant with I2S microphone array and audio output.</p>
-                                                </div>
-                                                <span class="module-card__state" aria-hidden="true">
-                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
-                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
-                                                </span>
-                                            </div>
-                                            <dl class="module-card__specs">
-                                                <div class="module-card__spec">
-                                                    <dt>Core</dt>
-                                                    <dd>Rev B core or newer</dd>
-                                                </div>
-                                                <div class="module-card__spec">
-                                                    <dt>Headers</dt>
-                                                    <dd>J5 audio interface</dd>
-                                                </div>
-                                            </dl>
-                                            <div class="module-card__badges" aria-hidden="true"></div>
-                                        </div>
-                                    </label>
-                                    </div>
-                                </div>
-                            </section>
-
                             <section class="module-group" data-module-group="bathroomairiq" id="bathroomairiq-module-section" data-expanded="false" style="display: none;">
                                 <div class="module-group__summary">
                                     <div class="module-group__summary-text">
@@ -963,9 +926,9 @@
                 </div>
                     </div>
 
-                    <!-- Step 4: Review & Install -->
-                    <div class="wizard-step step" id="step-4" hidden aria-hidden="true">
-                <h2>Step 4: Review & Install</h2>
+                    <!-- Step 5: Review & Install -->
+                    <div class="wizard-step step" id="step-5" hidden aria-hidden="true">
+                <h2>Step 5: Review & Install</h2>
 
                 <p class="step-intro">
                     Use desktop Chrome or Edge to connect your Sense360 hub. Then click &lsquo;Install firmware&rsquo;. If you&rsquo;re not on a supported browser, download the .bin instead.
