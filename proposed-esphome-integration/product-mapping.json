@@ -1,0 +1,241 @@
+{
+  "_comment": "Maps ESPHome product names to WebFlash naming convention",
+  "_format": "esphome_product_name -> [core_type, mount, power, modules[]]",
+  "_version": "1.0.0",
+
+  "mappings": {
+    "sense360-core-c-usb": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "USB",
+      "modules": [],
+      "description": "Core Ceiling USB - Base configuration"
+    },
+    "sense360-core-c-poe": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "POE",
+      "modules": [],
+      "description": "Core Ceiling POE - Professional installation"
+    },
+    "sense360-core-c-pwr": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "PWR",
+      "modules": [],
+      "description": "Core Ceiling PWR - DC power input"
+    },
+
+    "sense360-core-w-usb": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": [],
+      "description": "Core Wall USB - Desktop/wall mount"
+    },
+    "sense360-core-w-poe": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "POE",
+      "modules": [],
+      "description": "Core Wall POE - Professional installation"
+    },
+    "sense360-core-w-pwr": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "PWR",
+      "modules": [],
+      "description": "Core Wall PWR - DC power input"
+    },
+
+    "sense360-core-v-c-usb": {
+      "core_type": "CoreVoice",
+      "mount": "Ceiling",
+      "power": "USB",
+      "modules": [],
+      "description": "Core Voice Ceiling USB - With microphone array"
+    },
+    "sense360-core-v-c-poe": {
+      "core_type": "CoreVoice",
+      "mount": "Ceiling",
+      "power": "POE",
+      "modules": [],
+      "description": "Core Voice Ceiling POE - Professional voice installation"
+    },
+    "sense360-core-v-c-pwr": {
+      "core_type": "CoreVoice",
+      "mount": "Ceiling",
+      "power": "PWR",
+      "modules": [],
+      "description": "Core Voice Ceiling PWR - DC power with voice"
+    },
+
+    "sense360-core-v-w-usb": {
+      "core_type": "CoreVoice",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": [],
+      "description": "Core Voice Wall USB - Desktop voice assistant"
+    },
+    "sense360-core-v-w-poe": {
+      "core_type": "CoreVoice",
+      "mount": "Wall",
+      "power": "POE",
+      "modules": [],
+      "description": "Core Voice Wall POE - Professional wall mount"
+    },
+    "sense360-core-v-w-pwr": {
+      "core_type": "CoreVoice",
+      "mount": "Wall",
+      "power": "PWR",
+      "modules": [],
+      "description": "Core Voice Wall PWR - DC power voice mount"
+    },
+
+    "sense360-core-ceiling": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "USB",
+      "modules": [],
+      "description": "Legacy: Core Ceiling (defaults to USB)"
+    },
+    "sense360-core-wall": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": [],
+      "description": "Legacy: Core Wall (defaults to USB)"
+    },
+    "sense360-core-voice-ceiling": {
+      "core_type": "CoreVoice",
+      "mount": "Ceiling",
+      "power": "USB",
+      "modules": [],
+      "description": "Legacy: Core Voice Ceiling"
+    },
+    "sense360-core-voice-wall": {
+      "core_type": "CoreVoice",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": [],
+      "description": "Legacy: Core Voice Wall"
+    },
+
+    "sense360-core-ceiling-bathroom": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "POE",
+      "modules": ["BathroomAirIQ"],
+      "description": "Bathroom air quality monitoring"
+    },
+    "sense360-core-ceiling-presence": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "POE",
+      "modules": ["Presence"],
+      "description": "Ceiling presence detection"
+    },
+    "sense360-core-wall-presence": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "POE",
+      "modules": ["Presence"],
+      "description": "Wall presence detection"
+    },
+
+    "sense360-mini-airiq": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["AirIQBase"],
+      "description": "Mini AirIQ - Compact air quality"
+    },
+    "sense360-mini-airiq-basic": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["AirIQBase"],
+      "description": "Mini AirIQ Basic - Entry level"
+    },
+    "sense360-mini-airiq-advanced": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["AirIQPro"],
+      "description": "Mini AirIQ Advanced - Full sensor suite"
+    },
+    "sense360-mini-presence": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["Presence"],
+      "description": "Mini Presence - Compact mmWave"
+    },
+    "sense360-mini-presence-basic": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["PresenceBase"],
+      "description": "Mini Presence Basic - Single zone"
+    },
+    "sense360-mini-presence-advanced": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["PresencePro"],
+      "description": "Mini Presence Advanced - Multi-zone"
+    },
+    "sense360-mini-presence-ld2412": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["PresenceBase"],
+      "description": "Mini Presence LD2412 variant"
+    },
+    "sense360-mini-presence-advanced-ld2412": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["PresencePro"],
+      "description": "Mini Presence Advanced LD2412"
+    },
+    "sense360-mini-airiq-ld2412": {
+      "core_type": "Core",
+      "mount": "Wall",
+      "power": "USB",
+      "modules": ["AirIQBase", "Presence"],
+      "description": "Mini AirIQ with LD2412 presence"
+    },
+
+    "sense360-ceiling-s3-full": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "PWR",
+      "modules": ["AirIQPro", "Presence", "Comfort"],
+      "description": "Full sensor suite - All modules"
+    },
+
+    "sense360-fan-pwm": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "PWR",
+      "modules": ["FanPWM"],
+      "description": "Fan controller - PWM output"
+    },
+
+    "sense360-poe": {
+      "core_type": "Core",
+      "mount": "Ceiling",
+      "power": "POE",
+      "modules": [],
+      "description": "POE-only base configuration"
+    }
+  },
+
+  "webflash_naming": {
+    "pattern": "Sense360-{core_type}-{mount}-{power}-{modules}-v{version}-{channel}.bin",
+    "example": "Sense360-Core-Ceiling-POE-AirIQBase-v2.1.0-stable.bin",
+    "channels": ["stable", "preview", "beta", "dev", "rescue"],
+    "chip_family": "ESP32-S3"
+  }
+}

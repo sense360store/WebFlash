@@ -424,6 +424,130 @@ jobs:
 
 ---
 
+## ESPHome-Public Integration (Recommended Solution)
+
+### Discovery
+
+Investigation of `sense360store/esphome-public` revealed:
+
+| Aspect | Current State |
+|--------|---------------|
+| ESPHome YAML configs | 31 product configurations in `products/` |
+| CI/CD | Validation only (`test.yml`, `validate.yml`) |
+| Releases | Semantic versioning (v2.1.0 latest) |
+| **Pre-compiled binaries** | **Not present** - source only |
+| Chip family | ESP32-S3 |
+
+### The Gap
+
+The two repositories serve different distribution models:
+
+```
+┌─────────────────────────────────┐     ┌─────────────────────────────────┐
+│     esphome-public              │     │     WebFlash                    │
+├─────────────────────────────────┤     ├─────────────────────────────────┤
+│ • Source YAML configurations    │     │ • Pre-compiled .bin binaries    │
+│ • Users compile via ESPHome     │     │ • Browser-based flashing        │
+│ • Requires Home Assistant or    │     │ • No compilation needed         │
+│   local ESPHome installation    │     │ • ESP Web Tools integration     │
+│ • No binaries in releases       │     │ • 47+ firmware variants         │
+└─────────────────────────────────┘     └─────────────────────────────────┘
+              ↓                                        ↓
+      "DIY/Advanced Users"                    "Plug-and-Play Users"
+```
+
+### Proposed Integration
+
+A workflow has been created to bridge these repositories:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    PROPOSED AUTOMATED PIPELINE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  esphome-public                              WebFlash                       │
+│  ┌─────────────────────┐                    ┌─────────────────────┐        │
+│  │ 1. Create Release   │                    │                     │        │
+│  │    (tag v2.2.0)     │                    │                     │        │
+│  └──────────┬──────────┘                    │                     │        │
+│             ▼                                │                     │        │
+│  ┌─────────────────────┐                    │                     │        │
+│  │ 2. CI Builds All    │                    │                     │        │
+│  │    31 Products      │                    │                     │        │
+│  │    via ESPHome      │                    │                     │        │
+│  └──────────┬──────────┘                    │                     │        │
+│             ▼                                │                     │        │
+│  ┌─────────────────────┐                    │                     │        │
+│  │ 3. Rename to        │                    │                     │        │
+│  │    WebFlash format  │────────────────────┼──┐                  │        │
+│  │    & attach to      │                    │  │                  │        │
+│  │    GitHub Release   │                    │  ▼                  │        │
+│  └─────────────────────┘                    │ sync-from-releases  │        │
+│                                             │         │           │        │
+│                                             │         ▼           │        │
+│                                             │ gen-manifests.py    │        │
+│                                             │         │           │        │
+│                                             │         ▼           │        │
+│                                             │ Deploy to Pages     │        │
+│                                             └─────────────────────┘        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Implementation Files
+
+Created in `proposed-esphome-integration/`:
+
+| File | Purpose |
+|------|---------|
+| `firmware-build-release.yml` | GitHub Actions workflow for esphome-public |
+| `product-mapping.json` | ESPHome product → WebFlash naming mapping |
+| `README.md` | Integration guide |
+
+### Product Mapping (Key Examples)
+
+| ESPHome Product | WebFlash Filename |
+|-----------------|-------------------|
+| `sense360-core-c-poe` | `Sense360-Core-Ceiling-POE-v{ver}-{ch}.bin` |
+| `sense360-core-w-usb` | `Sense360-Core-Wall-USB-v{ver}-{ch}.bin` |
+| `sense360-core-v-c-poe` | `Sense360-CoreVoice-Ceiling-POE-v{ver}-{ch}.bin` |
+| `sense360-core-ceiling-bathroom` | `Sense360-Core-Ceiling-POE-BathroomAirIQ-v{ver}-{ch}.bin` |
+| `sense360-mini-airiq-advanced` | `Sense360-Core-Wall-USB-AirIQPro-v{ver}-{ch}.bin` |
+
+### Benefits
+
+| Metric | Before (Manual) | After (Automated) |
+|--------|-----------------|-------------------|
+| Time per release | 30-60 minutes | ~5 minutes |
+| Error risk | High | Low |
+| Naming consistency | Manual | Automated |
+| Traceability | None | Git SHA in release |
+| Required actions | 7 steps | 1 step (create release) |
+
+### Next Steps
+
+1. **Copy workflow to esphome-public:**
+   ```bash
+   cp proposed-esphome-integration/firmware-build-release.yml \
+      ../esphome-public/.github/workflows/
+   ```
+
+2. **Create a test release:**
+   ```bash
+   gh release create v2.2.0-test --prerelease
+   ```
+
+3. **Verify binaries are attached with correct naming**
+
+4. **Run WebFlash sync:**
+   ```bash
+   python scripts/sync-from-releases.py \
+     --repo sense360store/esphome-public \
+     --tag v2.2.0-test
+   ```
+
+---
+
 ## Recommendations Summary
 
 ### Quick Wins (Low Effort, High Impact)

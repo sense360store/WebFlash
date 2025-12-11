@@ -1,0 +1,373 @@
+# =============================================================================
+# PROPOSED WORKFLOW FOR: sense360store/esphome-public
+# =============================================================================
+# This workflow builds ESPHome configurations into firmware binaries and
+# attaches them to GitHub releases with WebFlash-compatible naming.
+#
+# To use: Copy this file to esphome-public/.github/workflows/firmware-build-release.yml
+# =============================================================================
+
+name: Build and Release Firmware
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v2.1.0)'
+        required: true
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'stable'
+        type: choice
+        options:
+          - stable
+          - preview
+          - beta
+
+permissions:
+  contents: write
+
+env:
+  ESPHOME_VERSION: "2024.11.0"
+
+jobs:
+  # ===========================================================================
+  # Job 1: Generate build matrix from products directory
+  # ===========================================================================
+  generate-matrix:
+    name: Generate Build Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      version: ${{ steps.version.outputs.version }}
+      channel: ${{ steps.version.outputs.channel }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine version and channel
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION="${VERSION#v}"
+            # Determine channel from prerelease flag
+            if [ "${{ github.event.release.prerelease }}" == "true" ]; then
+              CHANNEL="preview"
+            else
+              CHANNEL="stable"
+            fi
+          else
+            VERSION="${{ github.event.inputs.version }}"
+            VERSION="${VERSION#v}"
+            CHANNEL="${{ github.event.inputs.channel }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "channel=$CHANNEL" >> $GITHUB_OUTPUT
+          echo "Building version $VERSION on $CHANNEL channel"
+
+      - name: Generate build matrix
+        id: set-matrix
+        run: |
+          # Build matrix from products directory
+          # Maps ESPHome product names to WebFlash naming convention
+
+          cat > /tmp/generate_matrix.py << 'PYTHON'
+          import json
+          import os
+          from pathlib import Path
+
+          # Mapping from ESPHome product filenames to WebFlash naming components
+          # Format: esphome_name -> (core_type, mount, power, modules)
+          PRODUCT_MAP = {
+              # Core Ceiling variants
+              "sense360-core-c-usb": ("Core", "Ceiling", "USB", []),
+              "sense360-core-c-poe": ("Core", "Ceiling", "POE", []),
+              "sense360-core-c-pwr": ("Core", "Ceiling", "PWR", []),
+
+              # Core Wall variants
+              "sense360-core-w-usb": ("Core", "Wall", "USB", []),
+              "sense360-core-w-poe": ("Core", "Wall", "POE", []),
+              "sense360-core-w-pwr": ("Core", "Wall", "PWR", []),
+
+              # Core Voice Ceiling variants
+              "sense360-core-v-c-usb": ("CoreVoice", "Ceiling", "USB", []),
+              "sense360-core-v-c-poe": ("CoreVoice", "Ceiling", "POE", []),
+              "sense360-core-v-c-pwr": ("CoreVoice", "Ceiling", "PWR", []),
+
+              # Core Voice Wall variants
+              "sense360-core-v-w-usb": ("CoreVoice", "Wall", "USB", []),
+              "sense360-core-v-w-poe": ("CoreVoice", "Wall", "POE", []),
+              "sense360-core-v-w-pwr": ("CoreVoice", "Wall", "PWR", []),
+
+              # Legacy naming (for backwards compatibility)
+              "sense360-core-ceiling": ("Core", "Ceiling", "USB", []),
+              "sense360-core-wall": ("Core", "Wall", "USB", []),
+              "sense360-core-voice-ceiling": ("CoreVoice", "Ceiling", "USB", []),
+              "sense360-core-voice-wall": ("CoreVoice", "Wall", "USB", []),
+
+              # Bathroom variants (Ceiling only)
+              "sense360-core-ceiling-bathroom": ("Core", "Ceiling", "POE", ["BathroomAirIQ"]),
+
+              # Presence variants
+              "sense360-core-ceiling-presence": ("Core", "Ceiling", "POE", ["Presence"]),
+              "sense360-core-wall-presence": ("Core", "Wall", "POE", ["Presence"]),
+
+              # Mini variants (map to appropriate WebFlash configs)
+              "sense360-mini-airiq": ("Core", "Wall", "USB", ["AirIQBase"]),
+              "sense360-mini-airiq-basic": ("Core", "Wall", "USB", ["AirIQBase"]),
+              "sense360-mini-airiq-advanced": ("Core", "Wall", "USB", ["AirIQPro"]),
+              "sense360-mini-presence": ("Core", "Wall", "USB", ["Presence"]),
+              "sense360-mini-presence-basic": ("Core", "Wall", "USB", ["PresenceBase"]),
+              "sense360-mini-presence-advanced": ("Core", "Wall", "USB", ["PresencePro"]),
+
+              # Full configuration
+              "sense360-ceiling-s3-full": ("Core", "Ceiling", "PWR", ["AirIQPro", "Presence", "Comfort"]),
+
+              # Fan control
+              "sense360-fan-pwm": ("Core", "Ceiling", "PWR", ["FanPWM"]),
+
+              # POE standalone
+              "sense360-poe": ("Core", "Ceiling", "POE", []),
+          }
+
+          def generate_webflash_name(product_name, version, channel):
+              """Generate WebFlash-compatible filename from product name."""
+              if product_name not in PRODUCT_MAP:
+                  return None
+
+              core_type, mount, power, modules = PRODUCT_MAP[product_name]
+
+              parts = ["Sense360"]
+              if core_type:
+                  parts.append(core_type)
+              parts.append(mount)
+              parts.append(power)
+              parts.extend(modules)
+
+              config_string = "-".join(parts[1:])  # Everything after Sense360
+              filename = f"Sense360-{config_string}-v{version}-{channel}.bin"
+
+              return filename
+
+          # Find all product YAML files
+          products_dir = Path("products")
+          matrix_items = []
+
+          for yaml_file in sorted(products_dir.glob("*.yaml")):
+              product_name = yaml_file.stem
+
+              # Skip if not in mapping (unknown product)
+              if product_name not in PRODUCT_MAP:
+                  print(f"Warning: No mapping for {product_name}, skipping")
+                  continue
+
+              matrix_items.append({
+                  "product": product_name,
+                  "yaml_file": str(yaml_file),
+              })
+
+          matrix = {"include": matrix_items}
+          print(json.dumps(matrix, indent=2))
+
+          # Write to output
+          with open(os.environ.get("GITHUB_OUTPUT", "/dev/stdout"), "a") as f:
+              # Escape for GitHub Actions
+              matrix_json = json.dumps(matrix).replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D")
+              f.write(f"matrix={json.dumps(matrix)}\n")
+          PYTHON
+
+          python3 /tmp/generate_matrix.py
+
+  # ===========================================================================
+  # Job 2: Build firmware for each product configuration
+  # ===========================================================================
+  build:
+    name: Build ${{ matrix.product }}
+    needs: generate-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ESPHome
+        run: |
+          pip install esphome==${{ env.ESPHOME_VERSION }}
+
+      - name: Create secrets file
+        run: |
+          # Create minimal secrets for compilation
+          cat > secrets.yaml << 'EOF'
+          wifi_ssid: "placeholder"
+          wifi_password: "placeholder"
+          api_encryption_key: "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="
+          ota_password: "placeholder"
+          EOF
+
+      - name: Compile firmware
+        run: |
+          esphome compile ${{ matrix.yaml_file }}
+
+      - name: Generate WebFlash filename
+        id: filename
+        run: |
+          VERSION="${{ needs.generate-matrix.outputs.version }}"
+          CHANNEL="${{ needs.generate-matrix.outputs.channel }}"
+          PRODUCT="${{ matrix.product }}"
+
+          # Use the same mapping logic as matrix generation
+          cat > /tmp/get_filename.py << PYTHON
+          PRODUCT_MAP = {
+              "sense360-core-c-usb": ("Core", "Ceiling", "USB", []),
+              "sense360-core-c-poe": ("Core", "Ceiling", "POE", []),
+              "sense360-core-c-pwr": ("Core", "Ceiling", "PWR", []),
+              "sense360-core-w-usb": ("Core", "Wall", "USB", []),
+              "sense360-core-w-poe": ("Core", "Wall", "POE", []),
+              "sense360-core-w-pwr": ("Core", "Wall", "PWR", []),
+              "sense360-core-v-c-usb": ("CoreVoice", "Ceiling", "USB", []),
+              "sense360-core-v-c-poe": ("CoreVoice", "Ceiling", "POE", []),
+              "sense360-core-v-c-pwr": ("CoreVoice", "Ceiling", "PWR", []),
+              "sense360-core-v-w-usb": ("CoreVoice", "Wall", "USB", []),
+              "sense360-core-v-w-poe": ("CoreVoice", "Wall", "POE", []),
+              "sense360-core-v-w-pwr": ("CoreVoice", "Wall", "PWR", []),
+              "sense360-core-ceiling": ("Core", "Ceiling", "USB", []),
+              "sense360-core-wall": ("Core", "Wall", "USB", []),
+              "sense360-core-voice-ceiling": ("CoreVoice", "Ceiling", "USB", []),
+              "sense360-core-voice-wall": ("CoreVoice", "Wall", "USB", []),
+              "sense360-core-ceiling-bathroom": ("Core", "Ceiling", "POE", ["BathroomAirIQ"]),
+              "sense360-core-ceiling-presence": ("Core", "Ceiling", "POE", ["Presence"]),
+              "sense360-core-wall-presence": ("Core", "Wall", "POE", ["Presence"]),
+              "sense360-mini-airiq": ("Core", "Wall", "USB", ["AirIQBase"]),
+              "sense360-mini-airiq-basic": ("Core", "Wall", "USB", ["AirIQBase"]),
+              "sense360-mini-airiq-advanced": ("Core", "Wall", "USB", ["AirIQPro"]),
+              "sense360-mini-presence": ("Core", "Wall", "USB", ["Presence"]),
+              "sense360-mini-presence-basic": ("Core", "Wall", "USB", ["PresenceBase"]),
+              "sense360-mini-presence-advanced": ("Core", "Wall", "USB", ["PresencePro"]),
+              "sense360-ceiling-s3-full": ("Core", "Ceiling", "PWR", ["AirIQPro", "Presence", "Comfort"]),
+              "sense360-fan-pwm": ("Core", "Ceiling", "PWR", ["FanPWM"]),
+              "sense360-poe": ("Core", "Ceiling", "POE", []),
+          }
+
+          product = "$PRODUCT"
+          version = "$VERSION"
+          channel = "$CHANNEL"
+
+          if product in PRODUCT_MAP:
+              core_type, mount, power, modules = PRODUCT_MAP[product]
+              parts = [core_type, mount, power] + modules
+              config = "-".join(parts)
+              filename = f"Sense360-{config}-v{version}-{channel}.bin"
+              print(filename)
+          else:
+              # Fallback: use product name directly
+              print(f"Sense360-{product}-v{version}-{channel}.bin")
+          PYTHON
+
+          FILENAME=$(python3 /tmp/get_filename.py)
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+          echo "Generated filename: $FILENAME"
+
+      - name: Rename and prepare artifact
+        run: |
+          # Find the compiled firmware
+          FIRMWARE_PATH=$(find .esphome/build -name "*.bin" -path "*/.pioenvs/*" | head -1)
+
+          if [ -z "$FIRMWARE_PATH" ]; then
+            echo "Error: No firmware binary found!"
+            exit 1
+          fi
+
+          echo "Found firmware at: $FIRMWARE_PATH"
+
+          # Copy with WebFlash-compatible name
+          mkdir -p artifacts
+          cp "$FIRMWARE_PATH" "artifacts/${{ steps.filename.outputs.filename }}"
+
+          echo "Created: artifacts/${{ steps.filename.outputs.filename }}"
+          ls -la artifacts/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.product }}
+          path: artifacts/*.bin
+          retention-days: 1
+
+  # ===========================================================================
+  # Job 3: Collect all firmware and attach to release
+  # ===========================================================================
+  release:
+    name: Attach Firmware to Release
+    needs: [generate-matrix, build]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: firmware
+          pattern: firmware-*
+          merge-multiple: true
+
+      - name: List firmware files
+        run: |
+          echo "Firmware files to upload:"
+          find firmware -name "*.bin" -exec ls -la {} \;
+
+      - name: Upload firmware to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: firmware/*.bin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate checksums
+        run: |
+          cd firmware
+          sha256sum *.bin > SHA256SUMS.txt
+          md5sum *.bin > MD5SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload checksums to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            firmware/SHA256SUMS.txt
+            firmware/MD5SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # Job 4: Trigger WebFlash sync (optional - requires webhook or PAT)
+  # ===========================================================================
+  notify-webflash:
+    name: Notify WebFlash Repository
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Trigger WebFlash sync
+        run: |
+          echo "Release complete. WebFlash will automatically sync on next push."
+          echo "Firmware files are available at:"
+          echo "https://github.com/${{ github.repository }}/releases/tag/${{ github.event.release.tag_name }}"
+
+          # Optional: Trigger WebFlash workflow via repository_dispatch
+          # Requires WEBFLASH_PAT secret with repo scope
+          # curl -X POST \
+          #   -H "Accept: application/vnd.github+json" \
+          #   -H "Authorization: Bearer ${{ secrets.WEBFLASH_PAT }}" \
+          #   https://api.github.com/repos/sense360store/WebFlash/dispatches \
+          #   -d '{"event_type":"firmware-release","client_payload":{"version":"${{ github.event.release.tag_name }}"}}'
