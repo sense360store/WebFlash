@@ -521,10 +521,13 @@ Current required configurations (from CI validation):
 ## Files Referenced
 
 - `.github/workflows/firmware-publish.yml` - CI/CD workflow
-- `scripts/gen-manifests.py` - Manifest generator (887 lines)
-- `scripts/sync-from-releases.py` - Release sync (209 lines)
-- `scripts/deploy-automation.py` - Deployment automation
+- `scripts/gen-manifests.py` - Manifest generator
+- `scripts/sync-from-releases.py` - Release sync
 - `DEVELOPER.md` - Developer guide
 - `manifest.json` - Generated manifest
 - `firmware/configurations/*.bin` - Firmware binaries
 - `firmware/configurations/*.md` - Release notes
+
+## Related Repositories
+
+- **[esphome-public](https://github.com/sense360store/esphome-public)**: Source ESPHome YAML configurations for DIY users compiling via Home Assistant/ESPHome

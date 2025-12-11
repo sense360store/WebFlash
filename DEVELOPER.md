@@ -318,8 +318,10 @@ WebFlash/
 │   └── rescue/                  # Recovery firmware
 ├── scripts/
 │   ├── gen-manifests.py         # Main manifest generator
-│   ├── sync-from-releases.py   # GitHub release sync
-│   └── deploy-automation.py    # Deployment automation
+│   └── sync-from-releases.py    # GitHub release sync
+├── css/                         # Stylesheets
+├── __tests__/                   # Test suite
+├── .github/workflows/           # CI/CD automation
 ├── manifest.json                # Generated: main firmware catalog
 ├── firmware-*.json              # Generated: individual manifests
 └── index.html                   # Web interface
@@ -511,8 +513,13 @@ For development questions:
 - Test locally before deploying
 - Contact development team if issues persist
 
+## Related Repositories
+
+- **[esphome-public](https://github.com/sense360store/esphome-public)**: Source ESPHome YAML configurations for DIY users. Firmware compiled from this repository is distributed through WebFlash for browser-based installation.
+
 ## Related Documentation
 
 - [README.md](README.md): User guide
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): Common issues
+- [FEATURES.md](FEATURES.md): Feature tracking and roadmap
 - [ESP Web Tools Documentation](https://esphome.github.io/esp-web-tools/)

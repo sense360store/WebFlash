@@ -129,11 +129,20 @@ These can be shared with support teams for faster issue resolution.
 
 For additional help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
+## Custom Firmware & Source Code
+
+For users who want to build custom firmware configurations or modify the ESPHome YAML source files:
+
+- **ESPHome Public Repository**: [sense360store/esphome-public](https://github.com/sense360store/esphome-public) - Contains ESPHome YAML configurations for DIY users compiling via Home Assistant/ESPHome
+
+WebFlash provides pre-compiled firmware binaries for plug-and-play browser-based flashing. The esphome-public repository contains the source YAML files for users who want to customize or build their own firmware.
+
 ## Documentation
 
 - **README.md** (this file): User guide for flashing devices
 - **DEVELOPER.md**: Maintainer guide for publishing firmware
 - **TROUBLESHOOTING.md**: Detailed troubleshooting steps
+- **FEATURES.md**: Feature tracking and roadmap
 
 ## Project Structure
 
@@ -141,12 +150,14 @@ For additional help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 WebFlash/
 ├── index.html              # Web interface
 ├── app.js                  # Application logic
-├── ui.js                   # UI components
 ├── manifest.json           # Firmware catalog (auto-generated)
 ├── firmware-*.json         # Individual firmware manifests (auto-generated)
 ├── firmware/               # Firmware binaries and configurations
-├── scripts/                # Automation and deployment scripts
-└── css/                    # Stylesheets
+│   ├── configurations/     # Production firmware files
+│   └── rescue/             # Recovery firmware
+├── scripts/                # Manifest generation and sync scripts
+├── css/                    # Stylesheets
+└── __tests__/              # Test suite
 ```
 
 ## License
