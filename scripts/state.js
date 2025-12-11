@@ -1077,6 +1077,7 @@ function buildManifestContext(manifest) {
                             comfort: new Set(),
                             fan: new Set(),
                             voice: new Set(),
+                            led: new Set(),
                             bathroomairiq: new Set()
                         },
                         combos: new Set()
