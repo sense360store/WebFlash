@@ -636,6 +636,7 @@ def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
         "name": "Sense360 Modular Platform Firmware",
         "version": determine_manifest_version(artifacts),
         "home_assistant_domain": "esphome",
+        "funding_url": "https://sense360store.com/support",
         "new_install_prompt_erase": True,
         "new_install_improv_wait_time": 15,
         "builds": [artifact.manifest_entry() for artifact in artifacts],
@@ -675,6 +676,7 @@ def write_individual_manifests(
             "name": "Sense360 ESP32 Firmware - Core Module",
             "version": artifact.metadata.version,
             "home_assistant_domain": "esphome",
+            "funding_url": "https://sense360store.com/support",
             "new_install_prompt_erase": True,
             "new_install_improv_wait_time": 15,
             "builds": [

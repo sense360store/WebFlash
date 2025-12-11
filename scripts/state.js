@@ -3145,6 +3145,18 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                         <button slot="activate" class="btn btn-primary" data-firmware-id="${escapeHtml(firmware.firmwareId)}">
                             Install Firmware
                         </button>
+                        <span slot="unsupported">
+                            <span class="esp-web-tools-unsupported">
+                                Web Serial requires <strong>Chrome</strong> or <strong>Edge</strong> on desktop.
+                                <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more</a>
+                            </span>
+                        </span>
+                        <span slot="not-allowed">
+                            <span class="esp-web-tools-not-allowed">
+                                Web flashing requires a <strong>secure context (HTTPS)</strong>.
+                                Please access this page via HTTPS.
+                            </span>
+                        </span>
                     </esp-web-install-button>
                 </div>
             </div>

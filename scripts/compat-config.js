@@ -650,7 +650,29 @@ function renderInstall(container, manifestData, build, lookup) {
   activateButton.className = 'btn btn-primary';
   activateButton.textContent = 'Install Firmware';
 
+  // Add unsupported browser slot
+  const unsupportedSlot = document.createElement('span');
+  unsupportedSlot.setAttribute('slot', 'unsupported');
+  unsupportedSlot.innerHTML = `
+    <span class="esp-web-tools-unsupported">
+      Web Serial requires <strong>Chrome</strong> or <strong>Edge</strong> on desktop.
+      <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more</a>
+    </span>
+  `;
+
+  // Add not-allowed (non-HTTPS) slot
+  const notAllowedSlot = document.createElement('span');
+  notAllowedSlot.setAttribute('slot', 'not-allowed');
+  notAllowedSlot.innerHTML = `
+    <span class="esp-web-tools-not-allowed">
+      Web flashing requires a <strong>secure context (HTTPS)</strong>.
+      Please access this page via HTTPS.
+    </span>
+  `;
+
   installButton.appendChild(activateButton);
+  installButton.appendChild(unsupportedSlot);
+  installButton.appendChild(notAllowedSlot);
   actionContainer.appendChild(installButton);
   firmwareItem.appendChild(actionContainer);
 

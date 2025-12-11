@@ -17,6 +17,9 @@ import "./scripts/layout/init-splitview.js";
 import "./scripts/layout/option-info-popover.js";
 import "./scripts/navigation.js";
 
+// ESP Web Tools enhancements - checkSameFirmware override for detecting installed firmware
+import "./scripts/utils/esp-web-tools-overrides.js";
+
 /**
  * Register service worker for offline support.
  * Only registers in production (served over HTTPS or localhost).

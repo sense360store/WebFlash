@@ -2,6 +2,7 @@
   "name": "Sense360 Modular Platform Firmware",
   "version": "2.0.0",
   "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 15,
   "builds": [
