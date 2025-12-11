@@ -3384,3 +3384,130 @@ html[data-theme="dark"] .quick-start-presets {
     border-color: var(--brand-green-border);
     background: var(--brand-green-selection-surface-subtle);
 }
+
+/* Flash Progress Indicator */
+.flash-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.flash-progress__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flash-progress__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.flash-progress__title-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+.flash-progress__percentage {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.flash-progress__track {
+    height: 8px;
+    background: var(--color-surface-muted);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.flash-progress__fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.flash-progress__status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.flash-progress__status-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+.flash-progress__status-icon.is-spinning {
+    animation: flashSpinner 1s linear infinite;
+}
+
+@keyframes flashSpinner {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.flash-progress__phases {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.flash-progress__phase {
+    flex: 1;
+    height: 4px;
+    background: var(--color-surface-muted);
+    border-radius: 2px;
+    transition: background-color 0.3s ease;
+}
+
+.flash-progress__phase.is-active {
+    background: var(--accent);
+}
+
+.flash-progress__phase.is-complete {
+    background: var(--brand-green-contrast);
+}
+
+.flash-progress__phase-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+}
+
+.flash-progress__phase-label {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.flash-progress__phase-label.is-active {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.flash-progress__phase-label.is-complete {
+    color: var(--brand-green-contrast);
+}
