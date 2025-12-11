@@ -18,10 +18,10 @@ WebFlash uses automated manifest generation to maintain firmware catalogs. All m
 ### Add Firmware
 ```bash
 # 1. Place firmware in directory
-cp firmware.bin firmware/configurations/Sense360-[Config]-v[Version]-[Channel].bin
+cp firmware.bin firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].bin
 
 # 2. Create release notes (optional)
-nano firmware/configurations/Sense360-[Config]-v[Version]-[Channel].md
+nano firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
 
 # 3. Generate manifests
 python3 scripts/gen-manifests.py --summary
@@ -35,10 +35,10 @@ git push origin main
 ### Remove Firmware
 ```bash
 # 1. Delete firmware file
-rm firmware/configurations/Sense360-[Config]-v[Version]-[Channel].bin
+rm firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].bin
 
 # 2. Delete release notes
-rm firmware/configurations/Sense360-[Config]-v[Version]-[Channel].md
+rm firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
 
 # 3. Regenerate manifests
 python3 scripts/gen-manifests.py --summary
@@ -54,31 +54,39 @@ git push origin main
 Firmware files must follow this exact naming convention:
 
 ```
-Sense360-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
+Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 ```
 
 ### Components
+
+**CoreType**: `Core` or `CoreVoice`
+- `Core` - Standard core module without voice capabilities
+- `CoreVoice` - Core module with voice assistant integration (I2S microphone array, audio DAC)
 
 **MountType**: `Wall` or `Ceiling`
 
 **PowerType**: `USB`, `POE`, or `PWR`
 
 **Modules** (optional): Combination of:
-- `AirIQBase`, `AirIQPro`, `AirIQProv`
-- `Bathroom` (Ceiling only)
-- `BathroomAirIQBase`, `BathroomAirIQPro` (Ceiling + Bathroom only)
-- `Presence`, `PresencePro`
-- `Comfort`
-- `FanPWM`, `FanAnalog`
+- `AirIQBase`, `AirIQPro`, `AirIQProv` - Air quality stack for particulate, VOC, and CO₂ sensors
+- `BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro` - Bathroom-optimized air quality (Ceiling only)
+- `PresenceBase`, `PresencePro` - mmWave radar for occupancy detection
+- `ComfortBase` - Temperature and ambient light sensors
+- `FanPWM`, `FanAnalog` - Output driver for external fan control
 
 **Module Constraints:**
 - `Bathroom` is only available for Ceiling installations
 - `BathroomAirIQ` requires `Bathroom` to be enabled
-- `AirIQ` and `Bathroom` cannot be combined
+- `AirIQ` and `BathroomAirIQ` cannot be combined
 
-**BathroomAirIQ Sensors:**
-- Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
-- Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
+**Module Sensors:**
+- AirIQ Base: Basic air quality sensors (VOC, CO₂)
+- AirIQ Pro: Base + particulate sensors (PM1.0/PM2.5/PM10)
+- BathroomAirIQ Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
+- BathroomAirIQ Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
+- Presence Base: Single-zone mmWave radar
+- Presence Pro: Multi-zone mmWave radar with secondary UART
+- Comfort Base: Temperature and ambient light sensors
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
@@ -87,13 +95,15 @@ Sense360-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 ### Examples
 
 ```
-Sense360-Wall-USB-v1.0.0-stable.bin
-Sense360-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
-Sense360-Wall-PWR-AirIQPro-Presence-Comfort-v1.2.0-preview.bin
-Sense360-Ceiling-POE-AirIQPro-v2.0.0-beta.bin
-Sense360-Ceiling-POE-Bathroom-v1.0.0-stable.bin
-Sense360-Ceiling-POE-Bathroom-BathroomAirIQBase-v1.0.0-stable.bin
-Sense360-Ceiling-PWR-Bathroom-BathroomAirIQPro-v1.0.0-stable.bin
+Sense360-Core-Wall-USB-v1.0.0-stable.bin
+Sense360-Core-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
+Sense360-CoreVoice-Ceiling-POE-v1.0.0-stable.bin
+Sense360-CoreVoice-Wall-PWR-AirIQPro-PresenceBase-ComfortBase-v1.2.0-preview.bin
+Sense360-Core-Ceiling-POE-AirIQPro-PresencePro-v2.0.0-beta.bin
+Sense360-Core-Ceiling-POE-BathroomAirIQ-v1.0.0-stable.bin
+Sense360-CoreVoice-Ceiling-PWR-BathroomAirIQPro-v1.0.0-stable.bin
+Sense360-Core-Wall-USB-FanPWM-v1.0.0-stable.bin
+Sense360-Core-Ceiling-POE-AirIQBase-FanAnalog-v1.0.0-stable.bin
 ```
 
 ## Release Notes
@@ -106,10 +116,10 @@ Release notes files must match their firmware file:
 
 ```
 # Firmware file
-Sense360-Wall-USB-v1.0.0-stable.bin
+Sense360-Core-Wall-USB-v1.0.0-stable.bin
 
 # Release notes file
-Sense360-Wall-USB-v1.0.0-stable.md
+Sense360-Core-Wall-USB-v1.0.0-stable.md
 ```
 
 ### Format
@@ -218,11 +228,11 @@ open http://localhost:5000
 
 ```bash
 # 1. Add firmware to repository
-cp your-firmware.bin firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.bin
+cp your-firmware.bin firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin
 
 # 2. Create release notes (optional)
-cat > firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.md << 'EOF'
-# Sense360 Wall USB v1.0.0 (stable)
+cat > firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.md << 'EOF'
+# Sense360 Core Wall USB v1.0.0 (stable)
 [Release notes content]
 EOF
 
@@ -234,7 +244,7 @@ python3 -m http.server 5000  # Test locally
 
 # 5. Commit and push
 git add .
-git commit -m "Add Wall USB v1.0.0 stable firmware"
+git commit -m "Add Core Wall USB v1.0.0 stable firmware"
 git push origin main
 ```
 
@@ -326,7 +336,7 @@ Main catalog containing all firmware builds:
   "name": "Sense360 Firmware Collection",
   "builds": [
     {
-      "name": "Sense360-Wall-USB-v1.0.0-stable",
+      "name": "Sense360-Core-Wall-USB-v1.0.0-stable",
       "version": "1.0.0",
       "channel": "stable",
       "chipFamily": "ESP32-S3",
@@ -334,7 +344,7 @@ Main catalog containing all firmware builds:
       "description": "Firmware description",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin",
           "offset": 0
         }
       ]
@@ -349,7 +359,7 @@ Individual manifests for ESP Web Tools:
 
 ```json
 {
-  "name": "Sense360-Wall-USB-v1.0.0-stable",
+  "name": "Sense360-Core-Wall-USB-v1.0.0-stable",
   "version": "1.0.0",
   "builds": [
     {
@@ -357,7 +367,7 @@ Individual manifests for ESP Web Tools:
       "improv": true,
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin",
           "offset": 0
         }
       ]

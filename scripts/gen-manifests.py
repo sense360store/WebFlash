@@ -109,6 +109,10 @@ def describe_legacy(channel: str, model: str, variant: Optional[str], sensor_add
     base = f"{headline} for {details}."
     return f"{base} {suffix}".strip()
 
+CORE_TOKENS = {
+    "core",
+    "corevoice",
+}
 MOUNTING_TOKENS = {
     "wall",
     "ceiling",
@@ -200,6 +204,7 @@ class FirmwareMetadata:
     channel: str
     is_configuration: bool
     config_string: Optional[str]
+    core_type: Optional[str]
     mounting: Optional[str]
     power: Optional[str]
     modules: List[str]
@@ -278,6 +283,7 @@ def parse_firmware_metadata(
             channel=channel,
             is_configuration=True,
             config_string="Rescue",
+            core_type=None,
             mounting="Universal",
             power="Universal",
             modules=[],
@@ -297,19 +303,34 @@ def parse_firmware_metadata(
     is_config = False
     if force_configuration is not None:
         is_config = force_configuration
+    elif first_token and first_token.lower() in CORE_TOKENS:
+        # New format: Core/CoreVoice-Mounting-Power-Modules
+        is_config = True
     elif first_token and first_token.lower() in MOUNTING_TOKENS:
+        # Legacy format: Mounting-Power-Modules
         is_config = True
     if is_config:
         if not config_tokens:
             raise ValueError(f"No configuration tokens found in '{name}'")
-        mounting = config_tokens[0].replace("_", " ").title()
+
+        # Check if first token is Core/CoreVoice
+        core_type = None
+        token_index = 0
+        if config_tokens[0].lower() in CORE_TOKENS:
+            core_type = config_tokens[0]  # Preserve original casing (Core or CoreVoice)
+            token_index = 1
+
+        if len(config_tokens) <= token_index:
+            raise ValueError(f"Missing mounting token in '{name}'")
+
+        mounting = config_tokens[token_index].replace("_", " ").title()
         power = None
         module_tokens = []
-        if len(config_tokens) >= 2 and config_tokens[1].lower() in POWER_TOKENS:
-            power = config_tokens[1].upper()
-            module_tokens = config_tokens[2:]
+        if len(config_tokens) >= token_index + 2 and config_tokens[token_index + 1].lower() in POWER_TOKENS:
+            power = config_tokens[token_index + 1].upper()
+            module_tokens = config_tokens[token_index + 2:]
         else:
-            module_tokens = config_tokens[1:]
+            module_tokens = config_tokens[token_index + 1:]
         config_string = "-".join(config_tokens)
         description = describe_configuration(channel, config_string)
         return FirmwareMetadata(
@@ -318,6 +339,7 @@ def parse_firmware_metadata(
             channel=channel,
             is_configuration=True,
             config_string=config_string,
+            core_type=core_type,
             mounting=mounting,
             power=power,
             modules=module_tokens,
@@ -343,6 +365,7 @@ def parse_firmware_metadata(
         channel=channel,
         is_configuration=False,
         config_string=None,
+        core_type=None,
         mounting=None,
         power=None,
         modules=[],
@@ -397,6 +420,7 @@ class FirmwareArtifact:
             entry.update(
                 {
                     "config_string": self.metadata.config_string,
+                    "core_type": self.metadata.core_type,
                     "mounting": self.metadata.mounting,
                     "power": self.metadata.power,
                     "modules": list(self.metadata.modules),
