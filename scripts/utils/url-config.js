@@ -7,13 +7,13 @@
  * Order of configuration parameters for consistent URL generation.
  * @type {readonly string[]}
  */
-const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
+const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'led', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
 
 /**
  * Keys for optional module configuration parameters.
  * @type {readonly string[]}
  */
-const CONFIG_MODULE_KEYS = Object.freeze(['airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
+const CONFIG_MODULE_KEYS = Object.freeze(['led', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
 
 /**
  * Required configuration parameters that must be present for a valid config.
@@ -25,6 +25,7 @@ const DEFAULT_SANITIZED_CONFIG = Object.freeze({
     core: null,
     mount: null,
     power: null,
+    led: 'none',
     airiq: 'none',
     bathroomairiq: 'none',
     presence: 'none',
@@ -69,6 +70,16 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         legacyValues: new Map([
             ['pwr', 'ac']
         ])
+    }),
+    led: Object.freeze({
+        required: false,
+        aliases: Object.freeze(['led']),
+        defaultOption: 'none',
+        options: new Map([
+            ['none', { wizardValue: 'none', configSegment: null }],
+            ['base', { wizardValue: 'base', configSegment: 'LED' }]
+        ]),
+        allowedValues: Object.freeze(['none', 'base'])
     }),
     airiq: Object.freeze({
         required: false,
@@ -182,6 +193,7 @@ function parseConfigParams(inputParams) {
         core: DEFAULT_SANITIZED_CONFIG.core,
         mount: DEFAULT_SANITIZED_CONFIG.mount,
         power: DEFAULT_SANITIZED_CONFIG.power,
+        led: DEFAULT_SANITIZED_CONFIG.led,
         airiq: DEFAULT_SANITIZED_CONFIG.airiq,
         presence: DEFAULT_SANITIZED_CONFIG.presence,
         comfort: DEFAULT_SANITIZED_CONFIG.comfort,
@@ -376,6 +388,7 @@ function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
         voice: safeConfig.core ?? DEFAULT_SANITIZED_CONFIG.core,
         mounting: safeConfig.mount ?? DEFAULT_SANITIZED_CONFIG.mount,
         power: safeConfig.power ?? DEFAULT_SANITIZED_CONFIG.power,
+        led: safeConfig.led ?? DEFAULT_SANITIZED_CONFIG.led,
         airiq: safeConfig.airiq ?? DEFAULT_SANITIZED_CONFIG.airiq,
         bathroomairiq: safeConfig.bathroomairiq ?? DEFAULT_SANITIZED_CONFIG.bathroomairiq,
         presence: safeConfig.presence ?? DEFAULT_SANITIZED_CONFIG.presence,

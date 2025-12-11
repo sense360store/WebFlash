@@ -198,6 +198,37 @@ const MODULE_REQUIREMENT_MATRIX = {
                 sensors: [
                     'I2S microphone array',
                     'Audio DAC output'
+                ],
+                requires: [
+                    {
+                        module: 'led',
+                        variants: ['base'],
+                        message: 'Voice cores require LED Ring with integrated microphone.',
+                        detail: 'The Core Voice module mandates an LED Ring for visual feedback and microphone integration.'
+                    }
+                ]
+            }
+        }
+    },
+    led: {
+        label: 'LED Ring',
+        summary: 'Visual feedback ring with optional microphone integration for voice-enabled cores.',
+        variants: {
+            none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                conflicts: [],
+                recommended: true
+            },
+            base: {
+                label: 'Base',
+                coreRevision: 'Rev A core or newer',
+                headers: ['J11 LED data', 'J12 LED power'],
+                conflicts: [],
+                sensors: [
+                    'WS2812B addressable LED ring',
+                    'Integrated I2S microphone (voice models)'
                 ]
             }
         }

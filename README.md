@@ -51,6 +51,7 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 - **Presence Module**: None, Base, Pro
 - **Comfort Module**: None, Base
 - **Fan Module**: None, PWM, Analog (Wall mount only)
+- **LED Ring**: None, Base (Required for Core Voice)
 
 ### Release Channels
 - **Stable**: Production-ready firmware

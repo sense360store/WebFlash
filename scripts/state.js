@@ -41,6 +41,7 @@ const defaultConfiguration = {
     comfort: 'none',
     fan: 'none',
     voice: 'none',
+    led: 'none',
     bathroomairiq: 'none'
 };
 const configuration = { ...defaultConfiguration };
@@ -54,6 +55,7 @@ const allowedOptions = {
     comfort: ['none', 'base'],
     fan: ['none', 'pwm', 'analog'],
     voice: ['none', 'base'],
+    led: ['none', 'base'],
     bathroomairiq: ['none', 'base', 'pro']
 };
 
@@ -91,13 +93,17 @@ const MODULE_VARIANT_LABELS = Object.freeze({
         none: 'Core (standard module)',
         base: 'Core Voice module'
     }),
+    led: Object.freeze({
+        none: 'No LED Ring',
+        base: 'LED Ring module'
+    }),
     bathroomairiq: Object.freeze({
         base: 'Bathroom AirIQ Base module',
         pro: 'Bathroom AirIQ Pro module'
     })
 });
 
-const MODULE_KEYS = ['voice', 'airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
+const MODULE_KEYS = ['voice', 'led', 'airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
 const MODULE_LABELS = {
     airiq: 'AirIQ',
     bathroomairiq: 'Bathroom AirIQ',
@@ -105,6 +111,7 @@ const MODULE_LABELS = {
     comfort: 'Comfort',
     fan: 'Fan',
     voice: 'Core Type',
+    led: 'LED Ring',
     bathroomairiq: 'Bathroom AirIQ'
 };
 
@@ -115,6 +122,7 @@ const MODULE_SEGMENT_FORMATTERS = {
     comfort: value => `Comfort${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
     voice: value => value === 'base' ? 'CoreVoice' : 'Core',
+    led: value => value === 'base' ? 'LED' : '',
     bathroomairiq: value => `BathroomAirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`
 };
 
@@ -986,6 +994,7 @@ function parseConfigStringState(configString) {
         comfort: 'none',
         fan: 'none',
         voice: coreType,
+        led: 'none',
         bathroomairiq: 'none'
     };
 
@@ -1016,6 +1025,8 @@ function parseConfigStringState(configString) {
         } else if (segment.startsWith('Voice')) {
             const suffix = segment.substring('Voice'.length);
             moduleState.voice = normaliseModuleValue('voice', suffix ? suffix.toLowerCase() : 'base');
+        } else if (segment === 'LED' || segment.startsWith('LED')) {
+            moduleState.led = 'base';
         }
     }
 
@@ -1308,6 +1319,7 @@ function bindWizardEventListeners() {
         { selector: 'input[name="presence"]', datasetKey: 'presenceBound', handler: updateConfiguration },
         { selector: 'input[name="comfort"]', datasetKey: 'comfortBound', handler: updateConfiguration },
         { selector: 'input[name="fan"]', datasetKey: 'fanBound', handler: updateConfiguration },
+        { selector: 'input[name="led"]', datasetKey: 'ledBound', handler: updateConfiguration },
         { selector: 'input[name="bathroomairiq"]', datasetKey: 'bathroomairiqBound', handler: updateConfiguration }
     ];
 
@@ -1595,6 +1607,21 @@ function syncConfigurationFromInputs() {
         const bathroomAirIQNoneInput = document.querySelector('input[name="bathroomairiq"][value="none"]');
         if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
             bathroomAirIQNoneInput.checked = true;
+        }
+    }
+
+    // LED Ring - sync from inputs
+    configuration.led = document.querySelector('input[name="led"]:checked')?.value || 'none';
+
+    // Voice (Core Type) - sync from inputs
+    configuration.voice = document.querySelector('input[name="voice"]:checked')?.value || 'none';
+
+    // Voice cores mandate LED Ring - auto-select LED when voice is enabled
+    if (configuration.voice === 'base' && configuration.led === 'none') {
+        configuration.led = 'base';
+        const ledBaseInput = document.querySelector('input[name="led"][value="base"]');
+        if (ledBaseInput && !ledBaseInput.checked) {
+            ledBaseInput.checked = true;
         }
     }
 }
@@ -4314,6 +4341,7 @@ function updateUrlFromConfiguration() {
     }
 
     params.set('voice', configuration.voice || 'none');
+    params.set('led', configuration.led || 'none');
     params.set('airiq', configuration.airiq || 'none');
     params.set('presence', configuration.presence || 'none');
     params.set('comfort', configuration.comfort || 'none');

@@ -73,11 +73,13 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 - `PresenceBase`, `PresencePro` - mmWave radar for occupancy detection
 - `ComfortBase` - Temperature and ambient light sensors
 - `FanPWM`, `FanAnalog` - Output driver for external fan control
+- `LED` - Addressable LED ring for visual feedback (Required for CoreVoice)
 
 **Module Constraints:**
 - `Bathroom` is only available for Ceiling installations
 - `BathroomAirIQ` requires `Bathroom` to be enabled
 - `AirIQ` and `BathroomAirIQ` cannot be combined
+- `CoreVoice` requires `LED` ring module (voice cores mandate LED rings with integrated microphone)
 
 **Module Sensors:**
 - AirIQ Base: Basic air quality sensors (VOC, CO₂)
@@ -87,6 +89,7 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 - Presence Base: Single-zone mmWave radar
 - Presence Pro: Multi-zone mmWave radar with secondary UART
 - Comfort Base: Temperature and ambient light sensors
+- LED Ring: WS2812B addressable LEDs, integrated I2S microphone (for voice models)
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
@@ -97,13 +100,14 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 ```
 Sense360-Core-Wall-USB-v1.0.0-stable.bin
 Sense360-Core-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-POE-v1.0.0-stable.bin
-Sense360-CoreVoice-Wall-PWR-AirIQPro-PresenceBase-ComfortBase-v1.2.0-preview.bin
+Sense360-CoreVoice-Ceiling-POE-LED-v1.0.0-stable.bin
+Sense360-CoreVoice-Wall-PWR-LED-AirIQPro-PresenceBase-ComfortBase-v1.2.0-preview.bin
 Sense360-Core-Ceiling-POE-AirIQPro-PresencePro-v2.0.0-beta.bin
 Sense360-Core-Ceiling-POE-BathroomAirIQ-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-PWR-BathroomAirIQPro-v1.0.0-stable.bin
+Sense360-CoreVoice-Ceiling-PWR-LED-BathroomAirIQPro-v1.0.0-stable.bin
 Sense360-Core-Wall-USB-FanPWM-v1.0.0-stable.bin
-Sense360-Core-Ceiling-POE-AirIQBase-FanAnalog-v1.0.0-stable.bin
+Sense360-Core-Wall-USB-LED-v1.0.0-stable.bin
+Sense360-Core-Ceiling-POE-LED-AirIQBase-v1.0.0-stable.bin
 ```
 
 ## Release Notes
