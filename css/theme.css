@@ -549,3 +549,46 @@ esp-web-install-button::part(button):disabled {
         transition: none;
     }
 }
+
+/* ESP Web Tools custom slot styling for unsupported browsers and non-HTTPS */
+.esp-web-tools-unsupported,
+.esp-web-tools-not-allowed {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.esp-web-tools-unsupported {
+    background: var(--warning-surface);
+    border: 1px solid var(--warning-border);
+    color: var(--warning-text);
+}
+
+.esp-web-tools-unsupported strong {
+    color: var(--warning-strong);
+}
+
+.esp-web-tools-unsupported a {
+    color: var(--warning-strong);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--warning-strong) 50%, transparent);
+}
+
+.esp-web-tools-unsupported a:hover {
+    text-decoration-color: var(--warning-strong);
+}
+
+.esp-web-tools-not-allowed {
+    background: var(--danger-surface);
+    border: 1px solid var(--danger-border);
+    color: var(--danger-text);
+}
+
+.esp-web-tools-not-allowed strong {
+    color: var(--danger-strong);
+}
