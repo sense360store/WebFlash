@@ -960,7 +960,20 @@ function parseConfigStringState(configString) {
     }
 
     const mounting = normaliseMountingToken(segments[mountingIndex]);
-    const power = normalisePowerToken(segments[mountingIndex + 1]);
+
+    // Check if Voice segment appears between mounting and power (e.g., "Ceiling-Voice-USB")
+    let powerIndex = mountingIndex + 1;
+    if (segments[powerIndex] && segments[powerIndex].toLowerCase() === 'voice') {
+        coreType = 'base';
+        powerIndex += 1;
+    }
+
+    // Ensure we still have a power segment
+    if (segments.length <= powerIndex) {
+        return null;
+    }
+
+    const power = normalisePowerToken(segments[powerIndex]);
 
     if (!mounting || !power) {
         return null;
@@ -976,7 +989,7 @@ function parseConfigStringState(configString) {
         bathroomairiq: 'none'
     };
 
-    for (let index = mountingIndex + 2; index < segments.length; index += 1) {
+    for (let index = powerIndex + 1; index < segments.length; index += 1) {
         const segment = segments[index];
         if (!segment) {
             continue;
