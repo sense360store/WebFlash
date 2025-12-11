@@ -7,7 +7,7 @@
  * Order of configuration parameters for consistent URL generation.
  * @type {readonly string[]}
  */
-const CONFIG_PARAM_ORDER = Object.freeze(['mount', 'power', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
+const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
 
 /**
  * Keys for optional module configuration parameters.
@@ -19,9 +19,10 @@ const CONFIG_MODULE_KEYS = Object.freeze(['airiq', 'bathroomairiq', 'presence', 
  * Required configuration parameters that must be present for a valid config.
  * @type {readonly string[]}
  */
-const REQUIRED_CONFIG_PARAMS = Object.freeze(['mount', 'power']);
+const REQUIRED_CONFIG_PARAMS = Object.freeze(['core', 'mount', 'power']);
 
 const DEFAULT_SANITIZED_CONFIG = Object.freeze({
+    core: null,
     mount: null,
     power: null,
     airiq: 'none',
@@ -32,6 +33,21 @@ const DEFAULT_SANITIZED_CONFIG = Object.freeze({
 });
 
 const CONFIG_PARAM_DEFINITIONS = Object.freeze({
+    core: Object.freeze({
+        required: true,
+        aliases: Object.freeze(['core', 'coretype', 'voice']),
+        options: new Map([
+            ['core', { wizardValue: 'none', configSegment: 'Core' }],
+            ['corevoice', { wizardValue: 'base', configSegment: 'CoreVoice' }]
+        ]),
+        allowedValues: Object.freeze(['core', 'corevoice']),
+        legacyValues: new Map([
+            ['none', 'core'],
+            ['base', 'corevoice'],
+            ['standard', 'core'],
+            ['voice', 'corevoice']
+        ])
+    }),
     mount: Object.freeze({
         required: true,
         aliases: Object.freeze(['mount', 'mounting']),
@@ -154,15 +170,16 @@ function ensureSearchParams(input) {
  * @param {URLSearchParams|string|Object} inputParams - Input parameters to parse
  * @returns {ParsedConfig} Parsed and validated configuration
  * @example
- * const result = parseConfigParams('mount=wall&power=usb&airiq=base');
+ * const result = parseConfigParams('core=core&mount=wall&power=usb&airiq=base');
  * if (result.isValid) {
- *   console.log(result.configKey); // 'Wall-USB-AirIQBase'
+ *   console.log(result.configKey); // 'Core-Wall-USB-AirIQBase'
  * }
  */
 function parseConfigParams(inputParams) {
     const params = ensureSearchParams(inputParams);
 
     const sanitizedConfig = {
+        core: DEFAULT_SANITIZED_CONFIG.core,
         mount: DEFAULT_SANITIZED_CONFIG.mount,
         power: DEFAULT_SANITIZED_CONFIG.power,
         airiq: DEFAULT_SANITIZED_CONFIG.airiq,
@@ -288,13 +305,18 @@ function parseConfigParams(inputParams) {
         configSegments.set('bathroomairiq', null);
     }
 
-    const isValid = errors.length === 0 && Boolean(sanitizedConfig.mount) && Boolean(sanitizedConfig.power);
+    const isValid = errors.length === 0 && Boolean(sanitizedConfig.core) && Boolean(sanitizedConfig.mount) && Boolean(sanitizedConfig.power);
 
     let configKey = null;
     if (isValid) {
         const segments = [];
+        const coreSegment = configSegments.get('core');
         const mountSegment = configSegments.get('mount');
         const powerSegment = configSegments.get('power');
+
+        if (coreSegment) {
+            segments.push(coreSegment);
+        }
 
         if (mountSegment) {
             segments.push(mountSegment);
@@ -351,6 +373,7 @@ function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
         : DEFAULT_SANITIZED_CONFIG;
 
     return {
+        voice: safeConfig.core ?? DEFAULT_SANITIZED_CONFIG.core,
         mounting: safeConfig.mount ?? DEFAULT_SANITIZED_CONFIG.mount,
         power: safeConfig.power ?? DEFAULT_SANITIZED_CONFIG.power,
         airiq: safeConfig.airiq ?? DEFAULT_SANITIZED_CONFIG.airiq,

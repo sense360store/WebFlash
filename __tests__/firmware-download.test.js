@@ -318,7 +318,8 @@ describe('firmware download interactions', () => {
     test('pre-flash acknowledgement resets when firmware selection changes', async () => {
         minimalManifest.builds = [
             {
-                config_string: 'Wall-USB',
+                config_string: 'Core-Wall-USB',
+                core_type: 'Core',
                 version: '1.2.3',
                 channel: 'stable',
                 parts: [
@@ -326,7 +327,8 @@ describe('firmware download interactions', () => {
                 ]
             },
             {
-                config_string: 'Wall-USB',
+                config_string: 'Core-Wall-USB',
+                core_type: 'Core',
                 version: '1.2.4',
                 channel: 'beta',
                 parts: [
@@ -340,7 +342,7 @@ describe('firmware download interactions', () => {
 
         document.dispatchEvent(new Event('DOMContentLoaded'));
 
-        setState({ mounting: 'wall', power: 'usb' }, { skipUrlUpdate: true });
+        setState({ voice: 'none', mounting: 'wall', power: 'usb' }, { skipUrlUpdate: true });
         setStep(4, { animate: false, skipUrlUpdate: true });
 
         await __testHooks.loadManifestData();

@@ -34,6 +34,7 @@ let mobileSummaryMediaQuery = null;
 
 (function () {
     const FIELD_MAP = [
+        { key: 'voice', name: 'voice', label: 'Core Type' },
         { key: 'mount', name: 'mounting', label: 'Mount' },
         { key: 'power', name: 'power', label: 'Power' },
         { key: 'airiq', name: 'airiq', label: 'AirIQ' },
@@ -41,7 +42,7 @@ let mobileSummaryMediaQuery = null;
         { key: 'comfort', name: 'comfort', label: 'Comfort' },
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
-    const MODULE_VARIANT_KEYS = ['airiq', 'presence', 'comfort', 'fan'];
+    const MODULE_VARIANT_KEYS = ['voice', 'airiq', 'presence', 'comfort', 'fan'];
     const CORE_REVISION_PATTERN = /rev\s*([a-z])/i;
     const subscribers = new Set();
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
@@ -142,6 +143,7 @@ let mobileSummaryMediaQuery = null;
 
     function mapSummaryStateToConfiguration(state) {
         return {
+            voice: state.voice || 'none',
             mounting: state.mount || null,
             power: state.power || null,
             airiq: state.airiq || 'none',

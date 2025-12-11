@@ -97,7 +97,7 @@ const MODULE_VARIANT_LABELS = Object.freeze({
     })
 });
 
-const MODULE_KEYS = ['airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
+const MODULE_KEYS = ['voice', 'airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
 const MODULE_LABELS = {
     airiq: 'AirIQ',
     bathroomairiq: 'Bathroom AirIQ',
@@ -111,10 +111,10 @@ const MODULE_LABELS = {
 const MODULE_SEGMENT_FORMATTERS = {
     airiq: value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`,
     bathroomairiq: value => `BathroomAirIQ${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    presence: value => `Presence${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    comfort: value => `Comfort${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
+    presence: value => `Presence${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
+    comfort: value => `Comfort${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
-    voice: value => value === 'base' ? 'Core Voice' : 'Core',
+    voice: value => value === 'base' ? 'CoreVoice' : 'Core',
     bathroomairiq: value => `BathroomAirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`
 };
 
@@ -944,8 +944,23 @@ function parseConfigStringState(configString) {
         return null;
     }
 
-    const mounting = normaliseMountingToken(segments[0]);
-    const power = normalisePowerToken(segments[1]);
+    // Check if first segment is Core/CoreVoice (new format) or mounting type (legacy format)
+    let coreType = 'none';
+    let mountingIndex = 0;
+    const firstSegmentLower = segments[0].toLowerCase();
+
+    if (firstSegmentLower === 'core' || firstSegmentLower === 'corevoice') {
+        coreType = firstSegmentLower === 'corevoice' ? 'base' : 'none';
+        mountingIndex = 1;
+    }
+
+    // Ensure we have enough segments for mounting and power
+    if (segments.length < mountingIndex + 2) {
+        return null;
+    }
+
+    const mounting = normaliseMountingToken(segments[mountingIndex]);
+    const power = normalisePowerToken(segments[mountingIndex + 1]);
 
     if (!mounting || !power) {
         return null;
@@ -957,11 +972,11 @@ function parseConfigStringState(configString) {
         presence: 'none',
         comfort: 'none',
         fan: 'none',
-        voice: 'none',
+        voice: coreType,
         bathroomairiq: 'none'
     };
 
-    for (let index = 2; index < segments.length; index += 1) {
+    for (let index = mountingIndex + 2; index < segments.length; index += 1) {
         const segment = segments[index];
         if (!segment) {
             continue;
@@ -3691,7 +3706,10 @@ async function findCompatibleFirmware() {
     const previousConfigString = window.currentConfigString;
     let configString = '';
 
-    configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
+    // Core type (voice) comes first
+    const voiceValue = configuration.voice || 'none';
+    configString += voiceValue === 'base' ? 'CoreVoice' : 'Core';
+    configString += `-${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
     configString += `-${configuration.power.toUpperCase()}`;
 
     configString += formatConfigSegment('airiq', configuration.airiq);
