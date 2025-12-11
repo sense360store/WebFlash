@@ -88,7 +88,8 @@ const MODULE_VARIANT_LABELS = Object.freeze({
         analog: 'Fan Analog module'
     }),
     voice: Object.freeze({
-        base: 'Voice Base module'
+        none: 'Core (standard module)',
+        base: 'Core Voice module'
     }),
     bathroomairiq: Object.freeze({
         base: 'Bathroom AirIQ Base module',
@@ -103,7 +104,7 @@ const MODULE_LABELS = {
     presence: 'Presence',
     comfort: 'Comfort',
     fan: 'Fan',
-    voice: 'Voice',
+    voice: 'Core Type',
     bathroomairiq: 'Bathroom AirIQ'
 };
 
@@ -113,7 +114,7 @@ const MODULE_SEGMENT_FORMATTERS = {
     presence: value => `Presence${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     comfort: value => `Comfort${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
-    voice: value => 'Voice',
+    voice: value => value === 'base' ? 'Core Voice' : 'Core',
     bathroomairiq: value => `BathroomAirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`
 };
 
@@ -1856,6 +1857,12 @@ function formatMountingPowerLabel(state) {
 
 function formatModuleSelectionLabel(key, value) {
     const label = MODULE_LABELS[key] || key;
+
+    // Special handling for Core Type (voice) - uses "Core" and "Core Voice" labels
+    if (key === 'voice') {
+        return value === 'base' ? 'Core Voice' : 'Core';
+    }
+
     if (value === 'none') {
         return `${label} None`;
     }

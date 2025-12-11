@@ -21,6 +21,7 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 
 1. Navigate to https://sense360store.github.io/WebFlash/
 2. Configure your device:
+   - Select core type (Core or Core Voice)
    - Select mounting type (Wall or Ceiling)
    - Choose power source (USB, POE, or PWR Module)
    - Enable required modules (AirIQ, Presence, Comfort, Fan)
@@ -31,6 +32,10 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 7. Follow ESP Web Tools prompts to complete installation
 
 ## Configuration Options
+
+### Core Type
+- **Core**: Standard Sense360 core module without voice hardware
+- **Core Voice**: Core with I2S microphone array and audio output for voice control (requires Rev B core or newer, J5 audio interface header)
 
 ### Mounting Type
 - **Wall Mount**: Supports all power and module combinations

@@ -5,7 +5,8 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ## Completed Features
 
 ### Core Wizard Interface
-- [x] Step-by-step wizard interface (4 steps: Mount → Power → Modules → Review)
+- [x] Step-by-step wizard interface (5 steps: Core → Mount → Power → Modules → Review)
+- [x] Core type selection (Core or Core Voice)
 - [x] Wall and Ceiling mounting support
 - [x] Power source options (USB, POE, PWR)
 - [x] Visual progress indicator with step navigation
@@ -58,10 +59,10 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 ## Planned Features
 
-### Voice Control
-- [x] Voice module UI support in wizard
-- [x] Voice assistant integration options
-- [x] Voice firmware configuration
+### Core Voice Support
+- [x] Core Voice option in wizard (Core type selection step)
+- [x] Voice assistant integration with Core Voice hardware
+- [x] Voice-enabled firmware configuration
 
 ### Firmware Management
 - [x] Firmware update checker (compare installed vs available)
