@@ -322,6 +322,49 @@ const optionTooltips = {
                 href: 'https://docs.sense360.com/modules/fan-analog'
             }
         }
+    },
+    led: {
+        none: {
+            title: 'No LED Ring',
+            summary: 'Skip the LED ring when visual status feedback is not required.',
+            pros: [
+                'Reduces power consumption and overall system cost.',
+                'Suitable for headless installations where visual feedback is unnecessary.'
+            ],
+            cons: [
+                'No visual status indication for device state or alerts.',
+                'Not compatible with Core Voice configurations.'
+            ],
+            measurements: [
+                'Power budget impact: 0 W (module disabled).'
+            ],
+            learnMore: {
+                label: 'LED Ring overview',
+                href: 'https://docs.sense360.com/modules/led-ring'
+            }
+        },
+        base: {
+            title: 'LED Ring',
+            summary: 'Addressable RGB LED ring providing visual feedback for device status and alerts.',
+            pros: [
+                'Clear visual indication of device state, alerts, and sensor readings.',
+                'Includes integrated I2S microphone for voice-enabled configurations.',
+                'Customizable lighting patterns and colors via Home Assistant.'
+            ],
+            cons: [
+                'Adds 0.8 W to the power budget at full brightness.',
+                'Requires proper mounting orientation for optimal visibility.'
+            ],
+            measurements: [
+                'WS2812B addressable LEDs with 24-bit color depth.',
+                'Integrated MEMS microphone for Core Voice configurations.',
+                'Maximum brightness: 60 mA per LED at full white.'
+            ],
+            learnMore: {
+                label: 'LED Ring installation guide',
+                href: 'https://docs.sense360.com/modules/led-ring-base'
+            }
+        }
     }
 };
 

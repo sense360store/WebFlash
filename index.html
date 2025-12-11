@@ -777,6 +777,84 @@
                                 </div>
                             </section>
 
+                            <section class="module-group" data-module-group="led" id="led-module-section" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">LED Ring</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: LED Ring None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="led"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-led"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-led" data-module-group-body hidden>
+                                    <p class="module-group__description">Visual feedback ring with optional microphone integration for voice-enabled cores.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="led" data-variant="none">
+                                        <input type="radio" name="led" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">No LED ring installed.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="voice" data-conflict-variants="base" title="Core Voice requires LED Ring with integrated microphone." aria-label="Conflicts with Core Voice: Core Voice requires LED Ring with integrated microphone.">Core Voice</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="led" data-variant="base">
+                                        <input type="radio" name="led" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Base</div>
+                                                    <p class="option-description module-card__description">Addressable RGB LED ring for visual status feedback.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev A core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J11 LED data · J12 LED power</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
+
                             <section class="module-group" data-module-group="bathroomairiq" id="bathroomairiq-module-section" data-expanded="false" style="display: none;">
                                 <div class="module-group__summary">
                                     <div class="module-group__summary-text">
