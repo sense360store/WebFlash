@@ -1,7 +1,8 @@
 {
   "name": "Sense360 ESP32 Firmware - Core Module",
-  "version": "1.0.0",
+  "version": "3.0.1",
   "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 15,
   "builds": [
@@ -9,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-USB-Fan-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-CoreVoice-Wall-PWR-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+          "md5": "d96ea15841d692a5ffe8abd376d4f04a",
+          "sha256": "987c9cc0efae6dbf56aa182f30d05c32dc9701bd7512ac952e9e116bc3af7632",
+          "signature": "ECu6mhF2bqlwplPbnqLwllHHthemNT5FYv3JYyGdcd4="
         }
       ],
       "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+      "md5": "d96ea15841d692a5ffe8abd376d4f04a",
+      "sha256": "987c9cc0efae6dbf56aa182f30d05c32dc9701bd7512ac952e9e116bc3af7632",
+      "signature": "ECu6mhF2bqlwplPbnqLwllHHthemNT5FYv3JYyGdcd4="
     }
   ]
 }
