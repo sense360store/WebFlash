@@ -1,0 +1,26 @@
+{
+  "name": "Sense360 ESP32 Firmware - Core Module",
+  "version": "3.0.1",
+  "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 15,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Mini-AirIQ-Advanced-v3.0.1-stable.bin",
+          "offset": 0,
+          "md5": "f95b912feb07ace14a58084154105bdc",
+          "sha256": "9dd5378153df151c1d5fac0a33e68e785a517236081e5e7f043153e2069ed085",
+          "signature": "81qhXFhML1KAbmBvaO5fpTuRTaVOnKeCiV3KK+LkfU8="
+        }
+      ],
+      "improv": true,
+      "md5": "f95b912feb07ace14a58084154105bdc",
+      "sha256": "9dd5378153df151c1d5fac0a33e68e785a517236081e5e7f043153e2069ed085",
+      "signature": "81qhXFhML1KAbmBvaO5fpTuRTaVOnKeCiV3KK+LkfU8="
+    }
+  ]
+}

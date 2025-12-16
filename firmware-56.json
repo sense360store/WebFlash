@@ -1,0 +1,26 @@
+{
+  "name": "Sense360 ESP32 Firmware - Core Module",
+  "version": "3.0.1",
+  "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 15,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-POE-v3.0.1-stable.bin",
+          "offset": 0,
+          "md5": "371a558c232954069155c21ecf2760a2",
+          "sha256": "4b4f0738c10430fb5367a8cabeccbff2f7a5127061a5fc76e49cf630325c2af2",
+          "signature": "3OUy2z+6EqMVE/q5rOFFNOw+/nEQabHH2a09XZg8aSw="
+        }
+      ],
+      "improv": true,
+      "md5": "371a558c232954069155c21ecf2760a2",
+      "sha256": "4b4f0738c10430fb5367a8cabeccbff2f7a5127061a5fc76e49cf630325c2af2",
+      "signature": "3OUy2z+6EqMVE/q5rOFFNOw+/nEQabHH2a09XZg8aSw="
+    }
+  ]
+}

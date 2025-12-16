@@ -1,7 +1,8 @@
 {
   "name": "Sense360 ESP32 Firmware - Core Module",
-  "version": "1.0.0",
+  "version": "3.0.1",
   "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 15,
   "builds": [
@@ -9,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Wall-POE-Presence-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Ceiling-PWR-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+          "md5": "40524c5a06060838fe64b22d13b4afaa",
+          "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
+          "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
         }
       ],
       "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
+      "md5": "40524c5a06060838fe64b22d13b4afaa",
+      "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
+      "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
     }
   ]
 }

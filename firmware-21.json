@@ -2,6 +2,7 @@
   "name": "Sense360 ESP32 Firmware - Core Module",
   "version": "1.0.0",
   "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 15,
   "builds": [
@@ -9,7 +10,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-USB-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "1eb1fea3994bbbeea11080159dbbe611",
           "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",

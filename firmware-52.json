@@ -1,0 +1,26 @@
+{
+  "name": "Sense360 ESP32 Firmware - Core Module",
+  "version": "3.0.1",
+  "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 15,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Mini-Presence-Advanced-v3.0.1-stable.bin",
+          "offset": 0,
+          "md5": "0466784a430b916b45d7bd52c38d42d7",
+          "sha256": "e84380fdfb7ec6e1235fe00bb6b16a4fa1e1296a1a63eaef5d74782f43593795",
+          "signature": "PO6YQNvnrBIRFLOoIbimb6asv+uBpf4PYVoINRNDnN0="
+        }
+      ],
+      "improv": true,
+      "md5": "0466784a430b916b45d7bd52c38d42d7",
+      "sha256": "e84380fdfb7ec6e1235fe00bb6b16a4fa1e1296a1a63eaef5d74782f43593795",
+      "signature": "PO6YQNvnrBIRFLOoIbimb6asv+uBpf4PYVoINRNDnN0="
+    }
+  ]
+}
