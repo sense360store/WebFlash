@@ -2367,7 +2367,7 @@ function updateFirmwareControls() {
         && window.currentFirmware.parts.length > 0
     );
     const canWebSerial = Boolean(navigator?.serial);
-    const onReviewStep = currentStep === 4;
+    const onReviewStep = currentStep === 5;
     const shouldShowInstallControls = canWebSerial && onReviewStep;
     const verificationStatus = (firmwareVerificationState.status || '').toString().toLowerCase();
     const isVerified = verificationStatus === 'verified';
