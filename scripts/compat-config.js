@@ -37,6 +37,79 @@ const CHANNEL_PRIORITY_MAP = {
 
 let currentManifestUrl = null;
 
+
+function normalizeHardwareToken(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  return normalized || null;
+}
+
+function deriveHardwareTargetDescriptor(configuration = {}) {
+  const mount = normalizeHardwareToken(configuration.mounting || configuration.mount);
+  const power = normalizeHardwareToken(configuration.power);
+  const family = normalizeHardwareToken(configuration.family);
+
+  const tokens = ['sense360'];
+  if (mount) tokens.push(mount);
+  if (power) tokens.push(power);
+  if (family) tokens.push(family);
+
+  return {
+    family: family || 'sense360',
+    mount,
+    power,
+    normalizedTarget: tokens.join('-')
+  };
+}
+
+function parseHardwareTarget(target) {
+  const normalized = normalizeHardwareToken(target);
+  if (!normalized) {
+    return { family: null, mount: null, power: null, normalizedTarget: null };
+  }
+
+  const tokens = normalized.split('-').filter(Boolean);
+  const [family, mount, power] = tokens;
+  return {
+    family: family || null,
+    mount: mount || null,
+    power: power || null,
+    normalizedTarget: normalized
+  };
+}
+
+function verifyImportedPresetCompatibility(importedHardwareTarget, currentConfiguration = {}) {
+  const imported = parseHardwareTarget(importedHardwareTarget);
+  const current = deriveHardwareTargetDescriptor(currentConfiguration);
+
+  const mismatches = [];
+  if (imported.mount && current.mount && imported.mount !== current.mount) {
+    mismatches.push({ key: 'mounting', imported: imported.mount, current: current.mount, blocking: true });
+  }
+  if (imported.power && current.power && imported.power !== current.power) {
+    mismatches.push({ key: 'power', imported: imported.power, current: current.power, blocking: true });
+  }
+  if (imported.family && current.family && imported.family !== current.family) {
+    mismatches.push({ key: 'family', imported: imported.family, current: current.family, blocking: false });
+  }
+
+  let level = 'compatible';
+  if (mismatches.some((entry) => entry.blocking)) {
+    level = 'incompatible-blocking';
+  } else if (mismatches.length > 0) {
+    level = 'incompatible-warning';
+  }
+
+  const messages = mismatches.map((entry) => {
+    const label = entry.key === 'mounting' ? 'Mounting' : entry.key.charAt(0).toUpperCase() + entry.key.slice(1);
+    return `${label} mismatch (import: ${entry.imported}, current: ${entry.current})`;
+  });
+
+  return { level, mismatches, messages, importedTarget: imported.normalizedTarget, currentTarget: current.normalizedTarget };
+}
+
 function cleanupManifestUrl() {
   if (currentManifestUrl) {
     try {
@@ -792,5 +865,7 @@ export {
   initializeCompatInstall,
   readInstallQueryParams,
   renderParameterError,
-  REQUIRED_CONFIG_PARAMS
+  REQUIRED_CONFIG_PARAMS,
+  verifyImportedPresetCompatibility,
+  deriveHardwareTargetDescriptor
 };

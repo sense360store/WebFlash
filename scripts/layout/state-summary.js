@@ -20,6 +20,7 @@ import {
     validatePresetName
 } from '../utils/preset-storage.js';
 import { downloadJsonFile } from '../utils/file-download.js';
+import { verifyImportedPresetCompatibility } from '../compat-config.js';
 
 const moduleSummaryRefs = new Map();
 const presetCache = new Map();
@@ -917,6 +918,31 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
+        const currentConfiguration = mapSummaryStateToConfiguration(getState());
+        const compatCheck = verifyImportedPresetCompatibility(parsed.hardwareTarget, currentConfiguration);
+        const compatibilityDiagnostics = [...validation.diagnostics];
+
+        if (compatCheck.level === 'incompatible-blocking') {
+            setPresetError('Import blocked: preset target does not match this device setup.');
+            compatibilityDiagnostics.push(...compatCheck.messages.map(message => `compat: ${message}`));
+            setPresetImportDiagnostics(compatibilityDiagnostics);
+            if (refs.importButton) refs.importButton.focus();
+            return;
+        }
+
+        if (compatCheck.level === 'incompatible-warning') {
+            const warningDetails = compatCheck.messages.join('; ');
+            const accepted = window.confirm(`Target mismatch detected. ${warningDetails}. Apply anyway?`);
+            compatibilityDiagnostics.push(...compatCheck.messages.map(message => `compat-warning: ${message}`));
+            if (!accepted) {
+                setPresetError('Import canceled: confirmation required for target mismatch.');
+                setPresetImportDiagnostics(compatibilityDiagnostics);
+                if (refs.importButton) refs.importButton.focus();
+                return;
+            }
+            compatibilityDiagnostics.push('compat-warning: User acknowledged mismatch and continued import.');
+        }
+
         const imported = upsertPresetByName(validation.preset.name, validation.preset.configuration, {
             ...PRESET_STORAGE_OPTIONS,
             state: validation.preset.state,
@@ -933,7 +959,7 @@ let mobileSummaryMediaQuery = null;
         applyPresetStateToWizard(imported.data.state);
         markPresetApplied(imported.data.id, PRESET_STORAGE_OPTIONS);
         setPresetError('');
-        setPresetImportDiagnostics(validation.diagnostics);
+        setPresetImportDiagnostics(compatibilityDiagnostics);
         renderPresetList();
         if (refs.importButton) refs.importButton.focus();
     }
