@@ -18,6 +18,10 @@ const PRESET_STORAGE_OPTIONS = Object.freeze({
     storageKey: 'wizard.presets',
     maxEntries: 20
 });
+const PRESET_NAME_RULES = Object.freeze({
+    minLength: 3,
+    maxLength: 40
+});
 
 const presetCache = new Map();
 const PRESET_EXPORT_SCHEMA_VERSION = 1;
@@ -65,32 +69,42 @@ function readPresetEntries(options = {}) {
     try {
         raw = storage.getItem(storageKey);
     } catch (error) {
-        console.warn('[preset-storage] Failed to read from storage', error);
-        return [];
+        const storageError = new PresetStorageError('read_failed', 'Failed to read presets from storage', error);
+        console.warn('[preset-storage] Failed to read from storage', storageError);
+        return { ok: false, error: storageError, data: [] };
     }
 
     if (!raw) {
-        return [];
+        return { ok: true, error: null, data: [] };
     }
 
     try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-            return parsed.filter(entry => entry && typeof entry === 'object');
+            return {
+                ok: true,
+                error: null,
+                data: parsed.filter(entry => entry && typeof entry === 'object')
+            };
         }
     } catch (error) {
-        console.warn('[preset-storage] Failed to parse stored presets', error);
+        const parseError = new PresetStorageError('parse_failed', 'Failed to parse stored presets', error);
+        console.warn('[preset-storage] Failed to parse stored presets', parseError);
+        return { ok: false, error: parseError, data: [] };
     }
 
-    return [];
+    return { ok: true, error: null, data: [] };
 }
 
 function writePresetEntries(entries, options = {}) {
     const { storage, storageKey } = resolveOptions(options);
     try {
         storage.setItem(storageKey, JSON.stringify(entries));
+        return { ok: true, error: null, data: null };
     } catch (error) {
-        console.warn('[preset-storage] Failed to write presets to storage', error);
+        const storageError = new PresetStorageError('write_failed', 'Failed to write presets to storage', error);
+        console.warn('[preset-storage] Failed to write presets to storage', storageError);
+        return { ok: false, error: storageError, data: null };
     }
 }
 
@@ -140,7 +154,8 @@ function normalizePresetEntry(entry = {}) {
         return null;
     }
 
-    const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : 'Preset';
+    const validatedName = validatePresetName(entry.name, { allowEmpty: true });
+    const name = validatedName.normalized || 'Preset';
     const state = normalizePresetState(entry.state);
     const configuration = normalizePresetConfiguration(entry.configuration, state);
     const createdAt = normalizeTimestamp(entry.createdAt);
@@ -198,9 +213,57 @@ function clampStep(step) {
     return value;
 }
 
+function validatePresetName(value, options = {}) {
+    const allowEmpty = options.allowEmpty !== false;
+    const raw = typeof value === 'string' ? value : '';
+    const normalized = raw.normalize('NFKC').replace(/\s+/g, ' ').trim();
+
+    if (!normalized) {
+        return {
+            valid: allowEmpty,
+            normalized: '',
+            reason: allowEmpty ? null : 'empty',
+            message: allowEmpty ? '' : 'Enter a preset name.'
+        };
+    }
+
+    if (normalized.length < PRESET_NAME_RULES.minLength) {
+        return {
+            valid: false,
+            normalized,
+            reason: 'minLength',
+            message: `Preset names must be at least ${PRESET_NAME_RULES.minLength} characters.`
+        };
+    }
+
+    if (normalized.length > PRESET_NAME_RULES.maxLength) {
+        return {
+            valid: false,
+            normalized,
+            reason: 'maxLength',
+            message: `Preset names must be ${PRESET_NAME_RULES.maxLength} characters or fewer.`
+        };
+    }
+
+    return {
+        valid: true,
+        normalized,
+        reason: null,
+        message: ''
+    };
+}
+
 function createPresetId() {
     const random = Math.random().toString(36).slice(2, 10);
     return `preset-${Date.now()}-${random}`;
+}
+
+function normalizePresetName(name) {
+    if (typeof name !== 'string') {
+        return '';
+    }
+
+    return name.trim().normalize('NFKC').toLocaleLowerCase();
 }
 
 function mapConfigurationToState(configuration = {}) {
@@ -215,8 +278,12 @@ function mapConfigurationToState(configuration = {}) {
 }
 
 function ensurePresetList(options = {}) {
-    const entries = readPresetEntries(options);
-    const normalized = entries
+    const readResult = readPresetEntries(options);
+    if (!readResult.ok) {
+        return { ok: false, error: readResult.error, data: [] };
+    }
+
+    const normalized = readResult.data
         .map(entry => normalizePresetEntry(entry))
         .filter(Boolean);
 
@@ -225,11 +292,16 @@ function ensurePresetList(options = {}) {
         presetCache.set(entry.id, clonePreset(entry));
     });
 
-    return normalized;
+    return { ok: true, error: null, data: normalized };
 }
 
 function listPresets(options = {}) {
-    const presets = ensurePresetList(options)
+    const ensured = ensurePresetList(options);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: [] };
+    }
+
+    const presets = ensured.data
         .sort((a, b) => {
             const aTime = typeof a.updatedAt === 'number' ? a.updatedAt : 0;
             const bTime = typeof b.updatedAt === 'number' ? b.updatedAt : 0;
@@ -237,26 +309,35 @@ function listPresets(options = {}) {
         })
         .map(preset => clonePreset(preset));
 
-    return presets;
+    return { ok: true, error: null, data: presets };
 }
 
 function getPreset(id, options = {}) {
     if (presetCache.has(id)) {
-        return clonePreset(presetCache.get(id));
+        return { ok: true, error: null, data: clonePreset(presetCache.get(id)) };
     }
 
-    const presets = ensurePresetList(options);
-    const preset = presets.find(entry => entry.id === id);
-    return preset ? clonePreset(preset) : null;
+    const ensured = ensurePresetList(options);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+
+    const preset = ensured.data.find(entry => entry.id === id);
+    return { ok: true, error: null, data: preset ? clonePreset(preset) : null };
 }
 
 function savePreset(name, configuration, options = {}) {
     const resolvedOptions = resolveOptions(options);
-    const safeName = typeof name === 'string' && name.trim() ? name.trim() : 'Preset';
+    const nameValidation = validatePresetName(name, { allowEmpty: true });
+    const safeName = nameValidation.normalized || 'Preset';
     const state = options.state ? normalizePresetState(options.state) : mapConfigurationToState(configuration);
     const normalizedConfiguration = normalizePresetConfiguration(configuration, state);
     const timestamp = Date.now();
-    const entries = ensurePresetList(resolvedOptions);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+    const entries = ensured.data;
 
     const preset = {
         id: createPresetId(),
@@ -281,29 +362,75 @@ function savePreset(name, configuration, options = {}) {
         entries.length = resolvedOptions.maxEntries;
     }
 
-    writePresetEntries(entries, resolvedOptions);
+    const writeResult = writePresetEntries(entries, resolvedOptions);
+    if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error, data: null };
+    }
     presetCache.set(preset.id, clonePreset(preset));
-    return clonePreset(preset);
+    return { ok: true, error: null, data: clonePreset(preset) };
 }
 
-function updatePresetById(id, updater, options = {}) {
-    if (typeof updater !== 'function') {
+function upsertPresetByName(name, configuration, options = {}) {
+    const normalizedName = normalizePresetName(name);
+    if (!normalizedName) {
         return null;
     }
 
     const resolvedOptions = resolveOptions(options);
     const entries = ensurePresetList(resolvedOptions);
+    const existing = entries.find(entry => normalizePresetName(entry.name) === normalizedName);
+
+    if (!existing) {
+        return savePreset(name, configuration, options);
+    }
+
+    return updatePresetById(existing.id, preset => {
+        const state = options.state ? normalizePresetState(options.state) : mapConfigurationToState(configuration);
+        const normalizedConfiguration = normalizePresetConfiguration(configuration, state);
+        const now = Date.now();
+        const nextPreset = {
+            ...preset,
+            name: typeof name === 'string' && name.trim() ? name.trim() : preset.name,
+            state,
+            configuration: normalizedConfiguration,
+            updatedAt: now
+        };
+
+        if (Number.isFinite(options.currentStep)) {
+            const currentStep = clampStep(Math.trunc(options.currentStep));
+            nextPreset.state.currentStep = currentStep;
+            nextPreset.meta = {
+                ...preset.meta,
+                currentStep
+            };
+        }
+
+        return nextPreset;
+    }, resolvedOptions);
+}
+
+function updatePresetById(id, updater, options = {}) {
+    if (typeof updater !== 'function') {
+        return { ok: true, error: null, data: null };
+    }
+
+    const resolvedOptions = resolveOptions(options);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+    const entries = ensured.data;
     const index = entries.findIndex(entry => entry.id === id);
 
     if (index === -1) {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     const original = entries[index];
     const updated = updater(clonePreset(original));
 
     if (!updated) {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     entries[index] = normalizePresetEntry({
@@ -316,17 +443,20 @@ function updatePresetById(id, updater, options = {}) {
         entries.splice(index, 1);
     }
 
-    writePresetEntries(entries, resolvedOptions);
+    const writeResult = writePresetEntries(entries, resolvedOptions);
+    if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error, data: null };
+    }
     presetCache.clear();
     entries.forEach(entry => presetCache.set(entry.id, clonePreset(entry)));
 
-    return entries[index] ? clonePreset(entries[index]) : null;
+    return { ok: true, error: null, data: entries[index] ? clonePreset(entries[index]) : null };
 }
 
 function renamePreset(id, newName, options = {}) {
     const trimmed = typeof newName === 'string' && newName.trim() ? newName.trim() : null;
     if (!trimmed) {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     return updatePresetById(id, preset => ({
@@ -338,17 +468,24 @@ function renamePreset(id, newName, options = {}) {
 
 function deletePreset(id, options = {}) {
     const resolvedOptions = resolveOptions(options);
-    const entries = ensurePresetList(resolvedOptions);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: false };
+    }
+    const entries = ensured.data;
     const index = entries.findIndex(entry => entry.id === id);
 
     if (index === -1) {
-        return false;
+        return { ok: true, error: null, data: false };
     }
 
     entries.splice(index, 1);
-    writePresetEntries(entries, resolvedOptions);
+    const writeResult = writePresetEntries(entries, resolvedOptions);
+    if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error, data: false };
+    }
     presetCache.delete(id);
-    return true;
+    return { ok: true, error: null, data: true };
 }
 
 function markPresetApplied(id, options = {}) {
@@ -512,6 +649,8 @@ export {
     listPresets,
     getPreset,
     savePreset,
+    upsertPresetByName,
+    normalizePresetName,
     renamePreset,
     deletePreset,
     markPresetApplied,
