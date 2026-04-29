@@ -21,7 +21,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -54,7 +54,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -87,7 +87,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -120,7 +120,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -153,7 +153,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -175,18 +175,18 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-POE-Bathroom configuration. Recommended for production deployments.",
+      "description": "Stable firmware for Sense360 Ceiling-POE-VentIQBase configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-Bathroom-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQBase-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "1eb1fea3994bbbeea11080159dbbe611",
           "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -196,12 +196,12 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "config_string": "Ceiling-POE-Bathroom",
+      "config_string": "Ceiling-POE-VentIQBase",
       "core_type": null,
       "mounting": "Ceiling",
       "power": "POE",
       "modules": [
-        "Bathroom"
+        "VentIQBase"
       ]
     },
     {
@@ -219,7 +219,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -252,7 +252,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -285,7 +285,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.091748+00:00",
+      "build_date": "2026-04-29T14:33:24.103285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -318,7 +318,7 @@
           "signature": "ZnVmteF9JN2af/MAgzZrPAkKhrDps3U4bY8NIY5gZB4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.131748+00:00",
+      "build_date": "2026-04-29T14:33:24.151285+00:00",
       "file_size": 1105312,
       "improv": true,
       "md5": "dd241495d8c030ef1ff46c672211b86d",
@@ -352,7 +352,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.135748+00:00",
+      "build_date": "2026-04-29T14:33:24.151285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -383,7 +383,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.135748+00:00",
+      "build_date": "2026-04-29T14:33:24.151285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -416,7 +416,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.135748+00:00",
+      "build_date": "2026-04-29T14:33:24.151285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -449,7 +449,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.135748+00:00",
+      "build_date": "2026-04-29T14:33:24.151285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -484,7 +484,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.135748+00:00",
+      "build_date": "2026-04-29T14:33:24.151285+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -518,7 +518,7 @@
           "signature": "2sj5kvLg2h8sfET2amSg3LB8nPkkW06Md0wHLYMLIeU="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.191748+00:00",
+      "build_date": "2026-04-29T14:33:24.223286+00:00",
       "file_size": 1253952,
       "improv": true,
       "md5": "f838930dba738160330f3a9a9160e058",
@@ -538,39 +538,6 @@
       "device_type": "Core Module",
       "version": "3.0.1",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling-Bathroom configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-Bathroom-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "05602f78a9de37b98475864012d68919",
-          "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
-          "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY="
-        }
-      ],
-      "build_date": "2026-04-29T14:21:29.143748+00:00",
-      "file_size": 1123072,
-      "improv": true,
-      "md5": "05602f78a9de37b98475864012d68919",
-      "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
-      "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Ceiling-Bathroom",
-      "core_type": "Core",
-      "mounting": "Ceiling",
-      "power": null,
-      "modules": [
-        "Bathroom"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
       "description": "Stable firmware for Sense360 Core-Ceiling-POE configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
@@ -582,7 +549,7 @@
           "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.167748+00:00",
+      "build_date": "2026-04-29T14:33:24.191286+00:00",
       "file_size": 1018704,
       "improv": true,
       "md5": "fdf0bb3457057710791f551fb3dfeae5",
@@ -613,7 +580,7 @@
           "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.179748+00:00",
+      "build_date": "2026-04-29T14:33:24.207286+00:00",
       "file_size": 1017648,
       "improv": true,
       "md5": "40524c5a06060838fe64b22d13b4afaa",
@@ -644,7 +611,7 @@
           "signature": "w4hULWARrjbGejQUDuxl7xNGoPa8SmnTeqWtjvEChYc="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.179748+00:00",
+      "build_date": "2026-04-29T14:33:24.211286+00:00",
       "file_size": 1021792,
       "improv": true,
       "md5": "cd2e27dbda194d182727cfa494eb6e0b",
@@ -664,6 +631,39 @@
       "device_type": "Core Module",
       "version": "3.0.1",
       "channel": "stable",
+      "description": "Stable firmware for Sense360 Core-Ceiling-VentIQBase configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Core-Ceiling-VentIQBase-v3.0.1-stable.bin",
+          "offset": 0,
+          "md5": "05602f78a9de37b98475864012d68919",
+          "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
+          "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY="
+        }
+      ],
+      "build_date": "2026-04-29T14:33:24.163285+00:00",
+      "file_size": 1123072,
+      "improv": true,
+      "md5": "05602f78a9de37b98475864012d68919",
+      "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
+      "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY=",
+      "features": [],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "config_string": "Core-Ceiling-VentIQBase",
+      "core_type": "Core",
+      "mounting": "Ceiling",
+      "power": null,
+      "modules": [
+        "VentIQBase"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "3.0.1",
+      "channel": "stable",
       "description": "Stable firmware for Sense360 Core-Wall configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
@@ -675,7 +675,7 @@
           "signature": "xikqYnnGPMCYalZY/qqsIAVlpwIBgHq/SKrNsv40ij4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.215748+00:00",
+      "build_date": "2026-04-29T14:33:24.259286+00:00",
       "file_size": 1262240,
       "improv": true,
       "md5": "b6dd268e39781645f15ecc7db0b24964",
@@ -706,7 +706,7 @@
           "signature": "qebi+n/82TbPpFFuAmSpDTwFBiWnZCvW7zH8XSYePsE="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.195748+00:00",
+      "build_date": "2026-04-29T14:33:24.227286+00:00",
       "file_size": 1031968,
       "improv": true,
       "md5": "27e7f4996f66982a3460438ce6b429da",
@@ -737,7 +737,7 @@
           "signature": "ddN4JmnLzJnR8G7sdhFolVNuhsockpvdi138qebK2m8="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.207748+00:00",
+      "build_date": "2026-04-29T14:33:24.243286+00:00",
       "file_size": 1031040,
       "improv": true,
       "md5": "f35388f149ac11e3bb12702a85d58862",
@@ -768,7 +768,7 @@
           "signature": "omKa6T4tty8vdKD2spUkH7DLENq7DnVeugD7LoCy9TY="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.207748+00:00",
+      "build_date": "2026-04-29T14:33:24.247286+00:00",
       "file_size": 1033936,
       "improv": true,
       "md5": "1745ddce2d367adb5255cc4dee4a15c5",
@@ -799,7 +799,7 @@
           "signature": "C1Bb4NscKsj73mSUDTUTDpTVu6B/xf23RH67bUKz668="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.311748+00:00",
+      "build_date": "2026-04-29T14:33:24.343287+00:00",
       "file_size": 1303328,
       "improv": true,
       "md5": "aff28fae8aa834ea308b24b18726e427",
@@ -830,7 +830,7 @@
           "signature": "2h3aP3IHUMiN7cBQp49BWVg/tlhS/SHGTUL/rZdv5aI="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.247748+00:00",
+      "build_date": "2026-04-29T14:33:24.275286+00:00",
       "file_size": 1128272,
       "improv": true,
       "md5": "b4e2ff0ed070ebe685ac62e9b731c4f4",
@@ -861,7 +861,7 @@
           "signature": "K0VeM3f0b56sW7MfyTStp34mwkaxzVVAbAEYJ9afcxE="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.255748+00:00",
+      "build_date": "2026-04-29T14:33:24.287287+00:00",
       "file_size": 1127376,
       "improv": true,
       "md5": "c0fdc0ac5067ba31d768d77587d95344",
@@ -892,7 +892,7 @@
           "signature": "k+JimxyaQ/oOCydqRJpfe/bhdEElFtywaUML4rp91E4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.259748+00:00",
+      "build_date": "2026-04-29T14:33:24.291287+00:00",
       "file_size": 1129936,
       "improv": true,
       "md5": "1d44e7813c0a3d01e8b65eba8fd0470c",
@@ -923,7 +923,7 @@
           "signature": "HR83bz70LoR2LZYi8cLVi7FYE/aFhR8PjWlavIwuKcs="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.343748+00:00",
+      "build_date": "2026-04-29T14:33:24.371287+00:00",
       "file_size": 1309200,
       "improv": true,
       "md5": "5c794cb1a31fa7b8e607a047d19e93a6",
@@ -954,7 +954,7 @@
           "signature": "+Wc7uEVsDa32rHsPA++DHEyUDjd3k9YRxrXRbB5g7nc="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.319748+00:00",
+      "build_date": "2026-04-29T14:33:24.347287+00:00",
       "file_size": 1137632,
       "improv": true,
       "md5": "384768f5cda1a14a5401c5eafe98cdd0",
@@ -985,7 +985,7 @@
           "signature": "ECu6mhF2bqlwplPbnqLwllHHthemNT5FYv3JYyGdcd4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.323748+00:00",
+      "build_date": "2026-04-29T14:33:24.355287+00:00",
       "file_size": 1136800,
       "improv": true,
       "md5": "d96ea15841d692a5ffe8abd376d4f04a",
@@ -1016,7 +1016,7 @@
           "signature": "MeuP3HkbPNRrMVfKXPUademdFjHtrNAB8v3BIcEKkU4="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.327748+00:00",
+      "build_date": "2026-04-29T14:33:24.359287+00:00",
       "file_size": 1139408,
       "improv": true,
       "md5": "eb9d41c3cded417688055710df4c18ce",
@@ -1047,7 +1047,7 @@
           "signature": "gsXhQPuUNspNNw5f+lSh3a/bQD2KbZX/EAz0iuaFc4I="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.367748+00:00",
+      "build_date": "2026-04-29T14:33:24.391288+00:00",
       "file_size": 1637344,
       "improv": true,
       "md5": "c26bdb4931dee34718059f0dba10f5f4",
@@ -1080,7 +1080,7 @@
           "signature": "ZyBc/7EV6c7hT/37FTzWaYbK4VATcNgtUrumdSfUMrk="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.467748+00:00",
+      "build_date": "2026-04-29T14:33:24.475288+00:00",
       "file_size": 1683040,
       "improv": true,
       "md5": "21f8dc672eee75a8de179814d89bf2ea",
@@ -1113,7 +1113,7 @@
           "signature": "81qhXFhML1KAbmBvaO5fpTuRTaVOnKeCiV3KK+LkfU8="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.399748+00:00",
+      "build_date": "2026-04-29T14:33:24.419288+00:00",
       "file_size": 1580416,
       "improv": true,
       "md5": "f95b912feb07ace14a58084154105bdc",
@@ -1147,7 +1147,7 @@
           "signature": "uhbyvxDOHp+l3Q0ZQKy3/n0Evuj3R1v/B7l0VfsfuKA="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.427748+00:00",
+      "build_date": "2026-04-29T14:33:24.443288+00:00",
       "file_size": 1525072,
       "improv": true,
       "md5": "f96f0bedbb815957fe97d28afbb852d4",
@@ -1181,7 +1181,7 @@
           "signature": "iMkOh2dwVkDRLzT2G3odr65/TPtanGvghPz1+qYC0/g="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.451748+00:00",
+      "build_date": "2026-04-29T14:33:24.463288+00:00",
       "file_size": 1675200,
       "improv": true,
       "md5": "115c189bd99122bb0d4f7ced7d37a1d8",
@@ -1215,7 +1215,7 @@
           "signature": "3OUy2z+6EqMVE/q5rOFFNOw+/nEQabHH2a09XZg8aSw="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.475748+00:00",
+      "build_date": "2026-04-29T14:33:24.487288+00:00",
       "file_size": 1194736,
       "improv": true,
       "md5": "371a558c232954069155c21ecf2760a2",
@@ -1246,7 +1246,7 @@
           "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.503748+00:00",
+      "build_date": "2026-04-29T14:33:24.511289+00:00",
       "file_size": 524288,
       "improv": false,
       "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
@@ -1279,7 +1279,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.475748+00:00",
+      "build_date": "2026-04-29T14:33:24.487288+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1312,7 +1312,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.475748+00:00",
+      "build_date": "2026-04-29T14:33:24.487288+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1343,7 +1343,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.475748+00:00",
+      "build_date": "2026-04-29T14:33:24.487288+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1376,7 +1376,7 @@
           "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.499748+00:00",
+      "build_date": "2026-04-29T14:33:24.507289+00:00",
       "file_size": 1032016,
       "improv": true,
       "md5": "e02ba33bea0997b543ddac28af33fc2f",
@@ -1407,7 +1407,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.487748+00:00",
+      "build_date": "2026-04-29T14:33:24.499289+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1438,7 +1438,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.487748+00:00",
+      "build_date": "2026-04-29T14:33:24.499289+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1469,7 +1469,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.475748+00:00",
+      "build_date": "2026-04-29T14:33:24.487288+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1502,7 +1502,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.487748+00:00",
+      "build_date": "2026-04-29T14:33:24.499289+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1535,7 +1535,7 @@
           "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.487748+00:00",
+      "build_date": "2026-04-29T14:33:24.499289+00:00",
       "file_size": 1032016,
       "improv": true,
       "md5": "e02ba33bea0997b543ddac28af33fc2f",
@@ -1568,7 +1568,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.487748+00:00",
+      "build_date": "2026-04-29T14:33:24.499289+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1601,7 +1601,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.499748+00:00",
+      "build_date": "2026-04-29T14:33:24.507289+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -1636,7 +1636,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-29T14:21:29.499748+00:00",
+      "build_date": "2026-04-29T14:33:24.507289+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",

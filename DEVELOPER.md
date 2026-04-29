@@ -69,26 +69,36 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 **Modules** (optional): Combination of:
 - `AirIQBase`, `AirIQPro`, `AirIQProv` - Air quality stack for particulate, VOC, and CO₂ sensors
-- `BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro` - Bathroom-optimized air quality (Ceiling only)
+- `VentIQBase`, `VentIQPro` - Bathroom-optimized air quality stack (Ceiling + Bathroom mode only)
 - `FanPWM`, `FanAnalog` - Output driver for external fan control
 - `LED` - Addressable LED ring for visual feedback (Required for CoreVoice)
 
 **Module Constraints:**
 - `Bathroom` is only available for Ceiling installations
-- `BathroomAirIQ` requires `Bathroom` to be enabled
-- `AirIQ` and `BathroomAirIQ` cannot be combined
+- `VentIQ` requires `Bathroom` to be enabled
+- `AirIQ` and `VentIQ` cannot be combined
 - `CoreVoice` requires `LED` ring module (voice cores mandate LED rings with integrated microphone)
 
 **Module Sensors:**
 - AirIQ Base: Basic air quality sensors (VOC, CO₂)
 - AirIQ Pro: Base + particulate sensors (PM1.0/PM2.5/PM10)
-- BathroomAirIQ Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
-- BathroomAirIQ Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
+- VentIQ Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
+- VentIQ Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
 - LED Ring: WS2812B addressable LEDs, integrated I2S microphone (for voice models)
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
 **Channel**: `stable`, `preview`, or `beta`
+
+
+### Canonical module token policy
+
+Use these module tokens in firmware filenames and manifest metadata:
+- `AirIQBase`, `AirIQPro`
+- `VentIQBase`, `VentIQPro`
+- `FanPWM`, `FanAnalog`, `LED`
+
+Legacy tokens (`BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro`) are supported only as read-time aliases by tooling and URL parsing; they must not be used in new filenames or metadata.
 
 ### Examples
 
@@ -98,8 +108,8 @@ Sense360-Core-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
 Sense360-CoreVoice-Ceiling-POE-LED-v1.0.0-stable.bin
 Sense360-CoreVoice-Wall-PWR-LED-AirIQPro-v1.2.0-preview.bin
 Sense360-Core-Ceiling-POE-AirIQPro-v2.0.0-beta.bin
-Sense360-Core-Ceiling-POE-BathroomAirIQ-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-PWR-LED-BathroomAirIQPro-v1.0.0-stable.bin
+Sense360-Core-Ceiling-POE-VentIQBase-v1.0.0-stable.bin
+Sense360-CoreVoice-Ceiling-PWR-LED-VentIQPro-v1.0.0-stable.bin
 Sense360-Core-Wall-USB-FanPWM-v1.0.0-stable.bin
 Sense360-Core-Wall-USB-LED-v1.0.0-stable.bin
 Sense360-Core-Ceiling-POE-LED-AirIQBase-v1.0.0-stable.bin

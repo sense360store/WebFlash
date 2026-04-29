@@ -92,13 +92,19 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
     }),
     bathroomairiq: Object.freeze({
         required: false,
-        aliases: Object.freeze(['bathroomairiq']),
+        aliases: Object.freeze(['bathroomairiq', 'ventiq']),
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'BathroomAirIQ' }]
+            ['base', { wizardValue: 'base', configSegment: 'VentIQBase' }],
+            ['pro', { wizardValue: 'pro', configSegment: 'VentIQPro' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base'])
+        allowedValues: Object.freeze(['none', 'base', 'pro']),
+        legacyValues: new Map([
+            ['bathroomairiq', 'base'],
+            ['bathroomairiqbase', 'base'],
+            ['bathroomairiqpro', 'pro']
+        ])
     }),
     fan: Object.freeze({
         required: false,

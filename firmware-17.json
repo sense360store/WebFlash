@@ -10,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-POE-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Ceiling-PWR-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "fdf0bb3457057710791f551fb3dfeae5",
-          "sha256": "d2990b821eab3d3b379e427a766c2d8dac56cf43892f80cd847695132d2fa568",
-          "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4="
+          "md5": "40524c5a06060838fe64b22d13b4afaa",
+          "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
+          "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
         }
       ],
       "improv": true,
-      "md5": "fdf0bb3457057710791f551fb3dfeae5",
-      "sha256": "d2990b821eab3d3b379e427a766c2d8dac56cf43892f80cd847695132d2fa568",
-      "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4="
+      "md5": "40524c5a06060838fe64b22d13b4afaa",
+      "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
+      "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
     }
   ]
 }

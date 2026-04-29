@@ -10,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-Bathroom-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Ceiling-POE-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "05602f78a9de37b98475864012d68919",
-          "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
-          "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY="
+          "md5": "fdf0bb3457057710791f551fb3dfeae5",
+          "sha256": "d2990b821eab3d3b379e427a766c2d8dac56cf43892f80cd847695132d2fa568",
+          "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4="
         }
       ],
       "improv": true,
-      "md5": "05602f78a9de37b98475864012d68919",
-      "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
-      "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY="
+      "md5": "fdf0bb3457057710791f551fb3dfeae5",
+      "sha256": "d2990b821eab3d3b379e427a766c2d8dac56cf43892f80cd847695132d2fa568",
+      "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4="
     }
   ]
 }
