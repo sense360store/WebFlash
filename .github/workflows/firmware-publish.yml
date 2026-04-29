@@ -51,6 +51,12 @@ jobs:
             --release-id "${{ github.event.release.id }}" \
             --target-dir firmware
 
+
+      - name: Validate firmware naming policy
+        run: |
+          set -euo pipefail
+          node scripts/validate-naming-policy.js firmware/configurations
+
       - name: Generate firmware manifests
         run: |
           set -euo pipefail
