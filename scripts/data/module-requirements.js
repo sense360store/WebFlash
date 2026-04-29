@@ -43,8 +43,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'presence',
                         variants: ['pro'],
-                        message: 'Conflicts with Presence Pro — both modules require the secondary UART header.',
-                        detail: 'Use Presence Base or remove one of the modules to avoid UART contention.'
+                        message: 'Conflicts with RoomIQ Motion Pro — both modules require the secondary UART header.',
+                        detail: 'Use RoomIQ Motion Base or remove one of the modules to avoid UART contention.'
                     },
                     {
                         module: 'bathroomairiq',
@@ -97,7 +97,7 @@ const MODULE_REQUIREMENT_MATRIX = {
         }
     },
     presence: {
-        label: 'Presence Module',
+        label: 'RoomIQ Motion Module',
         summary: 'mmWave radar for occupancy detection.',
         variants: {
             none: {
@@ -129,8 +129,8 @@ const MODULE_REQUIREMENT_MATRIX = {
         }
     },
     comfort: {
-        label: 'Comfort Module',
-        summary: 'Temperature and ambient light sensors for comfort tuning.',
+        label: 'RoomIQ Climate Module',
+        summary: 'Temperature, humidity, and ambient light sensors for RoomIQ climate tuning.',
         variants: {
             none: {
                 label: 'None',

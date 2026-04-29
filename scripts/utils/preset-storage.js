@@ -723,11 +723,11 @@ function formatModuleName(moduleKey, value) {
             pro: 'AirIQ Pro'
         },
         presence: {
-            base: 'Presence Base',
-            pro: 'Presence Pro'
+            base: 'RoomIQ Motion Base',
+            pro: 'RoomIQ Motion Pro'
         },
         comfort: {
-            base: 'Comfort Base'
+            base: 'RoomIQ Climate Base'
         },
         fan: {
             pwm: 'Fan PWM',

@@ -79,11 +79,11 @@ const MODULE_VARIANT_LABELS = Object.freeze({
         base: 'Bathroom AirIQ Base module'
     }),
     presence: Object.freeze({
-        base: 'Presence Base module',
-        pro: 'Presence Pro module'
+        base: 'RoomIQ Motion Base module',
+        pro: 'RoomIQ Motion Pro module'
     }),
     comfort: Object.freeze({
-        base: 'Comfort Base module'
+        base: 'RoomIQ Climate Base module'
     }),
     fan: Object.freeze({
         pwm: 'Fan PWM module',
@@ -107,8 +107,8 @@ const MODULE_KEYS = ['voice', 'led', 'airiq', 'presence', 'comfort', 'fan', 'bat
 const MODULE_LABELS = {
     airiq: 'AirIQ',
     bathroomairiq: 'Bathroom AirIQ',
-    presence: 'Presence',
-    comfort: 'Comfort',
+    presence: 'RoomIQ Motion',
+    comfort: 'RoomIQ Climate',
     fan: 'Fan / Switching',
     voice: 'Core Type',
     led: 'LED Ring',
@@ -118,8 +118,8 @@ const MODULE_LABELS = {
 const MODULE_SEGMENT_FORMATTERS = {
     airiq: value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`,
     bathroomairiq: value => `BathroomAirIQ${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    presence: value => `Presence${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    comfort: value => `Comfort${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
+    presence: value => `RoomIQMotion${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
+    comfort: value => `RoomIQClimate${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
     voice: value => value === 'base' ? 'CoreVoice' : 'Core',
     led: value => value === 'base' ? 'LED' : '',
@@ -1033,10 +1033,18 @@ function parseConfigStringState(configString) {
         } else if (segment.startsWith('AirIQ')) {
             const suffix = segment.substring('AirIQ'.length);
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'base');
+        } else if (segment.startsWith('RoomIQMotion')) {
+            const suffix = segment.substring('RoomIQMotion'.length);
+            moduleState.presence = normaliseModuleValue('presence', suffix ? suffix.toLowerCase() : 'base');
         } else if (segment.startsWith('Presence')) {
+            // Backward compatibility: legacy config segments used Presence* tokens.
             const suffix = segment.substring('Presence'.length);
             moduleState.presence = normaliseModuleValue('presence', suffix ? suffix.toLowerCase() : 'base');
+        } else if (segment.startsWith('RoomIQClimate')) {
+            const suffix = segment.substring('RoomIQClimate'.length);
+            moduleState.comfort = normaliseModuleValue('comfort', suffix ? suffix.toLowerCase() : 'base');
         } else if (segment.startsWith('Comfort')) {
+            // Backward compatibility: legacy config segments used Comfort* tokens.
             const suffix = segment.substring('Comfort'.length);
             moduleState.comfort = normaliseModuleValue('comfort', suffix ? suffix.toLowerCase() : 'base');
         } else if (segment.startsWith('Fan')) {
@@ -2335,7 +2343,7 @@ function updateSummary() {
         `;
     }
 
-    // Presence
+    // RoomIQ Motion
     if (configuration.presence !== 'none') {
         const presenceSensors = {
             'base': ['SEN0609 mmWave sensor'],
@@ -2343,18 +2351,18 @@ function updateSummary() {
         };
         summaryHtml += `
             <div class="summary-item">
-                <div class="summary-label">Presence Module:</div>
+                <div class="summary-label">RoomIQ Motion Module:</div>
                 <div class="summary-value">${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}</div>
                 <div class="summary-sensors">Includes: ${presenceSensors[configuration.presence].join(', ')}</div>
             </div>
         `;
     }
 
-    // Comfort
+    // RoomIQ Climate
     if (configuration.comfort !== 'none') {
         summaryHtml += `
             <div class="summary-item">
-                <div class="summary-label">Comfort Module:</div>
+                <div class="summary-label">RoomIQ Climate Module:</div>
                 <div class="summary-value">${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}</div>
                 <div class="summary-sensors">Includes: SHT40 (Temperature/Humidity), LTR-303 (Light)</div>
             </div>
