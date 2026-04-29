@@ -1017,6 +1017,35 @@
                     <div id="config-summary" aria-live="polite"></div>
                 </section>
 
+                <section class="preflight-panel" data-preflight-panel aria-labelledby="preflight-checks-heading">
+                    <div class="preflight-panel__header">
+                        <h3 id="preflight-checks-heading">Preflight checks</h3>
+                        <p>We run these diagnostics before flashing so you can confirm your setup is ready.</p>
+                    </div>
+                    <ul class="preflight-panel__list" data-preflight-list role="status" aria-live="polite" aria-label="Preflight diagnostics">
+                        <li class="preflight-panel__item" data-preflight-item="browser-support" data-status="pending">
+                            <span class="preflight-panel__label">Browser support</span>
+                            <span class="preflight-panel__status" data-preflight-status="browser-support" aria-live="polite" role="status"></span>
+                            <p class="preflight-panel__detail" data-preflight-detail="browser-support"></p>
+                        </li>
+                        <li class="preflight-panel__item" data-preflight-item="device-visibility" data-status="pending">
+                            <span class="preflight-panel__label">Device connection visibility</span>
+                            <span class="preflight-panel__status" data-preflight-status="device-visibility" aria-live="polite" role="status"></span>
+                            <p class="preflight-panel__detail" data-preflight-detail="device-visibility"></p>
+                        </li>
+                        <li class="preflight-panel__item" data-preflight-item="firmware-verification" data-status="pending">
+                            <span class="preflight-panel__label">Firmware verification</span>
+                            <span class="preflight-panel__status" data-preflight-status="firmware-verification" aria-live="polite" role="status"></span>
+                            <p class="preflight-panel__detail" data-preflight-detail="firmware-verification"></p>
+                        </li>
+                        <li class="preflight-panel__item" data-preflight-item="user-acknowledgement" data-status="pending">
+                            <span class="preflight-panel__label">User acknowledgement</span>
+                            <span class="preflight-panel__status" data-preflight-status="user-acknowledgement" aria-live="polite" role="status"></span>
+                            <p class="preflight-panel__detail" data-preflight-detail="user-acknowledgement"></p>
+                        </li>
+                    </ul>
+                </section>
+
                 <section class="pre-flash-checklist" aria-labelledby="pre-flash-checklist-heading">
                     <div class="pre-flash-checklist__header">
                         <h3 id="pre-flash-checklist-heading">Before you flash</h3>
