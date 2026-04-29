@@ -45,11 +45,9 @@ let mobileSummaryMediaQuery = null;
         { key: 'mount', name: 'mounting', label: 'Mount' },
         { key: 'power', name: 'power', label: 'Power' },
         { key: 'airiq', name: 'airiq', label: 'AirIQ' },
-        { key: 'presence', name: 'presence', label: 'RoomIQ Motion' },
-        { key: 'comfort', name: 'comfort', label: 'RoomIQ Climate' },
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
-    const MODULE_VARIANT_KEYS = ['voice', 'airiq', 'presence', 'comfort', 'fan'];
+    const MODULE_VARIANT_KEYS = ['voice', 'airiq', 'fan'];
     const CORE_REVISION_PATTERN = /rev\s*([a-z])/i;
     const subscribers = new Set();
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
@@ -154,8 +152,6 @@ let mobileSummaryMediaQuery = null;
             mounting: state.mount || null,
             power: state.power || null,
             airiq: state.airiq || 'none',
-            presence: state.presence || 'none',
-            comfort: state.comfort || 'none',
             fan: state.fan || 'none'
         };
     }
@@ -1658,8 +1654,6 @@ let mobileSummaryMediaQuery = null;
             }
 
             params.set('airiq', state.airiq || 'none');
-            params.set('presence', state.presence || 'none');
-            params.set('comfort', state.comfort || 'none');
             params.set('fan', state.fan || 'none');
         }
 

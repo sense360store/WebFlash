@@ -37,8 +37,6 @@ const defaultConfiguration = {
     bathroom: false,
     airiq: 'none',
     bathroomairiq: 'none',
-    presence: 'none',
-    comfort: 'none',
     fan: 'none',
     voice: 'none',
     led: 'none',
@@ -51,8 +49,6 @@ const allowedOptions = {
     bathroom: [false, true],
     airiq: ['none', 'base', 'pro'],
     bathroomairiq: ['none', 'base'],
-    presence: ['none', 'base', 'pro'],
-    comfort: ['none', 'base'],
     fan: ['none', 'pwm', 'analog'],
     voice: ['none', 'base'],
     led: ['none', 'base'],
@@ -78,13 +74,6 @@ const MODULE_VARIANT_LABELS = Object.freeze({
     bathroomairiq: Object.freeze({
         base: 'Bathroom AirIQ Base module'
     }),
-    presence: Object.freeze({
-        base: 'RoomIQ Motion Base module',
-        pro: 'RoomIQ Motion Pro module'
-    }),
-    comfort: Object.freeze({
-        base: 'RoomIQ Climate Base module'
-    }),
     fan: Object.freeze({
         pwm: 'Fan PWM module',
         analog: 'Fan Analog module'
@@ -103,13 +92,11 @@ const MODULE_VARIANT_LABELS = Object.freeze({
     })
 });
 
-const MODULE_KEYS = ['voice', 'led', 'airiq', 'presence', 'comfort', 'fan', 'bathroomairiq'];
+const MODULE_KEYS = ['voice', 'led', 'airiq', 'fan', 'bathroomairiq'];
 const MODULE_LABELS = {
     airiq: 'AirIQ',
     bathroomairiq: 'Bathroom AirIQ',
-    presence: 'RoomIQ Motion',
-    comfort: 'RoomIQ Climate',
-    fan: 'Fan / Switching',
+            fan: 'Fan / Switching',
     voice: 'Core Type',
     led: 'LED Ring',
     bathroomairiq: 'Bathroom AirIQ'
@@ -118,8 +105,6 @@ const MODULE_LABELS = {
 const MODULE_SEGMENT_FORMATTERS = {
     airiq: value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`,
     bathroomairiq: value => `BathroomAirIQ${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    presence: value => `RoomIQMotion${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    comfort: value => `RoomIQClimate${value === 'base' ? 'Base' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
     voice: value => value === 'base' ? 'CoreVoice' : 'Core',
     led: value => value === 'base' ? 'LED' : '',
@@ -1014,9 +999,7 @@ function parseConfigStringState(configString) {
     const moduleState = {
         bathroom: false,
         airiq: 'none',
-        presence: 'none',
-        comfort: 'none',
-        fan: 'none',
+                fan: 'none',
         voice: coreType,
         led: 'none',
         bathroomairiq: 'none'
@@ -1037,20 +1020,6 @@ function parseConfigStringState(configString) {
         } else if (segment.startsWith('AirIQ')) {
             const suffix = segment.substring('AirIQ'.length);
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'base');
-        } else if (segment.startsWith('RoomIQMotion')) {
-            const suffix = segment.substring('RoomIQMotion'.length);
-            moduleState.presence = normaliseModuleValue('presence', suffix ? suffix.toLowerCase() : 'base');
-        } else if (segment.startsWith('Presence')) {
-            // Backward compatibility: legacy config segments used Presence* tokens.
-            const suffix = segment.substring('Presence'.length);
-            moduleState.presence = normaliseModuleValue('presence', suffix ? suffix.toLowerCase() : 'base');
-        } else if (segment.startsWith('RoomIQClimate')) {
-            const suffix = segment.substring('RoomIQClimate'.length);
-            moduleState.comfort = normaliseModuleValue('comfort', suffix ? suffix.toLowerCase() : 'base');
-        } else if (segment.startsWith('Comfort')) {
-            // Backward compatibility: legacy config segments used Comfort* tokens.
-            const suffix = segment.substring('Comfort'.length);
-            moduleState.comfort = normaliseModuleValue('comfort', suffix ? suffix.toLowerCase() : 'base');
         } else if (segment.startsWith('Fan')) {
             const suffix = segment.substring('Fan'.length);
             moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
@@ -1105,8 +1074,6 @@ function buildManifestContext(manifest) {
                     manifestAvailabilityIndex.set(baseKey, {
                         modules: {
                             airiq: new Set(),
-                            presence: new Set(),
-                            comfort: new Set(),
                             fan: new Set(),
                             voice: new Set(),
                             led: new Set(),
@@ -1349,8 +1316,6 @@ function bindWizardEventListeners() {
         { selector: 'input[name="power"]', datasetKey: 'powerBound', handler: handlePowerChange },
         { selector: 'input[name="bathroom"]', datasetKey: 'bathroomBound', handler: handleBathroomChange },
         { selector: 'input[name="airiq"]', datasetKey: 'airiqBound', handler: updateConfiguration },
-        { selector: 'input[name="presence"]', datasetKey: 'presenceBound', handler: updateConfiguration },
-        { selector: 'input[name="comfort"]', datasetKey: 'comfortBound', handler: updateConfiguration },
         { selector: 'input[name="fan"]', datasetKey: 'fanBound', handler: updateConfiguration },
         { selector: 'input[name="led"]', datasetKey: 'ledBound', handler: updateConfiguration },
         { selector: 'input[name="bathroomairiq"]', datasetKey: 'bathroomairiqBound', handler: updateConfiguration }
@@ -1601,8 +1566,6 @@ function handleBathroomChange(e) {
 
 function syncConfigurationFromInputs() {
     configuration.airiq = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
-    configuration.presence = document.querySelector('input[name="presence"]:checked')?.value || 'none';
-    configuration.comfort = document.querySelector('input[name="comfort"]:checked')?.value || 'none';
 
     // Bathroom checkbox (ceiling only)
     const bathroomCheckbox = document.querySelector('input[name="bathroom"]');
@@ -2343,32 +2306,6 @@ function updateSummary() {
                 <div class="summary-label">AirIQ Module:</div>
                 <div class="summary-value">${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}</div>
                 <div class="summary-sensors">Includes: ${airiqSensors[configuration.airiq].join(', ')}</div>
-            </div>
-        `;
-    }
-
-    // RoomIQ Motion
-    if (configuration.presence !== 'none') {
-        const presenceSensors = {
-            'base': ['SEN0609 mmWave sensor'],
-            'pro': ['SEN0609 mmWave sensor', 'LD2450 24GHz radar']
-        };
-        summaryHtml += `
-            <div class="summary-item">
-                <div class="summary-label">RoomIQ Motion Module:</div>
-                <div class="summary-value">${configuration.presence.charAt(0).toUpperCase() + configuration.presence.slice(1)}</div>
-                <div class="summary-sensors">Includes: ${presenceSensors[configuration.presence].join(', ')}</div>
-            </div>
-        `;
-    }
-
-    // RoomIQ Climate
-    if (configuration.comfort !== 'none') {
-        summaryHtml += `
-            <div class="summary-item">
-                <div class="summary-label">RoomIQ Climate Module:</div>
-                <div class="summary-value">${configuration.comfort.charAt(0).toUpperCase() + configuration.comfort.slice(1)}</div>
-                <div class="summary-sensors">Includes: SHT40 (Temperature/Humidity), LTR-303 (Light)</div>
             </div>
         `;
     }
@@ -3993,8 +3930,6 @@ async function findCompatibleFirmware() {
     configString += `-${configuration.power.toUpperCase()}`;
 
     configString += formatConfigSegment('airiq', configuration.airiq);
-    configString += formatConfigSegment('presence', configuration.presence);
-    configString += formatConfigSegment('comfort', configuration.comfort);
     configString += formatConfigSegment('fan', configuration.fan);
 
     window.currentConfigString = configString;
@@ -4534,7 +4469,7 @@ function applyConfiguration(initialConfig) {
         setStepNextButtonDisabled('#step-3', true);
     }
 
-    ['airiq', 'bathroomairiq', 'presence', 'comfort', 'fan', 'voice'].forEach(key => {
+    ['airiq', 'bathroomairiq', 'fan', 'voice'].forEach(key => {
         const value = configuration[key];
         const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
         if (input) {
@@ -4575,8 +4510,6 @@ function updateUrlFromConfiguration() {
     params.set('voice', configuration.voice || 'none');
     params.set('led', configuration.led || 'none');
     params.set('airiq', configuration.airiq || 'none');
-    params.set('presence', configuration.presence || 'none');
-    params.set('comfort', configuration.comfort || 'none');
 
     if (configuration.mounting === 'wall') {
         params.set('fan', configuration.fan || 'none');

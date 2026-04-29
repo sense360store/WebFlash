@@ -41,12 +41,6 @@ const MODULE_REQUIREMENT_MATRIX = {
                         detail: 'Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.'
                     },
                     {
-                        module: 'presence',
-                        variants: ['pro'],
-                        message: 'Conflicts with RoomIQ Motion Pro — both modules require the secondary UART header.',
-                        detail: 'Use RoomIQ Motion Base or remove one of the modules to avoid UART contention.'
-                    },
-                    {
                         module: 'bathroomairiq',
                         variants: ['base'],
                         message: 'Conflicts with Bathroom AirIQ — only one air quality module can be active at a time.',
@@ -93,57 +87,6 @@ const MODULE_REQUIREMENT_MATRIX = {
                     'MLX90614 (IR surface temperature / condensation risk)',
                     'SPS30 (PM1.0 / PM2.5 / PM10)'
                 ]
-            }
-        }
-    },
-    presence: {
-        label: 'RoomIQ Motion Module',
-        summary: 'mmWave radar for occupancy detection.',
-        variants: {
-            none: {
-                label: 'None',
-                coreRevision: null,
-                headers: [],
-                conflicts: []
-            },
-            base: {
-                label: 'Base',
-                coreRevision: 'Rev B core or newer',
-                headers: ['J2 radar slot'],
-                recommended: true,
-                conflicts: []
-            },
-            pro: {
-                label: 'Pro',
-                coreRevision: 'Rev D core',
-                headers: ['J2 radar slot', 'J8 secondary UART'],
-                conflicts: [
-                    {
-                        module: 'airiq',
-                        variants: ['pro'],
-                        message: 'Conflicts with AirIQ Pro — UART header cannot be shared.',
-                        detail: 'Select AirIQ Base or remove one of the modules.'
-                    }
-                ]
-            }
-        }
-    },
-    comfort: {
-        label: 'RoomIQ Climate Module',
-        summary: 'Temperature, humidity, and ambient light sensors for RoomIQ climate tuning.',
-        variants: {
-            none: {
-                label: 'None',
-                coreRevision: null,
-                headers: [],
-                conflicts: [],
-                recommended: true
-            },
-            base: {
-                label: 'Base',
-                coreRevision: 'Rev A core or newer',
-                headers: ['J3 environmental header'],
-                conflicts: []
             }
         }
     },

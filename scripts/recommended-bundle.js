@@ -4,8 +4,6 @@ const RECOMMENDED_STATE = Object.freeze({
     mount: 'wall',
     power: 'usb',
     airiq: 'base',
-    presence: 'base',
-    comfort: 'none',
     fan: 'none'
 });
 
@@ -15,8 +13,6 @@ function normaliseStateShape(state) {
             mount: null,
             power: null,
             airiq: 'none',
-            presence: 'none',
-            comfort: 'none',
             fan: 'none'
         };
     }
@@ -25,8 +21,6 @@ function normaliseStateShape(state) {
         mount: state.mounting || null,
         power: state.power || null,
         airiq: state.airiq || 'none',
-        presence: state.presence || 'none',
-        comfort: state.comfort || 'none',
         fan: state.fan || 'none'
     };
 }
