@@ -58,28 +58,71 @@ describe('preset import hardware compatibility', () => {
     markPresetAppliedMock.mockReturnValue({ ok: true });
   });
 
-  test('blocks import when mount/power target is incompatible', async () => {
+  test.each([
+    {
+      name: 'compatible target proceeds to save/apply',
+      hardwareTarget: 'sense360-wall-usb',
+      confirmReturn: true,
+      expectConfirm: false,
+      expectSaved: true,
+      expectApplied: true,
+      expectErrorContains: ''
+    },
+    {
+      name: 'warning target requires confirmation before save/apply',
+      hardwareTarget: 'otherfamily-wall-usb',
+      confirmReturn: false,
+      expectConfirm: true,
+      expectSaved: false,
+      expectApplied: false,
+      expectErrorContains: 'confirmation required'
+    },
+    {
+      name: 'blocking target prevents save/apply',
+      hardwareTarget: 'sense360-ceiling-poe',
+      confirmReturn: true,
+      expectConfirm: false,
+      expectSaved: false,
+      expectApplied: false,
+      expectErrorContains: 'Import blocked'
+    }
+  ])('$name', async ({ hardwareTarget, confirmReturn, expectConfirm, expectSaved, expectApplied, expectErrorContains }) => {
+    window.confirm = jest.fn(() => confirmReturn);
     const input = document.querySelector('[data-preset-import-input]');
-    const payload = { schemaVersion: 1, hardwareTarget: 'sense360-ceiling-poe', preset: { name: 'Bad', state: { mount: 'wall', power: 'usb' }, configuration: { mounting: 'wall', power: 'usb' } } };
+    const payload = {
+      schemaVersion: 1,
+      hardwareTarget,
+      preset: { name: 'Import', state: { mount: 'wall', power: 'usb' }, configuration: { mounting: 'wall', power: 'usb' } }
+    };
+
     Object.defineProperty(input, 'files', { value: [{ text: async () => JSON.stringify(payload) }], configurable: true });
     input.dispatchEvent(new Event('change'));
-    await Promise.resolve(); await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
 
-    expect(upsertPresetByNameMock).not.toHaveBeenCalled();
-    expect(applyPresetStateToWizardMock).not.toHaveBeenCalled();
-    expect(document.querySelector('[data-preset-error]').textContent).toContain('Import blocked');
-  });
+    if (expectConfirm) {
+      expect(window.confirm).toHaveBeenCalled();
+    } else {
+      expect(window.confirm).not.toHaveBeenCalled();
+    }
 
-  test('requires explicit acknowledgement for warning-level mismatch', async () => {
-    window.confirm = jest.fn(() => false);
-    const input = document.querySelector('[data-preset-import-input]');
-    const payload = { schemaVersion: 1, hardwareTarget: 'otherfamily-wall-usb', preset: { name: 'Warn', state: { mount: 'wall', power: 'usb' }, configuration: { mounting: 'wall', power: 'usb' } } };
-    Object.defineProperty(input, 'files', { value: [{ text: async () => JSON.stringify(payload) }], configurable: true });
-    input.dispatchEvent(new Event('change'));
-    await Promise.resolve(); await Promise.resolve();
+    if (expectSaved) {
+      expect(upsertPresetByNameMock).toHaveBeenCalled();
+    } else {
+      expect(upsertPresetByNameMock).not.toHaveBeenCalled();
+    }
 
-    expect(window.confirm).toHaveBeenCalled();
-    expect(upsertPresetByNameMock).not.toHaveBeenCalled();
-    expect(document.querySelector('[data-preset-error]').textContent).toContain('confirmation required');
+    if (expectApplied) {
+      expect(applyPresetStateToWizardMock).toHaveBeenCalled();
+    } else {
+      expect(applyPresetStateToWizardMock).not.toHaveBeenCalled();
+    }
+
+    const errorText = document.querySelector('[data-preset-error]').textContent;
+    if (expectErrorContains) {
+      expect(errorText).toContain(expectErrorContains);
+    } else {
+      expect(errorText).toBe('');
+    }
   });
 });

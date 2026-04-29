@@ -117,16 +117,54 @@ describe('compat-config direct install validation', () => {
 
 
 describe('verifyImportedPresetCompatibility', () => {
-  test('returns blocking incompatibility for mount/power mismatch', async () => {
+  test.each([
+    {
+      name: 'exact match is compatible',
+      importedHardwareTarget: 'sense360-wall-usb',
+      currentConfiguration: { mounting: 'wall', power: 'usb' },
+      expectedLevel: 'compatible',
+      expectedBlocked: false,
+      expectedRequiresConfirmation: false,
+      expectedMismatchKeys: []
+    },
+    {
+      name: 'mount/power mismatch is blocking',
+      importedHardwareTarget: 'sense360-ceiling-poe',
+      currentConfiguration: { mounting: 'wall', power: 'usb' },
+      expectedLevel: 'incompatible-blocking',
+      expectedBlocked: true,
+      expectedRequiresConfirmation: false,
+      expectedMismatchKeys: ['mounting', 'power']
+    },
+    {
+      name: 'family mismatch with same mount/power is warning',
+      importedHardwareTarget: 'otherfamily-wall-usb',
+      currentConfiguration: { mounting: 'wall', power: 'usb' },
+      expectedLevel: 'incompatible-warning',
+      expectedBlocked: false,
+      expectedRequiresConfirmation: true,
+      expectedMismatchKeys: ['family']
+    },
+    {
+      name: 'unknown or empty hardware target stays compatible',
+      importedHardwareTarget: '',
+      currentConfiguration: { mounting: 'wall', power: 'usb' },
+      expectedLevel: 'compatible',
+      expectedBlocked: false,
+      expectedRequiresConfirmation: false,
+      expectedMismatchKeys: []
+    }
+  ])('$name', async ({ importedHardwareTarget, currentConfiguration, expectedLevel, expectedBlocked, expectedRequiresConfirmation, expectedMismatchKeys }) => {
     const { verifyImportedPresetCompatibility } = await import('../scripts/compat-config.js');
-    const result = verifyImportedPresetCompatibility('sense360-ceiling-poe', { mounting: 'wall', power: 'usb' });
-    expect(result.level).toBe('incompatible-blocking');
-    expect(result.messages.join(' ')).toContain('Mounting mismatch');
-  });
+    const result = verifyImportedPresetCompatibility(importedHardwareTarget, currentConfiguration);
 
-  test('returns warning incompatibility for family mismatch only', async () => {
-    const { verifyImportedPresetCompatibility } = await import('../scripts/compat-config.js');
-    const result = verifyImportedPresetCompatibility('otherfamily-wall-usb', { mounting: 'wall', power: 'usb' });
-    expect(result.level).toBe('incompatible-warning');
+    expect(result.level).toBe(expectedLevel);
+    expect(result.mismatches.map((entry) => entry.key)).toEqual(expectedMismatchKeys);
+
+    const blocked = result.level === 'incompatible-blocking';
+    const requiresConfirmation = result.level === 'incompatible-warning';
+
+    expect(blocked).toBe(expectedBlocked);
+    expect(requiresConfirmation).toBe(expectedRequiresConfirmation);
   });
 });
