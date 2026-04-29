@@ -24,8 +24,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Conflicts with VentIQ — only one air quality module can be active at a time.',
-                        detail: 'Choose either standard AirIQ or VentIQ, not both.'
+                        message: 'Conflicts with VentIQ — VentIQ replaces standard AirIQ in bathroom mode.',
+                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
             },
@@ -43,16 +43,16 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Conflicts with VentIQ — only one air quality module can be active at a time.',
-                        detail: 'Choose either standard AirIQ or VentIQ, not both.'
+                        message: 'Conflicts with VentIQ — VentIQ replaces standard AirIQ in bathroom mode.',
+                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
             }
         }
     },
     bathroomairiq: {
-        label: 'VentIQ Module',
-        summary: 'Bathroom-optimized air quality sensing with humidity, pressure, VOC/NOx, and optional condensation detection.',
+        label: 'Sense360 VentIQ',
+        summary: 'Bathroom air-quality module with humidity, pressure, and VOC/NOx sensing.',
         ceilingOnly: true,
         requiresBathroom: true,
         variants: {
@@ -64,28 +64,22 @@ const MODULE_REQUIREMENT_MATRIX = {
                 sensors: []
             },
             base: {
-                label: 'Base',
-                coreRevision: 'To be added',
-                headers: ['To be added'],
+                label: 'Sense360 VentIQ',
+                coreRevision: 'Rev C core or newer',
+                headers: ['J4 sensor bus', 'J7 auxiliary power'],
                 recommended: true,
-                conflicts: [],
+                conflicts: [
+                    {
+                        module: 'airiq',
+                        variants: ['base', 'pro'],
+                        message: 'Conflicts with AirIQ Base/Pro — VentIQ is the bathroom air-quality path.',
+                        detail: 'Set AirIQ to None when VentIQ is enabled.'
+                    }
+                ],
                 sensors: [
                     'SHT4x (temperature, humidity)',
                     'BMP390 (pressure)',
                     'SGP41 (VOC / NOx)'
-                ]
-            },
-            pro: {
-                label: 'Pro',
-                coreRevision: 'To be added',
-                headers: ['To be added'],
-                conflicts: [],
-                sensors: [
-                    'SHT4x (temperature, humidity)',
-                    'BMP390 (pressure)',
-                    'SGP41 (VOC / NOx)',
-                    'MLX90614 (IR surface temperature / condensation risk)',
-                    'SPS30 (PM1.0 / PM2.5 / PM10)'
                 ]
             }
         }

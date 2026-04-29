@@ -87,7 +87,7 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['power', ['usb', 'poe', 'pwr']],
     ['bathroom', [false, true]],
     ['airiq', ['none', 'base', 'pro']],
-    ['bathroomairiq', ['none', 'base', 'pro']],
+    ['bathroomairiq', ['none', 'base']],
     ['fan', ['none', 'pwm', 'analog']],
     ['voice', ['none']],
     ['led', ['none', 'base']]
@@ -110,8 +110,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
         pro: 'AirIQ Pro module'
     })],
     ['bathroomairiq', Object.freeze({
-        base: 'VentIQ Base module',
-        pro: 'VentIQ Pro module'
+        base: 'Sense360 VentIQ module'
     })],
     ['fan', Object.freeze({
         pwm: 'Fan PWM module',
@@ -136,7 +135,7 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
     ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
-    ['bathroomairiq', value => `VentIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
+    ['bathroomairiq', value => value === 'base' ? 'VentIQ' : ''],
     ['fan', value => `Fan${value.toUpperCase()}`],
     ['voice', () => 'Core'],
     ['led', value => value === 'base' ? 'LED' : '']
