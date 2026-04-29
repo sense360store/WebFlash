@@ -15,8 +15,6 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ### Module Support
 - [x] AirIQ Module (Base/Pro) - Temperature, humidity, VOC/NOx sensors
 - [x] Bathroom AirIQ Module (Base/Pro) - Ceiling-only with pressure sensor
-- [x] Presence Module (Base/Pro) - mmWave radar occupancy detection
-- [x] Comfort Module - Temperature and ambient light
 - [x] Fan Module (PWM/Analog) - External fan control
 - [x] Ceiling fan support
 
@@ -24,7 +22,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 - [x] Module conflict detection with visual feedback
 - [x] Hardware compatibility validation (core revision, headers)
 - [x] Firmware recommendation engine
-- [x] Default recommended bundle (Wall + USB + AirIQ Base + Presence Base)
+- [x] Default recommended bundle (Wall + USB + AirIQ Base)
 - [x] Quick-start presets for common configurations
 
 ### Installation Features
