@@ -1051,24 +1051,27 @@ let mobileSummaryMediaQuery = null;
 
     function handlePresetExport(presetId) {
         const cached = presetCache.get(presetId);
-        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
-        if (!presetResult.ok) {
-            setPresetError('Could not read preset from storage.');
-            return;
+        let presetResult = { ok: true, data: cached };
+
+        if (!cached) {
+            presetResult = getPreset(presetId, PRESET_STORAGE_OPTIONS);
+            if (!presetResult.ok) {
+                setPresetError('Could not read preset from storage.');
+                return;
+            }
         }
 
-        const preset = presetResult.data;
-        if (!preset) {
+        if (!presetResult.data) {
             setPresetError('Preset is no longer available.');
             return;
         }
 
-        const payload = serializePresetConfig(preset);
+        const payload = serializePresetConfig(presetResult.data);
         if (!payload) {
             return;
         }
 
-        const slug = preset.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'preset';
+        const slug = presetResult.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'preset';
         const filename = `${slug}.config.json`;
         downloadJsonFile(filename, payload);
     }
