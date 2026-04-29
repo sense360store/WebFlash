@@ -151,6 +151,54 @@ let preFlashAcknowledged = false;
 let preflightWarningsAcknowledged = false;
 let currentFlashEntryId = null;
 let flashStartTime = null;
+const CONNECTION_QUALITY_THRESHOLDS = Object.freeze({
+    failDisconnects: 3,
+    failSerialFailures: 3,
+    failRetries: 5,
+    failStabilityWindowMs: 10_000,
+    warnDisconnects: 1,
+    warnSerialFailures: 1,
+    warnRetries: 2,
+    warnStabilityWindowMs: 30_000
+});
+
+const connectionQualityMetrics = {
+    disconnects: 0,
+    reconnectAttempts: 0,
+    serialReadFailures: 0,
+    serialWriteFailures: 0,
+    retryCount: 0,
+    stabilityWindowStart: Date.now()
+};
+
+function getConnectionQualitySnapshot() {
+    return {
+        disconnects: Number(connectionQualityMetrics.disconnects) || 0,
+        reconnectAttempts: Number(connectionQualityMetrics.reconnectAttempts) || 0,
+        serialReadFailures: Number(connectionQualityMetrics.serialReadFailures) || 0,
+        serialWriteFailures: Number(connectionQualityMetrics.serialWriteFailures) || 0,
+        retryCount: Number(connectionQualityMetrics.retryCount) || 0,
+        stabilityWindowMs: Math.max(0, Date.now() - (Number(connectionQualityMetrics.stabilityWindowStart) || Date.now()))
+    };
+}
+
+function updateConnectionQualityMetrics(partial = {}) {
+    if (!partial || typeof partial !== 'object') {
+        return getConnectionQualitySnapshot();
+    }
+    ['disconnects', 'reconnectAttempts', 'serialReadFailures', 'serialWriteFailures', 'retryCount'].forEach(key => {
+        if (key in partial) {
+            connectionQualityMetrics[key] = Math.max(0, Number(partial[key]) || 0);
+        }
+    });
+    if ('stabilityWindowStart' in partial) {
+        connectionQualityMetrics.stabilityWindowStart = Number(partial.stabilityWindowStart) || Date.now();
+    }
+    if (partial.resetStabilityWindow === true) {
+        connectionQualityMetrics.stabilityWindowStart = Date.now();
+    }
+    return getConnectionQualitySnapshot();
+}
 
 function setWizardStepVisibility(stepElement, isVisible) {
     if (!stepElement) {
@@ -2669,6 +2717,52 @@ async function refreshPreflightDiagnostics() {
         });
     };
 
+    const getConnectionQualityCheck = () => {
+        const metrics = getConnectionQualitySnapshot();
+        const serialFailures = metrics.serialReadFailures + metrics.serialWriteFailures;
+        const stabilitySeconds = Math.floor(metrics.stabilityWindowMs / 1000);
+
+        const fail =
+            metrics.disconnects >= CONNECTION_QUALITY_THRESHOLDS.failDisconnects ||
+            serialFailures >= CONNECTION_QUALITY_THRESHOLDS.failSerialFailures ||
+            metrics.retryCount >= CONNECTION_QUALITY_THRESHOLDS.failRetries ||
+            metrics.stabilityWindowMs < CONNECTION_QUALITY_THRESHOLDS.failStabilityWindowMs;
+
+        if (fail) {
+            return createCheck({
+                key: 'connection-quality',
+                label: 'Connection quality',
+                state: 'fail',
+                detail: `Link is unstable (${metrics.disconnects} disconnects, ${metrics.reconnectAttempts} reconnect attempts, ${serialFailures} serial failures, ${metrics.retryCount} retries over ${stabilitySeconds}s). Reconnect the cable/device, then retry once the connection stays stable for at least 30 seconds.`,
+                blocking: true
+            });
+        }
+
+        const warn =
+            metrics.disconnects >= CONNECTION_QUALITY_THRESHOLDS.warnDisconnects ||
+            serialFailures >= CONNECTION_QUALITY_THRESHOLDS.warnSerialFailures ||
+            metrics.retryCount >= CONNECTION_QUALITY_THRESHOLDS.warnRetries ||
+            metrics.stabilityWindowMs < CONNECTION_QUALITY_THRESHOLDS.warnStabilityWindowMs;
+
+        if (warn) {
+            return createCheck({
+                key: 'connection-quality',
+                label: 'Connection quality',
+                state: 'warn',
+                detail: `Minor link instability detected (${metrics.disconnects} disconnects, ${metrics.reconnectAttempts} reconnect attempts, ${serialFailures} serial failures, ${metrics.retryCount} retries over ${stabilitySeconds}s). You can proceed, but a stable USB/serial link for 30+ seconds is recommended.`,
+                blocking: false
+            });
+        }
+
+        return createCheck({
+            key: 'connection-quality',
+            label: 'Connection quality',
+            state: 'pass',
+            detail: `Connection remained stable for ${stabilitySeconds}s with no disconnects or serial failures. Safe to continue.`,
+            blocking: false
+        });
+    };
+
     const checks = [
         createCheck({
             key: 'browser-support',
@@ -2680,6 +2774,7 @@ async function refreshPreflightDiagnostics() {
             blocking: !navigator?.serial
         }),
         getDeviceVisibilityCheck(),
+        getConnectionQualityCheck(),
         getFirmwareVerificationCheck(),
         createCheck({
             key: 'user-acknowledgement',
@@ -4566,7 +4661,8 @@ export const __testHooks = Object.freeze({
     updateFirmwareControls,
     setPreFlashAcknowledgement,
     setPreflightWarningsAcknowledgement,
-    evaluatePreflightPolicy
+    evaluatePreflightPolicy,
+    updateConnectionQualityMetrics
 });
 
 export {
