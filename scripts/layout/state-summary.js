@@ -676,6 +676,7 @@ let mobileSummaryMediaQuery = null;
 
         const list = root.querySelector('[data-preset-list]');
         const empty = root.querySelector('[data-preset-empty]');
+        const error = root.querySelector('[data-preset-error]');
         const form = root.querySelector('[data-preset-form]');
         const nameInput = root.querySelector('[data-preset-name]');
         const saveButton = root.querySelector('[data-preset-save]');
@@ -685,7 +686,7 @@ let mobileSummaryMediaQuery = null;
             return null;
         }
 
-        presetManagerRefs = { root, list, empty, form, nameInput, saveButton };
+        presetManagerRefs = { root, list, empty, error, form, nameInput, saveButton };
         bindPresetManager(presetManagerRefs);
         return presetManagerRefs;
     }
@@ -707,15 +708,89 @@ let mobileSummaryMediaQuery = null;
             list.addEventListener('click', handlePresetListClick);
             list.dataset.presetBound = 'true';
         }
+
+        ensurePresetNameErrorRefs(refs);
+        updatePresetNameValidity(refs.nameInput, true);
     }
 
-    function updatePresetEmptyState(presets) {
+    function ensurePresetNameErrorRefs(refs) {
+        const { root, nameInput } = refs;
+        if (!nameInput || !root) {
+            return null;
+        }
+
+        let errorId = nameInput.getAttribute('aria-describedby');
+        let errorElement = errorId ? document.getElementById(errorId) : null;
+        if (!errorElement) {
+            errorElement = root.querySelector('[data-preset-name-error]');
+        }
+
+        if (!errorElement) {
+            errorElement = document.createElement('p');
+            errorElement.dataset.presetNameError = 'true';
+            errorElement.className = 'preset-panel__name-error';
+            errorElement.hidden = true;
+            nameInput.insertAdjacentElement('afterend', errorElement);
+        }
+
+        if (!errorElement.id) {
+            errorElement.id = `preset-name-error-${Math.random().toString(36).slice(2, 9)}`;
+        }
+
+        nameInput.setAttribute('aria-describedby', errorElement.id);
+        refs.nameError = errorElement;
+        return errorElement;
+    }
+
+    function updatePresetNameValidity(nameInput, suppressError = false) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !nameInput) {
+            return { valid: false, normalized: '', message: '' };
+        }
+
+        const validation = validatePresetName(nameInput.value, { allowEmpty: true });
+        const hasRawInput = typeof nameInput.value === 'string' && nameInput.value.trim().length > 0;
+        const showError = !suppressError && hasRawInput && !validation.valid;
+        const errorElement = ensurePresetNameErrorRefs(refs);
+
+        nameInput.setAttribute('aria-invalid', showError ? 'true' : 'false');
+        if (errorElement) {
+            errorElement.textContent = showError
+                ? `${validation.message} Leave blank to auto-generate a name.`
+                : '';
+            errorElement.hidden = !showError;
+        }
+
+        return validation;
+    }
+
+    function setPresetError(message) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !refs.error) {
+            return;
+        }
+
+        refs.error.textContent = message || '';
+        refs.error.hidden = !message;
+    }
+
+    function setPresetError(message) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !refs.error) {
+            return;
+        }
+
+        refs.error.textContent = message || '';
+        refs.error.hidden = !message;
+    }
+
+    function updatePresetEmptyState(presets, readErrorCode = null) {
         const refs = ensurePresetManagerRefs();
         if (!refs) {
             return;
         }
 
-        refs.empty.hidden = presets.length > 0;
+        refs.empty.hidden = presets.length > 0 || readErrorCode === 'read_failed' || readErrorCode === 'parse_failed';
         refs.list.hidden = presets.length === 0;
     }
 
@@ -725,7 +800,8 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        const presets = listPresets(PRESET_STORAGE_OPTIONS);
+        const listResult = listPresets(PRESET_STORAGE_OPTIONS);
+        const presets = listResult.ok ? listResult.data : [];
         presetCache.clear();
 
         while (refs.list.firstChild) {
@@ -775,7 +851,13 @@ let mobileSummaryMediaQuery = null;
         });
 
         refs.list.appendChild(fragment);
-        updatePresetEmptyState(presets);
+        updatePresetEmptyState(presets, listResult.ok ? null : listResult.error?.code);
+
+        if (!listResult.ok) {
+            setPresetError('Could not read saved presets from storage.');
+        } else {
+            setPresetError('');
+        }
     }
 
     function updatePresetSaveState(state) {
@@ -786,7 +868,8 @@ let mobileSummaryMediaQuery = null;
 
         const hasMount = Boolean(state.mount);
         const hasPower = Boolean(state.power);
-        refs.saveButton.disabled = !(hasMount && hasPower);
+        const nameValidation = updatePresetNameValidity(refs.nameInput);
+        refs.saveButton.disabled = !(hasMount && hasPower && nameValidation.valid);
     }
 
     function handlePresetSave(event) {
@@ -801,11 +884,14 @@ let mobileSummaryMediaQuery = null;
         if (!state.mount || !state.power) {
             return;
         }
+        const nameValidation = updatePresetNameValidity(refs.nameInput);
+        if (!nameValidation.valid) {
+            updatePresetSaveState(state);
+            return;
+        }
 
         const configuration = mapSummaryStateToConfiguration(state);
-        const rawName = refs.nameInput.value;
-        const trimmedName = typeof rawName === 'string' ? rawName.trim() : '';
-        const presetName = trimmedName || generatePresetName(state);
+        const presetName = nameValidation.normalized || generatePresetName(state);
         const currentStep = getCurrentWizardStep();
         const normalizedName = normalizePresetName(presetName);
         const existing = listPresets(PRESET_STORAGE_OPTIONS)
@@ -835,11 +921,17 @@ let mobileSummaryMediaQuery = null;
             currentStep
         });
 
-        if (saved) {
-            markPresetApplied(saved.id, PRESET_STORAGE_OPTIONS);
+        if (!savedResult.ok) {
+            setPresetError(savedResult.error?.code === 'read_failed' ? 'Could not read presets before saving.' : 'Could not save preset due to a storage error.');
+            return;
+        }
+
+        if (savedResult.data) {
+            markPresetApplied(savedResult.data.id, PRESET_STORAGE_OPTIONS);
         }
 
         refs.nameInput.value = '';
+        setPresetError('');
         renderPresetList();
         updatePresetSaveState(state);
         refs.nameInput.focus();
@@ -875,19 +967,38 @@ let mobileSummaryMediaQuery = null;
     }
 
     function applyPresetById(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
         applyPresetStateToWizard(preset.state);
-        markPresetApplied(preset.id, PRESET_STORAGE_OPTIONS);
+        const markResult = markPresetApplied(preset.id, PRESET_STORAGE_OPTIONS);
+        if (!markResult.ok) {
+            setPresetError('Preset was applied, but could not update storage.');
+        } else {
+            setPresetError('');
+        }
         renderPresetList();
     }
 
     function handlePresetRename(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
@@ -901,13 +1012,25 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        renamePreset(presetId, trimmed, PRESET_STORAGE_OPTIONS);
+        const renameResult = renamePreset(presetId, trimmed, PRESET_STORAGE_OPTIONS);
+        if (!renameResult.ok) {
+            setPresetError('Could not rename preset due to a storage error.');
+            return;
+        }
+        setPresetError('');
         renderPresetList();
     }
 
     function handlePresetDelete(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
@@ -916,7 +1039,12 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        deletePreset(presetId, PRESET_STORAGE_OPTIONS);
+        const deleteResult = deletePreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!deleteResult.ok) {
+            setPresetError('Could not delete preset due to a storage error.');
+            return;
+        }
+        setPresetError('');
         renderPresetList();
     }
 
@@ -1340,6 +1468,7 @@ let mobileSummaryMediaQuery = null;
         }
 
         ensureMobileSummaryRefs();
+        ensurePresetManagerRefs();
         if (mobileSummaryMediaQuery) {
             handleMobileSummaryMediaChange(mobileSummaryMediaQuery);
         }
