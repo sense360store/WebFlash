@@ -94,4 +94,23 @@ describe('config URL parser', () => {
     expect(result.configKey).toBe('Core-Wall-USB');
     expect(result.sanitizedConfig.core).toBe('none');
   });
+
+  test('accepts legacy Presence/Comfort token values and normalizes to RoomIQ output segments', () => {
+    const params = new URLSearchParams('core=corevoice&mount=wall&power=ac&presence=presencepro&comfort=comfortbase');
+    const result = parseConfigParams(params);
+
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.sanitizedConfig.presence).toBe('pro');
+    expect(result.sanitizedConfig.comfort).toBe('base');
+    expect(result.configKey).toBe('CoreVoice-Wall-PWR-RoomIQMotionPro-RoomIQClimateBase');
+  });
+
+  test('emits RoomIQ segments for canonical module values', () => {
+    const params = new URLSearchParams('core=core&mount=ceiling&power=poe&presence=base&comfort=base');
+    const result = parseConfigParams(params);
+
+    expect(result.isValid).toBe(true);
+    expect(result.configKey).toBe('Core-Ceiling-POE-RoomIQMotionBase-RoomIQClimateBase');
+  });
 });
