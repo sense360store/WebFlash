@@ -1050,8 +1050,16 @@ let mobileSummaryMediaQuery = null;
     }
 
     function handlePresetExport(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
