@@ -2571,10 +2571,150 @@ function updateFirmwareControls() {
         installAssumptions.hidden = !shouldShowAssumptions;
         installAssumptions.setAttribute('aria-hidden', shouldShowAssumptions ? 'false' : 'true');
     }
+
 }
 
 async function refreshPreflightDiagnostics() {
-    return null;
+    const statusList = document.querySelector('[data-preflight-list]');
+    if (!statusList) {
+        return [];
+    }
+
+    const createCheck = ({ key, label, state, detail, blocking = false }) => ({
+        key,
+        label,
+        state,
+        detail: detail || '',
+        blocking: Boolean(blocking)
+    });
+
+    const getFirmwareVerificationCheck = () => {
+        const verificationStatus = (firmwareVerificationState?.status || '').toString().toLowerCase();
+        if (verificationStatus === 'verified') {
+            return createCheck({
+                key: 'firmware-verification',
+                label: 'Firmware verification',
+                state: 'pass',
+                detail: firmwareVerificationState.message || 'Checksum and signature verified.',
+                blocking: false
+            });
+        }
+        if (verificationStatus === 'failed') {
+            return createCheck({
+                key: 'firmware-verification',
+                label: 'Firmware verification',
+                state: 'fail',
+                detail: firmwareVerificationState.message || 'Firmware verification failed.',
+                blocking: true
+            });
+        }
+        if (verificationStatus === 'pending') {
+            return createCheck({
+                key: 'firmware-verification',
+                label: 'Firmware verification',
+                state: 'warn',
+                detail: firmwareVerificationState.message || 'Verification is still in progress.',
+                blocking: true
+            });
+        }
+
+        return createCheck({
+            key: 'firmware-verification',
+            label: 'Firmware verification',
+            state: 'warn',
+            detail: 'Choose firmware to start verification.',
+            blocking: true
+        });
+    };
+
+    const getDeviceVisibilityCheck = () => {
+        const statusElement = document.querySelector('[data-device-status]');
+        const warningElement = document.querySelector('[data-device-warning]');
+        const errorElement = document.querySelector('[data-device-error]:not([hidden])');
+        const connected = statusElement?.classList.contains('device-info-panel__status--connected');
+        const warningText = warningElement && !warningElement.hidden ? warningElement.textContent?.trim() : '';
+
+        if (connected) {
+            return createCheck({
+                key: 'device-visibility',
+                label: 'Device connection visibility',
+                state: warningText ? 'warn' : 'pass',
+                detail: warningText || 'Device is connected and readable.',
+                blocking: false
+            });
+        }
+
+        if (errorElement) {
+            const errorMessage = errorElement.querySelector('[data-device-error-message]')?.textContent?.trim();
+            return createCheck({
+                key: 'device-visibility',
+                label: 'Device connection visibility',
+                state: 'warn',
+                detail: errorMessage || 'Unable to read device info. You can continue if the device is connected.',
+                blocking: false
+            });
+        }
+
+        return createCheck({
+            key: 'device-visibility',
+            label: 'Device connection visibility',
+            state: 'warn',
+            detail: 'Device info has not been read yet.',
+            blocking: false
+        });
+    };
+
+    const checks = [
+        createCheck({
+            key: 'browser-support',
+            label: 'Browser support',
+            state: navigator?.serial ? 'pass' : 'fail',
+            detail: navigator?.serial
+                ? 'Web Serial API is available in this browser.'
+                : 'This browser does not support Web Serial. Use a compatible Chromium-based browser.',
+            blocking: !navigator?.serial
+        }),
+        getDeviceVisibilityCheck(),
+        getFirmwareVerificationCheck(),
+        createCheck({
+            key: 'user-acknowledgement',
+            label: 'User acknowledgement',
+            state: preFlashAcknowledged ? 'pass' : 'warn',
+            detail: preFlashAcknowledged
+                ? 'Pre-flash checklist acknowledged.'
+                : 'Review and acknowledge the pre-flash checklist before installing.',
+            blocking: !preFlashAcknowledged
+        })
+    ];
+
+    const STATUS_LABELS = Object.freeze({
+        pass: 'Pass',
+        warn: 'Warning',
+        fail: 'Fail'
+    });
+    const STATUS_ICONS = Object.freeze({
+        pass: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6.4 11.2 3.2 8l1.1-1.1 2.1 2.1 5.3-5.3L12.8 4z"></path></svg>',
+        warn: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 15 14H1L8 1.6zm0 4.2a.9.9 0 0 0-.9.9v3a.9.9 0 1 0 1.8 0v-3a.9.9 0 0 0-.9-.9zm0 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"></path></svg>',
+        fail: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m4.7 3.6 3.3 3.3 3.3-3.3 1.1 1.1-3.3 3.3 3.3 3.3-1.1 1.1-3.3-3.3-3.3 3.3-1.1-1.1 3.3-3.3-3.3-3.3 1.1-1.1z"></path></svg>'
+    });
+
+    checks.forEach(check => {
+        const item = statusList.querySelector(`[data-preflight-item="${check.key}"]`);
+        const statusNode = statusList.querySelector(`[data-preflight-status="${check.key}"]`);
+        const detailNode = statusList.querySelector(`[data-preflight-detail="${check.key}"]`);
+        if (!item || !statusNode || !detailNode) {
+            return;
+        }
+
+        const state = check.state === 'pass' || check.state === 'warn' || check.state === 'fail' ? check.state : 'warn';
+        item.dataset.status = state;
+        statusNode.classList.remove('status-pass', 'status-warn', 'status-fail');
+        statusNode.classList.add(`status-${state}`);
+        statusNode.innerHTML = `${STATUS_ICONS[state]}<span>${STATUS_LABELS[state]}</span>`;
+        detailNode.textContent = check.detail;
+    });
+
+    return checks;
 }
 
 

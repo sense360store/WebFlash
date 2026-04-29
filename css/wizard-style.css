@@ -1997,6 +1997,9 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     grid-area: status;
     min-width: 96px;
     justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     text-align: right;
     font-size: 12px;
     font-weight: 600;
@@ -2006,6 +2009,39 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 
 .preflight-panel__status:empty::before {
     content: 'Pending';
+}
+
+.preflight-panel__status svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+.preflight-panel__status.status-pass {
+    color: #0f7a3b;
+}
+
+.preflight-panel__status.status-warn {
+    color: #915900;
+}
+
+.preflight-panel__status.status-fail {
+    color: #b42318;
+}
+
+:root.dark-theme .preflight-panel__status.status-pass,
+[data-theme="dark"] .preflight-panel__status.status-pass {
+    color: #4ade80;
+}
+
+:root.dark-theme .preflight-panel__status.status-warn,
+[data-theme="dark"] .preflight-panel__status.status-warn {
+    color: #fbbf24;
+}
+
+:root.dark-theme .preflight-panel__status.status-fail,
+[data-theme="dark"] .preflight-panel__status.status-fail {
+    color: #f87171;
 }
 
 .preflight-panel__detail {
