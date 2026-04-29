@@ -18,6 +18,10 @@ const PRESET_STORAGE_OPTIONS = Object.freeze({
     storageKey: 'wizard.presets',
     maxEntries: 20
 });
+const PRESET_NAME_RULES = Object.freeze({
+    minLength: 3,
+    maxLength: 40
+});
 
 const presetCache = new Map();
 class PresetStorageError extends Error {
@@ -157,7 +161,8 @@ function normalizePresetEntry(entry = {}) {
         return null;
     }
 
-    const name = typeof entry.name === 'string' && entry.name.trim() ? entry.name.trim() : 'Preset';
+    const validatedName = validatePresetName(entry.name, { allowEmpty: true });
+    const name = validatedName.normalized || 'Preset';
     const state = normalizePresetState(entry.state);
     const configuration = normalizePresetConfiguration(entry.configuration, state);
     const createdAt = normalizeTimestamp(entry.createdAt);
@@ -213,6 +218,46 @@ function clampStep(step) {
 
     const value = Math.max(1, Math.min(step, 4));
     return value;
+}
+
+function validatePresetName(value, options = {}) {
+    const allowEmpty = options.allowEmpty !== false;
+    const raw = typeof value === 'string' ? value : '';
+    const normalized = raw.normalize('NFKC').replace(/\s+/g, ' ').trim();
+
+    if (!normalized) {
+        return {
+            valid: allowEmpty,
+            normalized: '',
+            reason: allowEmpty ? null : 'empty',
+            message: allowEmpty ? '' : 'Enter a preset name.'
+        };
+    }
+
+    if (normalized.length < PRESET_NAME_RULES.minLength) {
+        return {
+            valid: false,
+            normalized,
+            reason: 'minLength',
+            message: `Preset names must be at least ${PRESET_NAME_RULES.minLength} characters.`
+        };
+    }
+
+    if (normalized.length > PRESET_NAME_RULES.maxLength) {
+        return {
+            valid: false,
+            normalized,
+            reason: 'maxLength',
+            message: `Preset names must be ${PRESET_NAME_RULES.maxLength} characters or fewer.`
+        };
+    }
+
+    return {
+        valid: true,
+        normalized,
+        reason: null,
+        message: ''
+    };
 }
 
 function createPresetId() {
@@ -282,7 +327,8 @@ function getPreset(id, options = {}) {
 
 function savePreset(name, configuration, options = {}) {
     const resolvedOptions = resolveOptions(options);
-    const safeName = typeof name === 'string' && name.trim() ? name.trim() : 'Preset';
+    const nameValidation = validatePresetName(name, { allowEmpty: true });
+    const safeName = nameValidation.normalized || 'Preset';
     const state = options.state ? normalizePresetState(options.state) : mapConfigurationToState(configuration);
     const normalizedConfiguration = normalizePresetConfiguration(configuration, state);
     const timestamp = Date.now();
@@ -531,5 +577,7 @@ export {
     generatePresetName,
     getCurrentWizardStep,
     applyPresetStateToWizard,
-    PRESET_STORAGE_OPTIONS
+    PRESET_STORAGE_OPTIONS,
+    PRESET_NAME_RULES,
+    validatePresetName
 };
