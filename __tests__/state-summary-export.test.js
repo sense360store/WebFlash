@@ -32,7 +32,9 @@ async function loadStateSummaryModule() {
         getCurrentWizardStep: jest.fn(() => 1),
         applyPresetStateToWizard: jest.fn(),
         PRESET_STORAGE_OPTIONS: { storageKey: 'wizard-presets' },
-        serializePresetConfig: serializePresetConfigMock
+        serializePresetConfig: serializePresetConfigMock,
+        deserializePresetConfig: jest.fn(),
+        validatePresetName: jest.fn(() => ({ valid: true, message: '', normalized: '' }))
     }));
     jest.unstable_mockModule('../scripts/utils/file-download.js', () => ({
         downloadJsonFile: downloadJsonFileMock
@@ -61,7 +63,6 @@ describe('state-summary preset export', () => {
         document.querySelector('[data-preset-list]').innerHTML = '';
         const error = document.querySelector('[data-preset-error]');
         error.textContent = '';
-        global.validatePresetName = jest.fn(() => ({ valid: true, message: '', normalized: '' }));
         listPresetsMock.mockReturnValue({ ok: true, data: [cachedPreset] });
         await loadStateSummaryModule();
     });
