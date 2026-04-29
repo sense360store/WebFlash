@@ -10,6 +10,8 @@ import {
     deletePreset,
     markPresetApplied,
     generatePresetName,
+    PRESET_NAME_RULES,
+    validatePresetName,
     getCurrentWizardStep,
     applyPresetStateToWizard,
     PRESET_STORAGE_OPTIONS
@@ -705,6 +707,60 @@ let mobileSummaryMediaQuery = null;
             list.addEventListener('click', handlePresetListClick);
             list.dataset.presetBound = 'true';
         }
+
+        ensurePresetNameErrorRefs(refs);
+        updatePresetNameValidity(refs.nameInput, true);
+    }
+
+    function ensurePresetNameErrorRefs(refs) {
+        const { root, nameInput } = refs;
+        if (!nameInput || !root) {
+            return null;
+        }
+
+        let errorId = nameInput.getAttribute('aria-describedby');
+        let errorElement = errorId ? document.getElementById(errorId) : null;
+        if (!errorElement) {
+            errorElement = root.querySelector('[data-preset-name-error]');
+        }
+
+        if (!errorElement) {
+            errorElement = document.createElement('p');
+            errorElement.dataset.presetNameError = 'true';
+            errorElement.className = 'preset-panel__name-error';
+            errorElement.hidden = true;
+            nameInput.insertAdjacentElement('afterend', errorElement);
+        }
+
+        if (!errorElement.id) {
+            errorElement.id = `preset-name-error-${Math.random().toString(36).slice(2, 9)}`;
+        }
+
+        nameInput.setAttribute('aria-describedby', errorElement.id);
+        refs.nameError = errorElement;
+        return errorElement;
+    }
+
+    function updatePresetNameValidity(nameInput, suppressError = false) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !nameInput) {
+            return { valid: false, normalized: '', message: '' };
+        }
+
+        const validation = validatePresetName(nameInput.value, { allowEmpty: true });
+        const hasRawInput = typeof nameInput.value === 'string' && nameInput.value.trim().length > 0;
+        const showError = !suppressError && hasRawInput && !validation.valid;
+        const errorElement = ensurePresetNameErrorRefs(refs);
+
+        nameInput.setAttribute('aria-invalid', showError ? 'true' : 'false');
+        if (errorElement) {
+            errorElement.textContent = showError
+                ? `${validation.message} Leave blank to auto-generate a name.`
+                : '';
+            errorElement.hidden = !showError;
+        }
+
+        return validation;
     }
 
     function updatePresetEmptyState(presets) {
@@ -784,7 +840,8 @@ let mobileSummaryMediaQuery = null;
 
         const hasMount = Boolean(state.mount);
         const hasPower = Boolean(state.power);
-        refs.saveButton.disabled = !(hasMount && hasPower);
+        const nameValidation = updatePresetNameValidity(refs.nameInput);
+        refs.saveButton.disabled = !(hasMount && hasPower && nameValidation.valid);
     }
 
     function handlePresetSave(event) {
@@ -799,11 +856,14 @@ let mobileSummaryMediaQuery = null;
         if (!state.mount || !state.power) {
             return;
         }
+        const nameValidation = updatePresetNameValidity(refs.nameInput);
+        if (!nameValidation.valid) {
+            updatePresetSaveState(state);
+            return;
+        }
 
         const configuration = mapSummaryStateToConfiguration(state);
-        const rawName = refs.nameInput.value;
-        const trimmedName = typeof rawName === 'string' ? rawName.trim() : '';
-        const presetName = trimmedName || generatePresetName(state);
+        const presetName = nameValidation.normalized || generatePresetName(state);
         const currentStep = getCurrentWizardStep();
 
         const saved = savePreset(presetName, configuration, {
@@ -1317,6 +1377,7 @@ let mobileSummaryMediaQuery = null;
         }
 
         ensureMobileSummaryRefs();
+        ensurePresetManagerRefs();
         if (mobileSummaryMediaQuery) {
             handleMobileSummaryMediaChange(mobileSummaryMediaQuery);
         }
