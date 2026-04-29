@@ -47,11 +47,11 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 - **PWR Module**: External power supply module
 
 ### Expansion Modules
-- **AirIQ Module**: None, Base, Pro
-- **Presence Module**: None, Base, Pro
-- **Comfort Module**: None, Base
+- **AirIQ Module**: None, Enabled
+- **Presence Module**: None, Enabled
+- **Comfort Module**: None, Enabled
 - **Fan Module**: None, PWM, Analog (Wall mount only)
-- **LED Ring**: None, Base (Required for Core Voice)
+- **LED Ring**: None, Enabled (Required for Core Voice)
 
 ### Release Channels
 - **Stable**: Production-ready firmware

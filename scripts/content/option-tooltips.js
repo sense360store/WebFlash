@@ -25,7 +25,7 @@ const optionTooltips = {
             summary: 'Ceiling installs free up wall space and maximize presence detection in open rooms.',
             pros: [
                 'Keeps cabling hidden above drop ceilings or in conduit.',
-                'Offers a broad motion sensing cone for RoomIQ Motion Base/Pro modules.'
+                'Offers a broad motion sensing cone for RoomIQ Motion modules.'
             ],
             cons: [
                 'Fan module is not supported because of exhaust restrictions overhead.',
@@ -123,7 +123,7 @@ const optionTooltips = {
             }
         },
         base: {
-            title: 'AirIQ Base',
+            title: 'AirIQ',
             summary: 'Balanced sensing for air quality metrics in offices, classrooms, and hospitality spaces.',
             pros: [
                 'Combines gas, particulate, and pressure sensors for cross-validated readings.',
@@ -138,12 +138,12 @@ const optionTooltips = {
                 'SCD41 CO₂ accuracy: ±40 ppm between 400–1000 ppm.'
             ],
             learnMore: {
-                label: 'AirIQ Base specifications',
+                label: 'AirIQ specifications',
                 href: 'https://docs.sense360.com/modules/airiq-base'
             }
         },
         pro: {
-            title: 'AirIQ Pro',
+            title: 'AirIQ',
             summary: 'Comprehensive air quality analytics with industrial-grade particulate and formaldehyde sensing.',
             pros: [
                 'Adds SPS30 laser particulate counter and SEN0321 formaldehyde sensor.',
@@ -158,7 +158,7 @@ const optionTooltips = {
                 'Formaldehyde detection range: 0–5 ppm with 0.01 ppm resolution.'
             ],
             learnMore: {
-                label: 'AirIQ Pro deployment tips',
+                label: 'AirIQ deployment tips',
                 href: 'https://docs.sense360.com/modules/airiq-pro'
             }
         }
@@ -183,7 +183,7 @@ const optionTooltips = {
             }
         },
         base: {
-            title: 'RoomIQ Motion Base',
+            title: 'RoomIQ Motion',
             summary: 'Single-sensor mmWave coverage for small rooms, focus booths, or restrooms.',
             pros: [
                 'Detects micro-movements through fabric partitions up to 4.5 m (15 ft).',
@@ -198,12 +198,12 @@ const optionTooltips = {
                 'Detection radius: 4.5 m (15 ft) for seated occupancy.'
             ],
             learnMore: {
-                label: 'RoomIQ Motion Base layout guide',
+                label: 'RoomIQ Motion layout guide',
                 href: 'https://docs.sense360.com/modules/presence-base'
             }
         },
         pro: {
-            title: 'RoomIQ Motion Pro',
+            title: 'RoomIQ Motion',
             summary: 'Dual-sensor radar for large collaboration areas requiring directional motion cues.',
             pros: [
                 'LD2450 radar adds zone tracking for up to four simultaneous occupants.',
@@ -211,14 +211,14 @@ const optionTooltips = {
             ],
             cons: [
                 'Requires firmware 1.4 or newer to expose zone telemetry.',
-                'Draws an extra 1.3 W compared to RoomIQ Motion Base.'
+                'Draws an extra 1.3 W compared to RoomIQ Motion.'
             ],
             measurements: [
                 'Coverage ellipse: 6.5 m × 5 m (21 ft × 16 ft) when ceiling-mounted at 3 m (10 ft).',
                 'Update rate: 10 Hz with ±0.3 m positional accuracy.'
             ],
             learnMore: {
-                label: 'RoomIQ Motion Pro zoning tips',
+                label: 'RoomIQ Motion zoning tips',
                 href: 'https://docs.sense360.com/modules/presence-pro'
             }
         }
@@ -243,7 +243,7 @@ const optionTooltips = {
             }
         },
         base: {
-            title: 'RoomIQ Climate Base',
+            title: 'RoomIQ Climate',
             summary: 'Essential ambient sensing for temperature, humidity, and light-level automation.',
             pros: [
                 'Includes SHT40 temperature/humidity with ±0.2 °C accuracy after calibration.',
@@ -258,7 +258,7 @@ const optionTooltips = {
                 'Light sensor window should face open space; avoid shading by signage.'
             ],
             learnMore: {
-                label: 'RoomIQ Climate Base integration notes',
+                label: 'RoomIQ Climate integration notes',
                 href: 'https://docs.sense360.com/modules/comfort-base'
             }
         }
