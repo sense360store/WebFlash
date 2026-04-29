@@ -658,7 +658,9 @@ export {
     getCurrentWizardStep,
     applyPresetStateToWizard,
     PRESET_STORAGE_OPTIONS,
+    PRESET_NAME_RULES,
     PRESET_EXPORT_SCHEMA_VERSION,
     serializePresetConfig,
-    deserializePresetConfig
+    deserializePresetConfig,
+    validatePresetName
 };

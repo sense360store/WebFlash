@@ -15,7 +15,9 @@ import {
     getCurrentWizardStep,
     applyPresetStateToWizard,
     PRESET_STORAGE_OPTIONS,
-    serializePresetConfig
+    serializePresetConfig,
+    deserializePresetConfig,
+    validatePresetName
 } from '../utils/preset-storage.js';
 import { downloadJsonFile } from '../utils/file-download.js';
 
@@ -688,7 +690,7 @@ let mobileSummaryMediaQuery = null;
             return null;
         }
 
-        presetManagerRefs = { root, list, empty, error, form, nameInput, saveButton };
+        presetManagerRefs = { root, list, empty, error, form, nameInput, saveButton, importButton: null, importInput: null, importDiagnostics: null };
         bindPresetManager(presetManagerRefs);
         return presetManagerRefs;
     }
@@ -712,7 +714,20 @@ let mobileSummaryMediaQuery = null;
         }
 
         ensurePresetNameErrorRefs(refs);
+        ensurePresetImportRefs(refs);
         updatePresetNameValidity(refs.nameInput, true);
+
+        if (refs.importButton && refs.importButton.dataset.presetBound !== "true") {
+            refs.importButton.addEventListener("click", handlePresetImportClick);
+            refs.importButton.dataset.presetBound = "true";
+        }
+
+        if (refs.importInput && refs.importInput.dataset.presetBound !== "true") {
+            refs.importInput.addEventListener("change", event => {
+                void handlePresetImportSelected(event);
+            });
+            refs.importInput.dataset.presetBound = "true";
+        }
     }
 
     function ensurePresetNameErrorRefs(refs) {
@@ -742,6 +757,185 @@ let mobileSummaryMediaQuery = null;
         nameInput.setAttribute('aria-describedby', errorElement.id);
         refs.nameError = errorElement;
         return errorElement;
+    }
+
+
+    function ensurePresetImportRefs(refs) {
+        if (!refs || !refs.root) {
+            return null;
+        }
+
+        let importButton = refs.root.querySelector('[data-preset-import-button]');
+        if (!importButton) {
+            importButton = document.createElement('button');
+            importButton.type = 'button';
+            importButton.className = 'preset-panel__action-button';
+            importButton.dataset.presetImportButton = 'true';
+            importButton.textContent = 'Import JSON';
+            const controls = refs.root.querySelector('.preset-panel__controls');
+            const form = refs.form || refs.root.querySelector('[data-preset-form]');
+            const anchor = controls || form;
+            if (anchor) {
+                anchor.insertAdjacentElement('afterend', importButton);
+            } else {
+                refs.root.appendChild(importButton);
+            }
+        }
+
+        let importInput = refs.root.querySelector('[data-preset-import-input]');
+        if (!importInput) {
+            importInput = document.createElement('input');
+            importInput.type = 'file';
+            importInput.accept = 'application/json,.json';
+            importInput.hidden = true;
+            importInput.dataset.presetImportInput = 'true';
+            refs.root.appendChild(importInput);
+        }
+
+        let importDiagnostics = refs.root.querySelector('[data-preset-import-diagnostics]');
+        if (!importDiagnostics) {
+            importDiagnostics = document.createElement('div');
+            importDiagnostics.className = 'preset-panel__import-diagnostics';
+            importDiagnostics.dataset.presetImportDiagnostics = 'true';
+            importDiagnostics.hidden = true;
+            importDiagnostics.setAttribute('role', 'status');
+            importDiagnostics.setAttribute('aria-live', 'polite');
+            if (refs.error) {
+                refs.error.insertAdjacentElement('afterend', importDiagnostics);
+            } else {
+                refs.root.appendChild(importDiagnostics);
+            }
+        }
+
+        refs.importButton = importButton;
+        refs.importInput = importInput;
+        refs.importDiagnostics = importDiagnostics;
+        return { importButton, importInput, importDiagnostics };
+    }
+
+    function setPresetImportDiagnostics(lines = []) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !refs.importDiagnostics) {
+            return;
+        }
+
+        while (refs.importDiagnostics.firstChild) {
+            refs.importDiagnostics.removeChild(refs.importDiagnostics.firstChild);
+        }
+
+        if (!Array.isArray(lines) || lines.length === 0) {
+            refs.importDiagnostics.hidden = true;
+            return;
+        }
+
+        const list = document.createElement('ul');
+        lines.forEach(line => {
+            const item = document.createElement('li');
+            item.textContent = line;
+            list.appendChild(item);
+        });
+        refs.importDiagnostics.appendChild(list);
+        refs.importDiagnostics.hidden = false;
+    }
+
+    function validatePresetImportPayload(payload) {
+        const diagnostics = [];
+        if (!payload || typeof payload !== 'object') {
+            diagnostics.push('schema: JSON root must be an object.');
+            return { ok: false, diagnostics, preset: null };
+        }
+
+        if (!payload.preset || typeof payload.preset !== 'object') {
+            diagnostics.push('schema: Missing "preset" object in import payload.');
+        }
+
+        if (payload.schemaVersion !== undefined && payload.schemaVersion !== 1) {
+            diagnostics.push(`compat: Unsupported schemaVersion ${payload.schemaVersion}; attempting best-effort import.`);
+        }
+
+        const preset = deserializePresetConfig(payload);
+        if (!preset) {
+            diagnostics.push('schema: Imported preset could not be normalized.');
+            return { ok: false, diagnostics, preset: null };
+        }
+
+        if (diagnostics.some(line => line.startsWith('schema:'))) {
+            return { ok: false, diagnostics, preset: null };
+        }
+
+        return { ok: true, diagnostics, preset };
+    }
+
+    async function handlePresetImportClick(event) {
+        event.preventDefault();
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !refs.importInput) {
+            return;
+        }
+        refs.importInput.value = '';
+        setPresetError('');
+        setPresetImportDiagnostics([]);
+        refs.importInput.click();
+    }
+
+    async function handlePresetImportSelected(event) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs) {
+            return;
+        }
+        const input = event.target;
+        const file = input?.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        let payloadText = '';
+        try {
+            payloadText = await file.text();
+        } catch (error) {
+            setPresetError('Could not read selected JSON file.');
+            setPresetImportDiagnostics(['parse: Failed to read file content.']);
+            if (refs.importButton) refs.importButton.focus();
+            return;
+        }
+
+        let parsed;
+        try {
+            parsed = JSON.parse(payloadText);
+        } catch (error) {
+            setPresetError('Imported file is not valid JSON.');
+            setPresetImportDiagnostics(['parse: JSON syntax is invalid.']);
+            if (refs.importButton) refs.importButton.focus();
+            return;
+        }
+
+        const validation = validatePresetImportPayload(parsed);
+        if (!validation.ok) {
+            setPresetError('Preset import failed validation.');
+            setPresetImportDiagnostics(validation.diagnostics);
+            if (refs.importButton) refs.importButton.focus();
+            return;
+        }
+
+        const imported = upsertPresetByName(validation.preset.name, validation.preset.configuration, {
+            ...PRESET_STORAGE_OPTIONS,
+            state: validation.preset.state,
+            currentStep: validation.preset.meta?.currentStep ?? validation.preset.state?.currentStep
+        });
+
+        if (!imported.ok || !imported.data) {
+            setPresetError('Could not save imported preset due to a storage error.');
+            setPresetImportDiagnostics(['compat: Preset payload parsed, but save operation failed.']);
+            if (refs.importButton) refs.importButton.focus();
+            return;
+        }
+
+        applyPresetStateToWizard(imported.data.state);
+        markPresetApplied(imported.data.id, PRESET_STORAGE_OPTIONS);
+        setPresetError('');
+        setPresetImportDiagnostics(validation.diagnostics);
+        renderPresetList();
+        if (refs.importButton) refs.importButton.focus();
     }
 
     function updatePresetNameValidity(nameInput, suppressError = false) {
@@ -920,13 +1114,13 @@ let mobileSummaryMediaQuery = null;
             currentStep
         });
 
-        if (!savedResult.ok) {
-            setPresetError(savedResult.error?.code === 'read_failed' ? 'Could not read presets before saving.' : 'Could not save preset due to a storage error.');
+        if (!saved.ok) {
+            setPresetError(saved.error?.code === 'read_failed' ? 'Could not read presets before saving.' : 'Could not save preset due to a storage error.');
             return;
         }
 
-        if (savedResult.data) {
-            markPresetApplied(savedResult.data.id, PRESET_STORAGE_OPTIONS);
+        if (saved.data) {
+            markPresetApplied(saved.data.id, PRESET_STORAGE_OPTIONS);
         }
 
         refs.nameInput.value = '';
