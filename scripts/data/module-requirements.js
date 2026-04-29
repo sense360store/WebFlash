@@ -124,7 +124,7 @@ const MODULE_REQUIREMENT_MATRIX = {
     },
     voice: {
         label: 'Voice Module',
-        summary: 'Voice assistant integration for hands-free control and feedback.',
+        summary: 'Voice assistant integration is not currently available.',
         variants: {
             none: {
                 label: 'None',
@@ -132,24 +132,6 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: [],
                 conflicts: [],
                 recommended: true
-            },
-            base: {
-                label: 'Base',
-                coreRevision: 'Rev B core or newer',
-                headers: ['J5 audio interface'],
-                conflicts: [],
-                sensors: [
-                    'I2S microphone array',
-                    'Audio DAC output'
-                ],
-                requires: [
-                    {
-                        module: 'led',
-                        variants: ['base'],
-                        message: 'Voice cores require LED Ring with integrated microphone.',
-                        detail: 'The Core Voice module mandates an LED Ring for visual feedback and microphone integration.'
-                    }
-                ]
             }
         }
     },

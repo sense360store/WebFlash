@@ -50,7 +50,7 @@ const allowedOptions = {
     airiq: ['none', 'base', 'pro'],
     bathroomairiq: ['none', 'base'],
     fan: ['none', 'pwm', 'analog'],
-    voice: ['none', 'base'],
+    voice: ['none'],
     led: ['none', 'base'],
     bathroomairiq: ['none', 'base', 'pro']
 };
@@ -80,7 +80,7 @@ const MODULE_VARIANT_LABELS = Object.freeze({
     }),
     voice: Object.freeze({
         none: 'Core (standard module)',
-        base: 'Core Voice module'
+
     }),
     led: Object.freeze({
         none: 'No LED Ring',
@@ -106,7 +106,7 @@ const MODULE_SEGMENT_FORMATTERS = {
     airiq: value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`,
     bathroomairiq: value => `BathroomAirIQ${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
     fan: value => `Fan${value.toUpperCase()}`,
-    voice: value => value === 'base' ? 'CoreVoice' : 'Core',
+    voice: () => 'Core',
     led: value => value === 'base' ? 'LED' : '',
     bathroomairiq: value => `BathroomAirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`
 };
@@ -967,7 +967,7 @@ function parseConfigStringState(configString) {
     const firstSegmentLower = segments[0].toLowerCase();
 
     if (firstSegmentLower === 'core' || firstSegmentLower === 'corevoice') {
-        coreType = firstSegmentLower === 'corevoice' ? 'base' : 'none';
+        coreType = 'none';
         mountingIndex = 1;
     }
 
@@ -981,7 +981,7 @@ function parseConfigStringState(configString) {
     // Check if Voice segment appears between mounting and power (e.g., "Ceiling-Voice-USB")
     let powerIndex = mountingIndex + 1;
     if (segments[powerIndex] && segments[powerIndex].toLowerCase() === 'voice') {
-        coreType = 'base';
+        coreType = 'none';
         powerIndex += 1;
     }
 
@@ -1024,8 +1024,7 @@ function parseConfigStringState(configString) {
             const suffix = segment.substring('Fan'.length);
             moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
         } else if (segment.startsWith('Voice')) {
-            const suffix = segment.substring('Voice'.length);
-            moduleState.voice = normaliseModuleValue('voice', suffix ? suffix.toLowerCase() : 'base');
+            moduleState.voice = 'none';
         } else if (segment === 'LED' || segment.startsWith('LED')) {
             moduleState.led = 'base';
         }
@@ -1611,15 +1610,6 @@ function syncConfigurationFromInputs() {
 
     // Voice (Core Type) - sync from inputs
     configuration.voice = document.querySelector('input[name="voice"]:checked')?.value || 'none';
-
-    // Voice cores mandate LED Ring - auto-select LED when voice is enabled
-    if (configuration.voice === 'base' && configuration.led === 'none') {
-        configuration.led = 'base';
-        const ledBaseInput = document.querySelector('input[name="led"][value="base"]');
-        if (ledBaseInput && !ledBaseInput.checked) {
-            ledBaseInput.checked = true;
-        }
-    }
 }
 
 function getOptionStatusElement(card) {
@@ -1697,9 +1687,8 @@ function formatMountingPowerLabel(state) {
 function formatModuleSelectionLabel(key, value) {
     const label = MODULE_LABELS[key] || key;
 
-    // Special handling for Core Type (voice) - uses "Core" and "Core Voice" labels
     if (key === 'voice') {
-        return value === 'base' ? 'Core Voice' : 'Core';
+        return 'Core';
     }
 
     if (value === 'none') {
@@ -3924,8 +3913,7 @@ async function findCompatibleFirmware() {
     let configString = '';
 
     // Core type (voice) comes first
-    const voiceValue = configuration.voice || 'none';
-    configString += voiceValue === 'base' ? 'CoreVoice' : 'Core';
+    configString += 'Core';
     configString += `-${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
     configString += `-${configuration.power.toUpperCase()}`;
 
@@ -4445,9 +4433,7 @@ function applyConfiguration(initialConfig) {
         configuration.bathroomairiq = 'none';
     }
 
-    if (configuration.voice === 'base') {
-        configuration.voice = 'none';
-    }
+    configuration.voice = 'none';
 
     if (configuration.mounting) {
         const mountingInput = document.querySelector(`input[name="mounting"][value="${configuration.mounting}"]`);
