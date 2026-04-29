@@ -1,5 +1,5 @@
 {
-  "name": "Sense360 ESP32 Firmware - Core Module",
+  "name": "Sense360 Modular Platform Firmware",
   "version": "3.0.1",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
@@ -10,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-PWR-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-CoreVoice-Wall-POE-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "40524c5a06060838fe64b22d13b4afaa",
-          "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
-          "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
+          "md5": "384768f5cda1a14a5401c5eafe98cdd0",
+          "sha256": "527b0e9a4b322b7f1f444ba501edd4345507b1c02f225743c83eb938911fad86",
+          "signature": "+Wc7uEVsDa32rHsPA++DHEyUDjd3k9YRxrXRbB5g7nc="
         }
       ],
       "improv": true,
-      "md5": "40524c5a06060838fe64b22d13b4afaa",
-      "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
-      "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
+      "md5": "384768f5cda1a14a5401c5eafe98cdd0",
+      "sha256": "527b0e9a4b322b7f1f444ba501edd4345507b1c02f225743c83eb938911fad86",
+      "signature": "+Wc7uEVsDa32rHsPA++DHEyUDjd3k9YRxrXRbB5g7nc="
     }
   ]
 }
