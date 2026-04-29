@@ -25,6 +25,7 @@ const PRESET_NAME_RULES = Object.freeze({
 
 const presetCache = new Map();
 const PRESET_EXPORT_SCHEMA_VERSION = 1;
+const DEPRECATED_PRESET_KEYS = Object.freeze(['presence', 'comfort']);
 
 function resolveStorage(options = {}) {
     if (options.storage && typeof options.storage.getItem === 'function' && typeof options.storage.setItem === 'function') {
@@ -287,16 +288,24 @@ function migrateDeprecatedPresetFields(entries = []) {
         const nextEntry = { ...entry };
 
         if (nextEntry.state && typeof nextEntry.state === 'object' && !Array.isArray(nextEntry.state)) {
-            const { presence, comfort, ...restState } = nextEntry.state;
-            if (presence !== undefined || comfort !== undefined) {
+            const { ...restState } = nextEntry.state;
+            const hadDeprecatedState = DEPRECATED_PRESET_KEYS.some(key => key in nextEntry.state);
+            DEPRECATED_PRESET_KEYS.forEach(key => {
+                delete restState[key];
+            });
+            if (hadDeprecatedState) {
                 changed = true;
             }
             nextEntry.state = restState;
         }
 
         if (nextEntry.configuration && typeof nextEntry.configuration === 'object' && !Array.isArray(nextEntry.configuration)) {
-            const { presence, comfort, ...restConfig } = nextEntry.configuration;
-            if (presence !== undefined || comfort !== undefined) {
+            const { ...restConfig } = nextEntry.configuration;
+            const hadDeprecatedConfig = DEPRECATED_PRESET_KEYS.some(key => key in nextEntry.configuration);
+            DEPRECATED_PRESET_KEYS.forEach(key => {
+                delete restConfig[key];
+            });
+            if (hadDeprecatedConfig) {
                 changed = true;
             }
             nextEntry.configuration = restConfig;
@@ -690,11 +699,12 @@ function validatePresetImportPayload(payload) {
         };
     }
 
-    const rawStateVoice = typeof payload?.preset?.state?.voice === 'string' ? payload.preset.state.voice.trim().toLowerCase() : '';
-    const rawConfigVoice = typeof payload?.preset?.configuration?.voice === 'string' ? payload.preset.configuration.voice.trim().toLowerCase() : '';
+    const strippedPreset = migrateDeprecatedPresetFields([{ ...payload.preset }]).entries[0];
+    const rawStateVoice = typeof strippedPreset?.state?.voice === 'string' ? strippedPreset.state.voice.trim().toLowerCase() : '';
+    const rawConfigVoice = typeof strippedPreset?.configuration?.voice === 'string' ? strippedPreset.configuration.voice.trim().toLowerCase() : '';
     const hadCoreVoice = rawStateVoice === 'base' || rawConfigVoice === 'base';
 
-    const normalizedPreset = normalizePresetEntry(payload.preset);
+    const normalizedPreset = normalizePresetEntry(strippedPreset);
     if (!normalizedPreset) {
         return {
             ok: false,
