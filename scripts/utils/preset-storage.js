@@ -547,11 +547,129 @@ function serializePresetConfig(preset, options = {}) {
 }
 
 function deserializePresetConfig(payload) {
-    if (!payload || typeof payload !== 'object') {
-        return null;
+    const validation = validatePresetImportPayload(payload);
+    if (!validation.ok) {
+        return validation;
     }
 
-    return normalizePresetEntry(payload.preset);
+    return {
+        ok: true,
+        data: validation.data,
+        metadata: validation.metadata
+    };
+}
+
+function validatePresetImportPayload(payload) {
+    const fieldErrors = [];
+
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return {
+            ok: false,
+            code: 'invalid_payload_shape',
+            message: 'Import payload must be an object.',
+            fieldErrors: [{ path: '', message: 'Expected a JSON object payload.' }]
+        };
+    }
+
+    const requiredTopLevelKeys = ['schemaVersion', 'hardwareTarget', 'preset'];
+    requiredTopLevelKeys.forEach(key => {
+        if (!(key in payload)) {
+            fieldErrors.push({ path: key, message: `Missing required key "${key}".` });
+        }
+    });
+
+    if (fieldErrors.length) {
+        return { ok: false, code: 'missing_required_keys', message: 'Payload is missing required top-level keys.', fieldErrors };
+    }
+
+    if (!Number.isFinite(payload.schemaVersion)) {
+        fieldErrors.push({ path: 'schemaVersion', message: 'schemaVersion must be a finite number.' });
+    }
+
+    if (typeof payload.hardwareTarget !== 'string' || !payload.hardwareTarget.trim()) {
+        fieldErrors.push({ path: 'hardwareTarget', message: 'hardwareTarget must be a non-empty string.' });
+    }
+
+    const preset = payload.preset;
+    if (!preset || typeof preset !== 'object' || Array.isArray(preset)) {
+        fieldErrors.push({ path: 'preset', message: 'preset must be an object.' });
+    } else {
+        ['id', 'name'].forEach(key => {
+            if (!(key in preset)) {
+                fieldErrors.push({ path: `preset.${key}`, message: `Missing required key "${key}".` });
+            }
+        });
+
+        if (!('state' in preset) && !('configuration' in preset)) {
+            fieldErrors.push({ path: 'preset', message: 'preset must include state or configuration.' });
+        }
+
+        const stateValue = preset.state;
+        if (stateValue !== undefined && (typeof stateValue !== 'object' || stateValue === null || Array.isArray(stateValue))) {
+            fieldErrors.push({ path: 'preset.state', message: 'preset.state must be an object when provided.' });
+        }
+
+        const configValue = preset.configuration;
+        if (configValue !== undefined && (typeof configValue !== 'object' || configValue === null || Array.isArray(configValue))) {
+            fieldErrors.push({ path: 'preset.configuration', message: 'preset.configuration must be an object when provided.' });
+        }
+
+        const enumValidations = [
+            { path: 'preset.state.mount', value: preset.state?.mount, allowed: ['wall', 'ceiling'] },
+            { path: 'preset.state.power', value: preset.state?.power, allowed: ['usb', 'poe', 'pwr'] },
+            { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: ['none', 'base', 'pro'] },
+            { path: 'preset.state.presence', value: preset.state?.presence, allowed: ['none', 'base', 'pro'] },
+            { path: 'preset.state.comfort', value: preset.state?.comfort, allowed: ['none', 'base'] },
+            { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'pwm', 'analog'] },
+            { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ['wall', 'ceiling'] },
+            { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ['usb', 'poe', 'pwr'] },
+            { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: ['none', 'base', 'pro'] },
+            { path: 'preset.configuration.presence', value: preset.configuration?.presence, allowed: ['none', 'base', 'pro'] },
+            { path: 'preset.configuration.comfort', value: preset.configuration?.comfort, allowed: ['none', 'base'] },
+            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'pwm', 'analog'] }
+        ];
+
+        enumValidations.forEach(({ path, value, allowed }) => {
+            if (value === undefined || value === null) {
+                return;
+            }
+            const normalized = typeof value === 'string' ? value.trim().toLowerCase() : '';
+            if (!normalized || !allowed.includes(normalized)) {
+                fieldErrors.push({
+                    path,
+                    message: `Invalid value "${value}" for ${path}. Allowed values: ${allowed.join(', ')}.`
+                });
+            }
+        });
+    }
+
+    if (fieldErrors.length) {
+        return {
+            ok: false,
+            code: 'invalid_payload',
+            message: 'Import payload validation failed.',
+            fieldErrors
+        };
+    }
+
+    const normalizedPreset = normalizePresetEntry(payload.preset);
+    if (!normalizedPreset) {
+        return {
+            ok: false,
+            code: 'invalid_preset',
+            message: 'Preset could not be normalized.',
+            fieldErrors: [{ path: 'preset', message: 'Preset is invalid or missing required values.' }]
+        };
+    }
+
+    return {
+        ok: true,
+        data: normalizedPreset,
+        metadata: {
+            schemaVersion: Math.trunc(payload.schemaVersion),
+            hardwareTarget: payload.hardwareTarget.trim()
+        }
+    };
 }
 
 function generatePresetName(state = {}) {
@@ -662,5 +780,6 @@ export {
     PRESET_EXPORT_SCHEMA_VERSION,
     serializePresetConfig,
     deserializePresetConfig,
+    validatePresetImportPayload,
     validatePresetName
 };
