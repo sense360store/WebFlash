@@ -31,29 +31,67 @@ function updateBottomDetailsVisibility(step) {
 function getTotalSteps() {
     return totalSteps;
 }
-const defaultConfiguration = {
-    mounting: null,
-    power: null,
-    bathroom: false,
-    airiq: 'none',
-    bathroomairiq: 'none',
-    fan: 'none',
-    voice: 'none',
-    led: 'none',
-    bathroomairiq: 'none'
-};
+const MODULE_KEYS = Object.freeze(['voice', 'led', 'airiq', 'fan', 'bathroomairiq']);
+
+const SUPPORTED_CONFIG_KEYS = Object.freeze([
+    'mounting',
+    'power',
+    'bathroom',
+    ...MODULE_KEYS
+]);
+
+function createValidatedMap(label, entries, { allowedKeys = null } = {}) {
+    const map = {};
+    const seen = new Set();
+    const duplicates = new Set();
+
+    entries.forEach(([key, value]) => {
+        if (seen.has(key)) {
+            duplicates.add(key);
+            return;
+        }
+
+        seen.add(key);
+        map[key] = value;
+    });
+
+    if (duplicates.size) {
+        throw new Error(`[state] ${label} contains duplicate keys: ${Array.from(duplicates).join(', ')}`);
+    }
+
+    if (Array.isArray(allowedKeys) && allowedKeys.length) {
+        const unsupported = Object.keys(map).filter(key => !allowedKeys.includes(key));
+        if (unsupported.length) {
+            throw new Error(`[state] ${label} contains unsupported keys: ${unsupported.join(', ')}`);
+        }
+    }
+
+    return map;
+}
+
+const defaultConfiguration = createValidatedMap('defaultConfiguration', [
+    ['mounting', null],
+    ['power', null],
+    ['bathroom', false],
+    ['airiq', 'none'],
+    ['bathroomairiq', 'none'],
+    ['fan', 'none'],
+    ['voice', 'none'],
+    ['led', 'none']
+], { allowedKeys: SUPPORTED_CONFIG_KEYS });
+
 const configuration = { ...defaultConfiguration };
-const allowedOptions = {
-    mounting: ['wall', 'ceiling'],
-    power: ['usb', 'poe', 'pwr'],
-    bathroom: [false, true],
-    airiq: ['none', 'base', 'pro'],
-    bathroomairiq: ['none', 'base'],
-    fan: ['none', 'pwm', 'analog'],
-    voice: ['none'],
-    led: ['none', 'base'],
-    bathroomairiq: ['none', 'base', 'pro']
-};
+
+const allowedOptions = createValidatedMap('allowedOptions', [
+    ['mounting', ['wall', 'ceiling']],
+    ['power', ['usb', 'poe', 'pwr']],
+    ['bathroom', [false, true]],
+    ['airiq', ['none', 'base', 'pro']],
+    ['bathroomairiq', ['none', 'base', 'pro']],
+    ['fan', ['none', 'pwm', 'analog']],
+    ['voice', ['none']],
+    ['led', ['none', 'base']]
+], { allowedKeys: SUPPORTED_CONFIG_KEYS });
 
 const MOUNT_LABELS = Object.freeze({
     wall: 'Wall mount',
@@ -66,50 +104,43 @@ const POWER_LABELS = Object.freeze({
     pwr: 'PWR module'
 });
 
-const MODULE_VARIANT_LABELS = Object.freeze({
-    airiq: Object.freeze({
+const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
+    ['airiq', Object.freeze({
         base: 'AirIQ Base module',
         pro: 'AirIQ Pro module'
-    }),
-    bathroomairiq: Object.freeze({
-        base: 'VentIQ Base module'
-    }),
-    fan: Object.freeze({
-        pwm: 'Fan PWM module',
-        analog: 'Fan Analog module'
-    }),
-    voice: Object.freeze({
-        none: 'Core (standard module)',
-
-    }),
-    led: Object.freeze({
-        none: 'No LED Ring',
-        base: 'LED Ring module'
-    }),
-    bathroomairiq: Object.freeze({
+    })],
+    ['bathroomairiq', Object.freeze({
         base: 'VentIQ Base module',
         pro: 'VentIQ Pro module'
-    })
-});
+    })],
+    ['fan', Object.freeze({
+        pwm: 'Fan PWM module',
+        analog: 'Fan Analog module'
+    })],
+    ['voice', Object.freeze({
+        none: 'Core (standard module)'
+    })],
+    ['led', Object.freeze({
+        none: 'No LED Ring',
+        base: 'LED Ring module'
+    })]
+], { allowedKeys: MODULE_KEYS }));
 
-const MODULE_KEYS = ['voice', 'led', 'airiq', 'fan', 'bathroomairiq'];
-const MODULE_LABELS = {
-    airiq: 'AirIQ',
-    bathroomairiq: 'VentIQ',
-            fan: 'Fan / Switching',
-    voice: 'Core Type',
-    led: 'LED Ring',
-    bathroomairiq: 'VentIQ'
-};
+const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
+    ['airiq', 'AirIQ'],
+    ['bathroomairiq', 'VentIQ'],
+    ['fan', 'Fan / Switching'],
+    ['voice', 'Core Type'],
+    ['led', 'LED Ring']
+], { allowedKeys: MODULE_KEYS });
 
-const MODULE_SEGMENT_FORMATTERS = {
-    airiq: value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`,
-    bathroomairiq: value => `VentIQ${value === 'base' ? '' : value.charAt(0).toUpperCase() + value.slice(1)}`,
-    fan: value => `Fan${value.toUpperCase()}`,
-    voice: () => 'Core',
-    led: value => value === 'base' ? 'LED' : '',
-    bathroomairiq: value => `VentIQ${value.charAt(0).toUpperCase() + value.slice(1)}`
-};
+const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
+    ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
+    ['bathroomairiq', value => `VentIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
+    ['fan', value => `Fan${value.toUpperCase()}`],
+    ['voice', () => 'Core'],
+    ['led', value => value === 'base' ? 'LED' : '']
+], { allowedKeys: MODULE_KEYS });
 
 let activeModuleGroupKey = null;
 
