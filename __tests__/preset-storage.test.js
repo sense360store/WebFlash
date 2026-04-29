@@ -28,7 +28,7 @@ describe('preset storage duplicate name handling', () => {
 
         const options = { storage: storageAdapter, storageKey: 'test.presets', maxEntries: 20 };
 
-        const initial = savePreset('Office', {
+        const initialResult = savePreset('Office', {
             mounting: 'wall',
             power: 'usb',
             airiq: 'none',
@@ -37,7 +37,7 @@ describe('preset storage duplicate name handling', () => {
             fan: 'none'
         }, options);
 
-        const replaced = upsertPresetByName(' office ', {
+        const replacedResult = upsertPresetByName(' office ', {
             mounting: 'ceiling',
             power: 'poe',
             airiq: 'base',
@@ -46,12 +46,13 @@ describe('preset storage duplicate name handling', () => {
             fan: 'none'
         }, options);
 
-        const presets = listPresets(options);
+        const presets = listPresets(options).data;
 
-        expect(replaced).not.toBeNull();
-        expect(replaced.id).toBe(initial.id);
+        expect(replacedResult).not.toBeNull();
+        expect(replacedResult.ok).toBe(true);
+        expect(replacedResult.data.id).toBe(initialResult.data.id);
         expect(presets).toHaveLength(1);
-        expect(presets[0].id).toBe(initial.id);
+        expect(presets[0].id).toBe(initialResult.data.id);
         expect(presets[0].configuration.mounting).toBe('ceiling');
         expect(presets[0].configuration.power).toBe('poe');
         expect(presets[0].name).toBe('office');
@@ -89,7 +90,28 @@ describe('preset storage duplicate name handling', () => {
             fan: 'none'
         }, options);
 
-        const presets = listPresets(options);
+        const presets = listPresets(options).data;
         expect(presets).toHaveLength(2);
     });
+});
+
+
+test('deserializePresetConfig downgrades core voice to none with notice', async () => {
+    const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+
+    const result = deserializePresetConfig({
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-wall-usb',
+        preset: {
+            id: 'p1',
+            name: 'Legacy Voice',
+            state: { mount: 'wall', power: 'usb', voice: 'base' },
+            configuration: { mounting: 'wall', power: 'usb', voice: 'base' }
+        }
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.data.state.voice).toBe('none');
+    expect(result.data.configuration.voice).toBe('none');
+    expect(result.metadata.notices).toContain('Core Voice is coming soon and was downgraded to Core.');
 });

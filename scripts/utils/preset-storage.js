@@ -115,7 +115,8 @@ function normalizePresetState(state = {}) {
         airiq: normalizeStringChoice(state.airiq, ['none', 'base', 'pro'], 'none'),
         presence: normalizeStringChoice(state.presence, ['none', 'base', 'pro'], 'none'),
         comfort: normalizeStringChoice(state.comfort, ['none', 'base'], 'none'),
-        fan: normalizeStringChoice(state.fan, ['none', 'pwm', 'analog'], 'none')
+        fan: normalizeStringChoice(state.fan, ['none', 'pwm', 'analog'], 'none'),
+        voice: normalizeStringChoice(state.voice, ['none'], 'none')
     };
 
     if (normalized.mount !== 'wall') {
@@ -138,7 +139,8 @@ function normalizePresetConfiguration(configuration = {}, state = {}) {
         airiq: normalizeStringChoice(configuration.airiq ?? normalizedState.airiq, ['none', 'base', 'pro'], 'none'),
         presence: normalizeStringChoice(configuration.presence ?? normalizedState.presence, ['none', 'base', 'pro'], 'none'),
         comfort: normalizeStringChoice(configuration.comfort ?? normalizedState.comfort, ['none', 'base'], 'none'),
-        fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ['none', 'pwm', 'analog'], 'none')
+        fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ['none', 'pwm', 'analog'], 'none'),
+        voice: normalizeStringChoice(configuration.voice ?? normalizedState.voice, ['none'], 'none')
     };
 
     if (normalized.mounting !== 'wall') {
@@ -377,7 +379,11 @@ function upsertPresetByName(name, configuration, options = {}) {
     }
 
     const resolvedOptions = resolveOptions(options);
-    const entries = ensurePresetList(resolvedOptions);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+    const entries = ensured.data;
     const existing = entries.find(entry => normalizePresetName(entry.name) === normalizedName);
 
     if (!existing) {
@@ -621,12 +627,14 @@ function validatePresetImportPayload(payload) {
             { path: 'preset.state.presence', value: preset.state?.presence, allowed: ['none', 'base', 'pro'] },
             { path: 'preset.state.comfort', value: preset.state?.comfort, allowed: ['none', 'base'] },
             { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'pwm', 'analog'] },
+                        { path: 'preset.state.voice', value: preset.state?.voice, allowed: ['none', 'base'] },
             { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ['wall', 'ceiling'] },
             { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: ['none', 'base', 'pro'] },
             { path: 'preset.configuration.presence', value: preset.configuration?.presence, allowed: ['none', 'base', 'pro'] },
             { path: 'preset.configuration.comfort', value: preset.configuration?.comfort, allowed: ['none', 'base'] },
-            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'pwm', 'analog'] }
+            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'pwm', 'analog'] },
+            { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: ['none', 'base'] },
         ];
 
         enumValidations.forEach(({ path, value, allowed }) => {
@@ -652,6 +660,10 @@ function validatePresetImportPayload(payload) {
         };
     }
 
+    const rawStateVoice = typeof payload?.preset?.state?.voice === 'string' ? payload.preset.state.voice.trim().toLowerCase() : '';
+    const rawConfigVoice = typeof payload?.preset?.configuration?.voice === 'string' ? payload.preset.configuration.voice.trim().toLowerCase() : '';
+    const hadCoreVoice = rawStateVoice === 'base' || rawConfigVoice === 'base';
+
     const normalizedPreset = normalizePresetEntry(payload.preset);
     if (!normalizedPreset) {
         return {
@@ -662,12 +674,25 @@ function validatePresetImportPayload(payload) {
         };
     }
 
+    const normalizedWithVoiceFallback = {
+        ...normalizedPreset,
+        state: {
+            ...normalizedPreset.state,
+            voice: 'none'
+        },
+        configuration: {
+            ...normalizedPreset.configuration,
+            voice: 'none'
+        }
+    };
+
     return {
         ok: true,
-        data: normalizedPreset,
+        data: normalizedWithVoiceFallback,
         metadata: {
             schemaVersion: Math.trunc(payload.schemaVersion),
-            hardwareTarget: payload.hardwareTarget.trim()
+            hardwareTarget: payload.hardwareTarget.trim(),
+            notices: hadCoreVoice ? ['Core Voice is coming soon and was downgraded to Core.'] : []
         }
     };
 }

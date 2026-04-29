@@ -459,4 +459,12 @@ describe('wizard state module', () => {
         expect(headingSelection.textContent.trim()).toBe('');
         expect(headingLabel.textContent.trim()).toBe('Compatible Firmware');
     });
+
+    test('replaceState coerces legacy voice base to none', async () => {
+        const stateModule = await import('../scripts/state.js');
+
+        stateModule.replaceState({ mount: 'wall', power: 'usb', voice: 'base' }, { skipUrlUpdate: true });
+
+        expect(stateModule.getState().voice).toBe('none');
+    });
 });
