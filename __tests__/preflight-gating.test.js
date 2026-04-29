@@ -22,6 +22,7 @@ function renderDom() {
       <ul data-preflight-list>
         <li data-preflight-item="browser-support"><span data-preflight-status="browser-support"></span><span data-preflight-detail="browser-support"></span></li>
         <li data-preflight-item="device-visibility"><span data-preflight-status="device-visibility"></span><span data-preflight-detail="device-visibility"></span></li>
+        <li data-preflight-item="connection-quality"><span data-preflight-status="connection-quality"></span><span data-preflight-detail="connection-quality"></span></li>
         <li data-preflight-item="firmware-verification"><span data-preflight-status="firmware-verification"></span><span data-preflight-detail="firmware-verification"></span></li>
         <li data-preflight-item="user-acknowledgement"><span data-preflight-status="user-acknowledgement"></span><span data-preflight-detail="user-acknowledgement"></span></li>
       </ul>
@@ -85,5 +86,51 @@ describe('preflight install gating', () => {
 
     expect(document.querySelector('[data-preflight-list]').hidden).not.toBe(true);
     expect(document.getElementById('step-5').hidden).toBe(false);
+  });
+
+  test('connection quality passes when stable and failure-free', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.updateConnectionQualityMetrics({
+      disconnects: 0,
+      reconnectAttempts: 0,
+      serialReadFailures: 0,
+      serialWriteFailures: 0,
+      retryCount: 0,
+      stabilityWindowStart: Date.now() - 35000
+    });
+    const checks = await __testHooks.refreshPreflightDiagnostics();
+    const quality = checks.find((check) => check.key === 'connection-quality');
+    expect(quality.state).toBe('pass');
+  });
+
+  test('connection quality warns at boundary thresholds', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.updateConnectionQualityMetrics({
+      disconnects: 1,
+      reconnectAttempts: 1,
+      serialReadFailures: 0,
+      serialWriteFailures: 1,
+      retryCount: 2,
+      stabilityWindowStart: Date.now() - 30000
+    });
+    const checks = await __testHooks.refreshPreflightDiagnostics();
+    const quality = checks.find((check) => check.key === 'connection-quality');
+    expect(quality.state).toBe('warn');
+  });
+
+  test('connection quality fails when link is flaky', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.updateConnectionQualityMetrics({
+      disconnects: 3,
+      reconnectAttempts: 4,
+      serialReadFailures: 2,
+      serialWriteFailures: 1,
+      retryCount: 5,
+      stabilityWindowStart: Date.now() - 9000
+    });
+    const checks = await __testHooks.refreshPreflightDiagnostics();
+    const quality = checks.find((check) => check.key === 'connection-quality');
+    expect(quality.state).toBe('fail');
+    expect(quality.blocking).toBe(true);
   });
 });

@@ -862,7 +862,7 @@
                 <section class="preflight-panel" data-preflight-panel aria-labelledby="preflight-checks-heading">
                     <div class="preflight-panel__header">
                         <h3 id="preflight-checks-heading">Preflight checks</h3>
-                        <p>We run these diagnostics before flashing so you can confirm your setup is ready.</p>
+                        <p>We run these diagnostics before flashing so you can confirm your setup is ready. Each result explains why it was assigned and what to do next.</p>
                     </div>
                     <ul class="preflight-panel__list" data-preflight-list role="status" aria-live="polite" aria-label="Preflight diagnostics">
                         <li class="preflight-panel__item" data-preflight-item="browser-support" data-status="pending">
@@ -874,6 +874,11 @@
                             <span class="preflight-panel__label">Device connection visibility</span>
                             <span class="preflight-panel__status" data-preflight-status="device-visibility" aria-live="polite" role="status"></span>
                             <p class="preflight-panel__detail" data-preflight-detail="device-visibility"></p>
+                        </li>
+                        <li class="preflight-panel__item" data-preflight-item="connection-quality" data-status="pending">
+                            <span class="preflight-panel__label">Connection quality</span>
+                            <span class="preflight-panel__status" data-preflight-status="connection-quality" aria-live="polite" role="status"></span>
+                            <p class="preflight-panel__detail" data-preflight-detail="connection-quality"></p>
                         </li>
                         <li class="preflight-panel__item" data-preflight-item="firmware-verification" data-status="pending">
                             <span class="preflight-panel__label">Firmware verification</span>
