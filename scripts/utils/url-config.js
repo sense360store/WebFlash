@@ -7,13 +7,13 @@
  * Order of configuration parameters for consistent URL generation.
  * @type {readonly string[]}
  */
-const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'led', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
+const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'led', 'airiq', 'bathroomairiq', 'fan']);
 
 /**
  * Keys for optional module configuration parameters.
  * @type {readonly string[]}
  */
-const CONFIG_MODULE_KEYS = Object.freeze(['led', 'airiq', 'bathroomairiq', 'presence', 'comfort', 'fan']);
+const CONFIG_MODULE_KEYS = Object.freeze(['led', 'airiq', 'bathroomairiq', 'fan']);
 
 /**
  * Required configuration parameters that must be present for a valid config.
@@ -28,8 +28,6 @@ const DEFAULT_SANITIZED_CONFIG = Object.freeze({
     led: 'none',
     airiq: 'none',
     bathroomairiq: 'none',
-    presence: 'none',
-    comfort: 'none',
     fan: 'none'
 });
 
@@ -102,37 +100,6 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         ]),
         allowedValues: Object.freeze(['none', 'base'])
     }),
-    presence: Object.freeze({
-        required: false,
-        aliases: Object.freeze(['presence']),
-        defaultOption: 'none',
-        options: new Map([
-            ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'RoomIQMotionBase' }],
-            ['pro', { wizardValue: 'pro', configSegment: 'RoomIQMotionPro' }]
-        ]),
-        allowedValues: Object.freeze(['none', 'base', 'pro']),
-        legacyValues: new Map([
-            ['presencebase', 'base'],
-            ['presencepro', 'pro'],
-            ['roomiqmotionbase', 'base'],
-            ['roomiqmotionpro', 'pro']
-        ])
-    }),
-    comfort: Object.freeze({
-        required: false,
-        aliases: Object.freeze(['comfort']),
-        defaultOption: 'none',
-        options: new Map([
-            ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'RoomIQClimateBase' }]
-        ]),
-        allowedValues: Object.freeze(['none', 'base']),
-        legacyValues: new Map([
-            ['comfortbase', 'base'],
-            ['roomiqclimatebase', 'base']
-        ])
-    }),
     fan: Object.freeze({
         required: false,
         aliases: Object.freeze(['fan']),
@@ -184,7 +151,7 @@ function ensureSearchParams(input) {
  *
  * Handles:
  * - Required parameters (mount, power)
- * - Optional module parameters (airiq, presence, comfort, fan)
+ * - Optional module parameters (airiq, bathroomairiq, fan)
  * - Legacy value aliases (e.g., 'pwr' → 'ac')
  * - Optional module parameters with defaults
  *
@@ -205,8 +172,7 @@ function parseConfigParams(inputParams) {
         power: DEFAULT_SANITIZED_CONFIG.power,
         led: DEFAULT_SANITIZED_CONFIG.led,
         airiq: DEFAULT_SANITIZED_CONFIG.airiq,
-        presence: DEFAULT_SANITIZED_CONFIG.presence,
-        comfort: DEFAULT_SANITIZED_CONFIG.comfort,
+        bathroomairiq: DEFAULT_SANITIZED_CONFIG.bathroomairiq,
         fan: DEFAULT_SANITIZED_CONFIG.fan
     };
 
@@ -401,8 +367,6 @@ function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
         led: safeConfig.led ?? DEFAULT_SANITIZED_CONFIG.led,
         airiq: safeConfig.airiq ?? DEFAULT_SANITIZED_CONFIG.airiq,
         bathroomairiq: safeConfig.bathroomairiq ?? DEFAULT_SANITIZED_CONFIG.bathroomairiq,
-        presence: safeConfig.presence ?? DEFAULT_SANITIZED_CONFIG.presence,
-        comfort: safeConfig.comfort ?? DEFAULT_SANITIZED_CONFIG.comfort,
         fan: safeConfig.fan ?? DEFAULT_SANITIZED_CONFIG.fan
     };
 }
