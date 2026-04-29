@@ -109,7 +109,7 @@ const MODULE_LABELS = {
     bathroomairiq: 'Bathroom AirIQ',
     presence: 'Presence',
     comfort: 'Comfort',
-    fan: 'Fan',
+    fan: 'Fan / Switching',
     voice: 'Core Type',
     led: 'LED Ring',
     bathroomairiq: 'Bathroom AirIQ'
@@ -2349,7 +2349,7 @@ function updateSummary() {
         };
         summaryHtml += `
             <div class="summary-item">
-                <div class="summary-label">Fan Module:</div>
+                <div class="summary-label">Fan / Switching:</div>
                 <div class="summary-value">${configuration.fan.toUpperCase()}</div>
                 <div class="summary-sensors">${fanTypes[configuration.fan]}</div>
             </div>

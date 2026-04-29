@@ -148,26 +148,26 @@ const MODULE_REQUIREMENT_MATRIX = {
         }
     },
     fan: {
-        label: 'Fan Module',
-        summary: 'Output driver options for external fan control.',
+        label: 'Fan / Switching',
+        summary: 'Driver options for external fan and load switching control.',
         variants: {
             none: {
-                label: 'None',
-                coreRevision: null,
-                headers: [],
+                label: 'Sense360 Fan Relay',
+                coreRevision: 'R4',
+                headers: ['S360-Relay-C'],
                 conflicts: [],
                 recommended: true
             },
             pwm: {
-                label: 'PWM',
-                coreRevision: 'Rev A core or newer',
-                headers: ['J9 PWM driver'],
+                label: 'Sense360 Fan PWM',
+                coreRevision: 'R4',
+                headers: ['12vFan_PWM_PulseCounter'],
                 conflicts: []
             },
             analog: {
-                label: 'Analog',
-                coreRevision: 'Rev C core or newer',
-                headers: ['J4 analog DAC', 'J10 isolation harness'],
+                label: 'Sense360 Fan DAC',
+                coreRevision: 'R4',
+                headers: ['Fan_GP8403'],
                 conflicts: [
                     {
                         module: 'airiq',
