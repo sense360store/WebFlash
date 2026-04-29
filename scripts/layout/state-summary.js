@@ -14,8 +14,10 @@ import {
     normalizePresetName,
     getCurrentWizardStep,
     applyPresetStateToWizard,
-    PRESET_STORAGE_OPTIONS
+    PRESET_STORAGE_OPTIONS,
+    serializePresetConfig
 } from '../utils/preset-storage.js';
+import { downloadJsonFile } from '../utils/file-download.js';
 
 const moduleSummaryRefs = new Map();
 const presetCache = new Map();
@@ -846,6 +848,13 @@ let mobileSummaryMediaQuery = null;
             deleteButton.textContent = 'Delete';
             actions.appendChild(deleteButton);
 
+            const exportButton = document.createElement('button');
+            exportButton.type = 'button';
+            exportButton.className = 'preset-panel__action-button';
+            exportButton.dataset.presetAction = 'export';
+            exportButton.textContent = 'Export JSON';
+            actions.appendChild(exportButton);
+
             item.appendChild(actions);
             fragment.appendChild(item);
         });
@@ -963,6 +972,8 @@ let mobileSummaryMediaQuery = null;
             handlePresetRename(presetId);
         } else if (action === 'delete') {
             handlePresetDelete(presetId);
+        } else if (action === 'export') {
+            handlePresetExport(presetId);
         }
     }
 
@@ -1046,6 +1057,22 @@ let mobileSummaryMediaQuery = null;
         }
         setPresetError('');
         renderPresetList();
+    }
+
+    function handlePresetExport(presetId) {
+        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!preset) {
+            return;
+        }
+
+        const payload = serializePresetConfig(preset);
+        if (!payload) {
+            return;
+        }
+
+        const slug = preset.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'preset';
+        const filename = `${slug}.config.json`;
+        downloadJsonFile(filename, payload);
     }
 
     function initializePresetManager() {
