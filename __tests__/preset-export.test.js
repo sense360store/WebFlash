@@ -203,4 +203,126 @@ describe('preset export JSON', () => {
       }
     });
   });
+
+  test.each([
+    {
+      name: 'mixed-case + whitespace enum values normalize, optional modules default to none, and step clamps high',
+      input: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-wall-usb',
+        preset: {
+          id: 'fixture-1',
+          name: ' Fixture 1 ',
+          state: { mount: ' Wall ', power: 'USB', currentStep: 99 },
+          configuration: { mounting: ' Wall ', power: 'USB' },
+          meta: { currentStep: 99 }
+        }
+      },
+      expected: {
+        state: { mount: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none', currentStep: 4 },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none' },
+        meta: { currentStep: 4 }
+      }
+    },
+    {
+      name: 'currentStep clamps low bound to 1',
+      input: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-wall-usb',
+        preset: {
+          id: 'fixture-2',
+          name: 'Fixture 2',
+          state: { mount: 'wall', power: 'usb', currentStep: 0 },
+          configuration: { mounting: 'wall', power: 'usb' },
+          meta: { currentStep: -5 }
+        }
+      },
+      expected: {
+        state: { mount: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none', currentStep: 1 },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none' },
+        meta: { currentStep: 1 }
+      }
+    }
+  ])('normalize-on-import regression: $name', async ({ input, expected }) => {
+    const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+    const result = deserializePresetConfig(input);
+
+    expect(result.ok).toBe(true);
+    expect(result.data.state).toEqual(expected.state);
+    expect(result.data.configuration).toEqual(expected.configuration);
+    expect(result.data.meta).toEqual(expected.meta);
+  });
+
+  test.each([
+    {
+      name: 'fan pwm gets coerced to none on ceiling mount in state/configuration',
+      input: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-ceiling-poe',
+        preset: {
+          id: 'fixture-fan-1',
+          name: 'Ceiling PWM',
+          state: { mount: 'ceiling', power: 'poe', fan: 'pwm' },
+          configuration: { mounting: 'ceiling', power: 'poe', fan: 'pwm' }
+        }
+      }
+    }
+  ])('fan coercion regression: $name', async ({ input }) => {
+    const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+    const result = deserializePresetConfig(input);
+
+    expect(result.ok).toBe(true);
+    expect(result.data.state.fan).toBe('none');
+    expect(result.data.configuration.fan).toBe('none');
+  });
+
+  test.each([
+    {
+      name: 'negative timestamps normalize to fallback/null',
+      input: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-wall-usb',
+        preset: {
+          id: 'fixture-ts-neg',
+          name: 'Negative TS',
+          state: { mount: 'wall', power: 'usb' },
+          configuration: { mounting: 'wall', power: 'usb' },
+          createdAt: -1,
+          updatedAt: -2,
+          appliedAt: -3
+        }
+      },
+      expected: { createdAt: null, updatedAt: 'number', appliedAt: null }
+    },
+    {
+      name: 'non-finite timestamps normalize to fallback/null',
+      input: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-wall-usb',
+        preset: {
+          id: 'fixture-ts-nonfinite',
+          name: 'Non Finite TS',
+          state: { mount: 'wall', power: 'usb' },
+          configuration: { mounting: 'wall', power: 'usb' },
+          createdAt: Number.NaN,
+          updatedAt: Number.POSITIVE_INFINITY,
+          appliedAt: Number.NEGATIVE_INFINITY
+        }
+      },
+      expected: { createdAt: null, updatedAt: 'number', appliedAt: null }
+    }
+  ])('timestamp normalization regression: $name', async ({ input, expected }) => {
+    const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+    const result = deserializePresetConfig(input);
+
+    expect(result.ok).toBe(true);
+    if (expected.createdAt === null) {
+      expect(result.data.createdAt).toBe(result.data.updatedAt);
+    }
+    if (expected.updatedAt === 'number') {
+      expect(Number.isFinite(result.data.updatedAt)).toBe(true);
+      expect(result.data.updatedAt).toBeGreaterThanOrEqual(0);
+    }
+    expect(result.data.appliedAt).toBe(expected.appliedAt);
+  });
 });
