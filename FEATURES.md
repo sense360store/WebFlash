@@ -77,8 +77,8 @@ This document tracks implemented and planned features for the WebFlash firmware 
 - [ ] Connected device dashboard
 
 ### Enhanced Configuration
-- [ ] User-saved configuration presets
-- [ ] Configuration import/export (JSON)
+- [x] User-saved configuration presets
+- [~] Configuration import/export (JSON) — Export complete; import parsing implemented in storage utility, pending UI integration
 - [ ] Configuration comparison tool
 - [ ] Advanced mode with all options visible
 
