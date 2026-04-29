@@ -108,10 +108,16 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'PresenceBase' }],
-            ['pro', { wizardValue: 'pro', configSegment: 'PresencePro' }]
+            ['base', { wizardValue: 'base', configSegment: 'RoomIQMotionBase' }],
+            ['pro', { wizardValue: 'pro', configSegment: 'RoomIQMotionPro' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base', 'pro'])
+        allowedValues: Object.freeze(['none', 'base', 'pro']),
+        legacyValues: new Map([
+            ['presencebase', 'base'],
+            ['presencepro', 'pro'],
+            ['roomiqmotionbase', 'base'],
+            ['roomiqmotionpro', 'pro']
+        ])
     }),
     comfort: Object.freeze({
         required: false,
@@ -119,9 +125,13 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'ComfortBase' }]
+            ['base', { wizardValue: 'base', configSegment: 'RoomIQClimateBase' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base'])
+        allowedValues: Object.freeze(['none', 'base']),
+        legacyValues: new Map([
+            ['comfortbase', 'base'],
+            ['roomiqclimatebase', 'base']
+        ])
     }),
     fan: Object.freeze({
         required: false,
