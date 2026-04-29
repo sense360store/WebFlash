@@ -676,6 +676,7 @@ let mobileSummaryMediaQuery = null;
 
         const list = root.querySelector('[data-preset-list]');
         const empty = root.querySelector('[data-preset-empty]');
+        const error = root.querySelector('[data-preset-error]');
         const form = root.querySelector('[data-preset-form]');
         const nameInput = root.querySelector('[data-preset-name]');
         const saveButton = root.querySelector('[data-preset-save]');
@@ -685,7 +686,7 @@ let mobileSummaryMediaQuery = null;
             return null;
         }
 
-        presetManagerRefs = { root, list, empty, form, nameInput, saveButton };
+        presetManagerRefs = { root, list, empty, error, form, nameInput, saveButton };
         bindPresetManager(presetManagerRefs);
         return presetManagerRefs;
     }
@@ -763,13 +764,23 @@ let mobileSummaryMediaQuery = null;
         return validation;
     }
 
-    function updatePresetEmptyState(presets) {
+    function setPresetError(message) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !refs.error) {
+            return;
+        }
+
+        refs.error.textContent = message || '';
+        refs.error.hidden = !message;
+    }
+
+    function updatePresetEmptyState(presets, readErrorCode = null) {
         const refs = ensurePresetManagerRefs();
         if (!refs) {
             return;
         }
 
-        refs.empty.hidden = presets.length > 0;
+        refs.empty.hidden = presets.length > 0 || readErrorCode === 'read_failed' || readErrorCode === 'parse_failed';
         refs.list.hidden = presets.length === 0;
     }
 
@@ -779,7 +790,8 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        const presets = listPresets(PRESET_STORAGE_OPTIONS);
+        const listResult = listPresets(PRESET_STORAGE_OPTIONS);
+        const presets = listResult.ok ? listResult.data : [];
         presetCache.clear();
 
         while (refs.list.firstChild) {
@@ -829,7 +841,13 @@ let mobileSummaryMediaQuery = null;
         });
 
         refs.list.appendChild(fragment);
-        updatePresetEmptyState(presets);
+        updatePresetEmptyState(presets, listResult.ok ? null : listResult.error?.code);
+
+        if (!listResult.ok) {
+            setPresetError('Could not read saved presets from storage.');
+        } else {
+            setPresetError('');
+        }
     }
 
     function updatePresetSaveState(state) {
@@ -866,17 +884,23 @@ let mobileSummaryMediaQuery = null;
         const presetName = nameValidation.normalized || generatePresetName(state);
         const currentStep = getCurrentWizardStep();
 
-        const saved = savePreset(presetName, configuration, {
+        const savedResult = savePreset(presetName, configuration, {
             ...PRESET_STORAGE_OPTIONS,
             state,
             currentStep
         });
 
-        if (saved) {
-            markPresetApplied(saved.id, PRESET_STORAGE_OPTIONS);
+        if (!savedResult.ok) {
+            setPresetError(savedResult.error?.code === 'read_failed' ? 'Could not read presets before saving.' : 'Could not save preset due to a storage error.');
+            return;
+        }
+
+        if (savedResult.data) {
+            markPresetApplied(savedResult.data.id, PRESET_STORAGE_OPTIONS);
         }
 
         refs.nameInput.value = '';
+        setPresetError('');
         renderPresetList();
         updatePresetSaveState(state);
         refs.nameInput.focus();
@@ -912,19 +936,38 @@ let mobileSummaryMediaQuery = null;
     }
 
     function applyPresetById(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
         applyPresetStateToWizard(preset.state);
-        markPresetApplied(preset.id, PRESET_STORAGE_OPTIONS);
+        const markResult = markPresetApplied(preset.id, PRESET_STORAGE_OPTIONS);
+        if (!markResult.ok) {
+            setPresetError('Preset was applied, but could not update storage.');
+        } else {
+            setPresetError('');
+        }
         renderPresetList();
     }
 
     function handlePresetRename(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
@@ -938,13 +981,25 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        renamePreset(presetId, trimmed, PRESET_STORAGE_OPTIONS);
+        const renameResult = renamePreset(presetId, trimmed, PRESET_STORAGE_OPTIONS);
+        if (!renameResult.ok) {
+            setPresetError('Could not rename preset due to a storage error.');
+            return;
+        }
+        setPresetError('');
         renderPresetList();
     }
 
     function handlePresetDelete(presetId) {
-        const preset = presetCache.get(presetId) || getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        const cached = presetCache.get(presetId);
+        const presetResult = cached ? { ok: true, data: cached } : getPreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!presetResult.ok) {
+            setPresetError('Could not read preset from storage.');
+            return;
+        }
+        const preset = presetResult.data;
         if (!preset) {
+            setPresetError('Preset is no longer available.');
             return;
         }
 
@@ -953,7 +1008,12 @@ let mobileSummaryMediaQuery = null;
             return;
         }
 
-        deletePreset(presetId, PRESET_STORAGE_OPTIONS);
+        const deleteResult = deletePreset(presetId, PRESET_STORAGE_OPTIONS);
+        if (!deleteResult.ok) {
+            setPresetError('Could not delete preset due to a storage error.');
+            return;
+        }
+        setPresetError('');
         renderPresetList();
     }
 
