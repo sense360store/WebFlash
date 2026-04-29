@@ -24,8 +24,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Conflicts with Bathroom AirIQ — only one air quality module can be active at a time.',
-                        detail: 'Choose either standard AirIQ or Bathroom AirIQ, not both.'
+                        message: 'Conflicts with VentIQ — only one air quality module can be active at a time.',
+                        detail: 'Choose either standard AirIQ or VentIQ, not both.'
                     }
                 ]
             },
@@ -43,15 +43,15 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Conflicts with Bathroom AirIQ — only one air quality module can be active at a time.',
-                        detail: 'Choose either standard AirIQ or Bathroom AirIQ, not both.'
+                        message: 'Conflicts with VentIQ — only one air quality module can be active at a time.',
+                        detail: 'Choose either standard AirIQ or VentIQ, not both.'
                     }
                 ]
             }
         }
     },
     bathroomairiq: {
-        label: 'Bathroom AirIQ Module',
+        label: 'VentIQ Module',
         summary: 'Bathroom-optimized air quality sensing with humidity, pressure, VOC/NOx, and optional condensation detection.',
         ceilingOnly: true,
         requiresBathroom: true,
