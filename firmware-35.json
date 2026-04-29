@@ -1,5 +1,5 @@
 {
-  "name": "Sense360 ESP32 Firmware - Core Module",
+  "name": "Sense360 Modular Platform Firmware",
   "version": "3.0.1",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
@@ -10,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Wall-Presence-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-Mini-AirIQ-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "ebce46a5a5b9a74c1fa7a0f2f1ecf23e",
-          "sha256": "3acca3694d255aba5d510f8b96f2336cee630347cbbb95dd74510956b17c0d22",
-          "signature": "vSjJw/F8Tc2dpIZANEfyRAJetEzfgIUx/q6E62PO/4w="
+          "md5": "21f8dc672eee75a8de179814d89bf2ea",
+          "sha256": "fd9b4077c360d17037972599408df3b68004f62e6fc7d7a21ac5532b9a810b95",
+          "signature": "ZyBc/7EV6c7hT/37FTzWaYbK4VATcNgtUrumdSfUMrk="
         }
       ],
       "improv": true,
-      "md5": "ebce46a5a5b9a74c1fa7a0f2f1ecf23e",
-      "sha256": "3acca3694d255aba5d510f8b96f2336cee630347cbbb95dd74510956b17c0d22",
-      "signature": "vSjJw/F8Tc2dpIZANEfyRAJetEzfgIUx/q6E62PO/4w="
+      "md5": "21f8dc672eee75a8de179814d89bf2ea",
+      "sha256": "fd9b4077c360d17037972599408df3b68004f62e6fc7d7a21ac5532b9a810b95",
+      "signature": "ZyBc/7EV6c7hT/37FTzWaYbK4VATcNgtUrumdSfUMrk="
     }
   ]
 }

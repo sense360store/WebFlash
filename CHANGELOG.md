@@ -17,6 +17,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Added X-Frame-Options, X-Content-Type-Options, and X-XSS-Protection headers
 - Implemented strict Referrer-Policy
 
+### Changed
+- Retired Presence/Comfort firmware module variants were removed from manifests and distribution artifacts.
+
 ## [2.0.0] - 2025
 
 ### Added
