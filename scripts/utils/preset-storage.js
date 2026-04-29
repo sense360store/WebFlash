@@ -668,12 +668,12 @@ function validatePresetImportPayload(payload) {
             { path: 'preset.state.power', value: preset.state?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: ['none', 'base', 'pro'] },
             { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'pwm', 'analog'] },
-                        { path: 'preset.state.voice', value: preset.state?.voice, allowed: ['none', 'base'] },
+                        { path: 'preset.state.voice', value: preset.state?.voice, allowed: ['none'] },
             { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ['wall', 'ceiling'] },
             { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: ['none', 'base', 'pro'] },
             { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'pwm', 'analog'] },
-            { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: ['none', 'base'] },
+            { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: ['none'] },
         ];
 
         enumValidations.forEach(({ path, value, allowed }) => {
@@ -732,7 +732,7 @@ function validatePresetImportPayload(payload) {
         metadata: {
             schemaVersion: Math.trunc(payload.schemaVersion),
             hardwareTarget: payload.hardwareTarget.trim(),
-            notices: hadCoreVoice ? ['Core Voice is coming soon and was downgraded to Core.'] : []
+            notices: []
         }
     };
 }
