@@ -78,7 +78,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 ### Enhanced Configuration
 - [x] User-saved configuration presets
-- [~] Configuration import/export (JSON) — Export complete; import parsing implemented in storage utility, pending UI integration
+- [~] Configuration import/export (JSON) — Export complete in UI; import backend parsing implemented (`deserializePresetConfig`) but pending UI integration
 - [ ] Configuration comparison tool
 - [ ] Advanced mode with all options visible
 
