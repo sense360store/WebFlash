@@ -32,8 +32,6 @@ describe('preset storage duplicate name handling', () => {
             mounting: 'wall',
             power: 'usb',
             airiq: 'none',
-            presence: 'none',
-            comfort: 'none',
             fan: 'none'
         }, options);
 
@@ -41,8 +39,6 @@ describe('preset storage duplicate name handling', () => {
             mounting: 'ceiling',
             power: 'poe',
             airiq: 'base',
-            presence: 'none',
-            comfort: 'none',
             fan: 'none'
         }, options);
 
@@ -76,8 +72,6 @@ describe('preset storage duplicate name handling', () => {
             mounting: 'wall',
             power: 'usb',
             airiq: 'none',
-            presence: 'none',
-            comfort: 'none',
             fan: 'none'
         }, options);
 
@@ -85,8 +79,6 @@ describe('preset storage duplicate name handling', () => {
             mounting: 'ceiling',
             power: 'poe',
             airiq: 'none',
-            presence: 'none',
-            comfort: 'none',
             fan: 'none'
         }, options);
 
@@ -114,4 +106,31 @@ test('deserializePresetConfig downgrades core voice to none with notice', async 
     expect(result.data.state.voice).toBe('none');
     expect(result.data.configuration.voice).toBe('none');
     expect(result.metadata.notices).toContain('Core Voice is coming soon and was downgraded to Core.');
+});
+
+test('deserializePresetConfig strips deprecated presence/comfort keys from legacy payloads', async () => {
+    const { deserializePresetConfig, serializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+
+    const imported = deserializePresetConfig({
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-wall-usb',
+        preset: {
+            id: 'p-legacy',
+            name: 'Legacy Modules',
+            state: { mount: 'wall', power: 'usb', airiq: 'base', presence: 'pro', comfort: 'base', fan: 'pwm' },
+            configuration: { mounting: 'wall', power: 'usb', airiq: 'base', presence: 'pro', comfort: 'base', fan: 'pwm' }
+        }
+    });
+
+    expect(imported.ok).toBe(true);
+    expect(imported.data.state).not.toHaveProperty('presence');
+    expect(imported.data.state).not.toHaveProperty('comfort');
+    expect(imported.data.configuration).not.toHaveProperty('presence');
+    expect(imported.data.configuration).not.toHaveProperty('comfort');
+
+    const exported = serializePresetConfig(imported.data);
+    expect(exported.preset.state).not.toHaveProperty('presence');
+    expect(exported.preset.state).not.toHaveProperty('comfort');
+    expect(exported.preset.configuration).not.toHaveProperty('presence');
+    expect(exported.preset.configuration).not.toHaveProperty('comfort');
 });

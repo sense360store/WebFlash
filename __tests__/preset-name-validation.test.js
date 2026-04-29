@@ -50,8 +50,6 @@ describe('preset manager input validation behavior', () => {
             <input type="radio" name="mounting" value="wall" checked>
             <input type="radio" name="power" value="usb" checked>
             <input type="radio" name="airiq" value="none" checked>
-            <input type="radio" name="presence" value="none" checked>
-            <input type="radio" name="comfort" value="none" checked>
             <input type="radio" name="fan" value="none" checked>
         `;
         global.fetch = jest.fn(() => Promise.resolve({

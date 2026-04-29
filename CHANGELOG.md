@@ -49,7 +49,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Step-by-step wizard interface (Mounting, Power, Modules, Review)
 - Support for Wall and Ceiling mounting configurations
 - Power source options: USB, POE, PWR
-- Module support: AirIQ (Base/Pro), Presence (Base/Pro), Comfort, Fan (PWM/Analog)
+- Module support: AirIQ (Base/Pro), Fan (PWM/Analog)
 - Hardware compatibility validation and conflict detection
 - Direct install via URL parameters
 - Sharable configuration links

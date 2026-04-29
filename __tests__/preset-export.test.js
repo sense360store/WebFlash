@@ -11,46 +11,28 @@ describe('preset export JSON', () => {
     const payload = serializePresetConfig({
       id: 'preset-1',
       name: 'Wall USB',
-      state: { mount: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'none' },
-      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'none' },
+      state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
+      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
       createdAt: 10,
       updatedAt: 20,
       appliedAt: null,
       meta: { currentStep: 2 }
     });
 
-    expect(payload).toMatchInlineSnapshot(`
-{
-  "hardwareTarget": "sense360-wall-usb",
-  "preset": {
-    "appliedAt": null,
-    "configuration": {
-      "airiq": "base",
-      "comfort": "none",
-      "fan": "none",
-      "mounting": "wall",
-      "power": "usb",
-      "presence": "none",
-    },
-    "createdAt": 10,
-    "id": "preset-1",
-    "meta": {
-      "currentStep": 2,
-    },
-    "name": "Wall USB",
-    "state": {
-      "airiq": "base",
-      "comfort": "none",
-      "fan": "none",
-      "mount": "wall",
-      "power": "usb",
-      "presence": "none",
-    },
-    "updatedAt": 20,
-  },
-  "schemaVersion": 1,
-}
-`);
+    expect(payload).toEqual({
+      schemaVersion: 1,
+      hardwareTarget: 'sense360-wall-usb',
+      preset: {
+        id: 'preset-1',
+        name: 'Wall USB',
+        state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
+        createdAt: 10,
+        updatedAt: 20,
+        appliedAt: null,
+        meta: { currentStep: 2 }
+      }
+    });
   });
 
   test('serializer allows overriding schema version with numeric value', async () => {
@@ -59,8 +41,8 @@ describe('preset export JSON', () => {
     const preset = {
       id: 'preset-v2',
       name: 'Wall USB v2',
-      state: { mount: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'pwm' },
-      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'pwm' },
+      state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'pwm', voice: 'none' },
+      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'pwm', voice: 'none' },
       createdAt: 100,
       updatedAt: 200,
       appliedAt: null,
@@ -136,8 +118,8 @@ describe('preset export JSON', () => {
       preset: {
         id: 'preset-future',
         name: 'Future Schema',
-        state: { mount: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'analog' },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'analog' },
+        state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'analog', voice: 'none' },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'analog', voice: 'none' },
         createdAt: 1,
         updatedAt: 2,
         appliedAt: null
@@ -149,7 +131,8 @@ describe('preset export JSON', () => {
     expect(result.ok).toBe(true);
     expect(result.metadata).toEqual({
       schemaVersion: 999,
-      hardwareTarget: 'sense360-wall-usb'
+      hardwareTarget: 'sense360-wall-usb',
+      notices: []
     });
   });
 
@@ -179,8 +162,8 @@ describe('preset export JSON', () => {
     const source = {
       id: 'preset-2',
       name: 'Ceiling PoE',
-      state: { mount: 'ceiling', power: 'poe', airiq: 'pro', presence: 'base', comfort: 'base', fan: 'pwm', currentStep: 3 },
-      configuration: { mounting: 'ceiling', power: 'poe', airiq: 'pro', presence: 'base', comfort: 'base', fan: 'pwm' },
+      state: { mount: 'ceiling', power: 'poe', airiq: 'pro', fan: 'pwm', voice: 'none', currentStep: 3 },
+      configuration: { mounting: 'ceiling', power: 'poe', airiq: 'pro', fan: 'pwm', voice: 'none' },
       createdAt: 11,
       updatedAt: 22,
       appliedAt: 33,
@@ -199,7 +182,8 @@ describe('preset export JSON', () => {
       },
       metadata: {
         schemaVersion: 1,
-        hardwareTarget: 'sense360-ceiling-poe'
+        hardwareTarget: 'sense360-ceiling-poe',
+        notices: []
       }
     });
   });
@@ -219,8 +203,8 @@ describe('preset export JSON', () => {
         }
       },
       expected: {
-        state: { mount: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none', currentStep: 4 },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none' },
+        state: { mount: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none', currentStep: 4 },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none' },
         meta: { currentStep: 4 }
       }
     },
@@ -238,8 +222,8 @@ describe('preset export JSON', () => {
         }
       },
       expected: {
-        state: { mount: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none', currentStep: 1 },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', presence: 'none', comfort: 'none', fan: 'none' },
+        state: { mount: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none', currentStep: 1 },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none' },
         meta: { currentStep: 1 }
       }
     }

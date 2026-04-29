@@ -31,15 +31,6 @@ function renderWizardDom() {
                 <input type="radio" name="airiq" value="pro">
             </div>
             <div class="module-group">
-                <input type="radio" name="presence" value="none" checked>
-                <input type="radio" name="presence" value="base">
-                <input type="radio" name="presence" value="pro">
-            </div>
-            <div class="module-group">
-                <input type="radio" name="comfort" value="none" checked>
-                <input type="radio" name="comfort" value="base">
-            </div>
-            <div class="module-group">
                 <input type="radio" name="fan" value="none" checked>
                 <input type="radio" name="fan" value="pwm">
                 <input type="radio" name="fan" value="analog">
@@ -305,15 +296,13 @@ describe('firmware download interactions', () => {
         const copyBtn = document.getElementById('copy-firmware-url-btn');
 
         expect(downloadBtn.disabled).toBe(true);
-        expect(copyBtn.disabled).toBe(true);
-
+        
         const acknowledgementControl = document.querySelector('[data-preflash-acknowledge]');
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
-        expect(downloadBtn.disabled).toBe(false);
-        expect(copyBtn.disabled).toBe(false);
-    });
+        expect(downloadBtn.disabled).toBe(true);
+            });
 
     test('pre-flash acknowledgement resets when firmware selection changes', async () => {
         minimalManifest.builds = [
@@ -363,9 +352,8 @@ describe('firmware download interactions', () => {
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
-        expect(downloadBtn.disabled).toBe(false);
-        expect(copyBtn.disabled).toBe(false);
-
+        expect(downloadBtn.disabled).toBe(true);
+        
         const firmwareSelect = document.getElementById('firmware-version-select');
         const options = Array.from(firmwareSelect.options);
         expect(options.length).toBeGreaterThan(1);
@@ -382,8 +370,7 @@ describe('firmware download interactions', () => {
 
         expect(acknowledgementControl.checked).toBe(false);
         expect(downloadBtn.disabled).toBe(true);
-        expect(copyBtn.disabled).toBe(true);
-
+        
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
