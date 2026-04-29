@@ -56,6 +56,72 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 - **Preview**: Early access to upcoming features
 - **Beta**: Testing releases (not recommended for production)
 
+
+## Canonical Option Inventory Table
+
+The tables below are the **documentation source for operator-facing names**, while enforcement logic lives in code (see Source of Truth note at the end of this section).
+
+### Active (currently supported in UI)
+
+| Group | Friendly name | SKU | Rev | Legacy name | Status | Notes |
+|---|---|---|---|---|---|---|
+| Core | Sense360 Core | S360-CORE | Rev B+ | Core | Active | Core Voice is not selectable; `voice=none` only. |
+| Mount | Ceiling Mount | S360-MNT-C | Current | Ceiling | Active | Only mount currently enabled in the UI. |
+| Power | USB Power | S360-PWR-USB | Current | USB | Active | Available for Ceiling mount. |
+| Power | PoE Module | S360-PWR-POE | Current | POE | Active | Available for Ceiling mount. |
+| Power | PWR Module | S360-PWR-DC | Current | PWR | Active | Available for Ceiling mount. |
+| Module | AirIQ Base | S360-AIRQ-BASE | Rev B core+ | AirIQ Base | Active | Recommended AirIQ variant in current matrix. |
+| Module | VentIQ Base | S360-VIQ-BASE | To be added | BathroomAirIQ Base | Active | Only appears when Bathroom mode is enabled on Ceiling mount. |
+| Module | VentIQ Pro | S360-VIQ-PRO | To be added | BathroomAirIQ Pro | Active | Ceiling + Bathroom mode only. |
+| Module | Fan Relay | S360-Relay-C | R4 | Fan `none` variant | Active | In current model, fan group default maps to relay SKU. |
+| Module | Fan PWM | 12vFan_PWM_PulseCounter | R4 | Fan PWM | Active | Compatible alternative to AirIQ+analog conflict paths. |
+| Module | Fan DAC | Fan_GP8403 | R4 | Fan Analog | Active | Conflicts with AirIQ Base/Pro. |
+| Module | LED Ring Base | S360-LED-BASE | Rev A core+ | LED Base | Active | Optional LED ring module. |
+
+### Dropped / not currently selectable
+
+| Group | Friendly name | SKU | Rev | Legacy name | Status | Notes |
+|---|---|---|---|---|---|---|
+| Core | Core Voice | S360-CORE-VOICE | Rev B core+ | Voice | Dropped | Voice module currently exposes only `none`; voice assistant integration unavailable. |
+| Mount | Wall Mount | S360-MNT-W | Current | Wall | Dropped | Present in UI markup but currently disabled. |
+| Module | AirIQ Pro | S360-AIRQ-PRO | Rev C core+ | AirIQ Pro | Dropped | Variant exists in matrix/markup but currently disabled in UI selection. |
+| Module | Fan TRIAC | S360-FAN-TRIAC | N/A | TRIAC | Dropped | Mentioned in older docs text but not present in current option model. |
+
+### Source of Truth
+
+Constraint enforcement is implemented in `scripts/state.js` (UI gating/auto-resets) and module conflict metadata in `scripts/data/module-requirements.js`. Keep this README synchronized with those files whenever option logic changes.
+
+## Compatibility Matrix
+
+Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allowed.
+
+### Mount × Power compatibility (current UI)
+
+| Mount \ Power | USB | PoE | PWR |
+|---|---:|---:|---:|
+| Ceiling | ✅ | ✅ | ✅ |
+| Wall | 🚫 | 🚫 | 🚫 |
+
+> Note: Wall exists in markup but is currently disabled, so all wall combinations are effectively blocked in the running wizard.
+
+### Mount × Module compatibility (current UI constraints)
+
+| Mount | Bathroom mode | AirIQ | VentIQ (`bathroomairiq`) | Fan | LED |
+|---|---|---|---|---|---|
+| Ceiling + Bathroom OFF | n/a | `none`, `base` (Pro disabled) | `none` only | forced `none` | `none`, `base` |
+| Ceiling + Bathroom ON | enabled | `none`, `base` (Pro disabled) | `none`, `base`, `pro` | forced `none` | `none`, `base` |
+| Wall (disabled) | n/a | modeled but not selectable | `none` forced | `none`,`pwm`,`analog` in logic model | modeled but not selectable |
+
+### Enforced module-combination constraints
+
+| Combination | Result | Constraint source |
+|---|---|---|
+| AirIQ Base/Pro + Fan Analog | 🚫 blocked | Shared DAC bus conflict metadata in module requirements. |
+| AirIQ (Base/Pro) + VentIQ Base | 🚫 blocked | “Only one air quality module can be active at a time.” |
+| Mount != Ceiling | VentIQ hidden and reset to `none` | UI logic auto-hides VentIQ unless Ceiling + Bathroom. |
+| Mount != Wall | Fan auto-reset to `none` | UI logic forces fan none for non-wall mount. |
+
+
 ## Installation Process
 
 1. **Connect Device**: Plug device into computer via USB
