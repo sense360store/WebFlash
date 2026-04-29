@@ -1,5 +1,5 @@
 {
-  "name": "Sense360 Modular Platform Firmware",
+  "name": "Sense360 ESP32 Firmware - Core Module",
   "version": "3.0.1",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",

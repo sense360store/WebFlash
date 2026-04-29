@@ -113,6 +113,43 @@ describe('compat-config direct install validation', () => {
     const wizardMain = document.querySelector('.wizard-main');
     expect(wizardMain.firstElementChild).toBe(container);
   });
+
+  test('resolves legacy AirIQProv direct links to AirIQPro manifest entries', async () => {
+    window.history.replaceState(null, '', '?core=core&mount=wall&power=usb&airiq=AirIQProv');
+
+    const manifest = {
+      builds: [
+        {
+          config_string: 'Core-Wall-USB-AirIQPro',
+          core_type: 'Core',
+          channel: 'stable',
+          file_size: 2048,
+          build_date: '2024-01-01T00:00:00Z',
+          description: 'Canonical AirIQPro firmware build',
+          parts: [
+            {
+              path: './firmware/test-airiqpro.bin',
+              type: 'firmware'
+            }
+          ]
+        }
+      ]
+    };
+
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => manifest
+    });
+
+    const module = await import('../scripts/compat-config.js');
+    await module.initializeCompatInstall();
+
+    const container = document.getElementById('compat-config-installer');
+    expect(container).not.toBeNull();
+    expect(container.querySelector('.firmware-item')).not.toBeNull();
+    expect(container.textContent).toContain('Install Firmware');
+    expect(container.textContent).not.toContain('not found in the manifest');
+  });
 });
 
 

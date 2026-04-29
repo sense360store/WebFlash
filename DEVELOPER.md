@@ -68,7 +68,7 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 **PowerType**: `USB`, `POE`, or `PWR`
 
 **Modules** (optional): Combination of:
-- `AirIQBase`, `AirIQPro`, `AirIQProv` - Air quality stack for particulate, VOC, and CO₂ sensors
+- `AirIQBase`, `AirIQPro` - Air quality stack for particulate, VOC, and CO₂ sensors
 - `BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro` - Bathroom-optimized air quality (Ceiling only)
 - `FanPWM`, `FanAnalog` - Output driver for external fan control
 - `LED` - Addressable LED ring for visual feedback (Required for CoreVoice)

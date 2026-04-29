@@ -64,6 +64,15 @@ describe('config URL parser', () => {
     expect(result.sanitizedConfig.power).toBe('pwr');
   });
 
+  test('supports legacy AirIQProv alias for airiq module', () => {
+    const params = new URLSearchParams('core=core&mount=wall&power=usb&airiq=AirIQProv');
+    const result = parseConfigParams(params);
+
+    expect(result.isValid).toBe(true);
+    expect(result.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(result.sanitizedConfig.airiq).toBe('pro');
+  });
+
   test('parses analog fan selection', () => {
     const params = new URLSearchParams('core=core&mount=wall&power=usb&fan=analog');
     const result = parseConfigParams(params);

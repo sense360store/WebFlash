@@ -241,6 +241,14 @@ function normalizeModelLookupValue(raw) {
   return trimmed;
 }
 
+function canonicalizeConfigLookupKey(key) {
+  if (typeof key !== 'string') {
+    return '';
+  }
+
+  return key.replace(/AirIQProv/g, 'AirIQPro');
+}
+
 function createModelSignature(model, variant, sensorAddon) {
   const normalizedModel = model.toLowerCase();
   const normalizedVariant = variant.toLowerCase();
@@ -791,12 +799,12 @@ async function initializeCompatInstall() {
         });
       }
     } else {
-      const normalizedConfigKey = lookup.key.toLowerCase();
+      const normalizedConfigKey = canonicalizeConfigLookupKey(lookup.key).toLowerCase();
       matchingBuilds = builds.filter((build) => {
         if (!build || typeof build.config_string !== 'string') {
           return false;
         }
-        return build.config_string.toLowerCase() === normalizedConfigKey;
+        return canonicalizeConfigLookupKey(build.config_string).toLowerCase() === normalizedConfigKey;
       });
     }
 
