@@ -25,7 +25,7 @@ const optionTooltips = {
             summary: 'Ceiling installs free up wall space and maximize presence detection in open rooms.',
             pros: [
                 'Keeps cabling hidden above drop ceilings or in conduit.',
-                'Offers a broad motion sensing cone for Presence Base/Pro modules.'
+                'Offers a broad motion sensing cone for RoomIQ Motion Base/Pro modules.'
             ],
             cons: [
                 'Fan module is not supported because of exhaust restrictions overhead.',
@@ -165,7 +165,7 @@ const optionTooltips = {
     },
     presence: {
         none: {
-            title: 'No Presence Module',
+            title: 'No RoomIQ Motion Module',
             summary: 'Exclude motion detection when the hub is only gathering environmental data.',
             pros: [
                 'Eliminates radar emissions for spaces with strict RF policies.',
@@ -178,12 +178,12 @@ const optionTooltips = {
                 'Power budget impact: 0 W (module disabled).'
             ],
             learnMore: {
-                label: 'Presence module capabilities',
+                label: 'RoomIQ Motion module capabilities',
                 href: 'https://docs.sense360.com/modules/presence'
             }
         },
         base: {
-            title: 'Presence Base',
+            title: 'RoomIQ Motion Base',
             summary: 'Single-sensor mmWave coverage for small rooms, focus booths, or restrooms.',
             pros: [
                 'Detects micro-movements through fabric partitions up to 4.5 m (15 ft).',
@@ -198,12 +198,12 @@ const optionTooltips = {
                 'Detection radius: 4.5 m (15 ft) for seated occupancy.'
             ],
             learnMore: {
-                label: 'Presence Base layout guide',
+                label: 'RoomIQ Motion Base layout guide',
                 href: 'https://docs.sense360.com/modules/presence-base'
             }
         },
         pro: {
-            title: 'Presence Pro',
+            title: 'RoomIQ Motion Pro',
             summary: 'Dual-sensor radar for large collaboration areas requiring directional motion cues.',
             pros: [
                 'LD2450 radar adds zone tracking for up to four simultaneous occupants.',
@@ -211,21 +211,21 @@ const optionTooltips = {
             ],
             cons: [
                 'Requires firmware 1.4 or newer to expose zone telemetry.',
-                'Draws an extra 1.3 W compared to Presence Base.'
+                'Draws an extra 1.3 W compared to RoomIQ Motion Base.'
             ],
             measurements: [
                 'Coverage ellipse: 6.5 m × 5 m (21 ft × 16 ft) when ceiling-mounted at 3 m (10 ft).',
                 'Update rate: 10 Hz with ±0.3 m positional accuracy.'
             ],
             learnMore: {
-                label: 'Presence Pro zoning tips',
+                label: 'RoomIQ Motion Pro zoning tips',
                 href: 'https://docs.sense360.com/modules/presence-pro'
             }
         }
     },
     comfort: {
         none: {
-            title: 'No Comfort Module',
+            title: 'No RoomIQ Climate Module',
             summary: 'Use when a building already feeds temperature and ambient light data from other systems.',
             pros: [
                 'Frees capacity for specialty modules such as access control.',
@@ -238,12 +238,12 @@ const optionTooltips = {
                 'Power budget impact: 0 W (module disabled).'
             ],
             learnMore: {
-                label: 'Comfort module insight',
+                label: 'RoomIQ Climate module insight',
                 href: 'https://docs.sense360.com/modules/comfort'
             }
         },
         base: {
-            title: 'Comfort Base',
+            title: 'RoomIQ Climate Base',
             summary: 'Essential ambient sensing for temperature, humidity, and light-level automation.',
             pros: [
                 'Includes SHT40 temperature/humidity with ±0.2 °C accuracy after calibration.',
@@ -258,7 +258,7 @@ const optionTooltips = {
                 'Light sensor window should face open space; avoid shading by signage.'
             ],
             learnMore: {
-                label: 'Comfort Base integration notes',
+                label: 'RoomIQ Climate Base integration notes',
                 href: 'https://docs.sense360.com/modules/comfort-base'
             }
         }

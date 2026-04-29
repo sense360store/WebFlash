@@ -45,8 +45,8 @@ let mobileSummaryMediaQuery = null;
         { key: 'mount', name: 'mounting', label: 'Mount' },
         { key: 'power', name: 'power', label: 'Power' },
         { key: 'airiq', name: 'airiq', label: 'AirIQ' },
-        { key: 'presence', name: 'presence', label: 'Presence' },
-        { key: 'comfort', name: 'comfort', label: 'Comfort' },
+        { key: 'presence', name: 'presence', label: 'RoomIQ Motion' },
+        { key: 'comfort', name: 'comfort', label: 'RoomIQ Climate' },
         { key: 'fan', name: 'fan', label: 'Fan' }
     ];
     const MODULE_VARIANT_KEYS = ['voice', 'airiq', 'presence', 'comfort', 'fan'];
