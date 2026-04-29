@@ -21,10 +21,10 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 
 1. Navigate to https://sense360store.github.io/WebFlash/
 2. Configure your device:
-   - Select core type (Core or Core Voice)
-   - Select mounting type (Wall or Ceiling)
-   - Choose power source (USB, POE, or PWR Module)
-   - Enable required modules (AirIQ, Presence, Comfort, Fan)
+   - Select core type (Sense360 Core only; Core Voice coming soon)
+   - Select mounting type (Ceiling only; Wall coming soon)
+   - Choose power source (USB, Sense360 PoE PSU, or Sense360 Mains PSU)
+   - Enable required modules (Sense360 RoomIQ, Sense360 AirIQ, Sense360 VentIQ, Sense360 LED, Sense360 Fan Relay/PWM/DAC/TRIAC)
 3. Review the recommended firmware configuration
 4. Wait for firmware verification to complete
 5. Acknowledge safety warnings
