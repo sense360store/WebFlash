@@ -119,6 +119,28 @@ Sense360-Core-Wall-USB-LED-v1.0.0-stable.bin
 Sense360-Core-Ceiling-POE-LED-AirIQBase-v1.0.0-stable.bin
 ```
 
+
+## Naming Policy Validator
+
+Run the naming-policy validator before generating manifests or publishing:
+
+```bash
+node scripts/validate-naming-policy.js firmware/configurations
+```
+
+The validator enforces:
+
+- **Allowed canonical token forms**: use `AirIQ`, `AirIQPro`, `Bathroom`, and `Fan` naming.
+- **Disallowed/deprecated tokens**:
+  - `AirIQProv` → migrate to `AirIQPro`
+  - `AirIQBase` → migrate to `AirIQ`
+  - `BathroomAirIQ` → migrate to `Bathroom`
+  - `FanPWM` and `FanAnalog` → migrate to `Fan`
+- **Channel artifact placement**: only `stable` release notes (`*.md`) are allowed under `firmware/configurations/`. Preview/beta notes should not be stored in the production firmware directory.
+- **Canonical filename shape**: `Sense360-...-vX.Y.Z-(stable|preview|beta).(bin|md)`
+
+Migration rule of thumb: rename artifacts in place to canonical tokens, regenerate manifests, then verify CI passes.
+
 ## Release Notes
 
 Release notes are optional markdown files with channel-based storage policy:
@@ -454,7 +476,29 @@ Individual manifests for ESP Web Tools:
 - **beta**: Testing, may have known issues
 - Never publish untested firmware to stable
 
-### Release Notes
+#
+## Naming Policy Validator
+
+Run the naming-policy validator before generating manifests or publishing:
+
+```bash
+node scripts/validate-naming-policy.js firmware/configurations
+```
+
+The validator enforces:
+
+- **Allowed canonical token forms**: use `AirIQ`, `AirIQPro`, `Bathroom`, and `Fan` naming.
+- **Disallowed/deprecated tokens**:
+  - `AirIQProv` → migrate to `AirIQPro`
+  - `AirIQBase` → migrate to `AirIQ`
+  - `BathroomAirIQ` → migrate to `Bathroom`
+  - `FanPWM` and `FanAnalog` → migrate to `Fan`
+- **Channel artifact placement**: only `stable` release notes (`*.md`) are allowed under `firmware/configurations/`. Preview/beta notes should not be stored in the production firmware directory.
+- **Canonical filename shape**: `Sense360-...-vX.Y.Z-(stable|preview|beta).(bin|md)`
+
+Migration rule of thumb: rename artifacts in place to canonical tokens, regenerate manifests, then verify CI passes.
+
+## Release Notes
 
 - Write clear, concise descriptions
 - List hardware requirements explicitly
