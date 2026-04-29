@@ -106,7 +106,7 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 **Examples of valid names:**
 - `Sense360-Core-Wall-USB-v1.0.0-stable.bin`
-- `Sense360-CoreVoice-Ceiling-POE-AirIQPro-PresenceBase-v2.0.0-preview.bin`
+- `Sense360-CoreVoice-Ceiling-POE-AirIQPro-v2.0.0-preview.bin`
 - `Sense360-Core-Ceiling-PWR-BathroomAirIQ-FanPWM-v1.0.0-stable.bin`
 
 **Issues:**
@@ -215,10 +215,10 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 ### Weaknesses
 
 1. **Long filenames**: Up to 80+ characters
-   - `Sense360-CoreVoice-Ceiling-PWR-AirIQPro-PresenceBase-ComfortBase-FanPWM-v1.2.3-preview.bin`
+   - `Sense360-CoreVoice-Ceiling-PWR-AirIQPro-FanPWM-v1.2.3-preview.bin`
 
 2. **Module ordering**: No enforced order, can lead to inconsistencies
-   - `AirIQ-Presence-Comfort` vs `Comfort-Presence-AirIQ`
+   - `AirIQ-Fan` vs `Fan-AirIQ`
 
 3. **No build metadata**: Missing build number, git commit, build date
 
@@ -484,17 +484,17 @@ Current required configurations (from CI validation):
 | Ceiling | POE | AirIQPro | No | Required |
 | Ceiling | POE | Bathroom | No | Required |
 | Ceiling | PWR | AirIQ | No | Required |
-| Ceiling | PWR | AirIQ-Comfort | No | Required |
-| Ceiling | PWR | AirIQ-Presence | No | Required |
-| Ceiling | PWR | AirIQ-Comfort-Presence | No | Required |
-| Ceiling | PWR | AirIQ-Comfort-Presence-Fan | No | Required |
-| Ceiling | PWR | Bathroom-Comfort-Presence | No | Required |
-| Ceiling | POE | Comfort | No | Required |
-| Ceiling | POE | Presence | No | Required |
+| Ceiling | PWR | AirIQ | No | Required |
+| Ceiling | PWR | AirIQ-Fan | No | Required |
+| Ceiling | PWR | AirIQ-Bathroom | No | Required |
+| Ceiling | PWR | AirIQ-Fan-LED | No | Required |
+| Ceiling | PWR | BathroomAirIQ | No | Required |
+| Ceiling | POE | AirIQ | No | Required |
+| Ceiling | POE | Fan | No | Required |
 | Ceiling | USB | Fan | No | Required |
 | Ceiling | USB | - | Yes | Required |
 | Ceiling | POE | AirIQ | Yes | Required |
-| Ceiling | PWR | AirIQ-Comfort-Presence | Yes | Required |
+| Ceiling | PWR | AirIQ-Fan | Yes | Required |
 | Wall | USB | - | No | Required |
 | Wall | USB | AirIQ | No | Required |
 | Wall | USB | AirIQPro | No | Required |
@@ -502,16 +502,16 @@ Current required configurations (from CI validation):
 | Wall | POE | AirIQ | No | Required |
 | Wall | PWR | - | No | Required |
 | Wall | PWR | AirIQ | No | Required |
-| Wall | PWR | AirIQ-Comfort | No | Required |
-| Wall | PWR | AirIQ-Presence | No | Required |
-| Wall | PWR | AirIQ-Comfort-Presence | No | Required |
-| Wall | PWR | AirIQ-Comfort-Presence-Fan | No | Required |
-| Wall | POE | Comfort | No | Required |
-| Wall | POE | Presence | No | Required |
+| Wall | PWR | AirIQ | No | Required |
+| Wall | PWR | AirIQ-Fan | No | Required |
+| Wall | PWR | AirIQ-LED | No | Required |
+| Wall | PWR | AirIQ-Fan-LED | No | Required |
+| Wall | POE | AirIQ | No | Required |
+| Wall | POE | Fan | No | Required |
 | Wall | USB | Fan | No | Required |
 | Wall | USB | - | Yes | Required |
 | Wall | POE | AirIQ | Yes | Required |
-| Wall | PWR | AirIQ-Comfort-Presence | Yes | Required |
+| Wall | PWR | AirIQ-Fan | Yes | Required |
 | - | - | Rescue | - | Required |
 
 **Total:** 35 required configurations

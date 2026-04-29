@@ -37,15 +37,6 @@ function renderWizardDom() {
                 <input type="radio" name="airiq" value="pro">
             </div>
             <div class="module-group">
-                <input type="radio" name="presence" value="none" checked>
-                <input type="radio" name="presence" value="base">
-                <input type="radio" name="presence" value="pro">
-            </div>
-            <div class="module-group">
-                <input type="radio" name="comfort" value="none" checked>
-                <input type="radio" name="comfort" value="base">
-            </div>
-            <div class="module-group">
                 <input type="radio" name="fan" value="none" checked>
                 <input type="radio" name="fan" value="pwm">
                 <input type="radio" name="fan" value="analog">

@@ -48,8 +48,6 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 
 ### Expansion Modules
 - **AirIQ Module**: None, Enabled
-- **Presence Module**: None, Enabled
-- **Comfort Module**: None, Enabled
 - **Fan Module**: None, PWM, Analog (Wall mount only)
 - **LED Ring**: None, Enabled (Required for Core Voice)
 
