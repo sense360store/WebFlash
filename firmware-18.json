@@ -10,17 +10,17 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-PWR-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Ceiling-USB-v3.0.1-stable.bin",
           "offset": 0,
-          "md5": "40524c5a06060838fe64b22d13b4afaa",
-          "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
-          "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
+          "md5": "cd2e27dbda194d182727cfa494eb6e0b",
+          "sha256": "e55ecd82802f19c7815344e46fcb61a26bc509c61cac19750198d040cacc91ab",
+          "signature": "w4hULWARrjbGejQUDuxl7xNGoPa8SmnTeqWtjvEChYc="
         }
       ],
       "improv": true,
-      "md5": "40524c5a06060838fe64b22d13b4afaa",
-      "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
-      "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
+      "md5": "cd2e27dbda194d182727cfa494eb6e0b",
+      "sha256": "e55ecd82802f19c7815344e46fcb61a26bc509c61cac19750198d040cacc91ab",
+      "signature": "w4hULWARrjbGejQUDuxl7xNGoPa8SmnTeqWtjvEChYc="
     }
   ]
 }

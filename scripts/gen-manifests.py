@@ -134,6 +134,14 @@ POWER_TOKENS = {
     "solar",
 }
 
+CANONICAL_MODULE_TOKENS: Dict[str, str] = {
+    "bathroomairiq": "VentIQBase",
+    "bathroomairiqbase": "VentIQBase",
+    "bathroomairiqpro": "VentIQPro",
+}
+
+LEGACY_MODULE_TOKENS = frozenset(CANONICAL_MODULE_TOKENS.keys())
+
 CHIP_HINTS = [
     ("esp32s3", "ESP32-S3"),
     ("esp32-s3", "ESP32-S3"),
@@ -242,7 +250,8 @@ def _normalise_config_tokens(tokens: List[str]) -> Tuple[List[str], Optional[str
         if lowered in CONFIG_CHIP_HINTS:
             chip_hint = CONFIG_CHIP_HINTS[lowered]
             continue
-        filtered.append(token)
+        canonical_module = CANONICAL_MODULE_TOKENS.get(lowered)
+        filtered.append(canonical_module or token)
     return filtered, chip_hint
 
 
