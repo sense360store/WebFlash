@@ -20,6 +20,7 @@ const PRESET_STORAGE_OPTIONS = Object.freeze({
 });
 
 const presetCache = new Map();
+const PRESET_EXPORT_SCHEMA_VERSION = 1;
 
 function resolveStorage(options = {}) {
     if (options.storage && typeof options.storage.getItem === 'function' && typeof options.storage.setItem === 'function') {
@@ -378,6 +379,44 @@ function markPresetApplied(id, options = {}) {
     }, options);
 }
 
+function buildHardwareTargetFromConfiguration(configuration = {}) {
+    const mounting = configuration.mounting || 'unknown';
+    const power = configuration.power || 'unknown';
+    return `sense360-${mounting}-${power}`;
+}
+
+function serializePresetConfig(preset, options = {}) {
+    if (!preset || typeof preset !== 'object') {
+        return null;
+    }
+
+    const normalized = normalizePresetEntry(preset);
+    if (!normalized) {
+        return null;
+    }
+
+    const schemaVersion = Number.isFinite(options.schemaVersion)
+        ? Math.trunc(options.schemaVersion)
+        : PRESET_EXPORT_SCHEMA_VERSION;
+    const hardwareTarget = typeof options.hardwareTarget === 'string' && options.hardwareTarget.trim()
+        ? options.hardwareTarget.trim()
+        : buildHardwareTargetFromConfiguration(normalized.configuration);
+
+    return {
+        schemaVersion,
+        hardwareTarget,
+        preset: clonePreset(normalized)
+    };
+}
+
+function deserializePresetConfig(payload) {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+
+    return normalizePresetEntry(payload.preset);
+}
+
 function generatePresetName(state = {}) {
     const normalized = normalizePresetState(state);
     const parts = [];
@@ -479,5 +518,8 @@ export {
     generatePresetName,
     getCurrentWizardStep,
     applyPresetStateToWizard,
-    PRESET_STORAGE_OPTIONS
+    PRESET_STORAGE_OPTIONS,
+    PRESET_EXPORT_SCHEMA_VERSION,
+    serializePresetConfig,
+    deserializePresetConfig
 };
