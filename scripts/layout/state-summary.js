@@ -774,6 +774,16 @@ let mobileSummaryMediaQuery = null;
         refs.error.hidden = !message;
     }
 
+    function setPresetError(message) {
+        const refs = ensurePresetManagerRefs();
+        if (!refs || !refs.error) {
+            return;
+        }
+
+        refs.error.textContent = message || '';
+        refs.error.hidden = !message;
+    }
+
     function updatePresetEmptyState(presets, readErrorCode = null) {
         const refs = ensurePresetManagerRefs();
         if (!refs) {
