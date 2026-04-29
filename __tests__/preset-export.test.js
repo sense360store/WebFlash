@@ -53,6 +53,33 @@ describe('preset export JSON', () => {
 `);
   });
 
+  test('serializer allows overriding schema version with numeric value', async () => {
+    const { serializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+
+    const preset = {
+      id: 'preset-v2',
+      name: 'Wall USB v2',
+      state: { mount: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'pwm' },
+      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'pwm' },
+      createdAt: 100,
+      updatedAt: 200,
+      appliedAt: null,
+      meta: { currentStep: 2 }
+    };
+
+    const payload = serializePresetConfig(preset, { schemaVersion: 2 });
+
+    expect(payload).toEqual({
+      schemaVersion: 2,
+      hardwareTarget: 'sense360-wall-usb',
+      preset: {
+        ...preset,
+        state: { ...preset.state, fan: 'pwm' },
+        configuration: { ...preset.configuration, fan: 'pwm' }
+      }
+    });
+  });
+
   test('returns structured validation result for malformed payload', async () => {
     const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
 
@@ -97,6 +124,52 @@ describe('preset export JSON', () => {
       expect.objectContaining({ path: 'preset.state.power' }),
       expect.objectContaining({ path: 'preset.configuration.mounting' }),
       expect.objectContaining({ path: 'preset.configuration.power' })
+    ]));
+  });
+
+  test('deserializer accepts unknown numeric schema version and preserves metadata', async () => {
+    const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+
+    const payload = {
+      schemaVersion: 999,
+      hardwareTarget: 'sense360-wall-usb',
+      preset: {
+        id: 'preset-future',
+        name: 'Future Schema',
+        state: { mount: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'analog' },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'base', presence: 'none', comfort: 'none', fan: 'analog' },
+        createdAt: 1,
+        updatedAt: 2,
+        appliedAt: null
+      }
+    };
+
+    const result = deserializePresetConfig(payload);
+
+    expect(result.ok).toBe(true);
+    expect(result.metadata).toEqual({
+      schemaVersion: 999,
+      hardwareTarget: 'sense360-wall-usb'
+    });
+  });
+
+  test('validator returns field error for non-numeric schema version', async () => {
+    const { validatePresetImportPayload } = await import('../scripts/utils/preset-storage.js');
+
+    const result = validatePresetImportPayload({
+      schemaVersion: '1',
+      hardwareTarget: 'sense360-wall-usb',
+      preset: {
+        id: 'preset-bad-schema',
+        name: 'Bad Schema',
+        state: { mount: 'wall', power: 'usb' },
+        configuration: { mounting: 'wall', power: 'usb' }
+      }
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.fieldErrors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'schemaVersion' })
     ]));
   });
 
