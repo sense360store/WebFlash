@@ -202,6 +202,14 @@ function createPresetId() {
     return `preset-${Date.now()}-${random}`;
 }
 
+function normalizePresetName(name) {
+    if (typeof name !== 'string') {
+        return '';
+    }
+
+    return name.trim().normalize('NFKC').toLocaleLowerCase();
+}
+
 function mapConfigurationToState(configuration = {}) {
     return normalizePresetState({
         mount: configuration.mounting,
@@ -283,6 +291,45 @@ function savePreset(name, configuration, options = {}) {
     writePresetEntries(entries, resolvedOptions);
     presetCache.set(preset.id, clonePreset(preset));
     return clonePreset(preset);
+}
+
+function upsertPresetByName(name, configuration, options = {}) {
+    const normalizedName = normalizePresetName(name);
+    if (!normalizedName) {
+        return null;
+    }
+
+    const resolvedOptions = resolveOptions(options);
+    const entries = ensurePresetList(resolvedOptions);
+    const existing = entries.find(entry => normalizePresetName(entry.name) === normalizedName);
+
+    if (!existing) {
+        return savePreset(name, configuration, options);
+    }
+
+    return updatePresetById(existing.id, preset => {
+        const state = options.state ? normalizePresetState(options.state) : mapConfigurationToState(configuration);
+        const normalizedConfiguration = normalizePresetConfiguration(configuration, state);
+        const now = Date.now();
+        const nextPreset = {
+            ...preset,
+            name: typeof name === 'string' && name.trim() ? name.trim() : preset.name,
+            state,
+            configuration: normalizedConfiguration,
+            updatedAt: now
+        };
+
+        if (Number.isFinite(options.currentStep)) {
+            const currentStep = clampStep(Math.trunc(options.currentStep));
+            nextPreset.state.currentStep = currentStep;
+            nextPreset.meta = {
+                ...preset.meta,
+                currentStep
+            };
+        }
+
+        return nextPreset;
+    }, resolvedOptions);
 }
 
 function updatePresetById(id, updater, options = {}) {
@@ -473,6 +520,8 @@ export {
     listPresets,
     getPreset,
     savePreset,
+    upsertPresetByName,
+    normalizePresetName,
     renamePreset,
     deletePreset,
     markPresetApplied,
