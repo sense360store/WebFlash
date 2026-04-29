@@ -134,3 +134,37 @@ test('deserializePresetConfig strips deprecated presence/comfort keys from legac
     expect(exported.preset.configuration).not.toHaveProperty('presence');
     expect(exported.preset.configuration).not.toHaveProperty('comfort');
 });
+
+
+test('listPresets migrates stored entries by removing deprecated module keys', async () => {
+    const { listPresets } = await import('../scripts/utils/preset-storage.js');
+
+    const storage = new Map();
+    const storageAdapter = {
+        getItem: key => (storage.has(key) ? storage.get(key) : null),
+        setItem: (key, value) => storage.set(key, value)
+    };
+
+    const options = { storage: storageAdapter, storageKey: 'test.presets.migration', maxEntries: 20 };
+    const seeded = [{
+        id: 'legacy-1',
+        name: 'Legacy',
+        updatedAt: Date.now(),
+        state: { mount: 'wall', power: 'usb', presence: 'pro', comfort: 'base', fan: 'pwm' },
+        configuration: { mounting: 'wall', power: 'usb', presence: 'pro', comfort: 'base', fan: 'pwm' }
+    }];
+    storage.set(options.storageKey, JSON.stringify(seeded));
+
+    const result = listPresets(options);
+    expect(result.ok).toBe(true);
+    expect(result.data[0].state).not.toHaveProperty('presence');
+    expect(result.data[0].state).not.toHaveProperty('comfort');
+    expect(result.data[0].configuration).not.toHaveProperty('presence');
+    expect(result.data[0].configuration).not.toHaveProperty('comfort');
+
+    const stored = JSON.parse(storage.get(options.storageKey));
+    expect(stored[0].state).not.toHaveProperty('presence');
+    expect(stored[0].state).not.toHaveProperty('comfort');
+    expect(stored[0].configuration).not.toHaveProperty('presence');
+    expect(stored[0].configuration).not.toHaveProperty('comfort');
+});

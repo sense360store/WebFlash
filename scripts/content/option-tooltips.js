@@ -22,7 +22,7 @@ const optionTooltips = {
         },
         ceiling: {
             title: 'Ceiling Mount',
-            summary: 'Ceiling installs free up wall space and maximize presence detection in open rooms.',
+            summary: 'Ceiling installs free up wall space and maximize coverage in open rooms.',
             pros: [
                 'Keeps cabling hidden above drop ceilings or in conduit.',
                 'Offers a broad motion sensing cone for RoomIQ Motion modules.'
