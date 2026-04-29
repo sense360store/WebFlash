@@ -113,8 +113,6 @@ function normalizePresetState(state = {}) {
         mount: normalizeStringChoice(state.mount, ['wall', 'ceiling']),
         power: normalizeStringChoice(state.power, ['usb', 'poe', 'pwr']),
         airiq: normalizeStringChoice(state.airiq, ['none', 'base', 'pro'], 'none'),
-        presence: normalizeStringChoice(state.presence, ['none', 'base', 'pro'], 'none'),
-        comfort: normalizeStringChoice(state.comfort, ['none', 'base'], 'none'),
         fan: normalizeStringChoice(state.fan, ['none', 'pwm', 'analog'], 'none'),
         voice: normalizeStringChoice(state.voice, ['none'], 'none')
     };
@@ -137,8 +135,6 @@ function normalizePresetConfiguration(configuration = {}, state = {}) {
         mounting: normalizeStringChoice(configuration.mounting ?? normalizedState.mount, ['wall', 'ceiling']),
         power: normalizeStringChoice(configuration.power ?? normalizedState.power, ['usb', 'poe', 'pwr']),
         airiq: normalizeStringChoice(configuration.airiq ?? normalizedState.airiq, ['none', 'base', 'pro'], 'none'),
-        presence: normalizeStringChoice(configuration.presence ?? normalizedState.presence, ['none', 'base', 'pro'], 'none'),
-        comfort: normalizeStringChoice(configuration.comfort ?? normalizedState.comfort, ['none', 'base'], 'none'),
         fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ['none', 'pwm', 'analog'], 'none'),
         voice: normalizeStringChoice(configuration.voice ?? normalizedState.voice, ['none'], 'none')
     };
@@ -273,10 +269,43 @@ function mapConfigurationToState(configuration = {}) {
         mount: configuration.mounting,
         power: configuration.power,
         airiq: configuration.airiq,
-        presence: configuration.presence,
-        comfort: configuration.comfort,
         fan: configuration.fan
     });
+}
+
+function migrateDeprecatedPresetFields(entries = []) {
+    if (!Array.isArray(entries)) {
+        return { entries: [], changed: false };
+    }
+
+    let changed = false;
+    const migrated = entries.map(entry => {
+        if (!entry || typeof entry !== 'object') {
+            return entry;
+        }
+
+        const nextEntry = { ...entry };
+
+        if (nextEntry.state && typeof nextEntry.state === 'object' && !Array.isArray(nextEntry.state)) {
+            const { presence, comfort, ...restState } = nextEntry.state;
+            if (presence !== undefined || comfort !== undefined) {
+                changed = true;
+            }
+            nextEntry.state = restState;
+        }
+
+        if (nextEntry.configuration && typeof nextEntry.configuration === 'object' && !Array.isArray(nextEntry.configuration)) {
+            const { presence, comfort, ...restConfig } = nextEntry.configuration;
+            if (presence !== undefined || comfort !== undefined) {
+                changed = true;
+            }
+            nextEntry.configuration = restConfig;
+        }
+
+        return nextEntry;
+    });
+
+    return { entries: migrated, changed };
 }
 
 function ensurePresetList(options = {}) {
@@ -285,7 +314,12 @@ function ensurePresetList(options = {}) {
         return { ok: false, error: readResult.error, data: [] };
     }
 
-    const normalized = readResult.data
+    const migrated = migrateDeprecatedPresetFields(readResult.data);
+    if (migrated.changed) {
+        writePresetEntries(migrated.entries, options);
+    }
+
+    const normalized = migrated.entries
         .map(entry => normalizePresetEntry(entry))
         .filter(Boolean);
 
@@ -624,15 +658,11 @@ function validatePresetImportPayload(payload) {
             { path: 'preset.state.mount', value: preset.state?.mount, allowed: ['wall', 'ceiling'] },
             { path: 'preset.state.power', value: preset.state?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.state.presence', value: preset.state?.presence, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.state.comfort', value: preset.state?.comfort, allowed: ['none', 'base'] },
             { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'pwm', 'analog'] },
                         { path: 'preset.state.voice', value: preset.state?.voice, allowed: ['none', 'base'] },
             { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ['wall', 'ceiling'] },
             { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.configuration.presence', value: preset.configuration?.presence, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.configuration.comfort', value: preset.configuration?.comfort, allowed: ['none', 'base'] },
             { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'pwm', 'analog'] },
             { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: ['none', 'base'] },
         ];
@@ -709,7 +739,7 @@ function generatePresetName(state = {}) {
         parts.push(formatPower(normalized.power));
     }
 
-    ['airiq', 'presence', 'comfort', 'fan'].forEach(key => {
+    ['airiq', 'fan'].forEach(key => {
         const value = normalized[key];
         if (!value || value === 'none') {
             return;
@@ -746,13 +776,6 @@ function formatModuleName(moduleKey, value) {
         airiq: {
             base: 'AirIQ',
             pro: 'AirIQ'
-        },
-        presence: {
-            base: 'RoomIQ Motion',
-            pro: 'RoomIQ Motion'
-        },
-        comfort: {
-            base: 'RoomIQ Climate'
         },
         fan: {
             pwm: 'Fan PWM',

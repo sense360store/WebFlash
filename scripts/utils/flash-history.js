@@ -7,6 +7,31 @@
 const STORAGE_KEY = 'webflash-flash-history';
 const MAX_HISTORY_ENTRIES = 50;
 
+function stripDeprecatedConfigurationFields(configuration) {
+    if (!configuration || typeof configuration !== 'object' || Array.isArray(configuration)) {
+        return configuration;
+    }
+
+    const { presence, comfort, ...sanitized } = configuration;
+    return sanitized;
+}
+
+function sanitizeHistoryEntry(entry) {
+    if (!entry || typeof entry !== 'object') {
+        return entry;
+    }
+
+    const sanitized = { ...entry };
+    if ('configuration' in sanitized) {
+        sanitized.configuration = stripDeprecatedConfigurationFields(sanitized.configuration);
+    }
+    if ('state' in sanitized && sanitized.state && typeof sanitized.state === 'object' && !Array.isArray(sanitized.state)) {
+        const { presence, comfort, ...restState } = sanitized.state;
+        sanitized.state = restState;
+    }
+    return sanitized;
+}
+
 /**
  * @typedef {Object} FlashHistoryEntry
  * @property {string} id - Unique entry identifier
@@ -44,7 +69,8 @@ const storage = (() => {
             }
             try {
                 const data = localStorage.getItem(STORAGE_KEY);
-                return data ? JSON.parse(data) : [];
+                const parsed = data ? JSON.parse(data) : [];
+                return Array.isArray(parsed) ? parsed.map(sanitizeHistoryEntry) : [];
             } catch (error) {
                 console.warn('[flash-history] Failed to read from storage', error);
                 return [];
@@ -56,7 +82,7 @@ const storage = (() => {
                 return;
             }
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.map(sanitizeHistoryEntry)));
             } catch (error) {
                 console.warn('[flash-history] Failed to write to storage', error);
             }
