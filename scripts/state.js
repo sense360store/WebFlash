@@ -284,6 +284,10 @@ function normalizeStateForConfiguration(state = {}) {
         normalized.mounting = mount;
     }
 
+    if (normalized.voice === 'base') {
+        normalized.voice = 'none';
+    }
+
     return normalized;
 }
 
@@ -4496,6 +4500,10 @@ function applyConfiguration(initialConfig) {
 
     if (configuration.mounting !== 'ceiling') {
         configuration.bathroomairiq = 'none';
+    }
+
+    if (configuration.voice === 'base') {
+        configuration.voice = 'none';
     }
 
     if (configuration.mounting) {

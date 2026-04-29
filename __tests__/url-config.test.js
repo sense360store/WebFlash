@@ -24,11 +24,11 @@ describe('config URL parser', () => {
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.configKey).toBe('CoreVoice-Ceiling-POE-AirIQBase');
-    expect(result.sanitizedConfig.core).toBe('base');
+    expect(result.configKey).toBe('Core-Ceiling-POE-AirIQBase');
+    expect(result.sanitizedConfig.core).toBe('none');
 
     const wizardConfig = mapToWizardConfiguration(result.sanitizedConfig);
-    expect(wizardConfig).toMatchObject({ voice: 'base', mounting: 'ceiling', power: 'poe' });
+    expect(wizardConfig).toMatchObject({ voice: 'none', mounting: 'ceiling', power: 'poe' });
   });
 
   test('marks missing required parameters including core', () => {
@@ -91,7 +91,7 @@ describe('config URL parser', () => {
     const result = parseConfigParams(params);
 
     expect(result.isValid).toBe(true);
-    expect(result.configKey).toBe('CoreVoice-Wall-USB');
-    expect(result.sanitizedConfig.core).toBe('base');
+    expect(result.configKey).toBe('Core-Wall-USB');
+    expect(result.sanitizedConfig.core).toBe('none');
   });
 });

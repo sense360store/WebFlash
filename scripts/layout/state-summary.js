@@ -854,11 +854,17 @@ let mobileSummaryMediaQuery = null;
             diagnostics.push(`compat: Unsupported schemaVersion ${payload.schemaVersion}; attempting best-effort import.`);
         }
 
-        const preset = deserializePresetConfig(payload);
-        if (!preset) {
+        const presetResult = deserializePresetConfig(payload);
+        if (!presetResult?.ok || !presetResult?.data) {
             diagnostics.push('schema: Imported preset could not be normalized.');
             return { ok: false, diagnostics, preset: null };
         }
+
+        if (Array.isArray(presetResult.metadata?.notices)) {
+            diagnostics.push(...presetResult.metadata.notices.map(line => `notice: ${line}`));
+        }
+
+        const preset = presetResult.data;
 
         if (diagnostics.some(line => line.startsWith('schema:'))) {
             return { ok: false, diagnostics, preset: null };

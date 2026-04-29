@@ -25,7 +25,7 @@ async function loadStateSummaryModule() {
     applyPresetStateToWizard: applyPresetStateToWizardMock,
     PRESET_STORAGE_OPTIONS: { storageKey: 'wizard-presets' },
     serializePresetConfig: jest.fn(),
-    deserializePresetConfig: jest.fn(payload => payload?.preset ?? null),
+    deserializePresetConfig: jest.fn(payload => ({ ok: true, data: payload?.preset ?? null, metadata: { notices: [] } })),
     validatePresetName: jest.fn(() => ({ valid: true, message: '', normalized: '' }))
   }));
 
@@ -69,6 +69,15 @@ describe('preset import hardware compatibility', () => {
       expectErrorContains: ''
     },
     {
+      name: 'core voice import downgrades with non-blocking notice',
+      hardwareTarget: 'sense360-wall-usb',
+      confirmReturn: true,
+      expectConfirm: false,
+      expectSaved: true,
+      expectApplied: true,
+      expectErrorContains: ''
+    },
+    {
       name: 'warning target requires confirmation before save/apply',
       hardwareTarget: 'otherfamily-wall-usb',
       confirmReturn: false,
@@ -92,8 +101,19 @@ describe('preset import hardware compatibility', () => {
     const payload = {
       schemaVersion: 1,
       hardwareTarget,
-      preset: { name: 'Import', state: { mount: 'wall', power: 'usb' }, configuration: { mounting: 'wall', power: 'usb' } }
+      preset: name.includes('core voice')
+        ? { name: 'Import', state: { mount: 'wall', power: 'usb', voice: 'base' }, configuration: { mounting: 'wall', power: 'usb', voice: 'base' } }
+        : { name: 'Import', state: { mount: 'wall', power: 'usb' }, configuration: { mounting: 'wall', power: 'usb' } }
     };
+
+    if (name.includes('core voice')) {
+      const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+      deserializePresetConfig.mockReturnValueOnce({
+        ok: true,
+        data: { name: 'Import', state: { mount: 'wall', power: 'usb', voice: 'none' }, configuration: { mounting: 'wall', power: 'usb', voice: 'none' }, meta: {} },
+        metadata: { notices: ['Core Voice is coming soon and was downgraded to Core.'] }
+      });
+    }
 
     Object.defineProperty(input, 'files', { value: [{ text: async () => JSON.stringify(payload) }], configurable: true });
     input.dispatchEvent(new Event('change'));
@@ -123,6 +143,10 @@ describe('preset import hardware compatibility', () => {
       expect(errorText).toContain(expectErrorContains);
     } else {
       expect(errorText).toBe('');
+    }
+
+    if (name.includes('core voice')) {
+      expect(document.querySelector('[data-preset-import-diagnostics]').textContent).toContain('Core Voice is coming soon and was downgraded to Core.');
     }
   });
 });

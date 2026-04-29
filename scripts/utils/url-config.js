@@ -39,7 +39,7 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         aliases: Object.freeze(['core', 'coretype', 'voice']),
         options: new Map([
             ['core', { wizardValue: 'none', configSegment: 'Core' }],
-            ['corevoice', { wizardValue: 'base', configSegment: 'CoreVoice' }]
+            ['corevoice', { wizardValue: 'none', configSegment: 'Core' }]
         ]),
         allowedValues: Object.freeze(['core', 'corevoice']),
         legacyValues: new Map([
