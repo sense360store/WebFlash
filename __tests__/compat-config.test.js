@@ -114,3 +114,19 @@ describe('compat-config direct install validation', () => {
     expect(wizardMain.firstElementChild).toBe(container);
   });
 });
+
+
+describe('verifyImportedPresetCompatibility', () => {
+  test('returns blocking incompatibility for mount/power mismatch', async () => {
+    const { verifyImportedPresetCompatibility } = await import('../scripts/compat-config.js');
+    const result = verifyImportedPresetCompatibility('sense360-ceiling-poe', { mounting: 'wall', power: 'usb' });
+    expect(result.level).toBe('incompatible-blocking');
+    expect(result.messages.join(' ')).toContain('Mounting mismatch');
+  });
+
+  test('returns warning incompatibility for family mismatch only', async () => {
+    const { verifyImportedPresetCompatibility } = await import('../scripts/compat-config.js');
+    const result = verifyImportedPresetCompatibility('otherfamily-wall-usb', { mounting: 'wall', power: 'usb' });
+    expect(result.level).toBe('incompatible-warning');
+  });
+});
