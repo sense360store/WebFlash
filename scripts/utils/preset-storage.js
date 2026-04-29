@@ -20,6 +20,14 @@ const PRESET_STORAGE_OPTIONS = Object.freeze({
 });
 
 const presetCache = new Map();
+class PresetStorageError extends Error {
+    constructor(code, message, cause = null) {
+        super(message);
+        this.name = 'PresetStorageError';
+        this.code = code;
+        this.cause = cause;
+    }
+}
 
 function resolveStorage(options = {}) {
     if (options.storage && typeof options.storage.getItem === 'function' && typeof options.storage.setItem === 'function') {
@@ -64,32 +72,42 @@ function readPresetEntries(options = {}) {
     try {
         raw = storage.getItem(storageKey);
     } catch (error) {
-        console.warn('[preset-storage] Failed to read from storage', error);
-        return [];
+        const storageError = new PresetStorageError('read_failed', 'Failed to read presets from storage', error);
+        console.warn('[preset-storage] Failed to read from storage', storageError);
+        return { ok: false, error: storageError, data: [] };
     }
 
     if (!raw) {
-        return [];
+        return { ok: true, error: null, data: [] };
     }
 
     try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-            return parsed.filter(entry => entry && typeof entry === 'object');
+            return {
+                ok: true,
+                error: null,
+                data: parsed.filter(entry => entry && typeof entry === 'object')
+            };
         }
     } catch (error) {
-        console.warn('[preset-storage] Failed to parse stored presets', error);
+        const parseError = new PresetStorageError('parse_failed', 'Failed to parse stored presets', error);
+        console.warn('[preset-storage] Failed to parse stored presets', parseError);
+        return { ok: false, error: parseError, data: [] };
     }
 
-    return [];
+    return { ok: true, error: null, data: [] };
 }
 
 function writePresetEntries(entries, options = {}) {
     const { storage, storageKey } = resolveOptions(options);
     try {
         storage.setItem(storageKey, JSON.stringify(entries));
+        return { ok: true, error: null, data: null };
     } catch (error) {
-        console.warn('[preset-storage] Failed to write presets to storage', error);
+        const storageError = new PresetStorageError('write_failed', 'Failed to write presets to storage', error);
+        console.warn('[preset-storage] Failed to write presets to storage', storageError);
+        return { ok: false, error: storageError, data: null };
     }
 }
 
@@ -214,8 +232,12 @@ function mapConfigurationToState(configuration = {}) {
 }
 
 function ensurePresetList(options = {}) {
-    const entries = readPresetEntries(options);
-    const normalized = entries
+    const readResult = readPresetEntries(options);
+    if (!readResult.ok) {
+        return { ok: false, error: readResult.error, data: [] };
+    }
+
+    const normalized = readResult.data
         .map(entry => normalizePresetEntry(entry))
         .filter(Boolean);
 
@@ -224,11 +246,16 @@ function ensurePresetList(options = {}) {
         presetCache.set(entry.id, clonePreset(entry));
     });
 
-    return normalized;
+    return { ok: true, error: null, data: normalized };
 }
 
 function listPresets(options = {}) {
-    const presets = ensurePresetList(options)
+    const ensured = ensurePresetList(options);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: [] };
+    }
+
+    const presets = ensured.data
         .sort((a, b) => {
             const aTime = typeof a.updatedAt === 'number' ? a.updatedAt : 0;
             const bTime = typeof b.updatedAt === 'number' ? b.updatedAt : 0;
@@ -236,17 +263,21 @@ function listPresets(options = {}) {
         })
         .map(preset => clonePreset(preset));
 
-    return presets;
+    return { ok: true, error: null, data: presets };
 }
 
 function getPreset(id, options = {}) {
     if (presetCache.has(id)) {
-        return clonePreset(presetCache.get(id));
+        return { ok: true, error: null, data: clonePreset(presetCache.get(id)) };
     }
 
-    const presets = ensurePresetList(options);
-    const preset = presets.find(entry => entry.id === id);
-    return preset ? clonePreset(preset) : null;
+    const ensured = ensurePresetList(options);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+
+    const preset = ensured.data.find(entry => entry.id === id);
+    return { ok: true, error: null, data: preset ? clonePreset(preset) : null };
 }
 
 function savePreset(name, configuration, options = {}) {
@@ -255,7 +286,11 @@ function savePreset(name, configuration, options = {}) {
     const state = options.state ? normalizePresetState(options.state) : mapConfigurationToState(configuration);
     const normalizedConfiguration = normalizePresetConfiguration(configuration, state);
     const timestamp = Date.now();
-    const entries = ensurePresetList(resolvedOptions);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+    const entries = ensured.data;
 
     const preset = {
         id: createPresetId(),
@@ -280,29 +315,36 @@ function savePreset(name, configuration, options = {}) {
         entries.length = resolvedOptions.maxEntries;
     }
 
-    writePresetEntries(entries, resolvedOptions);
+    const writeResult = writePresetEntries(entries, resolvedOptions);
+    if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error, data: null };
+    }
     presetCache.set(preset.id, clonePreset(preset));
-    return clonePreset(preset);
+    return { ok: true, error: null, data: clonePreset(preset) };
 }
 
 function updatePresetById(id, updater, options = {}) {
     if (typeof updater !== 'function') {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     const resolvedOptions = resolveOptions(options);
-    const entries = ensurePresetList(resolvedOptions);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: null };
+    }
+    const entries = ensured.data;
     const index = entries.findIndex(entry => entry.id === id);
 
     if (index === -1) {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     const original = entries[index];
     const updated = updater(clonePreset(original));
 
     if (!updated) {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     entries[index] = normalizePresetEntry({
@@ -315,17 +357,20 @@ function updatePresetById(id, updater, options = {}) {
         entries.splice(index, 1);
     }
 
-    writePresetEntries(entries, resolvedOptions);
+    const writeResult = writePresetEntries(entries, resolvedOptions);
+    if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error, data: null };
+    }
     presetCache.clear();
     entries.forEach(entry => presetCache.set(entry.id, clonePreset(entry)));
 
-    return entries[index] ? clonePreset(entries[index]) : null;
+    return { ok: true, error: null, data: entries[index] ? clonePreset(entries[index]) : null };
 }
 
 function renamePreset(id, newName, options = {}) {
     const trimmed = typeof newName === 'string' && newName.trim() ? newName.trim() : null;
     if (!trimmed) {
-        return null;
+        return { ok: true, error: null, data: null };
     }
 
     return updatePresetById(id, preset => ({
@@ -337,17 +382,24 @@ function renamePreset(id, newName, options = {}) {
 
 function deletePreset(id, options = {}) {
     const resolvedOptions = resolveOptions(options);
-    const entries = ensurePresetList(resolvedOptions);
+    const ensured = ensurePresetList(resolvedOptions);
+    if (!ensured.ok) {
+        return { ok: false, error: ensured.error, data: false };
+    }
+    const entries = ensured.data;
     const index = entries.findIndex(entry => entry.id === id);
 
     if (index === -1) {
-        return false;
+        return { ok: true, error: null, data: false };
     }
 
     entries.splice(index, 1);
-    writePresetEntries(entries, resolvedOptions);
+    const writeResult = writePresetEntries(entries, resolvedOptions);
+    if (!writeResult.ok) {
+        return { ok: false, error: writeResult.error, data: false };
+    }
     presetCache.delete(id);
-    return true;
+    return { ok: true, error: null, data: true };
 }
 
 function markPresetApplied(id, options = {}) {
