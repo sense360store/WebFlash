@@ -133,6 +133,7 @@ let moduleDetailPanelInitialized = false;
 let activeModuleDetailKey = null;
 let activeModuleDetailVariant = null;
 let preFlashAcknowledged = false;
+let preflightWarningsAcknowledged = false;
 let currentFlashEntryId = null;
 let flashStartTime = null;
 
@@ -181,6 +182,24 @@ function setPreFlashAcknowledgement(value) {
     updateFirmwareControls();
 }
 
+function setPreflightWarningsAcknowledgement(value) {
+    preflightWarningsAcknowledged = Boolean(value);
+    updateFirmwareControls();
+}
+
+function evaluatePreflightPolicy(checks = []) {
+    const normalizedChecks = Array.isArray(checks) ? checks : [];
+    const failChecks = normalizedChecks.filter(check => check?.state === 'fail');
+    const warnChecks = normalizedChecks.filter(check => check?.state === 'warn');
+    const blockingReasons = failChecks.map(check => check?.detail || `${check?.label || 'A required check'} failed.`);
+
+    return {
+        canInstall: failChecks.length === 0 && (!warnChecks.length || preflightWarningsAcknowledged),
+        requiresWarnAcknowledgement: warnChecks.length > 0 && !preflightWarningsAcknowledged,
+        blockingReasons
+    };
+}
+
 function resetPreFlashAcknowledgement() {
     const control = document.querySelector('[data-preflash-acknowledge]');
 
@@ -195,6 +214,7 @@ function resetPreFlashAcknowledgement() {
     }
 
     setPreFlashAcknowledgement(false);
+    setPreflightWarningsAcknowledgement(false);
 }
 
 function applyModuleRecommendations() {
@@ -2374,7 +2394,10 @@ function updateFirmwareControls() {
     const isPending = verificationStatus === 'pending';
     const isFailed = verificationStatus === 'failed';
     const isAcknowledged = Boolean(preFlashAcknowledged);
-    const readyToFlash = hasFirmware && isVerified && isAcknowledged;
+    const preflightChecks = Array.isArray(window.latestPreflightChecks) ? window.latestPreflightChecks : [];
+    const preflightPolicy = evaluatePreflightPolicy(preflightChecks);
+    const blockingReason = preflightPolicy.blockingReasons[0] || '';
+    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall;
 
     const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
@@ -2391,6 +2414,8 @@ function updateFirmwareControls() {
                 downloadBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
             } else if (!isAcknowledged) {
                 downloadBtn.title = 'Acknowledge the pre-flash checklist to continue.';
+            } else if (!preflightPolicy.canInstall && blockingReason) {
+                downloadBtn.title = blockingReason;
             } else {
                 downloadBtn.removeAttribute('title');
             }
@@ -2416,6 +2441,8 @@ function updateFirmwareControls() {
             copyUrlBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
         } else if (!isAcknowledged) {
             copyUrlBtn.title = 'Acknowledge the pre-flash checklist to continue.';
+        } else if (!preflightPolicy.canInstall && blockingReason) {
+            copyUrlBtn.title = blockingReason;
         } else {
             copyUrlBtn.removeAttribute('title');
         }
@@ -2443,6 +2470,8 @@ function updateFirmwareControls() {
                     installButton.title = message;
                 } else if (!isAcknowledged) {
                     installButton.title = 'Acknowledge the pre-flash checklist to continue.';
+                } else if (!preflightPolicy.canInstall && blockingReason) {
+                    installButton.title = blockingReason;
                 } else {
                     installButton.removeAttribute('title');
                 }
@@ -2470,6 +2499,12 @@ function updateFirmwareControls() {
         if (isVerified && !isAcknowledged) {
             return { text: 'Review the pre-flash checklist and acknowledge before continuing.', isError: false, isWarning: true };
         }
+        if (!preflightPolicy.canInstall && blockingReason) {
+            return { text: blockingReason, isError: true, isWarning: false };
+        }
+        if (preflightPolicy.requiresWarnAcknowledgement) {
+            return { text: 'Warnings detected. Check “Accept preflight warnings” to continue installation.', isError: false, isWarning: true };
+        }
         if (isVerified) {
             return { text: 'Ready to flash', isError: false, isWarning: false };
         }
@@ -2490,6 +2525,8 @@ function updateFirmwareControls() {
                 summaryInstallButton.title = message;
             } else if (!isAcknowledged) {
                 summaryInstallButton.title = 'Acknowledge the pre-flash checklist to continue.';
+            } else if (!preflightPolicy.canInstall && blockingReason) {
+                summaryInstallButton.title = blockingReason;
             } else {
                 summaryInstallButton.removeAttribute('title');
             }
@@ -2686,6 +2723,24 @@ async function refreshPreflightDiagnostics() {
             blocking: !preFlashAcknowledged
         })
     ];
+    const hasWarnings = checks.some(check => check.state === 'warn');
+    const warningsAcknowledgeControl = document.querySelector('[data-preflight-warn-acknowledge]');
+    if (warningsAcknowledgeControl) {
+        warningsAcknowledgeControl.hidden = !hasWarnings;
+        warningsAcknowledgeControl.setAttribute('aria-hidden', hasWarnings ? 'false' : 'true');
+        if (warningsAcknowledgeControl.dataset.preflightWarnBound !== 'true') {
+            warningsAcknowledgeControl.addEventListener('change', event => {
+                setPreflightWarningsAcknowledgement(Boolean(event?.target?.checked));
+            });
+            warningsAcknowledgeControl.dataset.preflightWarnBound = 'true';
+        }
+        if (!hasWarnings) {
+            warningsAcknowledgeControl.checked = false;
+            setPreflightWarningsAcknowledgement(false);
+        }
+    } else if (!hasWarnings) {
+        setPreflightWarningsAcknowledgement(false);
+    }
 
     const STATUS_LABELS = Object.freeze({
         pass: 'Pass',
@@ -2714,6 +2769,7 @@ async function refreshPreflightDiagnostics() {
         detailNode.textContent = check.detail;
     });
 
+    window.latestPreflightChecks = checks;
     return checks;
 }
 
@@ -3805,6 +3861,20 @@ function attachInstallButtonListeners() {
 
         if (activateButton && activateButton.dataset.installBound !== 'true') {
             activateButton.addEventListener('click', event => {
+                const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
+                if (!policy.canInstall) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
+                    const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
+                    const message = policy.blockingReasons[0] || 'Resolve preflight checks before installing.';
+                    [detailHelper, primaryHelper].filter(Boolean).forEach(helper => {
+                        helper.textContent = message;
+                        helper.classList.add('is-visible', 'is-error');
+                        helper.classList.remove('is-warning');
+                    });
+                    return;
+                }
                 if (!window.confirm('Keep the device connected and powered during flashing. Continue?')) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
@@ -3855,6 +3925,11 @@ function bindSummaryInstallButton() {
     summaryButton.dataset.installRelay = 'true';
     summaryButton.addEventListener('click', event => {
         event.preventDefault();
+        const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
+        if (!policy.canInstall) {
+            updateFirmwareControls();
+            return;
+        }
         const primaryInstall = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
 
         if (primaryInstall && !primaryInstall.disabled) {
@@ -4519,7 +4594,9 @@ export const __testHooks = Object.freeze({
     setFirmwareVerificationState: setFirmwareVerificationStateForTests,
     setFirmwareStatusMessage: setFirmwareStatusMessageForTests,
     updateFirmwareControls,
-    setPreFlashAcknowledgement
+    setPreFlashAcknowledgement,
+    setPreflightWarningsAcknowledgement,
+    evaluatePreflightPolicy
 });
 
 export {
