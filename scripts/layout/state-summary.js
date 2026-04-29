@@ -6,12 +6,12 @@ import {
     listPresets,
     getPreset,
     savePreset,
+    upsertPresetByName,
     renamePreset,
     deletePreset,
     markPresetApplied,
     generatePresetName,
-    PRESET_NAME_RULES,
-    validatePresetName,
+    normalizePresetName,
     getCurrentWizardStep,
     applyPresetStateToWizard,
     PRESET_STORAGE_OPTIONS
@@ -893,8 +893,29 @@ let mobileSummaryMediaQuery = null;
         const configuration = mapSummaryStateToConfiguration(state);
         const presetName = nameValidation.normalized || generatePresetName(state);
         const currentStep = getCurrentWizardStep();
+        const normalizedName = normalizePresetName(presetName);
+        const existing = listPresets(PRESET_STORAGE_OPTIONS)
+            .find(preset => normalizePresetName(preset.name) === normalizedName);
 
-        const savedResult = savePreset(presetName, configuration, {
+        refs.nameInput.setCustomValidity('');
+
+        if (existing) {
+            const shouldOverwrite = window.confirm(`A preset named "${existing.name}" already exists. Overwrite it?`);
+            if (!shouldOverwrite) {
+                refs.nameInput.setCustomValidity('A preset with this name already exists.');
+                refs.nameInput.reportValidity();
+                refs.nameInput.focus();
+                return;
+            }
+        }
+
+        const saved = existing
+            ? upsertPresetByName(presetName, configuration, {
+                ...PRESET_STORAGE_OPTIONS,
+                state,
+                currentStep
+            })
+            : savePreset(presetName, configuration, {
             ...PRESET_STORAGE_OPTIONS,
             state,
             currentStep
