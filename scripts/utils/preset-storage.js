@@ -744,15 +744,15 @@ function formatPower(value) {
 function formatModuleName(moduleKey, value) {
     const labels = {
         airiq: {
-            base: 'AirIQ Base',
-            pro: 'AirIQ Pro'
+            base: 'AirIQ',
+            pro: 'AirIQ'
         },
         presence: {
-            base: 'RoomIQ Motion Base',
-            pro: 'RoomIQ Motion Pro'
+            base: 'RoomIQ Motion',
+            pro: 'RoomIQ Motion'
         },
         comfort: {
-            base: 'RoomIQ Climate Base'
+            base: 'RoomIQ Climate'
         },
         fan: {
             pwm: 'Fan PWM',

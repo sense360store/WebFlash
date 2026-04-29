@@ -376,7 +376,7 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ Base module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ Base module to free the DAC bus.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ module to free the DAC bus.">Fan Analog</span>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or Bathroom AirIQ, not both." aria-label="Conflicts with Bathroom AirIQ: Choose either standard AirIQ or Bathroom AirIQ, not both.">Bathroom AirIQ</span>
                                             </div>
                                         </div>
@@ -405,7 +405,8 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support." aria-label="Conflicts with Fan Analog: Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Choose PWM fan control or disable AirIQ to regain analog fan support." aria-label="Conflicts with Fan Analog: Choose PWM fan control or disable AirIQ to regain analog fan support.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="presence" data-conflict-variants="pro" title="Use RoomIQ Motion or remove one of the modules to avoid UART contention." aria-label="Conflicts with RoomIQ Motion: Use RoomIQ Motion or remove one of the modules to avoid UART contention.">RoomIQ Motion</span>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or Bathroom AirIQ, not both." aria-label="Conflicts with Bathroom AirIQ: Choose either standard AirIQ or Bathroom AirIQ, not both.">Bathroom AirIQ</span>
                                             </div>
                                         </div>
@@ -484,7 +485,7 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Choose either Sense360 VentIQ or Sense360 AirIQ, not both." aria-label="Conflicts with AirIQ Base/Pro: Choose either Sense360 VentIQ or Sense360 AirIQ, not both.">AirIQ Base/Pro</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Choose either Sense360 VentIQ or Sense360 AirIQ, not both." aria-label="Conflicts with AirIQ: Choose either Sense360 VentIQ or Sense360 AirIQ, not both.">AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
@@ -492,6 +493,185 @@
                                 </div>
                             </section>
 
+                            <section class="module-group" data-module-group="presence" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Sense360 RoomIQ</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: RoomIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="presence"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-presence"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-presence" data-module-group-body hidden>
+                                    <p class="module-group__description">mmWave radar options for occupancy detection.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="presence" data-variant="none">
+                                        <input type="radio" name="presence" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Skip presence sensing.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="presence" data-variant="base">
+                                        <input type="radio" name="presence" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Sense360 RoomIQ</div>
+                                                    <p class="option-description module-card__description">Single-zone mmWave radar coverage.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev B core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J2 radar slot</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="presence" data-variant="pro">
+                                        <input type="radio" name="presence" value="pro" disabled>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Pro</div>
+                                                    <p class="option-description module-card__description">Dual-zone radar with LD2450 secondary coverage.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev D core</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J2 radar slot · J8 secondary UART</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" data-module-card-conflicts>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="pro" title="Select AirIQ or remove one of the modules." aria-label="Conflicts with AirIQ: Select AirIQ or remove one of the modules.">AirIQ</span>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="module-group" data-module-group="comfort" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Sense360 VentIQ</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: VentIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="comfort"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-comfort"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-comfort" data-module-group-body hidden>
+                                    <p class="module-group__description">Environmental sensing for comfort tuning.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="comfort" data-variant="none">
+                                        <input type="radio" name="comfort" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Skip comfort sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="comfort" data-variant="base">
+                                        <input type="radio" name="comfort" value="base">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Sense360 VentIQ</div>
+                                                    <p class="option-description module-card__description">Humidity and ambient light monitoring.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>Rev A core or newer</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J3 environmental header</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
 
                             <section class="module-group" data-module-group="fan" id="fan-module-section" data-expanded="false">
                                 <div class="module-group__summary">
@@ -589,7 +769,7 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ Base/Pro: Disable AirIQ or switch the fan output to PWM mode.">AirIQ Base/Pro</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base pro" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ: Disable AirIQ or switch the fan output to PWM mode.">AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
