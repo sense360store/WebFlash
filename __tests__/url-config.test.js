@@ -95,8 +95,8 @@ describe('config URL parser', () => {
     expect(result.sanitizedConfig.core).toBe('none');
   });
 
-  test('ignores deprecated Presence/Comfort query keys during parsing', () => {
-    const params = new URLSearchParams('core=corevoice&mount=wall&power=ac&presence=presencepro&comfort=comfortbase');
+  test('ignores deprecated/unknown query keys during parsing', () => {
+    const params = new URLSearchParams('core=corevoice&mount=wall&power=ac&legacy=1&foo=bar');
     const result = parseConfigParams(params);
 
     expect(result.isValid).toBe(true);

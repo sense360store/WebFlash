@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Implemented strict Referrer-Policy
 
 ### Changed
-- Retired Presence/Comfort firmware module variants were removed from manifests and distribution artifacts.
+- Retired legacy module variants were removed from manifests and distribution artifacts.
 
 ## [2.0.0] - 2025
 
