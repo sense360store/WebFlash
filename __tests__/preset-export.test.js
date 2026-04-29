@@ -53,6 +53,53 @@ describe('preset export JSON', () => {
 `);
   });
 
+  test('returns structured validation result for malformed payload', async () => {
+    const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
+
+    expect(deserializePresetConfig(null)).toEqual({
+      ok: false,
+      code: 'invalid_payload_shape',
+      message: 'Import payload must be an object.',
+      fieldErrors: [{ path: '', message: 'Expected a JSON object payload.' }]
+    });
+  });
+
+  test('returns field errors for missing required keys', async () => {
+    const { validatePresetImportPayload } = await import('../scripts/utils/preset-storage.js');
+
+    const result = validatePresetImportPayload({ schemaVersion: 1 });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('missing_required_keys');
+    expect(result.fieldErrors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'hardwareTarget' }),
+      expect.objectContaining({ path: 'preset' })
+    ]));
+  });
+
+  test('returns field errors for invalid enum values', async () => {
+    const { validatePresetImportPayload } = await import('../scripts/utils/preset-storage.js');
+
+    const result = validatePresetImportPayload({
+      schemaVersion: 1,
+      hardwareTarget: 'sense360-wall-usb',
+      preset: {
+        id: 'preset-3',
+        name: 'Invalid enums',
+        state: { mount: 'desk', power: 'battery' },
+        configuration: { mounting: 'floor', power: 'magic' }
+      }
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.fieldErrors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'preset.state.mount' }),
+      expect.objectContaining({ path: 'preset.state.power' }),
+      expect.objectContaining({ path: 'preset.configuration.mounting' }),
+      expect.objectContaining({ path: 'preset.configuration.power' })
+    ]));
+  });
+
   test('exported payload round-trips to equivalent preset', async () => {
     const { serializePresetConfig, deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
 
@@ -71,9 +118,16 @@ describe('preset export JSON', () => {
     const imported = deserializePresetConfig(payload);
 
     expect(imported).toEqual({
-      ...source,
-      state: { ...source.state, fan: 'none' },
-      configuration: { ...source.configuration, fan: 'none' }
+      ok: true,
+      data: {
+        ...source,
+        state: { ...source.state, fan: 'none' },
+        configuration: { ...source.configuration, fan: 'none' }
+      },
+      metadata: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-ceiling-poe'
+      }
     });
   });
 });
