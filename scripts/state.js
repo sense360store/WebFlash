@@ -4070,8 +4070,13 @@ function buildReleaseNotesPathFromPart(partPath, channel) {
 
     const prefix = baseName.substring(0, lastHyphenIndex);
     const channelSuffix = releaseNotesChannel ? `-${releaseNotesChannel}` : '';
+    const fileNameWithChannel = `${prefix}${channelSuffix}.md`;
 
-    return `${directory}${prefix}${channelSuffix}.md`;
+    if (releaseNotesChannel === 'stable') {
+        return `${directory}${fileNameWithChannel}`;
+    }
+
+    return `firmware/previews/${fileNameWithChannel}`;
 }
 
 async function loadReleaseNotes({ notesSection, firmwareId }) {

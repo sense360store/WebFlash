@@ -60,6 +60,18 @@ jobs:
             --manifest-prefix firmware- \
             --summary
 
+      - name: Validate release-note channel policy
+        run: |
+          set -euo pipefail
+          invalid_preview_notes=$(find firmware/configurations -maxdepth 1 -type f \( -name '*-preview.md' -o -name '*-beta.md' -o -name '*-dev.md' \))
+          if [ -n "${invalid_preview_notes}" ]; then
+            echo "❌ Preview/Beta/Dev release notes are not allowed in firmware/configurations:" >&2
+            echo "${invalid_preview_notes}" >&2
+            echo "Move non-stable notes to firmware/previews/." >&2
+            exit 1
+          fi
+          echo "✅ Release-note policy validated (stable-only in firmware/configurations)."
+
       - name: List firmware & dry-run summary
         run: |
           set -euo pipefail

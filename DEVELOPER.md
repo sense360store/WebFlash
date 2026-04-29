@@ -21,7 +21,10 @@ WebFlash uses automated manifest generation to maintain firmware catalogs. All m
 cp firmware.bin firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].bin
 
 # 2. Create release notes (optional)
-nano firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
+# stable notes (production-discoverable):
+nano firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-stable.md
+# preview/beta notes (non-production path):
+nano firmware/previews/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
 
 # 3. Generate manifests
 python3 scripts/gen-manifests.py --summary
@@ -38,7 +41,8 @@ git push origin main
 rm firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].bin
 
 # 2. Delete release notes
-rm firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
+rm firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-stable.md
+rm firmware/previews/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
 
 # 3. Regenerate manifests
 python3 scripts/gen-manifests.py --summary
@@ -117,7 +121,9 @@ Sense360-Core-Ceiling-POE-LED-AirIQBase-v1.0.0-stable.bin
 
 ## Release Notes
 
-Release notes are optional markdown files stored alongside firmware binaries.
+Release notes are optional markdown files with channel-based storage policy:
+- `stable` notes live in `firmware/configurations/` (production-discoverable path).
+- `preview`/`beta`/`dev` notes live in `firmware/previews/` (segregated non-production path).
 
 ### File Naming
 
@@ -127,8 +133,11 @@ Release notes files must match their firmware file:
 # Firmware file
 Sense360-Core-Wall-USB-v1.0.0-stable.bin
 
-# Release notes file
-Sense360-Core-Wall-USB-v1.0.0-stable.md
+# Release notes file (stable)
+firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.md
+
+# Release notes file (preview/beta/dev)
+firmware/previews/Sense360-Core-Wall-USB-v1.1.0-preview.md
 ```
 
 ### Format
@@ -467,7 +476,7 @@ Individual manifests for ESP Web Tools:
 
 1. Scan firmware directories
 2. Parse filenames for metadata
-3. Load release notes files
+3. Load stable release notes from `firmware/configurations/` and non-stable release notes from `firmware/previews/`
 4. Generate main manifest
 5. Create individual manifests
 6. Validate all manifests

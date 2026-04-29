@@ -40,7 +40,8 @@ This document reviews the current firmware distribution and uploading process to
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | Firmware Binaries | `firmware/configurations/*.bin` | 47+ firmware variants |
-| Release Notes | `firmware/configurations/*.md` | Optional markdown docs (13 files) |
+| Release Notes (stable) | `firmware/configurations/*-stable.md` | Production-discoverable markdown docs |
+| Release Notes (preview/beta/dev) | `firmware/previews/*.md` | Segregated non-production markdown docs |
 | Main Manifest | `manifest.json` | Central catalog for WebFlash UI |
 | ESP Web Tools Manifests | `firmware-*.json` | Individual manifests for flashing |
 | Manifest Generator | `scripts/gen-manifests.py` | Automated manifest creation |
@@ -68,6 +69,7 @@ cp Sense360-Core-Wall-USB-v1.2.0-stable.bin \
 
 # Step 4: Create release notes (optional)
 nano firmware/configurations/Sense360-Core-Wall-USB-v1.2.0-stable.md
+# (for preview/beta/dev channels use firmware/previews/)
 
 # Step 5: Run manifest generator
 python3 scripts/gen-manifests.py --summary
@@ -526,7 +528,8 @@ Current required configurations (from CI validation):
 - `DEVELOPER.md` - Developer guide
 - `manifest.json` - Generated manifest
 - `firmware/configurations/*.bin` - Firmware binaries
-- `firmware/configurations/*.md` - Release notes
+- `firmware/configurations/*-stable.md` - Stable release notes (production path)
+- `firmware/previews/*.md` - Preview/Beta/Dev release notes (non-production path)
 
 ## Related Repositories
 
