@@ -92,7 +92,14 @@ const MODULE_REQUIREMENT_MATRIX = {
                 label: 'Sense360 Fan PWM',
                 coreRevision: 'R4',
                 headers: ['12vFan_PWM_PulseCounter'],
-                conflicts: []
+                conflicts: [],
+                compatibilityNotes: [
+                    {
+                        mounting: 'ceiling',
+                        power: 'pwr',
+                        message: 'PWM fan control is not supported for Ceiling mount with PWR power.'
+                    }
+                ]
             },
             analog: {
                 label: 'Sense360 Fan DAC',
