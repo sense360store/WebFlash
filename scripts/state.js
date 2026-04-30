@@ -1610,28 +1610,38 @@ function updateBathroomVisibility() {
 }
 
 function updateVentIQModuleVisibility() {
-    const bathroomAirIQSection = document.getElementById('bathroomairiq-module-section');
-    if (!bathroomAirIQSection) {
+    const bathroomAirIQSections = Array.from(document.querySelectorAll('[data-module-group="bathroomairiq"]'));
+    if (!bathroomAirIQSections.length) {
         return;
+    }
+
+    if (bathroomAirIQSections.length > 1) {
+        // Defensive guard: duplicate VentIQ module-group markup is invalid and should never be rendered.
+        console.warn('[state] Invalid DOM: multiple [data-module-group="bathroomairiq"] sections found. Applying visibility updates to all sections defensively.');
     }
 
     // VentIQ is only available when ceiling mount AND bathroom is enabled
     const shouldHideVentIQ = configuration.mounting !== 'ceiling' || !configuration.bathroom;
 
     if (shouldHideVentIQ) {
-        bathroomAirIQSection.style.display = 'none';
+        bathroomAirIQSections.forEach(section => {
+            section.style.display = 'none';
+        });
         closeModuleGroup('bathroomairiq');
 
-        const bathroomAirIQNoneInput = document.querySelector('input[name="bathroomairiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
-        }
+        document.querySelectorAll('input[name="bathroomairiq"][value="none"]').forEach(input => {
+            if (!input.checked) {
+                input.checked = true;
+            }
+        });
 
         configuration.bathroomairiq = 'none';
     } else {
-        bathroomAirIQSection.style.display = '';
-        const isExpanded = bathroomAirIQSection.dataset.expanded === 'true';
-        setModuleGroupExpanded(bathroomAirIQSection, isExpanded);
+        bathroomAirIQSections.forEach(section => {
+            section.style.display = '';
+            const isExpanded = section.dataset.expanded === 'true';
+            setModuleGroupExpanded(section, isExpanded);
+        });
     }
 
     updateModuleGroupSummaries();
@@ -1661,10 +1671,11 @@ function syncConfigurationFromInputs() {
         configuration.bathroomairiq = document.querySelector('input[name="bathroomairiq"]:checked')?.value || 'none';
     } else {
         configuration.bathroomairiq = 'none';
-        const bathroomAirIQNoneInput = document.querySelector('input[name="bathroomairiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
-        }
+        document.querySelectorAll('input[name="bathroomairiq"][value="none"]').forEach(input => {
+            if (!input.checked) {
+                input.checked = true;
+            }
+        });
     }
 
     if (configuration.mounting === 'wall') {
@@ -1681,10 +1692,11 @@ function syncConfigurationFromInputs() {
         configuration.bathroomairiq = document.querySelector('input[name="bathroomairiq"]:checked')?.value || 'none';
     } else {
         configuration.bathroomairiq = 'none';
-        const bathroomAirIQNoneInput = document.querySelector('input[name="bathroomairiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
-        }
+        document.querySelectorAll('input[name="bathroomairiq"][value="none"]').forEach(input => {
+            if (!input.checked) {
+                input.checked = true;
+            }
+        });
     }
 
     // LED Ring - sync from inputs
