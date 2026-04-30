@@ -1740,9 +1740,11 @@ function applyOptionAvailabilityState(input, { available, reason }) {
         if (available) {
             card.classList.remove('is-unavailable');
             card.removeAttribute('aria-disabled');
+            card.removeAttribute('title');
         } else {
             card.classList.add('is-unavailable');
             card.setAttribute('aria-disabled', 'true');
+            card.setAttribute('title', reason || 'Not available for this configuration.');
         }
 
         const status = card.querySelector('[data-option-status]');
@@ -1753,6 +1755,12 @@ function applyOptionAvailabilityState(input, { available, reason }) {
         } else if (status) {
             status.textContent = '';
             status.style.display = 'none';
+        }
+
+        const availabilityHint = card.querySelector('[data-module-availability-hint]');
+        if (availabilityHint) {
+            availabilityHint.textContent = !available ? (reason || 'Not available for this configuration.') : '';
+            availabilityHint.hidden = available;
         }
     }
 }
@@ -1765,10 +1773,16 @@ function resetOptionAvailability() {
             if (card) {
                 card.classList.remove('is-unavailable');
                 card.removeAttribute('aria-disabled');
+                card.removeAttribute('title');
                 const status = card.querySelector('[data-option-status]');
                 if (status) {
                     status.textContent = '';
                     status.style.display = 'none';
+                }
+                const availabilityHint = card.querySelector('[data-module-availability-hint]');
+                if (availabilityHint) {
+                    availabilityHint.textContent = '';
+                    availabilityHint.hidden = true;
                 }
             }
         });
@@ -1794,6 +1808,9 @@ function formatModuleSelectionLabel(key, value) {
     }
 
     if (value === 'none') {
+        if (key === 'fan') {
+            return `${label} Relay`;
+        }
         return `${label} None`;
     }
 
@@ -1988,6 +2005,18 @@ function bindModuleGroupToggleListeners() {
 }
 
 function formatOptionUnavailableReason(baseState, moduleKey, value) {
+    const variant = getModuleVariantEntry(moduleKey, value);
+    const compatibilityNotes = Array.isArray(variant?.compatibilityNotes) ? variant.compatibilityNotes : [];
+    const matchedNote = compatibilityNotes.find(note => {
+        const mountingMatches = !note?.mounting || note.mounting === baseState.mounting;
+        const powerMatches = !note?.power || note.power === baseState.power;
+        return mountingMatches && powerMatches;
+    });
+
+    if (matchedNote?.message) {
+        return matchedNote.message;
+    }
+
     const moduleLabel = formatModuleSelectionLabel(moduleKey, value);
     const combinationLabel = formatMountingPowerLabel(baseState);
 

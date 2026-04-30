@@ -1113,12 +1113,25 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 
 .option-card.is-unavailable .module-card__inner {
     border-style: dashed;
-    opacity: 0.6;
+    opacity: 0.45;
     box-shadow: none;
+    filter: grayscale(0.2);
 }
 
 .option-card.is-unavailable .module-card__state {
     opacity: 0.6;
+}
+
+.module-card__availability-hint {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--color-border-subtle));
+    background: color-mix(in srgb, var(--danger) 9%, var(--color-surface));
+    color: color-mix(in srgb, var(--danger) 75%, var(--color-text-primary));
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 600;
 }
 
 .module-summary-card {
