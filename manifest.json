@@ -175,11 +175,11 @@
       "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-POE-VentIQBase configuration. Recommended for production deployments.",
+      "description": "Stable firmware for Sense360 Ceiling-POE-VentIQ configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQBase-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-v1.0.0-stable.bin",
           "offset": 0,
           "md5": "1eb1fea3994bbbeea11080159dbbe611",
           "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
@@ -196,12 +196,12 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "config_string": "Ceiling-POE-VentIQBase",
+      "config_string": "Ceiling-POE-VentIQ",
       "core_type": null,
       "mounting": "Ceiling",
       "power": "POE",
       "modules": [
-        "VentIQBase"
+        "VentIQ"
       ]
     },
     {
@@ -629,11 +629,11 @@
       "device_type": "Core Module",
       "version": "3.0.1",
       "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling-VentIQBase configuration. Recommended for production deployments.",
+      "description": "Stable firmware for Sense360 Core-Ceiling-VentIQ configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-VentIQBase-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Ceiling-VentIQ-v3.0.1-stable.bin",
           "offset": 0,
           "md5": "05602f78a9de37b98475864012d68919",
           "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
@@ -650,12 +650,12 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "config_string": "Core-Ceiling-VentIQBase",
+      "config_string": "Core-Ceiling-VentIQ",
       "core_type": "Core",
       "mounting": "Ceiling",
       "power": null,
       "modules": [
-        "VentIQBase"
+        "VentIQ"
       ]
     },
     {

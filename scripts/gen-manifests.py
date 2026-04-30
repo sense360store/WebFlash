@@ -151,9 +151,9 @@ EXACT_POWER_TOKENS = {"USB", "POE", "PWR"}
 
 CANONICAL_MODULE_TOKENS: Dict[str, str] = {
     "airiqpro": "AirIQ",
-    "bathroomairiq": "VentIQBase",
-    "bathroomairiqbase": "VentIQBase",
-    "bathroomairiqpro": "VentIQBase",
+    "bathroomairiq": "VentIQ",
+    "bathroomairiqbase": "VentIQ",
+    "bathroomairiqpro": "VentIQ",
     "ventiqpro": "VentIQ",
 }
 
@@ -161,6 +161,8 @@ LEGACY_MODULE_TOKENS = frozenset(CANONICAL_MODULE_TOKENS.keys())
 DEPRECATED_MODULE_TOKENS = frozenset(
     {
         "airiqpro",
+        "bathroomairiq",
+        "bathroomairiqbase",
         "bathroomairiqpro",
         "ventiqpro",
     }
@@ -274,8 +276,7 @@ def _normalise_config_tokens(tokens: List[str]) -> Tuple[List[str], Optional[str
         if lowered in CONFIG_CHIP_HINTS:
             chip_hint = CONFIG_CHIP_HINTS[lowered]
             continue
-        canonical_module = CANONICAL_MODULE_TOKENS.get(lowered)
-        filtered.append(canonical_module or token)
+        filtered.append(token)
     return filtered, chip_hint
 
 
@@ -700,24 +701,29 @@ def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
     }
 
 
+def _collect_deprecated_module_hits(values: Sequence[str]) -> List[str]:
+    hits: List[str] = []
+    for value in values:
+        parts = [part for part in value.split("-") if part]
+        for part in parts:
+            if part.lower() in DEPRECATED_MODULE_TOKENS:
+                hits.append(part)
+    return hits
+
+
 def validate_no_deprecated_modules(artifacts: Sequence[FirmwareArtifact]) -> None:
     for artifact in artifacts:
         meta = artifact.metadata
         if not meta.is_configuration:
             continue
-        deprecated_hits = [
-            token
-            for token in (meta.config_string or "").split("-")
-            if token.lower() in DEPRECATED_MODULE_TOKENS
-        ]
-        deprecated_hits.extend(
-            module for module in meta.modules if module.lower() in DEPRECATED_MODULE_TOKENS
-        )
+        deprecated_hits = _collect_deprecated_module_hits([meta.config_string or ""])
+        deprecated_hits.extend(_collect_deprecated_module_hits(meta.modules))
+        deprecated_hits.extend(_collect_deprecated_module_hits([meta.description]))
         if deprecated_hits:
             hits = ", ".join(sorted(set(deprecated_hits), key=str.lower))
             raise SystemExit(
                 f"Deprecated module name(s) found in {artifact.path.name}: {hits}. "
-                "Use current module taxonomy (for example: AirIQ, VentIQ, VentIQBase)."
+                "Use current module taxonomy (for example: AirIQ, VentIQ)."
             )
 
 
