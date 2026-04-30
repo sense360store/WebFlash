@@ -19,7 +19,7 @@
     state.mount = pick('#step-1, .wizard-step[data-step="1"], .wizard-step:has(h2:contains("Mounting"))',
       { 'Wall': 'wall', 'Ceiling': 'ceiling' });
     // Power
-    state.power = pick('#step-2, .wizard-step[data-step="2"], .wizard-step:has(h2:contains("Power"))',
+    state.power = pick('#step-3, .wizard-step[data-step="3"], .wizard-step:has(h2:contains("Power"))',
       { 'USB': 'usb', 'POE': 'poe', 'PWR': 'pwr' });
     // Modules
     state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Base':'base','Pro':'pro' });
