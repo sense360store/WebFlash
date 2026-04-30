@@ -74,6 +74,29 @@ describe('config URL parser', () => {
     expect(result.sanitizedConfig.fan).toBe('analog');
   });
 
+
+  test('supports legacy and canonical AirIQ aliases case-insensitively', () => {
+    const legacyShort = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=prov'));
+    expect(legacyShort.isValid).toBe(true);
+    expect(legacyShort.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(legacyShort.sanitizedConfig.airiq).toBe('pro');
+
+    const legacyToken = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=AirIQProv'));
+    expect(legacyToken.isValid).toBe(true);
+    expect(legacyToken.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(legacyToken.sanitizedConfig.airiq).toBe('pro');
+
+    const canonicalShort = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=pro'));
+    expect(canonicalShort.isValid).toBe(true);
+    expect(canonicalShort.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(canonicalShort.sanitizedConfig.airiq).toBe('pro');
+
+    const canonicalToken = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=AirIQPro'));
+    expect(canonicalToken.isValid).toBe(true);
+    expect(canonicalToken.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(canonicalToken.sanitizedConfig.airiq).toBe('pro');
+  });
+
   test('reports invalid fan values', () => {
     const params = new URLSearchParams('core=core&mount=wall&power=usb&fan=linear');
     const result = parseConfigParams(params);
