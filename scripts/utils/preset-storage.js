@@ -120,12 +120,42 @@ function writePresetEntries(entries, options = {}) {
     }
 }
 
+const ALLOWED_AIRIQ_VALUES = Object.freeze(['none', 'airiq', 'ventiq']);
+const ALLOWED_FAN_VALUES = Object.freeze(['none', 'relay', 'pwm', 'analog', 'triac']);
+const ALLOWED_MOUNT_VALUES = Object.freeze(['wall', 'ceiling']);
+const ALLOWED_POWER_VALUES = Object.freeze(['usb', 'poe', 'pwr']);
+const AIRIQ_LEGACY_ALIASES = Object.freeze({
+    base: 'airiq',
+    airiqbase: 'airiq',
+    pro: 'ventiq',
+    prov: 'ventiq',
+    airiqpro: 'ventiq',
+    airiqprov: 'ventiq'
+});
+
+function normalizeAirIqValue(value) {
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const lowered = value.trim().toLowerCase();
+    if (!lowered) {
+        return null;
+    }
+    if (ALLOWED_AIRIQ_VALUES.includes(lowered)) {
+        return lowered;
+    }
+    if (Object.prototype.hasOwnProperty.call(AIRIQ_LEGACY_ALIASES, lowered)) {
+        return AIRIQ_LEGACY_ALIASES[lowered];
+    }
+    return null;
+}
+
 function normalizePresetState(state = {}) {
     const normalized = {
-        mount: normalizeStringChoice(state.mount, ['wall', 'ceiling']),
-        power: normalizeStringChoice(state.power, ['usb', 'poe', 'pwr']),
-        airiq: normalizeStringChoice(state.airiq, ['none', 'base', 'pro'], 'none'),
-        fan: normalizeStringChoice(state.fan, ['none', 'relay', 'pwm', 'analog', 'triac'], 'none'),
+        mount: normalizeStringChoice(state.mount, ALLOWED_MOUNT_VALUES),
+        power: normalizeStringChoice(state.power, ALLOWED_POWER_VALUES),
+        airiq: normalizeAirIqValue(state.airiq) ?? 'none',
+        fan: normalizeStringChoice(state.fan, ALLOWED_FAN_VALUES, 'none'),
         voice: normalizeStringChoice(state.voice, ['none'], 'none')
     };
 
@@ -140,10 +170,10 @@ function normalizePresetState(state = {}) {
 function normalizePresetConfiguration(configuration = {}, state = {}) {
     const normalizedState = normalizePresetState(state);
     const normalized = {
-        mounting: normalizeStringChoice(configuration.mounting ?? normalizedState.mount, ['wall', 'ceiling']),
-        power: normalizeStringChoice(configuration.power ?? normalizedState.power, ['usb', 'poe', 'pwr']),
-        airiq: normalizeStringChoice(configuration.airiq ?? normalizedState.airiq, ['none', 'base', 'pro'], 'none'),
-        fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ['none', 'relay', 'pwm', 'analog', 'triac'], 'none'),
+        mounting: normalizeStringChoice(configuration.mounting ?? normalizedState.mount, ALLOWED_MOUNT_VALUES),
+        power: normalizeStringChoice(configuration.power ?? normalizedState.power, ALLOWED_POWER_VALUES),
+        airiq: normalizeAirIqValue(configuration.airiq) ?? normalizedState.airiq ?? 'none',
+        fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ALLOWED_FAN_VALUES, 'none'),
         voice: normalizeStringChoice(configuration.voice ?? normalizedState.voice, ['none'], 'none')
     };
 
@@ -666,17 +696,22 @@ function validatePresetImportPayload(payload) {
             fieldErrors.push({ path: 'preset.configuration', message: 'preset.configuration must be an object when provided.' });
         }
 
+        const VOICE_LEGACY_VALUES = ['none', 'base'];
+        const AIRIQ_VALIDATION_VALUES = [
+            ...ALLOWED_AIRIQ_VALUES,
+            ...Object.keys(AIRIQ_LEGACY_ALIASES)
+        ];
         const enumValidations = [
-            { path: 'preset.state.mount', value: preset.state?.mount, allowed: ['wall', 'ceiling'] },
-            { path: 'preset.state.power', value: preset.state?.power, allowed: ['usb', 'poe', 'pwr'] },
-            { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'relay', 'pwm', 'analog', 'triac'] },
-                        { path: 'preset.state.voice', value: preset.state?.voice, allowed: ['none'] },
-            { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ['wall', 'ceiling'] },
-            { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ['usb', 'poe', 'pwr'] },
-            { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'relay', 'pwm', 'analog', 'triac'] },
-            { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: ['none'] },
+            { path: 'preset.state.mount', value: preset.state?.mount, allowed: ALLOWED_MOUNT_VALUES },
+            { path: 'preset.state.power', value: preset.state?.power, allowed: ALLOWED_POWER_VALUES },
+            { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: AIRIQ_VALIDATION_VALUES },
+            { path: 'preset.state.fan', value: preset.state?.fan, allowed: ALLOWED_FAN_VALUES },
+            { path: 'preset.state.voice', value: preset.state?.voice, allowed: VOICE_LEGACY_VALUES },
+            { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ALLOWED_MOUNT_VALUES },
+            { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ALLOWED_POWER_VALUES },
+            { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: AIRIQ_VALIDATION_VALUES },
+            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ALLOWED_FAN_VALUES },
+            { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: VOICE_LEGACY_VALUES }
         ];
 
         enumValidations.forEach(({ path, value, allowed }) => {
@@ -729,13 +764,18 @@ function validatePresetImportPayload(payload) {
         }
     };
 
+    const notices = [];
+    if (hadCoreVoice) {
+        notices.push('Core Voice is coming soon and was downgraded to Core.');
+    }
+
     return {
         ok: true,
         data: normalizedWithVoiceFallback,
         metadata: {
             schemaVersion: Math.trunc(payload.schemaVersion),
             hardwareTarget: payload.hardwareTarget.trim(),
-            notices: []
+            notices
         }
     };
 }
@@ -787,8 +827,8 @@ function formatPower(value) {
 function formatModuleName(moduleKey, value) {
     const labels = {
         airiq: {
-            base: 'AirIQ',
-            pro: 'AirIQ'
+            airiq: 'AirIQ',
+            ventiq: 'VentIQ'
         },
         fan: {
             relay: 'Fan Relay',

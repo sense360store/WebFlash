@@ -85,15 +85,16 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'AirIQBase' }],
-            ['pro', { wizardValue: 'pro', configSegment: 'AirIQPro' }]
+            ['airiq', { wizardValue: 'airiq', configSegment: 'AirIQ' }],
+            ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['base', { wizardValue: 'airiq', configSegment: 'AirIQBase' }],
+            ['airiqbase', { wizardValue: 'airiq', configSegment: 'AirIQBase' }],
+            ['pro', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
+            ['prov', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
+            ['airiqpro', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
+            ['airiqprov', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base', 'pro']),
-        legacyValues: new Map([
-            ['prov', 'pro'],
-            ['airiqprov', 'pro'],
-            ['airiqpro', 'pro']
-        ])
+        allowedValues: Object.freeze(['none', 'airiq', 'ventiq'])
     }),
     bathroomairiq: Object.freeze({
         required: false,
@@ -101,15 +102,14 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'VentIQBase' }],
-            ['pro', { wizardValue: 'pro', configSegment: 'VentIQPro' }]
+            ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['base', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['pro', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['bathroomairiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['bathroomairiqbase', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['bathroomairiqpro', { wizardValue: 'ventiq', configSegment: 'VentIQ' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base', 'pro']),
-        legacyValues: new Map([
-            ['bathroomairiq', 'base'],
-            ['bathroomairiqbase', 'base'],
-            ['bathroomairiqpro', 'pro']
-        ])
+        allowedValues: Object.freeze(['none', 'ventiq'])
     }),
     fan: Object.freeze({
         required: false,
@@ -239,17 +239,6 @@ function parseConfigParams(inputParams) {
 
         if (definition.legacyValues instanceof Map && definition.legacyValues.has(canonicalValue)) {
             canonicalValue = definition.legacyValues.get(canonicalValue);
-        }
-
-        if (key === 'airiq' && canonicalValue === 'pro') {
-            canonicalValue = 'base';
-            notices.push({
-                type: 'legacy-remap',
-                field: 'airiq',
-                from: 'pro',
-                to: 'base',
-                message: 'AirIQ Pro is no longer available and was changed to AirIQ Base.'
-            });
         }
 
         if (!options.has(canonicalValue)) {

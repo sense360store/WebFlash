@@ -1254,6 +1254,12 @@ async function loadManifestData(options = {}) {
     }
 
     const attemptFetch = async (attempt = 1) => {
+        if (typeof fetch !== 'function') {
+            const error = new Error('fetch API is not available in this environment');
+            manifestLoadError = error;
+            manifestLoadPromise = null;
+            throw error;
+        }
         try {
             const response = await fetch('manifest.json', { cache: 'no-store' });
             if (!response.ok) {
@@ -2587,13 +2593,27 @@ function updateSummary() {
 }
 
 function updateFirmwareControls() {
+    const downloadBtn = document.getElementById('download-btn');
+    const downloadBtnHost = downloadBtn?.closest?.('.wizard-step') || null;
+    const downloadBtnStepNumber = downloadBtnHost?.id
+        ? Number(downloadBtnHost.id.replace('step-', ''))
+        : NaN;
+    const reviewStepNumber = Number.isFinite(downloadBtnStepNumber) && downloadBtnStepNumber > 0
+        ? downloadBtnStepNumber
+        : totalSteps;
+    const firmwareIsRegistered = Boolean(
+        window.currentFirmware
+        && window.currentFirmware.firmwareId
+        && firmwareOptionsMap.has(window.currentFirmware.firmwareId)
+    );
     const hasFirmware = Boolean(
         window.currentFirmware
         && Array.isArray(window.currentFirmware.parts)
         && window.currentFirmware.parts.length > 0
+        && firmwareIsRegistered
     );
     const canWebSerial = Boolean(navigator?.serial);
-    const onReviewStep = currentStep === 5;
+    const onReviewStep = currentStep === reviewStepNumber;
     const shouldShowInstallControls = canWebSerial && onReviewStep;
     const verificationStatus = (firmwareVerificationState.status || '').toString().toLowerCase();
     const isVerified = verificationStatus === 'verified';
@@ -2605,7 +2625,6 @@ function updateFirmwareControls() {
     const blockingReason = preflightPolicy.blockingReasons[0] || '';
     const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall;
 
-    const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
         downloadBtn.hidden = !onReviewStep;
         downloadBtn.setAttribute('aria-hidden', onReviewStep ? 'false' : 'true');
