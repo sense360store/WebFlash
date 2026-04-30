@@ -20,6 +20,12 @@ const MODULE_REQUIREMENT_MATRIX = {
                         variants: ['analog'],
                         message: 'Conflicts with Fan Analog — analog control uses the shared DAC header.',
                         detail: 'Select PWM fan control or remove the AirIQ Base module to free the DAC bus.'
+                    },
+                    {
+                        module: 'bathroomairiq',
+                        variants: ['base'],
+                        message: 'Compatible with VentIQ in bathroom mode.',
+                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
             },
@@ -33,6 +39,12 @@ const MODULE_REQUIREMENT_MATRIX = {
                         variants: ['analog'],
                         message: 'Conflicts with Fan Analog — the Pro particulate harness occupies the DAC header.',
                         detail: 'Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.'
+                    },
+                    {
+                        module: 'bathroomairiq',
+                        variants: ['base'],
+                        message: 'Compatible with VentIQ in bathroom mode.',
+                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
             }
