@@ -142,6 +142,20 @@ const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS'
     ['led', value => value === 'base' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
 
+
+function moduleHasSelectableVariants(moduleKey) {
+    const moduleEntry = MODULE_REQUIREMENT_MATRIX[moduleKey];
+    if (!moduleEntry || !moduleEntry.variants || typeof moduleEntry.variants !== 'object') {
+        return false;
+    }
+
+    return Object.keys(moduleEntry.variants).some(variantKey => variantKey !== 'none');
+}
+
+function getVisibleModuleGroupKeys() {
+    return MODULE_KEYS.filter(moduleKey => moduleHasSelectableVariants(moduleKey));
+}
+
 let activeModuleGroupKey = null;
 
 let moduleDetailPanelElement = null;
@@ -680,7 +694,7 @@ function syncModuleDetailPanelToSelection() {
     }
 
     if (!activeModuleDetailKey || !MODULE_REQUIREMENT_MATRIX[activeModuleDetailKey]) {
-        const defaultModule = MODULE_KEYS.find(key => MODULE_REQUIREMENT_MATRIX[key]);
+        const defaultModule = getVisibleModuleGroupKeys().find(key => MODULE_REQUIREMENT_MATRIX[key]);
         if (defaultModule) {
             activeModuleDetailKey = defaultModule;
         }
@@ -744,7 +758,7 @@ function initializeModuleDetailPanel() {
         }
     });
 
-    const defaultModule = MODULE_KEYS.find(key => MODULE_REQUIREMENT_MATRIX[key]);
+    const defaultModule = getVisibleModuleGroupKeys().find(key => MODULE_REQUIREMENT_MATRIX[key]);
     if (defaultModule) {
         setActiveModuleDetail(defaultModule, configuration[defaultModule] || 'none');
     } else {
@@ -1785,10 +1799,17 @@ function formatModuleSelectionLabel(key, value) {
 }
 
 function updateModuleGroupSummaries() {
+    const visibleKeys = new Set(getVisibleModuleGroupKeys());
     const groups = document.querySelectorAll('[data-module-group]');
     groups.forEach(group => {
         const key = group.getAttribute('data-module-group');
         if (!key) {
+            return;
+        }
+
+        const isVisible = visibleKeys.has(key);
+        group.style.display = isVisible ? '' : 'none';
+        if (!isVisible) {
             return;
         }
 
@@ -1852,7 +1873,7 @@ function openModuleGroup(key, { focus = false } = {}) {
     }
 
     const target = document.querySelector(`[data-module-group="${key}"]`);
-    if (!target) {
+    if (!target || !getVisibleModuleGroupKeys().includes(key)) {
         return;
     }
 
