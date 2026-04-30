@@ -70,6 +70,13 @@ const MODULE_REQUIREMENT_MATRIX = {
         summary: 'Driver options for external fan and load switching control.',
         variants: {
             none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                description: 'No fan or switching driver installed.',
+                conflicts: []
+            },
+            relay: {
                 label: 'Sense360 Fan Relay',
                 sku: 'S360-310',
                 coreRevision: 'R4',
