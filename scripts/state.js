@@ -87,7 +87,7 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['mounting', ['wall', 'ceiling']],
     ['power', ['usb', 'poe', 'pwr']],
     ['bathroom', [false, true]],
-    ['airiq', ['none', 'base', 'pro']],
+    ['airiq', ['none', 'base']],
     ['bathroomairiq', ['none', 'base']],
     ['fan', ['none', 'pwm', 'analog']],
     ['voice', ['none']],
@@ -107,8 +107,7 @@ const POWER_LABELS = Object.freeze({
 
 const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
     ['airiq', Object.freeze({
-        base: 'AirIQ Base module',
-        pro: 'AirIQ Pro module'
+        base: 'AirIQ Base module'
     })],
     ['bathroomairiq', Object.freeze({
         base: 'Sense360 VentIQ module'
@@ -2369,8 +2368,7 @@ function updateSummary() {
     // AirIQ
     if (configuration.airiq !== 'none') {
         const airiqSensors = {
-            'base': ['SGP41', 'SCD41', 'MiCS4514', 'BMP390'],
-            'pro': ['SGP41', 'SCD41', 'MiCS4514', 'BMP390', 'SEN0321', 'SPS30', 'SFA40']
+            base: ['SGP41', 'SCD41', 'MiCS4514', 'BMP390']
         };
         summaryHtml += `
             <div class="summary-item">
@@ -4616,6 +4614,14 @@ function initializeFromUrl() {
     const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
 
     applyConfiguration(sanitizedConfig);
+
+    if (Array.isArray(parsed.notices) && parsed.notices.length) {
+        parsed.notices.forEach(notice => {
+            if (notice?.message) {
+                showToast(notice.message);
+            }
+        });
+    }
 
     const maxStep = getMaxReachableStep();
     let targetStep;
