@@ -4,7 +4,7 @@
   const state = {
     mount: null,   // 'wall' | 'ceiling'
     power: null,   // 'usb' | 'poe' | 'pwr'
-    airiq: null,   // 'none' | 'base' | 'pro'
+    airiq: null,   // 'none' | 'airiq' | 'ventiq'
     fan: null      // 'none' | 'pwm' | 'analog'
   };
 
@@ -22,7 +22,7 @@
     state.power = pick('#step-3, .wizard-step[data-step="3"], .wizard-step:has(h2:contains("Power"))',
       { 'USB': 'usb', 'POE': 'poe', 'PWR': 'pwr' });
     // Modules
-    state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Base':'base','Pro':'pro' });
+    state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Base':'airiq','Pro':'ventiq' });
     state.fan      = pickByGroup('Fan',      { 'None':'none','PWM':'pwm','Analog':'analog' });
     emit();
   }

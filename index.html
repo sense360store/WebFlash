@@ -152,10 +152,10 @@
                 <div class="quick-start-presets" data-quick-start-presets>
                     <p class="quick-start-presets__label">Quick start:</p>
                     <div class="quick-start-presets__buttons">
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"wall","power":"usb","airiq":"base","fan":"none"}'>
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"wall","power":"usb","airiq":"airiq","fan":"none"}'>
                             Popular: Wall + AirIQ &amp; RoomIQ Motion
                         </button>
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="ceiling" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"base","fan":"none"}'>
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="ceiling" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
                             Ceiling + POE
                         </button>
                         <button class="btn btn-secondary btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"wall","power":"usb","airiq":"none","fan":"none"}'>
@@ -358,8 +358,8 @@
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="airiq" data-variant="base">
-                                        <input type="radio" name="airiq" value="base">
+                                    <label class="module-card option-card" data-module-card="airiq" data-variant="airiq">
+                                        <input type="radio" name="airiq" value="airiq">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
@@ -383,7 +383,7 @@
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ module to free the DAC bus.">Fan Analog</span>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="bathroomairiq" data-conflict-variants="base" title="Choose either standard AirIQ or VentIQ, not both." aria-label="Conflicts with VentIQ: Choose either standard AirIQ or VentIQ, not both.">VentIQ</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="ventiq" data-conflict-variants="airiq" title="Choose either standard AirIQ or VentIQ, not both." aria-label="Conflicts with VentIQ: Choose either standard AirIQ or VentIQ, not both.">VentIQ</span>
                                             </div>
                                         </div>
                                     </label>
@@ -391,7 +391,7 @@
                                 </div>
                                 </section>
 
-                            <section class="module-group" data-module-group="bathroomairiq" id="bathroomairiq-module-section" data-expanded="false" style="display: none;">
+                            <section class="module-group" data-module-group="ventiq" id="ventiq-module-section" data-expanded="false" style="display: none;">
                                 <div class="module-group__summary">
                                     <div class="module-group__summary-text">
                                         <h3 class="module-group__title">Sense360 VentIQ</h3>
@@ -401,18 +401,18 @@
                                         type="button"
                                         class="btn btn-tertiary module-group__summary-button"
                                         data-module-group-toggle
-                                        data-module-group-key="bathroomairiq"
+                                        data-module-group-key="ventiq"
                                         aria-expanded="false"
-                                        aria-controls="module-group-bathroomairiq"
+                                        aria-controls="module-group-ventiq"
                                     >
                                         Change
                                     </button>
                                 </div>
-                                <div class="module-group__body" id="module-group-bathroomairiq" data-module-group-body hidden>
+                                <div class="module-group__body" id="module-group-ventiq" data-module-group-body hidden>
                                     <p class="module-group__description">Ceiling-mounted air quality sensors optimized for bathroom environments.</p>
                                     <div class="module-card-grid">
-                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="none">
-                                        <input type="radio" name="bathroomairiq" value="none" checked>
+                                    <label class="module-card option-card" data-module-card="ventiq" data-variant="none">
+                                        <input type="radio" name="ventiq" value="none" checked>
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
@@ -437,8 +437,8 @@
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="base">
-                                        <input type="radio" name="bathroomairiq" value="base">
+                                    <label class="module-card option-card" data-module-card="ventiq" data-variant="airiq">
+                                        <input type="radio" name="ventiq" value="airiq">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
@@ -461,12 +461,12 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base" title="Choose either Sense360 VentIQ or Sense360 AirIQ, not both." aria-label="Conflicts with AirIQ: Choose either Sense360 VentIQ or Sense360 AirIQ, not both.">AirIQ</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="airiq" title="Choose either Sense360 VentIQ or Sense360 AirIQ, not both." aria-label="Conflicts with AirIQ: Choose either Sense360 VentIQ or Sense360 AirIQ, not both.">AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="bathroomairiq" data-variant="pro">
-                                        <input type="radio" name="bathroomairiq" value="pro">
+                                    <label class="module-card option-card" data-module-card="ventiq" data-variant="ventiq">
+                                        <input type="radio" name="ventiq" value="ventiq">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
@@ -599,7 +599,7 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="base" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ: Disable AirIQ or switch the fan output to PWM mode.">AirIQ</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="airiq" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ: Disable AirIQ or switch the fan output to PWM mode.">AirIQ</span>
                                             </div>
                                         </div>
                                     </label>
@@ -653,8 +653,8 @@
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="led" data-variant="base">
-                                        <input type="radio" name="led" value="base">
+                                    <label class="module-card option-card" data-module-card="led" data-variant="airiq">
+                                        <input type="radio" name="led" value="airiq">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">

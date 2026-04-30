@@ -32,7 +32,7 @@ function updateBottomDetailsVisibility(step) {
 function getTotalSteps() {
     return totalSteps;
 }
-const MODULE_KEYS = Object.freeze(['voice', 'led', 'airiq', 'fan', 'bathroomairiq']);
+const MODULE_KEYS = Object.freeze(['voice', 'led', 'airiq', 'fan', 'ventiq']);
 
 const SUPPORTED_CONFIG_KEYS = Object.freeze([
     'mounting',
@@ -75,7 +75,7 @@ const defaultConfiguration = createValidatedMap('defaultConfiguration', [
     ['power', null],
     ['bathroom', false],
     ['airiq', 'none'],
-    ['bathroomairiq', 'none'],
+    ['ventiq', 'none'],
     ['fan', 'none'],
     ['voice', 'none'],
     ['led', 'none']
@@ -87,11 +87,11 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['mounting', ['wall', 'ceiling']],
     ['power', ['usb', 'poe', 'pwr']],
     ['bathroom', [false, true]],
-    ['airiq', ['none', 'base']],
-    ['bathroomairiq', ['none', 'base']],
+    ['airiq', ['none', 'airiq']],
+    ['ventiq', ['none', 'airiq']],
     ['fan', ['none', 'pwm', 'analog']],
     ['voice', ['none']],
-    ['led', ['none', 'base']]
+    ['led', ['none', 'airiq']]
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
 
 const MOUNT_LABELS = Object.freeze({
@@ -109,7 +109,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
     ['airiq', Object.freeze({
         base: 'AirIQ Base module'
     })],
-    ['bathroomairiq', Object.freeze({
+    ['ventiq', Object.freeze({
         base: 'Sense360 VentIQ module'
     })],
     ['fan', Object.freeze({
@@ -127,7 +127,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
 
 const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
     ['airiq', 'AirIQ'],
-    ['bathroomairiq', 'VentIQ'],
+    ['ventiq', 'VentIQ'],
     ['fan', 'Fan / Switching'],
     ['voice', 'Core Type'],
     ['led', 'LED Ring']
@@ -135,10 +135,10 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
     ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
-    ['bathroomairiq', value => value === 'base' ? 'VentIQ' : ''],
+    ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
     ['fan', value => `Fan${value.toUpperCase()}`],
     ['voice', () => 'Core'],
-    ['led', value => value === 'base' ? 'LED' : '']
+    ['led', value => value === 'airiq' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
 
 
@@ -364,7 +364,7 @@ function normalizeStateForConfiguration(state = {}) {
         normalized.mounting = mount;
     }
 
-    if (normalized.voice === 'base') {
+    if (normalized.voice === 'airiq') {
         normalized.voice = 'none';
     }
 
@@ -1027,8 +1027,8 @@ function normaliseModuleValue(key, value) {
     }
 
     if (!normalised) {
-        if (allowed.includes('base')) {
-            return 'base';
+        if (allowed.includes('airiq')) {
+            return 'airiq';
         }
         if (allowed.includes('none')) {
             return 'none';
@@ -1097,7 +1097,7 @@ function parseConfigStringState(configString) {
                 fan: 'none',
         voice: coreType,
         led: 'none',
-        bathroomairiq: 'none'
+        ventiq: 'none'
     };
 
     for (let index = powerIndex + 1; index < segments.length; index += 1) {
@@ -1109,19 +1109,19 @@ function parseConfigStringState(configString) {
         // Check VentIQ before Bathroom (since VentIQ starts with Bathroom)
         if (segment.startsWith('VentIQ')) {
             const suffix = segment.substring('VentIQ'.length);
-            moduleState.bathroomairiq = normaliseModuleValue('bathroomairiq', suffix ? suffix.toLowerCase() : 'base');
+            moduleState.ventiq = normaliseModuleValue('ventiq', suffix ? suffix.toLowerCase() : 'airiq');
         } else if (segment === 'Bathroom') {
             moduleState.bathroom = true;
         } else if (segment.startsWith('AirIQ')) {
             const suffix = segment.substring('AirIQ'.length);
-            moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'base');
+            moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'airiq');
         } else if (segment.startsWith('Fan')) {
             const suffix = segment.substring('Fan'.length);
             moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
         } else if (segment.startsWith('Voice')) {
             moduleState.voice = 'none';
         } else if (segment === 'LED' || segment.startsWith('LED')) {
-            moduleState.led = 'base';
+            moduleState.led = 'airiq';
         }
     }
 
@@ -1171,7 +1171,7 @@ function buildManifestContext(manifest) {
                             fan: new Set(),
                             voice: new Set(),
                             led: new Set(),
-                            bathroomairiq: new Set()
+                            ventiq: new Set()
                         },
                         combos: new Set()
                     });
@@ -1412,7 +1412,7 @@ function bindWizardEventListeners() {
         { selector: 'input[name="airiq"]', datasetKey: 'airiqBound', handler: updateConfiguration },
         { selector: 'input[name="fan"]', datasetKey: 'fanBound', handler: updateConfiguration },
         { selector: 'input[name="led"]', datasetKey: 'ledBound', handler: updateConfiguration },
-        { selector: 'input[name="bathroomairiq"]', datasetKey: 'bathroomairiqBound', handler: updateConfiguration }
+        { selector: 'input[name="ventiq"]', datasetKey: 'ventiqBound', handler: updateConfiguration }
     ];
 
     inputBindings.forEach(({ selector, datasetKey, handler }) => {
@@ -1623,8 +1623,8 @@ function updateBathroomVisibility() {
 }
 
 function updateVentIQModuleVisibility() {
-    const bathroomAirIQSections = Array.from(document.querySelectorAll('[data-module-group="bathroomairiq"]'));
-    if (!bathroomAirIQSections.length) {
+    const bathroomAirIQSection = document.getElementById('ventiq-module-section');
+    if (!bathroomAirIQSection) {
         return;
     }
 
@@ -1637,18 +1637,15 @@ function updateVentIQModuleVisibility() {
     const shouldHideVentIQ = configuration.mounting !== 'ceiling' || !configuration.bathroom;
 
     if (shouldHideVentIQ) {
-        bathroomAirIQSections.forEach(section => {
-            section.style.display = 'none';
-        });
-        closeModuleGroup('bathroomairiq');
+        bathroomAirIQSection.style.display = 'none';
+        closeModuleGroup('ventiq');
 
-        document.querySelectorAll('input[name="bathroomairiq"][value="none"]').forEach(input => {
-            if (!input.checked) {
-                input.checked = true;
-            }
-        });
+        const bathroomAirIQNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
+        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
+            bathroomAirIQNoneInput.checked = true;
+        }
 
-        configuration.bathroomairiq = 'none';
+        configuration.ventiq = 'none';
     } else {
         bathroomAirIQSections.forEach(section => {
             section.style.display = '';
@@ -1681,14 +1678,13 @@ function syncConfigurationFromInputs() {
 
     // VentIQ (ceiling + bathroom only)
     if (configuration.mounting === 'ceiling' && configuration.bathroom) {
-        configuration.bathroomairiq = document.querySelector('input[name="bathroomairiq"]:checked')?.value || 'none';
+        configuration.ventiq = document.querySelector('input[name="ventiq"]:checked')?.value || 'none';
     } else {
-        configuration.bathroomairiq = 'none';
-        document.querySelectorAll('input[name="bathroomairiq"][value="none"]').forEach(input => {
-            if (!input.checked) {
-                input.checked = true;
-            }
-        });
+        configuration.ventiq = 'none';
+        const bathroomAirIQNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
+        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
+            bathroomAirIQNoneInput.checked = true;
+        }
     }
 
     if (configuration.mounting === 'wall') {
@@ -1702,14 +1698,13 @@ function syncConfigurationFromInputs() {
     }
 
     if (configuration.mounting === 'ceiling') {
-        configuration.bathroomairiq = document.querySelector('input[name="bathroomairiq"]:checked')?.value || 'none';
+        configuration.ventiq = document.querySelector('input[name="ventiq"]:checked')?.value || 'none';
     } else {
-        configuration.bathroomairiq = 'none';
-        document.querySelectorAll('input[name="bathroomairiq"][value="none"]').forEach(input => {
-            if (!input.checked) {
-                input.checked = true;
-            }
-        });
+        configuration.ventiq = 'none';
+        const bathroomAirIQNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
+        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
+            bathroomAirIQNoneInput.checked = true;
+        }
     }
 
     // LED Ring - sync from inputs
@@ -4187,7 +4182,7 @@ async function findCompatibleFirmware() {
             entries.sort((a, b) => {
                 const labelA = formatVariantHeadingLabel(a).toLowerCase();
                 const labelB = formatVariantHeadingLabel(b).toLowerCase();
-                return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'base' });
+                return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'airiq' });
             });
 
             bucketMap.set(model, entries);
@@ -4691,7 +4686,7 @@ function applyConfiguration(initialConfig) {
     }
 
     if (configuration.mounting !== 'ceiling') {
-        configuration.bathroomairiq = 'none';
+        configuration.ventiq = 'none';
     }
 
     configuration.voice = 'none';
@@ -4716,7 +4711,7 @@ function applyConfiguration(initialConfig) {
         setStepNextButtonDisabled('#step-3', true);
     }
 
-    ['airiq', 'bathroomairiq', 'fan', 'voice'].forEach(key => {
+    ['airiq', 'ventiq', 'fan', 'voice'].forEach(key => {
         const value = configuration[key];
         const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
         if (input) {

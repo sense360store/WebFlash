@@ -3,7 +3,7 @@ import { getState as getWizardState, setState, setStep, getMaxReachableStep } fr
 const RECOMMENDED_STATE = Object.freeze({
     mount: 'wall',
     power: 'usb',
-    airiq: 'base',
+    airiq: 'airiq',
     fan: 'none'
 });
 
