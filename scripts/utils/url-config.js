@@ -90,11 +90,9 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         ]),
         allowedValues: Object.freeze(['none', 'base', 'pro']),
         legacyValues: new Map([
-            ['airiq', 'base'],
-            ['airiqbase', 'base'],
             ['prov', 'pro'],
-            ['airiqpro', 'pro'],
-            ['airiqprov', 'pro']
+            ['airiqprov', 'pro'],
+            ['airiqpro', 'pro']
         ])
     }),
     bathroomairiq: Object.freeze({
