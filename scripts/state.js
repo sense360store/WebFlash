@@ -3,6 +3,7 @@ import { normalizeChannelKey } from './utils/channel-alias.js';
 import { MODULE_REQUIREMENT_MATRIX, getModuleMatrixEntry, getModuleVariantEntry } from './data/module-requirements.js';
 import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.js';
 import { recordFlashStart, recordFlashSuccess, recordFlashError, exportFlashHistoryText } from './utils/flash-history.js';
+import { copyTextToClipboard } from './utils/copy-to-clipboard.js';
 // Import error logging service early to capture all errors including manifest load failures
 import './services/error-log.js';
 
@@ -170,6 +171,9 @@ const connectionQualityMetrics = {
     retryCount: 0,
     stabilityWindowStart: Date.now()
 };
+
+const DIAGNOSTICS_SCHEMA_VERSION = '1.0.0';
+const SENSITIVE_KEY_PATTERN = /(id|uuid|serial|mac|token|secret|signature|checksum|key|path|url)/i;
 
 function getConnectionQualitySnapshot() {
     return {
@@ -2836,6 +2840,87 @@ async function refreshPreflightDiagnostics() {
     return checks;
 }
 
+function redactDiagnosticsValue(value, keyPath = '') {
+    if (Array.isArray(value)) {
+        return value.map((entry, index) => redactDiagnosticsValue(entry, `${keyPath}[${index}]`));
+    }
+
+    if (value && typeof value === 'object') {
+        return Object.entries(value).reduce((accumulator, [key, nestedValue]) => {
+            const nextPath = keyPath ? `${keyPath}.${key}` : key;
+            accumulator[key] = redactDiagnosticsValue(nestedValue, nextPath);
+            return accumulator;
+        }, {});
+    }
+
+    if (SENSITIVE_KEY_PATTERN.test(keyPath)) {
+        return '[REDACTED]';
+    }
+
+    return value;
+}
+
+function buildDiagnosticsBundle() {
+    const checks = Array.isArray(window.latestPreflightChecks) ? window.latestPreflightChecks : [];
+    const selectedFirmware = window.currentFirmware || null;
+
+    return redactDiagnosticsValue({
+        schemaVersion: DIAGNOSTICS_SCHEMA_VERSION,
+        createdAt: new Date().toISOString(),
+        wizardStep: currentStep,
+        browserCapability: {
+            webSerialAvailable: Boolean(navigator?.serial),
+            clipboardApiAvailable: Boolean(navigator?.clipboard)
+        },
+        serialAvailability: {
+            canConnect: Boolean(navigator?.serial),
+            connectionQuality: getConnectionQualitySnapshot()
+        },
+        preflightResults: checks.map(check => ({
+            key: check.key,
+            label: check.label,
+            state: check.state,
+            detail: check.detail,
+            blocking: Boolean(check.blocking)
+        })),
+        selectedConfiguration: { ...configuration },
+        firmwareTarget: selectedFirmware
+            ? {
+                model: selectedFirmware.model || null,
+                variant: selectedFirmware.variant || null,
+                sensorAddon: selectedFirmware.sensor_addon || null,
+                channel: normalizeChannelKey(selectedFirmware.channel || 'stable'),
+                version: selectedFirmware.version || null,
+                firmwareId: selectedFirmware.firmwareId || null
+            }
+            : null,
+        firmwareVerification: {
+            status: firmwareVerificationState.status || 'idle',
+            message: firmwareVerificationState.message || ''
+        },
+        compatibilityVerdict: evaluatePreflightPolicy(checks)
+    });
+}
+
+async function copyDiagnosticsBundle(trigger = null) {
+    const payload = JSON.stringify(buildDiagnosticsBundle(), null, 2);
+
+    try {
+        await copyTextToClipboard(payload);
+        if (trigger) {
+            trigger.dataset.copyState = 'success';
+        }
+        showToast('Diagnostics copied');
+        return true;
+    } catch (error) {
+        if (trigger) {
+            trigger.dataset.copyState = 'error';
+        }
+        showToast('Copy failed');
+        return false;
+    }
+}
+
 
 
 function groupBuildsByConfig(builds) {
@@ -4444,6 +4529,13 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('click', async event => {
+    const diagnosticsTrigger = event.target.closest('[data-copy-diagnostics]');
+    if (diagnosticsTrigger) {
+        event.preventDefault();
+        await copyDiagnosticsBundle(diagnosticsTrigger);
+        return;
+    }
+
     const trigger = event.target.closest('[data-copy-text]');
     if (!trigger) {
         return;
@@ -4662,7 +4754,10 @@ export const __testHooks = Object.freeze({
     setPreFlashAcknowledgement,
     setPreflightWarningsAcknowledgement,
     evaluatePreflightPolicy,
-    updateConnectionQualityMetrics
+    updateConnectionQualityMetrics,
+    buildDiagnosticsBundle,
+    redactDiagnosticsValue,
+    copyDiagnosticsBundle
 });
 
 export {
