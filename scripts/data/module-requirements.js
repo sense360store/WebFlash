@@ -1,7 +1,7 @@
 const MODULE_REQUIREMENT_MATRIX = {
     airiq: {
-        label: 'AirIQ Module',
-        summary: 'Air quality stack for particulate, VOC, and CO₂ sensors.',
+        label: 'Sense360 AirIQ',
+        summary: 'Air quality board with CO₂, VOC, and gas sensing plus expansion connectors.',
         variants: {
             none: {
                 label: 'None',
@@ -10,16 +10,25 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: []
             },
             airiq: {
-                label: 'AirIQ',
-                coreRevision: 'Rev B core or newer',
+                label: 'Sense360 AirIQ',
+                sku: 'S360-210',
+                coreRevision: 'R4',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
+                description: 'Ceiling air-quality board with CO₂ (SCD41), VOC (SGP41), and gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30).',
                 recommended: true,
+                sensors: [
+                    'SCD41 (CO₂)',
+                    'SGP41 (VOC)',
+                    'MICS-4514 with STM8 (gas)',
+                    'SPS30 connector (particulate matter, optional)',
+                    'SFA30 connector (formaldehyde, optional)'
+                ],
                 conflicts: [
                     {
                         module: 'fan',
                         variants: ['analog'],
-                        message: 'Conflicts with Fan Analog — analog control uses the shared DAC header.',
-                        detail: 'Select PWM fan control or remove the AirIQ module to free the DAC bus.'
+                        message: 'Conflicts with Fan DAC — analog control uses the shared DAC header.',
+                        detail: 'Select PWM, Relay, or TRIAC fan control or remove the AirIQ module to free the DAC bus.'
                     },
                     {
                         module: 'ventiq',
@@ -33,7 +42,7 @@ const MODULE_REQUIREMENT_MATRIX = {
     },
     ventiq: {
         label: 'Sense360 VentIQ',
-        summary: 'Bathroom air-quality module with humidity, pressure, and VOC/NOx sensing.',
+        summary: 'Bathroom-focused air-quality board with onboard SGP41 plus IR temp and SPS30 connectors.',
         ceilingOnly: true,
         requiresBathroom: true,
         variants: {
@@ -46,8 +55,10 @@ const MODULE_REQUIREMENT_MATRIX = {
             },
             airiq: {
                 label: 'Sense360 VentIQ',
-                coreRevision: 'Rev C core or newer',
+                sku: 'S360-211',
+                coreRevision: 'R4',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
+                description: 'Smaller air-quality board for bathrooms. SGP41 on board, with connectors for IR temperature and SPS30 particulate sensors.',
                 recommended: true,
                 conflicts: [
                     {
@@ -58,9 +69,9 @@ const MODULE_REQUIREMENT_MATRIX = {
                     }
                 ],
                 sensors: [
-                    'SHT4x (temperature, humidity)',
-                    'BMP390 (pressure)',
-                    'SGP41 (VOC / NOx)'
+                    'SGP41 (VOC / NOx, onboard)',
+                    'IR temperature connector (optional)',
+                    'SPS30 connector (particulate matter, optional)'
                 ]
             }
         }
@@ -132,8 +143,8 @@ const MODULE_REQUIREMENT_MATRIX = {
         }
     },
     led: {
-        label: 'LED Ring',
-        summary: 'Visual feedback ring with optional microphone integration for voice-enabled cores.',
+        label: 'Sense360 LED',
+        summary: 'Ring of WS2812B LEDs for visual feedback, with optional microphone for voice-enabled cores.',
         variants: {
             none: {
                 label: 'None',
@@ -143,7 +154,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 recommended: true
             },
             airiq: {
-                label: 'LED Ring',
+                label: 'Sense360 LED',
                 sku: 'S360-300',
                 coreRevision: 'R4',
                 headers: ['J11 LED data', 'J12 LED power'],

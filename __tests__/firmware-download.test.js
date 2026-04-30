@@ -354,8 +354,9 @@ describe('firmware download interactions', () => {
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
-        expect(downloadBtn.disabled).toBe(true);
-        
+        expect(downloadBtn.disabled).toBe(false);
+        expect(copyBtn.disabled).toBe(false);
+
         const firmwareSelect = document.getElementById('firmware-version-select');
         const options = Array.from(firmwareSelect.options);
         expect(options.length).toBeGreaterThan(1);
@@ -372,7 +373,8 @@ describe('firmware download interactions', () => {
 
         expect(acknowledgementControl.checked).toBe(false);
         expect(downloadBtn.disabled).toBe(true);
-        
+        expect(copyBtn.disabled).toBe(true);
+
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
