@@ -1442,7 +1442,7 @@ function initializeWizard() {
         console.error('Wizard initialization encountered an error during setup:', error);
         Object.assign(configuration, defaultConfiguration);
 
-        const nextButton = document.querySelector('#step-2 .btn-next');
+        const nextButton = document.querySelector('#step-1 .btn-next');
         if (nextButton) {
             nextButton.disabled = true;
         }
@@ -4703,7 +4703,7 @@ function applyConfiguration(initialConfig) {
             setStepNextButtonDisabled(mountingInput, false);
         }
     } else {
-        setStepNextButtonDisabled('#step-2', true);
+        setStepNextButtonDisabled('#step-1', true);
     }
 
     if (configuration.power) {

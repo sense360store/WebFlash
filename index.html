@@ -75,11 +75,11 @@
                     <div class="progress-bar">
                 <div class="progress-step active" data-step="1">
                     <div class="step-number">1</div>
-                    <div class="step-label">Core</div>
+                    <div class="step-label">Mounting</div>
                 </div>
                 <div class="progress-step" data-step="2">
                     <div class="step-number">2</div>
-                    <div class="step-label">Mounting</div>
+                    <div class="step-label">Core</div>
                 </div>
                 <div class="progress-step" data-step="3">
                     <div class="step-number">3</div>
@@ -95,9 +95,10 @@
                 </div>
                     </div>
 
-                    <!-- Step 1: Core Configuration -->
-                    <div class="wizard-step step" id="step-1">
-                <h2>Step 1: Configure Core Features</h2>
+                    <!-- Step 2: Core Configuration -->
+                    <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
+                <h2>Step 2: Configure Core Features</h2>
+                <p class="step-intro">Choose the base Sense360 hub family before selecting power and expansion modules.</p>
 
                 <aside class="safety-notice" aria-label="Important safety information">
                     <div class="safety-notice__icon" aria-hidden="true">
@@ -119,6 +120,18 @@
                             <div class="option-content">
                                 <div class="option-header">
                                     <div class="option-title">Core</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="core"
+                                        data-option-value="standard"
+                                        aria-label="Details about Core"
+                                        aria-controls="option-info-popover"
+                                        aria-describedby="option-info-popover-summary"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
                                 </div>
                                 <div class="option-description">Standard Sense360 core module without voice hardware.</div>
                             </div>
@@ -131,9 +144,10 @@
                 </div>
                     </div>
 
-                    <!-- Step 2: Mounting Type -->
-                    <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
-                <h2>Step 2: Where is this unit being installed?</h2>
+                    <!-- Step 1: Mounting Type -->
+                    <div class="wizard-step step" id="step-1">
+                <h2>Step 1: Where is this unit being installed?</h2>
+                <p class="step-intro">Mounting is first because it determines supported power accessories and module compatibility.</p>
 
                 <div class="quick-start-presets" data-quick-start-presets>
                     <p class="quick-start-presets__label">Quick start:</p>
@@ -203,6 +217,7 @@
                     <!-- Step 3: Power Option -->
                     <div class="wizard-step step" id="step-3" hidden aria-hidden="true">
                 <h2>Step 3: Select Power Option</h2>
+                <p class="step-intro">Select how this unit will be powered in the field. This impacts cable planning and available accessories.</p>
                 <div class="option-grid">
                     <label class="option-card">
                         <input type="radio" name="power" value="usb">
@@ -916,6 +931,7 @@
                     </section>
                 </div>
             </div>
+            <p class="option-info-popover__edit-hint">Admin note: edit these info popovers in <code>scripts/content/option-tooltips.js</code>.</p>
         </div>
 
         <div class="browser-check">
