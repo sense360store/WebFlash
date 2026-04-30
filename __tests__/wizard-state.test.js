@@ -38,8 +38,10 @@ function renderWizardDom() {
             </div>
             <div class="module-group">
                 <input type="radio" name="fan" value="none" checked>
+                <input type="radio" name="fan" value="relay">
                 <input type="radio" name="fan" value="pwm">
                 <input type="radio" name="fan" value="analog">
+                <input type="radio" name="fan" value="triac">
             </div>
         </div>
         <div id="step-5" class="wizard-step">

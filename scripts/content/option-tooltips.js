@@ -202,6 +202,26 @@ const optionTooltips = {
                 href: 'https://docs.sense360.com/modules/fan'
             }
         },
+        relay: {
+            title: 'Sense360 Fan Relay',
+            summary: 'Simple on/off relay output for bathroom fans, exhaust fans, and similar low-current loads.',
+            pros: [
+                'Single drop-in board with the S360-Relay-C harness.',
+                'Reliable mechanical contact rated for daily switching.'
+            ],
+            cons: [
+                'No variable speed control — output is on or off only.',
+                'Audible relay click on each state change.'
+            ],
+            measurements: [
+                'Switches resistive loads up to 5 A at 250 VAC.',
+                'Power budget impact: 0.2 W when energised.'
+            ],
+            learnMore: {
+                label: 'Fan relay wiring guide',
+                href: 'https://docs.sense360.com/modules/fan-relay'
+            }
+        },
         pwm: {
             title: 'PWM Fan Module',
             summary: 'Provides 25 kHz PWM output for EC fans and in-duct boosters requiring precise speed control.',

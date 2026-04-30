@@ -125,7 +125,7 @@ function normalizePresetState(state = {}) {
         mount: normalizeStringChoice(state.mount, ['wall', 'ceiling']),
         power: normalizeStringChoice(state.power, ['usb', 'poe', 'pwr']),
         airiq: normalizeStringChoice(state.airiq, ['none', 'base', 'pro'], 'none'),
-        fan: normalizeStringChoice(state.fan, ['none', 'pwm', 'analog', 'triac'], 'none'),
+        fan: normalizeStringChoice(state.fan, ['none', 'relay', 'pwm', 'analog', 'triac'], 'none'),
         voice: normalizeStringChoice(state.voice, ['none'], 'none')
     };
 
@@ -143,7 +143,7 @@ function normalizePresetConfiguration(configuration = {}, state = {}) {
         mounting: normalizeStringChoice(configuration.mounting ?? normalizedState.mount, ['wall', 'ceiling']),
         power: normalizeStringChoice(configuration.power ?? normalizedState.power, ['usb', 'poe', 'pwr']),
         airiq: normalizeStringChoice(configuration.airiq ?? normalizedState.airiq, ['none', 'base', 'pro'], 'none'),
-        fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ['none', 'pwm', 'analog', 'triac'], 'none'),
+        fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ['none', 'relay', 'pwm', 'analog', 'triac'], 'none'),
         voice: normalizeStringChoice(configuration.voice ?? normalizedState.voice, ['none'], 'none')
     };
 
@@ -670,12 +670,12 @@ function validatePresetImportPayload(payload) {
             { path: 'preset.state.mount', value: preset.state?.mount, allowed: ['wall', 'ceiling'] },
             { path: 'preset.state.power', value: preset.state?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'pwm', 'analog', 'triac'] },
+            { path: 'preset.state.fan', value: preset.state?.fan, allowed: ['none', 'relay', 'pwm', 'analog', 'triac'] },
                         { path: 'preset.state.voice', value: preset.state?.voice, allowed: ['none'] },
             { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ['wall', 'ceiling'] },
             { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ['usb', 'poe', 'pwr'] },
             { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: ['none', 'base', 'pro'] },
-            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'pwm', 'analog', 'triac'] },
+            { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ['none', 'relay', 'pwm', 'analog', 'triac'] },
             { path: 'preset.configuration.voice', value: preset.configuration?.voice, allowed: ['none'] },
         ];
 
@@ -791,6 +791,7 @@ function formatModuleName(moduleKey, value) {
             pro: 'AirIQ'
         },
         fan: {
+            relay: 'Fan Relay',
             pwm: 'Fan PWM',
             analog: 'Fan Analog',
             triac: 'Fan TRIAC'

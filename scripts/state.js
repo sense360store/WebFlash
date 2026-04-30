@@ -89,7 +89,7 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['bathroom', [false, true]],
     ['airiq', ['none', 'airiq']],
     ['ventiq', ['none', 'airiq']],
-    ['fan', ['none', 'pwm', 'analog', 'triac']],
+    ['fan', ['none', 'relay', 'pwm', 'analog', 'triac']],
     ['voice', ['none']],
     ['led', ['none', 'airiq']]
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
@@ -113,6 +113,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
         base: 'Sense360 VentIQ module'
     })],
     ['fan', Object.freeze({
+        relay: 'Fan Relay module',
         pwm: 'Fan PWM module',
         analog: 'Fan Analog module',
         triac: 'Fan TRIAC module'
@@ -138,6 +139,7 @@ const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS'
     ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
     ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
     ['fan', value => {
+        if (value === 'relay') return 'FanRelay';
         if (value === 'pwm') return 'FanPWM';
         if (value === 'analog') return 'FanAnalog';
         if (value === 'triac') return 'FanTRIAC';
@@ -164,9 +166,6 @@ function getVisibleModuleGroupKeys() {
         }
         if (moduleKey === 'ventiq') {
             return configuration.mounting === 'ceiling' && configuration.bathroom === true;
-        }
-        if (moduleKey === 'fan') {
-            return configuration.mounting === 'wall';
         }
         return true;
     });
@@ -1888,13 +1887,13 @@ function formatModuleSelectionLabel(key, value) {
     }
 
     if (value === 'none') {
-        if (key === 'fan') {
-            return `${label} Relay`;
-        }
         return `${label} None`;
     }
 
     if (key === 'fan') {
+        if (value === 'relay') {
+            return `${label} Relay`;
+        }
         return `${label} ${value.toUpperCase()}`;
     }
 
@@ -2535,14 +2534,22 @@ function updateSummary() {
     // Fan
     if (configuration.fan !== 'none') {
         const fanTypes = {
-            'pwm': 'Variable speed fan control via PWM',
-            'analog': '0-10V analog fan control'
+            'relay': 'On / off relay for bathroom fans',
+            'pwm': '12V PWM fan driver, up to 4 fans with tach feedback',
+            'analog': '0 to 10V analog fan driver',
+            'triac': 'Phase dimmer for mains fan or lamp'
+        };
+        const fanLabels = {
+            'relay': 'Relay',
+            'pwm': 'PWM',
+            'analog': 'Analog',
+            'triac': 'TRIAC'
         };
         summaryHtml += `
             <div class="summary-item">
                 <div class="summary-label">Fan / Switching:</div>
-                <div class="summary-value">${configuration.fan.toUpperCase()}</div>
-                <div class="summary-sensors">${fanTypes[configuration.fan]}</div>
+                <div class="summary-value">${fanLabels[configuration.fan] || configuration.fan.toUpperCase()}</div>
+                <div class="summary-sensors">${fanTypes[configuration.fan] || ''}</div>
             </div>
         `;
     }
@@ -4895,11 +4902,7 @@ function updateUrlFromConfiguration() {
     params.set('led', configuration.led || 'none');
     params.set('airiq', configuration.airiq || 'none');
 
-    if (configuration.mounting === 'wall') {
-        params.set('fan', configuration.fan || 'none');
-    } else {
-        params.set('fan', 'none');
-    }
+    params.set('fan', configuration.fan || 'none');
 
     if (configuration.mounting === 'ceiling') {
         params.set('bathroom', configuration.bathroom ? 'true' : 'false');
