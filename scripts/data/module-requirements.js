@@ -24,8 +24,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Compatible with VentIQ in bathroom mode.',
-                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
+                        message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ Base only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
                     }
                 ]
             },
@@ -43,8 +43,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Compatible with VentIQ in bathroom mode.',
-                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
+                        message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ Pro only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
                     }
                 ]
             }
@@ -68,7 +68,14 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'Rev C core or newer',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
                 recommended: true,
-                conflicts: [],
+                conflicts: [
+                    {
+                        module: 'airiq',
+                        variants: ['base', 'pro'],
+                        message: 'Conflicts with AirIQ Base/Pro — AirIQ and VentIQ cannot both be enabled.',
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select VentIQ only when AirIQ is set to None, and disable VentIQ to use AirIQ Base or Pro.'
+                    }
+                ],
                 sensors: [
                     'SHT4x (temperature, humidity)',
                     'BMP390 (pressure)',
