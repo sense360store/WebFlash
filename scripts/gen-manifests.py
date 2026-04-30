@@ -134,6 +134,21 @@ POWER_TOKENS = {
     "solar",
 }
 
+CANONICAL_MOUNTINGS = {
+    "ceiling": "Ceiling",
+    "wall": "Wall",
+    "mini": "Mini",
+    "desk": "Desk",
+    "portable": "Portable",
+    "lab": "Lab",
+    "bench": "Bench",
+    "dev": "Dev",
+    "test": "Test",
+    "universal": "Universal",
+}
+
+EXACT_POWER_TOKENS = {"USB", "POE", "PWR"}
+
 CANONICAL_MODULE_TOKENS: Dict[str, str] = {
     "airiqpro": "AirIQ",
     "bathroomairiq": "VentIQBase",
@@ -341,14 +356,38 @@ def parse_firmware_metadata(
         if len(config_tokens) <= token_index:
             raise ValueError(f"Missing mounting token in '{name}'")
 
-        mounting = config_tokens[token_index].replace("_", " ").title()
+        config_tail = config_tokens[token_index:]
+        if not config_tail:
+            raise ValueError(f"Missing mounting token in '{name}'")
+
+        mounting = None
+        mounting_index = None
+        for index, token in enumerate(config_tail):
+            canonical_mount = CANONICAL_MOUNTINGS.get(token.replace("_", "-").lower())
+            if canonical_mount:
+                mounting = canonical_mount
+                mounting_index = index
+                break
+        if mounting is None:
+            raw_mounting = config_tail[0].replace("_", "-").strip()
+            mounting = CANONICAL_MOUNTINGS.get(raw_mounting.lower(), raw_mounting.title())
+            mounting_index = 0
+
         power = None
-        module_tokens = []
-        if len(config_tokens) >= token_index + 2 and config_tokens[token_index + 1].lower() in POWER_TOKENS:
-            power = config_tokens[token_index + 1].upper()
-            module_tokens = config_tokens[token_index + 2:]
-        else:
-            module_tokens = config_tokens[token_index + 1:]
+        power_index = None
+        for index, token in enumerate(config_tail):
+            candidate = token.upper()
+            if candidate in EXACT_POWER_TOKENS:
+                power = candidate
+                power_index = index
+                break
+
+        consumed_indexes = {mounting_index}
+        if power_index is not None:
+            consumed_indexes.add(power_index)
+        module_tokens = [
+            token for index, token in enumerate(config_tail) if index not in consumed_indexes
+        ]
         config_string = "-".join(config_tokens)
         description = describe_configuration(channel, config_string)
         return FirmwareMetadata(
@@ -682,6 +721,32 @@ def validate_no_deprecated_modules(artifacts: Sequence[FirmwareArtifact]) -> Non
             )
 
 
+
+
+def validate_structured_config_consistency(artifacts: Sequence[FirmwareArtifact]) -> None:
+    mismatches: List[str] = []
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if not meta.is_configuration or not meta.config_string:
+            continue
+        tokens = [token for token in meta.config_string.split("-") if token]
+        token_set = {token.upper() for token in tokens}
+        required_power_tokens = token_set.intersection(EXACT_POWER_TOKENS)
+        if required_power_tokens and meta.power is None:
+            mismatches.append(
+                f"{artifact.path.name}: config_string includes {sorted(required_power_tokens)} but power is null"
+            )
+            continue
+        if meta.power is not None and meta.power.upper() in EXACT_POWER_TOKENS and meta.power.upper() not in token_set:
+            mismatches.append(
+                f"{artifact.path.name}: power='{meta.power}' not present in config_string='{meta.config_string}'"
+            )
+    if mismatches:
+        joined = "\n  - "+"\n  - ".join(mismatches)
+        raise SystemExit(
+            "Structured metadata/config_string mismatch detected:" + joined
+        )
+
 def write_json_file(path: Path, data: Dict[str, object], *, dry_run: bool) -> None:
     if dry_run:
         print(f"[dry-run] Would write {path}")
@@ -865,6 +930,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
+    validate_structured_config_consistency(ordered)
     manifest = build_manifest(ordered)
     if not manifest["builds"]:
         message = "Manifest would be empty; aborting."
