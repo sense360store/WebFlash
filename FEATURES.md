@@ -29,13 +29,19 @@ This document tracks implemented and planned features for the WebFlash firmware 
 - [x] ESP Web Tools v10 integration
 - [x] Web Serial API support
 - [x] Flash progress indicator (Connect → Erase → Write → Verify)
-- [x] Pre-flash safety acknowledgment
+- [x] Pre-flash checklist acknowledgement (`Before you flash` checkbox)
 - [x] Firmware integrity verification (SHA256, MD5)
 - [x] Flash history tracking with export
 
-### Post-Installation
-- [x] Improv Serial protocol for WiFi setup
-- [x] Automatic WiFi credential entry
+### Presets & Preflight
+- [x] Preset export to JSON from Review sidebar (`Export JSON`)
+- [x] Preset import from JSON (`Import JSON`) with schema validation diagnostics
+- [x] Import compatibility handling:
+  - blocking mismatch is rejected
+  - warning mismatch can be continued after confirmation (`Apply anyway?`)
+- [x] Preflight checks panel with status badges (`Pass`, `Warning`, `Fail`)
+- [x] Install/download gating on failed preflight checks
+- [~] Warning-level preflight acknowledgement gate exists in logic, but the `Accept preflight warnings` checkbox control is not currently present in `index.html`
 
 ### User Experience
 - [x] Dark/light theme toggle with persistent preference
@@ -55,12 +61,15 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 ---
 
-## Planned Features
+## MVP Gaps / Incomplete Areas
 
-### Core Voice Support
-- [x] Core Voice option in wizard (Core type selection step)
-- [x] Voice assistant integration with Core Voice hardware
-- [x] Voice-enabled firmware configuration
+- [ ] **Connection-quality heuristic wiring:** Preflight `Connection quality` scoring exists, but metrics updates are not fully wired into serial lifecycle events yet. Current behavior can remain in warning/fail based on default counters + stability-window timing rather than real event telemetry.
+- [ ] **Diagnostics bundle copy flow:** A dedicated one-click diagnostics bundle copy/share flow is not implemented yet; current support tooling is still split across support info, links, and firmware URL copy actions.
+- [ ] **Preflight warning acknowledgement UX:** Logic requires warning acknowledgement before install when any warning exists, but UI control text (`Accept preflight warnings`) is referenced only by helper copy and not currently rendered as a checkbox control.
+
+---
+
+## Planned Features
 
 ### Firmware Management
 - [x] Firmware update checker (compare installed vs available)
@@ -76,31 +85,16 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 ### Enhanced Configuration
 - [x] User-saved configuration presets
-- [~] Configuration import/export (JSON) — Export complete in UI; import backend parsing implemented (`deserializePresetConfig`) but pending UI integration
+- [x] Configuration import/export (JSON) in Review sidebar
 - [ ] Configuration comparison tool
 - [ ] Advanced mode with all options visible
 
 ### Diagnostics
 - [ ] Device diagnostic mode
 - [x] Sensor health check
-- [ ] Connection quality indicator
+- [~] Connection quality preflight check (heuristic scaffolding present; full event-driven telemetry pending)
 - [x] Error log viewer
 
 ### Localization
 - [ ] Multi-language support
 - [ ] Localized documentation
-
----
-
-## Version History
-
-| Version | Key Features Added |
-|---------|-------------------|
-| 2.1.1   | Error log viewer |
-| 2.1.0   | Firmware changelog viewer, Firmware update checker, Sensor health check |
-| 2.0.0   | Bathroom AirIQ, Flash progress indicator, Ceiling fan support, Theme toggle |
-| 1.0.0   | Initial release with core wizard, module support, safety features |
-
----
-
-*Last updated: December 2025*
