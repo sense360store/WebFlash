@@ -88,7 +88,12 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
             ['base', { wizardValue: 'base', configSegment: 'AirIQBase' }],
             ['pro', { wizardValue: 'pro', configSegment: 'AirIQPro' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base', 'pro'])
+        allowedValues: Object.freeze(['none', 'base', 'pro']),
+        legacyValues: new Map([
+            ['prov', 'pro'],
+            ['airiqprov', 'pro'],
+            ['airiqpro', 'pro']
+        ])
     }),
     bathroomairiq: Object.freeze({
         required: false,

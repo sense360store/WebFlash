@@ -55,6 +55,22 @@ describe('config URL parser', () => {
     expect(result.configKey).toBe('Core-Ceiling-USB-FanPWM');
   });
 
+
+  test.each([
+    ['airiq=prov', 'pro', 'Core-Wall-USB-AirIQPro'],
+    ['airiq=AirIQProv', 'pro', 'Core-Wall-USB-AirIQPro'],
+    ['airiq=pro', 'pro', 'Core-Wall-USB-AirIQPro'],
+    ['airiq=AirIQPro', 'pro', 'Core-Wall-USB-AirIQPro']
+  ])('supports AirIQ Pro compatibility aliases (%s)', (airiqParam, expectedAirIq, expectedConfigKey) => {
+    const params = new URLSearchParams(`core=core&mount=wall&power=usb&${airiqParam}`);
+    const result = parseConfigParams(params);
+
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.sanitizedConfig.airiq).toBe(expectedAirIq);
+    expect(result.configKey).toBe(expectedConfigKey);
+  });
+
   test('supports legacy power alias', () => {
     const params = new URLSearchParams('core=core&mount=wall&power=pwr');
     const result = parseConfigParams(params);
