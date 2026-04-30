@@ -3,6 +3,10 @@
         window.renderSidebar?.(1);
     });
 
+    function findStaticSidebar() {
+        return document.querySelector('.wizard-sidebar[data-wizard-summary]');
+    }
+
     function findWizardRoot() {
         const direct = document.querySelector('.wizard-container');
         if (direct) {
@@ -35,6 +39,11 @@
 
     function createSidebar(sidebar) {
         if (!sidebar) {
+            return;
+        }
+
+        // Don't double-populate if cards already exist
+        if (sidebar.querySelector('#sb-config')) {
             return;
         }
 
@@ -107,45 +116,51 @@
     }
 
     function setupSplitView() {
-        const root = findWizardRoot();
-        if (!root || !root.parentElement) {
-            return;
-        }
+        // Prefer the statically-defined wizard shell if present.
+        const staticSidebar = findStaticSidebar();
+        let sidebar = staticSidebar;
 
-        if (root.classList.contains('wizard-shell') || root.closest('.wizard-shell')) {
-            return;
-        }
-
-        const parent = root.parentElement;
-        const shell = document.createElement('div');
-        shell.className = 'wizard-shell';
-
-        const main = document.createElement('div');
-        main.className = 'wizard-main';
-
-        const sidebar = document.createElement('aside');
-        sidebar.className = 'wizard-sidebar';
-        sidebar.dataset.wizardSummary = '';
-        sidebar.setAttribute('aria-label', 'Quick summary and actions');
-
-        parent.insertBefore(shell, root);
-        main.appendChild(root);
-        shell.appendChild(main);
-        shell.appendChild(sidebar);
-
-        createSidebar(sidebar);
-
-        function renderSidebar(step) {
-            if (!sidebar) {
+        if (!sidebar) {
+            // Legacy fallback: dynamically wrap the wizard container.
+            const root = findWizardRoot();
+            if (!root || !root.parentElement) {
                 return;
             }
 
-            const shouldShow = Number(step) === 4;
-            sidebar.style.display = shouldShow ? '' : 'none';
+            if (root.classList.contains('wizard-shell') || root.closest('.wizard-shell')) {
+                return;
+            }
+
+            const parent = root.parentElement;
+            const shell = document.createElement('div');
+            shell.className = 'wizard-shell';
+
+            const main = document.createElement('div');
+            main.className = 'wizard-main';
+
+            sidebar = document.createElement('aside');
+            sidebar.className = 'wizard-sidebar';
+            sidebar.dataset.wizardSummary = '';
+            sidebar.setAttribute('aria-label', 'Quick summary and actions');
+
+            parent.insertBefore(shell, root);
+            main.appendChild(root);
+            shell.appendChild(main);
+            shell.appendChild(sidebar);
+        }
+
+        createSidebar(sidebar);
+
+        function renderSidebar() {
+            // Sidebar is always visible across all steps in the redesigned layout.
+            if (!sidebar) {
+                return;
+            }
+            sidebar.style.display = '';
         }
 
         window.renderSidebar = renderSidebar;
-        renderSidebar(1);
+        renderSidebar();
 
         if (document.body) {
             document.body.classList.add('has-wizard-sidebar');

@@ -68,31 +68,94 @@
         </nav>
 
         <div class="wizard-container">
-            <!-- Sidebar is injected by scripts/layout/init-splitview.js via the outer .wizard-shell -->
-            <div class="wizard-layout" data-layout="single-column">
-                <div class="wizard-main">
-                    <!-- Progress Indicator -->
-                    <div class="progress-bar">
-                <div class="progress-step active" data-step="1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Mounting</div>
-                </div>
-                <div class="progress-step" data-step="2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Core</div>
-                </div>
-                <div class="progress-step" data-step="3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Power</div>
-                </div>
-                <div class="progress-step" data-step="4">
-                    <div class="step-number">4</div>
-                    <div class="step-label">Modules</div>
-                </div>
-                <div class="progress-step" data-step="5">
-                    <div class="step-number">5</div>
-                    <div class="step-label">Review</div>
-                </div>
+            <div class="wizard-shell" data-wizard-shell="static">
+                <aside class="wizard-stepper" aria-label="Wizard progress">
+                    <header class="wizard-stepper__header">
+                        <p class="wizard-stepper__eyebrow">Sense360 setup</p>
+                        <h2 class="wizard-stepper__title">Configure firmware</h2>
+                        <p class="wizard-stepper__subtitle">Five quick steps to a ready-to-flash hub.</p>
+                    </header>
+                    <ol class="wizard-stepper__list" role="list">
+                        <li class="wizard-stepper__item">
+                            <a href="#step-1" class="progress-step wizard-stepper__node active" data-step="1" data-reachable="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">1</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Mounting</span>
+                                    <span class="wizard-stepper__hint">Choose installation type</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-2" class="progress-step wizard-stepper__node" data-step="2" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">2</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Core</span>
+                                    <span class="wizard-stepper__hint">Pick the hub family</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-3" class="progress-step wizard-stepper__node" data-step="3" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">3</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Power</span>
+                                    <span class="wizard-stepper__hint">Select power source</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-4" class="progress-step wizard-stepper__node" data-step="4" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">4</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Modules</span>
+                                    <span class="wizard-stepper__hint">Add expansion boards</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-5" class="progress-step wizard-stepper__node" data-step="5" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">5</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Review</span>
+                                    <span class="wizard-stepper__hint">Verify &amp; install firmware</span>
+                                </span>
+                            </a>
+                        </li>
+                    </ol>
+                </aside>
+
+                <main class="wizard-main">
+                    <div class="progress-bar progress-bar--mobile" aria-hidden="true">
+                        <div class="progress-step active" data-step="1" data-reachable="true">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Mounting</div>
+                        </div>
+                        <div class="progress-step" data-step="2" data-reachable="false">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Core</div>
+                        </div>
+                        <div class="progress-step" data-step="3" data-reachable="false">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Power</div>
+                        </div>
+                        <div class="progress-step" data-step="4" data-reachable="false">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Modules</div>
+                        </div>
+                        <div class="progress-step" data-step="5" data-reachable="false">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Review</div>
+                        </div>
                     </div>
 
                     <!-- Step 2: Core Configuration -->
@@ -875,8 +938,9 @@
                     </p>
                 </aside>
                     </div>
-                </div>
+                </main>
 
+                <aside class="wizard-sidebar" data-wizard-summary aria-label="Live configuration summary"></aside>
             </div>
         </div>
 
