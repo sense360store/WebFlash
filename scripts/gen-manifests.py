@@ -134,6 +134,15 @@ POWER_TOKENS = {
     "solar",
 }
 
+CANONICAL_MODULE_TOKENS: Dict[str, str] = {
+    "airiqpro": "AirIQ",
+    "bathroomairiq": "VentIQ",
+    "bathroomairiqbase": "VentIQ",
+    "bathroomairiqpro": "VentIQ",
+    "ventiqpro": "VentIQ",
+}
+
+LEGACY_MODULE_TOKENS = frozenset(CANONICAL_MODULE_TOKENS.keys())
 DEPRECATED_MODULE_TOKENS = frozenset(
     {
         "airiqpro",
@@ -675,7 +684,7 @@ def validate_no_deprecated_modules(artifacts: Sequence[FirmwareArtifact]) -> Non
             hits = ", ".join(sorted(set(deprecated_hits), key=str.lower))
             raise SystemExit(
                 f"Deprecated module name(s) found in {artifact.path.name}: {hits}. "
-                "Use current module taxonomy (for example: AirIQ, VentIQ, VentIQBase)."
+                "Use current module taxonomy (for example: AirIQ, VentIQ)."
             )
 
 
