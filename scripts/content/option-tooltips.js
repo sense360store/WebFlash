@@ -1,4 +1,25 @@
 const optionTooltips = {
+
+    core: {
+        standard: {
+            title: 'Core (Standard)',
+            summary: 'The Core is the base Sense360 processing hub that all mounting, power, and expansion modules connect to.',
+            pros: [
+                'Required foundation for every Sense360 deployment.',
+                'Keeps configuration simple when voice features are not needed.'
+            ],
+            cons: [
+                'Does not include voice hardware by default.'
+            ],
+            measurements: [
+                'Use the matched Core firmware family when generating install links.'
+            ],
+            learnMore: {
+                label: 'Core platform overview',
+                href: 'https://docs.sense360.com/core'
+            }
+        }
+    },
     mounting: {
         wall: {
             title: 'Wall Mount',

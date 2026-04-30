@@ -141,6 +141,20 @@ const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS'
     ['led', value => value === 'airiq' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
 
+
+function moduleHasSelectableVariants(moduleKey) {
+    const moduleEntry = MODULE_REQUIREMENT_MATRIX[moduleKey];
+    if (!moduleEntry || !moduleEntry.variants || typeof moduleEntry.variants !== 'object') {
+        return false;
+    }
+
+    return Object.keys(moduleEntry.variants).some(variantKey => variantKey !== 'none');
+}
+
+function getVisibleModuleGroupKeys() {
+    return MODULE_KEYS.filter(moduleKey => moduleHasSelectableVariants(moduleKey));
+}
+
 let activeModuleGroupKey = null;
 
 let moduleDetailPanelElement = null;
@@ -679,7 +693,7 @@ function syncModuleDetailPanelToSelection() {
     }
 
     if (!activeModuleDetailKey || !MODULE_REQUIREMENT_MATRIX[activeModuleDetailKey]) {
-        const defaultModule = MODULE_KEYS.find(key => MODULE_REQUIREMENT_MATRIX[key]);
+        const defaultModule = getVisibleModuleGroupKeys().find(key => MODULE_REQUIREMENT_MATRIX[key]);
         if (defaultModule) {
             activeModuleDetailKey = defaultModule;
         }
@@ -743,7 +757,7 @@ function initializeModuleDetailPanel() {
         }
     });
 
-    const defaultModule = MODULE_KEYS.find(key => MODULE_REQUIREMENT_MATRIX[key]);
+    const defaultModule = getVisibleModuleGroupKeys().find(key => MODULE_REQUIREMENT_MATRIX[key]);
     if (defaultModule) {
         setActiveModuleDetail(defaultModule, configuration[defaultModule] || 'none');
     } else {
@@ -1428,7 +1442,7 @@ function initializeWizard() {
         console.error('Wizard initialization encountered an error during setup:', error);
         Object.assign(configuration, defaultConfiguration);
 
-        const nextButton = document.querySelector('#step-2 .btn-next');
+        const nextButton = document.querySelector('#step-1 .btn-next');
         if (nextButton) {
             nextButton.disabled = true;
         }
@@ -1614,6 +1628,11 @@ function updateVentIQModuleVisibility() {
         return;
     }
 
+    if (bathroomAirIQSections.length > 1) {
+        // Defensive guard: duplicate VentIQ module-group markup is invalid and should never be rendered.
+        console.warn('[state] Invalid DOM: multiple [data-module-group="bathroomairiq"] sections found. Applying visibility updates to all sections defensively.');
+    }
+
     // VentIQ is only available when ceiling mount AND bathroom is enabled
     const shouldHideVentIQ = configuration.mounting !== 'ceiling' || !configuration.bathroom;
 
@@ -1628,9 +1647,11 @@ function updateVentIQModuleVisibility() {
 
         configuration.ventiq = 'none';
     } else {
-        bathroomAirIQSection.style.display = '';
-        const isExpanded = bathroomAirIQSection.dataset.expanded === 'true';
-        setModuleGroupExpanded(bathroomAirIQSection, isExpanded);
+        bathroomAirIQSections.forEach(section => {
+            section.style.display = '';
+            const isExpanded = section.dataset.expanded === 'true';
+            setModuleGroupExpanded(section, isExpanded);
+        });
     }
 
     updateModuleGroupSummaries();
@@ -1784,10 +1805,17 @@ function formatModuleSelectionLabel(key, value) {
 }
 
 function updateModuleGroupSummaries() {
+    const visibleKeys = new Set(getVisibleModuleGroupKeys());
     const groups = document.querySelectorAll('[data-module-group]');
     groups.forEach(group => {
         const key = group.getAttribute('data-module-group');
         if (!key) {
+            return;
+        }
+
+        const isVisible = visibleKeys.has(key);
+        group.style.display = isVisible ? '' : 'none';
+        if (!isVisible) {
             return;
         }
 
@@ -1851,7 +1879,7 @@ function openModuleGroup(key, { focus = false } = {}) {
     }
 
     const target = document.querySelector(`[data-module-group="${key}"]`);
-    if (!target) {
+    if (!target || !getVisibleModuleGroupKeys().includes(key)) {
         return;
     }
 
@@ -4670,7 +4698,7 @@ function applyConfiguration(initialConfig) {
             setStepNextButtonDisabled(mountingInput, false);
         }
     } else {
-        setStepNextButtonDisabled('#step-2', true);
+        setStepNextButtonDisabled('#step-1', true);
     }
 
     if (configuration.power) {
