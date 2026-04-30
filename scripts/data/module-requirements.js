@@ -24,7 +24,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Conflicts with VentIQ — VentIQ replaces standard AirIQ in bathroom mode.',
+                        message: 'Compatible with VentIQ in bathroom mode.',
                         detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
@@ -43,7 +43,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'bathroomairiq',
                         variants: ['base'],
-                        message: 'Conflicts with VentIQ — VentIQ replaces standard AirIQ in bathroom mode.',
+                        message: 'Compatible with VentIQ in bathroom mode.',
                         detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
