@@ -192,6 +192,7 @@ function parseConfigParams(inputParams) {
     const presentKeys = new Set();
     const rawValues = {};
     const errors = [];
+    const notices = [];
     const configSegments = new Map();
     let fanCanonicalValue = null;
 
@@ -236,6 +237,17 @@ function parseConfigParams(inputParams) {
 
         if (definition.legacyValues instanceof Map && definition.legacyValues.has(canonicalValue)) {
             canonicalValue = definition.legacyValues.get(canonicalValue);
+        }
+
+        if (key === 'airiq' && canonicalValue === 'pro') {
+            canonicalValue = 'base';
+            notices.push({
+                type: 'legacy-remap',
+                field: 'airiq',
+                from: 'pro',
+                to: 'base',
+                message: 'AirIQ Pro is no longer available and was changed to AirIQ Base.'
+            });
         }
 
         if (!options.has(canonicalValue)) {
@@ -349,6 +361,7 @@ function parseConfigParams(inputParams) {
         presentKeys,
         rawValues,
         errors,
+        notices,
         isValid,
         configKey,
         forcedFanNone,
