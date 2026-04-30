@@ -160,12 +160,16 @@ function moduleHasSelectableVariants(moduleKey) {
 }
 
 function getVisibleModuleGroupKeys() {
+    const isCeilingBathroom = configuration.mounting === 'ceiling' && configuration.bathroom === true;
     return MODULE_KEYS.filter(moduleKey => {
         if (!moduleHasSelectableVariants(moduleKey)) {
             return false;
         }
         if (moduleKey === 'ventiq') {
-            return configuration.mounting === 'ceiling' && configuration.bathroom === true;
+            return isCeilingBathroom;
+        }
+        if (moduleKey === 'airiq') {
+            return !isCeilingBathroom;
         }
         return true;
     });
@@ -1698,22 +1702,44 @@ function updateBathroomVisibility() {
         bathroomSection.style.display = '';
     }
 
-    updateVentIQModuleVisibility();
+    updateAirIQVentIQVisibility();
 }
 
-function updateVentIQModuleVisibility() {
+function updateAirIQVentIQVisibility() {
     const ventIQSections = Array.from(document.querySelectorAll('[data-module-group="ventiq"], #ventiq-module-section'));
-    if (!ventIQSections.length) {
+    const airIQSections = Array.from(document.querySelectorAll('[data-module-group="airiq"], #airiq-module-section'));
+
+    if (!ventIQSections.length && !airIQSections.length) {
         return;
     }
 
     if (ventIQSections.length > 1) {
         console.warn('[state] Invalid DOM: multiple VentIQ module-group sections found. Applying visibility updates to all sections defensively.');
     }
+    if (airIQSections.length > 1) {
+        console.warn('[state] Invalid DOM: multiple AirIQ module-group sections found. Applying visibility updates to all sections defensively.');
+    }
 
-    const shouldHideVentIQ = configuration.mounting !== 'ceiling' || !configuration.bathroom;
+    const isBathroomMode = configuration.mounting === 'ceiling' && configuration.bathroom === true;
 
-    if (shouldHideVentIQ) {
+    if (isBathroomMode) {
+        airIQSections.forEach(section => {
+            section.style.display = 'none';
+        });
+        closeModuleGroup('airiq');
+
+        const airiqNoneInput = document.querySelector('input[name="airiq"][value="none"]');
+        if (airiqNoneInput && !airiqNoneInput.checked) {
+            airiqNoneInput.checked = true;
+        }
+        configuration.airiq = 'none';
+
+        ventIQSections.forEach(section => {
+            section.style.display = '';
+            const isExpanded = section.dataset.expanded === 'true';
+            setModuleGroupExpanded(section, isExpanded);
+        });
+    } else {
         ventIQSections.forEach(section => {
             section.style.display = 'none';
         });
@@ -1723,10 +1749,9 @@ function updateVentIQModuleVisibility() {
         if (ventiqNoneInput && !ventiqNoneInput.checked) {
             ventiqNoneInput.checked = true;
         }
-
         configuration.ventiq = 'none';
-    } else {
-        ventIQSections.forEach(section => {
+
+        airIQSections.forEach(section => {
             section.style.display = '';
             const isExpanded = section.dataset.expanded === 'true';
             setModuleGroupExpanded(section, isExpanded);
@@ -1738,7 +1763,7 @@ function updateVentIQModuleVisibility() {
 
 function handleBathroomChange(e) {
     configuration.bathroom = e.target.checked;
-    updateVentIQModuleVisibility();
+    updateAirIQVentIQVisibility();
     updateConfiguration({ skipUrlUpdate: true });
     updateProgressSteps(getStep());
     updateUrlFromConfiguration();
