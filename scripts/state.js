@@ -368,7 +368,31 @@ function normalizeStateForConfiguration(state = {}) {
         normalized.voice = 'none';
     }
 
-    return normalized;
+    return enforceAirIQVentIQExclusivity(normalized);
+}
+
+
+function enforceAirIQVentIQExclusivity(state = {}) {
+    if (!state || typeof state !== 'object') {
+        return state;
+    }
+
+    const isCeilingBathroom = state.mounting === 'ceiling' && state.bathroom === true;
+
+    if (!isCeilingBathroom) {
+        state.ventiq = 'none';
+    }
+
+    const hasVentIQ = state.ventiq && state.ventiq !== 'none' && isCeilingBathroom;
+    const hasAirIQ = state.airiq && state.airiq !== 'none';
+
+    if (hasVentIQ) {
+        state.airiq = 'none';
+    } else if (hasAirIQ) {
+        state.ventiq = 'none';
+    }
+
+    return state;
 }
 
 function setState(newState = {}, options = {}) {
@@ -1623,31 +1647,31 @@ function updateBathroomVisibility() {
 }
 
 function updateVentIQModuleVisibility() {
-    const bathroomAirIQSection = document.getElementById('ventiq-module-section');
-    if (!bathroomAirIQSection) {
+    const ventIQSections = Array.from(document.querySelectorAll('[data-module-group="ventiq"], #ventiq-module-section'));
+    if (!ventIQSections.length) {
         return;
     }
 
-    if (bathroomAirIQSections.length > 1) {
-        // Defensive guard: duplicate VentIQ module-group markup is invalid and should never be rendered.
-        console.warn('[state] Invalid DOM: multiple [data-module-group="bathroomairiq"] sections found. Applying visibility updates to all sections defensively.');
+    if (ventIQSections.length > 1) {
+        console.warn('[state] Invalid DOM: multiple VentIQ module-group sections found. Applying visibility updates to all sections defensively.');
     }
 
-    // VentIQ is only available when ceiling mount AND bathroom is enabled
     const shouldHideVentIQ = configuration.mounting !== 'ceiling' || !configuration.bathroom;
 
     if (shouldHideVentIQ) {
-        bathroomAirIQSection.style.display = 'none';
+        ventIQSections.forEach(section => {
+            section.style.display = 'none';
+        });
         closeModuleGroup('ventiq');
 
-        const bathroomAirIQNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
+        const ventiqNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
+        if (ventiqNoneInput && !ventiqNoneInput.checked) {
+            ventiqNoneInput.checked = true;
         }
 
         configuration.ventiq = 'none';
     } else {
-        bathroomAirIQSections.forEach(section => {
+        ventIQSections.forEach(section => {
             section.style.display = '';
             const isExpanded = section.dataset.expanded === 'true';
             setModuleGroupExpanded(section, isExpanded);
@@ -1666,9 +1690,8 @@ function handleBathroomChange(e) {
 }
 
 function syncConfigurationFromInputs() {
-    configuration.airiq = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
+    const selectedAirIQ = document.querySelector('input[name="airiq"]:checked')?.value || 'none';
 
-    // Bathroom checkbox (ceiling only)
     const bathroomCheckbox = document.querySelector('input[name="bathroom"]');
     if (configuration.mounting === 'ceiling' && bathroomCheckbox) {
         configuration.bathroom = bathroomCheckbox.checked;
@@ -1676,14 +1699,33 @@ function syncConfigurationFromInputs() {
         configuration.bathroom = false;
     }
 
-    // VentIQ (ceiling + bathroom only)
-    if (configuration.mounting === 'ceiling' && configuration.bathroom) {
-        configuration.ventiq = document.querySelector('input[name="ventiq"]:checked')?.value || 'none';
-    } else {
+    const canUseVentIQ = configuration.mounting === 'ceiling' && configuration.bathroom;
+    const selectedVentIQ = canUseVentIQ
+        ? (document.querySelector('input[name="ventiq"]:checked')?.value || 'none')
+        : 'none';
+
+    configuration.airiq = selectedAirIQ;
+    configuration.ventiq = selectedVentIQ;
+
+    if (configuration.ventiq !== 'none') {
+        configuration.airiq = 'none';
+        const airiqNoneInput = document.querySelector('input[name="airiq"][value="none"]');
+        if (airiqNoneInput && !airiqNoneInput.checked) {
+            airiqNoneInput.checked = true;
+        }
+    } else if (configuration.airiq !== 'none') {
         configuration.ventiq = 'none';
-        const bathroomAirIQNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
+        const ventiqNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
+        if (ventiqNoneInput && !ventiqNoneInput.checked) {
+            ventiqNoneInput.checked = true;
+        }
+    }
+
+    if (!canUseVentIQ) {
+        configuration.ventiq = 'none';
+        const ventiqNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
+        if (ventiqNoneInput && !ventiqNoneInput.checked) {
+            ventiqNoneInput.checked = true;
         }
     }
 
@@ -1694,16 +1736,6 @@ function syncConfigurationFromInputs() {
         const fanNoneInput = document.querySelector('input[name="fan"][value="none"]');
         if (fanNoneInput && !fanNoneInput.checked) {
             fanNoneInput.checked = true;
-        }
-    }
-
-    if (configuration.mounting === 'ceiling') {
-        configuration.ventiq = document.querySelector('input[name="ventiq"]:checked')?.value || 'none';
-    } else {
-        configuration.ventiq = 'none';
-        const bathroomAirIQNoneInput = document.querySelector('input[name="ventiq"][value="none"]');
-        if (bathroomAirIQNoneInput && !bathroomAirIQNoneInput.checked) {
-            bathroomAirIQNoneInput.checked = true;
         }
     }
 
@@ -4708,7 +4740,7 @@ function initializeFromUrl() {
 }
 
 function applyConfiguration(initialConfig) {
-    Object.assign(configuration, defaultConfiguration, initialConfig);
+    Object.assign(configuration, defaultConfiguration, enforceAirIQVentIQExclusivity({ ...initialConfig }));
 
     if (configuration.mounting !== 'wall') {
         configuration.fan = 'none';
