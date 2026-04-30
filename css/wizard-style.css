@@ -2065,6 +2065,36 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     min-height: 1.1em;
 }
 
+.preflight-panel__warn-acknowledge {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid #f5c177;
+    border-radius: 10px;
+    background: #fff8eb;
+    color: var(--color-text-primary);
+    font-size: 14px;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.preflight-panel__warn-acknowledge[hidden] {
+    display: none;
+}
+
+.preflight-panel__warn-acknowledge input[type="checkbox"] {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+:root.dark-theme .preflight-panel__warn-acknowledge,
+[data-theme="dark"] .preflight-panel__warn-acknowledge {
+    background: rgba(251, 191, 36, 0.08);
+    border-color: rgba(251, 191, 36, 0.4);
+}
+
 @media (max-width: 640px) {
     .preflight-panel__item {
         grid-template-columns: 1fr;

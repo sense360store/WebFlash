@@ -1335,15 +1335,21 @@ function setHomeAssistantIntegrationsButtonEnabled(isEnabled) {
 
 function handleInstallStateEvent(event) {
     const detail = event?.detail;
-    const state = typeof detail === 'string' ? detail : detail?.state;
+    const rawState = typeof detail === 'string' ? detail : detail?.state;
     const message = detail?.message;
+    const state = typeof rawState === 'string' ? rawState.toLowerCase() : rawState;
 
     if (!state) {
         return;
     }
 
+    if (state === 'preparing' || state === 'manifest' || state === 'initializing') {
+        updateConnectionQualityMetrics({ resetStabilityWindow: true });
+    }
+
     if (state === 'finished') {
         setHomeAssistantIntegrationsButtonEnabled(true);
+        updateConnectionQualityMetrics({ resetStabilityWindow: true });
         // Record successful flash
         if (currentFlashEntryId) {
             const duration = flashStartTime ? Date.now() - flashStartTime : 0;
@@ -1351,10 +1357,17 @@ function handleInstallStateEvent(event) {
             currentFlashEntryId = null;
             flashStartTime = null;
         }
+        refreshPreflightDiagnostics();
         return;
     }
 
     if (state === 'error') {
+        const snapshot = getConnectionQualitySnapshot();
+        updateConnectionQualityMetrics({
+            serialReadFailures: snapshot.serialReadFailures + 1,
+            retryCount: snapshot.retryCount + 1
+        });
+        refreshPreflightDiagnostics();
         // Record failed flash
         if (currentFlashEntryId) {
             const errorMsg = message || 'Installation failed';
@@ -1367,6 +1380,32 @@ function handleInstallStateEvent(event) {
     if (state !== 'idle') {
         setHomeAssistantIntegrationsButtonEnabled(false);
     }
+}
+
+function bindSerialDisconnectListener() {
+    if (typeof navigator === 'undefined' || !navigator.serial || typeof navigator.serial.addEventListener !== 'function') {
+        return;
+    }
+    if (navigator.serial._webflashDisconnectBound) {
+        return;
+    }
+    navigator.serial._webflashDisconnectBound = true;
+    navigator.serial.addEventListener('disconnect', () => {
+        const snapshot = getConnectionQualitySnapshot();
+        updateConnectionQualityMetrics({
+            disconnects: snapshot.disconnects + 1,
+            resetStabilityWindow: true
+        });
+        refreshPreflightDiagnostics();
+    });
+    navigator.serial.addEventListener('connect', () => {
+        const snapshot = getConnectionQualitySnapshot();
+        updateConnectionQualityMetrics({
+            reconnectAttempts: snapshot.reconnectAttempts + 1,
+            resetStabilityWindow: true
+        });
+        refreshPreflightDiagnostics();
+    });
 }
 
 function openHomeAssistantIntegrations(event) {
@@ -2307,6 +2346,14 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
     }
 
     if (currentStep === 5) {
+        if (previousStep !== 5) {
+            // Reset the connection-quality stability window when the user first
+            // arrives at the review step so the preflight check is measured
+            // against the time the device is actually expected to be connected
+            // rather than the time elapsed since page load.
+            updateConnectionQualityMetrics({ resetStabilityWindow: true });
+        }
+        bindSerialDisconnectListener();
         updateConfiguration({ skipUrlUpdate: true });
         updateSummary();
         findCompatibleFirmware();
@@ -2896,6 +2943,10 @@ async function refreshPreflightDiagnostics() {
     ];
     const hasWarnings = checks.some(check => check.state === 'warn');
     const warningsAcknowledgeControl = document.querySelector('[data-preflight-warn-acknowledge]');
+    const warningsAcknowledgeInput = warningsAcknowledgeControl?.matches?.('input[type="checkbox"]')
+        ? warningsAcknowledgeControl
+        : warningsAcknowledgeControl?.querySelector('input[type="checkbox"]')
+            || document.querySelector('[data-preflight-warn-acknowledge-input]');
     if (warningsAcknowledgeControl) {
         warningsAcknowledgeControl.hidden = !hasWarnings;
         warningsAcknowledgeControl.setAttribute('aria-hidden', hasWarnings ? 'false' : 'true');
@@ -2906,7 +2957,9 @@ async function refreshPreflightDiagnostics() {
             warningsAcknowledgeControl.dataset.preflightWarnBound = 'true';
         }
         if (!hasWarnings) {
-            warningsAcknowledgeControl.checked = false;
+            if (warningsAcknowledgeInput && 'checked' in warningsAcknowledgeInput) {
+                warningsAcknowledgeInput.checked = false;
+            }
             setPreflightWarningsAcknowledgement(false);
         }
     } else if (!hasWarnings) {

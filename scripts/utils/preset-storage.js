@@ -1,5 +1,16 @@
 import { replaceState, setStep, getStep } from '../state.js';
 
+class PresetStorageError extends Error {
+    constructor(code, message, cause) {
+        super(message);
+        this.name = 'PresetStorageError';
+        this.code = code;
+        if (cause !== undefined) {
+            this.cause = cause;
+        }
+    }
+}
+
 const MEMORY_STORAGE = new Map();
 
 const memoryStorageAdapter = {

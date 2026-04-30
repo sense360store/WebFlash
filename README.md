@@ -138,7 +138,7 @@ Each check reports `Pass`, `Warning`, or `Fail`. Current install/download gating
 
 - Any `Fail` blocks install/download.
 - The **Before you flash** checkbox (`I understand and will keep the hub powered and connected throughout flashing.`) must be checked.
-- Warning-level checks are also gated by a separate acknowledgement flag in logic. The helper text references **Accept preflight warnings**, but that checkbox is not currently rendered in `index.html`, so warning acknowledgement UX is incomplete.
+- When at least one check reports `Warning`, an **Accept preflight warnings** checkbox appears in the preflight panel and must be checked before the install/download button is enabled. The checkbox is hidden again automatically as soon as the warning condition clears.
 
 ### Status-to-remediation quick map
 
@@ -186,10 +186,9 @@ The Review step includes utilities for troubleshooting:
 - **Copy Support Info**: Captures device detection, browser support, and configuration
 - **Copy Sharable Link**: Creates URL with your current configuration
 - **Copy Firmware URL**: Direct link to firmware file
+- **Copy Diagnostics**: Single redacted JSON bundle on the preflight panel containing browser capabilities, preflight check results, the selected configuration, the firmware target, and a connection-quality snapshot. Sensitive identifiers (IDs, MACs, serial numbers, tokens, signatures, paths, URLs) are replaced with `[REDACTED]` before copy.
 
 These can be shared with support teams for faster issue resolution.
-
-> MVP gap: a single diagnostics bundle copy flow is not implemented yet; use the individual copy actions above.
 
 ## Troubleshooting
 

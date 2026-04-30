@@ -8,6 +8,7 @@ const cachedPreset = { id: 'p1', name: 'Office Profile', state: { mount: 'wall' 
 
 async function loadStateSummaryModule() {
     jest.unstable_mockModule('../scripts/utils/channel-alias.js', () => ({
+        DEFAULT_CHANNEL_KEY: 'stable',
         normalizeChannelKey: jest.fn(() => 'stable')
     }));
     jest.unstable_mockModule('../scripts/utils/copy-to-clipboard.js', () => ({

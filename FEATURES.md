@@ -41,7 +41,8 @@ This document tracks implemented and planned features for the WebFlash firmware 
   - warning mismatch can be continued after confirmation (`Apply anyway?`)
 - [x] Preflight checks panel with status badges (`Pass`, `Warning`, `Fail`)
 - [x] Install/download gating on failed preflight checks
-- [~] Warning-level preflight acknowledgement gate exists in logic, but the `Accept preflight warnings` checkbox control is not currently present in `index.html`
+- [x] Warning-level preflight acknowledgement gate (`Accept preflight warnings` checkbox renders only when warnings are present)
+- [x] One-click diagnostics bundle copy (`Copy diagnostics` on the preflight panel) with sensitive-key redaction
 
 ### User Experience
 - [x] Dark/light theme toggle with persistent preference
@@ -63,9 +64,9 @@ This document tracks implemented and planned features for the WebFlash firmware 
 
 ## MVP Gaps / Incomplete Areas
 
-- [ ] **Connection-quality heuristic wiring:** Preflight `Connection quality` scoring exists, but metrics updates are not fully wired into serial lifecycle events yet. Current behavior can remain in warning/fail based on default counters + stability-window timing rather than real event telemetry.
-- [ ] **Diagnostics bundle copy flow:** A dedicated one-click diagnostics bundle copy/share flow is not implemented yet; current support tooling is still split across support info, links, and firmware URL copy actions.
-- [ ] **Preflight warning acknowledgement UX:** Logic requires warning acknowledgement before install when any warning exists, but UI control text (`Accept preflight warnings`) is referenced only by helper copy and not currently rendered as a checkbox control.
+- [x] **Connection-quality heuristic wiring:** Stability window now resets on entry to the Review step, and `navigator.serial` `connect`/`disconnect` events plus ESP Web Tools `state-changed`/`error` transitions update the metrics directly so `Connection quality` reflects real serial lifecycle events.
+- [x] **Diagnostics bundle copy flow:** `Copy diagnostics` on the preflight panel emits a single redacted JSON bundle (preflight results, configuration, firmware target, connection-quality snapshot) via the clipboard.
+- [x] **Preflight warning acknowledgement UX:** `Accept preflight warnings` is rendered as a checkbox inside the preflight panel and is shown only when at least one warning is active.
 
 ---
 
@@ -92,7 +93,7 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ### Diagnostics
 - [ ] Device diagnostic mode
 - [x] Sensor health check
-- [~] Connection quality preflight check (heuristic scaffolding present; full event-driven telemetry pending)
+- [x] Connection quality preflight check (event-driven telemetry from `navigator.serial` and ESP Web Tools install state)
 - [x] Error log viewer
 
 ### Localization
