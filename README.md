@@ -27,8 +27,9 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
    - Enable required modules (Sense360 RoomIQ, Sense360 AirIQ, Sense360 VentIQ, Sense360 LED, Sense360 Fan Relay/PWM/DAC/TRIAC)
 3. Review the recommended firmware configuration
 4. Wait for firmware verification to complete
-5. Acknowledge safety warnings
-6. Click "Install Firmware" to flash via browser
+5. Acknowledge **Before you flash** checklist
+6. Resolve preflight failures (and warnings when applicable)
+7. Click "Install Firmware" to flash via browser
 7. Follow ESP Web Tools prompts to complete installation
 
 ## Configuration Options
@@ -122,6 +123,31 @@ Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allo
 | Mount != Wall | Fan auto-reset to `none` | UI logic forces fan none for non-wall mount. |
 
 
+
+## Preflight checks and install gating
+
+Step 5 includes a **Preflight checks** panel with these labels:
+
+- **Browser support**
+- **Device connection visibility**
+- **Connection quality**
+- **Firmware verification**
+- **User acknowledgement**
+
+Each check reports `Pass`, `Warning`, or `Fail`. Current install/download gating behavior:
+
+- Any `Fail` blocks install/download.
+- The **Before you flash** checkbox (`I understand and will keep the hub powered and connected throughout flashing.`) must be checked.
+- Warning-level checks are also gated by a separate acknowledgement flag in logic. The helper text references **Accept preflight warnings**, but that checkbox is not currently rendered in `index.html`, so warning acknowledgement UX is incomplete.
+
+### Status-to-remediation quick map
+
+- **Browser support = Fail**: switch to a Chromium browser with Web Serial (Chrome/Edge/Opera).
+- **Device connection visibility = Warning**: connect/reconnect USB, close other serial apps, re-read device info.
+- **Connection quality = Warning/Fail**: keep cable and power stable for at least 30s, avoid hubs, retry after reconnecting.
+- **Firmware verification = Warning/Fail**: wait for verification to finish or reselect firmware/retry download if verification fails.
+- **User acknowledgement = Warning**: check the **Before you flash** acknowledgement checkbox.
+
 ## Installation Process
 
 1. **Connect Device**: Plug device into computer via USB
@@ -162,6 +188,8 @@ The Review step includes utilities for troubleshooting:
 - **Copy Firmware URL**: Direct link to firmware file
 
 These can be shared with support teams for faster issue resolution.
+
+> MVP gap: a single diagnostics bundle copy flow is not implemented yet; use the individual copy actions above.
 
 ## Troubleshooting
 
