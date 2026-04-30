@@ -9,8 +9,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: [],
                 conflicts: []
             },
-            base: {
-                label: 'Base',
+            airiq: {
+                label: 'AirIQ',
                 coreRevision: 'Rev B core or newer',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
                 recommended: true,
@@ -19,38 +19,19 @@ const MODULE_REQUIREMENT_MATRIX = {
                         module: 'fan',
                         variants: ['analog'],
                         message: 'Conflicts with Fan Analog — analog control uses the shared DAC header.',
-                        detail: 'Select PWM fan control or remove the AirIQ Base module to free the DAC bus.'
+                        detail: 'Select PWM fan control or remove the AirIQ module to free the DAC bus.'
                     },
                     {
-                        module: 'bathroomairiq',
-                        variants: ['base'],
+                        module: 'ventiq',
+                        variants: ['airiq'],
                         message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
-                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ Base only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
-                    }
-                ]
-            },
-            pro: {
-                label: 'Pro',
-                coreRevision: 'Rev C core or newer',
-                headers: ['J4 sensor bus', 'J6 particulate harness', 'J7 auxiliary power'],
-                conflicts: [
-                    {
-                        module: 'fan',
-                        variants: ['analog'],
-                        message: 'Conflicts with Fan Analog — the Pro particulate harness occupies the DAC header.',
-                        detail: 'Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.'
-                    },
-                    {
-                        module: 'bathroomairiq',
-                        variants: ['base'],
-                        message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
-                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ Pro only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
                     }
                 ]
             }
         }
     },
-    bathroomairiq: {
+    ventiq: {
         label: 'Sense360 VentIQ',
         summary: 'Bathroom air-quality module with humidity, pressure, and VOC/NOx sensing.',
         ceilingOnly: true,
@@ -63,7 +44,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [],
                 sensors: []
             },
-            base: {
+            airiq: {
                 label: 'Sense360 VentIQ',
                 coreRevision: 'Rev C core or newer',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
@@ -71,9 +52,9 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [
                     {
                         module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ Base/Pro — AirIQ and VentIQ cannot both be enabled.',
-                        detail: 'The Bathroom toggle drives VentIQ flow. Select VentIQ only when AirIQ is set to None, and disable VentIQ to use AirIQ Base or Pro.'
+                        variants: ['airiq'],
+                        message: 'Conflicts with AirIQ — AirIQ and VentIQ cannot both be enabled.',
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select VentIQ only when AirIQ is set to None, and disable VentIQ to use AirIQ.'
                     }
                 ],
                 sensors: [
@@ -115,8 +96,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [
                     {
                         module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ Base/Pro — analog control occupies the shared DAC bus.',
+                        variants: ['airiq'],
+                        message: 'Conflicts with AirIQ — analog control occupies the shared DAC bus.',
                         detail: 'Disable AirIQ or switch the fan output to PWM mode.'
                     }
                 ]
@@ -147,8 +128,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [],
                 recommended: true
             },
-            base: {
-                label: 'Base',
+            airiq: {
+                label: 'LED Ring',
                 coreRevision: 'Rev A core or newer',
                 headers: ['J11 LED data', 'J12 LED power'],
                 conflicts: [],
