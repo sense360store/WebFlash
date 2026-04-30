@@ -27,6 +27,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  test:
+    # Surfaces unit-test results in CI. continue-on-error is set so pre-existing
+    # failing tests do not block firmware deployments while they are being
+    # cleaned up; remove the flag once the suite is fully green.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run unit tests
+        run: npm test -- --ci
+
   build:
     runs-on: ubuntu-latest
     steps:
