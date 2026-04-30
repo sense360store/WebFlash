@@ -34,6 +34,15 @@ function getTotalSteps() {
 }
 const MODULE_KEYS = Object.freeze(['voice', 'led', 'airiq', 'fan', 'ventiq']);
 
+// Hardware accessory modules whose availability is governed by the module
+// matrix (conflicts) rather than firmware/manifest presence. Their option
+// cards must never display a manifest-derived "not available" message.
+const ALWAYS_AVAILABLE_MODULE_KEYS = Object.freeze(new Set(['fan', 'led']));
+
+function isAlwaysAvailableModuleKey(key) {
+    return ALWAYS_AVAILABLE_MODULE_KEYS.has(key);
+}
+
 const SUPPORTED_CONFIG_KEYS = Object.freeze([
     'mounting',
     'power',
@@ -1812,6 +1821,15 @@ function getOptionStatusElement(card) {
 }
 
 function applyOptionAvailabilityState(input, { available, reason }) {
+    // Hardware accessory modules (fan/led) are governed by the module matrix
+    // and must never show a manifest-derived availability error, regardless of
+    // what the caller passes in. Force them to the "available" state so any
+    // stale status text from a previous render is cleared.
+    if (input?.name && isAlwaysAvailableModuleKey(input.name)) {
+        available = true;
+        reason = '';
+    }
+
     input.disabled = !available;
     const card = input.closest('.option-card');
 
@@ -2084,18 +2102,6 @@ function bindModuleGroupToggleListeners() {
 }
 
 function formatOptionUnavailableReason(baseState, moduleKey, value) {
-    const variant = getModuleVariantEntry(moduleKey, value);
-    const compatibilityNotes = Array.isArray(variant?.compatibilityNotes) ? variant.compatibilityNotes : [];
-    const matchedNote = compatibilityNotes.find(note => {
-        const mountingMatches = !note?.mounting || note.mounting === baseState.mounting;
-        const powerMatches = !note?.power || note.power === baseState.power;
-        return mountingMatches && powerMatches;
-    });
-
-    if (matchedNote?.message) {
-        return matchedNote.message;
-    }
-
     const moduleLabel = formatModuleSelectionLabel(moduleKey, value);
     const combinationLabel = formatMountingPowerLabel(baseState);
 
@@ -2110,6 +2116,17 @@ function createModuleTag(label, variant = 'info') {
     return `<span class="module-tag module-tag--${variant}">${escapeHtml(label)}</span>`;
 }
 
+function clearAlwaysAvailableModuleOptions() {
+    MODULE_KEYS.forEach(key => {
+        if (!isAlwaysAvailableModuleKey(key)) {
+            return;
+        }
+        document.querySelectorAll(`input[name="${key}"]`).forEach(input => {
+            applyOptionAvailabilityState(input, { available: true, reason: '' });
+        });
+    });
+}
+
 function updateModuleOptionAvailability() {
     if (manifestLoadError || !configuration.mounting || !configuration.power) {
         resetOptionAvailability();
@@ -2117,6 +2134,7 @@ function updateModuleOptionAvailability() {
     }
 
     if (!isManifestReady()) {
+        clearAlwaysAvailableModuleOptions();
         return;
     }
 
@@ -2143,7 +2161,7 @@ function updateModuleOptionAvailability() {
             // Fan / Switching driver options and LED Ring options are hardware
             // accessory choices and are always selectable; their compatibility is
             // driven by the module matrix (conflicts) rather than manifest presence.
-            if (key === 'fan' || key === 'led') {
+            if (isAlwaysAvailableModuleKey(key)) {
                 applyOptionAvailabilityState(input, { available: true, reason: '' });
                 return;
             }
@@ -2222,7 +2240,7 @@ function updateModuleAvailabilityMessage() {
     }
 
     const moduleComboKey = buildModuleComboKey(configuration);
-    const unsupportedModules = MODULE_KEYS.filter(moduleKey => moduleKey !== 'fan' && moduleKey !== 'led' && !availability.modules[moduleKey].has(configuration[moduleKey]));
+    const unsupportedModules = MODULE_KEYS.filter(moduleKey => !isAlwaysAvailableModuleKey(moduleKey) && !availability.modules[moduleKey].has(configuration[moduleKey]));
 
     if (unsupportedModules.length > 0) {
         hint.classList.add('is-warning');
