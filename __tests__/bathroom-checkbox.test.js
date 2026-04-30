@@ -23,7 +23,7 @@ function renderWizardDom() {
                 </label>
             </section>
             <section class="module-collection">
-                <section class="module-group" data-module-group="airiq" data-expanded="false">
+                <section class="module-group" data-module-group="airiq" id="airiq-module-section" data-expanded="false">
                     <input type="radio" name="airiq" value="none" checked>
                     <input type="radio" name="airiq" value="airiq">
                 </section>
@@ -56,7 +56,7 @@ beforeEach(() => {
     renderWizardDom();
 });
 
-test('bathroom checkbox toggles configuration.bathroom and shows VentIQ section', async () => {
+test('bathroom checkbox toggles configuration.bathroom and switches AirIQ <-> VentIQ section', async () => {
     const stateModule = await import('../scripts/state.js');
 
     // Initialize wizard
@@ -71,12 +71,17 @@ test('bathroom checkbox toggles configuration.bathroom and shows VentIQ section'
     const bathroomSection = document.getElementById('bathroom-toggle-section');
     expect(bathroomSection.style.display).not.toBe('none');
 
-    // Verify state is ceiling/false bathroom
+    // Verify state is ceiling/false bathroom and AirIQ is shown, VentIQ hidden
     let state = stateModule.getState();
     expect(state.mounting).toBe('ceiling');
     expect(state.bathroom).toBe(false);
 
-    // Check bathroom checkbox
+    const airIQSection = document.getElementById('airiq-module-section');
+    const ventIQSection = document.getElementById('ventiq-module-section');
+    expect(airIQSection.style.display).not.toBe('none');
+    expect(ventIQSection.style.display).toBe('none');
+
+    // Check bathroom checkbox -> should switch from AirIQ to VentIQ
     const bathroomCheckbox = document.querySelector('input[name="bathroom"]');
     expect(bathroomCheckbox).toBeTruthy();
     bathroomCheckbox.checked = true;
@@ -85,9 +90,18 @@ test('bathroom checkbox toggles configuration.bathroom and shows VentIQ section'
     state = stateModule.getState();
     expect(state.bathroom).toBe(true);
 
-    // VentIQ section should be visible
-    const ventIQSection = document.getElementById('ventiq-module-section');
+    // VentIQ section should be visible, AirIQ section should be hidden
     expect(ventIQSection.style.display).not.toBe('none');
+    expect(airIQSection.style.display).toBe('none');
+
+    // Unchecking should switch back: AirIQ visible, VentIQ hidden
+    bathroomCheckbox.checked = false;
+    bathroomCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+
+    state = stateModule.getState();
+    expect(state.bathroom).toBe(false);
+    expect(airIQSection.style.display).not.toBe('none');
+    expect(ventIQSection.style.display).toBe('none');
 });
 
 test('bathroom state persists in URL after toggle', async () => {
