@@ -118,7 +118,7 @@ Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allo
 | Combination | Result | Constraint source |
 |---|---|---|
 | AirIQ Base/Pro + Fan Analog | 🚫 blocked | Shared DAC bus conflict metadata in module requirements. |
-| AirIQ (Base/Pro) + VentIQ Base | 🚫 blocked | “Only one air quality module can be active at a time.” |
+| AirIQ (Base/Pro) + VentIQ (Base/Pro) | ⚠️ conditionally allowed | Allowed only on **Ceiling mount + Bathroom mode ON**; combinations outside that scope remain blocked by UI gating. |
 | Mount != Ceiling | VentIQ hidden and reset to `none` | UI logic auto-hides VentIQ unless Ceiling + Bathroom. |
 | Mount != Wall | Fan auto-reset to `none` | UI logic forces fan none for non-wall mount. |
 
