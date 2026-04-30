@@ -133,4 +133,41 @@ describe('preflight install gating', () => {
     expect(quality.state).toBe('fail');
     expect(quality.blocking).toBe(true);
   });
+
+  test('diagnostics bundle includes required keys and redacts sensitive values', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    window.currentFirmware = {
+      model: 'Sense360',
+      variant: 'Wall',
+      sensor_addon: 'AirIQ',
+      channel: 'stable',
+      version: '1.2.3',
+      firmwareId: 'firmware-secret-id',
+      parts: [{ path: '/firmware/private.bin', offset: 0 }]
+    };
+    __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+    await __testHooks.refreshPreflightDiagnostics();
+    const bundle = __testHooks.buildDiagnosticsBundle();
+
+    expect(bundle).toEqual(expect.objectContaining({
+      schemaVersion: expect.any(String),
+      browserCapability: expect.any(Object),
+      serialAvailability: expect.any(Object),
+      preflightResults: expect.any(Array),
+      selectedConfiguration: expect.any(Object),
+      firmwareTarget: expect.any(Object),
+      compatibilityVerdict: expect.any(Object)
+    }));
+    expect(bundle.firmwareTarget.firmwareId).toBe('[REDACTED]');
+    expect(__testHooks.redactDiagnosticsValue({ deviceId: 'abc123' }).deviceId).toBe('[REDACTED]');
+  });
+
+  test('copy diagnostics uses clipboard fallback when Clipboard API is unavailable', async () => {
+    delete global.navigator.clipboard;
+    document.execCommand = jest.fn(() => true);
+    const { __testHooks } = await import('../scripts/state.js');
+    const copied = await __testHooks.copyDiagnosticsBundle();
+    expect(copied).toBe(true);
+    expect(document.execCommand).toHaveBeenCalledWith('copy');
+  });
 });
