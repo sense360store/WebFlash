@@ -49,7 +49,6 @@ const optionTooltips = {
                 'Offers a broad motion sensing cone for RoomIQ Motion modules.'
             ],
             cons: [
-                'Fan module is not supported because of exhaust restrictions overhead.',
                 'Requires access to joists or anchors rated for 1.5 kg to secure the chassis.'
             ],
             measurements: [
@@ -241,6 +240,26 @@ const optionTooltips = {
             learnMore: {
                 label: 'Analog fan integration guide',
                 href: 'https://docs.sense360.com/modules/fan-analog'
+            }
+        },
+        triac: {
+            title: 'TRIAC Fan Module',
+            summary: 'Phase dimmer for mains-voltage fans and lamps via the TRIAC_Board harness.',
+            pros: [
+                'Drives line-voltage AC fans, exhaust units, and dimmable lamps without an external dimmer.',
+                'Single-board solution with onboard zero-cross detection and snubber.'
+            ],
+            cons: [
+                'Requires mains wiring by a qualified electrician.',
+                'Phase control may produce audible hum on some inductive loads.'
+            ],
+            measurements: [
+                'Switches up to 2 A at 120/230 VAC, 50/60 Hz.',
+                'Programmable minimum on-time to protect motor windings.'
+            ],
+            learnMore: {
+                label: 'TRIAC fan wiring guide',
+                href: 'https://docs.sense360.com/modules/fan-triac'
             }
         }
     },
