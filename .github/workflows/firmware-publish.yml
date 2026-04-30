@@ -106,60 +106,49 @@ jobs:
           # =============================================================
 
           REQUIRED_CONFIGS=(
-            # ---------------------------------------------------------
-            # CEILING (non-voice) - All power types + module variations
-            # ---------------------------------------------------------
-            "Ceiling-USB"                              # Core-C + USB (no modules)
-            "Ceiling-USB-AirIQ"                        # Core-C + USB + AirIQ
-            "Ceiling-POE-AirIQBase"                    # Core-C + POE + AirIQ (base)
-            "Ceiling-POE-AirIQPro"                     # Core-C + POE + AirIQ (pro)
-            "Ceiling-POE-Bathroom"                     # Core-C + POE + Bathroom
-            "Ceiling-PWR-AirIQ"                        # Core-C + PWR + AirIQ
-            "Ceiling-PWR-AirIQ-Comfort"                # Core-C + PWR + AirIQ + Comfort
-            "Ceiling-PWR-AirIQ-Presence"               # Core-C + PWR + AirIQ + Presence
-            "Ceiling-PWR-AirIQ-Comfort-Presence"       # Core-C + PWR + AirIQ + Comfort + Presence
-            "Ceiling-PWR-AirIQ-Comfort-Presence-Fan"   # Core-C + PWR + full module stack
-            "Ceiling-PWR-Bathroom-Comfort-Presence"    # Core-C + PWR + Bathroom + modules
-            "Ceiling-POE-Comfort"                      # Core-C + POE + Comfort only
-            "Ceiling-POE-Presence"                     # Core-C + POE + Presence only
-            "Ceiling-USB-Fan"                          # Core-C + USB + Fan only
-
-            # ---------------------------------------------------------
-            # CEILING (voice) - Voice variants with LED+MIC
-            # ---------------------------------------------------------
-            "Ceiling-Voice-USB"                        # Core-V-C + USB
-            "Ceiling-Voice-POE-AirIQ"                  # Core-V-C + POE + AirIQ
-            "Ceiling-Voice-PWR-AirIQ-Comfort-Presence" # Core-V-C + PWR + full stack
-
-            # ---------------------------------------------------------
-            # WALL/DESK (non-voice) - All power types + module variations
-            # ---------------------------------------------------------
-            "Wall-USB"                                 # Core-W + USB (no modules)
-            "Wall-USB-AirIQ"                           # Core-W + USB + AirIQ
-            "Wall-USB-AirIQPro"                        # Core-W + USB + AirIQ (pro)
-            "Wall-POE-AirIQBase"                       # Core-W + POE + AirIQ (base)
-            "Wall-POE-AirIQ"                           # Core-W + POE + AirIQ
-            "Wall-PWR"                                 # Core-W + PWR (no modules)
-            "Wall-PWR-AirIQ"                           # Core-W + PWR + AirIQ
-            "Wall-PWR-AirIQ-Comfort"                   # Core-W + PWR + AirIQ + Comfort
-            "Wall-PWR-AirIQ-Presence"                  # Core-W + PWR + AirIQ + Presence
-            "Wall-PWR-AirIQ-Comfort-Presence"          # Core-W + PWR + AirIQ + Comfort + Presence
-            "Wall-PWR-AirIQ-Comfort-Presence-Fan"      # Core-W + PWR + full module stack
-            "Wall-POE-Comfort"                         # Core-W + POE + Comfort only
-            "Wall-POE-Presence"                        # Core-W + POE + Presence only
-            "Wall-USB-Fan"                             # Core-W + USB + Fan only
-
-            # ---------------------------------------------------------
-            # WALL/DESK (voice) - Voice variants with LED+MIC
-            # ---------------------------------------------------------
-            "Wall-Voice-USB"                           # Core-V-W + USB
-            "Wall-Voice-POE-AirIQ"                     # Core-V-W + POE + AirIQ
-            "Wall-Voice-PWR-AirIQ-Comfort-Presence"    # Core-V-W + PWR + full stack
-
-            # ---------------------------------------------------------
-            # SPECIAL
-            # ---------------------------------------------------------
-            "Rescue"                                   # Universal rescue firmware
+            "Ceiling-POE-AirIQPro"
+            "Ceiling-POE-VentIQBase"
+            "Ceiling-PWR-AirIQ"
+            "Ceiling-PWR-AirIQPro"
+            "Ceiling-S3-Full"
+            "Ceiling-USB"
+            "Ceiling-USB-AirIQ"
+            "Ceiling-USB-Fan"
+            "Ceiling-Voice-POE-AirIQ"
+            "Ceiling-Voice-USB"
+            "Core-Ceiling"
+            "Core-Ceiling-POE"
+            "Core-Ceiling-PWR"
+            "Core-Ceiling-USB"
+            "Core-Ceiling-VentIQBase"
+            "Core-Wall"
+            "Core-Wall-POE"
+            "Core-Wall-PWR"
+            "Core-Wall-USB"
+            "CoreVoice-Ceiling"
+            "CoreVoice-Ceiling-POE"
+            "CoreVoice-Ceiling-PWR"
+            "CoreVoice-Ceiling-USB"
+            "CoreVoice-Wall"
+            "CoreVoice-Wall-POE"
+            "CoreVoice-Wall-PWR"
+            "CoreVoice-Wall-USB"
+            "Fan-PWM"
+            "Mini-AirIQ"
+            "Mini-AirIQ-Advanced"
+            "Mini-AirIQ-Basic"
+            "Mini-AirIQ-LD2412"
+            "POE"
+            "Rescue"
+            "Wall-POE-AirIQ"
+            "Wall-PWR"
+            "Wall-PWR-AirIQ"
+            "Wall-USB"
+            "Wall-USB-AirIQ"
+            "Wall-USB-AirIQPro"
+            "Wall-USB-Fan"
+            "Wall-Voice-POE-AirIQ"
+            "Wall-Voice-USB"
           )
 
           missing=0
