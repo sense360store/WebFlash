@@ -80,7 +80,7 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 **Module Constraints:**
 - `Bathroom` is only available for Ceiling installations
 - `VentIQ` requires `Bathroom` to be enabled
-- `AirIQ` and `VentIQ` cannot be combined
+- `AirIQ` and `VentIQ` can be combined only when `Bathroom` is enabled on `Ceiling` installations; combinations outside that scope remain unsupported
 - `CoreVoice` requires `LED` ring module (voice cores mandate LED rings with integrated microphone)
 
 **Module Sensors:**
