@@ -20,12 +20,6 @@ const MODULE_REQUIREMENT_MATRIX = {
                         variants: ['analog'],
                         message: 'Conflicts with Fan Analog — analog control uses the shared DAC header.',
                         detail: 'Select PWM fan control or remove the AirIQ Base module to free the DAC bus.'
-                    },
-                    {
-                        module: 'bathroomairiq',
-                        variants: ['base'],
-                        message: 'Conflicts with VentIQ — VentIQ replaces standard AirIQ in bathroom mode.',
-                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
             },
@@ -39,12 +33,6 @@ const MODULE_REQUIREMENT_MATRIX = {
                         variants: ['analog'],
                         message: 'Conflicts with Fan Analog — the Pro particulate harness occupies the DAC header.',
                         detail: 'Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.'
-                    },
-                    {
-                        module: 'bathroomairiq',
-                        variants: ['base'],
-                        message: 'Conflicts with VentIQ — VentIQ replaces standard AirIQ in bathroom mode.',
-                        detail: 'Disable VentIQ to use AirIQ Base, or keep VentIQ enabled and set AirIQ to None.'
                     }
                 ]
             }
@@ -68,14 +56,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'Rev C core or newer',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
                 recommended: true,
-                conflicts: [
-                    {
-                        module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ Base/Pro — VentIQ is the bathroom air-quality path.',
-                        detail: 'Set AirIQ to None when VentIQ is enabled.'
-                    }
-                ],
+                conflicts: [],
                 sensors: [
                     'SHT4x (temperature, humidity)',
                     'BMP390 (pressure)',
