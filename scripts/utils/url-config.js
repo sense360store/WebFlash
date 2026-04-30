@@ -118,9 +118,10 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
             ['base', { wizardValue: 'pwm', configSegment: 'FanPWM' }],
-            ['analog', { wizardValue: 'analog', configSegment: 'FanAnalog' }]
+            ['analog', { wizardValue: 'analog', configSegment: 'FanAnalog' }],
+            ['triac', { wizardValue: 'triac', configSegment: 'FanTRIAC' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base', 'analog']),
+        allowedValues: Object.freeze(['none', 'base', 'analog', 'triac']),
         legacyValues: new Map([
             ['pwm', 'base']
         ])

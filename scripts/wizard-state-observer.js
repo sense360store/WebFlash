@@ -5,7 +5,7 @@
     mount: null,   // 'wall' | 'ceiling'
     power: null,   // 'usb' | 'poe' | 'pwr'
     airiq: null,   // 'none' | 'airiq' | 'ventiq'
-    fan: null      // 'none' | 'pwm' | 'analog'
+    fan: null      // 'none' | 'pwm' | 'analog' | 'triac'
   };
 
   const listeners = new Set();
@@ -23,7 +23,7 @@
       { 'USB': 'usb', 'POE': 'poe', 'PWR': 'pwr' });
     // Modules
     state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Base':'airiq','Pro':'ventiq' });
-    state.fan      = pickByGroup('Fan',      { 'None':'none','PWM':'pwm','Analog':'analog' });
+    state.fan      = pickByGroup('Fan',      { 'None':'none','PWM':'pwm','Analog':'analog','TRIAC':'triac' });
     emit();
   }
 

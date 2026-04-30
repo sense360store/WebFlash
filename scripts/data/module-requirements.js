@@ -71,28 +71,27 @@ const MODULE_REQUIREMENT_MATRIX = {
         variants: {
             none: {
                 label: 'Sense360 Fan Relay',
+                sku: 'S360-310',
                 coreRevision: 'R4',
                 headers: ['S360-Relay-C'],
+                description: 'On / off relay for bathroom fans.',
                 conflicts: [],
                 recommended: true
             },
             pwm: {
                 label: 'Sense360 Fan PWM',
+                sku: 'S360-311',
                 coreRevision: 'R4',
                 headers: ['12vFan_PWM_PulseCounter'],
-                conflicts: [],
-                compatibilityNotes: [
-                    {
-                        mounting: 'ceiling',
-                        power: 'pwr',
-                        message: 'PWM fan control is not supported for Ceiling mount with PWR power.'
-                    }
-                ]
+                description: '12V PWM fan driver, up to 4 fans with tach feedback.',
+                conflicts: []
             },
             analog: {
                 label: 'Sense360 Fan DAC',
+                sku: 'S360-312',
                 coreRevision: 'R4',
                 headers: ['Fan_GP8403'],
+                description: '0 to 10V analog fan driver, for example Cloudlift S12.',
                 conflicts: [
                     {
                         module: 'airiq',
@@ -101,6 +100,14 @@ const MODULE_REQUIREMENT_MATRIX = {
                         detail: 'Disable AirIQ or switch the fan output to PWM mode.'
                     }
                 ]
+            },
+            triac: {
+                label: 'Sense360 TRIAC',
+                sku: 'S360-320',
+                coreRevision: 'R4',
+                headers: ['TRIAC_Board'],
+                description: 'Phase dimmer for mains fan or lamp.',
+                conflicts: []
             }
         }
     },

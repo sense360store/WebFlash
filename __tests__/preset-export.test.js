@@ -175,11 +175,7 @@ describe('preset export JSON', () => {
 
     expect(imported).toEqual({
       ok: true,
-      data: {
-        ...source,
-        state: { ...source.state, fan: 'none' },
-        configuration: { ...source.configuration, fan: 'none' }
-      },
+      data: source,
       metadata: {
         schemaVersion: 1,
         hardwareTarget: 'sense360-ceiling-poe',
@@ -239,7 +235,7 @@ describe('preset export JSON', () => {
 
   test.each([
     {
-      name: 'fan pwm gets coerced to none on ceiling mount in state/configuration',
+      name: 'fan pwm is preserved on ceiling mount in state/configuration',
       input: {
         schemaVersion: 1,
         hardwareTarget: 'sense360-ceiling-poe',
@@ -249,15 +245,30 @@ describe('preset export JSON', () => {
           state: { mount: 'ceiling', power: 'poe', fan: 'pwm' },
           configuration: { mounting: 'ceiling', power: 'poe', fan: 'pwm' }
         }
-      }
+      },
+      expectedFan: 'pwm'
+    },
+    {
+      name: 'fan triac is accepted on ceiling mount in state/configuration',
+      input: {
+        schemaVersion: 1,
+        hardwareTarget: 'sense360-ceiling-poe',
+        preset: {
+          id: 'fixture-fan-2',
+          name: 'Ceiling TRIAC',
+          state: { mount: 'ceiling', power: 'poe', fan: 'triac' },
+          configuration: { mounting: 'ceiling', power: 'poe', fan: 'triac' }
+        }
+      },
+      expectedFan: 'triac'
     }
-  ])('fan coercion regression: $name', async ({ input }) => {
+  ])('fan ceiling preservation: $name', async ({ input, expectedFan }) => {
     const { deserializePresetConfig } = await import('../scripts/utils/preset-storage.js');
     const result = deserializePresetConfig(input);
 
     expect(result.ok).toBe(true);
-    expect(result.data.state.fan).toBe('none');
-    expect(result.data.configuration.fan).toBe('none');
+    expect(result.data.state.fan).toBe(expectedFan);
+    expect(result.data.configuration.fan).toBe(expectedFan);
   });
 
   test.each([

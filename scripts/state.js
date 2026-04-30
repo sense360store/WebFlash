@@ -89,7 +89,7 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['bathroom', [false, true]],
     ['airiq', ['none', 'airiq']],
     ['ventiq', ['none', 'airiq']],
-    ['fan', ['none', 'pwm', 'analog']],
+    ['fan', ['none', 'pwm', 'analog', 'triac']],
     ['voice', ['none']],
     ['led', ['none', 'airiq']]
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
@@ -114,7 +114,8 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
     })],
     ['fan', Object.freeze({
         pwm: 'Fan PWM module',
-        analog: 'Fan Analog module'
+        analog: 'Fan Analog module',
+        triac: 'Fan TRIAC module'
     })],
     ['voice', Object.freeze({
         none: 'Core (standard module)'
@@ -136,7 +137,12 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
     ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
     ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
-    ['fan', value => `Fan${value.toUpperCase()}`],
+    ['fan', value => {
+        if (value === 'pwm') return 'FanPWM';
+        if (value === 'analog') return 'FanAnalog';
+        if (value === 'triac') return 'FanTRIAC';
+        return '';
+    }],
     ['voice', () => 'Core'],
     ['led', value => value === 'airiq' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
@@ -1740,15 +1746,7 @@ function syncConfigurationFromInputs() {
         }
     }
 
-    if (configuration.mounting === 'wall') {
-        configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
-    } else {
-        configuration.fan = 'none';
-        const fanNoneInput = document.querySelector('input[name="fan"][value="none"]');
-        if (fanNoneInput && !fanNoneInput.checked) {
-            fanNoneInput.checked = true;
-        }
-    }
+    configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
 
     // LED Ring - sync from inputs
     configuration.led = document.querySelector('input[name="led"]:checked')?.value || 'none';
@@ -2104,6 +2102,14 @@ function updateModuleOptionAvailability() {
             let available = true;
             let reason = '';
 
+            // Fan / Switching driver options are hardware accessory choices and
+            // are always selectable; their compatibility is driven by the module
+            // matrix (conflicts) rather than manifest presence.
+            if (key === 'fan') {
+                applyOptionAvailabilityState(input, { available: true, reason: '' });
+                return;
+            }
+
             if (!availability) {
                 available = false;
                 reason = formatOptionUnavailableReason(baseState, key, input.value);
@@ -2178,7 +2184,7 @@ function updateModuleAvailabilityMessage() {
     }
 
     const moduleComboKey = buildModuleComboKey(configuration);
-    const unsupportedModules = MODULE_KEYS.filter(moduleKey => !availability.modules[moduleKey].has(configuration[moduleKey]));
+    const unsupportedModules = MODULE_KEYS.filter(moduleKey => moduleKey !== 'fan' && !availability.modules[moduleKey].has(configuration[moduleKey]));
 
     if (unsupportedModules.length > 0) {
         hint.classList.add('is-warning');
@@ -4762,10 +4768,6 @@ function initializeFromUrl() {
 
 function applyConfiguration(initialConfig) {
     Object.assign(configuration, defaultConfiguration, enforceAirIQVentIQExclusivity({ ...initialConfig }));
-
-    if (configuration.mounting !== 'wall') {
-        configuration.fan = 'none';
-    }
 
     if (configuration.mounting !== 'ceiling') {
         configuration.ventiq = 'none';
