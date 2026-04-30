@@ -135,12 +135,21 @@ POWER_TOKENS = {
 }
 
 CANONICAL_MODULE_TOKENS: Dict[str, str] = {
+    "airiqpro": "AirIQ",
     "bathroomairiq": "VentIQBase",
     "bathroomairiqbase": "VentIQBase",
-    "bathroomairiqpro": "VentIQPro",
+    "bathroomairiqpro": "VentIQBase",
+    "ventiqpro": "VentIQ",
 }
 
 LEGACY_MODULE_TOKENS = frozenset(CANONICAL_MODULE_TOKENS.keys())
+DEPRECATED_MODULE_TOKENS = frozenset(
+    {
+        "airiqpro",
+        "bathroomairiqpro",
+        "ventiqpro",
+    }
+)
 
 CHIP_HINTS = [
     ("esp32s3", "ESP32-S3"),
@@ -652,6 +661,27 @@ def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
     }
 
 
+def validate_no_deprecated_modules(artifacts: Sequence[FirmwareArtifact]) -> None:
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if not meta.is_configuration:
+            continue
+        deprecated_hits = [
+            token
+            for token in (meta.config_string or "").split("-")
+            if token.lower() in DEPRECATED_MODULE_TOKENS
+        ]
+        deprecated_hits.extend(
+            module for module in meta.modules if module.lower() in DEPRECATED_MODULE_TOKENS
+        )
+        if deprecated_hits:
+            hits = ", ".join(sorted(set(deprecated_hits), key=str.lower))
+            raise SystemExit(
+                f"Deprecated module name(s) found in {artifact.path.name}: {hits}. "
+                "Use current module taxonomy (for example: AirIQ, VentIQ, VentIQBase)."
+            )
+
+
 def write_json_file(path: Path, data: Dict[str, object], *, dry_run: bool) -> None:
     if dry_run:
         print(f"[dry-run] Would write {path}")
@@ -834,6 +864,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 f"supersedes {old.metadata.version}"
             )
     ordered = sort_artifacts(selected)
+    validate_no_deprecated_modules(ordered)
     manifest = build_manifest(ordered)
     if not manifest["builds"]:
         message = "Manifest would be empty; aborting."
