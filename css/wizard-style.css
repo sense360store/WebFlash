@@ -108,14 +108,25 @@ h2 {
     }
 }
 
-/* Progress Bar */
+/* Progress Bar (compact horizontal stepper for narrower viewports) */
 .progress-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 32px;
-    padding: 0 24px;
-    gap: 16px;
+    gap: 12px;
+    padding: 8px 4px 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--color-border-subtle, var(--color-border));
+}
+
+.progress-bar.progress-bar--mobile .progress-step {
+    flex: 0 1 auto;
+    gap: 8px;
+}
+
+.progress-bar.progress-bar--mobile .step-label {
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .progress-step {
@@ -147,8 +158,18 @@ h2 {
     display: none;
 }
 
+.wizard-stepper__node::after {
+    display: none !important;
+}
+
 .progress-step:not(.active) {
     opacity: 0.55;
+}
+
+/* In the vertical stepper, dimming is handled by data-reachable rules in
+   layout.css; keep all reachable steps fully readable. */
+.wizard-stepper__node:not(.active) {
+    opacity: 1;
 }
 
 .progress-step[data-reachable="true"] {
@@ -213,8 +234,8 @@ h2 {
 /* Wizard Container */
 .wizard-container {
     background: var(--color-surface);
-    border-radius: 12px;
-    padding: 32px;
+    border-radius: 16px;
+    padding: clamp(20px, 3vw, 28px);
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
@@ -225,8 +246,27 @@ h2 {
     align-items: stretch;
 }
 
+.wizard-shell .wizard-main {
+    min-width: 0;
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: clamp(18px, 2.5vw, 28px) clamp(18px, 2.5vw, 28px) clamp(24px, 3vw, 32px);
+    border: 1px solid var(--color-border-subtle, var(--color-border));
+    display: flex;
+    flex-direction: column;
+}
+
 .wizard-main {
     min-width: 0;
+}
+
+/* The wizard container becomes a thin frame; the main column carries the
+   surface styling so left/right rails read as separate columns. */
+.wizard-container:has(.wizard-shell[data-wizard-shell="static"]) {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    border-radius: 0;
 }
 
 
@@ -270,11 +310,42 @@ h2 {
 }
 
 .wizard-step h2 {
-    font-size: 28px;
+    font-size: clamp(22px, 2vw + 12px, 28px);
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 32px;
+    margin-bottom: 8px;
     color: var(--text, var(--color-text-primary));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.wizard-step h2::before {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--brand-green-contrast, #0d9488);
+    background: color-mix(in srgb, var(--brand-green-contrast, #0d9488) 12%, transparent);
+    padding: 4px 10px;
+    border-radius: 999px;
+    line-height: 1.4;
+}
+
+#step-1 h2::before { content: 'Step 1 of 5'; }
+#step-2 h2::before { content: 'Step 2 of 5'; }
+#step-3 h2::before { content: 'Step 3 of 5'; }
+#step-4 h2::before { content: 'Step 4 of 5'; }
+#step-5 h2::before { content: 'Step 5 of 5'; }
+
+.wizard-step .step-intro {
+    margin-bottom: 24px;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.55;
+    max-width: 60ch;
 }
 
 .wizard-step__content {
@@ -752,6 +823,14 @@ body.has-wizard-sidebar .module-step-grid__main {
 
 body.has-wizard-sidebar .module-step-grid__summary--inline {
     display: none;
+}
+
+/* When sidebar is hidden by responsive CSS, show the inline step-4 summary so
+   users still see their selections in the same column. */
+@media (max-width: 880px) {
+    body.has-wizard-sidebar .module-step-grid__summary--inline {
+        display: block;
+    }
 }
 
 @media (max-width: 1200px) {
@@ -1708,13 +1787,32 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 /* Wizard Actions */
 .wizard-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
     margin-top: 32px;
-    padding-top: 24px;
-    border-top: 1px solid var(--color-border);
+    padding: 16px 0 4px;
+    border-top: 1px solid var(--color-border-subtle, var(--color-border));
+}
+
+.wizard-actions [data-back] {
+    margin-right: auto;
+}
+
+/* The first step doesn't have a Back button — keep Next aligned right */
+.wizard-actions:not(:has([data-back])) {
+    justify-content: flex-end;
+}
+
+.wizard-actions .btn-next {
+    min-width: 140px;
+}
+
+/* When there's a primary-action-group on the review step, it
+   already manages its own column so let it sit on the right */
+.wizard-actions .primary-action-group {
+    margin-left: auto;
 }
 
 .install-assumptions {
