@@ -152,7 +152,18 @@ function moduleHasSelectableVariants(moduleKey) {
 }
 
 function getVisibleModuleGroupKeys() {
-    return MODULE_KEYS.filter(moduleKey => moduleHasSelectableVariants(moduleKey));
+    return MODULE_KEYS.filter(moduleKey => {
+        if (!moduleHasSelectableVariants(moduleKey)) {
+            return false;
+        }
+        if (moduleKey === 'ventiq') {
+            return configuration.mounting === 'ceiling' && configuration.bathroom === true;
+        }
+        if (moduleKey === 'fan') {
+            return configuration.mounting === 'wall';
+        }
+        return true;
+    });
 }
 
 let activeModuleGroupKey = null;
@@ -4702,6 +4713,16 @@ function initializeFromUrl() {
     const parsed = parseConfigParams(searchParams);
     const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
 
+    if (searchParams.has('bathroom')) {
+        const bathroomRaw = (searchParams.get('bathroom') || '').trim().toLowerCase();
+        sanitizedConfig.bathroom = bathroomRaw === 'true' || bathroomRaw === '1';
+    }
+
+    if (searchParams.has('ventiq')) {
+        const ventiqRaw = (searchParams.get('ventiq') || '').trim().toLowerCase();
+        sanitizedConfig.ventiq = allowedOptions.ventiq.includes(ventiqRaw) ? ventiqRaw : 'none';
+    }
+
     applyConfiguration(sanitizedConfig);
 
     if (Array.isArray(parsed.notices) && parsed.notices.length) {
@@ -4780,6 +4801,11 @@ function applyConfiguration(initialConfig) {
         }
     });
 
+    const bathroomCheckbox = document.querySelector('input[name="bathroom"]');
+    if (bathroomCheckbox) {
+        bathroomCheckbox.checked = configuration.mounting === 'ceiling' && configuration.bathroom === true;
+    }
+
     updateFanModuleVisibility();
     updateBathroomVisibility();
     updateConfiguration({ skipUrlUpdate: true });
@@ -4818,6 +4844,13 @@ function updateUrlFromConfiguration() {
         params.set('fan', configuration.fan || 'none');
     } else {
         params.set('fan', 'none');
+    }
+
+    if (configuration.mounting === 'ceiling') {
+        params.set('bathroom', configuration.bathroom ? 'true' : 'false');
+        if (configuration.bathroom) {
+            params.set('ventiq', configuration.ventiq || 'none');
+        }
     }
 
     params.set('step', String(currentStep));
