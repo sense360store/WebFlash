@@ -2102,10 +2102,10 @@ function updateModuleOptionAvailability() {
             let available = true;
             let reason = '';
 
-            // Fan / Switching driver options are hardware accessory choices and
-            // are always selectable; their compatibility is driven by the module
-            // matrix (conflicts) rather than manifest presence.
-            if (key === 'fan') {
+            // Fan / Switching driver options and LED Ring options are hardware
+            // accessory choices and are always selectable; their compatibility is
+            // driven by the module matrix (conflicts) rather than manifest presence.
+            if (key === 'fan' || key === 'led') {
                 applyOptionAvailabilityState(input, { available: true, reason: '' });
                 return;
             }
@@ -2184,7 +2184,7 @@ function updateModuleAvailabilityMessage() {
     }
 
     const moduleComboKey = buildModuleComboKey(configuration);
-    const unsupportedModules = MODULE_KEYS.filter(moduleKey => moduleKey !== 'fan' && !availability.modules[moduleKey].has(configuration[moduleKey]));
+    const unsupportedModules = MODULE_KEYS.filter(moduleKey => moduleKey !== 'fan' && moduleKey !== 'led' && !availability.modules[moduleKey].has(configuration[moduleKey]));
 
     if (unsupportedModules.length > 0) {
         hint.classList.add('is-warning');

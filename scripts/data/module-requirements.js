@@ -137,8 +137,10 @@ const MODULE_REQUIREMENT_MATRIX = {
             },
             airiq: {
                 label: 'LED Ring',
-                coreRevision: 'Rev A core or newer',
+                sku: 'S360-300',
+                coreRevision: 'R4',
                 headers: ['J11 LED data', 'J12 LED power'],
+                description: 'Ring of WS2812B LEDs.',
                 conflicts: [],
                 sensors: [
                     'WS2812B addressable LED ring',
