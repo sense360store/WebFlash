@@ -68,14 +68,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'Rev C core or newer',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
                 recommended: true,
-                conflicts: [
-                    {
-                        module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ Base/Pro — VentIQ is the bathroom air-quality path.',
-                        detail: 'Set AirIQ to None when VentIQ is enabled.'
-                    }
-                ],
+                conflicts: [],
                 sensors: [
                     'SHT4x (temperature, humidity)',
                     'BMP390 (pressure)',
