@@ -11,8 +11,8 @@ describe('preset export JSON', () => {
     const payload = serializePresetConfig({
       id: 'preset-1',
       name: 'Wall USB',
-      state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
-      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
+      state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
+      configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
       createdAt: 10,
       updatedAt: 20,
       appliedAt: null,
@@ -25,8 +25,8 @@ describe('preset export JSON', () => {
       preset: {
         id: 'preset-1',
         name: 'Wall USB',
-        state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'none', voice: 'none' },
+        state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
         createdAt: 10,
         updatedAt: 20,
         appliedAt: null,
@@ -41,8 +41,8 @@ describe('preset export JSON', () => {
     const preset = {
       id: 'preset-v2',
       name: 'Wall USB v2',
-      state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'pwm', voice: 'none' },
-      configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'pwm', voice: 'none' },
+      state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'pwm', voice: 'none' },
+      configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'pwm', voice: 'none' },
       createdAt: 100,
       updatedAt: 200,
       appliedAt: null,
@@ -118,8 +118,8 @@ describe('preset export JSON', () => {
       preset: {
         id: 'preset-future',
         name: 'Future Schema',
-        state: { mount: 'wall', power: 'usb', airiq: 'base', fan: 'analog', voice: 'none' },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'base', fan: 'analog', voice: 'none' },
+        state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'analog', voice: 'none' },
+        configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'analog', voice: 'none' },
         createdAt: 1,
         updatedAt: 2,
         appliedAt: null
@@ -162,8 +162,8 @@ describe('preset export JSON', () => {
     const source = {
       id: 'preset-2',
       name: 'Ceiling PoE',
-      state: { mount: 'ceiling', power: 'poe', airiq: 'pro', fan: 'pwm', voice: 'none', currentStep: 3 },
-      configuration: { mounting: 'ceiling', power: 'poe', airiq: 'pro', fan: 'pwm', voice: 'none' },
+      state: { mount: 'ceiling', power: 'poe', airiq: 'ventiq', fan: 'pwm', voice: 'none', currentStep: 3 },
+      configuration: { mounting: 'ceiling', power: 'poe', airiq: 'ventiq', fan: 'pwm', voice: 'none' },
       createdAt: 11,
       updatedAt: 22,
       appliedAt: 33,

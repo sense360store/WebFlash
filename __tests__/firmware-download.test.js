@@ -27,8 +27,8 @@ function renderWizardDom() {
             <div id="fan-module-section"></div>
             <div class="module-group">
                 <input type="radio" name="airiq" value="none" checked>
-                <input type="radio" name="airiq" value="base">
-                <input type="radio" name="airiq" value="pro">
+                <input type="radio" name="airiq" value="airiq">
+                <input type="radio" name="airiq" value="ventiq">
             </div>
             <div class="module-group">
                 <input type="radio" name="fan" value="none" checked>
