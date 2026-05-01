@@ -46,7 +46,7 @@ const optionTooltips = {
             summary: 'Ceiling installs free up wall space and maximize coverage in open rooms.',
             pros: [
                 'Keeps cabling hidden above drop ceilings or in conduit.',
-                'Offers a broad motion sensing cone for RoomIQ Motion modules.'
+                'Offers a broad motion sensing cone for the Sense360 RoomIQ sensor board.'
             ],
             cons: [
                 'Requires access to joists or anchors rated for 1.5 kg to secure the chassis.'
