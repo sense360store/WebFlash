@@ -6,9 +6,12 @@ const DEFAULT_DIR = path.join('firmware', 'configurations');
 const CANONICAL_PATTERN = /^Sense360-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*-v\d+\.\d+\.\d+-(stable|preview|beta)\.(bin|md)$/;
 
 const DISALLOWED_TOKEN_MIGRATIONS = {
-  AirIQProv: 'AirIQPro',
+  AirIQProv: 'AirIQ',
+  AirIQPro: 'AirIQ',
   AirIQBase: 'AirIQ',
-  BathroomAirIQ: 'Bathroom',
+  BathroomAirIQ: 'VentIQ',
+  BathroomAirIQBase: 'VentIQ',
+  BathroomAirIQPro: 'VentIQ',
   FanPWM: 'Fan',
   FanAnalog: 'Fan'
 };

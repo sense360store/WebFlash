@@ -1,12 +1,6 @@
 import { DEFAULT_CHANNEL_KEY, normalizeChannelKey } from './utils/channel-alias.js';
 import { parseConfigParams, REQUIRED_CONFIG_PARAMS } from './utils/url-config.js';
 
-const PARAM_ALIASES = {
-  model: ['model'],
-  variant: ['variant'],
-  sensor_addon: ['sensor_addon', 'sensor-addon']
-};
-
 const DEFAULT_VALIDATION_ERROR = {
   title: 'Direct Install Link Incomplete',
   description: 'Direct install links must include the following query parameters:',
@@ -191,13 +185,10 @@ function getCombinedSearchParams() {
 }
 
 function readParam(params, key) {
-  const aliases = PARAM_ALIASES[key] || [key];
-  for (const alias of aliases) {
-    if (params.has(alias)) {
-      const value = params.get(alias);
-      if (typeof value === 'string') {
-        return value.trim();
-      }
+  if (params.has(key)) {
+    const value = params.get(key);
+    if (typeof value === 'string') {
+      return value.trim();
     }
   }
   return null;
@@ -228,48 +219,6 @@ function readChannelFromParams(params = getCombinedSearchParams()) {
   return normalizeRequestedChannel(raw);
 }
 
-function normalizeModelLookupValue(raw) {
-  if (raw === null || raw === undefined) {
-    return null;
-  }
-
-  const trimmed = String(raw).trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  return trimmed;
-}
-
-function createModelSignature(model, variant, sensorAddon) {
-  const normalizedModel = model.toLowerCase();
-  const normalizedVariant = variant.toLowerCase();
-  const normalizedAddon = sensorAddon ? sensorAddon.toLowerCase() : '__base__';
-  return `${normalizedModel}::${normalizedVariant}::${normalizedAddon}`;
-}
-
-function buildModelLookupFromParams(params = getCombinedSearchParams()) {
-  const model = normalizeModelLookupValue(readParam(params, 'model'));
-  const variant = normalizeModelLookupValue(readParam(params, 'variant'));
-
-  if (!model || !variant) {
-    return null;
-  }
-
-  const sensorAddonRaw = normalizeModelLookupValue(readParam(params, 'sensor_addon'));
-  const sensorAddon = sensorAddonRaw && sensorAddonRaw.toLowerCase() === 'none'
-    ? null
-    : sensorAddonRaw;
-
-  return {
-    type: 'model',
-    model,
-    variant,
-    sensorAddon,
-    signature: createModelSignature(model, variant, sensorAddon)
-  };
-}
-
 function buildInstallLookupFromParams(params = getCombinedSearchParams(), parsedConfig = parseConfigParams(params)) {
   if (parsedConfig && parsedConfig.configKey) {
     return {
@@ -278,7 +227,7 @@ function buildInstallLookupFromParams(params = getCombinedSearchParams(), parsed
     };
   }
 
-  return buildModelLookupFromParams(params);
+  return null;
 }
 
 function readInstallQueryParams() {
@@ -287,10 +236,7 @@ function readInstallQueryParams() {
   const channel = readChannelFromParams(params);
 
   const hasConfigParams = parsedConfig?.presentKeys instanceof Set && parsedConfig.presentKeys.size > 0;
-  const hasModelParams = Boolean(
-    readParam(params, 'model') || readParam(params, 'variant') || readParam(params, 'sensor_addon')
-  );
-  const hasInstallParams = hasConfigParams || hasModelParams;
+  const hasInstallParams = hasConfigParams;
 
   if (!hasInstallParams) {
     return {
@@ -368,31 +314,9 @@ function renderStatus(container, message) {
 }
 
 function describeLookupForDisplay(lookup) {
-  if (!lookup || lookup.type !== 'model') {
-    if (!lookup || !lookup.key) {
-      return {
-        heading: 'Configuration',
-        value: ''
-      };
-    }
-
-    return {
-      heading: 'Configuration',
-      value: lookup.key
-    };
-  }
-
-  const segments = [lookup.model];
-  if (lookup.variant) {
-    segments.push(lookup.variant);
-  }
-  if (lookup.sensorAddon) {
-    segments.push(lookup.sensorAddon);
-  }
-
   return {
-    heading: 'Device',
-    value: segments.join(' · ')
+    heading: 'Configuration',
+    value: lookup?.key || ''
   };
 }
 
@@ -412,18 +336,11 @@ function renderNoMatch(container, lookup, channel) {
   message.appendChild(title);
 
   const lookupDisplay = describeLookupForDisplay(lookup);
-  const isModelLookup = lookup && lookup.type === 'model';
 
   const description = document.createElement('p');
-  if (channel) {
-    description.textContent = isModelLookup
-      ? 'The requested firmware device selection and channel were not found in the manifest:'
-      : 'The requested firmware configuration and channel were not found in the manifest:';
-  } else {
-    description.textContent = isModelLookup
-      ? 'The requested firmware device selection was not found in the manifest:'
-      : 'The requested firmware configuration was not found in the manifest:';
-  }
+  description.textContent = channel
+    ? 'The requested firmware configuration and channel were not found in the manifest:'
+    : 'The requested firmware configuration was not found in the manifest:';
   message.appendChild(description);
 
   const config = document.createElement('p');
@@ -610,7 +527,7 @@ function extractFirmwareFileName(build) {
   return null;
 }
 
-function formatFallbackFileName(build, lookup) {
+function formatFallbackFileName(build) {
   const versionSuffix = build && build.version ? `-v${build.version}` : '';
   const channelSuffix = build && build.channel ? `-${build.channel}` : '';
 
@@ -618,38 +535,7 @@ function formatFallbackFileName(build, lookup) {
     return `Sense360-${build.config_string.trim()}${versionSuffix}${channelSuffix}.bin`;
   }
 
-  if (lookup && lookup.type === 'model') {
-    const segments = [lookup.model];
-    if (lookup.variant) {
-      segments.push(lookup.variant);
-    }
-    if (lookup.sensorAddon) {
-      segments.push(lookup.sensorAddon);
-    }
-    const base = segments.filter(Boolean).join('-') || 'Sense360-Firmware';
-    return `${base}${versionSuffix}${channelSuffix}.bin`;
-  }
-
   return `Sense360-Firmware${versionSuffix}${channelSuffix}.bin`;
-}
-
-function getModelSignatureForBuild(build) {
-  if (!build || typeof build !== 'object') {
-    return null;
-  }
-
-  const model = normalizeModelLookupValue(build.model);
-  const variant = normalizeModelLookupValue(build.variant);
-  if (!model || !variant) {
-    return null;
-  }
-
-  const sensorAddonRaw = normalizeModelLookupValue(build.sensor_addon);
-  const sensorAddon = sensorAddonRaw && sensorAddonRaw.toLowerCase() === 'none'
-    ? null
-    : sensorAddonRaw;
-
-  return createModelSignature(model, variant, sensorAddon);
 }
 
 function renderInstall(container, manifestData, build, lookup) {
@@ -678,7 +564,7 @@ function renderInstall(container, manifestData, build, lookup) {
 
   const firmwareName = document.createElement('div');
   firmwareName.className = 'firmware-name';
-  const inferredName = extractFirmwareFileName(build) || formatFallbackFileName(build, lookup);
+  const inferredName = extractFirmwareFileName(build) || formatFallbackFileName(build);
   firmwareName.textContent = inferredName;
   firmwareInfo.appendChild(firmwareName);
 
@@ -780,25 +666,13 @@ async function initializeCompatInstall() {
   try {
     const manifest = await loadManifest();
     const builds = Array.isArray(manifest.builds) ? manifest.builds : [];
-    let matchingBuilds = [];
-
-    if (lookup.type === 'model') {
-      const targetSignature = lookup.signature || null;
-      if (targetSignature) {
-        matchingBuilds = builds.filter((build) => {
-          const buildSignature = getModelSignatureForBuild(build);
-          return buildSignature === targetSignature;
-        });
+    const normalizedConfigKey = lookup.key.toLowerCase();
+    const matchingBuilds = builds.filter((build) => {
+      if (!build || typeof build.config_string !== 'string') {
+        return false;
       }
-    } else {
-      const normalizedConfigKey = lookup.key.toLowerCase();
-      matchingBuilds = builds.filter((build) => {
-        if (!build || typeof build.config_string !== 'string') {
-          return false;
-        }
-        return build.config_string.toLowerCase() === normalizedConfigKey;
-      });
-    }
+      return build.config_string.toLowerCase() === normalizedConfigKey;
+    });
 
     if (matchingBuilds.length === 0) {
       renderNoMatch(container, lookup, requestedChannel || undefined);
