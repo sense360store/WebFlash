@@ -39,7 +39,7 @@ This document reviews the current firmware distribution and uploading process to
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| Firmware Binaries | `firmware/configurations/*.bin` | 47+ firmware variants |
+| Firmware Binaries | `firmware/configurations/*.bin` | Production firmware builds (currently 14, see directory listing for live count) |
 | Release Notes (stable) | `firmware/configurations/*-stable.md` | Production-discoverable markdown docs |
 | Release Notes (preview/beta/dev) | `firmware/previews/*.md` | Segregated non-production markdown docs |
 | Main Manifest | `manifest.json` | Central catalog for WebFlash UI |

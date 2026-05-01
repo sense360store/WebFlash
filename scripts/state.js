@@ -2565,7 +2565,7 @@ function updateSummary() {
     // AirIQ
     if (configuration.airiq !== 'none') {
         const airiqSensors = {
-            base: ['SGP41', 'SCD41', 'MiCS4514', 'BMP390']
+            base: ['SGP41', 'SCD41', 'MiCS4514']
         };
         summaryHtml += `
             <div class="summary-item">
