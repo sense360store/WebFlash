@@ -130,22 +130,23 @@ jobs:
         run: |
           set -euo pipefail
           # =============================================================
-          # Test Configuration Matrix
+          # Required configuration allowlist
           # =============================================================
-          # Valid combinations based on hardware ruleset:
-          #   Core: CORE-C, CORE-V-C (Ceiling) | CORE-W, CORE-V-W (Wall)
-          #   Power: USB, POE, PWR
-          #   Modules: AirIQ, Bathroom (Ceiling only), Comfort, Presence, Fan
-          #   Constraints:
-          #     - AirIQ and Bathroom cannot be combined
-          #     - Bathroom is ceiling-only
+          # Each entry must match a build.config_string in manifest.json
+          # exactly. Use canonical SKU tokens (see CLAUDE.md):
+          #   Power tokens: USB, POE, PWR
+          #   Module tokens: AirIQ, VentIQ, Fan, LED
+          # Drop entries when their firmware is permanently retired; do
+          # not add Base/Pro variant tokens (AirIQPro / VentIQBase / etc.)
+          # — the product taxonomy is flat, one SKU per product.
+          # Bathroom mode toggles AirIQ <-> VentIQ visibility on Ceiling;
+          # the two SKUs are mutually exclusive.
           # =============================================================
 
           REQUIRED_CONFIGS=(
-            "Ceiling-POE-AirIQPro"
-            "Ceiling-POE-VentIQBase"
+            "Ceiling-POE-AirIQ"
+            "Ceiling-POE-VentIQ"
             "Ceiling-PWR-AirIQ"
-            "Ceiling-PWR-AirIQPro"
             "Ceiling-S3-Full"
             "Ceiling-USB"
             "Ceiling-USB-AirIQ"
@@ -156,7 +157,7 @@ jobs:
             "Core-Ceiling-POE"
             "Core-Ceiling-PWR"
             "Core-Ceiling-USB"
-            "Core-Ceiling-VentIQBase"
+            "Core-Ceiling-VentIQ"
             "Core-Wall"
             "Core-Wall-POE"
             "Core-Wall-PWR"
@@ -181,7 +182,6 @@ jobs:
             "Wall-PWR-AirIQ"
             "Wall-USB"
             "Wall-USB-AirIQ"
-            "Wall-USB-AirIQPro"
             "Wall-USB-Fan"
             "Wall-Voice-POE-AirIQ"
             "Wall-Voice-USB"
