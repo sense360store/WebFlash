@@ -31,13 +31,17 @@ const DEFAULT_SANITIZED_CONFIG = Object.freeze({
     fan: 'none'
 });
 
+// Per CLAUDE.md the canonical config_string is Mounting-Power-Modules with no
+// Core- prefix and a flat module taxonomy (no Base/Pro/Analog variants), so the
+// URL parser is intentionally tolerant of legacy values for backwards compat
+// with older shareable links but always emits canonical configSegments.
 const CONFIG_PARAM_DEFINITIONS = Object.freeze({
     core: Object.freeze({
         required: true,
         aliases: Object.freeze(['core', 'coretype', 'voice']),
         options: new Map([
-            ['core', { wizardValue: 'none', configSegment: 'Core' }],
-            ['corevoice', { wizardValue: 'none', configSegment: 'Core' }]
+            ['core', { wizardValue: 'none', configSegment: null }],
+            ['corevoice', { wizardValue: 'none', configSegment: null }]
         ]),
         allowedValues: Object.freeze(['core', 'corevoice']),
         legacyValues: new Map([
@@ -51,10 +55,12 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         required: true,
         aliases: Object.freeze(['mount', 'mounting']),
         options: new Map([
-            ['wall', { wizardValue: 'wall', configSegment: 'Wall' }],
             ['ceiling', { wizardValue: 'ceiling', configSegment: 'Ceiling' }]
         ]),
-        allowedValues: Object.freeze(['wall', 'ceiling'])
+        allowedValues: Object.freeze(['ceiling']),
+        legacyValues: new Map([
+            ['wall', 'ceiling']
+        ])
     }),
     power: Object.freeze({
         required: true,
@@ -75,9 +81,12 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['base', { wizardValue: 'base', configSegment: 'LED' }]
+            ['airiq', { wizardValue: 'airiq', configSegment: 'LED' }]
         ]),
-        allowedValues: Object.freeze(['none', 'base'])
+        allowedValues: Object.freeze(['none', 'airiq']),
+        legacyValues: new Map([
+            ['base', 'airiq']
+        ])
     }),
     airiq: Object.freeze({
         required: false,
@@ -86,15 +95,17 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
             ['airiq', { wizardValue: 'airiq', configSegment: 'AirIQ' }],
-            ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['base', { wizardValue: 'airiq', configSegment: 'AirIQBase' }],
-            ['airiqbase', { wizardValue: 'airiq', configSegment: 'AirIQBase' }],
-            ['pro', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
-            ['prov', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
-            ['airiqpro', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
-            ['airiqprov', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }]
+            ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }]
         ]),
-        allowedValues: Object.freeze(['none', 'airiq', 'ventiq'])
+        allowedValues: Object.freeze(['none', 'airiq', 'ventiq']),
+        legacyValues: new Map([
+            ['base', 'airiq'],
+            ['airiqbase', 'airiq'],
+            ['pro', 'ventiq'],
+            ['prov', 'ventiq'],
+            ['airiqpro', 'ventiq'],
+            ['airiqprov', 'ventiq']
+        ])
     }),
     bathroomairiq: Object.freeze({
         required: false,
@@ -102,14 +113,16 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['base', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['pro', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['bathroomairiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['bathroomairiqbase', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['bathroomairiqpro', { wizardValue: 'ventiq', configSegment: 'VentIQ' }]
+            ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }]
         ]),
-        allowedValues: Object.freeze(['none', 'ventiq'])
+        allowedValues: Object.freeze(['none', 'ventiq']),
+        legacyValues: new Map([
+            ['base', 'ventiq'],
+            ['pro', 'ventiq'],
+            ['bathroomairiq', 'ventiq'],
+            ['bathroomairiqbase', 'ventiq'],
+            ['bathroomairiqpro', 'ventiq']
+        ])
     }),
     fan: Object.freeze({
         required: false,
@@ -117,14 +130,14 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['relay', { wizardValue: 'relay', configSegment: 'FanRelay' }],
-            ['base', { wizardValue: 'pwm', configSegment: 'FanPWM' }],
-            ['analog', { wizardValue: 'analog', configSegment: 'FanAnalog' }],
-            ['triac', { wizardValue: 'triac', configSegment: 'FanTRIAC' }]
+            ['relay', { wizardValue: 'relay', configSegment: 'Fan' }],
+            ['pwm', { wizardValue: 'pwm', configSegment: 'Fan' }],
+            ['analog', { wizardValue: 'analog', configSegment: 'Fan' }],
+            ['triac', { wizardValue: 'triac', configSegment: 'Fan' }]
         ]),
-        allowedValues: Object.freeze(['none', 'relay', 'base', 'analog', 'triac']),
+        allowedValues: Object.freeze(['none', 'relay', 'pwm', 'analog', 'triac']),
         legacyValues: new Map([
-            ['pwm', 'base']
+            ['base', 'pwm']
         ])
     })
 });
@@ -171,9 +184,9 @@ function ensureSearchParams(input) {
  * @param {URLSearchParams|string|Object} inputParams - Input parameters to parse
  * @returns {ParsedConfig} Parsed and validated configuration
  * @example
- * const result = parseConfigParams('core=core&mount=wall&power=usb&airiq=base');
+ * const result = parseConfigParams('core=core&mount=ceiling&power=usb&airiq=airiq');
  * if (result.isValid) {
- *   console.log(result.configKey); // 'Core-Wall-USB-AirIQBase'
+ *   console.log(result.configKey); // 'Ceiling-USB-AirIQ'
  * }
  */
 function parseConfigParams(inputParams) {
@@ -297,15 +310,7 @@ function parseConfigParams(inputParams) {
     }
 
     const forcedFanNone = false;
-
-    let forcedBathroomAirIQNone = false;
-    if (sanitizedConfig.mount === 'wall') {
-        if (sanitizedConfig.bathroomairiq && sanitizedConfig.bathroomairiq !== 'none') {
-            forcedBathroomAirIQNone = true;
-        }
-        sanitizedConfig.bathroomairiq = 'none';
-        configSegments.set('bathroomairiq', null);
-    }
+    const forcedBathroomAirIQNone = false;
 
     const isValid = errors.length === 0 && Boolean(sanitizedConfig.core) && Boolean(sanitizedConfig.mount) && Boolean(sanitizedConfig.power);
 
@@ -367,8 +372,8 @@ function parseConfigParams(inputParams) {
  * @param {Object} [sanitizedConfig] - Sanitized config from parseConfigParams
  * @returns {Object} Configuration in wizard state format
  * @example
- * const wizardConfig = mapToWizardConfiguration({ mount: 'wall', power: 'usb' });
- * // Returns: { mounting: 'wall', power: 'usb', airiq: 'none', ... }
+ * const wizardConfig = mapToWizardConfiguration({ mount: 'ceiling', power: 'usb' });
+ * // Returns: { mounting: 'ceiling', power: 'usb', airiq: 'none', ... }
  */
 function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
     const safeConfig = sanitizedConfig && typeof sanitizedConfig === 'object'

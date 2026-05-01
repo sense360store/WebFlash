@@ -93,7 +93,7 @@ const defaultConfiguration = createValidatedMap('defaultConfiguration', [
 const configuration = { ...defaultConfiguration };
 
 const allowedOptions = createValidatedMap('allowedOptions', [
-    ['mounting', ['wall', 'ceiling']],
+    ['mounting', ['ceiling']],
     ['power', ['usb', 'poe', 'pwr']],
     ['bathroom', [false, true]],
     ['airiq', ['none', 'airiq']],
@@ -104,7 +104,6 @@ const allowedOptions = createValidatedMap('allowedOptions', [
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
 
 const MOUNT_LABELS = Object.freeze({
-    wall: 'Wall mount',
     ceiling: 'Ceiling mount'
 });
 

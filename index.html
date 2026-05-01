@@ -243,14 +243,11 @@
                 <div class="quick-start-presets" data-quick-start-presets>
                     <p class="quick-start-presets__label">Quick start:</p>
                     <div class="quick-start-presets__buttons">
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"wall","power":"usb","airiq":"airiq","fan":"none"}'>
-                            Popular: Wall + Sense360 AirIQ
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
+                            Popular: Ceiling + Sense360 AirIQ
                         </button>
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="ceiling" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
-                            Ceiling + POE
-                        </button>
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"wall","power":"usb","airiq":"none","fan":"none"}'>
-                            Minimal: Wall + USB only
+                        <button class="btn btn-secondary btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
+                            Minimal: Ceiling + USB only
                         </button>
                     </div>
                     <p class="quick-start-presets__hint">Or configure step-by-step below</p>
@@ -275,27 +272,6 @@
                                 </button>
                             </div>
                             <div class="option-description">Ceiling installation</div>
-                        </div>
-                    </label>
-                    <label class="option-card">
-                        <input type="radio" name="mounting" value="wall" disabled>
-                        <div class="option-content">
-                            <div class="option-header">
-                                <div class="option-title">Wall Mount (Coming soon)</div>
-                                <button
-                                    type="button"
-                                    class="option-info-button"
-                                    data-option-info
-                                    data-option-group="mounting"
-                                    data-option-value="wall"
-                                    aria-label="Details about Wall Mount"
-                                    aria-controls="option-info-popover"
-                                    aria-describedby="option-info-popover-summary"
-                                >
-                                    <span aria-hidden="true">i</span>
-                                </button>
-                            </div>
-                            <div class="option-description">Standard wall installation with full module support</div>
                         </div>
                     </label>
                 </div>

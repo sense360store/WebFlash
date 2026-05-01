@@ -75,9 +75,9 @@ describe('parseConfigStringState handles both legacy and current tokens', () => 
     });
 
     test('still parses legacy FanPWM / FanRelay / FanTRIAC tokens for old shareable links', () => {
-        expect(parseConfigStringState('Wall-USB-FanPWM').fan).toBe('pwm');
-        expect(parseConfigStringState('Wall-USB-FanRelay').fan).toBe('relay');
-        expect(parseConfigStringState('Wall-USB-FanTRIAC').fan).toBe('triac');
+        expect(parseConfigStringState('Ceiling-USB-FanPWM').fan).toBe('pwm');
+        expect(parseConfigStringState('Ceiling-USB-FanRelay').fan).toBe('relay');
+        expect(parseConfigStringState('Ceiling-USB-FanTRIAC').fan).toBe('triac');
     });
 
     test('manifest config_strings either parse cleanly or are recognised legacy formats', () => {

@@ -74,13 +74,12 @@ describe('compat-config direct install validation', () => {
   });
 
   test('renders install UI for valid configuration lookup', async () => {
-    window.history.replaceState(null, '', '?core=core&mount=wall&power=usb');
+    window.history.replaceState(null, '', '?core=core&mount=ceiling&power=usb');
 
     const manifest = {
       builds: [
         {
-          config_string: 'Core-Wall-USB',
-          core_type: 'Core',
+          config_string: 'Ceiling-USB',
           channel: 'stable',
           file_size: 2048,
           build_date: '2024-01-01T00:00:00Z',

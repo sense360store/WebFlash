@@ -10,9 +10,9 @@ describe('preset export JSON', () => {
 
     const payload = serializePresetConfig({
       id: 'preset-1',
-      name: 'Wall USB',
-      state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
-      configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
+      name: 'Ceiling USB',
+      state: { mount: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
+      configuration: { mounting: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
       createdAt: 10,
       updatedAt: 20,
       appliedAt: null,
@@ -21,12 +21,12 @@ describe('preset export JSON', () => {
 
     expect(payload).toEqual({
       schemaVersion: 1,
-      hardwareTarget: 'sense360-wall-usb',
+      hardwareTarget: 'sense360-ceiling-usb',
       preset: {
         id: 'preset-1',
-        name: 'Wall USB',
-        state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
+        name: 'Ceiling USB',
+        state: { mount: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
+        configuration: { mounting: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'none', voice: 'none' },
         createdAt: 10,
         updatedAt: 20,
         appliedAt: null,
@@ -40,9 +40,9 @@ describe('preset export JSON', () => {
 
     const preset = {
       id: 'preset-v2',
-      name: 'Wall USB v2',
-      state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'pwm', voice: 'none' },
-      configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'pwm', voice: 'none' },
+      name: 'Ceiling USB v2',
+      state: { mount: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'pwm', voice: 'none' },
+      configuration: { mounting: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'pwm', voice: 'none' },
       createdAt: 100,
       updatedAt: 200,
       appliedAt: null,
@@ -53,7 +53,7 @@ describe('preset export JSON', () => {
 
     expect(payload).toEqual({
       schemaVersion: 2,
-      hardwareTarget: 'sense360-wall-usb',
+      hardwareTarget: 'sense360-ceiling-usb',
       preset: {
         ...preset,
         state: { ...preset.state, fan: 'pwm' },
@@ -91,7 +91,7 @@ describe('preset export JSON', () => {
 
     const result = validatePresetImportPayload({
       schemaVersion: 1,
-      hardwareTarget: 'sense360-wall-usb',
+      hardwareTarget: 'sense360-ceiling-usb',
       preset: {
         id: 'preset-3',
         name: 'Invalid enums',
@@ -114,12 +114,12 @@ describe('preset export JSON', () => {
 
     const payload = {
       schemaVersion: 999,
-      hardwareTarget: 'sense360-wall-usb',
+      hardwareTarget: 'sense360-ceiling-usb',
       preset: {
         id: 'preset-future',
         name: 'Future Schema',
-        state: { mount: 'wall', power: 'usb', airiq: 'airiq', fan: 'analog', voice: 'none' },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'airiq', fan: 'analog', voice: 'none' },
+        state: { mount: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'analog', voice: 'none' },
+        configuration: { mounting: 'ceiling', power: 'usb', airiq: 'airiq', fan: 'analog', voice: 'none' },
         createdAt: 1,
         updatedAt: 2,
         appliedAt: null
@@ -131,7 +131,7 @@ describe('preset export JSON', () => {
     expect(result.ok).toBe(true);
     expect(result.metadata).toEqual({
       schemaVersion: 999,
-      hardwareTarget: 'sense360-wall-usb',
+      hardwareTarget: 'sense360-ceiling-usb',
       notices: []
     });
   });
@@ -141,12 +141,12 @@ describe('preset export JSON', () => {
 
     const result = validatePresetImportPayload({
       schemaVersion: '1',
-      hardwareTarget: 'sense360-wall-usb',
+      hardwareTarget: 'sense360-ceiling-usb',
       preset: {
         id: 'preset-bad-schema',
         name: 'Bad Schema',
-        state: { mount: 'wall', power: 'usb' },
-        configuration: { mounting: 'wall', power: 'usb' }
+        state: { mount: 'ceiling', power: 'usb' },
+        configuration: { mounting: 'ceiling', power: 'usb' }
       }
     });
 
@@ -189,18 +189,18 @@ describe('preset export JSON', () => {
       name: 'mixed-case + whitespace enum values normalize, optional modules default to none, and step clamps high',
       input: {
         schemaVersion: 1,
-        hardwareTarget: 'sense360-wall-usb',
+        hardwareTarget: 'sense360-ceiling-usb',
         preset: {
           id: 'fixture-1',
           name: ' Fixture 1 ',
-          state: { mount: ' Wall ', power: 'USB', currentStep: 99 },
-          configuration: { mounting: ' Wall ', power: 'USB' },
+          state: { mount: ' Ceiling ', power: 'USB', currentStep: 99 },
+          configuration: { mounting: ' Ceiling ', power: 'USB' },
           meta: { currentStep: 99 }
         }
       },
       expected: {
-        state: { mount: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none', currentStep: 4 },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none' },
+        state: { mount: 'ceiling', power: 'usb', airiq: 'none', fan: 'none', voice: 'none', currentStep: 4 },
+        configuration: { mounting: 'ceiling', power: 'usb', airiq: 'none', fan: 'none', voice: 'none' },
         meta: { currentStep: 4 }
       }
     },
@@ -208,18 +208,18 @@ describe('preset export JSON', () => {
       name: 'currentStep clamps low bound to 1',
       input: {
         schemaVersion: 1,
-        hardwareTarget: 'sense360-wall-usb',
+        hardwareTarget: 'sense360-ceiling-usb',
         preset: {
           id: 'fixture-2',
           name: 'Fixture 2',
-          state: { mount: 'wall', power: 'usb', currentStep: 0 },
-          configuration: { mounting: 'wall', power: 'usb' },
+          state: { mount: 'ceiling', power: 'usb', currentStep: 0 },
+          configuration: { mounting: 'ceiling', power: 'usb' },
           meta: { currentStep: -5 }
         }
       },
       expected: {
-        state: { mount: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none', currentStep: 1 },
-        configuration: { mounting: 'wall', power: 'usb', airiq: 'none', fan: 'none', voice: 'none' },
+        state: { mount: 'ceiling', power: 'usb', airiq: 'none', fan: 'none', voice: 'none', currentStep: 1 },
+        configuration: { mounting: 'ceiling', power: 'usb', airiq: 'none', fan: 'none', voice: 'none' },
         meta: { currentStep: 1 }
       }
     }
@@ -276,12 +276,12 @@ describe('preset export JSON', () => {
       name: 'negative timestamps normalize to fallback/null',
       input: {
         schemaVersion: 1,
-        hardwareTarget: 'sense360-wall-usb',
+        hardwareTarget: 'sense360-ceiling-usb',
         preset: {
           id: 'fixture-ts-neg',
           name: 'Negative TS',
-          state: { mount: 'wall', power: 'usb' },
-          configuration: { mounting: 'wall', power: 'usb' },
+          state: { mount: 'ceiling', power: 'usb' },
+          configuration: { mounting: 'ceiling', power: 'usb' },
           createdAt: -1,
           updatedAt: -2,
           appliedAt: -3
@@ -293,12 +293,12 @@ describe('preset export JSON', () => {
       name: 'non-finite timestamps normalize to fallback/null',
       input: {
         schemaVersion: 1,
-        hardwareTarget: 'sense360-wall-usb',
+        hardwareTarget: 'sense360-ceiling-usb',
         preset: {
           id: 'fixture-ts-nonfinite',
           name: 'Non Finite TS',
-          state: { mount: 'wall', power: 'usb' },
-          configuration: { mounting: 'wall', power: 'usb' },
+          state: { mount: 'ceiling', power: 'usb' },
+          configuration: { mounting: 'ceiling', power: 'usb' },
           createdAt: Number.NaN,
           updatedAt: Number.POSITIVE_INFINITY,
           appliedAt: Number.NEGATIVE_INFINITY
