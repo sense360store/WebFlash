@@ -11,6 +11,34 @@ The codebase has two halves that meet at `manifest.json`:
 1. A **publishing pipeline** (Python + GitHub Actions) that converts firmware binaries dropped under `firmware/` into `manifest.json` and per-build `firmware-N.json` files.
 2. A **wizard frontend** (vanilla ES modules, no framework) that loads `manifest.json` at runtime, walks the user through a 5-step configuration, and hands a matching `firmware-N.json` to `<esp-web-install-button>`.
 
+### Platform and standards
+
+- **Follows the ESP Web Tools / esptool.js standard** for flashing ESP32 devices. The wizard renders the upstream `<esp-web-install-button>` component (loaded from unpkg) and consumes the standard ESP Web Tools manifest schema (`name`, `version`, `builds[].chipFamily`, `builds[].parts[].path`/`offset`, `improv`, etc.). Do not invent custom flash flows — extend behavior via the documented overrides surface (e.g. `checkSameFirmware` in `scripts/utils/esp-web-tools-overrides.js`) so the upstream component still drives connect/erase/write/verify.
+- **Laptop / desktop only.** Web Serial is not available on iOS, Android Chrome, or any mobile browser, so WebFlash explicitly targets desktop Chromium-based browsers (Chrome, Edge, Opera) on Windows / macOS / Linux. Firefox and Safari are unsupported. Capability detection lives in `scripts/capabilities.js` and surfaces an unsupported-browser banner via `scripts/init-review.js`. Do not add mobile-first layout assumptions or features that imply mobile is a supported runtime — the install path will not work there.
+
+## Sense360 hardware reference (canonical SKUs)
+
+This is the **authoritative SKU list** for the supported hardware. Use these names verbatim in user-facing copy, manifest descriptions, and module metadata. There is no Model/Variant axis — drop any "Base / Pro" or model/variant terminology when touching this code; each SKU is its own product.
+
+| Category | Product | SKU | Rev | Internal name | Notes |
+|---|---|---|---|---|---|
+| Ceiling (internal) | Sense360 Core | S360-100 | R4 | `360Core_Ceiling_V3_R` | Main board. ESP32-S3 with connectors for all other modules. |
+| Ceiling (internal) | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board: PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP351 (pressure). |
+| Ceiling (internal) | Sense360 AirIQ | S360-210 | R4 | `AirIQ Ceiling` | Air quality: CO₂ (SCD41), VOC (SGP41), gas (MICS-4514 + STM8). Connectors for PM (SPS30) and HCHO (SFA30). |
+| Ceiling (internal) | Sense360 VentIQ | S360-211 | R4 | `Bathroom Pro` | Bathroom-focused air quality. SGP41 onboard. Connectors for IR temp and SPS30. |
+| Ceiling (internal) | Sense360 LED | S360-300 | R4 | LED Ring | Ring of WS2812B LEDs. |
+| Fan / switching | Sense360 Fan Relay | S360-310 | R4 | `S360-Relay-C` | On/off relay for bathroom fans. |
+| Fan / switching | Sense360 Fan PWM | S360-311 | R4 | `12vFan_PWM_PulseCounter` | 12V PWM fan driver, up to 4 fans with tach feedback. |
+| Fan / switching | Sense360 Fan DAC | S360-312 | R4 | `Fan_GP8403` | 0–10V analog fan driver (e.g. Cloudlift S12). |
+| Fan / switching | Sense360 TRIAC | S360-320 | R4 | `TRIAC_Board` | Phase dimmer for mains fan or lamp. |
+| Power | Sense360 Mains PSU | S360-400 | R4 | PWR Module | Mains → 5V via HLK-5M05. |
+| Power | Sense360 PoE PSU | S360-410 | R4 | PoE Module | PoE → 5V. |
+
+Notes:
+
+- The current wizard exposes Ceiling mount only; a "Wall" branch lingers in markup/legacy aliases but is not a supported product.
+- `scripts/data/module-requirements.js` is the runtime source of truth for which SKUs are wired up, their headers, and conflicts. **Update both this file and the wizard SKU labels in `state.js`** (`MODULE_LABELS`, `MODULE_VARIANT_LABELS`, `MODULE_SEGMENT_FORMATTERS`) when introducing a new SKU; do not regress to model/variant nomenclature.
+
 ## Commands
 
 ```bash
@@ -53,7 +81,7 @@ It exports a small surface (`getState`, `setState`, `replaceState`, `getStep`, `
 
 Other notable pieces:
 
-- `scripts/data/module-requirements.js` — hardware compatibility matrix (SKUs, headers, conflicts, `recommended`/`ceilingOnly`/`requiresBathroom` flags). **Constraint enforcement reads from this file**; keep it consistent with the README option tables.
+- `scripts/data/module-requirements.js` — hardware compatibility matrix (SKUs, headers, conflicts, `recommended`/`ceilingOnly`/`requiresBathroom` flags). **Constraint enforcement reads from this file**; keep it consistent with the canonical SKU table above and with the README option tables.
 - `scripts/utils/url-config.js` — bidirectional parser for sharable config URLs. Maintains legacy aliases (e.g. `pwr` → `ac`, `BathroomAirIQ*` → `VentIQ`, fan `pwm` ↔ `base`) so old links still resolve. The wizard URL key `voice` historically maps to `core` in the URL alias set.
 - `scripts/utils/esp-web-tools-overrides.js` — installs a `MutationObserver` that attaches a `checkSameFirmware` override to every `<esp-web-install-button>` so users see a warning when reflashing the same version reported via Improv.
 - `scripts/recommended-bundle.js` — quick-start preset application; uses `getMaxReachableStep` to jump straight to step 4 when applying a preset.
@@ -64,7 +92,9 @@ Other notable pieces:
 
 ### Publishing pipeline
 
-`scripts/gen-manifests.py` is the only way `manifest.json` and `firmware-*.json` should change — these files are **generated, not hand-edited**. It scans `firmware/`, parses each filename via the canonical pattern (see below), produces a single `manifest.json` with full per-build metadata (including hashes and a `config_string` like `Ceiling-POE-AirIQ`), and writes one `firmware-<index>.json` per build for ESP Web Tools.
+`scripts/gen-manifests.py` is the only way `manifest.json` and `firmware-*.json` should change — these files are **generated, not hand-edited**. It scans `firmware/`, parses each filename via the canonical pattern (see below), produces a single `manifest.json` with full per-build metadata (including hashes and a `config_string` like `Ceiling-POE-AirIQ`), and writes one `firmware-<index>.json` per build (the standard ESP Web Tools per-product manifest format).
+
+The Python script still carries a legacy `model` / `variant` code path for binaries placed outside `firmware/configurations/`. **Treat this as deprecated** — do not introduce new firmware down that branch and do not extend Model/Variant metadata in new code. New SKUs and configurations belong in `firmware/configurations/` with the canonical `Sense360-...-vX.Y.Z-<channel>.bin` filename, identified by SKU/config-string only.
 
 `scripts/validate-naming-policy.js` enforces:
 
@@ -85,10 +115,12 @@ Otherwise the frontend will fail to find a build that the manifest claims exists
 
 ## Conventions and gotchas
 
+- **Desktop / Web Serial only.** The install path depends on `navigator.serial`, which is only implemented on desktop Chromium browsers. Do not add code paths that assume mobile or non-Chromium browsers can flash; gate any new install-time UI behind the existing capability detection in `scripts/capabilities.js` and surface unsupported-browser messaging through `init-review.js`.
 - **Pure ESM.** Tests require `NODE_OPTIONS=--experimental-vm-modules` (already set by `npm test`). Do not introduce CommonJS modules under `scripts/` or in tests; new tests should use `import { ... } from '@jest/globals'`. Jest config (`jest.config.cjs`) sets `transform: {}` — no transpilation.
 - **No external runtime dependencies in the wizard.** The only third-party script loaded by `index.html` is `esp-web-tools` from unpkg, which is allowed by the `Content-Security-Policy` in `_headers`. If you need new origins (scripts, fonts, connect-src), update the CSP there.
 - **`_headers` is GitHub-Pages-style.** It controls CORS, CSP, and cache rules. Firmware binaries are served with `Cache-Control: max-age=31536000`, so versioned filenames are critical — never overwrite a published `.bin` in place.
-- **Disabled options live in the matrix, not in markup.** The README option tables document what is currently selectable; the actual gating comes from `module-requirements.js` (e.g. `ceilingOnly`, `requiresBathroom`) and the visibility logic in `getVisibleModuleGroupKeys` in `state.js`. AirIQ ↔ VentIQ is mutually exclusive and driven by the Bathroom toggle on Ceiling mounts.
+- **Disabled options live in the matrix, not in markup.** The canonical SKU table above documents the products; runtime gating comes from `module-requirements.js` (e.g. `ceilingOnly`, `requiresBathroom`) and the visibility logic in `getVisibleModuleGroupKeys` in `state.js`. AirIQ ↔ VentIQ is mutually exclusive and driven by the Bathroom toggle on Ceiling mounts.
+- **No Model/Variant axis.** The product taxonomy is flat (one SKU per product). When extending the wizard, do not add Base/Pro variants or model/variant fields; add a new SKU entry to `module-requirements.js` and a new module key to `MODULE_KEYS` in `state.js` instead.
 - **Sensitive-value redaction.** `Copy diagnostics` and flash history both pass through redaction (`SENSITIVE_KEY_PATTERN` in `state.js`, `stripDeprecatedConfigurationFields` in `flash-history.js`). When adding new fields to diagnostics or history, audit whether they should be redacted before they ship.
 - **Service worker cache name is `webflash-v1`.** Bumping the cache version (or the `?v=` query in `index.html`'s stylesheet links) is how forced refreshes are landed; the `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
 - **Generated files are committed.** `manifest.json`, every `firmware-*.json`, and every `firmware/configurations/*.bin` are tracked in git. Regenerate with `gen-manifests.py` and commit the diff together with the firmware change in the same commit.
