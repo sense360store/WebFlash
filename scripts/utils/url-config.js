@@ -7,13 +7,13 @@
  * Order of configuration parameters for consistent URL generation.
  * @type {readonly string[]}
  */
-const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'led', 'airiq', 'bathroomairiq', 'fan']);
+const CONFIG_PARAM_ORDER = Object.freeze(['core', 'mount', 'power', 'led', 'roomiq', 'airiq', 'bathroomairiq', 'fan']);
 
 /**
  * Keys for optional module configuration parameters.
  * @type {readonly string[]}
  */
-const CONFIG_MODULE_KEYS = Object.freeze(['led', 'airiq', 'bathroomairiq', 'fan']);
+const CONFIG_MODULE_KEYS = Object.freeze(['led', 'roomiq', 'airiq', 'bathroomairiq', 'fan']);
 
 /**
  * Required configuration parameters that must be present for a valid config.
@@ -26,6 +26,7 @@ const DEFAULT_SANITIZED_CONFIG = Object.freeze({
     mount: null,
     power: null,
     led: 'none',
+    roomiq: 'none',
     airiq: 'none',
     bathroomairiq: 'none',
     fan: 'none'
@@ -86,6 +87,19 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         allowedValues: Object.freeze(['none', 'airiq']),
         legacyValues: new Map([
             ['base', 'airiq']
+        ])
+    }),
+    roomiq: Object.freeze({
+        required: false,
+        aliases: Object.freeze(['roomiq']),
+        defaultOption: 'none',
+        options: new Map([
+            ['none', { wizardValue: 'none', configSegment: null }],
+            ['roomiq', { wizardValue: 'roomiq', configSegment: 'RoomIQ' }]
+        ]),
+        allowedValues: Object.freeze(['none', 'roomiq']),
+        legacyValues: new Map([
+            ['base', 'roomiq']
         ])
     }),
     airiq: Object.freeze({
@@ -197,6 +211,7 @@ function parseConfigParams(inputParams) {
         mount: DEFAULT_SANITIZED_CONFIG.mount,
         power: DEFAULT_SANITIZED_CONFIG.power,
         led: DEFAULT_SANITIZED_CONFIG.led,
+        roomiq: DEFAULT_SANITIZED_CONFIG.roomiq,
         airiq: DEFAULT_SANITIZED_CONFIG.airiq,
         bathroomairiq: DEFAULT_SANITIZED_CONFIG.bathroomairiq,
         fan: DEFAULT_SANITIZED_CONFIG.fan
@@ -385,6 +400,7 @@ function mapToWizardConfiguration(sanitizedConfig = DEFAULT_SANITIZED_CONFIG) {
         mounting: safeConfig.mount ?? DEFAULT_SANITIZED_CONFIG.mount,
         power: safeConfig.power ?? DEFAULT_SANITIZED_CONFIG.power,
         led: safeConfig.led ?? DEFAULT_SANITIZED_CONFIG.led,
+        roomiq: safeConfig.roomiq ?? DEFAULT_SANITIZED_CONFIG.roomiq,
         airiq: safeConfig.airiq ?? DEFAULT_SANITIZED_CONFIG.airiq,
         bathroomairiq: safeConfig.bathroomairiq ?? DEFAULT_SANITIZED_CONFIG.bathroomairiq,
         fan: safeConfig.fan ?? DEFAULT_SANITIZED_CONFIG.fan

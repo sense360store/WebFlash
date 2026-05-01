@@ -1,4 +1,34 @@
 const MODULE_REQUIREMENT_MATRIX = {
+    roomiq: {
+        label: 'Sense360 RoomIQ',
+        summary: 'Room sensor board with presence, light, temperature, humidity, and pressure sensing.',
+        variants: {
+            none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                conflicts: [],
+                sensors: []
+            },
+            roomiq: {
+                label: 'Sense360 RoomIQ',
+                sku: 'S360-200',
+                coreRevision: 'R4',
+                headers: ['J3 sensor bus'],
+                description: 'Room sensor board. PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temperature/humidity), BMP581 (pressure).',
+                recommended: true,
+                sensors: [
+                    'PIR motion',
+                    'LD2450 (mmWave presence)',
+                    'SEN0609',
+                    'LTR-303ALS (light)',
+                    'SHT4x (temperature/humidity)',
+                    'BMP581 (pressure)'
+                ],
+                conflicts: []
+            }
+        }
+    },
     airiq: {
         label: 'Sense360 AirIQ',
         summary: 'Air quality board with CO₂, VOC, and gas sensing plus expansion connectors.',
