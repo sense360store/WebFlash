@@ -41,8 +41,8 @@ function renderWizardDom() {
                     <input type="radio" name="fan" value="pwm">
                     <div class="module-card__inner"></div>
                 </label>
-                <label class="module-card option-card" data-module-card="fan" data-variant="analog">
-                    <input type="radio" name="fan" value="analog">
+                <label class="module-card option-card" data-module-card="fan" data-variant="dac">
+                    <input type="radio" name="fan" value="dac">
                     <div class="module-card__inner"></div>
                 </label>
                 <label class="module-card option-card" data-module-card="fan" data-variant="triac">
@@ -106,7 +106,7 @@ beforeEach(() => {
     renderWizardDom();
 });
 
-test('fan PWM and analog options stay available on Ceiling+PWR', async () => {
+test('fan PWM and DAC options stay available on Ceiling+PWR', async () => {
     const stateModule = await import('../scripts/state.js');
     stateModule.__testHooks.initializeWizard();
     await stateModule.__testHooks.manifestReadyPromise();
@@ -119,7 +119,7 @@ test('fan PWM and analog options stay available on Ceiling+PWR', async () => {
     pwrInput.checked = true;
     pwrInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-    for (const value of ['none', 'relay', 'pwm', 'analog', 'triac']) {
+    for (const value of ['none', 'relay', 'pwm', 'dac', 'triac']) {
         const inspection = inspectCard('fan', value);
         expect(inspection.unavailable).toBe(false);
         expect(inspection.title).toBeNull();
@@ -141,16 +141,16 @@ test('updateConfiguration clears stale unavailable state on fan options', async 
     pwrInput.dispatchEvent(new Event('change', { bubbles: true }));
 
     injectStaleUnavailableState('fan', 'pwm');
-    injectStaleUnavailableState('fan', 'analog');
+    injectStaleUnavailableState('fan', 'dac');
 
     expect(inspectCard('fan', 'pwm').unavailable).toBe(true);
-    expect(inspectCard('fan', 'analog').unavailable).toBe(true);
+    expect(inspectCard('fan', 'dac').unavailable).toBe(true);
 
     const fanRelay = document.querySelector('input[name="fan"][value="relay"]');
     fanRelay.checked = true;
     fanRelay.dispatchEvent(new Event('change', { bubbles: true }));
 
-    for (const value of ['pwm', 'analog']) {
+    for (const value of ['pwm', 'dac']) {
         const inspection = inspectCard('fan', value);
         expect(inspection.unavailable).toBe(false);
         expect(inspection.title).toBeNull();

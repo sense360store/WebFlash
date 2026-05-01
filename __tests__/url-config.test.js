@@ -8,7 +8,7 @@ describe('config URL parser', () => {
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.configKey).toBe('Core-Wall-PWR-FanPWM');
+    expect(result.configKey).toBe('Core-Wall-PWR-Fan');
     expect(result.sanitizedConfig.core).toBe('none');
     expect(result.sanitizedConfig.mount).toBe('wall');
     expect(result.sanitizedConfig.power).toBe('pwr');
@@ -24,7 +24,7 @@ describe('config URL parser', () => {
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.configKey).toBe('Core-Ceiling-POE-AirIQBase');
+    expect(result.configKey).toBe('Core-Ceiling-POE-AirIQ');
     expect(result.sanitizedConfig.core).toBe('none');
 
     const wizardConfig = mapToWizardConfiguration(result.sanitizedConfig);
@@ -52,16 +52,16 @@ describe('config URL parser', () => {
     expect(result.isValid).toBe(true);
     expect(result.forcedFanNone).toBe(false);
     expect(result.sanitizedConfig.fan).toBe('pwm');
-    expect(result.configKey).toBe('Core-Ceiling-USB-FanPWM');
+    expect(result.configKey).toBe('Core-Ceiling-USB-Fan');
   });
 
 
   test.each([
-    ['airiq=prov', 'ventiq', 'Core-Wall-USB-AirIQPro'],
-    ['airiq=AirIQProv', 'ventiq', 'Core-Wall-USB-AirIQPro'],
-    ['airiq=pro', 'ventiq', 'Core-Wall-USB-AirIQPro'],
-    ['airiq=AirIQPro', 'ventiq', 'Core-Wall-USB-AirIQPro']
-  ])('supports AirIQ Pro compatibility aliases (%s)', (airiqParam, expectedAirIq, expectedConfigKey) => {
+    ['airiq=prov', 'ventiq', 'Core-Wall-USB-VentIQ'],
+    ['airiq=AirIQProv', 'ventiq', 'Core-Wall-USB-VentIQ'],
+    ['airiq=pro', 'ventiq', 'Core-Wall-USB-VentIQ'],
+    ['airiq=AirIQPro', 'ventiq', 'Core-Wall-USB-VentIQ']
+  ])('legacy AirIQ Pro aliases canonicalise to VentIQ (%s)', (airiqParam, expectedAirIq, expectedConfigKey) => {
     const params = new URLSearchParams(`core=core&mount=wall&power=usb&${airiqParam}`);
     const result = parseConfigParams(params);
 
@@ -80,36 +80,46 @@ describe('config URL parser', () => {
     expect(result.sanitizedConfig.power).toBe('pwr');
   });
 
-  test('parses analog fan selection', () => {
+  test('parses canonical fan=dac selection', () => {
+    const params = new URLSearchParams('core=core&mount=wall&power=usb&fan=dac');
+    const result = parseConfigParams(params);
+
+    expect(result.isValid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.configKey).toBe('Core-Wall-USB-Fan');
+    expect(result.sanitizedConfig.fan).toBe('dac');
+  });
+
+  test('legacy fan=analog URLs alias to the canonical dac value', () => {
     const params = new URLSearchParams('core=core&mount=wall&power=usb&fan=analog');
     const result = parseConfigParams(params);
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.configKey).toBe('Core-Wall-USB-FanAnalog');
-    expect(result.sanitizedConfig.fan).toBe('analog');
+    expect(result.configKey).toBe('Core-Wall-USB-Fan');
+    expect(result.sanitizedConfig.fan).toBe('dac');
   });
 
 
   test('supports legacy and canonical AirIQ aliases case-insensitively', () => {
     const legacyShort = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=prov'));
     expect(legacyShort.isValid).toBe(true);
-    expect(legacyShort.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(legacyShort.configKey).toBe('Core-Wall-USB-VentIQ');
     expect(legacyShort.sanitizedConfig.airiq).toBe('ventiq');
 
     const legacyToken = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=AirIQProv'));
     expect(legacyToken.isValid).toBe(true);
-    expect(legacyToken.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(legacyToken.configKey).toBe('Core-Wall-USB-VentIQ');
     expect(legacyToken.sanitizedConfig.airiq).toBe('ventiq');
 
     const canonicalShort = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=pro'));
     expect(canonicalShort.isValid).toBe(true);
-    expect(canonicalShort.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(canonicalShort.configKey).toBe('Core-Wall-USB-VentIQ');
     expect(canonicalShort.sanitizedConfig.airiq).toBe('ventiq');
 
     const canonicalToken = parseConfigParams(new URLSearchParams('core=core&mount=wall&power=usb&airiq=AirIQPro'));
     expect(canonicalToken.isValid).toBe(true);
-    expect(canonicalToken.configKey).toBe('Core-Wall-USB-AirIQPro');
+    expect(canonicalToken.configKey).toBe('Core-Wall-USB-VentIQ');
     expect(canonicalToken.sanitizedConfig.airiq).toBe('ventiq');
   });
 

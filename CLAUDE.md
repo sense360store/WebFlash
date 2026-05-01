@@ -71,7 +71,7 @@ There is no lint or typecheck step. CI runs `npm test -- --ci` with `continue-on
 
 `scripts/state.js` (~5000 lines) is the **central state module** and the source of truth. It owns:
 
-- The wizard configuration object (`mounting`, `power`, `bathroom`, plus module keys `voice`, `led`, `airiq`, `fan`, `ventiq`).
+- The wizard configuration object (`mounting`, `power`, `bathroom`, plus module keys `voice`, `led`, `airiq`, `fan`, `ventiq`). Fan variants are `relay` / `pwm` / `dac` / `triac`; the legacy `analog` value normalises to `dac` via `normalizeStateForConfiguration`, with matching aliases in `scripts/utils/url-config.js` and `scripts/utils/preset-storage.js` so old shareable URLs and presets still resolve.
 - Step gating via `getMaxReachableStep()` — step 2 unlocks once `mounting` is set, step 3 once `power` is set, etc.
 - Manifest loading, parsing of `config_string` values like `"Ceiling-POE-AirIQ"` back into wizard state (`parseConfigStringState`), and matching builds to the current selection.
 - The Step 5 preflight engine (`evaluatePreflightPolicy`) and connection-quality metrics fed by `navigator.serial` connect/disconnect events and ESP Web Tools `state-changed` events.
@@ -82,13 +82,12 @@ It exports a small surface (`getState`, `setState`, `replaceState`, `getStep`, `
 Other notable pieces:
 
 - `scripts/data/module-requirements.js` — hardware compatibility matrix (SKUs, headers, conflicts, `recommended`/`ceilingOnly`/`requiresBathroom` flags). **Constraint enforcement reads from this file**; keep it consistent with the canonical SKU table above and with the README option tables.
-- `scripts/utils/url-config.js` — bidirectional parser for sharable config URLs. Maintains legacy aliases (e.g. `pwr` → `ac`, `BathroomAirIQ*` → `VentIQ`, fan `pwm` ↔ `base`) so old links still resolve. The wizard URL key `voice` historically maps to `core` in the URL alias set.
+- `scripts/utils/url-config.js` — bidirectional parser for sharable config URLs. Maintains legacy aliases (e.g. `pwr` → `ac`, `BathroomAirIQ*` → `VentIQ`, fan `pwm` ↔ `base`, fan `analog` → `dac`) so old links still resolve. All `configSegment` outputs match the wizard's `MODULE_SEGMENT_FORMATTERS` in `scripts/state.js` (canonical `AirIQ` / `VentIQ` / `Fan` tokens — never `AirIQBase` / `FanPWM` / `FanAnalog`). The wizard URL key `voice` historically maps to `core` in the URL alias set.
 - `scripts/utils/esp-web-tools-overrides.js` — installs a `MutationObserver` that attaches a `checkSameFirmware` override to every `<esp-web-install-button>` so users see a warning when reflashing the same version reported via Improv.
 - `scripts/recommended-bundle.js` — quick-start preset application; uses `getMaxReachableStep` to jump straight to step 4 when applying a preset.
-- `scripts/utils/preset-storage.js` — JSON preset import/export with schema versioning; deprecated keys (`presence`, `comfort`) are stripped on read.
+- `scripts/utils/preset-storage.js` — JSON preset import/export with schema versioning; deprecated keys (`presence`, `comfort`) are stripped on read, and legacy fan value `analog` is normalised to `dac` on import.
 - `scripts/utils/flash-history.js` — flash attempts logged to `localStorage` for diagnostics; entries also strip deprecated keys.
 - `sw.js` — service worker. Strategy is network-first for `*.bin` and `manifest.json`, stale-while-revalidate for everything else. **When you add new top-level scripts, add them to `STATIC_ASSETS` or `SCRIPT_MODULES` in `sw.js`** or they will not be available offline.
-- `scripts/wizard-state-observer.js` — `window.WizardState` legacy observer that infers state from the DOM via a `MutationObserver`. Newer code reads from `state.js` directly; this exists for older inspector code that watches the DOM.
 
 ### Publishing pipeline
 
@@ -106,7 +105,7 @@ The Python script still carries a legacy `model` / `variant` code path for binar
 
 ### Frontend ↔ pipeline contract
 
-The wizard's selection is reduced to a `config_string` (e.g. `Ceiling-POE-AirIQ`) and matched against `build.config_string` in `manifest.json`. `parseConfigStringState` in `state.js` and the canonical token formatters in `MODULE_SEGMENT_FORMATTERS` define how segments encode/decode (`AirIQ` → `airiq=airiq`, `VentIQ` → `ventiq=airiq`, `FanPWM` → `fan=pwm`, etc.). When you add a new module token, update both:
+The wizard's selection is reduced to a `config_string` (e.g. `Ceiling-POE-AirIQ`) and matched against `build.config_string` in `manifest.json`. `parseConfigStringState` in `state.js` and the canonical token formatters in `MODULE_SEGMENT_FORMATTERS` define how segments encode/decode (`AirIQ` → `airiq=airiq`, `VentIQ` → `ventiq=airiq`, `Fan` → `fan=relay|pwm|dac|triac`, `LED` → `led=airiq`, etc.). The fan formatter collapses every non-`none` variant to a single `Fan` token because the manifest carries one fan firmware per mounting/power combo (e.g. `Ceiling-USB-Fan`). The parser still accepts legacy `FanPWM` / `FanRelay` / `FanTRIAC` segments for old shareable links. When you add a new module token, update both:
 
 1. The wizard's segment formatter and `parseConfigStringState` in `scripts/state.js`.
 2. `CANONICAL_MODULE_TOKENS` / token-handling logic in `scripts/gen-manifests.py`.
@@ -122,6 +121,6 @@ Otherwise the frontend will fail to find a build that the manifest claims exists
 - **Disabled options live in the matrix, not in markup.** The canonical SKU table above documents the products; runtime gating comes from `module-requirements.js` (e.g. `ceilingOnly`, `requiresBathroom`) and the visibility logic in `getVisibleModuleGroupKeys` in `state.js`. AirIQ ↔ VentIQ is mutually exclusive and driven by the Bathroom toggle on Ceiling mounts.
 - **No Model/Variant axis.** The product taxonomy is flat (one SKU per product). When extending the wizard, do not add Base/Pro variants or model/variant fields; add a new SKU entry to `module-requirements.js` and a new module key to `MODULE_KEYS` in `state.js` instead.
 - **Sensitive-value redaction.** `Copy diagnostics` and flash history both pass through redaction (`SENSITIVE_KEY_PATTERN` in `state.js`, `stripDeprecatedConfigurationFields` in `flash-history.js`). When adding new fields to diagnostics or history, audit whether they should be redacted before they ship.
-- **Service worker cache name is `webflash-v1`.** Bumping the cache version (or the `?v=` query in `index.html`'s stylesheet links) is how forced refreshes are landed; the `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
+- **Service worker cache name is `webflash-v2`.** Bumping the cache version (or the `?v=` query in `index.html`'s stylesheet links) is how forced refreshes are landed; the `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
 - **Generated files are committed.** `manifest.json`, every `firmware-*.json`, and every `firmware/configurations/*.bin` are tracked in git. Regenerate with `gen-manifests.py` and commit the diff together with the firmware change in the same commit.
 - **Branch policy.** All AI-assisted development on this repo runs on a dedicated `claude/...` branch (see workflow instructions). Never push to `main` directly.

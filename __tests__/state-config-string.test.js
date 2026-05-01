@@ -11,7 +11,7 @@ describe('MODULE_VARIANT_LABELS uses canonical Sense360 friendly names', () => {
         expect(MODULE_VARIANT_LABELS.ventiq.base).toBe('Sense360 VentIQ');
         expect(MODULE_VARIANT_LABELS.fan.relay).toBe('Sense360 Fan Relay');
         expect(MODULE_VARIANT_LABELS.fan.pwm).toBe('Sense360 Fan PWM');
-        expect(MODULE_VARIANT_LABELS.fan.analog).toBe('Sense360 Fan DAC');
+        expect(MODULE_VARIANT_LABELS.fan.dac).toBe('Sense360 Fan DAC');
         expect(MODULE_VARIANT_LABELS.fan.triac).toBe('Sense360 TRIAC');
         expect(MODULE_VARIANT_LABELS.led.base).toBe('Sense360 LED');
     });
@@ -39,7 +39,7 @@ describe('formatConfigSegment emits canonical tokens only', () => {
     test('Fan collapses every variant to a single canonical Fan token', () => {
         expect(formatConfigSegment('fan', 'relay')).toBe('-Fan');
         expect(formatConfigSegment('fan', 'pwm')).toBe('-Fan');
-        expect(formatConfigSegment('fan', 'analog')).toBe('-Fan');
+        expect(formatConfigSegment('fan', 'dac')).toBe('-Fan');
         expect(formatConfigSegment('fan', 'triac')).toBe('-Fan');
         expect(formatConfigSegment('fan', 'none')).toBe('');
     });
@@ -51,7 +51,7 @@ describe('formatConfigSegment emits canonical tokens only', () => {
             ['ventiq', 'airiq'],
             ['fan', 'relay'],
             ['fan', 'pwm'],
-            ['fan', 'analog'],
+            ['fan', 'dac'],
             ['fan', 'triac'],
             ['voice', 'base'],
             ['led', 'airiq']
@@ -78,6 +78,11 @@ describe('parseConfigStringState handles both legacy and current tokens', () => 
         expect(parseConfigStringState('Wall-USB-FanPWM').fan).toBe('pwm');
         expect(parseConfigStringState('Wall-USB-FanRelay').fan).toBe('relay');
         expect(parseConfigStringState('Wall-USB-FanTRIAC').fan).toBe('triac');
+    });
+
+    test('legacy FanAnalog token normalises to the renamed dac variant', () => {
+        const parsed = parseConfigStringState('Wall-USB-FanAnalog');
+        expect(parsed.fan).toBe('dac');
     });
 
     test('manifest config_strings either parse cleanly or are recognised legacy formats', () => {

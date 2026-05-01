@@ -40,7 +40,7 @@ function renderWizardDom() {
                 <input type="radio" name="fan" value="none" checked>
                 <input type="radio" name="fan" value="relay">
                 <input type="radio" name="fan" value="pwm">
-                <input type="radio" name="fan" value="analog">
+                <input type="radio" name="fan" value="dac">
                 <input type="radio" name="fan" value="triac">
             </div>
         </div>

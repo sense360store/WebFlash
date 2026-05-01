@@ -26,8 +26,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [
                     {
                         module: 'fan',
-                        variants: ['analog'],
-                        message: 'Conflicts with Fan DAC — analog control uses the shared DAC header.',
+                        variants: ['dac'],
+                        message: 'Conflicts with Sense360 Fan DAC — analog control uses the shared DAC header.',
                         detail: 'Select PWM, Relay, or TRIAC fan control or remove the AirIQ module to free the DAC bus.'
                     },
                     {
@@ -104,7 +104,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 description: '12V PWM fan driver, up to 4 fans with tach feedback.',
                 conflicts: []
             },
-            analog: {
+            dac: {
                 label: 'Sense360 Fan DAC',
                 sku: 'S360-312',
                 coreRevision: 'R4',
@@ -114,7 +114,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'airiq',
                         variants: ['airiq'],
-                        message: 'Conflicts with AirIQ — analog control occupies the shared DAC bus.',
+                        message: 'Conflicts with Sense360 AirIQ — DAC control occupies the shared DAC bus.',
                         detail: 'Disable AirIQ or switch the fan output to PWM mode.'
                     }
                 ]

@@ -4,8 +4,8 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v1';
-const CACHE_VERSION = 1;
+const CACHE_NAME = 'webflash-v2';
+const CACHE_VERSION = 2;
 
 /**
  * Static assets to cache on install.
@@ -37,7 +37,6 @@ const SCRIPT_MODULES = [
     './scripts/recommended-bundle.js',
     './scripts/state.js',
     './scripts/ui-capability-bar.js',
-    './scripts/wizard-state-observer.js',
     './scripts/data/module-requirements.js',
     './scripts/content/option-tooltips.js',
     './scripts/layout/firmware-note.js',

@@ -98,7 +98,7 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['bathroom', [false, true]],
     ['airiq', ['none', 'airiq']],
     ['ventiq', ['none', 'airiq']],
-    ['fan', ['none', 'relay', 'pwm', 'analog', 'triac']],
+    ['fan', ['none', 'relay', 'pwm', 'dac', 'triac']],
     ['voice', ['none']],
     ['led', ['none', 'airiq']]
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
@@ -124,7 +124,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
     ['fan', Object.freeze({
         relay: 'Sense360 Fan Relay',
         pwm: 'Sense360 Fan PWM',
-        analog: 'Sense360 Fan DAC',
+        dac: 'Sense360 Fan DAC',
         triac: 'Sense360 TRIAC'
     })],
     ['voice', Object.freeze({
@@ -389,6 +389,11 @@ function normalizeStateForConfiguration(state = {}) {
 
     if (normalized.voice === 'airiq') {
         normalized.voice = 'none';
+    }
+
+    // Legacy 'analog' fan variant was renamed to 'dac' (Sense360 Fan DAC, S360-312).
+    if (normalized.fan === 'analog') {
+        normalized.fan = 'dac';
     }
 
     return enforceAirIQVentIQExclusivity(normalized);
@@ -1163,8 +1168,10 @@ function parseConfigStringState(configString) {
             const suffix = segment.substring('AirIQ'.length);
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'airiq');
         } else if (segment.startsWith('Fan')) {
-            const suffix = segment.substring('Fan'.length);
-            moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
+            const suffix = segment.substring('Fan'.length).toLowerCase();
+            // Legacy 'analog' fan variant was renamed to 'dac' (Sense360 Fan DAC).
+            const aliasedSuffix = suffix === 'analog' ? 'dac' : suffix;
+            moduleState.fan = normaliseModuleValue('fan', aliasedSuffix || 'none');
         } else if (segment.startsWith('Voice')) {
             moduleState.voice = 'none';
         } else if (segment === 'LED' || segment.startsWith('LED')) {
@@ -2582,13 +2589,13 @@ function updateSummary() {
         const fanTypes = {
             'relay': 'On / off relay for bathroom fans',
             'pwm': '12V PWM fan driver, up to 4 fans with tach feedback',
-            'analog': '0 to 10V analog fan driver',
+            'dac': '0 to 10V analog fan driver',
             'triac': 'Phase dimmer for mains fan or lamp'
         };
         const fanLabels = {
             'relay': 'Relay',
             'pwm': 'PWM',
-            'analog': 'Analog',
+            'dac': 'DAC',
             'triac': 'TRIAC'
         };
         summaryHtml += `

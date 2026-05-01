@@ -83,16 +83,20 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         required: false,
         aliases: Object.freeze(['airiq']),
         defaultOption: 'none',
+        // configSegments emit canonical tokens that match the wizard's
+        // MODULE_SEGMENT_FORMATTERS output in scripts/state.js. Legacy URL
+        // values (base/pro/airiqbase/airiqpro/...) still parse for backward
+        // compatibility with old shareable links.
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
             ['airiq', { wizardValue: 'airiq', configSegment: 'AirIQ' }],
             ['ventiq', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
-            ['base', { wizardValue: 'airiq', configSegment: 'AirIQBase' }],
-            ['airiqbase', { wizardValue: 'airiq', configSegment: 'AirIQBase' }],
-            ['pro', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
-            ['prov', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
-            ['airiqpro', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }],
-            ['airiqprov', { wizardValue: 'ventiq', configSegment: 'AirIQPro' }]
+            ['base', { wizardValue: 'airiq', configSegment: 'AirIQ' }],
+            ['airiqbase', { wizardValue: 'airiq', configSegment: 'AirIQ' }],
+            ['pro', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['prov', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['airiqpro', { wizardValue: 'ventiq', configSegment: 'VentIQ' }],
+            ['airiqprov', { wizardValue: 'ventiq', configSegment: 'VentIQ' }]
         ]),
         allowedValues: Object.freeze(['none', 'airiq', 'ventiq'])
     }),
@@ -115,16 +119,22 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         required: false,
         aliases: Object.freeze(['fan']),
         defaultOption: 'none',
+        // The fan module collapses to a single canonical 'Fan' configSegment
+        // regardless of variant, matching scripts/state.js (and the manifest's
+        // Ceiling-USB-Fan / Wall-USB-Fan firmware filenames). Legacy 'analog'
+        // URL values normalize to 'dac' before lookup; legacy 'pwm' URL values
+        // normalize to 'base' (whose wizardValue is 'pwm').
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['relay', { wizardValue: 'relay', configSegment: 'FanRelay' }],
-            ['base', { wizardValue: 'pwm', configSegment: 'FanPWM' }],
-            ['analog', { wizardValue: 'analog', configSegment: 'FanAnalog' }],
-            ['triac', { wizardValue: 'triac', configSegment: 'FanTRIAC' }]
+            ['relay', { wizardValue: 'relay', configSegment: 'Fan' }],
+            ['base', { wizardValue: 'pwm', configSegment: 'Fan' }],
+            ['dac', { wizardValue: 'dac', configSegment: 'Fan' }],
+            ['triac', { wizardValue: 'triac', configSegment: 'Fan' }]
         ]),
-        allowedValues: Object.freeze(['none', 'relay', 'base', 'analog', 'triac']),
+        allowedValues: Object.freeze(['none', 'relay', 'base', 'dac', 'triac']),
         legacyValues: new Map([
-            ['pwm', 'base']
+            ['pwm', 'base'],
+            ['analog', 'dac']
         ])
     })
 });
