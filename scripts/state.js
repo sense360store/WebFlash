@@ -32,12 +32,12 @@ function updateBottomDetailsVisibility(step) {
 function getTotalSteps() {
     return totalSteps;
 }
-const MODULE_KEYS = Object.freeze(['voice', 'led', 'airiq', 'fan', 'ventiq']);
+const MODULE_KEYS = Object.freeze(['voice', 'led', 'roomiq', 'airiq', 'fan', 'ventiq']);
 
 // Hardware accessory modules whose availability is governed by the module
 // matrix (conflicts) rather than firmware/manifest presence. Their option
 // cards must never display a manifest-derived "not available" message.
-const ALWAYS_AVAILABLE_MODULE_KEYS = Object.freeze(new Set(['fan', 'led']));
+const ALWAYS_AVAILABLE_MODULE_KEYS = Object.freeze(new Set(['fan', 'led', 'roomiq']));
 
 function isAlwaysAvailableModuleKey(key) {
     return ALWAYS_AVAILABLE_MODULE_KEYS.has(key);
@@ -83,6 +83,7 @@ const defaultConfiguration = createValidatedMap('defaultConfiguration', [
     ['mounting', null],
     ['power', null],
     ['bathroom', false],
+    ['roomiq', 'none'],
     ['airiq', 'none'],
     ['ventiq', 'none'],
     ['fan', 'none'],
@@ -96,6 +97,7 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['mounting', ['ceiling']],
     ['power', ['usb', 'poe', 'pwr']],
     ['bathroom', [false, true]],
+    ['roomiq', ['none', 'roomiq']],
     ['airiq', ['none', 'airiq']],
     ['ventiq', ['none', 'airiq']],
     ['fan', ['none', 'relay', 'pwm', 'analog', 'triac']],
@@ -114,6 +116,9 @@ const POWER_LABELS = Object.freeze({
 });
 
 const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
+    ['roomiq', Object.freeze({
+        base: 'Sense360 RoomIQ'
+    })],
     ['airiq', Object.freeze({
         base: 'Sense360 AirIQ'
     })],
@@ -136,6 +141,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
 ], { allowedKeys: MODULE_KEYS }));
 
 const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
+    ['roomiq', 'RoomIQ'],
     ['airiq', 'AirIQ'],
     ['ventiq', 'VentIQ'],
     ['fan', 'Fan / Switching'],
@@ -144,6 +150,7 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 ], { allowedKeys: MODULE_KEYS });
 
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
+    ['roomiq', value => value === 'roomiq' ? 'RoomIQ' : ''],
     ['airiq', value => value === 'base' ? 'AirIQ' : ''],
     ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
     ['fan', value => (value && value !== 'none') ? 'Fan' : ''],
@@ -1139,6 +1146,7 @@ function parseConfigStringState(configString) {
 
     const moduleState = {
         bathroom: false,
+        roomiq: 'none',
         airiq: 'none',
                 fan: 'none',
         voice: coreType,
@@ -1158,6 +1166,8 @@ function parseConfigStringState(configString) {
             moduleState.ventiq = normaliseModuleValue('ventiq', suffix ? suffix.toLowerCase() : 'airiq');
         } else if (segment === 'Bathroom') {
             moduleState.bathroom = true;
+        } else if (segment === 'RoomIQ' || segment.startsWith('RoomIQ')) {
+            moduleState.roomiq = 'roomiq';
         } else if (segment.startsWith('AirIQ')) {
             const suffix = segment.substring('AirIQ'.length);
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'airiq');
@@ -1213,6 +1223,7 @@ function buildManifestContext(manifest) {
                 if (!manifestAvailabilityIndex.has(baseKey)) {
                     manifestAvailabilityIndex.set(baseKey, {
                         modules: {
+                            roomiq: new Set(),
                             airiq: new Set(),
                             fan: new Set(),
                             voice: new Set(),
@@ -1818,6 +1829,9 @@ function syncConfigurationFromInputs() {
     }
 
     configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
+
+    // RoomIQ - sync from inputs
+    configuration.roomiq = document.querySelector('input[name="roomiq"]:checked')?.value || 'none';
 
     // LED Ring - sync from inputs
     configuration.led = document.querySelector('input[name="led"]:checked')?.value || 'none';
@@ -4912,7 +4926,7 @@ function applyConfiguration(initialConfig) {
         setStepNextButtonDisabled('#step-3', true);
     }
 
-    ['airiq', 'ventiq', 'fan', 'voice'].forEach(key => {
+    ['roomiq', 'airiq', 'ventiq', 'fan', 'voice'].forEach(key => {
         const value = configuration[key];
         const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
         if (input) {
@@ -4957,6 +4971,7 @@ function updateUrlFromConfiguration() {
 
     params.set('voice', configuration.voice || 'none');
     params.set('led', configuration.led || 'none');
+    params.set('roomiq', configuration.roomiq || 'none');
     params.set('airiq', configuration.airiq || 'none');
 
     params.set('fan', configuration.fan || 'none');
