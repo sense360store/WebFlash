@@ -6,123 +6,96 @@ Browser-based firmware installation for Sense360 ESP32 devices using ESP Web Too
 
 ## Overview
 
-WebFlash provides a step-by-step wizard for configuring and flashing Sense360 firmware to ESP32 devices directly from your browser. No drivers or local toolchains required.
+WebFlash provides a step-by-step wizard for configuring and flashing Sense360 firmware to ESP32 devices directly from your browser. It uses [ESP Web Tools](https://esphome.github.io/esp-web-tools/) and `esptool.js` over the Web Serial API &mdash; no drivers, no local toolchain.
 
 ## Requirements
 
-- Chromium-based browser (Chrome, Edge, Opera)
-- Windows, macOS, or Linux
-- USB data cable
-- Sense360 ESP32 device
+- Desktop Chromium-based browser (Chrome, Edge, or Opera) on Windows, macOS, or Linux
+- USB *data* cable (charge-only cables won't enumerate)
+- Sense360 ESP32 hub
 
-Note: Firefox and Safari have limited Web Serial support and may not work.
+WebFlash is **desktop-only**. Web Serial isn't available on iOS, Android Chrome, or any mobile browser, and Firefox and Safari do not support it. If you open the site on an unsupported browser the install path will be disabled and you'll see a banner pointing you to a supported one.
 
 ## Quick Start
 
 1. Navigate to https://sense360store.github.io/WebFlash/
-2. Configure your device:
-   - Select core type (Sense360 Core only; Core Voice coming soon)
-   - Select mounting type (Ceiling only; Wall coming soon)
-   - Choose power source (USB, Sense360 PoE PSU, or Sense360 Mains PSU)
-   - Enable required modules (Sense360 RoomIQ, Sense360 AirIQ, Sense360 VentIQ, Sense360 LED, Sense360 Fan Relay/PWM/DAC/TRIAC)
-3. Review the recommended firmware configuration
-4. Wait for firmware verification to complete
-5. Acknowledge **Before you flash** checklist
-6. Resolve preflight failures (and warnings when applicable)
-7. Click "Install Firmware" to flash via browser
-7. Follow ESP Web Tools prompts to complete installation
+2. Walk through the 5-step wizard:
+   1. **Mounting** &mdash; only Ceiling is currently selectable
+   2. **Core** &mdash; Sense360 Core (S360-100). Voice integration is not currently exposed
+   3. **Power** &mdash; USB, Sense360 PoE PSU (S360-410), or Sense360 Mains PSU (S360-400)
+   4. **Modules** &mdash; toggle Sense360 RoomIQ, AirIQ, VentIQ (when Bathroom mode is on), LED, and the Fan / switching board
+   5. **Review** &mdash; verify the matched firmware, resolve preflight failures, acknowledge the *Before you flash* checkbox, then click Install
+3. Follow the ESP Web Tools prompts in the browser to choose the serial port and complete installation
+4. After flashing, stay on the page &mdash; WebFlash will offer to provision Wi-Fi over the same USB connection (Improv Serial)
 
 ## Configuration Options
 
-### Core Type
-- **Core**: Standard Sense360 core module without voice hardware
-- **Core Voice**: Core with I2S microphone array and audio output for voice control (requires Rev B core or newer, J5 audio interface header)
+There is no Model / Variant axis &mdash; each Sense360 SKU is its own product. The wizard exposes the Ceiling-mount line today; a Wall branch lingers in markup as a legacy alias and is not a supported product.
 
-### Mounting Type
-- **Wall Mount**: Supports all power and module combinations
-- **Ceiling Mount**: Excludes fan module options
+### Mounting
+- **Ceiling** &mdash; the only supported mount
 
-### Power Source
-- **USB Power**: USB-C connection
-- **POE Module**: Power over Ethernet backplate
-- **PWR Module**: External power supply module
+### Core
+- **Sense360 Core (S360-100, R4)** &mdash; ESP32-S3 main board
 
-### Expansion Modules
-- **AirIQ Module**: None, Enabled
-- **Fan Module**: None, PWM, Analog (Wall mount only)
-- **LED Ring**: None, Enabled (Required for Core Voice)
+### Power
+- **USB** &mdash; USB-C from your computer
+- **Sense360 PoE PSU (S360-410, R4)** &mdash; PoE backplate, PoE &rarr; 5V
+- **Sense360 Mains PSU (S360-400, R4)** &mdash; mains &rarr; 5V via HLK-5M05
 
-### Release Channels
-- **Stable**: Production-ready firmware
-- **Preview**: Early access to upcoming features
-- **Beta**: Testing releases (not recommended for production)
+### Expansion modules
+
+| Module | SKU | Notes |
+|---|---|---|
+| Sense360 RoomIQ | S360-200 | Presence + comfort sensors (PIR, LD2450, SEN0609, LTR-303ALS, SHT4x, BMP351). |
+| Sense360 AirIQ | S360-210 | Air quality (CO₂, VOC, gas) with optional PM and HCHO connectors. Mutually exclusive with VentIQ &mdash; the Bathroom toggle switches between them on Ceiling mounts. |
+| Sense360 VentIQ | S360-211 | Bathroom-focused air quality with onboard SGP41 plus IR temp / SPS30 connectors. Available only on Ceiling + Bathroom mode. |
+| Sense360 LED | S360-300 | Ring of WS2812B LEDs. |
+| Sense360 Fan Relay | S360-310 | On / off relay for bathroom fans. |
+| Sense360 Fan PWM | S360-311 | 12V PWM fan driver (up to 4 fans with tach feedback). |
+| Sense360 Fan DAC | S360-312 | 0&ndash;10V analog fan driver (e.g. Cloudlift S12). Conflicts with AirIQ on the shared DAC bus. |
+| Sense360 TRIAC | S360-320 | Phase dimmer for mains fan or lamp. |
+
+### Release channels
+- **Stable** &mdash; production-ready firmware
+- **Preview** &mdash; early access to upcoming features
+- **Beta** &mdash; testing releases (not recommended for production)
 
 
-## Canonical Option Inventory Table
-
-The tables below are the **documentation source for operator-facing names**, while enforcement logic lives in code (see Source of Truth note at the end of this section).
-
-### Active (currently supported in UI)
-
-| Group | Friendly name | SKU | Rev | Legacy name | Status | Notes |
-|---|---|---|---|---|---|---|
-| Core | Sense360 Core | S360-CORE | Rev B+ | Core | Active | Core Voice is not selectable; `voice=none` only. |
-| Mount | Ceiling Mount | S360-MNT-C | Current | Ceiling | Active | Only mount currently enabled in the UI. |
-| Power | USB Power | S360-PWR-USB | Current | USB | Active | Available for Ceiling mount. |
-| Power | PoE Module | S360-PWR-POE | Current | POE | Active | Available for Ceiling mount. |
-| Power | PWR Module | S360-PWR-DC | Current | PWR | Active | Available for Ceiling mount. |
-| Module | AirIQ Base | S360-AIRQ-BASE | Rev B core+ | AirIQ Base | Active | Recommended AirIQ variant in current matrix. |
-| Module | VentIQ Base | S360-VIQ-BASE | To be added | BathroomAirIQ Base | Active | Only appears when Bathroom mode is enabled on Ceiling mount. |
-| Module | VentIQ Pro | S360-VIQ-PRO | To be added | BathroomAirIQ Pro | Active | Ceiling + Bathroom mode only. |
-| Module | Fan Relay | S360-Relay-C | R4 | Fan `none` variant | Active | In current model, fan group default maps to relay SKU. |
-| Module | Fan PWM | 12vFan_PWM_PulseCounter | R4 | Fan PWM | Active | Compatible alternative to AirIQ+analog conflict paths. |
-| Module | Fan DAC | Fan_GP8403 | R4 | Fan Analog | Active | Conflicts with AirIQ Base/Pro. |
-| Module | LED Ring Base | S360-LED-BASE | Rev A core+ | LED Base | Active | Optional LED ring module. |
-
-### Dropped / not currently selectable
-
-| Group | Friendly name | SKU | Rev | Legacy name | Status | Notes |
-|---|---|---|---|---|---|---|
-| Core | Core Voice | S360-CORE-VOICE | Rev B core+ | Voice | Dropped | Voice module currently exposes only `none`; voice assistant integration unavailable. |
-| Mount | Wall Mount | S360-MNT-W | Current | Wall | Dropped | Present in UI markup but currently disabled. |
-| Module | AirIQ Pro | S360-AIRQ-PRO | Rev C core+ | AirIQ Pro | Dropped | Variant exists in matrix/markup but currently disabled in UI selection. |
-| Module | Fan TRIAC | S360-FAN-TRIAC | N/A | TRIAC | Dropped | Mentioned in older docs text but not present in current option model. |
-
-### Source of Truth
-
-Constraint enforcement is implemented in `scripts/state.js` (UI gating/auto-resets) and module conflict metadata in `scripts/data/module-requirements.js`. Keep this README synchronized with those files whenever option logic changes.
-
-## Compatibility Matrix
+## Compatibility matrix
 
 Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allowed.
 
-### Mount × Power compatibility (current UI)
+### Mount × Power
 
-| Mount \ Power | USB | PoE | PWR |
+| Mount \ Power | USB | PoE | Mains |
 |---|---:|---:|---:|
 | Ceiling | ✅ | ✅ | ✅ |
-| Wall | 🚫 | 🚫 | 🚫 |
+| Wall | 🚫 (legacy alias only) | 🚫 | 🚫 |
 
-> Note: Wall exists in markup but is currently disabled, so all wall combinations are effectively blocked in the running wizard.
+### Mount × Module
 
-### Mount × Module compatibility (current UI constraints)
-
-| Mount | Bathroom mode | AirIQ | VentIQ (`bathroomairiq`) | Fan | LED |
+| Mount | Bathroom mode | AirIQ | VentIQ | Fan / switching | LED |
 |---|---|---|---|---|---|
-| Ceiling + Bathroom OFF | n/a | `none`, `base` (Pro disabled) | `none` only | forced `none` | `none`, `base` |
-| Ceiling + Bathroom ON | enabled | `none`, `base` (Pro disabled) | `none`, `base`, `pro` | forced `none` | `none`, `base` |
-| Wall (disabled) | n/a | modeled but not selectable | `none` forced | `none`,`pwm`,`analog` in logic model | modeled but not selectable |
+| Ceiling + Bathroom OFF | n/a | optional | hidden | Relay / PWM / DAC / TRIAC | optional |
+| Ceiling + Bathroom ON | enabled | hidden | optional | Relay / PWM / DAC / TRIAC | optional |
+| Wall | n/a | not selectable (legacy alias only) | not selectable | not selectable | not selectable |
 
 ### Enforced module-combination constraints
 
 | Combination | Result | Constraint source |
 |---|---|---|
-| AirIQ Base/Pro + Fan Analog | 🚫 blocked | Shared DAC bus conflict metadata in module requirements. |
-| AirIQ (Base/Pro) + VentIQ (Base/Pro) | ⚠️ conditionally allowed | Allowed only on **Ceiling mount + Bathroom mode ON**; combinations outside that scope remain blocked by UI gating. |
-| Mount != Ceiling | VentIQ hidden and reset to `none` | UI logic auto-hides VentIQ unless Ceiling + Bathroom. |
-| Mount != Wall | Fan auto-reset to `none` | UI logic forces fan none for non-wall mount. |
+| AirIQ + Fan DAC | 🚫 blocked | Shared DAC bus conflict in `scripts/data/module-requirements.js`. |
+| AirIQ + VentIQ simultaneously | 🚫 blocked | Mutually exclusive; the Bathroom toggle switches between them. |
+| VentIQ on a non-Ceiling mount | 🚫 hidden and reset | `requiresBathroom` + `ceilingOnly` in `module-requirements.js`. |
 
+### Source of truth
 
+- Hardware compatibility and conflicts: `scripts/data/module-requirements.js`
+- UI gating, visibility, auto-reset rules: `scripts/state.js`
+- Canonical SKU table: [`CLAUDE.md`](CLAUDE.md#sense360-hardware-reference-canonical-skus)
+
+Keep this README in sync with those files whenever option logic changes.
 
 ## Preflight checks and install gating
 

@@ -5,24 +5,25 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ## Completed Features
 
 ### Core Wizard Interface
-- [x] Step-by-step wizard interface (5 steps: Core → Mount → Power → Modules → Review)
-- [x] Core type selection (Core or Core Voice)
-- [x] Wall and Ceiling mounting support
-- [x] Power source options (USB, POE, PWR)
+- [x] Step-by-step wizard interface (5 steps: Mounting &rarr; Core &rarr; Power &rarr; Modules &rarr; Review)
+- [x] Sense360 Core (S360-100) selection (Voice integration not currently exposed)
+- [x] Ceiling mount support (Wall lingers as legacy alias only)
+- [x] Power source options (USB, Sense360 PoE PSU S360-410, Sense360 Mains PSU S360-400)
 - [x] Visual progress indicator with step navigation
-- [x] Mobile-responsive design
+- [x] Desktop-only layout &mdash; the install path requires Web Serial on Chrome / Edge / Opera
 
-### Module Support
-- [x] AirIQ Module (Base/Pro) - Temperature, humidity, VOC/NOx sensors
-- [x] Bathroom AirIQ Module (Base/Pro) - Ceiling-only with pressure sensor
-- [x] Fan Module (PWM/Analog) - External fan control
-- [x] Ceiling fan support
+### Module support
+- [x] Sense360 AirIQ (S360-210) &mdash; CO₂, VOC, gas with optional PM / HCHO connectors
+- [x] Sense360 VentIQ (S360-211) &mdash; bathroom-focused air quality (Ceiling + Bathroom mode only; mutually exclusive with AirIQ)
+- [x] Sense360 LED (S360-300) &mdash; WS2812B ring
+- [x] Fan / switching family: Fan Relay (S360-310), Fan PWM (S360-311), Fan DAC (S360-312), TRIAC (S360-320)
+- [ ] Sense360 RoomIQ (S360-200) &mdash; reserved for future builds, not yet wired into the wizard module matrix
 
-### Configuration & Compatibility
-- [x] Module conflict detection with visual feedback
-- [x] Hardware compatibility validation (core revision, headers)
-- [x] Firmware recommendation engine
-- [x] Default recommended bundle (Wall + USB + AirIQ Base)
+### Configuration & compatibility
+- [x] Module conflict detection with visual feedback (e.g. AirIQ &harr; Fan DAC shared-bus block)
+- [x] Hardware compatibility validation (core revision, headers, mount/bathroom gating)
+- [x] Firmware recommendation engine driven by `config_string` matching
+- [x] Default recommended bundle (Ceiling + USB + Sense360 AirIQ)
 - [x] Quick-start presets for common configurations
 
 ### Installation Features

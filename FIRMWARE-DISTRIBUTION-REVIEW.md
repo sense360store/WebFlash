@@ -1,5 +1,7 @@
 # Firmware Distribution & Upload Process Review
 
+> **Status note (May 2026):** this document is a historical process review and is partly out of date. The pain-point analysis and CI/CD recommendations still apply, but the **naming examples below pre-date the canonical SKU model**. For current naming and the authoritative SKU table see [`CLAUDE.md`](CLAUDE.md#sense360-hardware-reference-canonical-skus) and [`DEVELOPER.md`](DEVELOPER.md#canonical-module-token-policy). Treat the legacy `AirIQBase` / `AirIQPro` / `BathroomAirIQ` / `FanPWM` / `FanAnalog` / `CoreVoice` / `Wall` tokens that appear here as historical &mdash; they must not be used in new artifacts.
+
 ## Executive Summary
 
 This document reviews the current firmware distribution and uploading process to GitHub for the WebFlash project, identifies pain points from an admin perspective, and proposes improvements including CI/CD automation opportunities.
@@ -60,15 +62,15 @@ The current admin process for uploading a new firmware version:
 # Step 1: Build firmware locally (outside this repo)
 # Admin compiles firmware in PlatformIO/ESP-IDF
 
-# Step 2: Rename binary to follow naming convention
-mv firmware.bin Sense360-Core-Wall-USB-v1.2.0-stable.bin
+# Step 2: Rename binary to follow the canonical naming convention
+mv firmware.bin Sense360-Ceiling-USB-AirIQ-v1.2.0-stable.bin
 
 # Step 3: Copy to WebFlash repository
-cp Sense360-Core-Wall-USB-v1.2.0-stable.bin \
+cp Sense360-Ceiling-USB-AirIQ-v1.2.0-stable.bin \
    /path/to/WebFlash/firmware/configurations/
 
 # Step 4: Create release notes (optional)
-nano firmware/configurations/Sense360-Core-Wall-USB-v1.2.0-stable.md
+nano firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.2.0-stable.md
 # (for preview/beta/dev channels use firmware/previews/)
 
 # Step 5: Run manifest generator
@@ -76,7 +78,7 @@ python3 scripts/gen-manifests.py --summary
 
 # Step 6: Commit and push
 git add .
-git commit -m "Add Core Wall USB v1.2.0 stable firmware"
+git commit -m "Add Ceiling USB AirIQ v1.2.0 stable firmware"
 git push origin main
 
 # Step 7: GitHub Actions deploys to GitHub Pages automatically
@@ -106,10 +108,15 @@ gh release create v1.2.0 \
 Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 ```
 
-**Examples of valid names:**
-- `Sense360-Core-Wall-USB-v1.0.0-stable.bin`
-- `Sense360-CoreVoice-Ceiling-POE-AirIQPro-v2.0.0-preview.bin`
-- `Sense360-Core-Ceiling-PWR-BathroomAirIQ-FanPWM-v1.0.0-stable.bin`
+**Examples of valid names (canonical, current):**
+- `Sense360-Ceiling-USB-v1.0.0-stable.bin`
+- `Sense360-Ceiling-POE-AirIQ-v2.0.0-preview.bin`
+- `Sense360-Ceiling-PWR-VentIQ-v1.0.0-stable.bin`
+
+**Historical examples that use disallowed tokens (for reference only):**
+- `Sense360-Core-Wall-USB-v1.0.0-stable.bin` (Wall is dropped)
+- `Sense360-CoreVoice-Ceiling-POE-AirIQPro-v2.0.0-preview.bin` (Voice integration is not exposed; AirIQPro replaced by plain AirIQ)
+- `Sense360-Core-Ceiling-PWR-BathroomAirIQ-FanPWM-v1.0.0-stable.bin` (BathroomAirIQ &rarr; VentIQ; FanPWM &rarr; Fan)
 
 **Issues:**
 - 9 components to correctly assemble
@@ -228,11 +235,11 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 ### Recommendation: Enhanced Naming
 
-Consider adding build metadata as optional suffix:
+Consider adding build metadata as optional suffix (using current canonical naming):
 ```
-Sense360-Core-Wall-USB-v1.2.0-stable.bin           # Standard
-Sense360-Core-Wall-USB-v1.2.0-stable+b1234.bin     # With build number
-Sense360-Core-Wall-USB-v1.2.0-stable+abc1234.bin   # With git short SHA
+Sense360-Ceiling-USB-AirIQ-v1.2.0-stable.bin           # Standard
+Sense360-Ceiling-USB-AirIQ-v1.2.0-stable+b1234.bin     # With build number
+Sense360-Ceiling-USB-AirIQ-v1.2.0-stable+abc1234.bin   # With git short SHA
 ```
 
 ---
@@ -476,47 +483,11 @@ jobs:
 
 ## Appendix: Configuration Matrix
 
-Current required configurations (from CI validation):
+> The sample matrix that previously lived here used legacy `Wall` / `CoreVoice` / `AirIQBase` / `AirIQPro` / `BathroomAirIQ` tokens and is no longer authoritative.
 
-| Mount | Power | Modules | Voice | Status |
-|-------|-------|---------|-------|--------|
-| Ceiling | USB | - | No | Required |
-| Ceiling | USB | AirIQ | No | Required |
-| Ceiling | POE | AirIQBase | No | Required |
-| Ceiling | POE | AirIQPro | No | Required |
-| Ceiling | POE | Bathroom | No | Required |
-| Ceiling | PWR | AirIQ | No | Required |
-| Ceiling | PWR | AirIQ | No | Required |
-| Ceiling | PWR | AirIQ-Fan | No | Required |
-| Ceiling | PWR | AirIQ-Bathroom | No | Required |
-| Ceiling | PWR | AirIQ-Fan-LED | No | Required |
-| Ceiling | PWR | BathroomAirIQ | No | Required |
-| Ceiling | POE | AirIQ | No | Required |
-| Ceiling | POE | Fan | No | Required |
-| Ceiling | USB | Fan | No | Required |
-| Ceiling | USB | - | Yes | Required |
-| Ceiling | POE | AirIQ | Yes | Required |
-| Ceiling | PWR | AirIQ-Fan | Yes | Required |
-| Wall | USB | - | No | Required |
-| Wall | USB | AirIQ | No | Required |
-| Wall | USB | AirIQPro | No | Required |
-| Wall | POE | AirIQBase | No | Required |
-| Wall | POE | AirIQ | No | Required |
-| Wall | PWR | - | No | Required |
-| Wall | PWR | AirIQ | No | Required |
-| Wall | PWR | AirIQ | No | Required |
-| Wall | PWR | AirIQ-Fan | No | Required |
-| Wall | PWR | AirIQ-LED | No | Required |
-| Wall | PWR | AirIQ-Fan-LED | No | Required |
-| Wall | POE | AirIQ | No | Required |
-| Wall | POE | Fan | No | Required |
-| Wall | USB | Fan | No | Required |
-| Wall | USB | - | Yes | Required |
-| Wall | POE | AirIQ | Yes | Required |
-| Wall | PWR | AirIQ-Fan | Yes | Required |
-| - | - | Rescue | - | Required |
+The current required configurations are defined as the `REQUIRED_CONFIGS` allowlist in [`.github/workflows/firmware-publish.yml`](.github/workflows/firmware-publish.yml). At the time of writing the allowlist contains roughly 44 entries keyed by canonical `config_string` (for example `Ceiling-POE-AirIQ`, `Ceiling-POE-VentIQ`, `Ceiling-USB-Fan`, `Rescue`). Adding a new permanent firmware means adding its `config_string` there.
 
-**Total:** 35 required configurations
+For the live shape of every published build (channel, version, hashes, structured metadata), inspect the generated [`manifest.json`](manifest.json).
 
 ---
 

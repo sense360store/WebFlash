@@ -63,32 +63,35 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 ### Components
 
-**CoreType**: `Core` or `CoreVoice`
-- `Core` - Standard core module without voice capabilities
-- `CoreVoice` - Core module with voice assistant integration (I2S microphone array, audio DAC)
+**CoreType**: `Core`
+- `Core` &mdash; Sense360 Core (S360-100). Voice integration is not currently exposed in the wizard, so all builds use `Core`.
 
-**MountType**: `Wall` or `Ceiling`
+**MountType**: `Ceiling`
+- Ceiling is the only supported mount today. `Wall` lingers as a legacy alias for older filenames but is not a current product.
 
 **PowerType**: `USB`, `POE`, or `PWR`
+- `USB` &mdash; USB-C from the host computer
+- `POE` &mdash; Sense360 PoE PSU (S360-410)
+- `PWR` &mdash; Sense360 Mains PSU (S360-400)
 
-**Modules** (optional): Combination of:
-- `AirIQBase`, `AirIQPro`, `AirIQProv` - Air quality stack for particulate, VOC, and CO₂ sensors
-- `VentIQBase`, `VentIQPro` - Bathroom-optimized air quality stack (Ceiling + Bathroom mode only)
-- `FanPWM`, `FanAnalog` - Output driver for external fan control
-- `LED` - Addressable LED ring for visual feedback (Required for CoreVoice)
+**Modules** (optional, canonical tokens only): combination of:
+- `AirIQ` &mdash; Sense360 AirIQ (S360-210). CO₂, VOC, gas, plus connectors for SPS30 PM and SFA30 HCHO.
+- `VentIQ` &mdash; Sense360 VentIQ (S360-211). Bathroom-focused air quality. Ceiling + Bathroom mode only; mutually exclusive with `AirIQ`.
+- `Fan`, `FanRelay`, `FanPWM`, `FanAnalog`, `FanTRIAC` &mdash; the Fan / switching SKUs (S360-310 Relay, S360-311 PWM, S360-312 DAC, S360-320 TRIAC). The current `validate-naming-policy.js` collapses `FanPWM`/`FanAnalog` to the bare `Fan` token; per-variant tokens travel through hyphenated config segments (e.g. `Fan-PWM`).
+- `LED` &mdash; Sense360 LED (S360-300). Ring of WS2812B LEDs.
+- `RoomIQ` &mdash; Sense360 RoomIQ (S360-200). Presence + comfort sensors. Not yet wired into the wizard module matrix; reserved for future builds.
 
-**Module Constraints:**
-- `Bathroom` is only available for Ceiling installations
-- `VentIQ` requires `Bathroom` to be enabled
-- `AirIQ` and `VentIQ` can be combined only when `Bathroom` is enabled on `Ceiling` installations; combinations outside that scope remain unsupported
-- `CoreVoice` requires `LED` ring module (voice cores mandate LED rings with integrated microphone)
+**Module constraints:**
+- `Bathroom` mode is only available on Ceiling installations, and it switches AirIQ &rarr; VentIQ visibility (they are mutually exclusive).
+- `Fan-DAC` (`FanAnalog`) conflicts with `AirIQ` on the shared DAC bus.
 
-**Module Sensors:**
-- AirIQ Base: Basic air quality sensors (VOC, CO₂)
-- AirIQ Pro: Base + particulate sensors (PM1.0/PM2.5/PM10)
-- VentIQ Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
-- VentIQ Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
-- LED Ring: WS2812B addressable LEDs, integrated I2S microphone (for voice models)
+**No Model / Variant axis.** Each Sense360 SKU is its own product. Do **not** introduce `Base` / `Pro` suffixes or model/variant fields when adding new firmware. Add a new SKU entry to `scripts/data/module-requirements.js` and a new module key to `MODULE_KEYS` in `scripts/state.js` instead. See [CLAUDE.md](CLAUDE.md#sense360-hardware-reference-canonical-skus) for the authoritative SKU list.
+
+**Module sensors:**
+- AirIQ (S360-210): SCD41 (CO₂), SGP41 (VOC), MICS-4514 + STM8 (gas); SPS30 (PM) and SFA30 (HCHO) connectors
+- VentIQ (S360-211): SGP41 onboard; IR temperature and SPS30 PM connectors
+- RoomIQ (S360-200): PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP351 (pressure)
+- LED (S360-300): WS2812B addressable LEDs
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
@@ -98,25 +101,29 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 ### Canonical module token policy
 
 Use these module tokens in firmware filenames and manifest metadata:
-- `AirIQBase`, `AirIQPro`
-- `VentIQBase`, `VentIQPro`
-- `FanPWM`, `FanAnalog`, `LED`
+- `AirIQ`
+- `VentIQ`
+- `Fan` (with hyphenated variant segments where needed: `Fan-PWM`, `Fan-Relay`)
+- `LED`
 
-Legacy tokens (`BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro`) are supported only as read-time aliases by tooling and URL parsing; they must not be used in new filenames or metadata.
+The following legacy tokens are **disallowed** in new filenames; the validator treats them as migrations:
+- `AirIQBase` &rarr; `AirIQ`
+- `AirIQProv` &rarr; `AirIQPro` (and `AirIQPro` itself is being phased out alongside the Base/Pro split &mdash; prefer plain `AirIQ`)
+- `BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro` &rarr; `Bathroom` (and use `VentIQ` for the SKU when describing the new module)
+- `FanPWM`, `FanAnalog` (no hyphen) &rarr; `Fan`
+
+Tooling (`gen-manifests.py`, `url-config.js`) accepts the legacy tokens as read-time aliases so old shareable URLs and existing manifests still resolve, but they must not appear in new artifacts.
 
 ### Examples
 
 ```
-Sense360-Core-Wall-USB-v1.0.0-stable.bin
-Sense360-Core-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-POE-LED-v1.0.0-stable.bin
-Sense360-CoreVoice-Wall-PWR-LED-AirIQPro-v1.2.0-preview.bin
-Sense360-Core-Ceiling-POE-AirIQPro-v2.0.0-beta.bin
-Sense360-Core-Ceiling-POE-VentIQBase-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-PWR-LED-VentIQPro-v1.0.0-stable.bin
-Sense360-Core-Wall-USB-FanPWM-v1.0.0-stable.bin
-Sense360-Core-Wall-USB-LED-v1.0.0-stable.bin
-Sense360-Core-Ceiling-POE-LED-AirIQBase-v1.0.0-stable.bin
+Sense360-Ceiling-USB-v1.0.0-stable.bin
+Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin
+Sense360-Ceiling-POE-VentIQ-v1.0.0-stable.bin
+Sense360-Ceiling-PWR-AirIQ-v1.0.1-stable.bin
+Sense360-Ceiling-USB-Fan-v1.0.0-stable.bin
+Sense360-Ceiling-POE-LED-v1.0.0-stable.bin
+Sense360-Rescue-v1.0.0-rescue.bin
 ```
 
 
@@ -153,13 +160,13 @@ Release notes files must match their firmware file:
 
 ```
 # Firmware file
-Sense360-Core-Wall-USB-v1.0.0-stable.bin
+Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin
 
 # Release notes file (stable)
-firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.md
+firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.md
 
 # Release notes file (preview/beta/dev)
-firmware/previews/Sense360-Core-Wall-USB-v1.1.0-preview.md
+firmware/previews/Sense360-Ceiling-USB-AirIQ-v1.1.0-preview.md
 ```
 
 ### Format
@@ -168,9 +175,9 @@ firmware/previews/Sense360-Core-Wall-USB-v1.1.0-preview.md
 # Sense360 [Config] v[Version] ([Channel])
 
 ## Configuration Details
-- **Mounting Type**: [Wall/Ceiling]
+- **Mounting Type**: Ceiling
 - **Power Option**: [USB/POE/PWR]
-- **Expansion Modules**: [Modules list]
+- **Expansion Modules**: [Modules list using canonical SKU names]
 - **Chip Family**: ESP32-S3
 - **Version**: v[Version]
 - **Channel**: [stable/preview/beta]
@@ -268,11 +275,11 @@ open http://localhost:5000
 
 ```bash
 # 1. Add firmware to repository
-cp your-firmware.bin firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin
+cp your-firmware.bin firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin
 
 # 2. Create release notes (optional)
-cat > firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.md << 'EOF'
-# Sense360 Core Wall USB v1.0.0 (stable)
+cat > firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.md << 'EOF'
+# Sense360 Ceiling USB AirIQ v1.0.0 (stable)
 [Release notes content]
 EOF
 
@@ -284,7 +291,7 @@ python3 -m http.server 5000  # Test locally
 
 # 5. Commit and push
 git add .
-git commit -m "Add Core Wall USB v1.0.0 stable firmware"
+git commit -m "Add Ceiling USB AirIQ v1.0.0 stable firmware"
 git push origin main
 ```
 
@@ -378,7 +385,7 @@ Main catalog containing all firmware builds:
   "name": "Sense360 Firmware Collection",
   "builds": [
     {
-      "name": "Sense360-Core-Wall-USB-v1.0.0-stable",
+      "name": "Sense360-Ceiling-USB-AirIQ-v1.0.0-stable",
       "version": "1.0.0",
       "channel": "stable",
       "chipFamily": "ESP32-S3",
@@ -386,7 +393,7 @@ Main catalog containing all firmware builds:
       "description": "Firmware description",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin",
           "offset": 0
         }
       ]
@@ -401,7 +408,7 @@ Individual manifests for ESP Web Tools:
 
 ```json
 {
-  "name": "Sense360-Core-Wall-USB-v1.0.0-stable",
+  "name": "Sense360-Ceiling-USB-AirIQ-v1.0.0-stable",
   "version": "1.0.0",
   "builds": [
     {
@@ -409,7 +416,7 @@ Individual manifests for ESP Web Tools:
       "improv": true,
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin",
           "offset": 0
         }
       ]
