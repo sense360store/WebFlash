@@ -23,7 +23,7 @@ This is the **authoritative SKU list** for the supported hardware. The **Friendl
 | Group | Type | Friendly name | SKU | Rev | Old name | What it does |
 |---|---|---|---|---|---|---|
 | Ceiling | Hub | Sense360 Core | S360-100 | R4 | `360Core_Ceiling_V3_R` | Main board. Has the ESP32-S3 and connectors for all other modules. |
-| Ceiling | Sensor | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board. PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp and humidity), BMP351 (pressure). |
+| Ceiling | Sensor | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board. PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp and humidity), BMP581 (pressure). |
 | Ceiling | Sensor | Sense360 AirIQ | S360-210 | R4 | `AirlQ Ceiling` (typo in old name) | Air quality board. CO2 (SCD41), VOC (SGP41), gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30). |
 | Ceiling | Sensor | Sense360 VentIQ | S360-211 | R4 | Bathroom Pro | Smaller air quality board for bathrooms. SGP41 on board. Connectors for IR temp and SPS30. |
 | Ceiling | Indicator | Sense360 LED | S360-300 | R4 | LED Ring | Ring of WS2812B LEDs. |
@@ -37,7 +37,7 @@ This is the **authoritative SKU list** for the supported hardware. The **Friendl
 Notes:
 
 - The current wizard exposes Ceiling mount only; a "Wall" branch lingers in markup/legacy aliases but is not a supported product.
-- `scripts/data/module-requirements.js` is the runtime source of truth for which SKUs are wired up, their headers, and conflicts. **Update both this file and the wizard SKU labels in `state.js`** (`MODULE_LABELS`, `MODULE_VARIANT_LABELS`, `MODULE_SEGMENT_FORMATTERS`) when introducing a new SKU; do not regress to model/variant nomenclature.
+- **Wizard coverage of the table:** only the sensor/driver/indicator SKUs are *separately selectable* via `scripts/data/module-requirements.js` (AirIQ S360-210, VentIQ S360-211, LED S360-300, Fan Relay S360-310, Fan PWM S360-311, Fan DAC S360-312, TRIAC S360-320). The Core (S360-100) is implicit — every flashable device is a Core. RoomIQ (S360-200) is bundled with Core and is not a standalone wizard option. The Mains PSU (S360-400) and PoE PSU (S360-410) are implied by the `power` selection (`pwr` / `poe`) rather than modeled as their own SKU entries. When introducing a new *selectable* SKU, add it to `module-requirements.js` and update the wizard SKU labels in `state.js` (`MODULE_LABELS`, `MODULE_VARIANT_LABELS`, `MODULE_SEGMENT_FORMATTERS`) — do not regress to model/variant nomenclature.
 
 ## Commands
 
@@ -94,7 +94,7 @@ Other notable pieces:
 
 `scripts/gen-manifests.py` is the only way `manifest.json` and `firmware-*.json` should change — these files are **generated, not hand-edited**. It scans `firmware/`, parses each filename via the canonical pattern (see below), produces a single `manifest.json` with full per-build metadata (including hashes and a `config_string` like `Ceiling-POE-AirIQ`), and writes one `firmware-<index>.json` per build (the standard ESP Web Tools per-product manifest format).
 
-The Python script still carries a legacy `model` / `variant` code path for binaries placed outside `firmware/configurations/`. **Treat this as deprecated** — do not introduce new firmware down that branch and do not extend Model/Variant metadata in new code. New SKUs and configurations belong in `firmware/configurations/` with the canonical `Sense360-...-vX.Y.Z-<channel>.bin` filename, identified by SKU/config-string only.
+The Python script still carries a legacy `model` / `variant` code path for binaries placed outside `firmware/configurations/`, and `scripts/compat-config.js` keeps a matching frontend lookup (`createModelSignature`, `lookup.type === 'model'`) for legacy share-links that arrive with `?model=…&variant=…` parameters. **Treat both as deprecated** — do not introduce new firmware down that branch and do not extend Model/Variant metadata in new code. New SKUs and configurations belong in `firmware/configurations/` with the canonical `Sense360-...-vX.Y.Z-<channel>.bin` filename, identified by SKU/config-string only.
 
 `scripts/validate-naming-policy.js` enforces:
 
@@ -102,7 +102,7 @@ The Python script still carries a legacy `model` / `variant` code path for binar
 - Disallowed token migrations: `AirIQProv` → `AirIQPro`, `AirIQBase` → `AirIQ`, `BathroomAirIQ` → `Bathroom`, `FanPWM`/`FanAnalog` → `Fan`.
 - Channel placement: only `*-stable.md` is allowed under `firmware/configurations/`. Preview/beta/dev release notes belong in `firmware/previews/`.
 
-`.github/workflows/firmware-publish.yml` runs unit tests, the naming-policy validator, the manifest generator, and a `REQUIRED_CONFIGS` allowlist that fails the build if any of ~40 expected `config_string` values are missing from `manifest.json`. When updating that allowlist, search the workflow for `REQUIRED_CONFIGS` — adding a new firmware also means adding its config_string there if it is meant to be permanent.
+`.github/workflows/firmware-publish.yml` runs unit tests, the naming-policy validator, the manifest generator, and a `REQUIRED_CONFIGS` allowlist that fails the build if any of the expected `config_string` values are missing from `manifest.json`. The current allowlist holds 9 entries (`Ceiling-POE-AirIQ`, `Ceiling-POE-VentIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-AirIQ`, `Ceiling-USB-Fan`, `Ceiling-Voice-POE-AirIQ`, `Ceiling-Voice-USB`, `Rescue`); the live array in the workflow file is the source of truth. When updating that allowlist, search the workflow for `REQUIRED_CONFIGS` — adding a new firmware also means adding its config_string there if it is meant to be permanent.
 
 ### Frontend ↔ pipeline contract
 

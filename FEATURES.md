@@ -5,24 +5,23 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ## Completed Features
 
 ### Core Wizard Interface
-- [x] Step-by-step wizard interface (5 steps: Core → Mount → Power → Modules → Review)
-- [x] Core type selection (Core or Core Voice)
-- [x] Wall and Ceiling mounting support
-- [x] Power source options (USB, POE, PWR)
+- [x] Step-by-step wizard interface (5 steps: Mount → Power → Modules → Review → Install)
+- [x] Ceiling mount support (Wall is documented as legacy and not selectable)
+- [x] Power source options (USB, Sense360 PoE PSU, Sense360 Mains PSU)
 - [x] Visual progress indicator with step navigation
-- [x] Mobile-responsive design
+- [x] Desktop Chromium browsers only (Web Serial requirement)
 
 ### Module Support
-- [x] AirIQ Module (Base/Pro) - Temperature, humidity, VOC/NOx sensors
-- [x] Bathroom AirIQ Module (Base/Pro) - Ceiling-only with pressure sensor
-- [x] Fan Module (PWM/Analog) - External fan control
-- [x] Ceiling fan support
+- [x] Sense360 AirIQ (`S360-210`) — CO₂, VOC, gas; optional PM/HCHO connectors
+- [x] Sense360 VentIQ (`S360-211`) — Bathroom-focused air quality (Ceiling + Bathroom mode only)
+- [x] Sense360 Fan drivers — Relay (`S360-310`), PWM (`S360-311`), DAC (`S360-312`)
+- [x] Sense360 LED (`S360-300`) — addressable WS2812B ring; carries the I2S microphone for voice builds
 
 ### Configuration & Compatibility
 - [x] Module conflict detection with visual feedback
 - [x] Hardware compatibility validation (core revision, headers)
 - [x] Firmware recommendation engine
-- [x] Default recommended bundle (Wall + USB + AirIQ Base)
+- [x] Default recommended bundle (Ceiling + Sense360 PoE PSU + Sense360 AirIQ)
 - [x] Quick-start presets for common configurations
 
 ### Installation Features
