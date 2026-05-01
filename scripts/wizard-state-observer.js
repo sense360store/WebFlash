@@ -2,7 +2,7 @@
 // Works out-of-the-box with radios/selects; easy to wire later if you add a central store.
 (function () {
   const state = {
-    mount: null,   // 'wall' | 'ceiling'
+    mount: null,   // 'ceiling' (Wall is documented as legacy and not selectable)
     power: null,   // 'usb' | 'poe' | 'pwr'
     airiq: null,   // 'none' | 'airiq' | 'ventiq'
     fan: null      // 'none' | 'relay' | 'pwm' | 'analog' | 'triac'
@@ -17,7 +17,7 @@
   function scan() {
     // Mounting
     state.mount = pick('#step-1, .wizard-step[data-step="1"], .wizard-step:has(h2:contains("Mounting"))',
-      { 'Wall': 'wall', 'Ceiling': 'ceiling' });
+      { 'Ceiling': 'ceiling' });
     // Power
     state.power = pick('#step-3, .wizard-step[data-step="3"], .wizard-step:has(h2:contains("Power"))',
       { 'USB': 'usb', 'POE': 'poe', 'PWR': 'pwr' });

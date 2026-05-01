@@ -63,8 +63,8 @@ const optionTooltips = {
             }
         },
         poe: {
-            title: 'POE Module',
-            summary: 'Deliver data and power through a single Ethernet cable using the POE expansion module.',
+            title: 'Sense360 PoE PSU',
+            summary: 'Deliver data and power through a single Ethernet cable using the Sense360 PoE PSU (S360-410).',
             pros: [
                 'Supports IEEE 802.3af/at injectors and switches up to 25 W.',
                 'Network resilience with auto-restart if power is interrupted.'
@@ -83,8 +83,8 @@ const optionTooltips = {
             }
         },
         pwr: {
-            title: 'PWR Module',
-            summary: 'Use the barrel-jack PWR module when a building low-voltage feed is available.',
+            title: 'Sense360 Mains PSU',
+            summary: 'Use the Sense360 Mains PSU (S360-400, HLK-5M05) when a building low-voltage feed is available.',
             pros: [
                 'Accepts 12–24 VDC input, enabling centralized power supplies.',
                 'Integrated surge suppression protects downstream modules.'

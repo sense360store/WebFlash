@@ -319,7 +319,7 @@ function parseDeviceInfo(data) {
     }
 
     // Parse config string if present
-    const configMatch = data.match(/(Wall|Ceiling)-(USB|POE|PWR)(-[A-Za-z]+)*/);
+    const configMatch = data.match(/Ceiling-(USB|POE|PWR)(-[A-Za-z]+)*/);
     if (configMatch) {
         info.firmwareName = configMatch[0];
         info.hasExistingFirmware = true;
