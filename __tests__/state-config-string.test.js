@@ -90,25 +90,10 @@ describe('parseConfigStringState handles both legacy and current tokens', () => 
         ));
         expect(configStrings.length).toBeGreaterThan(0);
 
-        // Standalone legacy configs that the parser is not expected to decode:
-        //   - single-segment specials (POE, Rescue)
-        //   - configs without a power token (the parser requires mounting + power)
-        //   - non-Sense360 mounting prefixes (Mini-, Fan-)
-        //   - the legacy Ceiling-S3-Full debug build
+        // Standalone special-case configs that the parser is not expected to
+        // decode (single-segment recovery build).
         const knownLegacy = new Set([
-            'Fan-PWM',
-            'Mini-AirIQ',
-            'Mini-AirIQ-Advanced',
-            'Mini-AirIQ-Basic',
-            'Mini-AirIQ-LD2412',
-            'POE',
-            'Rescue',
-            'Ceiling-S3-Full',
-            'Core-Ceiling',
-            'Core-Ceiling-VentIQ',
-            'Core-Wall',
-            'CoreVoice-Ceiling',
-            'CoreVoice-Wall'
+            'Rescue'
         ]);
 
         for (const configString of configStrings) {

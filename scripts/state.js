@@ -4345,12 +4345,11 @@ async function findCompatibleFirmware() {
     const previousConfigString = window.currentConfigString;
     let configString = '';
 
-    // Core type (voice) comes first
-    configString += 'Core';
-    configString += `-${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
+    configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
     configString += `-${configuration.power.toUpperCase()}`;
 
     configString += formatConfigSegment('airiq', configuration.airiq);
+    configString += formatConfigSegment('ventiq', configuration.ventiq);
     configString += formatConfigSegment('fan', configuration.fan);
 
     window.currentConfigString = configString;

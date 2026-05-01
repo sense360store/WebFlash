@@ -130,61 +130,27 @@ jobs:
         run: |
           set -euo pipefail
           # =============================================================
-          # Test Configuration Matrix
+          # Canonical configuration matrix
           # =============================================================
-          # Valid combinations based on hardware ruleset:
-          #   Core: CORE-C, CORE-V-C (Ceiling) | CORE-W, CORE-V-W (Wall)
-          #   Power: USB, POE, PWR
-          #   Modules: AirIQ, Bathroom (Ceiling only), Comfort, Presence, Fan
-          #   Constraints:
-          #     - AirIQ and Bathroom cannot be combined
-          #     - Bathroom is ceiling-only
+          # Per CLAUDE.md the wizard exposes Ceiling mount only and the
+          # firmware taxonomy is flat (no Model/Variant axis). Allowed
+          # config_string segments are Mounting-Power-Modules, where:
+          #   Mounting: Ceiling
+          #   Power:    USB | POE | PWR
+          #   Modules:  AirIQ | VentIQ | Fan (Bathroom drives AirIQ ↔ VentIQ)
+          # Rescue is a standalone unbricking build.
           # =============================================================
 
           REQUIRED_CONFIGS=(
-            "Ceiling-POE-AirIQPro"
-            "Ceiling-POE-VentIQBase"
+            "Ceiling-POE-AirIQ"
+            "Ceiling-POE-VentIQ"
             "Ceiling-PWR-AirIQ"
-            "Ceiling-PWR-AirIQPro"
-            "Ceiling-S3-Full"
             "Ceiling-USB"
             "Ceiling-USB-AirIQ"
             "Ceiling-USB-Fan"
             "Ceiling-Voice-POE-AirIQ"
             "Ceiling-Voice-USB"
-            "Core-Ceiling"
-            "Core-Ceiling-POE"
-            "Core-Ceiling-PWR"
-            "Core-Ceiling-USB"
-            "Core-Ceiling-VentIQBase"
-            "Core-Wall"
-            "Core-Wall-POE"
-            "Core-Wall-PWR"
-            "Core-Wall-USB"
-            "CoreVoice-Ceiling"
-            "CoreVoice-Ceiling-POE"
-            "CoreVoice-Ceiling-PWR"
-            "CoreVoice-Ceiling-USB"
-            "CoreVoice-Wall"
-            "CoreVoice-Wall-POE"
-            "CoreVoice-Wall-PWR"
-            "CoreVoice-Wall-USB"
-            "Fan-PWM"
-            "Mini-AirIQ"
-            "Mini-AirIQ-Advanced"
-            "Mini-AirIQ-Basic"
-            "Mini-AirIQ-LD2412"
-            "POE"
             "Rescue"
-            "Wall-POE-AirIQ"
-            "Wall-PWR"
-            "Wall-PWR-AirIQ"
-            "Wall-USB"
-            "Wall-USB-AirIQ"
-            "Wall-USB-AirIQPro"
-            "Wall-USB-Fan"
-            "Wall-Voice-POE-AirIQ"
-            "Wall-Voice-USB"
           )
 
           missing=0

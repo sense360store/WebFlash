@@ -1,6 +1,6 @@
 {
   "name": "Sense360 Modular Platform Firmware",
-  "version": "3.0.1",
+  "version": "2.0.0",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -21,7 +21,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -54,7 +54,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -87,7 +87,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -120,7 +120,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -153,7 +153,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.135697+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -186,7 +186,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.422559+00:00",
+      "build_date": "2026-05-01T11:37:43.919954+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -219,7 +219,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -252,7 +252,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.422559+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -285,7 +285,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T15:13:40.090290+00:00",
+      "build_date": "2026-04-30T15:12:58.139560+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -305,40 +305,6 @@
     },
     {
       "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-S3-Full configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-S3-Full-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "dd241495d8c030ef1ff46c672211b86d",
-          "sha256": "b3a5f126797d2b57603fbd4296fbf5a8530e92525c793b488b6699acf7b1e9b0",
-          "signature": "ZnVmteF9JN2af/MAgzZrPAkKhrDps3U4bY8NIY5gZB4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.446559+00:00",
-      "file_size": 1105312,
-      "improv": true,
-      "md5": "dd241495d8c030ef1ff46c672211b86d",
-      "sha256": "b3a5f126797d2b57603fbd4296fbf5a8530e92525c793b488b6699acf7b1e9b0",
-      "signature": "ZnVmteF9JN2af/MAgzZrPAkKhrDps3U4bY8NIY5gZB4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Ceiling-S3-Full",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": null,
-      "modules": [
-        "S3",
-        "Full"
-      ]
-    },
-    {
-      "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Ceiling-USB configuration. Recommended for production deployments.",
@@ -352,7 +318,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.446559+00:00",
+      "build_date": "2026-04-30T15:12:58.155697+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -383,7 +349,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.446559+00:00",
+      "build_date": "2026-04-30T15:12:58.155697+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -416,7 +382,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.446559+00:00",
+      "build_date": "2026-04-30T15:12:58.155697+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -449,7 +415,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.446559+00:00",
+      "build_date": "2026-04-30T15:12:58.155697+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -483,7 +449,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.446559+00:00",
+      "build_date": "2026-04-30T15:12:58.155697+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -503,734 +469,6 @@
     },
     {
       "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "f838930dba738160330f3a9a9160e058",
-          "sha256": "49d12764765de5ae91d1179801c3bd3daa3d9c8e2aa07c1730c3a95aa6c88ed5",
-          "signature": "2sj5kvLg2h8sfET2amSg3LB8nPkkW06Md0wHLYMLIeU="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.490559+00:00",
-      "file_size": 1253952,
-      "improv": true,
-      "md5": "f838930dba738160330f3a9a9160e058",
-      "sha256": "49d12764765de5ae91d1179801c3bd3daa3d9c8e2aa07c1730c3a95aa6c88ed5",
-      "signature": "2sj5kvLg2h8sfET2amSg3LB8nPkkW06Md0wHLYMLIeU=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Ceiling",
-      "core_type": "Core",
-      "mounting": "Ceiling",
-      "power": null,
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling-POE configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-POE-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "fdf0bb3457057710791f551fb3dfeae5",
-          "sha256": "d2990b821eab3d3b379e427a766c2d8dac56cf43892f80cd847695132d2fa568",
-          "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.462559+00:00",
-      "file_size": 1018704,
-      "improv": true,
-      "md5": "fdf0bb3457057710791f551fb3dfeae5",
-      "sha256": "d2990b821eab3d3b379e427a766c2d8dac56cf43892f80cd847695132d2fa568",
-      "signature": "H1nsUDP6kXWxA9rKzCkogxq7Fx9C/1ElBAZL1FSl++4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Ceiling-POE",
-      "core_type": "Core",
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling-PWR configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-PWR-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "40524c5a06060838fe64b22d13b4afaa",
-          "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
-          "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.470559+00:00",
-      "file_size": 1017648,
-      "improv": true,
-      "md5": "40524c5a06060838fe64b22d13b4afaa",
-      "sha256": "b32744ad59d952c1f4bd8cc8894fec4113076ef647b1e808a9bbcd92b7b96996",
-      "signature": "3NqxSF0Wh4GYibA5Nt51uvxC0Y/0mQhe49Kf2bSBmN4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Ceiling-PWR",
-      "core_type": "Core",
-      "mounting": "Ceiling",
-      "power": "PWR",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-USB-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "cd2e27dbda194d182727cfa494eb6e0b",
-          "sha256": "e55ecd82802f19c7815344e46fcb61a26bc509c61cac19750198d040cacc91ab",
-          "signature": "w4hULWARrjbGejQUDuxl7xNGoPa8SmnTeqWtjvEChYc="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.470559+00:00",
-      "file_size": 1021792,
-      "improv": true,
-      "md5": "cd2e27dbda194d182727cfa494eb6e0b",
-      "sha256": "e55ecd82802f19c7815344e46fcb61a26bc509c61cac19750198d040cacc91ab",
-      "signature": "w4hULWARrjbGejQUDuxl7xNGoPa8SmnTeqWtjvEChYc=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Ceiling-USB",
-      "core_type": "Core",
-      "mounting": "Ceiling",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Ceiling-VentIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-VentIQ-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "05602f78a9de37b98475864012d68919",
-          "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
-          "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.482559+00:00",
-      "file_size": 1123072,
-      "improv": true,
-      "md5": "05602f78a9de37b98475864012d68919",
-      "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
-      "signature": "7+QrNXPt45BSwMr7RkRYWiPfmzLij0B+WyA9tqlb4aY=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Ceiling-VentIQ",
-      "core_type": "Core",
-      "mounting": "Ceiling",
-      "power": null,
-      "modules": [
-        "VentIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Wall configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Wall-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "b6dd268e39781645f15ecc7db0b24964",
-          "sha256": "c797d3c821486f8521248dc54b37323d9f6495580fd6dbbf5a5004c48d9ab3d7",
-          "signature": "xikqYnnGPMCYalZY/qqsIAVlpwIBgHq/SKrNsv40ij4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.514559+00:00",
-      "file_size": 1262240,
-      "improv": true,
-      "md5": "b6dd268e39781645f15ecc7db0b24964",
-      "sha256": "c797d3c821486f8521248dc54b37323d9f6495580fd6dbbf5a5004c48d9ab3d7",
-      "signature": "xikqYnnGPMCYalZY/qqsIAVlpwIBgHq/SKrNsv40ij4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Wall",
-      "core_type": "Core",
-      "mounting": "Wall",
-      "power": null,
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Wall-POE configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Wall-POE-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "27e7f4996f66982a3460438ce6b429da",
-          "sha256": "27adc3d22acf12327ec80c47a7b9b5173ec34ec32818ba46ea4c0f62cbb48f70",
-          "signature": "qebi+n/82TbPpFFuAmSpDTwFBiWnZCvW7zH8XSYePsE="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.494559+00:00",
-      "file_size": 1031968,
-      "improv": true,
-      "md5": "27e7f4996f66982a3460438ce6b429da",
-      "sha256": "27adc3d22acf12327ec80c47a7b9b5173ec34ec32818ba46ea4c0f62cbb48f70",
-      "signature": "qebi+n/82TbPpFFuAmSpDTwFBiWnZCvW7zH8XSYePsE=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Wall-POE",
-      "core_type": "Core",
-      "mounting": "Wall",
-      "power": "POE",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Wall-PWR configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Wall-PWR-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "f35388f149ac11e3bb12702a85d58862",
-          "sha256": "1b7e89d581cef0a5f853af10c6d035ea7d4c7780a829b88a696c6f69a6490cc1",
-          "signature": "ddN4JmnLzJnR8G7sdhFolVNuhsockpvdi138qebK2m8="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.502559+00:00",
-      "file_size": 1031040,
-      "improv": true,
-      "md5": "f35388f149ac11e3bb12702a85d58862",
-      "sha256": "1b7e89d581cef0a5f853af10c6d035ea7d4c7780a829b88a696c6f69a6490cc1",
-      "signature": "ddN4JmnLzJnR8G7sdhFolVNuhsockpvdi138qebK2m8=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Wall-PWR",
-      "core_type": "Core",
-      "mounting": "Wall",
-      "power": "PWR",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Core-Wall-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Core-Wall-USB-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "1745ddce2d367adb5255cc4dee4a15c5",
-          "sha256": "a87d2563cda252f71f3f4460068907f6d8d9ef6cb8b52f95e464a165254ca767",
-          "signature": "omKa6T4tty8vdKD2spUkH7DLENq7DnVeugD7LoCy9TY="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.506559+00:00",
-      "file_size": 1033936,
-      "improv": true,
-      "md5": "1745ddce2d367adb5255cc4dee4a15c5",
-      "sha256": "a87d2563cda252f71f3f4460068907f6d8d9ef6cb8b52f95e464a165254ca767",
-      "signature": "omKa6T4tty8vdKD2spUkH7DLENq7DnVeugD7LoCy9TY=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Core-Wall-USB",
-      "core_type": "Core",
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Ceiling configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Ceiling-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "aff28fae8aa834ea308b24b18726e427",
-          "sha256": "04858b631b0d39283e9fd0cd1b404487f8cb827e7103e56de12c788f6d1f5016",
-          "signature": "C1Bb4NscKsj73mSUDTUTDpTVu6B/xf23RH67bUKz668="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.570559+00:00",
-      "file_size": 1303328,
-      "improv": true,
-      "md5": "aff28fae8aa834ea308b24b18726e427",
-      "sha256": "04858b631b0d39283e9fd0cd1b404487f8cb827e7103e56de12c788f6d1f5016",
-      "signature": "C1Bb4NscKsj73mSUDTUTDpTVu6B/xf23RH67bUKz668=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Ceiling",
-      "core_type": "CoreVoice",
-      "mounting": "Ceiling",
-      "power": null,
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Ceiling-POE configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Ceiling-POE-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "b4e2ff0ed070ebe685ac62e9b731c4f4",
-          "sha256": "f31b4a1cdf6ef8fda24d281d10d506d5981983b1ffeaf207b1e025a322cdf725",
-          "signature": "2h3aP3IHUMiN7cBQp49BWVg/tlhS/SHGTUL/rZdv5aI="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.522559+00:00",
-      "file_size": 1128272,
-      "improv": true,
-      "md5": "b4e2ff0ed070ebe685ac62e9b731c4f4",
-      "sha256": "f31b4a1cdf6ef8fda24d281d10d506d5981983b1ffeaf207b1e025a322cdf725",
-      "signature": "2h3aP3IHUMiN7cBQp49BWVg/tlhS/SHGTUL/rZdv5aI=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Ceiling-POE",
-      "core_type": "CoreVoice",
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Ceiling-PWR configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Ceiling-PWR-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "c0fdc0ac5067ba31d768d77587d95344",
-          "sha256": "fa2becdd96ac6dd98f6d67c7d7d6070aaa8b14539af750d0a675f9101351b93e",
-          "signature": "K0VeM3f0b56sW7MfyTStp34mwkaxzVVAbAEYJ9afcxE="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.534559+00:00",
-      "file_size": 1127376,
-      "improv": true,
-      "md5": "c0fdc0ac5067ba31d768d77587d95344",
-      "sha256": "fa2becdd96ac6dd98f6d67c7d7d6070aaa8b14539af750d0a675f9101351b93e",
-      "signature": "K0VeM3f0b56sW7MfyTStp34mwkaxzVVAbAEYJ9afcxE=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Ceiling-PWR",
-      "core_type": "CoreVoice",
-      "mounting": "Ceiling",
-      "power": "PWR",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Ceiling-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Ceiling-USB-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "1d44e7813c0a3d01e8b65eba8fd0470c",
-          "sha256": "2eac885f0850b156f281f22adc176cdc47e54d84a9d7c07af6dd2ed6704dada8",
-          "signature": "k+JimxyaQ/oOCydqRJpfe/bhdEElFtywaUML4rp91E4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.534559+00:00",
-      "file_size": 1129936,
-      "improv": true,
-      "md5": "1d44e7813c0a3d01e8b65eba8fd0470c",
-      "sha256": "2eac885f0850b156f281f22adc176cdc47e54d84a9d7c07af6dd2ed6704dada8",
-      "signature": "k+JimxyaQ/oOCydqRJpfe/bhdEElFtywaUML4rp91E4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Ceiling-USB",
-      "core_type": "CoreVoice",
-      "mounting": "Ceiling",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Wall configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Wall-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "5c794cb1a31fa7b8e607a047d19e93a6",
-          "sha256": "964284b4d65ddabf70f8b36ab8bbc810113d379841cedccec84f90715cc69576",
-          "signature": "HR83bz70LoR2LZYi8cLVi7FYE/aFhR8PjWlavIwuKcs="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.586559+00:00",
-      "file_size": 1309200,
-      "improv": true,
-      "md5": "5c794cb1a31fa7b8e607a047d19e93a6",
-      "sha256": "964284b4d65ddabf70f8b36ab8bbc810113d379841cedccec84f90715cc69576",
-      "signature": "HR83bz70LoR2LZYi8cLVi7FYE/aFhR8PjWlavIwuKcs=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Wall",
-      "core_type": "CoreVoice",
-      "mounting": "Wall",
-      "power": null,
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Wall-POE configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Wall-POE-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "384768f5cda1a14a5401c5eafe98cdd0",
-          "sha256": "527b0e9a4b322b7f1f444ba501edd4345507b1c02f225743c83eb938911fad86",
-          "signature": "+Wc7uEVsDa32rHsPA++DHEyUDjd3k9YRxrXRbB5g7nc="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.574559+00:00",
-      "file_size": 1137632,
-      "improv": true,
-      "md5": "384768f5cda1a14a5401c5eafe98cdd0",
-      "sha256": "527b0e9a4b322b7f1f444ba501edd4345507b1c02f225743c83eb938911fad86",
-      "signature": "+Wc7uEVsDa32rHsPA++DHEyUDjd3k9YRxrXRbB5g7nc=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Wall-POE",
-      "core_type": "CoreVoice",
-      "mounting": "Wall",
-      "power": "POE",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Wall-PWR configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Wall-PWR-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "d96ea15841d692a5ffe8abd376d4f04a",
-          "sha256": "987c9cc0efae6dbf56aa182f30d05c32dc9701bd7512ac952e9e116bc3af7632",
-          "signature": "ECu6mhF2bqlwplPbnqLwllHHthemNT5FYv3JYyGdcd4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.578559+00:00",
-      "file_size": 1136800,
-      "improv": true,
-      "md5": "d96ea15841d692a5ffe8abd376d4f04a",
-      "sha256": "987c9cc0efae6dbf56aa182f30d05c32dc9701bd7512ac952e9e116bc3af7632",
-      "signature": "ECu6mhF2bqlwplPbnqLwllHHthemNT5FYv3JYyGdcd4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Wall-PWR",
-      "core_type": "CoreVoice",
-      "mounting": "Wall",
-      "power": "PWR",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 CoreVoice-Wall-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-CoreVoice-Wall-USB-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "eb9d41c3cded417688055710df4c18ce",
-          "sha256": "cdf88140ac1212d16d81727cfafb1657eb4b1f84ffedb00e9008c3fe15b13822",
-          "signature": "MeuP3HkbPNRrMVfKXPUademdFjHtrNAB8v3BIcEKkU4="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.578559+00:00",
-      "file_size": 1139408,
-      "improv": true,
-      "md5": "eb9d41c3cded417688055710df4c18ce",
-      "sha256": "cdf88140ac1212d16d81727cfafb1657eb4b1f84ffedb00e9008c3fe15b13822",
-      "signature": "MeuP3HkbPNRrMVfKXPUademdFjHtrNAB8v3BIcEKkU4=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "CoreVoice-Wall-USB",
-      "core_type": "CoreVoice",
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Fan-PWM configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Fan-PWM-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "c26bdb4931dee34718059f0dba10f5f4",
-          "sha256": "442175ce7874eeb5b0e9e4f88be621b4d4245829311e68ff60d3bb738cb3a8af",
-          "signature": "gsXhQPuUNspNNw5f+lSh3a/bQD2KbZX/EAz0iuaFc4I="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.598559+00:00",
-      "file_size": 1637344,
-      "improv": true,
-      "md5": "c26bdb4931dee34718059f0dba10f5f4",
-      "sha256": "442175ce7874eeb5b0e9e4f88be621b4d4245829311e68ff60d3bb738cb3a8af",
-      "signature": "gsXhQPuUNspNNw5f+lSh3a/bQD2KbZX/EAz0iuaFc4I=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Fan-PWM",
-      "core_type": null,
-      "mounting": "Fan",
-      "power": null,
-      "modules": [
-        "PWM"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Mini-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Mini-AirIQ-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "21f8dc672eee75a8de179814d89bf2ea",
-          "sha256": "fd9b4077c360d17037972599408df3b68004f62e6fc7d7a21ac5532b9a810b95",
-          "signature": "ZyBc/7EV6c7hT/37FTzWaYbK4VATcNgtUrumdSfUMrk="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.658559+00:00",
-      "file_size": 1683040,
-      "improv": true,
-      "md5": "21f8dc672eee75a8de179814d89bf2ea",
-      "sha256": "fd9b4077c360d17037972599408df3b68004f62e6fc7d7a21ac5532b9a810b95",
-      "signature": "ZyBc/7EV6c7hT/37FTzWaYbK4VATcNgtUrumdSfUMrk=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Mini-AirIQ",
-      "core_type": null,
-      "mounting": "Mini",
-      "power": null,
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Mini-AirIQ-Advanced configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Mini-AirIQ-Advanced-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "f95b912feb07ace14a58084154105bdc",
-          "sha256": "9dd5378153df151c1d5fac0a33e68e785a517236081e5e7f043153e2069ed085",
-          "signature": "81qhXFhML1KAbmBvaO5fpTuRTaVOnKeCiV3KK+LkfU8="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.622559+00:00",
-      "file_size": 1580416,
-      "improv": true,
-      "md5": "f95b912feb07ace14a58084154105bdc",
-      "sha256": "9dd5378153df151c1d5fac0a33e68e785a517236081e5e7f043153e2069ed085",
-      "signature": "81qhXFhML1KAbmBvaO5fpTuRTaVOnKeCiV3KK+LkfU8=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Mini-AirIQ-Advanced",
-      "core_type": null,
-      "mounting": "Mini",
-      "power": null,
-      "modules": [
-        "AirIQ",
-        "Advanced"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Mini-AirIQ-Basic configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Mini-AirIQ-Basic-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "f96f0bedbb815957fe97d28afbb852d4",
-          "sha256": "7b2d585d7fb7207c22c74c7d42d7abeca196a6a54b3eb5a5cbf6b2a4a3733157",
-          "signature": "uhbyvxDOHp+l3Q0ZQKy3/n0Evuj3R1v/B7l0VfsfuKA="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.638559+00:00",
-      "file_size": 1525072,
-      "improv": true,
-      "md5": "f96f0bedbb815957fe97d28afbb852d4",
-      "sha256": "7b2d585d7fb7207c22c74c7d42d7abeca196a6a54b3eb5a5cbf6b2a4a3733157",
-      "signature": "uhbyvxDOHp+l3Q0ZQKy3/n0Evuj3R1v/B7l0VfsfuKA=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Mini-AirIQ-Basic",
-      "core_type": null,
-      "mounting": "Mini",
-      "power": null,
-      "modules": [
-        "AirIQ",
-        "Basic"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Mini-AirIQ-LD2412 configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Mini-AirIQ-LD2412-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "115c189bd99122bb0d4f7ced7d37a1d8",
-          "sha256": "3089cf197c25e0125dc80859858257fa4528f97c1158867939024dc522b70301",
-          "signature": "iMkOh2dwVkDRLzT2G3odr65/TPtanGvghPz1+qYC0/g="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.650559+00:00",
-      "file_size": 1675200,
-      "improv": true,
-      "md5": "115c189bd99122bb0d4f7ced7d37a1d8",
-      "sha256": "3089cf197c25e0125dc80859858257fa4528f97c1158867939024dc522b70301",
-      "signature": "iMkOh2dwVkDRLzT2G3odr65/TPtanGvghPz1+qYC0/g=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Mini-AirIQ-LD2412",
-      "core_type": null,
-      "mounting": "Mini",
-      "power": null,
-      "modules": [
-        "AirIQ",
-        "LD2412"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "3.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 POE configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-POE-v3.0.1-stable.bin",
-          "offset": 0,
-          "md5": "371a558c232954069155c21ecf2760a2",
-          "sha256": "4b4f0738c10430fb5367a8cabeccbff2f7a5127061a5fc76e49cf630325c2af2",
-          "signature": "3OUy2z+6EqMVE/q5rOFFNOw+/nEQabHH2a09XZg8aSw="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.666559+00:00",
-      "file_size": 1194736,
-      "improv": true,
-      "md5": "371a558c232954069155c21ecf2760a2",
-      "sha256": "4b4f0738c10430fb5367a8cabeccbff2f7a5127061a5fc76e49cf630325c2af2",
-      "signature": "3OUy2z+6EqMVE/q5rOFFNOw+/nEQabHH2a09XZg8aSw=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "POE",
-      "core_type": null,
-      "mounting": "Poe",
-      "power": "POE",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
       "version": "1.0.0",
       "channel": "rescue",
       "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
@@ -1244,7 +482,7 @@
           "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM="
         }
       ],
-      "build_date": "2026-04-30T14:53:10.682559+00:00",
+      "build_date": "2026-04-30T15:12:58.427696+00:00",
       "file_size": 524288,
       "improv": false,
       "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
@@ -1261,362 +499,6 @@
       "mounting": "Universal",
       "power": "Universal",
       "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-POE-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-POE-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.666559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "POE",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-PWR configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-PWR-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.666559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-PWR",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "PWR",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-PWR-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-PWR-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.666559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-PWR-AirIQ",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "PWR",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.1.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.1.0-stable.bin",
-          "offset": 0,
-          "md5": "e02ba33bea0997b543ddac28af33fc2f",
-          "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
-          "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.682559+00:00",
-      "file_size": 1032016,
-      "improv": true,
-      "md5": "e02ba33bea0997b543ddac28af33fc2f",
-      "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
-      "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-USB",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.674559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-USB",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360 Wall-USB configuration. Release candidate build for broader testing ahead of stable rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-USB-v1.0.0-beta.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.674559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-USB",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-USB-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-USB-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.666559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-USB-AirIQ",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360 Wall-USB-AirIQ configuration. Release candidate build for broader testing ahead of stable rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-USB-AirIQ-v1.0.0-beta.bin",
-          "offset": 0,
-          "md5": "e02ba33bea0997b543ddac28af33fc2f",
-          "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
-          "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE="
-        }
-      ],
-      "build_date": "2026-04-30T15:13:40.098290+00:00",
-      "file_size": 1032016,
-      "improv": true,
-      "md5": "e02ba33bea0997b543ddac28af33fc2f",
-      "sha256": "a9b741a42f96d0bc6a1fffdf40ba4a01593b0176e1bce185cd4678d3d53ac0dd",
-      "signature": "pAsD/rzkciTBJYTs5vmqkrHfaKGOAykYLYo9AUnRjXE=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-USB-AirIQ",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-USB-Fan configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-USB-Fan-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.674559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-USB-Fan",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": [
-        "Fan"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-Voice-POE-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-Voice-POE-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.682559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-Voice-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "POE",
-      "modules": [
-        "Voice",
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Wall-Voice-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Wall-Voice-USB-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
-        }
-      ],
-      "build_date": "2026-04-30T14:53:10.682559+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "config_string": "Wall-Voice-USB",
-      "core_type": null,
-      "mounting": "Wall",
-      "power": "USB",
-      "modules": [
-        "Voice"
-      ]
     }
   ]
 }
