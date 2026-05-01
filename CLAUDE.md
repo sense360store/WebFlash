@@ -83,6 +83,7 @@ Other notable pieces:
 
 - `scripts/data/module-requirements.js` — hardware compatibility matrix (SKUs, headers, conflicts, `recommended`/`ceilingOnly`/`requiresBathroom` flags). **Constraint enforcement reads from this file**; keep it consistent with the canonical SKU table above and with the README option tables.
 - `scripts/utils/url-config.js` — bidirectional parser for sharable config URLs. Maintains legacy aliases (e.g. `pwr` → `ac`, `BathroomAirIQ*` → `VentIQ`, fan `pwm` ↔ `base`, fan `analog` → `dac`) so old links still resolve. All `configSegment` outputs match the wizard's `MODULE_SEGMENT_FORMATTERS` in `scripts/state.js` (canonical `AirIQ` / `VentIQ` / `Fan` tokens — never `AirIQBase` / `FanPWM` / `FanAnalog`). The wizard URL key `voice` historically maps to `core` in the URL alias set.
+- `scripts/compat-config.js` — direct-install URL handler. When the page loads with `?core=...&mount=...&power=...&[airiq=...&fan=...]`, this module runs `parseConfigParams` (from `url-config.js`), turns the result into a `configKey`, and renders a standalone install button that bypasses the 5-step wizard. The configKey lookup is a case-insensitive exact match against `build.config_string` in `manifest.json`, so the canonical url-config configSegments must match what `gen-manifests.py` writes.
 - `scripts/utils/esp-web-tools-overrides.js` — installs a `MutationObserver` that attaches a `checkSameFirmware` override to every `<esp-web-install-button>` so users see a warning when reflashing the same version reported via Improv.
 - `scripts/recommended-bundle.js` — quick-start preset application; uses `getMaxReachableStep` to jump straight to step 4 when applying a preset.
 - `scripts/utils/preset-storage.js` — JSON preset import/export with schema versioning; deprecated keys (`presence`, `comfort`) are stripped on read, and legacy fan value `analog` is normalised to `dac` on import.
@@ -111,6 +112,25 @@ The wizard's selection is reduced to a `config_string` (e.g. `Ceiling-POE-AirIQ`
 2. `CANONICAL_MODULE_TOKENS` / token-handling logic in `scripts/gen-manifests.py`.
 
 Otherwise the frontend will fail to find a build that the manifest claims exists.
+
+### Adding a new SKU
+
+When a hardware SKU joins the canonical table above, the change touches both halves of the codebase. The minimum set of edits:
+
+1. **`scripts/data/module-requirements.js`** — add the variant entry under the relevant module key with `label` (Friendly name verbatim), `sku`, `coreRevision`, `headers`, `description`, and any `conflicts` referencing other module variants by canonical key.
+2. **`scripts/state.js`** — add the variant to `allowedOptions` for the module, add a label entry under `MODULE_VARIANT_LABELS` (Friendly name verbatim), and ensure `MODULE_SEGMENT_FORMATTERS` emits the canonical config_string token for the new variant. If the variant key is renamed from a previous canonical name, add a normalisation rule in `normalizeStateForConfiguration` *and* a parser alias in `parseConfigStringState` so old shareable links keep resolving.
+3. **`scripts/utils/url-config.js`** — add the new option to the module's `options` Map and `allowedValues`. If a previous URL key needs to remain accepted, add it to `legacyValues` mapping to the new canonical URL key. `configSegment` must match what state.js's formatter emits.
+4. **`scripts/utils/preset-storage.js`** — add the new value to `ALLOWED_*_VALUES`. If renaming a previous value, add it to the corresponding `*_LEGACY_ALIASES` map and use `normalize*Value` helpers; extend the `enumValidations` allowlist (`*_VALIDATION_VALUES`) so legacy preset payloads still pass schema validation.
+5. **`index.html`** — add a `module-card` with `data-variant="<canonical-key>"`, `<input value="<canonical-key>">`, and the Friendly name as the card title. Update any conflict badge `data-conflict-variants` attributes that reference the new variant.
+6. **Firmware + manifest** — drop new `Sense360-...-vX.Y.Z-<channel>.bin` files into `firmware/configurations/`, run `python3 scripts/gen-manifests.py --summary`, commit the regenerated `manifest.json` and `firmware-*.json` together with the binaries.
+7. **`.github/workflows/firmware-publish.yml`** — if the new config_string is meant to be a permanent build, add it to `REQUIRED_CONFIGS`.
+8. **Tests** — extend `__tests__/state-config-string.test.js` (Friendly-name and segment-formatter assertions), `__tests__/url-config.test.js` (new option + any legacy alias), and the relevant DOM stub tests (`fan-availability.test.js`, `bathroom-checkbox.test.js`, etc.) so the radio fixtures match the new variant key.
+
+`scripts/state.js` exports a `__testHooks` bundle (alongside `getState`/`setState`/...) that includes `parseConfigStringState`, `formatConfigSegment`, and `MODULE_VARIANT_LABELS` specifically for these regression tests — use it instead of stubbing the wizard.
+
+### Tests (Jest, jsdom)
+
+The 20 suites under `__tests__/` cover the behaviours that are hardest to verify by inspection: wizard navigation/gating (`wizard-state.test.js`, `navigation.test.js`, `bathroom-checkbox.test.js`, `fan-availability.test.js`), the URL ↔ wizard ↔ config_string contract (`url-config.test.js`, `state-config-string.test.js`, `compat-config.test.js`), preflight install gating (`preflight-gating.test.js`), preset import/export with schema versioning (`preset-*.test.js`), flash history (`flash-history.test.js`), the manifest's ESP Web Tools shape (`manifest-metadata.test.js`), the firmware naming policy validator (`naming-policy-validator.test.js`, `firmware-canonical-naming.test.js`), and release-notes rendering (`release-notes.test.js`). New behaviour usually slots into an existing suite — only add a new file when the surface is genuinely separate (the `state-config-string.test.js` parser/formatter regression is the canonical example).
 
 ## Conventions and gotchas
 
