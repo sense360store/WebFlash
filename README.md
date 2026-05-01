@@ -208,10 +208,12 @@ These can be shared with support teams for faster issue resolution.
 
 ### Installation Fails
 
-- Ensure device is in bootloader mode (press BOOT button if available)
-- Try different USB cable or port
-- Restart browser
-- Check USB cable supports data transfer
+Most devices auto-enter bootloader mode when ESP Web Tools opens the serial port. Try these in order:
+
+- Try a different USB cable or USB port
+- Use a known-good USB *data* cable (charge-only cables won't enumerate)
+- Restart the browser and retry the install
+- **Only if the device still isn't detected:** hold `BOOT`, tap `RESET`, then release `BOOT` to enter recovery mode manually, and retry the install while still in recovery
 
 ### Wrong Firmware Installed
 

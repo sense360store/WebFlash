@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sense360 Firmware Configuration Tool</title>
+    <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./css/wizard-style.css?v=1753432000">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=1761944400">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
     <link rel="stylesheet" href="./css/layout.css">
@@ -22,8 +22,8 @@
             <div class="logo-container">
                 <img src="./sense360-logo-new.png" alt="Sense360 Logo" class="logo">
                 <div class="header-text">
-                    <h1>Sense360 Firmware Configuration Tool</h1>
-                    <p class="subtitle">Flash your Sense360 hub directly from your browser in under 60 seconds</p>
+                    <h1>Sense360 Firmware Installer</h1>
+                    <p class="subtitle">Choose your hardware, install the right firmware in your browser, and connect the hub to Wi-Fi &mdash; in under 60 seconds.</p>
                 </div>
             </div>
             <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -66,6 +66,34 @@
                 </a>
             </div>
         </nav>
+
+        <section class="prereq-panel" aria-labelledby="prereq-panel-title">
+            <div class="prereq-panel__header">
+                <h2 id="prereq-panel-title" class="prereq-panel__title">Before you start</h2>
+                <p class="prereq-panel__subtitle">A 30-second check so the install works on the first try.</p>
+            </div>
+            <ul class="prereq-panel__list">
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">Browser</span>
+                    <span class="prereq-panel__detail">Use desktop <strong>Chrome, Edge, or Opera</strong>. Firefox, Safari, and mobile browsers don&rsquo;t support Web Serial.</span>
+                </li>
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">Cable</span>
+                    <span class="prereq-panel__detail">A <strong>USB data cable</strong> (not charge-only) plugged directly into your computer. Avoid hubs and long extensions.</span>
+                </li>
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">Other apps</span>
+                    <span class="prereq-panel__detail">Close anything else using the serial port (Arduino IDE, PlatformIO, ESPHome dashboard).</span>
+                </li>
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">After flashing</span>
+                    <span class="prereq-panel__detail">Keep the tab open &mdash; we&rsquo;ll guide you through Wi-Fi setup over the same serial connection (Improv).</span>
+                </li>
+            </ul>
+            <p class="prereq-panel__fallback">
+                If your hub isn&rsquo;t detected when you click Install, hold <strong>BOOT</strong>, tap <strong>RESET</strong>, then release BOOT to enter recovery mode and try again. Most devices don&rsquo;t need this step.
+            </p>
+        </section>
 
         <div class="wizard-container">
             <div class="wizard-shell" data-wizard-shell="static">
@@ -917,6 +945,9 @@
                         <li>Keep this browser tab open until the flashing process finishes.</li>
                         <li><strong>Do not disconnect power/USB during flashing.</strong></li>
                     </ul>
+                    <p class="pre-flash-checklist__next-step">
+                        <strong>What happens next:</strong> after flashing, this tab will offer to connect your hub to Wi-Fi over the same USB connection (Improv Serial). Have your Wi-Fi password ready.
+                    </p>
                     <label class="pre-flash-checklist__acknowledgement">
                         <input type="checkbox" data-preflash-acknowledge>
                         <span class="preflash-warning-text">I understand and will keep the hub powered and connected throughout flashing.</span>
@@ -943,13 +974,12 @@
                     <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <p class="install-assumptions" data-install-assumptions hidden aria-hidden="true"></p>
                     <div class="primary-action-group">
+                        <p class="action-row-label">Other options &mdash; the main <strong>Install</strong> button is on the firmware card above.</p>
                         <div class="primary-action-controls">
-                            <button class="btn btn-primary" id="download-btn" type="button" onclick="downloadFirmware()" disabled>Download Firmware</button>
-                            <button class="btn btn-copy" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
-                                Copy
-                            </button>
-                            <button class="btn btn-secondary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
-                                Open Home Assistant Integrations
+                            <button class="btn btn-secondary" id="download-btn" type="button" onclick="downloadFirmware()" disabled aria-label="Download firmware binary for manual flashing">Download .bin</button>
+                            <button class="btn btn-secondary" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy direct link to firmware binary" disabled>Copy install link</button>
+                            <button class="btn btn-primary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
+                                Open Home Assistant
                             </button>
                         </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>

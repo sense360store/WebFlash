@@ -93,10 +93,13 @@ Current limitation: helper text references **Accept preflight warnings** acknowl
 
 ### Installation Fails Immediately
 
-**Solutions:**
-1. Enter bootloader mode manually (BOOT + RESET sequence)
-2. Power-cycle device and reconnect
-3. Re-run from Step 5 after preflight statuses are resolved
+ESP Web Tools normally puts the device into bootloader mode automatically; manual `BOOT`/`RESET` is a fallback, not a routine step.
+
+**Solutions (in order):**
+1. Power-cycle the device and reconnect, then re-run from Step 5 after preflight statuses are resolved
+2. Try a different USB *data* cable (charge-only cables won't enumerate)
+3. Try a different USB port (avoid hubs)
+4. **Only if auto-entry fails:** enter bootloader mode manually — hold `BOOT`, tap `RESET`, release `BOOT` — then retry the install while still in recovery mode
 
 ### Installation Fails Partway
 
