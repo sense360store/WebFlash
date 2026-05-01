@@ -3672,3 +3672,113 @@ html[data-theme="dark"] .quick-start-presets {
     border-color: var(--brand-green-border);
     background: var(--brand-green-selection-surface-subtle);
 }
+
+/* Label that disambiguates the Step 5 action row: the primary Install
+ * button is on the firmware card; these are advanced / fallback actions.
+ * Sits above .primary-action-controls inside .primary-action-group. */
+.action-row-label {
+    margin: 0;
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+    text-align: right;
+    line-height: 1.4;
+    max-width: 22rem;
+}
+
+.action-row-label strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* Improv / Wi-Fi follow-up callout inside the pre-flash checklist. */
+.pre-flash-checklist__next-step {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-left: 3px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--color-surface));
+    border-radius: 6px;
+    color: var(--color-text);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.pre-flash-checklist__next-step strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
+
+/* Prerequisites panel — sits above the wizard so users see install
+ * requirements before they start configuring. Pairs with the canonical
+ * SKU/ESP Web Tools constraints documented in CLAUDE.md. */
+.prereq-panel {
+    margin: 0 0 24px;
+    padding: clamp(20px, 2.4vw, 28px);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--accent);
+    border-radius: 12px;
+}
+
+.prereq-panel__header {
+    margin-bottom: 16px;
+}
+
+.prereq-panel__title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--color-text);
+}
+
+.prereq-panel__subtitle {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+
+.prereq-panel__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px 24px;
+}
+
+.prereq-panel__item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.4;
+    font-size: 0.9rem;
+}
+
+.prereq-panel__label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-secondary);
+}
+
+.prereq-panel__detail {
+    color: var(--color-text);
+}
+
+.prereq-panel__detail strong {
+    color: var(--color-text);
+}
+
+.prereq-panel__fallback {
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px dashed var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.prereq-panel__fallback strong {
+    color: var(--color-text);
+    font-weight: 600;
+}
