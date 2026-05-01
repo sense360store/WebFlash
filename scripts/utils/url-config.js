@@ -82,11 +82,12 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         defaultOption: 'none',
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['airiq', { wizardValue: 'airiq', configSegment: 'LED' }]
+            ['led', { wizardValue: 'led', configSegment: 'LED' }]
         ]),
-        allowedValues: Object.freeze(['none', 'airiq']),
+        allowedValues: Object.freeze(['none', 'led']),
         legacyValues: new Map([
-            ['base', 'airiq']
+            ['base', 'led'],
+            ['airiq', 'led']
         ])
     }),
     roomiq: Object.freeze({
@@ -133,6 +134,7 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         legacyValues: new Map([
             ['base', 'ventiq'],
             ['pro', 'ventiq'],
+            ['airiq', 'ventiq'],
             ['bathroomairiq', 'ventiq'],
             ['bathroomairiqbase', 'ventiq'],
             ['bathroomairiqpro', 'ventiq']

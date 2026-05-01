@@ -99,10 +99,10 @@ const allowedOptions = createValidatedMap('allowedOptions', [
     ['bathroom', [false, true]],
     ['roomiq', ['none', 'roomiq']],
     ['airiq', ['none', 'airiq']],
-    ['ventiq', ['none', 'airiq']],
+    ['ventiq', ['none', 'ventiq']],
     ['fan', ['none', 'relay', 'pwm', 'analog', 'triac']],
     ['voice', ['none']],
-    ['led', ['none', 'airiq']]
+    ['led', ['none', 'led']]
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
 
 const MOUNT_LABELS = Object.freeze({
@@ -117,13 +117,13 @@ const POWER_LABELS = Object.freeze({
 
 const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
     ['roomiq', Object.freeze({
-        base: 'Sense360 RoomIQ'
+        roomiq: 'Sense360 RoomIQ'
     })],
     ['airiq', Object.freeze({
-        base: 'Sense360 AirIQ'
+        airiq: 'Sense360 AirIQ'
     })],
     ['ventiq', Object.freeze({
-        base: 'Sense360 VentIQ'
+        ventiq: 'Sense360 VentIQ'
     })],
     ['fan', Object.freeze({
         relay: 'Sense360 Fan Relay',
@@ -136,7 +136,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
     })],
     ['led', Object.freeze({
         none: 'No LED ring',
-        base: 'Sense360 LED'
+        led: 'Sense360 LED'
     })]
 ], { allowedKeys: MODULE_KEYS }));
 
@@ -151,11 +151,11 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
     ['roomiq', value => value === 'roomiq' ? 'RoomIQ' : ''],
-    ['airiq', value => value === 'base' ? 'AirIQ' : ''],
-    ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
+    ['airiq', value => value === 'airiq' ? 'AirIQ' : ''],
+    ['ventiq', value => value === 'ventiq' ? 'VentIQ' : ''],
     ['fan', value => (value && value !== 'none') ? 'Fan' : ''],
     ['voice', () => 'Core'],
-    ['led', value => value === 'airiq' ? 'LED' : '']
+    ['led', value => value === 'led' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
 
 
@@ -1080,8 +1080,9 @@ function normaliseModuleValue(key, value) {
     }
 
     if (!normalised) {
-        if (allowed.includes('airiq')) {
-            return 'airiq';
+        const enabledOption = allowed.find(option => option !== 'none');
+        if (enabledOption) {
+            return enabledOption;
         }
         if (allowed.includes('none')) {
             return 'none';
@@ -1163,7 +1164,7 @@ function parseConfigStringState(configString) {
         // Check VentIQ before Bathroom (since VentIQ starts with Bathroom)
         if (segment.startsWith('VentIQ')) {
             const suffix = segment.substring('VentIQ'.length);
-            moduleState.ventiq = normaliseModuleValue('ventiq', suffix ? suffix.toLowerCase() : 'airiq');
+            moduleState.ventiq = normaliseModuleValue('ventiq', suffix ? suffix.toLowerCase() : 'ventiq');
         } else if (segment === 'Bathroom') {
             moduleState.bathroom = true;
         } else if (segment === 'RoomIQ' || segment.startsWith('RoomIQ')) {
@@ -1177,7 +1178,7 @@ function parseConfigStringState(configString) {
         } else if (segment.startsWith('Voice')) {
             moduleState.voice = 'none';
         } else if (segment === 'LED' || segment.startsWith('LED')) {
-            moduleState.led = 'airiq';
+            moduleState.led = 'led';
         }
     }
 
