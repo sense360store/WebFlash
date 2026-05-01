@@ -29,7 +29,7 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 5. Acknowledge **Before you flash** checklist
 6. Resolve preflight failures (and warnings when applicable)
 7. Click "Install Firmware" to flash via browser
-7. Follow ESP Web Tools prompts to complete installation
+8. Follow ESP Web Tools prompts to complete installation
 
 ## Configuration Options
 
@@ -92,12 +92,11 @@ Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allo
 
 ### Mount × Power compatibility (current UI)
 
-| Mount \ Power | USB | PoE | PWR |
+| Mount \ Power | USB | Sense360 PoE PSU | Sense360 Mains PSU |
 |---|---:|---:|---:|
 | Ceiling | ✅ | ✅ | ✅ |
-| Wall | 🚫 | 🚫 | 🚫 |
 
-> Note: Wall exists in markup but is currently disabled, so all wall combinations are effectively blocked in the running wizard.
+> Wall mount lingers in markup and legacy URL aliases but is not a supported product, so only Ceiling combinations are exposed in the running wizard.
 
 ### Mount × Module compatibility (current UI constraints)
 
