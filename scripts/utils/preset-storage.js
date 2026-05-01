@@ -122,8 +122,11 @@ function writePresetEntries(entries, options = {}) {
 
 const ALLOWED_AIRIQ_VALUES = Object.freeze(['none', 'airiq', 'ventiq']);
 const ALLOWED_FAN_VALUES = Object.freeze(['none', 'relay', 'pwm', 'analog', 'triac']);
-const ALLOWED_MOUNT_VALUES = Object.freeze(['wall', 'ceiling']);
+const ALLOWED_MOUNT_VALUES = Object.freeze(['ceiling']);
 const ALLOWED_POWER_VALUES = Object.freeze(['usb', 'poe', 'pwr']);
+const MOUNT_LEGACY_ALIASES = Object.freeze({
+    wall: 'ceiling'
+});
 const AIRIQ_LEGACY_ALIASES = Object.freeze({
     base: 'airiq',
     airiqbase: 'airiq',
@@ -132,6 +135,23 @@ const AIRIQ_LEGACY_ALIASES = Object.freeze({
     airiqpro: 'ventiq',
     airiqprov: 'ventiq'
 });
+
+function normalizeMountValue(value) {
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const lowered = value.trim().toLowerCase();
+    if (!lowered) {
+        return null;
+    }
+    if (ALLOWED_MOUNT_VALUES.includes(lowered)) {
+        return lowered;
+    }
+    if (Object.prototype.hasOwnProperty.call(MOUNT_LEGACY_ALIASES, lowered)) {
+        return MOUNT_LEGACY_ALIASES[lowered];
+    }
+    return null;
+}
 
 function normalizeAirIqValue(value) {
     if (typeof value !== 'string') {
@@ -152,7 +172,7 @@ function normalizeAirIqValue(value) {
 
 function normalizePresetState(state = {}) {
     const normalized = {
-        mount: normalizeStringChoice(state.mount, ALLOWED_MOUNT_VALUES),
+        mount: normalizeMountValue(state.mount),
         power: normalizeStringChoice(state.power, ALLOWED_POWER_VALUES),
         airiq: normalizeAirIqValue(state.airiq) ?? 'none',
         fan: normalizeStringChoice(state.fan, ALLOWED_FAN_VALUES, 'none'),
@@ -170,7 +190,7 @@ function normalizePresetState(state = {}) {
 function normalizePresetConfiguration(configuration = {}, state = {}) {
     const normalizedState = normalizePresetState(state);
     const normalized = {
-        mounting: normalizeStringChoice(configuration.mounting ?? normalizedState.mount, ALLOWED_MOUNT_VALUES),
+        mounting: normalizeMountValue(configuration.mounting ?? normalizedState.mount),
         power: normalizeStringChoice(configuration.power ?? normalizedState.power, ALLOWED_POWER_VALUES),
         airiq: normalizeAirIqValue(configuration.airiq) ?? normalizedState.airiq ?? 'none',
         fan: normalizeStringChoice(configuration.fan ?? normalizedState.fan, ALLOWED_FAN_VALUES, 'none'),
@@ -701,13 +721,17 @@ function validatePresetImportPayload(payload) {
             ...ALLOWED_AIRIQ_VALUES,
             ...Object.keys(AIRIQ_LEGACY_ALIASES)
         ];
+        const MOUNT_VALIDATION_VALUES = [
+            ...ALLOWED_MOUNT_VALUES,
+            ...Object.keys(MOUNT_LEGACY_ALIASES)
+        ];
         const enumValidations = [
-            { path: 'preset.state.mount', value: preset.state?.mount, allowed: ALLOWED_MOUNT_VALUES },
+            { path: 'preset.state.mount', value: preset.state?.mount, allowed: MOUNT_VALIDATION_VALUES },
             { path: 'preset.state.power', value: preset.state?.power, allowed: ALLOWED_POWER_VALUES },
             { path: 'preset.state.airiq', value: preset.state?.airiq, allowed: AIRIQ_VALIDATION_VALUES },
             { path: 'preset.state.fan', value: preset.state?.fan, allowed: ALLOWED_FAN_VALUES },
             { path: 'preset.state.voice', value: preset.state?.voice, allowed: VOICE_LEGACY_VALUES },
-            { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: ALLOWED_MOUNT_VALUES },
+            { path: 'preset.configuration.mounting', value: preset.configuration?.mounting, allowed: MOUNT_VALIDATION_VALUES },
             { path: 'preset.configuration.power', value: preset.configuration?.power, allowed: ALLOWED_POWER_VALUES },
             { path: 'preset.configuration.airiq', value: preset.configuration?.airiq, allowed: AIRIQ_VALIDATION_VALUES },
             { path: 'preset.configuration.fan', value: preset.configuration?.fan, allowed: ALLOWED_FAN_VALUES },

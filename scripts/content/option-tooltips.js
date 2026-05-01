@@ -21,26 +21,6 @@ const optionTooltips = {
         }
     },
     mounting: {
-        wall: {
-            title: 'Wall Mount',
-            summary: 'Install on an interior wall to keep every expansion module within reach and maintain the designed airflow path.',
-            pros: [
-                'Supports the full Sense360 module catalog including Fan control accessories.',
-                'Easy to service without ladders; ideal for frequent module swaps.'
-            ],
-            cons: [
-                'Needs 120 mm × 120 mm of flat wall surface and a clean cable exit.',
-                'Avoid direct sunlight or HVAC vents that could skew air quality readings.'
-            ],
-            measurements: [
-                'Mount the hub 140–160 cm (55–63 in) above the finished floor for best sensor coverage.',
-                'Leave at least 75 mm (3 in) of side clearance to remove front-loading modules.'
-            ],
-            learnMore: {
-                label: 'View wall mounting guide',
-                href: 'https://docs.sense360.com/install/wall-mount'
-            }
-        },
         ceiling: {
             title: 'Ceiling Mount',
             summary: 'Ceiling installs free up wall space and maximize coverage in open rooms.',
