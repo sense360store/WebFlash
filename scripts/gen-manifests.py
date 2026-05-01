@@ -753,6 +753,103 @@ def validate_structured_config_consistency(artifacts: Sequence[FirmwareArtifact]
             "Structured metadata/config_string mismatch detected:" + joined
         )
 
+
+# Minimum firmware size below which we suspect a placeholder / corrupted binary.
+# 100 KB chosen because real ESP32-S3 application partitions are ~500 KB+; anything
+# smaller than this is almost certainly a stub. The repo currently ships some 18-byte
+# placeholder binaries, so this threshold is enforced as a warning by default and
+# only fails the build when --strict-validate is passed.
+DEFAULT_MIN_FIRMWARE_SIZE_BYTES = 100 * 1024
+
+# Sentinel size for the placeholder stubs already committed (18-byte files). Anything
+# at or below this is treated as "intentional placeholder" rather than a suspicious
+# size. Production firmware will not produce values this low.
+PLACEHOLDER_FIRMWARE_SIZE_BYTES = 64
+
+
+def validate_manifest_metadata(
+    artifacts: Sequence[FirmwareArtifact],
+    *,
+    min_firmware_size: int = DEFAULT_MIN_FIRMWARE_SIZE_BYTES,
+    strict: bool = False,
+) -> List[str]:
+    """Run trust-signal checks across the generated manifest entries.
+
+    Findings are returned as a list of human-readable strings. When ``strict`` is
+    set, the caller should treat a non-empty list as a build failure; otherwise
+    they're informational warnings printed to stderr.
+    """
+
+    findings: List[str] = []
+
+    for artifact in artifacts:
+        meta = artifact.metadata
+        name = artifact.path.name
+
+        # 1. description should reference the config_string for configuration builds.
+        # Rescue is exempt: it ships a hand-written human description rather than
+        # the boilerplate "{Channel} firmware for Sense360 X configuration." form.
+        if meta.is_configuration and meta.config_string and meta.channel != "rescue":
+            description = (meta.description or "").lower()
+            if description and meta.config_string.lower() not in description:
+                findings.append(
+                    f"{name}: description does not reference config_string "
+                    f"'{meta.config_string}' (got: {meta.description!r})."
+                )
+
+        # 2. every entry in modules should appear in config_string (case-insensitive).
+        if meta.is_configuration and meta.modules and meta.config_string:
+            cs_lower = meta.config_string.lower()
+            stray = [m for m in meta.modules if m.lower() not in cs_lower]
+            if stray:
+                findings.append(
+                    f"{name}: modules {stray} not present in config_string "
+                    f"'{meta.config_string}'."
+                )
+
+        # 3. file_size sanity. Skip entries we deliberately ship as placeholders.
+        if PLACEHOLDER_FIRMWARE_SIZE_BYTES < artifact.file_size < min_firmware_size:
+            findings.append(
+                f"{name}: file_size={artifact.file_size} bytes is below the "
+                f"plausible-firmware threshold ({min_firmware_size} bytes). "
+                "Verify this isn't a truncated build."
+            )
+
+        # 4. stable channel without any release-note signal at all.
+        if meta.channel == "stable" and meta.is_configuration:
+            has_features = bool(meta.features)
+            has_hardware = bool(meta.hardware_requirements)
+            if not has_features and not has_hardware:
+                findings.append(
+                    f"{name}: stable build has no features and no hardware_requirements; "
+                    "consider adding a release-notes .md so users get context."
+                )
+
+    return findings
+
+
+def validate_no_placeholder_descriptions(artifacts: Sequence[FirmwareArtifact]) -> List[str]:
+    """Soft check: catch obvious description/config drift like the historical
+    'AirIQPro described as a minimal configuration with no expansion modules'.
+    Returns findings (never raises)."""
+
+    findings: List[str] = []
+    minimal_phrases = ("no expansion modules", "minimal configuration", "no modules")
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if not meta.is_configuration or not meta.modules or not meta.description:
+            continue
+        desc_lower = meta.description.lower()
+        for phrase in minimal_phrases:
+            if phrase in desc_lower:
+                findings.append(
+                    f"{artifact.path.name}: description claims '{phrase}' but build "
+                    f"has modules {meta.modules}."
+                )
+                break
+    return findings
+
+
 def write_json_file(path: Path, data: Dict[str, object], *, dry_run: bool) -> None:
     if dry_run:
         print(f"[dry-run] Would write {path}")
@@ -905,6 +1002,23 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             "manifest. Can be provided multiple times or as a comma-separated list."
         ),
     )
+    parser.add_argument(
+        "--strict-validate",
+        action="store_true",
+        help=(
+            "Promote manifest-metadata validation findings (description / module / size "
+            "drift) from warnings to build failures."
+        ),
+    )
+    parser.add_argument(
+        "--min-firmware-size",
+        type=int,
+        default=DEFAULT_MIN_FIRMWARE_SIZE_BYTES,
+        help=(
+            "Minimum plausible firmware size in bytes; smaller builds are flagged as "
+            "suspicious. Default: %(default)s. Set to 0 to disable the size check."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -937,6 +1051,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
     validate_structured_config_consistency(ordered)
+    metadata_findings = validate_manifest_metadata(
+        ordered,
+        min_firmware_size=args.min_firmware_size,
+        strict=args.strict_validate,
+    )
+    metadata_findings.extend(validate_no_placeholder_descriptions(ordered))
+    if metadata_findings:
+        header = "Manifest metadata validation findings:"
+        body = "\n  - " + "\n  - ".join(metadata_findings)
+        if args.strict_validate:
+            raise SystemExit(header + body)
+        print(header + body, file=sys.stderr)
     manifest = build_manifest(ordered)
     if not manifest["builds"]:
         message = "Manifest would be empty; aborting."

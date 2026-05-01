@@ -88,6 +88,20 @@ jobs:
             --manifest-prefix firmware- \
             --summary
 
+      - name: Report manifest metadata findings
+        # Trust-signal validation: description / modules / file-size / release-note
+        # checks. Runs in warn-only mode against the freshly generated manifest so
+        # findings are visible in CI logs without blocking firmware deployment.
+        # Tighten to --strict-validate once existing stable builds gain release notes.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python scripts/gen-manifests.py \
+            --firmware-dir firmware \
+            --manifest-path manifest.json \
+            --manifest-prefix firmware- \
+            --dry-run
+
       - name: Validate release-note channel policy
         run: |
           set -euo pipefail
