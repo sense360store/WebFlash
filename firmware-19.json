@@ -10,7 +10,7 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Ceiling-VentIQBase-v3.0.1-stable.bin",
+          "path": "firmware/configurations/Sense360-Core-Ceiling-VentIQ-v3.0.1-stable.bin",
           "offset": 0,
           "md5": "05602f78a9de37b98475864012d68919",
           "sha256": "fe656669aac3071c64b44a4c3110848f2cf896bf5b96b5e4b21ea63e847ffa6b",
