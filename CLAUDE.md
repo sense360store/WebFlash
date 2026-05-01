@@ -18,21 +18,21 @@ The codebase has two halves that meet at `manifest.json`:
 
 ## Sense360 hardware reference (canonical SKUs)
 
-This is the **authoritative SKU list** for the supported hardware. Use these names verbatim in user-facing copy, manifest descriptions, and module metadata. There is no Model/Variant axis — drop any "Base / Pro" or model/variant terminology when touching this code; each SKU is its own product.
+This is the **authoritative SKU list** for the supported hardware. The **Friendly name** column is the canonical user-facing label — use it verbatim in wizard markup, manifest descriptions, and module metadata. There is no Model/Variant axis: each SKU is its own product, and "Base / Pro" or model/variant terminology must be dropped when touching this code. The **Old name** column lists deprecated internal/historical names and exists only to help recognise legacy references; do not use these in new code.
 
-| Category | Product | SKU | Rev | Internal name | Notes |
-|---|---|---|---|---|---|
-| Ceiling (internal) | Sense360 Core | S360-100 | R4 | `360Core_Ceiling_V3_R` | Main board. ESP32-S3 with connectors for all other modules. |
-| Ceiling (internal) | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board: PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP351 (pressure). |
-| Ceiling (internal) | Sense360 AirIQ | S360-210 | R4 | `AirIQ Ceiling` | Air quality: CO₂ (SCD41), VOC (SGP41), gas (MICS-4514 + STM8). Connectors for PM (SPS30) and HCHO (SFA30). |
-| Ceiling (internal) | Sense360 VentIQ | S360-211 | R4 | `Bathroom Pro` | Bathroom-focused air quality. SGP41 onboard. Connectors for IR temp and SPS30. |
-| Ceiling (internal) | Sense360 LED | S360-300 | R4 | LED Ring | Ring of WS2812B LEDs. |
-| Fan / switching | Sense360 Fan Relay | S360-310 | R4 | `S360-Relay-C` | On/off relay for bathroom fans. |
-| Fan / switching | Sense360 Fan PWM | S360-311 | R4 | `12vFan_PWM_PulseCounter` | 12V PWM fan driver, up to 4 fans with tach feedback. |
-| Fan / switching | Sense360 Fan DAC | S360-312 | R4 | `Fan_GP8403` | 0–10V analog fan driver (e.g. Cloudlift S12). |
-| Fan / switching | Sense360 TRIAC | S360-320 | R4 | `TRIAC_Board` | Phase dimmer for mains fan or lamp. |
-| Power | Sense360 Mains PSU | S360-400 | R4 | PWR Module | Mains → 5V via HLK-5M05. |
-| Power | Sense360 PoE PSU | S360-410 | R4 | PoE Module | PoE → 5V. |
+| Group | Type | Friendly name | SKU | Rev | Old name | What it does |
+|---|---|---|---|---|---|---|
+| Ceiling | Hub | Sense360 Core | S360-100 | R4 | `360Core_Ceiling_V3_R` | Main board. Has the ESP32-S3 and connectors for all other modules. |
+| Ceiling | Sensor | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board. PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp and humidity), BMP351 (pressure). |
+| Ceiling | Sensor | Sense360 AirIQ | S360-210 | R4 | `AirlQ Ceiling` (typo in old name) | Air quality board. CO2 (SCD41), VOC (SGP41), gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30). |
+| Ceiling | Sensor | Sense360 VentIQ | S360-211 | R4 | Bathroom Pro | Smaller air quality board for bathrooms. SGP41 on board. Connectors for IR temp and SPS30. |
+| Ceiling | Indicator | Sense360 LED | S360-300 | R4 | LED Ring | Ring of WS2812B LEDs. |
+| Inline | Driver | Sense360 Fan Relay | S360-310 | R4 | `S360-Relay-C` | On / off relay for bathroom fans. |
+| Inline | Driver | Sense360 Fan PWM | S360-311 | R4 | `12vFan_PWM_PulseCounter` | 12V PWM fan driver, up to 4 fans with tach feedback. |
+| Inline | Driver | Sense360 Fan DAC | S360-312 | R4 | `Fan_GP8403` | 0 to 10V analog fan driver, for example Cloudlift S12. |
+| Inline | Driver | Sense360 TRIAC | S360-320 | R4 | `TRIAC_Board` | Phase dimmer for mains fan or lamp. |
+| Power | PSU | Sense360 Mains PSU | S360-400 | R4 | PWR Module | Mains to 5V using HLK-5M05. |
+| Power | PSU | Sense360 PoE PSU | S360-410 | R4 | PoE Module | PoE to 5V. |
 
 Notes:
 

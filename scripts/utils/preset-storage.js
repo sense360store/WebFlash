@@ -833,7 +833,7 @@ function formatModuleName(moduleKey, value) {
         fan: {
             relay: 'Fan Relay',
             pwm: 'Fan PWM',
-            analog: 'Fan Analog',
+            analog: 'Fan DAC',
             triac: 'Fan TRIAC'
         }
     };

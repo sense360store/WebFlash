@@ -116,23 +116,23 @@ const POWER_LABELS = Object.freeze({
 
 const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
     ['airiq', Object.freeze({
-        base: 'AirIQ Base module'
+        base: 'Sense360 AirIQ'
     })],
     ['ventiq', Object.freeze({
-        base: 'Sense360 VentIQ module'
+        base: 'Sense360 VentIQ'
     })],
     ['fan', Object.freeze({
-        relay: 'Fan Relay module',
-        pwm: 'Fan PWM module',
-        analog: 'Fan Analog module',
-        triac: 'Fan TRIAC module'
+        relay: 'Sense360 Fan Relay',
+        pwm: 'Sense360 Fan PWM',
+        analog: 'Sense360 Fan DAC',
+        triac: 'Sense360 TRIAC'
     })],
     ['voice', Object.freeze({
-        none: 'Core (standard module)'
+        none: 'Sense360 Core'
     })],
     ['led', Object.freeze({
-        none: 'No LED Ring',
-        base: 'LED Ring module'
+        none: 'No LED ring',
+        base: 'Sense360 LED'
     })]
 ], { allowedKeys: MODULE_KEYS }));
 
@@ -145,15 +145,9 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 ], { allowedKeys: MODULE_KEYS });
 
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
-    ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
+    ['airiq', value => value === 'base' ? 'AirIQ' : ''],
     ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
-    ['fan', value => {
-        if (value === 'relay') return 'FanRelay';
-        if (value === 'pwm') return 'FanPWM';
-        if (value === 'analog') return 'FanAnalog';
-        if (value === 'triac') return 'FanTRIAC';
-        return '';
-    }],
+    ['fan', value => (value && value !== 'none') ? 'Fan' : ''],
     ['voice', () => 'Core'],
     ['led', value => value === 'airiq' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
@@ -5008,7 +5002,10 @@ export const __testHooks = Object.freeze({
     updateConnectionQualityMetrics,
     buildDiagnosticsBundle,
     redactDiagnosticsValue,
-    copyDiagnosticsBundle
+    copyDiagnosticsBundle,
+    parseConfigStringState,
+    formatConfigSegment,
+    MODULE_VARIANT_LABELS
 });
 
 export {
