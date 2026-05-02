@@ -62,7 +62,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                     },
                     {
                         module: 'ventiq',
-                        variants: ['airiq'],
+                        variants: ['ventiq'],
                         message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
                         detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
                     }
@@ -83,7 +83,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [],
                 sensors: []
             },
-            airiq: {
+            ventiq: {
                 label: 'Sense360 VentIQ',
                 sku: 'S360-211',
                 coreRevision: 'R4',
@@ -183,7 +183,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [],
                 recommended: true
             },
-            airiq: {
+            led: {
                 label: 'Sense360 LED',
                 sku: 'S360-300',
                 coreRevision: 'R4',
