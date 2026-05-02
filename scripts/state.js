@@ -214,6 +214,9 @@ function updateConnectionQualityMetrics(partial = {}) {
     if (partial.resetStabilityWindow === true) {
         connectionQualityMetrics.stabilityWindowStart = Date.now();
     }
+    if (currentStep === 5) {
+        refreshPreflightDiagnostics();
+    }
     return getConnectionQualitySnapshot();
 }
 
@@ -258,12 +261,21 @@ function updateWizardStepVisibility(activeStepNumber, { exclude = null } = {}) {
 }
 
 function setPreFlashAcknowledgement(value) {
-    preFlashAcknowledged = Boolean(value);
+    const next = Boolean(value);
+    const changed = preFlashAcknowledged !== next;
+    preFlashAcknowledged = next;
+    if (changed) {
+        refreshPreflightDiagnostics();
+    }
     updateFirmwareControls();
 }
 
 function setPreflightWarningsAcknowledgement(value) {
-    preflightWarningsAcknowledged = Boolean(value);
+    const next = Boolean(value);
+    if (preflightWarningsAcknowledged === next) {
+        return;
+    }
+    preflightWarningsAcknowledged = next;
     updateFirmwareControls();
 }
 
@@ -2293,6 +2305,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         updateConfiguration({ skipUrlUpdate: true });
         updateSummary();
         findCompatibleFirmware();
+        refreshPreflightDiagnostics();
     }
 
     if (!skipUrlUpdate) {
@@ -3290,6 +3303,7 @@ async function verifyCurrentFirmwareIntegrity() {
         firmwareVerificationState = createEmptyVerificationState();
         renderSelectedFirmware();
         updateFirmwareControls();
+        refreshPreflightDiagnostics();
         return;
     }
 
@@ -3303,6 +3317,7 @@ async function verifyCurrentFirmwareIntegrity() {
         };
         renderSelectedFirmware();
         updateFirmwareControls();
+        refreshPreflightDiagnostics();
         return;
     }
 
@@ -3324,6 +3339,7 @@ async function verifyCurrentFirmwareIntegrity() {
         };
         renderSelectedFirmware();
         updateFirmwareControls();
+        refreshPreflightDiagnostics();
         return;
     }
 
@@ -3343,6 +3359,7 @@ async function verifyCurrentFirmwareIntegrity() {
     };
     renderSelectedFirmware();
     updateFirmwareControls();
+    refreshPreflightDiagnostics();
 
     try {
         const results = await Promise.all(parts.map(part => verifyFirmwarePart(part)));
@@ -3399,6 +3416,7 @@ async function verifyCurrentFirmwareIntegrity() {
         if (token === firmwareVerificationToken) {
             renderSelectedFirmware();
             updateFirmwareControls();
+            refreshPreflightDiagnostics();
         }
     }
 }
