@@ -60,9 +60,9 @@
                 <ul class="sidebar-hardware__headers" data-hardware-summary-headers hidden></ul>
             </section>
             <div class="sidebar-actions">
-                <button class="btn primary" id="sb-copy-link" type="button">Copy sharable link</button>
-                <button class="btn btn-qr" id="sb-show-qr" type="button" aria-label="Show QR code">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button class="btn primary" id="sb-copy-link" type="button">Copy link</button>
+                <button class="btn btn-qr" id="sb-show-qr" type="button" aria-label="Show QR code" title="Share via QR code">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"/>
                         <rect x="14" y="3" width="7" height="7"/>
                         <rect x="3" y="14" width="7" height="7"/>
@@ -71,33 +71,28 @@
                         <rect x="14" y="18" width="3" height="3"/>
                         <rect x="18" y="18" width="3" height="3"/>
                     </svg>
-                    <span class="btn-qr__label">QR Code</span>
+                    <span class="btn-qr__label">QR</span>
                 </button>
-                <button class="btn" id="sb-reset" type="button">Start over</button>
+                <button class="btn btn-link" id="sb-reset" type="button">Start over</button>
+            </div>
+            <div class="sidebar-capabilities" id="sb-capabilities-inline" aria-label="Browser capability">
+                <span class="sidebar-capabilities__pill" id="sb-cap-mount"></span>
             </div>
         `;
 
-        const capabilitiesCard = document.createElement('div');
-        capabilitiesCard.className = 'sidebar-card';
-        capabilitiesCard.id = 'sb-capabilities';
-        capabilitiesCard.innerHTML = `
-            <h4>Capabilities</h4>
-            <div id="sb-cap-mount"></div>
-        `;
-
         const firmwareCard = document.createElement('div');
-        firmwareCard.className = 'sidebar-card';
+        firmwareCard.className = 'sidebar-card sidebar-card--firmware';
         firmwareCard.id = 'sb-firmware';
+        firmwareCard.dataset.empty = 'true';
         firmwareCard.innerHTML = `
             <h4>Firmware</h4>
-            <div id="sb-fw-meta">Selected build will appear here.</div>
+            <div id="sb-fw-meta" class="sidebar-fw-note sidebar-muted">Build selection will appear once power is set.</div>
         `;
 
         sidebar.appendChild(configCard);
-        sidebar.appendChild(capabilitiesCard);
         sidebar.appendChild(firmwareCard);
 
-        const mountPoint = capabilitiesCard.querySelector('#sb-cap-mount');
+        const mountPoint = configCard.querySelector('#sb-cap-mount');
         if (mountPoint) {
             mountPoint.innerHTML = '';
             if (typeof window.renderCapabilityBar === 'function') {
@@ -105,13 +100,22 @@
                     window.renderCapabilityBar(mountPoint);
                 } catch (error) {
                     console.error('[splitview] Failed to render capability bar', error);
+                    mountPoint.textContent = 'Web Serial (Chrome/Edge)';
                 }
             } else {
-                const note = document.createElement('p');
-                note.className = 'sidebar-fw-note sidebar-muted';
-                note.textContent = 'Uses Web Serial (Chrome/Edge).';
-                mountPoint.appendChild(note);
+                mountPoint.textContent = 'Web Serial (Chrome/Edge)';
             }
+        }
+
+        // Reveal the Firmware card when firmware-note.js writes content into
+        // #sb-fw-meta. Until then it stays hidden via the data-empty attribute.
+        const fwMeta = firmwareCard.querySelector('#sb-fw-meta');
+        if (fwMeta && typeof MutationObserver === 'function') {
+            const observer = new MutationObserver(() => {
+                const hasFirmwareContent = !!fwMeta.querySelector('.sidebar-fw-label');
+                firmwareCard.dataset.empty = hasFirmwareContent ? 'false' : 'true';
+            });
+            observer.observe(fwMeta, { childList: true, subtree: true });
         }
     }
 

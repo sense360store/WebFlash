@@ -8,10 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./css/wizard-style.css?v=1761944400">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=20260501">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/layout.css?v=20260501">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -44,34 +44,20 @@
             </button>
         </header>
 
-        <nav class="path-selector" aria-label="Choose your firmware path">
-            <div class="path-selector__options">
-                <a href="#step-1" class="path-card path-card--active" data-path="prebuilt">
-                    <div class="path-card__content">
-                        <h3 class="path-card__title">Flash Pre-built Firmware</h3>
-                        <p class="path-card__description">Install tested configurations for your hardware. Select your device type and install directly from your browser.</p>
-                    </div>
-                    <span class="path-card__badge">Recommended</span>
-                </a>
-                <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer" class="path-card" data-path="custom">
-                    <div class="path-card__content">
-                        <h3 class="path-card__title">Build Custom Firmware</h3>
-                        <p class="path-card__description">Configure custom firmware using ESPHome YAML. Adjust sensors, update intervals, and integration settings.</p>
-                    </div>
-                    <span class="path-card__external">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
-                        </svg>
-                    </span>
-                </a>
-            </div>
-        </nav>
-
-        <section class="prereq-panel" aria-labelledby="prereq-panel-title">
-            <div class="prereq-panel__header">
-                <h2 id="prereq-panel-title" class="prereq-panel__title">Before you start</h2>
-                <p class="prereq-panel__subtitle">A 30-second check so the install works on the first try.</p>
-            </div>
+        <details class="prereq-panel" aria-labelledby="prereq-panel-title">
+            <summary class="prereq-panel__summary">
+                <span class="prereq-panel__summary-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </span>
+                <span class="prereq-panel__summary-text">
+                    <strong id="prereq-panel-title">Before you start:</strong> use desktop Chrome, Edge, or Opera with a <strong>USB data cable</strong>.
+                </span>
+                <span class="prereq-panel__summary-cta" aria-hidden="true">Show details</span>
+            </summary>
             <ul class="prereq-panel__list">
                 <li class="prereq-panel__item">
                     <span class="prereq-panel__label">Browser</span>
@@ -93,16 +79,11 @@
             <p class="prereq-panel__fallback">
                 If your hub isn&rsquo;t detected when you click Install, hold <strong>BOOT</strong>, tap <strong>RESET</strong>, then release BOOT to enter recovery mode and try again. Most devices don&rsquo;t need this step.
             </p>
-        </section>
+        </details>
 
         <div class="wizard-container">
             <div class="wizard-shell" data-wizard-shell="static">
                 <aside class="wizard-stepper" aria-label="Wizard progress">
-                    <header class="wizard-stepper__header">
-                        <p class="wizard-stepper__eyebrow">Sense360 setup</p>
-                        <h2 class="wizard-stepper__title">Configure firmware</h2>
-                        <p class="wizard-stepper__subtitle">Five quick steps to a ready-to-flash hub.</p>
-                    </header>
                     <ol class="wizard-stepper__list" role="list">
                         <li class="wizard-stepper__item">
                             <a href="#step-1" class="progress-step wizard-stepper__node active" data-step="1" data-reachable="true">
@@ -110,8 +91,7 @@
                                     <span class="step-number">1</span>
                                 </span>
                                 <span class="wizard-stepper__text">
-                                    <span class="step-label">Mounting</span>
-                                    <span class="wizard-stepper__hint">Choose installation type</span>
+                                    <span class="step-label">Get started</span>
                                 </span>
                             </a>
                         </li>
@@ -122,7 +102,6 @@
                                 </span>
                                 <span class="wizard-stepper__text">
                                     <span class="step-label">Core</span>
-                                    <span class="wizard-stepper__hint">Pick the hub family</span>
                                 </span>
                             </a>
                         </li>
@@ -133,7 +112,6 @@
                                 </span>
                                 <span class="wizard-stepper__text">
                                     <span class="step-label">Power</span>
-                                    <span class="wizard-stepper__hint">Select power source</span>
                                 </span>
                             </a>
                         </li>
@@ -144,7 +122,6 @@
                                 </span>
                                 <span class="wizard-stepper__text">
                                     <span class="step-label">Modules</span>
-                                    <span class="wizard-stepper__hint">Add expansion boards</span>
                                 </span>
                             </a>
                         </li>
@@ -155,7 +132,6 @@
                                 </span>
                                 <span class="wizard-stepper__text">
                                     <span class="step-label">Review</span>
-                                    <span class="wizard-stepper__hint">Verify &amp; install firmware</span>
                                 </span>
                             </a>
                         </li>
@@ -188,7 +164,7 @@
 
                     <!-- Step 2: Core Configuration -->
                     <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
-                <h2>Step 2: Configure Core Features</h2>
+                <h2>Configure your Core</h2>
                 <p class="step-intro">Choose the base Sense360 hub family before selecting power and expansion modules.</p>
 
                 <aside class="safety-notice" aria-label="Important safety information">
@@ -235,56 +211,41 @@
                 </div>
                     </div>
 
-                    <!-- Step 1: Mounting Type -->
+                    <!-- Step 1: Get started -->
                     <div class="wizard-step step" id="step-1">
-                <h2>Step 1: Where is this unit being installed?</h2>
-                <p class="step-intro">Mounting is first because it determines supported power accessories and module compatibility.</p>
+                <h2>Pick a starting point</h2>
+                <p class="step-intro">Choose a tested preset to jump straight to firmware selection, or configure each module yourself.</p>
 
-                <div class="quick-start-presets" data-quick-start-presets>
-                    <p class="quick-start-presets__label">Quick start:</p>
-                    <div class="quick-start-presets__buttons">
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
-                            Popular: Ceiling + Sense360 AirIQ
-                        </button>
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
-                            Minimal: Ceiling + USB only
-                        </button>
-                    </div>
-                    <p class="quick-start-presets__hint">Or configure step-by-step below</p>
+                <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
+                    <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
+                        <span class="quick-start-card__badge">Most popular</span>
+                        <span class="quick-start-card__title">Ceiling + AirIQ over PoE</span>
+                        <span class="quick-start-card__description">Full air-quality stack powered over Ethernet. Recommended for most rooms.</span>
+                        <span class="quick-start-card__meta">PoE PSU &middot; Sense360 AirIQ &middot; no fan driver</span>
+                    </button>
+                    <button class="quick-start-card btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
+                        <span class="quick-start-card__title">Ceiling Core over USB</span>
+                        <span class="quick-start-card__description">Just the Sense360 Core, powered from USB. Fastest way to get going.</span>
+                        <span class="quick-start-card__meta">USB power &middot; no expansion modules</span>
+                    </button>
+                </section>
+
+                <div class="manual-path">
+                    <p class="manual-path__label">Building something different?</p>
+                    <button class="btn btn-secondary btn-next" type="button" data-next>Configure manually &rarr;</button>
                 </div>
-                <div class="option-grid">
-                    <label class="option-card">
-                        <input type="radio" name="mounting" value="ceiling">
-                        <div class="option-content">
-                            <div class="option-header">
-                                <div class="option-title">Ceiling Mount</div>
-                                <button
-                                    type="button"
-                                    class="option-info-button"
-                                    data-option-info
-                                    data-option-group="mounting"
-                                    data-option-value="ceiling"
-                                    aria-label="Details about Ceiling Mount"
-                                    aria-controls="option-info-popover"
-                                    aria-describedby="option-info-popover-summary"
-                                >
-                                    <span aria-hidden="true">i</span>
-                                </button>
-                            </div>
-                            <div class="option-description">Ceiling installation</div>
-                        </div>
-                    </label>
-                </div>
-                <div class="wizard-actions">
-                    <button class="btn btn-secondary" type="button" data-back>Back</button>
-                    <button class="btn btn-primary btn-next" type="button" data-next disabled>Next</button>
-                </div>
+
+                <input type="hidden" name="mounting" value="ceiling" data-mounting-default>
+
+                <p class="step-1-footnote">
+                    Need full control? <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer">Build custom firmware with ESPHome YAML</a>.
+                </p>
                     </div>
 
                     <!-- Step 3: Power Option -->
                     <div class="wizard-step step" id="step-3" hidden aria-hidden="true">
-                <h2>Step 3: Select Power Option</h2>
-                <p class="step-intro">Select how this unit will be powered in the field. This impacts cable planning and available accessories.</p>
+                <h2>How is the hub powered?</h2>
+                <p class="step-intro">Pick how this unit will get power in the field. This affects cable planning and available accessories.</p>
                 <div class="option-grid">
                     <label class="option-card">
                         <input type="radio" name="power" value="usb">
@@ -358,7 +319,7 @@
 
                 <!-- Step 4: Expansion Modules -->
                 <div class="wizard-step step" id="step-4" hidden aria-hidden="true">
-                <h2>Step 4: Add Expansion Modules</h2>
+                <h2>Add expansion modules</h2>
                 <div class="module-status-bar" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
                 </div>
@@ -907,7 +868,7 @@
 
                     <!-- Step 5: Review & Install -->
                     <div class="wizard-step step" id="step-5" hidden aria-hidden="true">
-                <h2>Step 5: Review & Install</h2>
+                <h2>Review &amp; install</h2>
 
                 <p class="step-intro">
                     Use desktop Chrome or Edge to connect your Sense360 hub. Then click &lsquo;Install firmware&rsquo;. If you&rsquo;re not on a supported browser, download the .bin instead.

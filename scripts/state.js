@@ -4861,6 +4861,14 @@ function initializeFromUrl() {
         sanitizedConfig.ventiq = allowedOptions.ventiq.includes(ventiqRaw) ? ventiqRaw : 'none';
     }
 
+    // Ceiling is currently the only supported mounting (see CLAUDE.md), so
+    // pre-select it on first load when no URL value was provided. This lets
+    // Step 1 act as a "Get started / quick-start preset" landing screen
+    // instead of forcing users through a one-option radio.
+    if (!sanitizedConfig.mounting) {
+        sanitizedConfig.mounting = 'ceiling';
+    }
+
     applyConfiguration(sanitizedConfig);
 
     if (Array.isArray(parsed.notices) && parsed.notices.length) {
