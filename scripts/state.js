@@ -186,10 +186,6 @@ function getVisibleModuleGroupKeys() {
 
 let activeModuleGroupKey = null;
 
-let moduleDetailPanelElement = null;
-let moduleDetailPanelInitialized = false;
-let activeModuleDetailKey = null;
-let activeModuleDetailVariant = null;
 let preFlashAcknowledged = false;
 let preflightWarningsAcknowledged = false;
 let currentFlashEntryId = null;
@@ -473,15 +469,6 @@ function formatConfigSegment(moduleKey, moduleValue) {
     return `-${segment}`;
 }
 
-function ensureModuleDetailPanelElement() {
-    if (moduleDetailPanelElement) {
-        return moduleDetailPanelElement;
-    }
-
-    moduleDetailPanelElement = document.getElementById('module-requirements-panel');
-    return moduleDetailPanelElement;
-}
-
 function formatHeaderList(headers = []) {
     const items = headers.filter(item => typeof item === 'string' && item.trim().length > 0);
     if (items.length === 0) {
@@ -593,241 +580,6 @@ function updateModuleConflictBadges() {
         badge.classList.toggle('is-active', isActive);
         badge.setAttribute('aria-hidden', String(!isActive));
     });
-}
-
-function renderModuleDetailPanel() {
-    const panel = ensureModuleDetailPanelElement();
-    if (!panel) {
-        return;
-    }
-
-    if (!activeModuleDetailKey || !MODULE_REQUIREMENT_MATRIX[activeModuleDetailKey]) {
-        panel.innerHTML = '<div class="module-requirements-panel__placeholder">Highlight a module option to see required core revisions, headers, and conflicts.</div>';
-        return;
-    }
-
-    const moduleEntry = getModuleMatrixEntry(activeModuleDetailKey);
-    if (!moduleEntry) {
-        panel.innerHTML = '<div class="module-requirements-panel__placeholder">Highlight a module option to see required core revisions, headers, and conflicts.</div>';
-        return;
-    }
-
-    const variants = moduleEntry.variants || {};
-    const selectedVariant = configuration[activeModuleDetailKey] || 'none';
-    const effectiveVariant = variants[activeModuleDetailVariant] ? activeModuleDetailVariant : selectedVariant;
-
-    let header = panel.querySelector('.module-detail__header');
-    let variantsContainer = panel.querySelector('.module-detail__variants');
-
-    if (!header || !variantsContainer) {
-        panel.innerHTML = '';
-
-        header = document.createElement('div');
-        header.className = 'module-detail__header';
-
-        const titleElement = document.createElement('h4');
-        titleElement.className = 'module-detail__title';
-        header.appendChild(titleElement);
-
-        panel.appendChild(header);
-
-        variantsContainer = document.createElement('div');
-        variantsContainer.className = 'module-detail__variants';
-        panel.appendChild(variantsContainer);
-    }
-
-    const titleElement = header.querySelector('.module-detail__title');
-    if (titleElement) {
-        titleElement.textContent = moduleEntry.label || MODULE_LABELS[activeModuleDetailKey] || activeModuleDetailKey;
-    }
-
-    let summaryElement = header.querySelector('.module-detail__summary');
-    if (moduleEntry.summary) {
-        if (!summaryElement) {
-            summaryElement = document.createElement('p');
-            summaryElement.className = 'module-detail__summary';
-            header.appendChild(summaryElement);
-        }
-        summaryElement.textContent = moduleEntry.summary;
-    } else if (summaryElement) {
-        summaryElement.remove();
-    }
-
-    variantsContainer.innerHTML = '';
-
-    Object.entries(variants).forEach(([variantKey, variant]) => {
-        const cardClasses = ['module-variant-card'];
-        if (variantKey === effectiveVariant) {
-            cardClasses.push('is-highlighted');
-        }
-        if (variantKey === selectedVariant) {
-            cardClasses.push('is-selected');
-        }
-
-        const coreRevision = variant.coreRevision
-            ? escapeHtml(variant.coreRevision)
-            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">No additional requirement</span>';
-
-        const headers = Array.isArray(variant.headers) && variant.headers.length > 0
-            ? escapeHtml(formatHeaderList(variant.headers))
-            : '<span class="module-variant-card__meta-value module-variant-card__meta-value--muted">No additional headers</span>';
-
-        const conflictMeta = collectVariantConflictMeta(activeModuleDetailKey, variantKey, variant);
-
-        const badgesHtml = conflictMeta.length > 0
-            ? `<div class="module-variant-card__badges">${conflictMeta.map(meta => `
-                <span class="module-variant-card__badge${meta.isActive ? ' is-active' : ''}" title="${escapeHtml(meta.tooltip)}">
-                    ${escapeHtml(meta.badgeLabel)}
-                </span>
-            `).join('')}</div>`
-            : '';
-
-        const detailItems = [];
-        if (variant.coreRevision) {
-            detailItems.push(`Requires ${escapeHtml(variant.coreRevision)}.`);
-        }
-        if (Array.isArray(variant.headers) && variant.headers.length > 0) {
-            detailItems.push(`Needs ${escapeHtml(formatHeaderList(variant.headers))}.`);
-        }
-        conflictMeta.forEach(meta => {
-            if (meta.detail) {
-                detailItems.push(escapeHtml(meta.detail));
-            }
-        });
-
-        const hasDetails = detailItems.length > 0;
-        const detailId = `module-variant-details-${activeModuleDetailKey}-${variantKey}`;
-        const accordionHtml = hasDetails
-            ? `<button type="button" class="module-variant-card__accordion" data-variant-accordion aria-expanded="false" aria-controls="${detailId}">Advanced details</button>`
-            : '';
-
-        const detailsHtml = hasDetails
-            ? `<div class="module-variant-card__panel" id="${detailId}" hidden><ul class="module-variant-card__panel-list">${detailItems.map(item => `<li>${item}</li>`).join('')}</ul></div>`
-            : '';
-
-        const variantLabel = variant.label
-            ? variant.label
-            : formatModuleSelectionLabel(activeModuleDetailKey, variantKey);
-
-        const cardHtml = `
-            <article class="${cardClasses.join(' ')}">
-                <div class="module-variant-card__header">
-                    <span class="module-variant-card__title">${escapeHtml(variantLabel)}</span>
-                </div>
-                <div class="module-variant-card__meta">
-                    <span><strong>Core</strong><span class="module-variant-card__meta-value">${coreRevision}</span></span>
-                    <span><strong>Headers</strong><span class="module-variant-card__meta-value">${headers}</span></span>
-                </div>
-                ${badgesHtml}
-                ${accordionHtml}
-                ${detailsHtml}
-            </article>
-        `;
-
-        variantsContainer.insertAdjacentHTML('beforeend', cardHtml);
-    });
-}
-
-function setActiveModuleDetail(moduleKey, variantKey) {
-    if (!moduleKey || !MODULE_REQUIREMENT_MATRIX[moduleKey]) {
-        return;
-    }
-
-    const moduleEntry = getModuleMatrixEntry(moduleKey);
-    const variants = moduleEntry?.variants || {};
-
-    activeModuleDetailKey = moduleKey;
-    if (variantKey && variants[variantKey]) {
-        activeModuleDetailVariant = variantKey;
-    } else {
-        const selectedVariant = configuration[moduleKey] || 'none';
-        activeModuleDetailVariant = variants[selectedVariant] ? selectedVariant : Object.keys(variants)[0] || null;
-    }
-
-    renderModuleDetailPanel();
-}
-
-function syncModuleDetailPanelToSelection() {
-    if (!moduleDetailPanelInitialized) {
-        return;
-    }
-
-    const panel = ensureModuleDetailPanelElement();
-    if (!panel) {
-        return;
-    }
-
-    if (!activeModuleDetailKey || !MODULE_REQUIREMENT_MATRIX[activeModuleDetailKey]) {
-        const defaultModule = getVisibleModuleGroupKeys().find(key => MODULE_REQUIREMENT_MATRIX[key]);
-        if (defaultModule) {
-            activeModuleDetailKey = defaultModule;
-        }
-    }
-
-    if (!activeModuleDetailKey) {
-        renderModuleDetailPanel();
-        return;
-    }
-
-    setActiveModuleDetail(activeModuleDetailKey, activeModuleDetailVariant);
-}
-
-function initializeModuleDetailPanel() {
-    if (moduleDetailPanelInitialized) {
-        return;
-    }
-
-    const panel = ensureModuleDetailPanelElement();
-    if (!panel) {
-        return;
-    }
-
-    moduleDetailPanelInitialized = true;
-
-    const handleHighlight = (event) => {
-        const input = event?.target;
-        if (!input || !input.name || !MODULE_REQUIREMENT_MATRIX[input.name]) {
-            return;
-        }
-        setActiveModuleDetail(input.name, input.value || configuration[input.name] || 'none');
-    };
-
-    panel.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-variant-accordion]');
-        if (!button || !panel.contains(button)) {
-            return;
-        }
-
-        const controlsId = button.getAttribute('aria-controls');
-        const details = controlsId ? document.getElementById(controlsId) : null;
-        if (!details) {
-            return;
-        }
-
-        const expanded = button.getAttribute('aria-expanded') === 'true';
-        button.setAttribute('aria-expanded', String(!expanded));
-        details.hidden = expanded;
-    });
-
-    document.querySelectorAll('[data-module-card] input[type="radio"]').forEach(input => {
-        input.addEventListener('focus', handleHighlight);
-        input.addEventListener('change', handleHighlight);
-
-        const card = input.closest('.option-card');
-        if (card && card.dataset.moduleDetailBound !== 'true') {
-            card.addEventListener('mouseenter', () => {
-                setActiveModuleDetail(input.name, input.value || configuration[input.name] || 'none');
-            });
-            card.dataset.moduleDetailBound = 'true';
-        }
-    });
-
-    const defaultModule = getVisibleModuleGroupKeys().find(key => MODULE_REQUIREMENT_MATRIX[key]);
-    if (defaultModule) {
-        setActiveModuleDetail(defaultModule, configuration[defaultModule] || 'none');
-    } else {
-        renderModuleDetailPanel();
-    }
 }
 
 function describeVariantRequirements(moduleKey, variantKey) {
@@ -1527,6 +1279,7 @@ function bindWizardEventListeners() {
         { selector: 'input[name="airiq"]', datasetKey: 'airiqBound', handler: updateConfiguration },
         { selector: 'input[name="fan"]', datasetKey: 'fanBound', handler: updateConfiguration },
         { selector: 'input[name="led"]', datasetKey: 'ledBound', handler: updateConfiguration },
+        { selector: 'input[name="roomiq"]', datasetKey: 'roomiqBound', handler: updateConfiguration },
         { selector: 'input[name="ventiq"]', datasetKey: 'ventiqBound', handler: updateConfiguration }
     ];
 
@@ -1582,9 +1335,9 @@ function initializeWizard() {
     }
 
     try {
-        initializeModuleDetailPanel();
+        initializeModuleToggles();
     } catch (error) {
-        console.error('Failed to initialize module detail panel:', error);
+        console.error('Failed to initialize module toggles:', error);
     }
 
     try {
@@ -1994,6 +1747,55 @@ function updateModuleGroupSummaries() {
     });
 }
 
+function syncModuleToggleStates() {
+    document.querySelectorAll('[data-module-toggle]').forEach(checkbox => {
+        const moduleKey = checkbox.getAttribute('data-module-key');
+        const variantOn = checkbox.getAttribute('data-variant-on');
+        if (!moduleKey || !variantOn) {
+            return;
+        }
+
+        const currentValue = configuration[moduleKey] || 'none';
+        checkbox.checked = currentValue === variantOn;
+
+        const onRadio = document.querySelector(`input[name="${moduleKey}"][value="${variantOn}"]`);
+        const isUnavailable = !!(onRadio && onRadio.disabled);
+        checkbox.disabled = isUnavailable;
+
+        const group = checkbox.closest('[data-module-group]');
+        if (group) {
+            group.classList.toggle('is-on', checkbox.checked);
+            group.classList.toggle('is-unavailable', isUnavailable);
+        }
+    });
+}
+
+function initializeModuleToggles() {
+    document.querySelectorAll('[data-module-toggle]').forEach(checkbox => {
+        if (checkbox.dataset.moduleToggleBound === 'true') {
+            return;
+        }
+        checkbox.dataset.moduleToggleBound = 'true';
+
+        checkbox.addEventListener('change', () => {
+            const moduleKey = checkbox.getAttribute('data-module-key');
+            const variantOn = checkbox.getAttribute('data-variant-on');
+            if (!moduleKey || !variantOn) {
+                return;
+            }
+
+            const targetValue = checkbox.checked ? variantOn : 'none';
+            const radio = document.querySelector(`input[name="${moduleKey}"][value="${targetValue}"]`);
+            if (radio) {
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        });
+    });
+
+    syncModuleToggleStates();
+}
+
 function setModuleGroupExpanded(groupElement, expanded) {
     if (!groupElement) {
         return;
@@ -2339,7 +2141,7 @@ function updateConfiguration(options = {}) {
     updateModuleOptionAvailability();
     syncConfigurationFromInputs();
     updateModuleAvailabilityMessage();
-    syncModuleDetailPanelToSelection();
+    syncModuleToggleStates();
     updateModuleConflictBadges();
     updateModuleGroupSummaries();
 
@@ -2410,7 +2212,7 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         updateBathroomVisibility();
         updateModuleOptionAvailability();
         updateModuleAvailabilityMessage();
-        syncModuleDetailPanelToSelection();
+        syncModuleToggleStates();
     }
 
     if (currentStep === 5) {
