@@ -36,7 +36,7 @@ function sanitizeHistoryEntry(entry) {
  * @typedef {Object} FlashHistoryEntry
  * @property {string} id - Unique entry identifier
  * @property {string} timestamp - ISO 8601 timestamp
- * @property {string} configString - Configuration string (e.g., "Wall-USB-AirIQBase")
+ * @property {string} configString - Configuration string (e.g., "Ceiling-POE-AirIQ")
  * @property {string} firmwareVersion - Firmware version (e.g., "1.0.0")
  * @property {string} channel - Release channel (stable, beta, preview)
  * @property {string} status - Flash status: 'started', 'success', 'error'

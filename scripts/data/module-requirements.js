@@ -1,7 +1,37 @@
 const MODULE_REQUIREMENT_MATRIX = {
+    roomiq: {
+        label: 'Sense360 RoomIQ',
+        summary: 'Room sensor board with presence, light, temperature, humidity, and pressure sensing.',
+        variants: {
+            none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                conflicts: [],
+                sensors: []
+            },
+            roomiq: {
+                label: 'Sense360 RoomIQ',
+                sku: 'S360-200',
+                coreRevision: 'R4',
+                headers: ['J3 sensor bus'],
+                description: 'Room sensor board. PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temperature/humidity), BMP581 (pressure).',
+                recommended: true,
+                sensors: [
+                    'PIR motion',
+                    'LD2450 (mmWave presence)',
+                    'SEN0609',
+                    'LTR-303ALS (light)',
+                    'SHT4x (temperature/humidity)',
+                    'BMP581 (pressure)'
+                ],
+                conflicts: []
+            }
+        }
+    },
     airiq: {
-        label: 'AirIQ Module',
-        summary: 'Air quality stack for particulate, VOC, and CO₂ sensors.',
+        label: 'Sense360 AirIQ',
+        summary: 'Air quality board with CO₂, VOC, and gas sensing plus expansion connectors.',
         variants: {
             none: {
                 label: 'None',
@@ -9,50 +39,40 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: [],
                 conflicts: []
             },
-            base: {
-                label: 'Base',
-                coreRevision: 'Rev B core or newer',
+            airiq: {
+                label: 'Sense360 AirIQ',
+                sku: 'S360-210',
+                coreRevision: 'R4',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
+                description: 'Ceiling air-quality board with CO₂ (SCD41), VOC (SGP41), and gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30).',
                 recommended: true,
+                sensors: [
+                    'SCD41 (CO₂)',
+                    'SGP41 (VOC)',
+                    'MICS-4514 with STM8 (gas)',
+                    'SPS30 connector (particulate matter, optional)',
+                    'SFA30 connector (formaldehyde, optional)'
+                ],
                 conflicts: [
                     {
                         module: 'fan',
                         variants: ['analog'],
-                        message: 'Conflicts with Fan Analog — analog control uses the shared DAC header.',
-                        detail: 'Select PWM fan control or remove the AirIQ Base module to free the DAC bus.'
+                        message: 'Conflicts with Fan DAC — analog control uses the shared DAC header.',
+                        detail: 'Select PWM, Relay, or TRIAC fan control or remove the AirIQ module to free the DAC bus.'
                     },
                     {
-                        module: 'bathroomairiq',
-                        variants: ['base'],
+                        module: 'ventiq',
+                        variants: ['ventiq'],
                         message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
-                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ Base only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
-                    }
-                ]
-            },
-            pro: {
-                label: 'Pro',
-                coreRevision: 'Rev C core or newer',
-                headers: ['J4 sensor bus', 'J6 particulate harness', 'J7 auxiliary power'],
-                conflicts: [
-                    {
-                        module: 'fan',
-                        variants: ['analog'],
-                        message: 'Conflicts with Fan Analog — the Pro particulate harness occupies the DAC header.',
-                        detail: 'Choose PWM fan control or downgrade AirIQ to Base to regain analog fan support.'
-                    },
-                    {
-                        module: 'bathroomairiq',
-                        variants: ['base'],
-                        message: 'Conflicts with VentIQ — AirIQ and VentIQ cannot both be enabled.',
-                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ Pro only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select AirIQ only when VentIQ is disabled, and set AirIQ to None when VentIQ is selected.'
                     }
                 ]
             }
         }
     },
-    bathroomairiq: {
+    ventiq: {
         label: 'Sense360 VentIQ',
-        summary: 'Bathroom air-quality module with humidity, pressure, and VOC/NOx sensing.',
+        summary: 'Bathroom-focused air-quality board with onboard SGP41 plus IR temp and SPS30 connectors.',
         ceilingOnly: true,
         requiresBathroom: true,
         variants: {
@@ -63,23 +83,25 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [],
                 sensors: []
             },
-            base: {
+            ventiq: {
                 label: 'Sense360 VentIQ',
-                coreRevision: 'Rev C core or newer',
+                sku: 'S360-211',
+                coreRevision: 'R4',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
+                description: 'Smaller air-quality board for bathrooms. SGP41 on board, with connectors for IR temperature and SPS30 particulate sensors.',
                 recommended: true,
                 conflicts: [
                     {
                         module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ Base/Pro — AirIQ and VentIQ cannot both be enabled.',
-                        detail: 'The Bathroom toggle drives VentIQ flow. Select VentIQ only when AirIQ is set to None, and disable VentIQ to use AirIQ Base or Pro.'
+                        variants: ['airiq'],
+                        message: 'Conflicts with AirIQ — AirIQ and VentIQ cannot both be enabled.',
+                        detail: 'The Bathroom toggle drives VentIQ flow. Select VentIQ only when AirIQ is set to None, and disable VentIQ to use AirIQ.'
                     }
                 ],
                 sensors: [
-                    'SHT4x (temperature, humidity)',
-                    'BMP390 (pressure)',
-                    'SGP41 (VOC / NOx)'
+                    'SGP41 (VOC / NOx, onboard)',
+                    'IR temperature connector (optional)',
+                    'SPS30 connector (particulate matter, optional)'
                 ]
             }
         }
@@ -89,37 +111,51 @@ const MODULE_REQUIREMENT_MATRIX = {
         summary: 'Driver options for external fan and load switching control.',
         variants: {
             none: {
+                label: 'None',
+                coreRevision: null,
+                headers: [],
+                description: 'No fan or switching driver installed.',
+                conflicts: []
+            },
+            relay: {
                 label: 'Sense360 Fan Relay',
+                sku: 'S360-310',
                 coreRevision: 'R4',
                 headers: ['S360-Relay-C'],
+                description: 'On / off relay for bathroom fans.',
                 conflicts: [],
                 recommended: true
             },
             pwm: {
                 label: 'Sense360 Fan PWM',
+                sku: 'S360-311',
                 coreRevision: 'R4',
                 headers: ['12vFan_PWM_PulseCounter'],
-                conflicts: [],
-                compatibilityNotes: [
-                    {
-                        mounting: 'ceiling',
-                        power: 'pwr',
-                        message: 'PWM fan control is not supported for Ceiling mount with PWR power.'
-                    }
-                ]
+                description: '12V PWM fan driver, up to 4 fans with tach feedback.',
+                conflicts: []
             },
             analog: {
                 label: 'Sense360 Fan DAC',
+                sku: 'S360-312',
                 coreRevision: 'R4',
                 headers: ['Fan_GP8403'],
+                description: '0 to 10V analog fan driver, for example Cloudlift S12.',
                 conflicts: [
                     {
                         module: 'airiq',
-                        variants: ['base', 'pro'],
-                        message: 'Conflicts with AirIQ Base/Pro — analog control occupies the shared DAC bus.',
+                        variants: ['airiq'],
+                        message: 'Conflicts with AirIQ — analog control occupies the shared DAC bus.',
                         detail: 'Disable AirIQ or switch the fan output to PWM mode.'
                     }
                 ]
+            },
+            triac: {
+                label: 'Sense360 TRIAC',
+                sku: 'S360-320',
+                coreRevision: 'R4',
+                headers: ['TRIAC_Board'],
+                description: 'Phase dimmer for mains fan or lamp.',
+                conflicts: []
             }
         }
     },
@@ -137,8 +173,8 @@ const MODULE_REQUIREMENT_MATRIX = {
         }
     },
     led: {
-        label: 'LED Ring',
-        summary: 'Visual feedback ring with optional microphone integration for voice-enabled cores.',
+        label: 'Sense360 LED',
+        summary: 'Ring of WS2812B LEDs for visual feedback, with optional microphone for voice-enabled cores.',
         variants: {
             none: {
                 label: 'None',
@@ -147,10 +183,12 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: [],
                 recommended: true
             },
-            base: {
-                label: 'Base',
-                coreRevision: 'Rev A core or newer',
+            led: {
+                label: 'Sense360 LED',
+                sku: 'S360-300',
+                coreRevision: 'R4',
                 headers: ['J11 LED data', 'J12 LED power'],
+                description: 'Ring of WS2812B LEDs.',
                 conflicts: [],
                 sensors: [
                     'WS2812B addressable LED ring',

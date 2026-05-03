@@ -134,11 +134,26 @@ POWER_TOKENS = {
     "solar",
 }
 
+CANONICAL_MOUNTINGS = {
+    "ceiling": "Ceiling",
+    "wall": "Wall",
+    "mini": "Mini",
+    "desk": "Desk",
+    "portable": "Portable",
+    "lab": "Lab",
+    "bench": "Bench",
+    "dev": "Dev",
+    "test": "Test",
+    "universal": "Universal",
+}
+
+EXACT_POWER_TOKENS = {"USB", "POE", "PWR"}
+
 CANONICAL_MODULE_TOKENS: Dict[str, str] = {
     "airiqpro": "AirIQ",
-    "bathroomairiq": "VentIQBase",
-    "bathroomairiqbase": "VentIQBase",
-    "bathroomairiqpro": "VentIQBase",
+    "bathroomairiq": "VentIQ",
+    "bathroomairiqbase": "VentIQ",
+    "bathroomairiqpro": "VentIQ",
     "ventiqpro": "VentIQ",
 }
 
@@ -146,6 +161,8 @@ LEGACY_MODULE_TOKENS = frozenset(CANONICAL_MODULE_TOKENS.keys())
 DEPRECATED_MODULE_TOKENS = frozenset(
     {
         "airiqpro",
+        "bathroomairiq",
+        "bathroomairiqbase",
         "bathroomairiqpro",
         "ventiqpro",
     }
@@ -259,8 +276,7 @@ def _normalise_config_tokens(tokens: List[str]) -> Tuple[List[str], Optional[str
         if lowered in CONFIG_CHIP_HINTS:
             chip_hint = CONFIG_CHIP_HINTS[lowered]
             continue
-        canonical_module = CANONICAL_MODULE_TOKENS.get(lowered)
-        filtered.append(canonical_module or token)
+        filtered.append(token)
     return filtered, chip_hint
 
 
@@ -341,14 +357,38 @@ def parse_firmware_metadata(
         if len(config_tokens) <= token_index:
             raise ValueError(f"Missing mounting token in '{name}'")
 
-        mounting = config_tokens[token_index].replace("_", " ").title()
+        config_tail = config_tokens[token_index:]
+        if not config_tail:
+            raise ValueError(f"Missing mounting token in '{name}'")
+
+        mounting = None
+        mounting_index = None
+        for index, token in enumerate(config_tail):
+            canonical_mount = CANONICAL_MOUNTINGS.get(token.replace("_", "-").lower())
+            if canonical_mount:
+                mounting = canonical_mount
+                mounting_index = index
+                break
+        if mounting is None:
+            raw_mounting = config_tail[0].replace("_", "-").strip()
+            mounting = CANONICAL_MOUNTINGS.get(raw_mounting.lower(), raw_mounting.title())
+            mounting_index = 0
+
         power = None
-        module_tokens = []
-        if len(config_tokens) >= token_index + 2 and config_tokens[token_index + 1].lower() in POWER_TOKENS:
-            power = config_tokens[token_index + 1].upper()
-            module_tokens = config_tokens[token_index + 2:]
-        else:
-            module_tokens = config_tokens[token_index + 1:]
+        power_index = None
+        for index, token in enumerate(config_tail):
+            candidate = token.upper()
+            if candidate in EXACT_POWER_TOKENS:
+                power = candidate
+                power_index = index
+                break
+
+        consumed_indexes = {mounting_index}
+        if power_index is not None:
+            consumed_indexes.add(power_index)
+        module_tokens = [
+            token for index, token in enumerate(config_tail) if index not in consumed_indexes
+        ]
         config_string = "-".join(config_tokens)
         description = describe_configuration(channel, config_string)
         return FirmwareMetadata(
@@ -661,25 +701,153 @@ def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
     }
 
 
+def _collect_deprecated_module_hits(values: Sequence[str]) -> List[str]:
+    hits: List[str] = []
+    for value in values:
+        parts = [part for part in value.split("-") if part]
+        for part in parts:
+            if part.lower() in DEPRECATED_MODULE_TOKENS:
+                hits.append(part)
+    return hits
+
+
 def validate_no_deprecated_modules(artifacts: Sequence[FirmwareArtifact]) -> None:
     for artifact in artifacts:
         meta = artifact.metadata
         if not meta.is_configuration:
             continue
-        deprecated_hits = [
-            token
-            for token in (meta.config_string or "").split("-")
-            if token.lower() in DEPRECATED_MODULE_TOKENS
-        ]
-        deprecated_hits.extend(
-            module for module in meta.modules if module.lower() in DEPRECATED_MODULE_TOKENS
-        )
+        deprecated_hits = _collect_deprecated_module_hits([meta.config_string or ""])
+        deprecated_hits.extend(_collect_deprecated_module_hits(meta.modules))
+        deprecated_hits.extend(_collect_deprecated_module_hits([meta.description]))
         if deprecated_hits:
             hits = ", ".join(sorted(set(deprecated_hits), key=str.lower))
             raise SystemExit(
                 f"Deprecated module name(s) found in {artifact.path.name}: {hits}. "
-                "Use current module taxonomy (for example: AirIQ, VentIQ, VentIQBase)."
+                "Use current module taxonomy (for example: AirIQ, VentIQ)."
             )
+
+
+
+
+def validate_structured_config_consistency(artifacts: Sequence[FirmwareArtifact]) -> None:
+    mismatches: List[str] = []
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if not meta.is_configuration or not meta.config_string:
+            continue
+        tokens = [token for token in meta.config_string.split("-") if token]
+        token_set = {token.upper() for token in tokens}
+        required_power_tokens = token_set.intersection(EXACT_POWER_TOKENS)
+        if required_power_tokens and meta.power is None:
+            mismatches.append(
+                f"{artifact.path.name}: config_string includes {sorted(required_power_tokens)} but power is null"
+            )
+            continue
+        if meta.power is not None and meta.power.upper() in EXACT_POWER_TOKENS and meta.power.upper() not in token_set:
+            mismatches.append(
+                f"{artifact.path.name}: power='{meta.power}' not present in config_string='{meta.config_string}'"
+            )
+    if mismatches:
+        joined = "\n  - "+"\n  - ".join(mismatches)
+        raise SystemExit(
+            "Structured metadata/config_string mismatch detected:" + joined
+        )
+
+
+# Minimum firmware size below which we suspect a placeholder / corrupted binary.
+# 100 KB chosen because real ESP32-S3 application partitions are ~500 KB+; anything
+# smaller than this is almost certainly a stub. The repo currently ships some 18-byte
+# placeholder binaries, so this threshold is enforced as a warning by default and
+# only fails the build when --strict-validate is passed.
+DEFAULT_MIN_FIRMWARE_SIZE_BYTES = 100 * 1024
+
+# Sentinel size for the placeholder stubs already committed (18-byte files). Anything
+# at or below this is treated as "intentional placeholder" rather than a suspicious
+# size. Production firmware will not produce values this low.
+PLACEHOLDER_FIRMWARE_SIZE_BYTES = 64
+
+
+def validate_manifest_metadata(
+    artifacts: Sequence[FirmwareArtifact],
+    *,
+    min_firmware_size: int = DEFAULT_MIN_FIRMWARE_SIZE_BYTES,
+    strict: bool = False,
+) -> List[str]:
+    """Run trust-signal checks across the generated manifest entries.
+
+    Findings are returned as a list of human-readable strings. When ``strict`` is
+    set, the caller should treat a non-empty list as a build failure; otherwise
+    they're informational warnings printed to stderr.
+    """
+
+    findings: List[str] = []
+
+    for artifact in artifacts:
+        meta = artifact.metadata
+        name = artifact.path.name
+
+        # 1. description should reference the config_string for configuration builds.
+        # Rescue is exempt: it ships a hand-written human description rather than
+        # the boilerplate "{Channel} firmware for Sense360 X configuration." form.
+        if meta.is_configuration and meta.config_string and meta.channel != "rescue":
+            description = (meta.description or "").lower()
+            if description and meta.config_string.lower() not in description:
+                findings.append(
+                    f"{name}: description does not reference config_string "
+                    f"'{meta.config_string}' (got: {meta.description!r})."
+                )
+
+        # 2. every entry in modules should appear in config_string (case-insensitive).
+        if meta.is_configuration and meta.modules and meta.config_string:
+            cs_lower = meta.config_string.lower()
+            stray = [m for m in meta.modules if m.lower() not in cs_lower]
+            if stray:
+                findings.append(
+                    f"{name}: modules {stray} not present in config_string "
+                    f"'{meta.config_string}'."
+                )
+
+        # 3. file_size sanity. Skip entries we deliberately ship as placeholders.
+        if PLACEHOLDER_FIRMWARE_SIZE_BYTES < artifact.file_size < min_firmware_size:
+            findings.append(
+                f"{name}: file_size={artifact.file_size} bytes is below the "
+                f"plausible-firmware threshold ({min_firmware_size} bytes). "
+                "Verify this isn't a truncated build."
+            )
+
+        # 4. stable channel without any release-note signal at all.
+        if meta.channel == "stable" and meta.is_configuration:
+            has_features = bool(meta.features)
+            has_hardware = bool(meta.hardware_requirements)
+            if not has_features and not has_hardware:
+                findings.append(
+                    f"{name}: stable build has no features and no hardware_requirements; "
+                    "consider adding a release-notes .md so users get context."
+                )
+
+    return findings
+
+
+def validate_no_placeholder_descriptions(artifacts: Sequence[FirmwareArtifact]) -> List[str]:
+    """Soft check: catch obvious description/config drift like the historical
+    'AirIQPro described as a minimal configuration with no expansion modules'.
+    Returns findings (never raises)."""
+
+    findings: List[str] = []
+    minimal_phrases = ("no expansion modules", "minimal configuration", "no modules")
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if not meta.is_configuration or not meta.modules or not meta.description:
+            continue
+        desc_lower = meta.description.lower()
+        for phrase in minimal_phrases:
+            if phrase in desc_lower:
+                findings.append(
+                    f"{artifact.path.name}: description claims '{phrase}' but build "
+                    f"has modules {meta.modules}."
+                )
+                break
+    return findings
 
 
 def write_json_file(path: Path, data: Dict[str, object], *, dry_run: bool) -> None:
@@ -834,6 +1002,23 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             "manifest. Can be provided multiple times or as a comma-separated list."
         ),
     )
+    parser.add_argument(
+        "--strict-validate",
+        action="store_true",
+        help=(
+            "Promote manifest-metadata validation findings (description / module / size "
+            "drift) from warnings to build failures."
+        ),
+    )
+    parser.add_argument(
+        "--min-firmware-size",
+        type=int,
+        default=DEFAULT_MIN_FIRMWARE_SIZE_BYTES,
+        help=(
+            "Minimum plausible firmware size in bytes; smaller builds are flagged as "
+            "suspicious. Default: %(default)s. Set to 0 to disable the size check."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -865,6 +1050,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
+    validate_structured_config_consistency(ordered)
+    metadata_findings = validate_manifest_metadata(
+        ordered,
+        min_firmware_size=args.min_firmware_size,
+        strict=args.strict_validate,
+    )
+    metadata_findings.extend(validate_no_placeholder_descriptions(ordered))
+    if metadata_findings:
+        header = "Manifest metadata validation findings:"
+        body = "\n  - " + "\n  - ".join(metadata_findings)
+        if args.strict_validate:
+            raise SystemExit(header + body)
+        print(header + body, file=sys.stderr)
     manifest = build_manifest(ordered)
     if not manifest["builds"]:
         message = "Manifest would be empty; aborting."

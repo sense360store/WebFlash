@@ -63,32 +63,31 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 ### Components
 
-**CoreType**: `Core` or `CoreVoice`
-- `Core` - Standard core module without voice capabilities
-- `CoreVoice` - Core module with voice assistant integration (I2S microphone array, audio DAC)
+**MountType**: `Ceiling` is the only supported mount. (`Wall` lingers as a legacy alias but no firmware should target it.)
 
-**MountType**: `Wall` or `Ceiling`
+**Voice** (optional): Insert the `Voice` segment immediately after the mount when the build includes voice-assistant integration (e.g. `Sense360-Ceiling-Voice-USB-...`). Voice builds use the LED ring's integrated I2S microphone.
 
-**PowerType**: `USB`, `POE`, or `PWR`
+**PowerType**: `USB`, `POE`, or `PWR`. These map to USB Power, Sense360 PoE PSU (`S360-410`), and Sense360 Mains PSU (`S360-400`) respectively.
 
-**Modules** (optional): Combination of:
-- `AirIQBase`, `AirIQPro`, `AirIQProv` - Air quality stack for particulate, VOC, and CO₂ sensors
-- `VentIQBase`, `VentIQPro` - Bathroom-optimized air quality stack (Ceiling + Bathroom mode only)
-- `FanPWM`, `FanAnalog` - Output driver for external fan control
-- `LED` - Addressable LED ring for visual feedback (Required for CoreVoice)
+**Modules** (optional): Combination of canonical SKU tokens:
+- `RoomIQ` — Sense360 RoomIQ (`S360-200`). Room sensor board: PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure).
+- `AirIQ` — Sense360 AirIQ (`S360-210`). Air-quality stack: SCD41 (CO₂), SGP41 (VOC), MICS-4514 (gas), with optional SPS30 (PM) / SFA30 (HCHO) connectors.
+- `VentIQ` — Sense360 VentIQ (`S360-211`). Bathroom-focused air-quality stack with onboard SGP41; IR-temp and SPS30 connectors. Ceiling + Bathroom mode only.
+- `Fan` — Sense360 Fan driver (`S360-310` Relay, `S360-311` PWM, or `S360-312` DAC). The specific driver is selected at runtime via the wizard.
+- `LED` — Sense360 LED (`S360-300`), addressable WS2812B ring; required for voice builds.
 
 **Module Constraints:**
-- `Bathroom` is only available for Ceiling installations
-- `VentIQ` requires `Bathroom` to be enabled
-- `AirIQ` and `VentIQ` can be combined only when `Bathroom` is enabled on `Ceiling` installations; combinations outside that scope remain unsupported
-- `CoreVoice` requires `LED` ring module (voice cores mandate LED rings with integrated microphone)
+- `Bathroom` is only available for Ceiling installations.
+- `VentIQ` requires `Bathroom` to be enabled.
+- `AirIQ` and `VentIQ` are mutually exclusive: the Bathroom toggle drives which one is visible on Ceiling mounts.
+- Voice builds require the `LED` ring (integrated I2S microphone lives on the LED board).
+- `Fan DAC` (`S360-312`) conflicts with `AirIQ` because both contend for the shared DAC bus.
 
 **Module Sensors:**
-- AirIQ Base: Basic air quality sensors (VOC, CO₂)
-- AirIQ Pro: Base + particulate sensors (PM1.0/PM2.5/PM10)
-- VentIQ Base: SHT4x (temp/humidity), BMP390 (pressure), SGP41 (VOC/NOx)
-- VentIQ Pro: Base sensors + MLX90614 (IR surface temp/condensation), SPS30 (PM1.0/PM2.5/PM10)
-- LED Ring: WS2812B addressable LEDs, integrated I2S microphone (for voice models)
+- Sense360 RoomIQ (`S360-200`): PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure).
+- Sense360 AirIQ (`S360-210`): SCD41 (CO₂), SGP41 (VOC), MICS-4514 + STM8 (gas), optional SPS30 (PM), optional SFA30 (HCHO).
+- Sense360 VentIQ (`S360-211`): SGP41 (VOC) onboard, optional MLX90614 (IR surface temp), optional SPS30 (PM).
+- Sense360 LED (`S360-300`): WS2812B addressable LEDs, integrated I2S microphone for voice builds.
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
@@ -97,12 +96,9 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 ### Canonical module token policy
 
-Use these module tokens in firmware filenames and manifest metadata:
-- `AirIQBase`, `AirIQPro`
-- `VentIQBase`, `VentIQPro`
-- `FanPWM`, `FanAnalog`, `LED`
+Use these module tokens in firmware filenames and manifest metadata: `AirIQ`, `VentIQ`, `Fan`, `LED`, `Voice`.
 
-Legacy tokens (`BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro`) are supported only as read-time aliases by tooling and URL parsing; they must not be used in new filenames or metadata.
+The naming-policy validator (`scripts/validate-naming-policy.js`) actively rejects deprecated variant tokens — `AirIQBase`, `AirIQPro`, `AirIQProv`, `BathroomAirIQ` (and its `Base`/`Pro` suffixes), `FanPWM`, `FanAnalog`. These are still recognised as read-time aliases by tooling and URL parsing for backwards compatibility, but they must not be used in new filenames or metadata.
 
 ### Examples
 

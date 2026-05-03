@@ -32,7 +32,16 @@ function updateBottomDetailsVisibility(step) {
 function getTotalSteps() {
     return totalSteps;
 }
-const MODULE_KEYS = Object.freeze(['voice', 'led', 'airiq', 'fan', 'ventiq']);
+const MODULE_KEYS = Object.freeze(['voice', 'led', 'roomiq', 'airiq', 'fan', 'ventiq']);
+
+// Hardware accessory modules whose availability is governed by the module
+// matrix (conflicts) rather than firmware/manifest presence. Their option
+// cards must never display a manifest-derived "not available" message.
+const ALWAYS_AVAILABLE_MODULE_KEYS = Object.freeze(new Set(['fan', 'led', 'roomiq']));
+
+function isAlwaysAvailableModuleKey(key) {
+    return ALWAYS_AVAILABLE_MODULE_KEYS.has(key);
+}
 
 const SUPPORTED_CONFIG_KEYS = Object.freeze([
     'mounting',
@@ -74,6 +83,7 @@ const defaultConfiguration = createValidatedMap('defaultConfiguration', [
     ['mounting', null],
     ['power', null],
     ['bathroom', false],
+    ['roomiq', 'none'],
     ['airiq', 'none'],
     ['ventiq', 'none'],
     ['fan', 'none'],
@@ -84,18 +94,18 @@ const defaultConfiguration = createValidatedMap('defaultConfiguration', [
 const configuration = { ...defaultConfiguration };
 
 const allowedOptions = createValidatedMap('allowedOptions', [
-    ['mounting', ['wall', 'ceiling']],
+    ['mounting', ['ceiling']],
     ['power', ['usb', 'poe', 'pwr']],
     ['bathroom', [false, true]],
+    ['roomiq', ['none', 'roomiq']],
     ['airiq', ['none', 'airiq']],
-    ['ventiq', ['none', 'airiq']],
-    ['fan', ['none', 'pwm', 'analog']],
+    ['ventiq', ['none', 'ventiq']],
+    ['fan', ['none', 'relay', 'pwm', 'analog', 'triac']],
     ['voice', ['none']],
-    ['led', ['none', 'airiq']]
+    ['led', ['none', 'led']]
 ], { allowedKeys: SUPPORTED_CONFIG_KEYS });
 
 const MOUNT_LABELS = Object.freeze({
-    wall: 'Wall mount',
     ceiling: 'Ceiling mount'
 });
 
@@ -106,26 +116,32 @@ const POWER_LABELS = Object.freeze({
 });
 
 const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
+    ['roomiq', Object.freeze({
+        roomiq: 'Sense360 RoomIQ'
+    })],
     ['airiq', Object.freeze({
-        base: 'AirIQ Base module'
+        airiq: 'Sense360 AirIQ'
     })],
     ['ventiq', Object.freeze({
-        base: 'Sense360 VentIQ module'
+        ventiq: 'Sense360 VentIQ'
     })],
     ['fan', Object.freeze({
-        pwm: 'Fan PWM module',
-        analog: 'Fan Analog module'
+        relay: 'Sense360 Fan Relay',
+        pwm: 'Sense360 Fan PWM',
+        analog: 'Sense360 Fan DAC',
+        triac: 'Sense360 TRIAC'
     })],
     ['voice', Object.freeze({
-        none: 'Core (standard module)'
+        none: 'Sense360 Core'
     })],
     ['led', Object.freeze({
-        none: 'No LED Ring',
-        base: 'LED Ring module'
+        none: 'No LED ring',
+        led: 'Sense360 LED'
     })]
 ], { allowedKeys: MODULE_KEYS }));
 
 const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
+    ['roomiq', 'RoomIQ'],
     ['airiq', 'AirIQ'],
     ['ventiq', 'VentIQ'],
     ['fan', 'Fan / Switching'],
@@ -134,11 +150,12 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 ], { allowedKeys: MODULE_KEYS });
 
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
-    ['airiq', value => `AirIQ${value.charAt(0).toUpperCase() + value.slice(1)}`],
-    ['ventiq', value => value === 'airiq' ? 'VentIQ' : ''],
-    ['fan', value => `Fan${value.toUpperCase()}`],
+    ['roomiq', value => value === 'roomiq' ? 'RoomIQ' : ''],
+    ['airiq', value => value === 'airiq' ? 'AirIQ' : ''],
+    ['ventiq', value => value === 'ventiq' ? 'VentIQ' : ''],
+    ['fan', value => (value && value !== 'none') ? 'Fan' : ''],
     ['voice', () => 'Core'],
-    ['led', value => value === 'airiq' ? 'LED' : '']
+    ['led', value => value === 'led' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
 
 
@@ -152,7 +169,19 @@ function moduleHasSelectableVariants(moduleKey) {
 }
 
 function getVisibleModuleGroupKeys() {
-    return MODULE_KEYS.filter(moduleKey => moduleHasSelectableVariants(moduleKey));
+    const isCeilingBathroom = configuration.mounting === 'ceiling' && configuration.bathroom === true;
+    return MODULE_KEYS.filter(moduleKey => {
+        if (!moduleHasSelectableVariants(moduleKey)) {
+            return false;
+        }
+        if (moduleKey === 'ventiq') {
+            return isCeilingBathroom;
+        }
+        if (moduleKey === 'airiq') {
+            return !isCeilingBathroom;
+        }
+        return true;
+    });
 }
 
 let activeModuleGroupKey = null;
@@ -214,6 +243,9 @@ function updateConnectionQualityMetrics(partial = {}) {
     if (partial.resetStabilityWindow === true) {
         connectionQualityMetrics.stabilityWindowStart = Date.now();
     }
+    if (currentStep === 5) {
+        refreshPreflightDiagnostics();
+    }
     return getConnectionQualitySnapshot();
 }
 
@@ -258,12 +290,21 @@ function updateWizardStepVisibility(activeStepNumber, { exclude = null } = {}) {
 }
 
 function setPreFlashAcknowledgement(value) {
-    preFlashAcknowledged = Boolean(value);
+    const next = Boolean(value);
+    const changed = preFlashAcknowledged !== next;
+    preFlashAcknowledged = next;
+    if (changed) {
+        refreshPreflightDiagnostics();
+    }
     updateFirmwareControls();
 }
 
 function setPreflightWarningsAcknowledgement(value) {
-    preflightWarningsAcknowledged = Boolean(value);
+    const next = Boolean(value);
+    if (preflightWarningsAcknowledged === next) {
+        return;
+    }
+    preflightWarningsAcknowledged = next;
     updateFirmwareControls();
 }
 
@@ -1051,8 +1092,9 @@ function normaliseModuleValue(key, value) {
     }
 
     if (!normalised) {
-        if (allowed.includes('airiq')) {
-            return 'airiq';
+        const enabledOption = allowed.find(option => option !== 'none');
+        if (enabledOption) {
+            return enabledOption;
         }
         if (allowed.includes('none')) {
             return 'none';
@@ -1117,6 +1159,7 @@ function parseConfigStringState(configString) {
 
     const moduleState = {
         bathroom: false,
+        roomiq: 'none',
         airiq: 'none',
                 fan: 'none',
         voice: coreType,
@@ -1133,9 +1176,11 @@ function parseConfigStringState(configString) {
         // Check VentIQ before Bathroom (since VentIQ starts with Bathroom)
         if (segment.startsWith('VentIQ')) {
             const suffix = segment.substring('VentIQ'.length);
-            moduleState.ventiq = normaliseModuleValue('ventiq', suffix ? suffix.toLowerCase() : 'airiq');
+            moduleState.ventiq = normaliseModuleValue('ventiq', suffix ? suffix.toLowerCase() : 'ventiq');
         } else if (segment === 'Bathroom') {
             moduleState.bathroom = true;
+        } else if (segment === 'RoomIQ' || segment.startsWith('RoomIQ')) {
+            moduleState.roomiq = 'roomiq';
         } else if (segment.startsWith('AirIQ')) {
             const suffix = segment.substring('AirIQ'.length);
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'airiq');
@@ -1145,7 +1190,7 @@ function parseConfigStringState(configString) {
         } else if (segment.startsWith('Voice')) {
             moduleState.voice = 'none';
         } else if (segment === 'LED' || segment.startsWith('LED')) {
-            moduleState.led = 'airiq';
+            moduleState.led = 'led';
         }
     }
 
@@ -1191,6 +1236,7 @@ function buildManifestContext(manifest) {
                 if (!manifestAvailabilityIndex.has(baseKey)) {
                     manifestAvailabilityIndex.set(baseKey, {
                         modules: {
+                            roomiq: new Set(),
                             airiq: new Set(),
                             fan: new Set(),
                             voice: new Set(),
@@ -1234,6 +1280,12 @@ async function loadManifestData(options = {}) {
     }
 
     const attemptFetch = async (attempt = 1) => {
+        if (typeof fetch !== 'function') {
+            const error = new Error('fetch API is not available in this environment');
+            manifestLoadError = error;
+            manifestLoadPromise = null;
+            throw error;
+        }
         try {
             const response = await fetch('manifest.json', { cache: 'no-store' });
             if (!response.ok) {
@@ -1318,15 +1370,21 @@ function setHomeAssistantIntegrationsButtonEnabled(isEnabled) {
 
 function handleInstallStateEvent(event) {
     const detail = event?.detail;
-    const state = typeof detail === 'string' ? detail : detail?.state;
+    const rawState = typeof detail === 'string' ? detail : detail?.state;
     const message = detail?.message;
+    const state = typeof rawState === 'string' ? rawState.toLowerCase() : rawState;
 
     if (!state) {
         return;
     }
 
+    if (state === 'preparing' || state === 'manifest' || state === 'initializing') {
+        updateConnectionQualityMetrics({ resetStabilityWindow: true });
+    }
+
     if (state === 'finished') {
         setHomeAssistantIntegrationsButtonEnabled(true);
+        updateConnectionQualityMetrics({ resetStabilityWindow: true });
         // Record successful flash
         if (currentFlashEntryId) {
             const duration = flashStartTime ? Date.now() - flashStartTime : 0;
@@ -1334,10 +1392,17 @@ function handleInstallStateEvent(event) {
             currentFlashEntryId = null;
             flashStartTime = null;
         }
+        refreshPreflightDiagnostics();
         return;
     }
 
     if (state === 'error') {
+        const snapshot = getConnectionQualitySnapshot();
+        updateConnectionQualityMetrics({
+            serialReadFailures: snapshot.serialReadFailures + 1,
+            retryCount: snapshot.retryCount + 1
+        });
+        refreshPreflightDiagnostics();
         // Record failed flash
         if (currentFlashEntryId) {
             const errorMsg = message || 'Installation failed';
@@ -1350,6 +1415,32 @@ function handleInstallStateEvent(event) {
     if (state !== 'idle') {
         setHomeAssistantIntegrationsButtonEnabled(false);
     }
+}
+
+function bindSerialDisconnectListener() {
+    if (typeof navigator === 'undefined' || !navigator.serial || typeof navigator.serial.addEventListener !== 'function') {
+        return;
+    }
+    if (navigator.serial._webflashDisconnectBound) {
+        return;
+    }
+    navigator.serial._webflashDisconnectBound = true;
+    navigator.serial.addEventListener('disconnect', () => {
+        const snapshot = getConnectionQualitySnapshot();
+        updateConnectionQualityMetrics({
+            disconnects: snapshot.disconnects + 1,
+            resetStabilityWindow: true
+        });
+        refreshPreflightDiagnostics();
+    });
+    navigator.serial.addEventListener('connect', () => {
+        const snapshot = getConnectionQualitySnapshot();
+        updateConnectionQualityMetrics({
+            reconnectAttempts: snapshot.reconnectAttempts + 1,
+            resetStabilityWindow: true
+        });
+        refreshPreflightDiagnostics();
+    });
 }
 
 function openHomeAssistantIntegrations(event) {
@@ -1643,22 +1734,44 @@ function updateBathroomVisibility() {
         bathroomSection.style.display = '';
     }
 
-    updateVentIQModuleVisibility();
+    updateAirIQVentIQVisibility();
 }
 
-function updateVentIQModuleVisibility() {
+function updateAirIQVentIQVisibility() {
     const ventIQSections = Array.from(document.querySelectorAll('[data-module-group="ventiq"], #ventiq-module-section'));
-    if (!ventIQSections.length) {
+    const airIQSections = Array.from(document.querySelectorAll('[data-module-group="airiq"], #airiq-module-section'));
+
+    if (!ventIQSections.length && !airIQSections.length) {
         return;
     }
 
     if (ventIQSections.length > 1) {
         console.warn('[state] Invalid DOM: multiple VentIQ module-group sections found. Applying visibility updates to all sections defensively.');
     }
+    if (airIQSections.length > 1) {
+        console.warn('[state] Invalid DOM: multiple AirIQ module-group sections found. Applying visibility updates to all sections defensively.');
+    }
 
-    const shouldHideVentIQ = configuration.mounting !== 'ceiling' || !configuration.bathroom;
+    const isBathroomMode = configuration.mounting === 'ceiling' && configuration.bathroom === true;
 
-    if (shouldHideVentIQ) {
+    if (isBathroomMode) {
+        airIQSections.forEach(section => {
+            section.style.display = 'none';
+        });
+        closeModuleGroup('airiq');
+
+        const airiqNoneInput = document.querySelector('input[name="airiq"][value="none"]');
+        if (airiqNoneInput && !airiqNoneInput.checked) {
+            airiqNoneInput.checked = true;
+        }
+        configuration.airiq = 'none';
+
+        ventIQSections.forEach(section => {
+            section.style.display = '';
+            const isExpanded = section.dataset.expanded === 'true';
+            setModuleGroupExpanded(section, isExpanded);
+        });
+    } else {
         ventIQSections.forEach(section => {
             section.style.display = 'none';
         });
@@ -1668,10 +1781,9 @@ function updateVentIQModuleVisibility() {
         if (ventiqNoneInput && !ventiqNoneInput.checked) {
             ventiqNoneInput.checked = true;
         }
-
         configuration.ventiq = 'none';
-    } else {
-        ventIQSections.forEach(section => {
+
+        airIQSections.forEach(section => {
             section.style.display = '';
             const isExpanded = section.dataset.expanded === 'true';
             setModuleGroupExpanded(section, isExpanded);
@@ -1683,7 +1795,7 @@ function updateVentIQModuleVisibility() {
 
 function handleBathroomChange(e) {
     configuration.bathroom = e.target.checked;
-    updateVentIQModuleVisibility();
+    updateAirIQVentIQVisibility();
     updateConfiguration({ skipUrlUpdate: true });
     updateProgressSteps(getStep());
     updateUrlFromConfiguration();
@@ -1729,15 +1841,10 @@ function syncConfigurationFromInputs() {
         }
     }
 
-    if (configuration.mounting === 'wall') {
-        configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
-    } else {
-        configuration.fan = 'none';
-        const fanNoneInput = document.querySelector('input[name="fan"][value="none"]');
-        if (fanNoneInput && !fanNoneInput.checked) {
-            fanNoneInput.checked = true;
-        }
-    }
+    configuration.fan = document.querySelector('input[name="fan"]:checked')?.value || 'none';
+
+    // RoomIQ - sync from inputs
+    configuration.roomiq = document.querySelector('input[name="roomiq"]:checked')?.value || 'none';
 
     // LED Ring - sync from inputs
     configuration.led = document.querySelector('input[name="led"]:checked')?.value || 'none';
@@ -1765,6 +1872,15 @@ function getOptionStatusElement(card) {
 }
 
 function applyOptionAvailabilityState(input, { available, reason }) {
+    // Hardware accessory modules (fan/led) are governed by the module matrix
+    // and must never show a manifest-derived availability error, regardless of
+    // what the caller passes in. Force them to the "available" state so any
+    // stale status text from a previous render is cleared.
+    if (input?.name && isAlwaysAvailableModuleKey(input.name)) {
+        available = true;
+        reason = '';
+    }
+
     input.disabled = !available;
     const card = input.closest('.option-card');
 
@@ -1840,13 +1956,13 @@ function formatModuleSelectionLabel(key, value) {
     }
 
     if (value === 'none') {
-        if (key === 'fan') {
-            return `${label} Relay`;
-        }
         return `${label} None`;
     }
 
     if (key === 'fan') {
+        if (value === 'relay') {
+            return `${label} Relay`;
+        }
         return `${label} ${value.toUpperCase()}`;
     }
 
@@ -2037,18 +2153,6 @@ function bindModuleGroupToggleListeners() {
 }
 
 function formatOptionUnavailableReason(baseState, moduleKey, value) {
-    const variant = getModuleVariantEntry(moduleKey, value);
-    const compatibilityNotes = Array.isArray(variant?.compatibilityNotes) ? variant.compatibilityNotes : [];
-    const matchedNote = compatibilityNotes.find(note => {
-        const mountingMatches = !note?.mounting || note.mounting === baseState.mounting;
-        const powerMatches = !note?.power || note.power === baseState.power;
-        return mountingMatches && powerMatches;
-    });
-
-    if (matchedNote?.message) {
-        return matchedNote.message;
-    }
-
     const moduleLabel = formatModuleSelectionLabel(moduleKey, value);
     const combinationLabel = formatMountingPowerLabel(baseState);
 
@@ -2063,6 +2167,17 @@ function createModuleTag(label, variant = 'info') {
     return `<span class="module-tag module-tag--${variant}">${escapeHtml(label)}</span>`;
 }
 
+function clearAlwaysAvailableModuleOptions() {
+    MODULE_KEYS.forEach(key => {
+        if (!isAlwaysAvailableModuleKey(key)) {
+            return;
+        }
+        document.querySelectorAll(`input[name="${key}"]`).forEach(input => {
+            applyOptionAvailabilityState(input, { available: true, reason: '' });
+        });
+    });
+}
+
 function updateModuleOptionAvailability() {
     if (manifestLoadError || !configuration.mounting || !configuration.power) {
         resetOptionAvailability();
@@ -2070,6 +2185,7 @@ function updateModuleOptionAvailability() {
     }
 
     if (!isManifestReady()) {
+        clearAlwaysAvailableModuleOptions();
         return;
     }
 
@@ -2092,6 +2208,14 @@ function updateModuleOptionAvailability() {
         options.forEach(input => {
             let available = true;
             let reason = '';
+
+            // Fan / Switching driver options and LED Ring options are hardware
+            // accessory choices and are always selectable; their compatibility is
+            // driven by the module matrix (conflicts) rather than manifest presence.
+            if (isAlwaysAvailableModuleKey(key)) {
+                applyOptionAvailabilityState(input, { available: true, reason: '' });
+                return;
+            }
 
             if (!availability) {
                 available = false;
@@ -2167,7 +2291,7 @@ function updateModuleAvailabilityMessage() {
     }
 
     const moduleComboKey = buildModuleComboKey(configuration);
-    const unsupportedModules = MODULE_KEYS.filter(moduleKey => !availability.modules[moduleKey].has(configuration[moduleKey]));
+    const unsupportedModules = MODULE_KEYS.filter(moduleKey => !isAlwaysAvailableModuleKey(moduleKey) && !availability.modules[moduleKey].has(configuration[moduleKey]));
 
     if (unsupportedModules.length > 0) {
         hint.classList.add('is-warning');
@@ -2290,9 +2414,18 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
     }
 
     if (currentStep === 5) {
+        if (previousStep !== 5) {
+            // Reset the connection-quality stability window when the user first
+            // arrives at the review step so the preflight check is measured
+            // against the time the device is actually expected to be connected
+            // rather than the time elapsed since page load.
+            updateConnectionQualityMetrics({ resetStabilityWindow: true });
+        }
+        bindSerialDisconnectListener();
         updateConfiguration({ skipUrlUpdate: true });
         updateSummary();
         findCompatibleFirmware();
+        refreshPreflightDiagnostics();
     }
 
     if (!skipUrlUpdate) {
@@ -2313,29 +2446,32 @@ function updateProgressSteps(targetStep) {
     const safeTargetStep = Math.min(Math.max(targetStep, 1), totalSteps);
 
     for (let i = 1; i <= totalSteps; i++) {
-        const progressElement = document.querySelector(`.progress-step[data-step="${i}"]`);
-        if (!progressElement) continue;
+        const progressElements = document.querySelectorAll(`.progress-step[data-step="${i}"]`);
+        if (!progressElements.length) continue;
 
         const isReachable = i <= maxReachable;
-        progressElement.dataset.reachable = String(isReachable);
 
-        if (isReachable) {
-            progressElement.removeAttribute('aria-disabled');
-        } else {
-            progressElement.setAttribute('aria-disabled', 'true');
-        }
+        progressElements.forEach(progressElement => {
+            progressElement.dataset.reachable = String(isReachable);
 
-        if (i === safeTargetStep) {
-            progressElement.classList.add('active');
-        } else {
-            progressElement.classList.remove('active');
-        }
+            if (isReachable) {
+                progressElement.removeAttribute('aria-disabled');
+            } else {
+                progressElement.setAttribute('aria-disabled', 'true');
+            }
 
-        if (i < safeTargetStep) {
-            progressElement.classList.add('completed');
-        } else {
-            progressElement.classList.remove('completed');
-        }
+            if (i === safeTargetStep) {
+                progressElement.classList.add('active');
+            } else {
+                progressElement.classList.remove('active');
+            }
+
+            if (i < safeTargetStep) {
+                progressElement.classList.add('completed');
+            } else {
+                progressElement.classList.remove('completed');
+            }
+        });
     }
 }
 
@@ -2457,7 +2593,7 @@ function updateSummary() {
     // AirIQ
     if (configuration.airiq !== 'none') {
         const airiqSensors = {
-            base: ['SGP41', 'SCD41', 'MiCS4514', 'BMP390']
+            base: ['SGP41', 'SCD41', 'MiCS4514']
         };
         summaryHtml += `
             <div class="summary-item">
@@ -2471,14 +2607,22 @@ function updateSummary() {
     // Fan
     if (configuration.fan !== 'none') {
         const fanTypes = {
-            'pwm': 'Variable speed fan control via PWM',
-            'analog': '0-10V analog fan control'
+            'relay': 'On / off relay for bathroom fans',
+            'pwm': '12V PWM fan driver, up to 4 fans with tach feedback',
+            'analog': '0 to 10V analog fan driver',
+            'triac': 'Phase dimmer for mains fan or lamp'
+        };
+        const fanLabels = {
+            'relay': 'Relay',
+            'pwm': 'PWM',
+            'analog': 'Analog',
+            'triac': 'TRIAC'
         };
         summaryHtml += `
             <div class="summary-item">
                 <div class="summary-label">Fan / Switching:</div>
-                <div class="summary-value">${configuration.fan.toUpperCase()}</div>
-                <div class="summary-sensors">${fanTypes[configuration.fan]}</div>
+                <div class="summary-value">${fanLabels[configuration.fan] || configuration.fan.toUpperCase()}</div>
+                <div class="summary-sensors">${fanTypes[configuration.fan] || ''}</div>
             </div>
         `;
     }
@@ -2488,13 +2632,27 @@ function updateSummary() {
 }
 
 function updateFirmwareControls() {
+    const downloadBtn = document.getElementById('download-btn');
+    const downloadBtnHost = downloadBtn?.closest?.('.wizard-step') || null;
+    const downloadBtnStepNumber = downloadBtnHost?.id
+        ? Number(downloadBtnHost.id.replace('step-', ''))
+        : NaN;
+    const reviewStepNumber = Number.isFinite(downloadBtnStepNumber) && downloadBtnStepNumber > 0
+        ? downloadBtnStepNumber
+        : totalSteps;
+    const firmwareIsRegistered = Boolean(
+        window.currentFirmware
+        && window.currentFirmware.firmwareId
+        && firmwareOptionsMap.has(window.currentFirmware.firmwareId)
+    );
     const hasFirmware = Boolean(
         window.currentFirmware
         && Array.isArray(window.currentFirmware.parts)
         && window.currentFirmware.parts.length > 0
+        && firmwareIsRegistered
     );
     const canWebSerial = Boolean(navigator?.serial);
-    const onReviewStep = currentStep === 5;
+    const onReviewStep = currentStep === reviewStepNumber;
     const shouldShowInstallControls = canWebSerial && onReviewStep;
     const verificationStatus = (firmwareVerificationState.status || '').toString().toLowerCase();
     const isVerified = verificationStatus === 'verified';
@@ -2506,7 +2664,6 @@ function updateFirmwareControls() {
     const blockingReason = preflightPolicy.blockingReasons[0] || '';
     const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall;
 
-    const downloadBtn = document.getElementById('download-btn');
     if (downloadBtn) {
         downloadBtn.hidden = !onReviewStep;
         downloadBtn.setAttribute('aria-hidden', onReviewStep ? 'false' : 'true');
@@ -2879,6 +3036,10 @@ async function refreshPreflightDiagnostics() {
     ];
     const hasWarnings = checks.some(check => check.state === 'warn');
     const warningsAcknowledgeControl = document.querySelector('[data-preflight-warn-acknowledge]');
+    const warningsAcknowledgeInput = warningsAcknowledgeControl?.matches?.('input[type="checkbox"]')
+        ? warningsAcknowledgeControl
+        : warningsAcknowledgeControl?.querySelector('input[type="checkbox"]')
+            || document.querySelector('[data-preflight-warn-acknowledge-input]');
     if (warningsAcknowledgeControl) {
         warningsAcknowledgeControl.hidden = !hasWarnings;
         warningsAcknowledgeControl.setAttribute('aria-hidden', hasWarnings ? 'false' : 'true');
@@ -2889,7 +3050,9 @@ async function refreshPreflightDiagnostics() {
             warningsAcknowledgeControl.dataset.preflightWarnBound = 'true';
         }
         if (!hasWarnings) {
-            warningsAcknowledgeControl.checked = false;
+            if (warningsAcknowledgeInput && 'checked' in warningsAcknowledgeInput) {
+                warningsAcknowledgeInput.checked = false;
+            }
             setPreflightWarningsAcknowledgement(false);
         }
     } else if (!hasWarnings) {
@@ -3290,6 +3453,7 @@ async function verifyCurrentFirmwareIntegrity() {
         firmwareVerificationState = createEmptyVerificationState();
         renderSelectedFirmware();
         updateFirmwareControls();
+        refreshPreflightDiagnostics();
         return;
     }
 
@@ -3303,6 +3467,7 @@ async function verifyCurrentFirmwareIntegrity() {
         };
         renderSelectedFirmware();
         updateFirmwareControls();
+        refreshPreflightDiagnostics();
         return;
     }
 
@@ -3324,6 +3489,7 @@ async function verifyCurrentFirmwareIntegrity() {
         };
         renderSelectedFirmware();
         updateFirmwareControls();
+        refreshPreflightDiagnostics();
         return;
     }
 
@@ -3343,6 +3509,7 @@ async function verifyCurrentFirmwareIntegrity() {
     };
     renderSelectedFirmware();
     updateFirmwareControls();
+    refreshPreflightDiagnostics();
 
     try {
         const results = await Promise.all(parts.map(part => verifyFirmwarePart(part)));
@@ -3399,6 +3566,7 @@ async function verifyCurrentFirmwareIntegrity() {
         if (token === firmwareVerificationToken) {
             renderSelectedFirmware();
             updateFirmwareControls();
+            refreshPreflightDiagnostics();
         }
     }
 }
@@ -4209,12 +4377,11 @@ async function findCompatibleFirmware() {
     const previousConfigString = window.currentConfigString;
     let configString = '';
 
-    // Core type (voice) comes first
-    configString += 'Core';
-    configString += `-${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
+    configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
     configString += `-${configuration.power.toUpperCase()}`;
 
     configString += formatConfigSegment('airiq', configuration.airiq);
+    configString += formatConfigSegment('ventiq', configuration.ventiq);
     configString += formatConfigSegment('fan', configuration.fan);
 
     window.currentConfigString = configString;
@@ -4702,6 +4869,24 @@ function initializeFromUrl() {
     const parsed = parseConfigParams(searchParams);
     const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
 
+    if (searchParams.has('bathroom')) {
+        const bathroomRaw = (searchParams.get('bathroom') || '').trim().toLowerCase();
+        sanitizedConfig.bathroom = bathroomRaw === 'true' || bathroomRaw === '1';
+    }
+
+    if (searchParams.has('ventiq')) {
+        const ventiqRaw = (searchParams.get('ventiq') || '').trim().toLowerCase();
+        sanitizedConfig.ventiq = allowedOptions.ventiq.includes(ventiqRaw) ? ventiqRaw : 'none';
+    }
+
+    // Ceiling is currently the only supported mounting (see CLAUDE.md), so
+    // pre-select it on first load when no URL value was provided. This lets
+    // Step 1 act as a "Get started / quick-start preset" landing screen
+    // instead of forcing users through a one-option radio.
+    if (!sanitizedConfig.mounting) {
+        sanitizedConfig.mounting = 'ceiling';
+    }
+
     applyConfiguration(sanitizedConfig);
 
     if (Array.isArray(parsed.notices) && parsed.notices.length) {
@@ -4742,10 +4927,6 @@ function initializeFromUrl() {
 function applyConfiguration(initialConfig) {
     Object.assign(configuration, defaultConfiguration, enforceAirIQVentIQExclusivity({ ...initialConfig }));
 
-    if (configuration.mounting !== 'wall') {
-        configuration.fan = 'none';
-    }
-
     if (configuration.mounting !== 'ceiling') {
         configuration.ventiq = 'none';
     }
@@ -4772,13 +4953,18 @@ function applyConfiguration(initialConfig) {
         setStepNextButtonDisabled('#step-3', true);
     }
 
-    ['airiq', 'ventiq', 'fan', 'voice'].forEach(key => {
+    ['roomiq', 'airiq', 'ventiq', 'fan', 'voice'].forEach(key => {
         const value = configuration[key];
         const input = document.querySelector(`input[name="${key}"][value="${value}"]`);
         if (input) {
             input.checked = true;
         }
     });
+
+    const bathroomCheckbox = document.querySelector('input[name="bathroom"]');
+    if (bathroomCheckbox) {
+        bathroomCheckbox.checked = configuration.mounting === 'ceiling' && configuration.bathroom === true;
+    }
 
     updateFanModuleVisibility();
     updateBathroomVisibility();
@@ -4812,12 +4998,16 @@ function updateUrlFromConfiguration() {
 
     params.set('voice', configuration.voice || 'none');
     params.set('led', configuration.led || 'none');
+    params.set('roomiq', configuration.roomiq || 'none');
     params.set('airiq', configuration.airiq || 'none');
 
-    if (configuration.mounting === 'wall') {
-        params.set('fan', configuration.fan || 'none');
-    } else {
-        params.set('fan', 'none');
+    params.set('fan', configuration.fan || 'none');
+
+    if (configuration.mounting === 'ceiling') {
+        params.set('bathroom', configuration.bathroom ? 'true' : 'false');
+        if (configuration.bathroom) {
+            params.set('ventiq', configuration.ventiq || 'none');
+        }
     }
 
     params.set('step', String(currentStep));
@@ -4852,7 +5042,10 @@ export const __testHooks = Object.freeze({
     updateConnectionQualityMetrics,
     buildDiagnosticsBundle,
     redactDiagnosticsValue,
-    copyDiagnosticsBundle
+    copyDiagnosticsBundle,
+    parseConfigStringState,
+    formatConfigSegment,
+    MODULE_VARIANT_LABELS
 });
 
 export {

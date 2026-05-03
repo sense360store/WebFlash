@@ -21,35 +21,14 @@ const optionTooltips = {
         }
     },
     mounting: {
-        wall: {
-            title: 'Wall Mount',
-            summary: 'Install on an interior wall to keep every expansion module within reach and maintain the designed airflow path.',
-            pros: [
-                'Supports the full Sense360 module catalog including Fan control accessories.',
-                'Easy to service without ladders; ideal for frequent module swaps.'
-            ],
-            cons: [
-                'Needs 120 mm × 120 mm of flat wall surface and a clean cable exit.',
-                'Avoid direct sunlight or HVAC vents that could skew air quality readings.'
-            ],
-            measurements: [
-                'Mount the hub 140–160 cm (55–63 in) above the finished floor for best sensor coverage.',
-                'Leave at least 75 mm (3 in) of side clearance to remove front-loading modules.'
-            ],
-            learnMore: {
-                label: 'View wall mounting guide',
-                href: 'https://docs.sense360.com/install/wall-mount'
-            }
-        },
         ceiling: {
             title: 'Ceiling Mount',
             summary: 'Ceiling installs free up wall space and maximize coverage in open rooms.',
             pros: [
                 'Keeps cabling hidden above drop ceilings or in conduit.',
-                'Offers a broad motion sensing cone for RoomIQ Motion modules.'
+                'Offers a broad motion sensing cone for the Sense360 RoomIQ sensor board.'
             ],
             cons: [
-                'Fan module is not supported because of exhaust restrictions overhead.',
                 'Requires access to joists or anchors rated for 1.5 kg to secure the chassis.'
             ],
             measurements: [
@@ -84,8 +63,8 @@ const optionTooltips = {
             }
         },
         poe: {
-            title: 'POE Module',
-            summary: 'Deliver data and power through a single Ethernet cable using the POE expansion module.',
+            title: 'Sense360 PoE PSU',
+            summary: 'Deliver data and power through a single Ethernet cable using the Sense360 PoE PSU (S360-410).',
             pros: [
                 'Supports IEEE 802.3af/at injectors and switches up to 25 W.',
                 'Network resilience with auto-restart if power is interrupted.'
@@ -104,8 +83,8 @@ const optionTooltips = {
             }
         },
         pwr: {
-            title: 'PWR Module',
-            summary: 'Use the barrel-jack PWR module when a building low-voltage feed is available.',
+            title: 'Sense360 Mains PSU',
+            summary: 'Use the Sense360 Mains PSU (S360-400, HLK-5M05) when a building low-voltage feed is available.',
             pros: [
                 'Accepts 12–24 VDC input, enabling centralized power supplies.',
                 'Integrated surge suppression protects downstream modules.'
@@ -203,6 +182,26 @@ const optionTooltips = {
                 href: 'https://docs.sense360.com/modules/fan'
             }
         },
+        relay: {
+            title: 'Sense360 Fan Relay',
+            summary: 'Simple on/off relay output for bathroom fans, exhaust fans, and similar low-current loads.',
+            pros: [
+                'Single drop-in board with the S360-Relay-C harness.',
+                'Reliable mechanical contact rated for daily switching.'
+            ],
+            cons: [
+                'No variable speed control — output is on or off only.',
+                'Audible relay click on each state change.'
+            ],
+            measurements: [
+                'Switches resistive loads up to 5 A at 250 VAC.',
+                'Power budget impact: 0.2 W when energised.'
+            ],
+            learnMore: {
+                label: 'Fan relay wiring guide',
+                href: 'https://docs.sense360.com/modules/fan-relay'
+            }
+        },
         pwm: {
             title: 'PWM Fan Module',
             summary: 'Provides 25 kHz PWM output for EC fans and in-duct boosters requiring precise speed control.',
@@ -241,6 +240,26 @@ const optionTooltips = {
             learnMore: {
                 label: 'Analog fan integration guide',
                 href: 'https://docs.sense360.com/modules/fan-analog'
+            }
+        },
+        triac: {
+            title: 'TRIAC Fan Module',
+            summary: 'Phase dimmer for mains-voltage fans and lamps via the TRIAC_Board harness.',
+            pros: [
+                'Drives line-voltage AC fans, exhaust units, and dimmable lamps without an external dimmer.',
+                'Single-board solution with onboard zero-cross detection and snubber.'
+            ],
+            cons: [
+                'Requires mains wiring by a qualified electrician.',
+                'Phase control may produce audible hum on some inductive loads.'
+            ],
+            measurements: [
+                'Switches up to 2 A at 120/230 VAC, 50/60 Hz.',
+                'Programmable minimum on-time to protect motor windings.'
+            ],
+            learnMore: {
+                label: 'TRIAC fan wiring guide',
+                href: 'https://docs.sense360.com/modules/fan-triac'
             }
         }
     },

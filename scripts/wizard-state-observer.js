@@ -2,10 +2,10 @@
 // Works out-of-the-box with radios/selects; easy to wire later if you add a central store.
 (function () {
   const state = {
-    mount: null,   // 'wall' | 'ceiling'
+    mount: null,   // 'ceiling' (Wall is documented as legacy and not selectable)
     power: null,   // 'usb' | 'poe' | 'pwr'
     airiq: null,   // 'none' | 'airiq' | 'ventiq'
-    fan: null      // 'none' | 'pwm' | 'analog'
+    fan: null      // 'none' | 'relay' | 'pwm' | 'analog' | 'triac'
   };
 
   const listeners = new Set();
@@ -17,13 +17,15 @@
   function scan() {
     // Mounting
     state.mount = pick('#step-1, .wizard-step[data-step="1"], .wizard-step:has(h2:contains("Mounting"))',
-      { 'Wall': 'wall', 'Ceiling': 'ceiling' });
+      { 'Ceiling': 'ceiling' });
     // Power
     state.power = pick('#step-3, .wizard-step[data-step="3"], .wizard-step:has(h2:contains("Power"))',
       { 'USB': 'usb', 'POE': 'poe', 'PWR': 'pwr' });
-    // Modules
-    state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Base':'airiq','Pro':'ventiq' });
-    state.fan      = pickByGroup('Fan',      { 'None':'none','PWM':'pwm','Analog':'analog' });
+    // Modules — keys are matched as case-insensitive substrings of the radio label.
+    // Sense360 friendly names come first; the legacy Base/Pro/Analog tokens are kept
+    // as fallbacks so cached pages with the old markup still parse.
+    state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Sense360 AirIQ':'airiq','Sense360 VentIQ':'ventiq','Base':'airiq','Pro':'ventiq' });
+    state.fan      = pickByGroup('Fan',      { 'None':'none','Sense360 Fan Relay':'relay','Sense360 Fan PWM':'pwm','Sense360 Fan DAC':'analog','Sense360 TRIAC':'triac','Relay':'relay','PWM':'pwm','Analog':'analog','TRIAC':'triac' });
     emit();
   }
 

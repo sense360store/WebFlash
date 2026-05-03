@@ -1,8 +1,8 @@
 import { getState as getWizardState, setState, setStep, getMaxReachableStep } from './state.js';
 
 const RECOMMENDED_STATE = Object.freeze({
-    mount: 'wall',
-    power: 'usb',
+    mount: 'ceiling',
+    power: 'poe',
     airiq: 'airiq',
     fan: 'none'
 });

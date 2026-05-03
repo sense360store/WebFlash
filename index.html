@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sense360 Firmware Configuration Tool</title>
+    <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./css/wizard-style.css?v=1753432000">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=20260501">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/layout.css?v=20260501">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -22,8 +22,8 @@
             <div class="logo-container">
                 <img src="./sense360-logo-new.png" alt="Sense360 Logo" class="logo">
                 <div class="header-text">
-                    <h1>Sense360 Firmware Configuration Tool</h1>
-                    <p class="subtitle">Flash your Sense360 hub directly from your browser in under 60 seconds</p>
+                    <h1>Sense360 Firmware Installer</h1>
+                    <p class="subtitle">Choose your hardware, install the right firmware in your browser, and connect the hub to Wi-Fi &mdash; in under 60 seconds.</p>
                 </div>
             </div>
             <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
@@ -44,60 +44,127 @@
             </button>
         </header>
 
-        <nav class="path-selector" aria-label="Choose your firmware path">
-            <div class="path-selector__options">
-                <a href="#step-1" class="path-card path-card--active" data-path="prebuilt">
-                    <div class="path-card__content">
-                        <h3 class="path-card__title">Flash Pre-built Firmware</h3>
-                        <p class="path-card__description">Install tested configurations for your hardware. Select your device type and install directly from your browser.</p>
-                    </div>
-                    <span class="path-card__badge">Recommended</span>
-                </a>
-                <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer" class="path-card" data-path="custom">
-                    <div class="path-card__content">
-                        <h3 class="path-card__title">Build Custom Firmware</h3>
-                        <p class="path-card__description">Configure custom firmware using ESPHome YAML. Adjust sensors, update intervals, and integration settings.</p>
-                    </div>
-                    <span class="path-card__external">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
-                        </svg>
-                    </span>
-                </a>
-            </div>
-        </nav>
+        <details class="prereq-panel" aria-labelledby="prereq-panel-title">
+            <summary class="prereq-panel__summary">
+                <span class="prereq-panel__summary-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </span>
+                <span class="prereq-panel__summary-text">
+                    <strong id="prereq-panel-title">Before you start:</strong> use desktop Chrome, Edge, or Opera with a <strong>USB data cable</strong>.
+                </span>
+                <span class="prereq-panel__summary-cta" aria-hidden="true">Show details</span>
+            </summary>
+            <ul class="prereq-panel__list">
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">Browser</span>
+                    <span class="prereq-panel__detail">Use desktop <strong>Chrome, Edge, or Opera</strong>. Firefox, Safari, and mobile browsers don&rsquo;t support Web Serial.</span>
+                </li>
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">Cable</span>
+                    <span class="prereq-panel__detail">A <strong>USB data cable</strong> (not charge-only) plugged directly into your computer. Avoid hubs and long extensions.</span>
+                </li>
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">Other apps</span>
+                    <span class="prereq-panel__detail">Close anything else using the serial port (Arduino IDE, PlatformIO, ESPHome dashboard).</span>
+                </li>
+                <li class="prereq-panel__item">
+                    <span class="prereq-panel__label">After flashing</span>
+                    <span class="prereq-panel__detail">Keep the tab open &mdash; we&rsquo;ll guide you through Wi-Fi setup over the same serial connection (Improv).</span>
+                </li>
+            </ul>
+            <p class="prereq-panel__fallback">
+                If your hub isn&rsquo;t detected when you click Install, hold <strong>BOOT</strong>, tap <strong>RESET</strong>, then release BOOT to enter recovery mode and try again. Most devices don&rsquo;t need this step.
+            </p>
+        </details>
 
         <div class="wizard-container">
-            <!-- Sidebar is injected by scripts/layout/init-splitview.js via the outer .wizard-shell -->
-            <div class="wizard-layout" data-layout="single-column">
-                <div class="wizard-main">
-                    <!-- Progress Indicator -->
-                    <div class="progress-bar">
-                <div class="progress-step active" data-step="1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Mounting</div>
-                </div>
-                <div class="progress-step" data-step="2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Core</div>
-                </div>
-                <div class="progress-step" data-step="3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Power</div>
-                </div>
-                <div class="progress-step" data-step="4">
-                    <div class="step-number">4</div>
-                    <div class="step-label">Modules</div>
-                </div>
-                <div class="progress-step" data-step="5">
-                    <div class="step-number">5</div>
-                    <div class="step-label">Review</div>
-                </div>
+            <div class="wizard-shell" data-wizard-shell="static">
+                <aside class="wizard-stepper" aria-label="Wizard progress">
+                    <ol class="wizard-stepper__list" role="list">
+                        <li class="wizard-stepper__item">
+                            <a href="#step-1" class="progress-step wizard-stepper__node active" data-step="1" data-reachable="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">1</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Get started</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-2" class="progress-step wizard-stepper__node" data-step="2" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">2</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Core</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-3" class="progress-step wizard-stepper__node" data-step="3" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">3</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Power</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-4" class="progress-step wizard-stepper__node" data-step="4" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">4</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Modules</span>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="wizard-stepper__item">
+                            <a href="#step-5" class="progress-step wizard-stepper__node" data-step="5" data-reachable="false" aria-disabled="true">
+                                <span class="wizard-stepper__indicator">
+                                    <span class="step-number">5</span>
+                                </span>
+                                <span class="wizard-stepper__text">
+                                    <span class="step-label">Review</span>
+                                </span>
+                            </a>
+                        </li>
+                    </ol>
+                </aside>
+
+                <main class="wizard-main">
+                    <div class="progress-bar progress-bar--mobile" aria-hidden="true">
+                        <div class="progress-step active" data-step="1" data-reachable="true">
+                            <div class="step-number">1</div>
+                            <div class="step-label">Mounting</div>
+                        </div>
+                        <div class="progress-step" data-step="2" data-reachable="false">
+                            <div class="step-number">2</div>
+                            <div class="step-label">Core</div>
+                        </div>
+                        <div class="progress-step" data-step="3" data-reachable="false">
+                            <div class="step-number">3</div>
+                            <div class="step-label">Power</div>
+                        </div>
+                        <div class="progress-step" data-step="4" data-reachable="false">
+                            <div class="step-number">4</div>
+                            <div class="step-label">Modules</div>
+                        </div>
+                        <div class="progress-step" data-step="5" data-reachable="false">
+                            <div class="step-number">5</div>
+                            <div class="step-label">Review</div>
+                        </div>
                     </div>
 
                     <!-- Step 2: Core Configuration -->
                     <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
-                <h2>Step 2: Configure Core Features</h2>
+                <h2>Configure your Core</h2>
                 <p class="step-intro">Choose the base Sense360 hub family before selecting power and expansion modules.</p>
 
                 <aside class="safety-notice" aria-label="Important safety information">
@@ -144,80 +211,41 @@
                 </div>
                     </div>
 
-                    <!-- Step 1: Mounting Type -->
+                    <!-- Step 1: Get started -->
                     <div class="wizard-step step" id="step-1">
-                <h2>Step 1: Where is this unit being installed?</h2>
-                <p class="step-intro">Mounting is first because it determines supported power accessories and module compatibility.</p>
+                <h2>Pick a starting point</h2>
+                <p class="step-intro">Choose a tested preset to jump straight to firmware selection, or configure each module yourself.</p>
 
-                <div class="quick-start-presets" data-quick-start-presets>
-                    <p class="quick-start-presets__label">Quick start:</p>
-                    <div class="quick-start-presets__buttons">
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"wall","power":"usb","airiq":"airiq","fan":"none"}'>
-                            Popular: Wall + AirIQ &amp; RoomIQ Motion
-                        </button>
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="ceiling" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
-                            Ceiling + POE
-                        </button>
-                        <button class="btn btn-secondary btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"wall","power":"usb","airiq":"none","fan":"none"}'>
-                            Minimal: Wall + USB only
-                        </button>
-                    </div>
-                    <p class="quick-start-presets__hint">Or configure step-by-step below</p>
+                <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
+                    <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
+                        <span class="quick-start-card__badge">Most popular</span>
+                        <span class="quick-start-card__title">Ceiling + AirIQ over PoE</span>
+                        <span class="quick-start-card__description">Full air-quality stack powered over Ethernet. Recommended for most rooms.</span>
+                        <span class="quick-start-card__meta">PoE PSU &middot; Sense360 AirIQ &middot; no fan driver</span>
+                    </button>
+                    <button class="quick-start-card btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
+                        <span class="quick-start-card__title">Ceiling Core over USB</span>
+                        <span class="quick-start-card__description">Just the Sense360 Core, powered from USB. Fastest way to get going.</span>
+                        <span class="quick-start-card__meta">USB power &middot; no expansion modules</span>
+                    </button>
+                </section>
+
+                <div class="manual-path">
+                    <p class="manual-path__label">Building something different?</p>
+                    <button class="btn btn-secondary btn-next" type="button" data-next>Configure manually &rarr;</button>
                 </div>
-                <div class="option-grid">
-                    <label class="option-card">
-                        <input type="radio" name="mounting" value="ceiling">
-                        <div class="option-content">
-                            <div class="option-header">
-                                <div class="option-title">Ceiling Mount</div>
-                                <button
-                                    type="button"
-                                    class="option-info-button"
-                                    data-option-info
-                                    data-option-group="mounting"
-                                    data-option-value="ceiling"
-                                    aria-label="Details about Ceiling Mount"
-                                    aria-controls="option-info-popover"
-                                    aria-describedby="option-info-popover-summary"
-                                >
-                                    <span aria-hidden="true">i</span>
-                                </button>
-                            </div>
-                            <div class="option-description">Ceiling installation</div>
-                        </div>
-                    </label>
-                    <label class="option-card">
-                        <input type="radio" name="mounting" value="wall" disabled>
-                        <div class="option-content">
-                            <div class="option-header">
-                                <div class="option-title">Wall Mount (Coming soon)</div>
-                                <button
-                                    type="button"
-                                    class="option-info-button"
-                                    data-option-info
-                                    data-option-group="mounting"
-                                    data-option-value="wall"
-                                    aria-label="Details about Wall Mount"
-                                    aria-controls="option-info-popover"
-                                    aria-describedby="option-info-popover-summary"
-                                >
-                                    <span aria-hidden="true">i</span>
-                                </button>
-                            </div>
-                            <div class="option-description">Standard wall installation with full module support</div>
-                        </div>
-                    </label>
-                </div>
-                <div class="wizard-actions">
-                    <button class="btn btn-secondary" type="button" data-back>Back</button>
-                    <button class="btn btn-primary btn-next" type="button" data-next disabled>Next</button>
-                </div>
+
+                <input type="hidden" name="mounting" value="ceiling" data-mounting-default>
+
+                <p class="step-1-footnote">
+                    Need full control? <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer">Build custom firmware with ESPHome YAML</a>.
+                </p>
                     </div>
 
                     <!-- Step 3: Power Option -->
                     <div class="wizard-step step" id="step-3" hidden aria-hidden="true">
-                <h2>Step 3: Select Power Option</h2>
-                <p class="step-intro">Select how this unit will be powered in the field. This impacts cable planning and available accessories.</p>
+                <h2>How is the hub powered?</h2>
+                <p class="step-intro">Pick how this unit will get power in the field. This affects cable planning and available accessories.</p>
                 <div class="option-grid">
                     <label class="option-card">
                         <input type="radio" name="power" value="usb">
@@ -291,7 +319,7 @@
 
                 <!-- Step 4: Expansion Modules -->
                 <div class="wizard-step step" id="step-4" hidden aria-hidden="true">
-                <h2>Step 4: Add Expansion Modules</h2>
+                <h2>Add expansion modules</h2>
                 <div class="module-status-bar" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
                 </div>
@@ -305,14 +333,90 @@
                                     <input type="checkbox" name="bathroom" class="bathroom-toggle__checkbox">
                                     <span class="bathroom-toggle__text">
                                         <strong>Bathroom Installation</strong>
-                                        <span class="bathroom-toggle__description">Enable bathroom-specific features and optional VentIQ module (ceiling only)</span>
+                                        <span class="bathroom-toggle__description">Switches the air-quality module from AirIQ to the bathroom-tuned VentIQ (ceiling only)</span>
                                     </span>
                                 </label>
                             </div>
                         </section>
 
                         <section class="module-collection" aria-label="Expansion module groups">
-                            <section class="module-group" data-module-group="airiq" data-expanded="false">
+                            <section class="module-group" data-module-group="roomiq" id="roomiq-module-section" data-expanded="false">
+                                <div class="module-group__summary">
+                                    <div class="module-group__summary-text">
+                                        <h3 class="module-group__title">Sense360 RoomIQ</h3>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: RoomIQ None</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-tertiary module-group__summary-button"
+                                        data-module-group-toggle
+                                        data-module-group-key="roomiq"
+                                        aria-expanded="false"
+                                        aria-controls="module-group-roomiq"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                                <div class="module-group__body" id="module-group-roomiq" data-module-group-body hidden>
+                                    <p class="module-group__description">Room sensor board with presence, light, temperature, humidity, and pressure sensing.</p>
+                                    <div class="module-card-grid">
+                                    <label class="module-card option-card" data-module-card="roomiq" data-variant="none">
+                                        <input type="radio" name="roomiq" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">Core only, no RoomIQ sensors.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="roomiq" data-variant="roomiq">
+                                        <input type="radio" name="roomiq" value="roomiq">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Sense360 RoomIQ</div>
+                                                    <p class="option-description module-card__description">Presence, light, temperature, humidity, and pressure sensors on a single board.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>R4</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>J3 sensor bus</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="module-group" data-module-group="airiq" id="airiq-module-section" data-expanded="false">
                                 <div class="module-group__summary">
                                     <div class="module-group__summary-text">
                                         <h3 class="module-group__title">Sense360 AirIQ</h3>
@@ -382,7 +486,7 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" data-module-card-conflicts>
-                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ module to free the DAC bus." aria-label="Conflicts with Fan Analog: Select PWM fan control or remove the AirIQ module to free the DAC bus.">Fan Analog</span>
+                                                <span class="module-card__badge" data-conflict-badge data-conflict-module="fan" data-conflict-variants="analog" title="Select PWM fan control or remove the AirIQ module to free the DAC bus." aria-label="Conflicts with Fan DAC: Select PWM fan control or remove the AirIQ module to free the DAC bus.">Fan DAC</span>
                                                 <span class="module-card__badge" title="Mutually exclusive with VentIQ." aria-label="Mutually exclusive with VentIQ.">Mutually exclusive with VentIQ</span>
                                             </div>
                                         </div>
@@ -437,8 +541,8 @@
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="ventiq" data-variant="airiq">
-                                        <input type="radio" name="ventiq" value="airiq">
+                                    <label class="module-card option-card" data-module-card="ventiq" data-variant="ventiq">
+                                        <input type="radio" name="ventiq" value="ventiq">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
@@ -465,36 +569,6 @@
                                             </div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="ventiq" data-variant="ventiq">
-                                        <input type="radio" name="ventiq" value="ventiq">
-                                        <div class="module-card__inner">
-                                            <div class="module-card__header">
-                                                <div class="module-card__titles">
-                                                    <div class="option-title module-card__title">Pro</div>
-                                                    <p class="option-description module-card__description">Full sensor suite with IR surface temperature, condensation risk detection, and particulate monitoring.</p>
-                                                </div>
-                                                <span class="module-card__state" aria-hidden="true">
-                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
-                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
-                                                </span>
-                                            </div>
-                                            <dl class="module-card__specs">
-                                                <div class="module-card__spec">
-                                                    <dt>Core</dt>
-                                                    <dd>To be added</dd>
-                                                </div>
-                                                <div class="module-card__spec">
-                                                    <dt>Headers</dt>
-                                                    <dd>To be added</dd>
-                                                </div>
-                                                <div class="module-card__spec">
-                                                    <dt>Sensors</dt>
-                                                    <dd>SHT4x · BMP390 · SGP41 · MLX90614 (IR/condensation) · SPS30 (PM1.0/2.5/10)</dd>
-                                                </div>
-                                            </dl>
-                                            <div class="module-card__badges" aria-hidden="true"></div>
-                                        </div>
-                                    </label>
                                     </div>
                                 </div>
                             </section>
@@ -507,7 +581,7 @@
                                 <div class="module-group__summary">
                                     <div class="module-group__summary-text">
                                         <h3 class="module-group__title">Fan / Switching</h3>
-                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Fan None</span>
+                                        <span class="module-group__summary-label" data-module-group-summary>Selected: Fan / Switching None</span>
                                     </div>
                                     <button
                                         type="button"
@@ -521,10 +595,36 @@
                                     </button>
                                 </div>
                                 <div class="module-group__body" id="module-group-fan" data-module-group-body hidden>
-                                    <p class="module-group__description">Driver options for external fan and load switching control.</p>
+                                    <p class="module-group__description">Driver options for external fan and load switching control. Optional — choose None to skip.</p>
                                     <div class="module-card-grid">
                                     <label class="module-card option-card" data-module-card="fan" data-variant="none">
                                         <input type="radio" name="fan" value="none" checked>
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">None</div>
+                                                    <p class="option-description module-card__description">No fan or switching driver installed.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>No additional requirement</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>No additional headers</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="fan" data-variant="relay">
+                                        <input type="radio" name="fan" value="relay">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
@@ -537,6 +637,10 @@
                                                 </span>
                                             </div>
                                             <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>SKU</dt>
+                                                    <dd>S360-310</dd>
+                                                </div>
                                                 <div class="module-card__spec">
                                                     <dt>Core</dt>
                                                     <dd>R4</dd>
@@ -555,7 +659,7 @@
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
                                                     <div class="option-title module-card__title">Sense360 Fan PWM</div>
-                                                    <p class="option-description module-card__description">Variable speed fan control via PWM driver.</p>
+                                                    <p class="option-description module-card__description">12V PWM fan driver, up to 4 fans with tach feedback.</p>
                                                 </div>
                                                 <span class="module-card__state" aria-hidden="true">
                                                     <span class="module-card__state-label module-card__state-label--default">Select</span>
@@ -563,6 +667,10 @@
                                                 </span>
                                             </div>
                                             <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>SKU</dt>
+                                                    <dd>S360-311</dd>
+                                                </div>
                                                 <div class="module-card__spec">
                                                     <dt>Core</dt>
                                                     <dd>R4</dd>
@@ -573,7 +681,6 @@
                                                 </div>
                                             </dl>
                                             <div class="module-card__badges" aria-hidden="true"></div>
-                                            <p class="module-card__availability-hint" data-module-availability-hint hidden></p>
                                         </div>
                                     </label>
                                     <label class="module-card option-card" data-module-card="fan" data-variant="analog">
@@ -582,7 +689,7 @@
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
                                                     <div class="option-title module-card__title">Sense360 Fan DAC</div>
-                                                    <p class="option-description module-card__description">0–10V analog fan control with isolation harness.</p>
+                                                    <p class="option-description module-card__description">0 to 10V analog fan driver, for example Cloudlift S12.</p>
                                                 </div>
                                                 <span class="module-card__state" aria-hidden="true">
                                                     <span class="module-card__state-label module-card__state-label--default">Select</span>
@@ -590,6 +697,10 @@
                                                 </span>
                                             </div>
                                             <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>SKU</dt>
+                                                    <dd>S360-312</dd>
+                                                </div>
                                                 <div class="module-card__spec">
                                                     <dt>Core</dt>
                                                     <dd>R4</dd>
@@ -602,6 +713,36 @@
                                             <div class="module-card__badges" data-module-card-conflicts>
                                                 <span class="module-card__badge" data-conflict-badge data-conflict-module="airiq" data-conflict-variants="airiq" title="Disable AirIQ or switch the fan output to PWM mode." aria-label="Conflicts with AirIQ: Disable AirIQ or switch the fan output to PWM mode.">AirIQ</span>
                                             </div>
+                                        </div>
+                                    </label>
+                                    <label class="module-card option-card" data-module-card="fan" data-variant="triac">
+                                        <input type="radio" name="fan" value="triac">
+                                        <div class="module-card__inner">
+                                            <div class="module-card__header">
+                                                <div class="module-card__titles">
+                                                    <div class="option-title module-card__title">Sense360 TRIAC</div>
+                                                    <p class="option-description module-card__description">Phase dimmer for mains fan or lamp.</p>
+                                                </div>
+                                                <span class="module-card__state" aria-hidden="true">
+                                                    <span class="module-card__state-label module-card__state-label--default">Select</span>
+                                                    <span class="module-card__state-label module-card__state-label--active">Selected</span>
+                                                </span>
+                                            </div>
+                                            <dl class="module-card__specs">
+                                                <div class="module-card__spec">
+                                                    <dt>SKU</dt>
+                                                    <dd>S360-320</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Core</dt>
+                                                    <dd>R4</dd>
+                                                </div>
+                                                <div class="module-card__spec">
+                                                    <dt>Headers</dt>
+                                                    <dd>TRIAC_Board</dd>
+                                                </div>
+                                            </dl>
+                                            <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
                                     </div>
@@ -654,13 +795,13 @@
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
-                                    <label class="module-card option-card" data-module-card="led" data-variant="airiq">
-                                        <input type="radio" name="led" value="airiq">
+                                    <label class="module-card option-card" data-module-card="led" data-variant="led">
+                                        <input type="radio" name="led" value="led">
                                         <div class="module-card__inner">
                                             <div class="module-card__header">
                                                 <div class="module-card__titles">
-                                                    <div class="option-title module-card__title">Base</div>
-                                                    <p class="option-description module-card__description">Addressable RGB LED ring for visual status feedback.</p>
+                                                    <div class="option-title module-card__title">Sense360 LED</div>
+                                                    <p class="option-description module-card__description">Ring of WS2812B LEDs.</p>
                                                 </div>
                                                 <span class="module-card__state" aria-hidden="true">
                                                     <span class="module-card__state-label module-card__state-label--default">Select</span>
@@ -670,7 +811,7 @@
                                             <dl class="module-card__specs">
                                                 <div class="module-card__spec">
                                                     <dt>Core</dt>
-                                                    <dd>Rev A core or newer</dd>
+                                                    <dd>R4</dd>
                                                 </div>
                                                 <div class="module-card__spec">
                                                     <dt>Headers</dt>
@@ -727,7 +868,7 @@
 
                     <!-- Step 5: Review & Install -->
                     <div class="wizard-step step" id="step-5" hidden aria-hidden="true">
-                <h2>Step 5: Review & Install</h2>
+                <h2>Review &amp; install</h2>
 
                 <p class="step-intro">
                     Use desktop Chrome or Edge to connect your Sense360 hub. Then click &lsquo;Install firmware&rsquo;. If you&rsquo;re not on a supported browser, download the .bin instead.
@@ -771,6 +912,10 @@
                             <p class="preflight-panel__detail" data-preflight-detail="user-acknowledgement"></p>
                         </li>
                     </ul>
+                    <label class="preflight-panel__warn-acknowledge" data-preflight-warn-acknowledge hidden aria-hidden="true">
+                        <input type="checkbox" data-preflight-warn-acknowledge-input>
+                        <span>Accept preflight warnings and continue. I understand the warnings above and accept the risk of installing anyway.</span>
+                    </label>
                 </section>
 
                 <section class="pre-flash-checklist" aria-labelledby="pre-flash-checklist-heading">
@@ -783,6 +928,9 @@
                         <li>Keep this browser tab open until the flashing process finishes.</li>
                         <li><strong>Do not disconnect power/USB during flashing.</strong></li>
                     </ul>
+                    <p class="pre-flash-checklist__next-step">
+                        <strong>What happens next:</strong> after flashing, this tab will offer to connect your hub to Wi-Fi over the same USB connection (Improv Serial). Have your Wi-Fi password ready.
+                    </p>
                     <label class="pre-flash-checklist__acknowledgement">
                         <input type="checkbox" data-preflash-acknowledge>
                         <span class="preflash-warning-text">I understand and will keep the hub powered and connected throughout flashing.</span>
@@ -809,13 +957,12 @@
                     <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <p class="install-assumptions" data-install-assumptions hidden aria-hidden="true"></p>
                     <div class="primary-action-group">
+                        <p class="action-row-label">Other options &mdash; the main <strong>Install</strong> button is on the firmware card above.</p>
                         <div class="primary-action-controls">
-                            <button class="btn btn-primary" id="download-btn" type="button" onclick="downloadFirmware()" disabled>Download Firmware</button>
-                            <button class="btn btn-copy" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy firmware link" disabled>
-                                Copy
-                            </button>
-                            <button class="btn btn-secondary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
-                                Open Home Assistant Integrations
+                            <button class="btn btn-secondary" id="download-btn" type="button" onclick="downloadFirmware()" disabled aria-label="Download firmware binary for manual flashing">Download .bin</button>
+                            <button class="btn btn-secondary" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy direct link to firmware binary" disabled>Copy install link</button>
+                            <button class="btn btn-primary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
+                                Open Home Assistant
                             </button>
                         </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
@@ -834,8 +981,9 @@
                     </p>
                 </aside>
                     </div>
-                </div>
+                </main>
 
+                <aside class="wizard-sidebar" data-wizard-summary aria-label="Live configuration summary"></aside>
             </div>
         </div>
 
