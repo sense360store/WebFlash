@@ -20,11 +20,11 @@ function renderDom() {
       <button id="download-btn"></button>
       <button id="copy-firmware-url-btn"></button>
       <ul data-preflight-list>
-        <li data-preflight-item="browser-support"><span data-preflight-status="browser-support"></span><span data-preflight-detail="browser-support"></span></li>
-        <li data-preflight-item="device-visibility"><span data-preflight-status="device-visibility"></span><span data-preflight-detail="device-visibility"></span></li>
-        <li data-preflight-item="connection-quality"><span data-preflight-status="connection-quality"></span><span data-preflight-detail="connection-quality"></span></li>
-        <li data-preflight-item="firmware-verification"><span data-preflight-status="firmware-verification"></span><span data-preflight-detail="firmware-verification"></span></li>
-        <li data-preflight-item="user-acknowledgement"><span data-preflight-status="user-acknowledgement"></span><span data-preflight-detail="user-acknowledgement"></span></li>
+        <li data-preflight-item="browser-support" data-status="pending"><span data-preflight-status="browser-support"></span><span data-preflight-detail="browser-support"></span></li>
+        <li data-preflight-item="device-visibility" data-status="pending"><span data-preflight-status="device-visibility"></span><span data-preflight-detail="device-visibility"></span></li>
+        <li data-preflight-item="connection-quality" data-status="pending"><span data-preflight-status="connection-quality"></span><span data-preflight-detail="connection-quality"></span></li>
+        <li data-preflight-item="firmware-verification" data-status="pending"><span data-preflight-status="firmware-verification"></span><span data-preflight-detail="firmware-verification"></span></li>
+        <li data-preflight-item="user-acknowledgement" data-status="pending"><span data-preflight-status="user-acknowledgement"></span><span data-preflight-detail="user-acknowledgement"></span></li>
       </ul>
     </div>`;
 }
@@ -86,6 +86,19 @@ describe('preflight install gating', () => {
 
     expect(document.querySelector('[data-preflight-list]').hidden).not.toBe(true);
     expect(document.getElementById('step-5').hidden).toBe(false);
+  });
+
+  test('entering step 5 resolves preflight items out of pending state', async () => {
+    delete window.currentFirmware;
+    const { setStep } = await import('../scripts/state.js');
+    setStep(5, { animate: false, skipUrlUpdate: true });
+    await Promise.resolve();
+
+    const items = document.querySelectorAll('[data-preflight-item]');
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((item) => {
+      expect(item.dataset.status).not.toBe('pending');
+    });
   });
 
   test('connection quality passes when stable and failure-free', async () => {
