@@ -1,6 +1,9 @@
 {
   "name": "Sense360 Modular Platform Firmware",
   "version": "2.0.0",
+  "manifest_version": 1,
+  "generated_at": "2026-05-04T13:08:37.762281+00:00",
+  "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -33,8 +36,8 @@
       "changelog": [
         "Stable v2.0.0 rollout for Sense360 Ceiling-POE-AirIQ; supersedes v1.0.0 as the recommended build."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -73,8 +76,8 @@
       "changelog": [
         "Initial tracked stable release for the Sense360 Ceiling-POE-AirIQ configuration; establishes the manifest baseline on this hardware revision."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": true,
       "deprecation_reason": "Superseded by v2.0.0; older stable build retained for diagnostic comparison only.",
@@ -111,8 +114,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,
@@ -149,8 +152,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,
@@ -187,8 +190,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,
@@ -215,7 +218,7 @@
           "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ="
         }
       ],
-      "build_date": "2026-05-04T10:50:44.003951+00:00",
+      "build_date": "2026-05-04T13:01:29.141486+00:00",
       "file_size": 18,
       "improv": true,
       "md5": "1eb1fea3994bbbeea11080159dbbe611",
@@ -227,8 +230,8 @@
       "changelog": [
         "Initial tracked stable release for the bathroom-focused Sense360 Ceiling-POE-VentIQ configuration; ships SGP41 default calibration and the standard PoE preset."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -267,8 +270,8 @@
       "changelog": [
         "Stable v1.0.1 patch for Sense360 Ceiling-PWR-AirIQ; supersedes v1.0.0 with the standard hardware probe sequence."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -307,8 +310,8 @@
       "changelog": [
         "Initial tracked stable release for the Sense360 Ceiling-PWR-AirIQ configuration powered by the Sense360 Mains PSU."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -345,8 +348,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,
@@ -385,8 +388,8 @@
       "changelog": [
         "Initial tracked stable release for the minimal Sense360 Ceiling-USB configuration (Core only, USB power, no expansion modules)."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -423,8 +426,8 @@
       "changelog": [
         "Initial tracked stable release for the Sense360 Ceiling-USB-AirIQ configuration; ships the AirIQ default sensor calibration tables on a USB-powered Core."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -463,8 +466,8 @@
       "changelog": [
         "Initial tracked stable release for the Sense360 Ceiling-USB-Fan configuration; covers the Fan Relay/PWM/DAC/TRIAC driver SKUs on a USB-powered Core."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -503,8 +506,8 @@
       "changelog": [
         "Initial tracked stable release for the Sense360 Ceiling-Voice-POE-AirIQ configuration; bundles the Voice variant of the Core with the AirIQ sensor stack."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -544,8 +547,8 @@
       "changelog": [
         "Initial tracked stable release for the Sense360 Ceiling-Voice-USB configuration; Voice-variant Core on USB power without expansion modules."
       ],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -584,8 +587,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "20a36fe31b026d7a87b23e2fed18030aaacfbced",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/20a36fe31b026d7a87b23e2fed18030aaacfbced",
+      "source_commit": "49301128e122e9fe486e548828714290c8ee93b8",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/49301128e122e9fe486e548828714290c8ee93b8",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,

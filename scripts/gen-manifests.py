@@ -821,10 +821,25 @@ def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
     return best_version
 
 
-def build_manifest(artifacts: Sequence[FirmwareArtifact]) -> Dict[str, object]:
+# Schema version of the top-level WebFlash manifest envelope (independent
+# of the ESP Web Tools `version` field, which tracks the latest firmware
+# build). Bump only when the WebFlash front-end requires a coordinated
+# change to read the new shape.
+MANIFEST_SCHEMA_VERSION = 1
+
+
+def build_manifest(
+    artifacts: Sequence[FirmwareArtifact],
+    *,
+    source_commit: Optional[str] = None,
+    generated_at: Optional[str] = None,
+) -> Dict[str, object]:
     return {
         "name": "Sense360 Modular Platform Firmware",
         "version": determine_manifest_version(artifacts),
+        "manifest_version": MANIFEST_SCHEMA_VERSION,
+        "generated_at": generated_at or datetime.now(timezone.utc).isoformat(),
+        "source_commit": source_commit or "unknown",
         "home_assistant_domain": "esphome",
         "funding_url": "https://sense360store.com/support",
         "new_install_prompt_erase": True,
@@ -1276,7 +1291,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.strict_validate:
             raise SystemExit(header + body)
         print(header + body, file=sys.stderr)
-    manifest = build_manifest(ordered)
+    manifest = build_manifest(ordered, source_commit=source_commit)
     if not manifest["builds"]:
         message = "Manifest would be empty; aborting."
         if args.allow_empty:
