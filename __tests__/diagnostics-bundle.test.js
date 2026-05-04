@@ -305,6 +305,44 @@ describe('buildSupportBundle — recovery and cache', () => {
         expect(bundle.recovery.mode_active).toBe(false);
     });
 
+    test('recovery section surfaces last error message and timestamp', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            recordRecoveryResult,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setSupportBundleStateProvider(() => ({ releaseMode: 'recovery' }));
+        recordRecoveryResult({
+            result: 'failed',
+            error: { message: 'Failed to connect to /home/user/example' }
+        });
+        const bundle = buildSupportBundle();
+        expect(bundle.recovery.last_recovery_result).toBe('failed');
+        expect(typeof bundle.recovery.last_recovery_timestamp).toBe('string');
+        expect(bundle.recovery.last_recovery_error).toMatch(/Failed to connect/);
+        // Path-like substrings inside the error message must be scrubbed before
+        // they ride along into the bundle.
+        expect(bundle.recovery.last_recovery_error).not.toMatch(/\/home\/user\/example/);
+    });
+
+    test('successful recovery clears any prior error from the bundle', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            recordRecoveryResult,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setSupportBundleStateProvider(() => ({ releaseMode: 'recovery' }));
+        recordRecoveryResult({ result: 'failed', error: { message: 'Boom' } });
+        recordRecoveryResult({ result: 'success' });
+        const bundle = buildSupportBundle();
+        expect(bundle.recovery.last_recovery_result).toBe('success');
+        expect(bundle.recovery.last_recovery_error).toBeNull();
+    });
+
     test('cache.service_worker_supported reflects navigator', async () => {
         const { buildSupportBundle } = await loadDiagnostics();
         const bundle = buildSupportBundle();

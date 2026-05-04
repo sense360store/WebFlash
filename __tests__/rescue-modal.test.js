@@ -137,4 +137,91 @@ describe('rescue-modal', () => {
         expect(button.getAttribute('manifest')).toBe('./firmware/rescue/manifest.json');
         expect(button.hasAttribute('erase-first')).toBe(true);
     });
+
+    test('copy is honest about what rescue can and cannot fix', () => {
+        mod.openRescueModal();
+        const body = document.querySelector('.rescue-modal__body').textContent;
+        // Hardware/cable/driver/bootloader caveats must appear so the modal
+        // does not overclaim "factory restore" or unbrick guarantees.
+        expect(body).toMatch(/hardware/i);
+        expect(body).toMatch(/cable/i);
+        // The salted-SHA-256 metadata is integrity, not authenticity, so the
+        // copy must not advertise the rescue image as cryptographically
+        // "signed" (see firmware-provenance.js trust-model docstring).
+        expect(body).not.toMatch(/signed image|signed firmware/i);
+    });
+
+    test('cancellation messages are recorded as cancelled, not failed', async () => {
+        const diagnostics = await import('../scripts/services/diagnostics.js');
+        diagnostics.resetSessionDiagnosticsStateForTests();
+
+        mod.openRescueModal();
+        const installButton = document.querySelector('esp-web-install-button');
+        installButton.dispatchEvent(new CustomEvent('state-changed', {
+            detail: { state: 'ERROR', message: 'User cancelled the install dialog' }
+        }));
+
+        const session = diagnostics.getSessionDiagnosticsState();
+        expect(session.lastRecoveryResult).toBe('cancelled');
+    });
+
+    test('genuine error messages are recorded as failed', async () => {
+        const diagnostics = await import('../scripts/services/diagnostics.js');
+        diagnostics.resetSessionDiagnosticsStateForTests();
+
+        mod.openRescueModal();
+        const installButton = document.querySelector('esp-web-install-button');
+        installButton.dispatchEvent(new CustomEvent('state-changed', {
+            detail: {
+                state: 'ERROR',
+                message: 'Failed to connect to ESP32',
+                error: new Error('Failed to connect to ESP32')
+            }
+        }));
+
+        const session = diagnostics.getSessionDiagnosticsState();
+        expect(session.lastRecoveryResult).toBe('failed');
+    });
+
+    test('successful FINISHED state clears any prior recovery error', async () => {
+        const diagnostics = await import('../scripts/services/diagnostics.js');
+        diagnostics.resetSessionDiagnosticsStateForTests();
+
+        mod.openRescueModal();
+        const installButton = document.querySelector('esp-web-install-button');
+
+        installButton.dispatchEvent(new CustomEvent('state-changed', {
+            detail: {
+                state: 'ERROR',
+                message: 'Failed to connect',
+                error: new Error('Failed to connect')
+            }
+        }));
+        expect(diagnostics.getSessionDiagnosticsState().lastRecoveryResult).toBe('failed');
+
+        installButton.dispatchEvent(new CustomEvent('state-changed', {
+            detail: { state: 'FINISHED' }
+        }));
+        const finalSession = diagnostics.getSessionDiagnosticsState();
+        expect(finalSession.lastRecoveryResult).toBe('success');
+        expect(finalSession.lastRecoveryError).toBeUndefined();
+    });
+
+    test('opening the modal resets the acknowledgement to false', async () => {
+        const diagnostics = await import('../scripts/services/diagnostics.js');
+        diagnostics.resetSessionDiagnosticsStateForTests();
+
+        mod.openRescueModal();
+        const ack = document.querySelector('[data-rescue-ack]');
+        ack.checked = true;
+        ack.dispatchEvent(new Event('change'));
+        expect(diagnostics.getSessionDiagnosticsState().recoveryAcknowledged).toBe(true);
+
+        mod.closeRescueModal();
+        mod.openRescueModal();
+
+        const ackAfter = document.querySelector('[data-rescue-ack]');
+        expect(ackAfter.checked).toBe(false);
+        expect(diagnostics.getSessionDiagnosticsState().recoveryAcknowledged).toBe(false);
+    });
 });

@@ -669,10 +669,10 @@ Documented in the comment block at the top of
 | --------------------------- | ------------------------- | ---------------------------------------------------- |
 | App shell (HTML/CSS/JS/img) | stale-while-revalidate    | Update detection drives the reload prompt.           |
 | `manifest.json`             | network-first             | Page also re-fetches with `cache: 'no-store'`.       |
-| Firmware binaries (`*.bin`) | network-first             | Cache only as a rescue fallback; never serve stale.  |
+| Firmware binaries (`*.bin`) | network-first             | Cached on success so a previously-flashed config is offline-available; never serve stale. The rescue binary is additionally precached so first-visit offline rescue works. |
 | Cross-origin (unpkg ESPWT)  | not intercepted           | Browser-managed.                                     |
 
-`CACHE_NAME` is `webflash-v2`. The `activate` handler purges any cache
+`CACHE_NAME` is `webflash-v4`. The `activate` handler purges any cache
 that starts with `webflash-` but is not the current name, so subsequent
 bumps just work.
 

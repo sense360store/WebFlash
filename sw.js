@@ -20,11 +20,20 @@
  *     a freshness verdict.
  *
  *   Firmware binaries (*.bin):
- *     network-first. Cached on success so the rescue flow can run after a
- *     successful first flash, but a network re-fetch is always preferred
- *     so the user gets the freshly published binary if one exists. NB: we
- *     do NOT use cache-only or cache-first here — flashing a stale binary
- *     would silently regress the device.
+ *     network-first. Cached on success so a configuration the user has
+ *     flashed once is available for subsequent attempts even if the network
+ *     drops, but a network re-fetch is always preferred so the user gets the
+ *     freshly published binary if one exists. NB: we do NOT use cache-only
+ *     or cache-first here — flashing a stale binary would silently regress
+ *     the device.
+ *
+ *     The rescue binary is the one exception that is *precached* via
+ *     STATIC_ASSETS (see below). The rescue/recovery path is exactly what a
+ *     user reaches for when their setup is broken — including their
+ *     network — so we want the bundled known-good image available offline
+ *     on first visit, not just after a prior successful fetch. The fetch
+ *     handler still serves it network-first so a regenerated rescue binary
+ *     from the live origin overrides the precache when reachable.
  *
  *   Cross-origin requests (e.g. unpkg ESP Web Tools):
  *     left to the browser; the SW does not intercept them.
@@ -41,8 +50,8 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v3';
-const CACHE_VERSION = 3;
+const CACHE_NAME = 'webflash-v4';
+const CACHE_VERSION = 4;
 
 /**
  * Static assets to cache on install.
@@ -55,6 +64,13 @@ const STATIC_ASSETS = [
     './ui.js',
     './manifest.json',
     './firmware/rescue/manifest.json',
+    // The rescue binary is precached because the rescue/recovery flow is
+    // exactly the path users hit when their setup is broken — including their
+    // network. Pinning the binary here guarantees the rescue modal can flash
+    // the bundled known-good image even on a first visit that goes offline
+    // before the user clicks Install. Versioned filename means cache
+    // invalidation rides on the cache name (CACHE_NAME) rather than per-file.
+    './firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin',
     './css/wizard-style.css',
     './css/capability-bar.css',
     './css/theme.css',
