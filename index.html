@@ -26,6 +26,13 @@
                     <p class="subtitle">Choose your hardware, install the right firmware in your browser, and connect the hub to Wi-Fi &mdash; in under 60 seconds.</p>
                 </div>
             </div>
+            <button type="button" class="rescue-entry-trigger" data-rescue-header-trigger data-rescue-open aria-haspopup="dialog" title="Open rescue and recovery mode">
+                <svg class="rescue-entry-trigger__icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+                <span class="rescue-entry-trigger__lead">Having trouble?</span>
+                <span class="rescue-entry-trigger__label">Rescue / Recovery Mode</span>
+            </button>
             <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
                 <svg class="theme-toggle__icon--sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="5"/>
@@ -78,6 +85,7 @@
             </ul>
             <p class="prereq-panel__fallback">
                 If your hub isn&rsquo;t detected when you click Install, hold <strong>BOOT</strong>, tap <strong>RESET</strong>, then release BOOT to enter recovery mode and try again. Most devices don&rsquo;t need this step.
+                <button type="button" class="prereq-panel__fallback-action" data-rescue-open aria-haspopup="dialog">Open Rescue / Recovery Mode</button>
             </p>
         </details>
 
