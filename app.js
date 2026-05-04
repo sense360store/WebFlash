@@ -10,6 +10,7 @@ import "./scripts/wizard-state-observer.js";
 import "./scripts/state.js";
 import { getManifestMetadataForAbout } from "./scripts/state.js";
 import "./scripts/recommended-bundle.js";
+import "./scripts/kit-mode.js";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";

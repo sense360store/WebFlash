@@ -5448,6 +5448,24 @@ function updateUrlFromConfiguration() {
 
     params.set('step', String(currentStep));
 
+    // Preserve the kit/SKU URL state set by scripts/kit-mode.js so a fresh
+    // setState() (e.g. when navigating between steps) doesn't strip the kit
+    // share-link params. Manual mode never writes these, so this is a no-op
+    // there.
+    try {
+        if (typeof window !== 'undefined' && window.location && window.location.search) {
+            const existing = new URLSearchParams(window.location.search);
+            ['configmode', 'sku'].forEach(key => {
+                const value = existing.get(key);
+                if (value !== null && value !== undefined && value !== '') {
+                    params.set(key, value);
+                }
+            });
+        }
+    } catch (_error) {
+        // ignore — preserving these params is best-effort.
+    }
+
     const paramString = params.toString();
     const newUrl = paramString ? `${window.location.pathname}?${paramString}` : window.location.pathname;
     history.replaceState(null, '', newUrl);
