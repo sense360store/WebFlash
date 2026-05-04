@@ -69,14 +69,16 @@ function createModal() {
                 <section class="rescue-modal__section">
                     <h3 class="rescue-modal__section-title">When to use this</h3>
                     <p class="rescue-modal__text">
-                        Use Rescue mode if your device fails to flash, ended up with the
-                        wrong firmware, won&rsquo;t boot, or you want to return it to a
-                        known-good baseline. The Rescue firmware is a minimal,
-                        signed image that brings the hub back to a flashable state.
+                        Rescue flash can recover many flash-failure and wrong-firmware
+                        cases by erasing and installing a known-good rescue image. Use it
+                        if your last flash failed mid-write, the wrong firmware was
+                        installed, or the hub no longer boots.
                     </p>
                     <p class="rescue-modal__text rescue-modal__text--muted">
-                        After a successful rescue flash, return to the wizard to
-                        re-install the firmware that matches your hardware.
+                        It is <strong>not</strong> guaranteed to fix hardware faults, bad
+                        USB cables, missing serial drivers, or bootloader-level damage.
+                        After a successful rescue flash, return to the wizard to re-install
+                        the firmware that matches your hardware.
                     </p>
                 </section>
 
@@ -204,7 +206,21 @@ function ensureInstallButton(modal) {
         }
         const state = detail.state || '';
         const message = detail.message || '';
-        if (detail.error || state === 'ERROR' || /error|failed|abort/i.test(message)) {
+        // User-cancelled flows often surface as messages with "cancel" or "user
+        // aborted" — treat those separately so a deliberate stop is not logged
+        // as a scary failure or announced as such.
+        const looksCancelled = /cancel|user[\s-]?aborted|user[\s-]?abort/i.test(message);
+        const looksError = Boolean(detail.error)
+            || state === 'ERROR'
+            || /error|failed/i.test(message);
+
+        if (looksCancelled && !detail.error) {
+            recordRecoveryResult({
+                result: 'cancelled',
+                error: { message: message || 'Rescue flash cancelled' }
+            });
+            announce('Rescue flash cancelled.');
+        } else if (looksError) {
             recordRecoveryResult({
                 result: 'failed',
                 error: detail.error || { message: message || 'Recovery flash error' }

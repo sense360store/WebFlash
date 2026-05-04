@@ -169,6 +169,10 @@ export function recordRecoveryResult({ result, error = null, timestamp = null } 
         : new Date().toISOString();
     if (error && typeof error === 'object') {
         sessionState.lastRecoveryError = error.name || error.message || null;
+    } else {
+        // Clear any stale error from a previous attempt so a 'success' result
+        // doesn't carry forward an old error message into diagnostics.
+        delete sessionState.lastRecoveryError;
     }
 }
 
@@ -471,12 +475,15 @@ function buildPreflightSection({ envCaps, sessionSnapshot }) {
 
 function buildRecoverySection({ releaseMode, sessionSnapshot }) {
     const modeActive = releaseMode === 'recovery';
+    const lastError = sessionSnapshot.lastRecoveryError;
     return {
         mode_active: modeActive,
         rescue_manifest: RESCUE_MANIFEST_URL,
         recovery_acknowledged: Boolean(sessionSnapshot.recoveryAcknowledged),
         bootloader_instructions_shown: Boolean(sessionSnapshot.bootloaderInstructionsShown),
-        last_recovery_result: sessionSnapshot.lastRecoveryResult || null
+        last_recovery_result: sessionSnapshot.lastRecoveryResult || null,
+        last_recovery_timestamp: sessionSnapshot.lastRecoveryTimestamp || null,
+        last_recovery_error: lastError ? scrubSensitiveText(String(lastError)) : null
     };
 }
 
