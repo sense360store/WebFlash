@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "validate:naming-policy": "node scripts/validate-naming-policy.js firmware/configurations"
+    "validate:naming-policy": "node scripts/validate-naming-policy.js firmware/configurations",
+    "check:headers": "node scripts/check-headers.js"
   },
   "devDependencies": {
     "jest": "^29.7.0",
