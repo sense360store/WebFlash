@@ -17,10 +17,13 @@ const STATIC_ASSETS = [
     './app.js',
     './ui.js',
     './manifest.json',
+    './firmware/rescue/manifest.json',
     './css/wizard-style.css',
     './css/capability-bar.css',
     './css/theme.css',
     './css/layout.css',
+    './css/features.css',
+    './css/device-qr.css',
     './sense360-logo-new.png',
     './sense360-favicon-32.png'
 ];
@@ -43,6 +46,8 @@ const SCRIPT_MODULES = [
     './scripts/layout/firmware-note.js',
     './scripts/layout/init-splitview.js',
     './scripts/layout/option-info-popover.js',
+    './scripts/layout/rescue-entry.js',
+    './scripts/layout/rescue-modal.js',
     './scripts/layout/state-summary.js',
     './scripts/utils/channel-alias.js',
     './scripts/utils/copy-to-clipboard.js',

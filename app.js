@@ -15,6 +15,7 @@ import "./scripts/layout/state-summary.js";
 import "./scripts/layout/firmware-note.js";
 import "./scripts/layout/init-splitview.js";
 import "./scripts/layout/option-info-popover.js";
+import "./scripts/layout/rescue-entry.js";
 import "./scripts/navigation.js";
 
 // ESP Web Tools enhancements - checkSameFirmware override for detecting installed firmware
