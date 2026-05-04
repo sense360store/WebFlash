@@ -9,6 +9,7 @@
 
 import { detectCapabilities, evaluateBrowserReadiness } from '../capabilities.js';
 import { logInfo, logWarning, logError } from '../services/error-log.js';
+import { recordUsbTestResult } from '../services/diagnostics.js';
 
 /** @type {HTMLElement|null} */
 let modalElement = null;
@@ -147,6 +148,15 @@ function createModal() {
                     <p class="rescue-modal__text">If the hub flashed previously but is now unresponsive, use Rescue / Recovery Mode to flash a known-good image.</p>
                     <button type="button" class="btn btn-secondary" data-rescue-open>Open Rescue / Recovery Mode</button>
                 </section>
+
+                <section class="preflight-help-modal__section preflight-help-modal__section--support">
+                    <h3 class="rescue-modal__section-title">Sharing this with support?</h3>
+                    <p class="rescue-modal__text">Copy a structured, redacted snapshot of your browser, manifest, firmware selection, preflight, and recent flash attempts. Wi-Fi passwords, tokens, and filesystem paths are stripped before copy.</p>
+                    <div class="preflight-help-modal__support-actions">
+                        <button type="button" class="btn btn-tertiary" data-copy-support-bundle>Copy support bundle</button>
+                        <button type="button" class="btn btn-tertiary" data-download-support-bundle>Download JSON</button>
+                    </div>
+                </section>
             </div>
         </div>
     `;
@@ -270,12 +280,14 @@ async function runSetupTest(modal) {
                 browser: caps.browser,
                 os: caps.os
             });
+            recordUsbTestResult({ result: first?.code || 'browser_blocked' });
             return;
         }
 
         if (!navigator?.serial?.requestPort) {
             setTestResult(modal, 'fail', 'navigator.serial.requestPort is unavailable. Use desktop Chrome, Edge, or Opera.');
             logWarning('preflight-help', 'Setup test failed: requestPort unavailable.');
+            recordUsbTestResult({ result: 'web_serial_unavailable' });
             return;
         }
 
@@ -290,28 +302,34 @@ async function runSetupTest(modal) {
                 `Browser sees a serial device (vendor ${vid}, product ${pid}). You’re ready to flash. The device was not opened or modified.`
             );
             logInfo('preflight-help', 'Setup test passed: serial port granted.', { vid, pid, browser: caps.browser, os: caps.os });
+            recordUsbTestResult({ result: 'pass' });
         } catch (error) {
             const name = error?.name || 'Error';
+            let usbTestResult;
             if (name === 'NotFoundError' || name === 'AbortError') {
                 setTestResult(
                     modal,
                     'warn',
                     'No port was selected. If your hub doesn’t appear in the picker, swap the USB cable for a known-data cable, plug it directly into the computer, and try again.'
                 );
+                usbTestResult = 'cancelled';
             } else if (name === 'SecurityError') {
                 setTestResult(
                     modal,
                     'fail',
                     'The browser blocked the serial-port request. Make sure the page is loaded over HTTPS and that the OS hasn’t denied USB access for this browser.'
                 );
+                usbTestResult = 'permission_denied';
             } else {
                 setTestResult(
                     modal,
                     'fail',
                     `Setup test failed: ${error?.message || name}. Check the cable, port, and OS-specific tips below.`
                 );
+                usbTestResult = 'error';
             }
             logError('preflight-help', error, { browser: caps.browser, os: caps.os });
+            recordUsbTestResult({ result: usbTestResult, error });
         }
     } finally {
         if (button) {

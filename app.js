@@ -18,10 +18,12 @@ import "./scripts/layout/option-info-popover.js";
 import "./scripts/layout/rescue-entry.js";
 import { initPreflightHelpModal } from "./scripts/layout/preflight-help-modal.js";
 import { initPreflightBanner } from "./scripts/layout/preflight-banner.js";
+import { initSupportBundleActions, recordUpdateAvailable } from "./scripts/services/diagnostics.js";
 import "./scripts/navigation.js";
 
 initPreflightHelpModal();
 initPreflightBanner();
+initSupportBundleActions();
 
 // ESP Web Tools enhancements - checkSameFirmware override for detecting installed firmware
 import "./scripts/utils/esp-web-tools-overrides.js";
@@ -43,6 +45,7 @@ if ('serviceWorker' in navigator) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                 console.log('[WebFlash] New version available');
+                                recordUpdateAvailable(true);
                             }
                         });
                     }

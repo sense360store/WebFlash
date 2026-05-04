@@ -22,6 +22,12 @@ import {
 // Import error logging service early to capture all errors including manifest load failures
 import './services/error-log.js';
 import { detectCapabilities, evaluateBrowserReadiness } from './capabilities.js';
+import {
+    buildSupportBundle,
+    copySupportBundle,
+    redactValue,
+    setSupportBundleStateProvider
+} from './services/diagnostics.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -275,9 +281,6 @@ const connectionQualityMetrics = {
     retryCount: 0,
     stabilityWindowStart: Date.now()
 };
-
-const DIAGNOSTICS_SCHEMA_VERSION = '1.0.0';
-const SENSITIVE_KEY_PATTERN = /(id|uuid|serial|mac|token|secret|signature|checksum|key|path|url)/i;
 
 function getConnectionQualitySnapshot() {
     return {
@@ -766,9 +769,18 @@ function collectActiveConflictMessages(state) {
 let manifestLoadPromise = null;
 let manifestData = null;
 let manifestLoadError = null;
+let manifestFreshness = 'unknown';
 let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
+
+function getManifestFreshness() {
+    return manifestFreshness;
+}
+
+function getManifestData() {
+    return manifestData;
+}
 
 const SIGNATURE_SALT_TEXT = 'Sense360 Firmware Signing Salt v1';
 const signatureSaltBytes = typeof TextEncoder !== 'undefined'
@@ -1137,11 +1149,13 @@ async function loadManifestData(options = {}) {
         manifestLoadError = null;
     }
 
+    manifestFreshness = 'loading';
     const attemptFetch = async (attempt = 1) => {
         if (typeof fetch !== 'function') {
             const error = new Error('fetch API is not available in this environment');
             manifestLoadError = error;
             manifestLoadPromise = null;
+            manifestFreshness = 'error';
             throw error;
         }
         try {
@@ -1152,6 +1166,7 @@ async function loadManifestData(options = {}) {
             const data = await response.json();
             manifestData = data;
             manifestLoadError = null;
+            manifestFreshness = 'current';
             buildManifestContext(data);
             return data;
         } catch (error) {
@@ -1163,6 +1178,7 @@ async function loadManifestData(options = {}) {
             }
             manifestLoadError = error;
             manifestLoadPromise = null;
+            manifestFreshness = 'error';
             console.error('Failed to load manifest after all retries:', error);
             throw error;
         }
@@ -3020,86 +3036,18 @@ async function refreshPreflightDiagnostics() {
     return checks;
 }
 
-function redactDiagnosticsValue(value, keyPath = '') {
-    if (Array.isArray(value)) {
-        return value.map((entry, index) => redactDiagnosticsValue(entry, `${keyPath}[${index}]`));
-    }
-
-    if (value && typeof value === 'object') {
-        return Object.entries(value).reduce((accumulator, [key, nestedValue]) => {
-            const nextPath = keyPath ? `${keyPath}.${key}` : key;
-            accumulator[key] = redactDiagnosticsValue(nestedValue, nextPath);
-            return accumulator;
-        }, {});
-    }
-
-    if (SENSITIVE_KEY_PATTERN.test(keyPath)) {
-        return '[REDACTED]';
-    }
-
-    return value;
-}
-
-function buildDiagnosticsBundle() {
-    const checks = Array.isArray(window.latestPreflightChecks) ? window.latestPreflightChecks : [];
-    const selectedFirmware = window.currentFirmware || null;
-
-    return redactDiagnosticsValue({
-        schemaVersion: DIAGNOSTICS_SCHEMA_VERSION,
-        createdAt: new Date().toISOString(),
-        wizardStep: currentStep,
-        browserCapability: {
-            webSerialAvailable: Boolean(navigator?.serial),
-            clipboardApiAvailable: Boolean(navigator?.clipboard)
-        },
-        serialAvailability: {
-            canConnect: Boolean(navigator?.serial),
-            connectionQuality: getConnectionQualitySnapshot()
-        },
-        preflightResults: checks.map(check => ({
-            key: check.key,
-            label: check.label,
-            state: check.state,
-            detail: check.detail,
-            blocking: Boolean(check.blocking)
-        })),
-        selectedConfiguration: { ...configuration },
-        firmwareTarget: selectedFirmware
-            ? {
-                model: selectedFirmware.model || null,
-                variant: selectedFirmware.variant || null,
-                sensorAddon: selectedFirmware.sensor_addon || null,
-                channel: normalizeChannelKey(selectedFirmware.channel || 'stable'),
-                version: selectedFirmware.version || null,
-                firmwareId: selectedFirmware.firmwareId || null
-            }
-            : null,
-        firmwareVerification: {
-            status: firmwareVerificationState.status || 'idle',
-            message: firmwareVerificationState.message || ''
-        },
-        compatibilityVerdict: evaluatePreflightPolicy(checks)
-    });
-}
-
-async function copyDiagnosticsBundle(trigger = null) {
-    const payload = JSON.stringify(buildDiagnosticsBundle(), null, 2);
-
-    try {
-        await copyTextToClipboard(payload);
-        if (trigger) {
-            trigger.dataset.copyState = 'success';
-        }
-        showToast('Diagnostics copied');
-        return true;
-    } catch (error) {
-        if (trigger) {
-            trigger.dataset.copyState = 'error';
-        }
-        showToast('Copy failed');
-        return false;
-    }
-}
+// Diagnostics builder lives in scripts/services/diagnostics.js. State.js
+// supplies a state provider so the bundle can reach private module
+// variables (configuration, currentStep, manifestData, manifestFreshness,
+// currentFirmware, releaseMode) without exporting them.
+setSupportBundleStateProvider(() => ({
+    configuration: { ...configuration },
+    stepInfo: { current: currentStep, maxReachable: getMaxReachableStep() },
+    manifestData: getManifestData(),
+    manifestFreshness: getManifestFreshness(),
+    currentFirmware: typeof window !== 'undefined' ? window.currentFirmware : null,
+    releaseMode: getReleaseMode()
+}));
 
 
 
@@ -5066,12 +5014,8 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('click', async event => {
-    const diagnosticsTrigger = event.target.closest('[data-copy-diagnostics]');
-    if (diagnosticsTrigger) {
-        event.preventDefault();
-        await copyDiagnosticsBundle(diagnosticsTrigger);
-        return;
-    }
+    // [data-copy-diagnostics] and [data-copy-support-bundle] are handled by
+    // initSupportBundleActions() in scripts/services/diagnostics.js.
 
     const trigger = event.target.closest('[data-copy-text]');
     if (!trigger) {
@@ -5324,9 +5268,10 @@ export const __testHooks = Object.freeze({
     setPreflightWarningsAcknowledgement,
     evaluatePreflightPolicy,
     updateConnectionQualityMetrics,
-    buildDiagnosticsBundle,
-    redactDiagnosticsValue,
-    copyDiagnosticsBundle,
+    buildDiagnosticsBundle: buildSupportBundle,
+    redactDiagnosticsValue: redactValue,
+    copyDiagnosticsBundle: copySupportBundle,
+    getManifestFreshness,
     parseConfigStringState,
     formatConfigSegment,
     MODULE_VARIANT_LABELS,

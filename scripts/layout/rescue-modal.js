@@ -7,6 +7,11 @@
 
 import { detectCapabilities } from '../capabilities.js';
 import { openErrorLogModal } from './error-log-modal.js';
+import {
+    recordRecoveryAcknowledged,
+    recordRecoveryResult,
+    recordBootloaderInstructionsShown
+} from '../services/diagnostics.js';
 
 const RESCUE_MANIFEST_URL = './firmware/rescue/manifest.json';
 const RESCUE_VERSION_LABEL = 'Sense360 Rescue v1.0.0-rescue';
@@ -112,6 +117,9 @@ function createModal() {
                     </svg>
                     View error log
                 </button>
+                <button type="button" class="btn btn-tertiary rescue-modal__support-bundle" data-copy-support-bundle aria-label="Copy support bundle">
+                    Copy support bundle
+                </button>
             </div>
         </div>
     `;
@@ -134,7 +142,10 @@ function bindEvents(modal) {
         closeBtn.addEventListener('click', closeRescueModal);
     }
     if (ackCheckbox) {
-        ackCheckbox.addEventListener('change', () => updateInstallEnabled(modal));
+        ackCheckbox.addEventListener('change', () => {
+            recordRecoveryAcknowledged(Boolean(ackCheckbox.checked));
+            updateInstallEnabled(modal);
+        });
     }
     if (diagnosticsBtn) {
         diagnosticsBtn.addEventListener('click', () => {
@@ -182,6 +193,23 @@ function ensureInstallButton(modal) {
     button.appendChild(unsupported);
     mount.appendChild(button);
 
+    button.addEventListener('state-changed', (event) => {
+        const detail = event?.detail;
+        if (!detail) {
+            return;
+        }
+        const state = detail.state || '';
+        const message = detail.message || '';
+        if (detail.error || state === 'ERROR' || /error|failed|abort/i.test(message)) {
+            recordRecoveryResult({
+                result: 'failed',
+                error: detail.error || { message: message || 'Recovery flash error' }
+            });
+        } else if (state === 'FINISHED') {
+            recordRecoveryResult({ result: 'success' });
+        }
+    });
+
     return button;
 }
 
@@ -223,11 +251,13 @@ export function openRescueModal(options = {}) {
 
     applyCapabilityMessage(modal);
     ensureInstallButton(modal);
+    recordBootloaderInstructionsShown(true);
 
     const ackCheckbox = modal.querySelector('[data-rescue-ack]');
     if (ackCheckbox) {
         ackCheckbox.checked = false;
     }
+    recordRecoveryAcknowledged(false);
     updateInstallEnabled(modal);
 
     modal.hidden = false;

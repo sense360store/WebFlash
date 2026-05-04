@@ -163,16 +163,25 @@ describe('preflight install gating', () => {
     const bundle = __testHooks.buildDiagnosticsBundle();
 
     expect(bundle).toEqual(expect.objectContaining({
-      schemaVersion: expect.any(String),
-      browserCapability: expect.any(Object),
-      serialAvailability: expect.any(Object),
-      preflightResults: expect.any(Array),
-      selectedConfiguration: expect.any(Object),
-      firmwareTarget: expect.any(Object),
-      compatibilityVerdict: expect.any(Object)
+      schema_version: 1,
+      generated_at: expect.any(String),
+      app: expect.any(Object),
+      environment: expect.any(Object),
+      manifest: expect.any(Object),
+      firmware: expect.any(Object),
+      wizard: expect.any(Object),
+      preflight: expect.any(Object),
+      recovery: expect.any(Object),
+      cache: expect.any(Object),
+      flash: expect.any(Object)
     }));
-    expect(bundle.firmwareTarget.firmwareId).toBe('[REDACTED]');
-    expect(__testHooks.redactDiagnosticsValue({ deviceId: 'abc123' }).deviceId).toBe('[REDACTED]');
+    // Path values that match a sensitive shape (start with /firmware/) are
+    // redacted via the value-based PATH classifier; firmware sha256/signature
+    // are reported as booleans only, never raw values.
+    expect(bundle.firmware.sha256_present).toBe(false);
+    expect(bundle.firmware.signature_present).toBe(false);
+    expect(__testHooks.redactDiagnosticsValue({ password: 'abc123' }).password).toBe('[REDACTED_PASSWORD]');
+    expect(__testHooks.redactDiagnosticsValue({ token: 'abc123' }).token).toBe('[REDACTED_TOKEN]');
   });
 
   test('copy diagnostics uses clipboard fallback when Clipboard API is unavailable', async () => {
