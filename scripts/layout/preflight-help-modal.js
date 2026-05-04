@@ -10,12 +10,15 @@
 import { detectCapabilities, evaluateBrowserReadiness } from '../capabilities.js';
 import { logInfo, logWarning, logError } from '../services/error-log.js';
 import { recordUsbTestResult } from '../services/diagnostics.js';
+import { trapFocus, restoreFocus, announce } from '../utils/a11y.js';
 
 /** @type {HTMLElement|null} */
 let modalElement = null;
 let isOpen = false;
 /** @type {HTMLElement|null} */
 let lastTrigger = null;
+/** @type {(() => void) | null} */
+let releaseFocusTrap = null;
 
 const OS_GUIDE = {
     windows: {
@@ -258,6 +261,13 @@ function setTestResult(modal, level, message) {
     }
     result.dataset.level = level;
     result.textContent = message;
+    if (message) {
+        if (level === 'fail') {
+            announce(`USB setup test failed. ${message}`, { assertive: true });
+        } else if (level === 'pass' || level === 'warn') {
+            announce(`USB setup test ${level === 'pass' ? 'passed' : 'warning'}. ${message}`);
+        }
+    }
 }
 
 async function runSetupTest(modal) {
@@ -355,6 +365,12 @@ export function openPreflightHelpModal(options = {}) {
     isOpen = true;
     document.body.style.overflow = 'hidden';
 
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+    }
+    const container = modal.querySelector('.preflight-help-modal__container') || modal;
+    releaseFocusTrap = trapFocus(container);
+
     setTimeout(() => {
         const closeBtn = modal.querySelector('[data-preflight-help-close]');
         if (closeBtn) {
@@ -372,9 +388,12 @@ export function closePreflightHelpModal() {
     isOpen = false;
     document.body.style.overflow = '';
 
-    if (lastTrigger && typeof lastTrigger.focus === 'function' && document.contains(lastTrigger)) {
-        lastTrigger.focus();
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+        releaseFocusTrap = null;
     }
+
+    restoreFocus(lastTrigger);
     lastTrigger = null;
 }
 
@@ -397,6 +416,10 @@ export const __testHooks = Object.freeze({
     runSetupTest,
     isOpen: () => isOpen,
     reset: () => {
+        if (releaseFocusTrap) {
+            releaseFocusTrap();
+            releaseFocusTrap = null;
+        }
         if (modalElement && modalElement.parentNode) {
             modalElement.parentNode.removeChild(modalElement);
         }

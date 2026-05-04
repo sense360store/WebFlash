@@ -339,6 +339,42 @@ code,
     outline-offset: 2px;
 }
 
+/* Visually hides content while keeping it available to assistive tech.
+   Used for the global aria-live region and the skip-link target. */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* "Skip to main content" link — invisible until it receives keyboard focus. */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 8px;
+    z-index: 10000;
+    padding: 0.6rem 1rem;
+    background: var(--accent, #0d9488);
+    color: var(--accent-contrast, #ffffff);
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    top: 8px;
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
 * {
     scrollbar-color: var(--border) var(--bg-elev-1);
     scrollbar-width: thin;
@@ -351,6 +387,19 @@ header {
 @media (prefers-reduced-motion: reduce) {
     .btn {
         transition: none;
+    }
+
+    /* Project-wide reduced-motion safety net. Steps, modals, banners, and
+       toast animations all respect prefers-reduced-motion. The selector is
+       scoped to actual animation-driving properties so we don't accidentally
+       defeat layout transitions used for accessibility (e.g. focus rings). */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
     }
 }
 

@@ -2528,6 +2528,8 @@ function updateProgressSteps(targetStep) {
         if (!progressElements.length) continue;
 
         const isReachable = i <= maxReachable;
+        const isCurrent = i === safeTargetStep;
+        const isCompleted = i < safeTargetStep;
 
         progressElements.forEach(progressElement => {
             progressElement.dataset.reachable = String(isReachable);
@@ -2538,17 +2540,36 @@ function updateProgressSteps(targetStep) {
                 progressElement.setAttribute('aria-disabled', 'true');
             }
 
-            if (i === safeTargetStep) {
+            if (isCurrent) {
                 progressElement.classList.add('active');
+                progressElement.setAttribute('aria-current', 'step');
             } else {
                 progressElement.classList.remove('active');
+                progressElement.removeAttribute('aria-current');
             }
 
-            if (i < safeTargetStep) {
+            if (isCompleted) {
                 progressElement.classList.add('completed');
             } else {
                 progressElement.classList.remove('completed');
             }
+
+            // Compose an accessible name that includes step status. Visible
+            // labels are kept terse for layout reasons; AT users get the full
+            // context (step number, name, completion / availability).
+            const labelEl = progressElement.querySelector('.step-label');
+            const baseLabel = labelEl ? labelEl.textContent.trim() : `Step ${i}`;
+            let stateSuffix;
+            if (isCurrent) {
+                stateSuffix = 'current step';
+            } else if (isCompleted) {
+                stateSuffix = 'completed';
+            } else if (!isReachable) {
+                stateSuffix = 'not yet available';
+            } else {
+                stateSuffix = 'available';
+            }
+            progressElement.setAttribute('aria-label', `Step ${i}: ${baseLabel} — ${stateSuffix}`);
         });
     }
 }

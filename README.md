@@ -501,6 +501,32 @@ When something goes wrong (preflight failure, install error, recovery flash, sta
 - **Versioned schema.** The top-level `schema_version: 1` lets support tooling pin to a known shape. Field names are stable; new fields will be added under existing sections rather than reshaping the document.
 - **Session-scoped.** The bundle reflects the *current* page session. Refreshing the page resets `last_usb_test_result`, recovery acknowledgements, `cache_clear_requested`, and similar transient signals. Persistent flash history is captured from `localStorage`, but always redacted before inclusion.
 
+## Accessibility
+
+WebFlash is intended to be usable with a keyboard and with screen readers, within the limits of the underlying Web Serial install flow. The conventions documented below are enforced by the code in `scripts/utils/a11y.js` plus the modal/wizard layout modules.
+
+- **Keyboard navigation.** Every interactive element — header rescue/theme toggle, wizard stepper, option cards, firmware select, acknowledgement checkboxes, support and download buttons, post-flash actions, modal close buttons — is reachable with `Tab`, activates on `Enter` (and `Space` for buttons), and follows visual reading order. A "Skip to main content" link is the first focusable element on the page so keyboard users can bypass the header.
+- **Modal focus behavior.** The rescue/recovery, preflight setup help, error log, changelog, and QR-code dialogs all use `role="dialog"`, `aria-modal="true"`, and an `aria-labelledby`-linked title. Opening a modal moves focus inside, traps `Tab`/`Shift+Tab` within the dialog, closes on `Escape`, and restores focus to the element that opened it. Focus restoration is covered by `__tests__/rescue-modal.test.js` and `__tests__/a11y-modal-focus.test.js`.
+- **Live region conventions.** Status changes (preflight, USB test results, support bundle copied, step navigation, rescue success/failure) announce through two app-wide live regions defined in `index.html`: `#webflash-a11y-live-region` (`aria-live="polite"`, used for non-blocking updates) and `#webflash-a11y-alert-region` (`aria-live="assertive"`, reserved for blocking errors). Use `announce(message)` or `announce(message, { assertive: true })` from `scripts/utils/a11y.js` rather than reinventing live regions inside individual modules. Inline `role="status"` containers on the preflight panel, freshness/preflight banners, and post-flash result panel still apply for surfaces where the message is also visible.
+- **Stepper semantics.** The active wizard step carries `aria-current="step"`. Reachability is exposed via `aria-disabled="true"` on unreached steps and a composed `aria-label` (`"Step N: Name — current step | completed | not yet available | available"`) so screen-reader users can hear their position in the flow.
+- **Reduced motion.** All transitions and animations respect `@media (prefers-reduced-motion: reduce)` (see `css/theme.css`). When the user opts out of motion, step transitions, banner pulses, and modal animations collapse to near-zero duration; no essential state depends on animation.
+- **Color independence.** Status indicators (release-channel badges, provenance pass/fail rows, preflight statuses, post-flash validation states, freshness banners) always combine color with a text label or icon. Focus rings use a dedicated CSS variable (`--focus-ring`) so the keyboard outline remains visible across themes.
+- **Mobile fallback.** Web Serial only works on desktop Chromium browsers. The mobile/unsupported message in `scripts/init-review.js` and the preflight banner stay readable and operable on small screens; the rescue and changelog modals scroll internally rather than truncating.
+
+### Running accessibility-focused tests
+
+Accessibility-related Jest suites live alongside the rest of the test code:
+
+```bash
+npm test -- a11y-utils                # focus trap, live region, getFocusableElements
+npm test -- a11y-modal-focus          # focus restoration for changelog & error-log modals
+npm test -- a11y-static-html          # static index.html structure checks
+npm test -- rescue-modal              # rescue dialog semantics + focus return
+npm test -- preflight-help-modal      # setup help dialog
+```
+
+Some tests in the broader suite have unrelated pre-existing failures (notably the wizard-state suite); the accessibility-specific tests above run independently.
+
 ## Custom Firmware & Source Code
 
 For users who want to build custom firmware configurations or modify the ESPHome YAML source files:

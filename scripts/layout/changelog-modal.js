@@ -4,12 +4,19 @@
  */
 
 import { getChangelog, getChangelogForConfig, formatDate } from '../services/changelog.js';
+import { trapFocus, restoreFocus } from '../utils/a11y.js';
 
 /** @type {HTMLElement|null} */
 let modalElement = null;
 
 /** @type {boolean} */
 let isOpen = false;
+
+/** @type {HTMLElement|null} */
+let lastTrigger = null;
+
+/** @type {(() => void) | null} */
+let releaseFocusTrap = null;
 
 /**
  * Creates the changelog modal element.
@@ -30,7 +37,7 @@ function createModal() {
 
     modalElement.innerHTML = `
         <div class="changelog-modal__backdrop" data-changelog-backdrop></div>
-        <div class="changelog-modal__container">
+        <div class="changelog-modal__container" tabindex="-1">
             <div class="changelog-modal__header">
                 <h2 id="changelog-modal-title" class="changelog-modal__title">
                     <svg class="changelog-modal__title-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -110,9 +117,13 @@ function createModal() {
 /**
  * Opens the changelog modal.
  * @param {string} [configString] - Optional configuration to filter by
+ * @param {{ trigger?: HTMLElement|null }} [options]
  */
-export async function openChangelogModal(configString = null) {
+export async function openChangelogModal(configString = null, options = {}) {
     const modal = createModal();
+
+    lastTrigger = options.trigger
+        || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
 
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
@@ -120,6 +131,12 @@ export async function openChangelogModal(configString = null) {
 
     // Store config string for filtering
     modal.dataset.configString = configString || '';
+
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+    }
+    const container = modal.querySelector('.changelog-modal__container') || modal;
+    releaseFocusTrap = trapFocus(container);
 
     // Focus the close button
     setTimeout(() => {
@@ -151,11 +168,22 @@ export function closeModal() {
     // Restore body scroll
     document.body.style.overflow = '';
 
-    // Return focus to trigger element if available
-    const triggerBtn = document.querySelector('[data-changelog-trigger]');
-    if (triggerBtn) {
-        triggerBtn.focus();
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+        releaseFocusTrap = null;
     }
+
+    // Return focus to the trigger that opened the modal, falling back to any
+    // changelog trigger button still in the DOM.
+    if (lastTrigger && document.contains(lastTrigger)) {
+        restoreFocus(lastTrigger);
+    } else {
+        const triggerBtn = document.querySelector('[data-changelog-trigger]');
+        if (triggerBtn) {
+            restoreFocus(triggerBtn);
+        }
+    }
+    lastTrigger = null;
 }
 
 /**
@@ -326,7 +354,7 @@ export function initChangelogModal() {
         const trigger = e.target.closest('[data-changelog-trigger]');
         if (trigger) {
             const configString = trigger.dataset.configString || window.currentConfigString || '';
-            openChangelogModal(configString);
+            openChangelogModal(configString, { trigger });
         }
     });
 }

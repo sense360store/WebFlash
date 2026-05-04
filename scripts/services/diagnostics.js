@@ -17,6 +17,7 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 import { downloadJsonFile } from '../utils/file-download.js';
 import { getFlashHistory } from '../utils/flash-history.js';
 import { validateFirmwareProvenance } from '../utils/firmware-provenance.js';
+import { announce } from '../utils/a11y.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -585,13 +586,17 @@ export async function copySupportBundle(trigger = null) {
         if (trigger && trigger.dataset) {
             trigger.dataset.copyState = 'success';
         }
-        showLocalToast('Support bundle copied. Paste it into your support request.');
+        const message = 'Support bundle copied. Paste it into your support request.';
+        showLocalToast(message);
+        announce(message);
         return true;
     } catch (error) {
         if (trigger && trigger.dataset) {
             trigger.dataset.copyState = 'error';
         }
-        showLocalToast('Could not copy automatically. Select and copy the support bundle manually.');
+        const message = 'Could not copy automatically. Select and copy the support bundle manually.';
+        showLocalToast(message);
+        announce(message, { assertive: true });
         return false;
     }
 }
@@ -603,6 +608,11 @@ export function downloadSupportBundle(trigger = null) {
     const ok = downloadJsonFile(filename, bundle);
     if (trigger && trigger.dataset) {
         trigger.dataset.copyState = ok ? 'success' : 'error';
+    }
+    if (ok) {
+        announce(`Support bundle downloaded as ${filename}.`);
+    } else {
+        announce('Could not download support bundle.', { assertive: true });
     }
     return ok;
 }

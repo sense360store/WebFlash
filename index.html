@@ -17,8 +17,13 @@
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <!-- Global aria-live regions used by scripts/utils/a11y.js. They are
+         programmatically populated and visually hidden via .sr-only. -->
+    <div id="webflash-a11y-live-region" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="webflash-a11y-alert-region" class="sr-only" role="alert" aria-live="assertive" aria-atomic="true"></div>
     <div class="container">
-        <header class="page-header">
+        <header class="page-header" role="banner">
             <div class="logo-container">
                 <img src="./sense360-logo-new.png" alt="Sense360 Logo" class="logo">
                 <div class="header-text">
@@ -150,7 +155,7 @@
                     </ol>
                 </aside>
 
-                <main class="wizard-main">
+                <main class="wizard-main" id="main-content" tabindex="-1">
                     <div class="progress-bar progress-bar--mobile" aria-hidden="true">
                         <div class="progress-step active" data-step="1" data-reachable="true">
                             <div class="step-number">1</div>
@@ -175,8 +180,8 @@
                     </div>
 
                     <!-- Step 2: Core Configuration -->
-                    <div class="wizard-step step" id="step-2" hidden aria-hidden="true">
-                <h2>Configure your Core</h2>
+                    <div class="wizard-step step" id="step-2" role="region" aria-labelledby="step-2-heading" hidden aria-hidden="true">
+                <h2 id="step-2-heading">Configure your Core</h2>
                 <p class="step-intro">Choose the base Sense360 hub family before selecting power and expansion modules.</p>
 
                 <aside class="safety-notice" aria-label="Important safety information">
@@ -224,8 +229,8 @@
                     </div>
 
                     <!-- Step 1: Get started -->
-                    <div class="wizard-step step" id="step-1">
-                <h2>Pick a starting point</h2>
+                    <div class="wizard-step step" id="step-1" role="region" aria-labelledby="step-1-heading">
+                <h2 id="step-1-heading">Pick a starting point</h2>
                 <p class="step-intro">Choose a tested preset to jump straight to firmware selection, or configure each module yourself.</p>
 
                 <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
@@ -255,8 +260,8 @@
                     </div>
 
                     <!-- Step 3: Power Option -->
-                    <div class="wizard-step step" id="step-3" hidden aria-hidden="true">
-                <h2>How is the hub powered?</h2>
+                    <div class="wizard-step step" id="step-3" role="region" aria-labelledby="step-3-heading" hidden aria-hidden="true">
+                <h2 id="step-3-heading">How is the hub powered?</h2>
                 <p class="step-intro">Pick how this unit will get power in the field. This affects cable planning and available accessories.</p>
                 <div class="option-grid">
                     <label class="option-card">
@@ -330,8 +335,8 @@
                     </div>
 
                 <!-- Step 4: Expansion Modules -->
-                <div class="wizard-step step" id="step-4" hidden aria-hidden="true">
-                <h2>Add expansion modules</h2>
+                <div class="wizard-step step" id="step-4" role="region" aria-labelledby="step-4-heading" hidden aria-hidden="true">
+                <h2 id="step-4-heading">Add expansion modules</h2>
                 <div class="module-status-bar" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
                 </div>
@@ -634,8 +639,8 @@
                     </div>
 
                     <!-- Step 5: Review & Install -->
-                    <div class="wizard-step step" id="step-5" hidden aria-hidden="true">
-                <h2>Review &amp; install</h2>
+                    <div class="wizard-step step" id="step-5" role="region" aria-labelledby="step-5-heading" hidden aria-hidden="true">
+                <h2 id="step-5-heading">Review &amp; install</h2>
 
                 <p class="step-intro">
                     Use desktop Chrome or Edge to connect your Sense360 hub. Then click &lsquo;Install firmware&rsquo;. If you&rsquo;re not on a supported browser, download the .bin instead.
@@ -683,8 +688,8 @@
                         </li>
                     </ul>
                     <label class="preflight-panel__warn-acknowledge" data-preflight-warn-acknowledge hidden aria-hidden="true">
-                        <input type="checkbox" data-preflight-warn-acknowledge-input>
-                        <span>Accept preflight warnings and continue. I understand the warnings above and accept the risk of installing anyway.</span>
+                        <input type="checkbox" data-preflight-warn-acknowledge-input aria-describedby="preflight-warn-acknowledge-description">
+                        <span id="preflight-warn-acknowledge-description">Accept preflight warnings and continue. I understand the warnings above and accept the risk of installing anyway.</span>
                     </label>
                 </section>
 
@@ -702,8 +707,8 @@
                         <strong>What happens next:</strong> after flashing, this tab will offer to connect your hub to Wi-Fi over the same USB connection (Improv Serial). Have your Wi-Fi password ready.
                     </p>
                     <label class="pre-flash-checklist__acknowledgement">
-                        <input type="checkbox" data-preflash-acknowledge>
-                        <span class="preflash-warning-text">I understand and will keep the hub powered and connected throughout flashing.</span>
+                        <input type="checkbox" data-preflash-acknowledge aria-describedby="preflash-acknowledge-description">
+                        <span class="preflash-warning-text" id="preflash-acknowledge-description">I understand and will keep the hub powered and connected throughout flashing.</span>
                     </label>
                 </section>
 
@@ -716,7 +721,10 @@
                     </h3>
                     <div class="firmware-selector" id="firmware-selector" hidden>
                         <label class="firmware-selector-label" for="firmware-version-select">Select firmware release</label>
-                        <select id="firmware-version-select" class="firmware-selector-control" aria-label="Available firmware releases"></select>
+                        <select id="firmware-version-select" class="firmware-selector-control"
+                                aria-label="Available firmware releases"
+                                aria-describedby="firmware-selector-help"></select>
+                        <span id="firmware-selector-help" class="sr-only">Choose between stable, beta, and preview releases for this configuration.</span>
                     </div>
                     <div id="compatible-firmware">
                         <!-- Compatible firmware will be shown here -->
@@ -863,7 +871,7 @@
                                     <p class="module-summary-card__firmware-version" data-module-summary-firmware-version></p>
                                     <p class="module-summary-card__firmware-size" data-module-summary-firmware-size></p>
                                 </div>
-                                <button type="button" class="btn btn-primary module-summary-card__install" data-module-summary-install disabled>Install</button>
+                                <button type="button" class="btn btn-primary module-summary-card__install" data-module-summary-install disabled aria-label="Install firmware for the selected configuration">Install</button>
                             </section>
                             <div class="module-summary-card__actions">
                                 <button type="button" class="btn btn-secondary" data-module-summary-copy data-default-label="Copy link">Copy link</button>

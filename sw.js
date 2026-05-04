@@ -98,6 +98,7 @@ const SCRIPT_MODULES = [
     './scripts/layout/state-summary.js',
     './scripts/services/diagnostics.js',
     './scripts/services/post-flash.js',
+    './scripts/utils/a11y.js',
     './scripts/utils/channel-alias.js',
     './scripts/utils/copy-to-clipboard.js',
     './scripts/utils/escape-html.js',
