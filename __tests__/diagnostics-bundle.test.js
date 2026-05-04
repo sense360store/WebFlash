@@ -199,6 +199,87 @@ describe('buildSupportBundle — wizard', () => {
     });
 });
 
+describe('buildSupportBundle — configuration mode', () => {
+    test('manual mode emits a manual configuration block', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            setConfigurationMode,
+            setSelectedKitSku,
+            setActiveKitMetadata,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setConfigurationMode('manual');
+        setSelectedKitSku(null);
+        setActiveKitMetadata(null);
+        setSupportBundleStateProvider(() => ({
+            configuration: { mounting: 'ceiling', power: 'usb', airiq: 'airiq' }
+        }));
+        const bundle = buildSupportBundle();
+        expect(bundle.configuration.mode).toBe('manual');
+        expect(bundle.configuration.selected_modules).toEqual(['airiq']);
+        expect(bundle.configuration.selected_power).toBe('usb');
+        expect(bundle.configuration.sku).toBeUndefined();
+        expect(bundle.configuration.kit_display_name).toBeUndefined();
+    });
+
+    test('kit mode emits resolved kit + firmware config', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            setConfigurationMode,
+            setSelectedKitSku,
+            setActiveKitMetadata,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setConfigurationMode('kit');
+        setSelectedKitSku('S360-KIT-CEILING-AIRIQ-POE');
+        setActiveKitMetadata({
+            sku: 'S360-KIT-CEILING-AIRIQ-POE',
+            display_name: 'Sense360 Ceiling AirIQ Kit (PoE)',
+            firmware_config_string: 'Ceiling-POE-AirIQ',
+            sample: true
+        });
+        setSupportBundleStateProvider(() => ({
+            configuration: { mounting: 'ceiling', power: 'poe', airiq: 'airiq' }
+        }));
+        const bundle = buildSupportBundle();
+        expect(bundle.configuration.mode).toBe('kit');
+        expect(bundle.configuration.sku).toBe('S360-KIT-CEILING-AIRIQ-POE');
+        expect(bundle.configuration.kit_display_name).toBe('Sense360 Ceiling AirIQ Kit (PoE)');
+        expect(bundle.configuration.kit_sample).toBe(true);
+        expect(bundle.configuration.resolved_modules).toEqual(['airiq']);
+        expect(bundle.configuration.resolved_power).toBe('poe');
+        expect(bundle.configuration.resolved_firmware_config).toBe('Ceiling-POE-AirIQ');
+    });
+
+    test('switching from kit back to manual clears kit metadata', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            setConfigurationMode,
+            setSelectedKitSku,
+            setActiveKitMetadata,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setConfigurationMode('kit');
+        setSelectedKitSku('S360-KIT-X');
+        setActiveKitMetadata({ sku: 'S360-KIT-X', display_name: 'X', firmware_config_string: 'Ceiling-USB' });
+        setConfigurationMode('manual');
+        setSelectedKitSku(null);
+        setActiveKitMetadata(null);
+        setSupportBundleStateProvider(() => ({
+            configuration: { mounting: 'ceiling', power: 'usb' }
+        }));
+        const bundle = buildSupportBundle();
+        expect(bundle.configuration.mode).toBe('manual');
+        expect(bundle.configuration.sku).toBeUndefined();
+    });
+});
+
 describe('buildSupportBundle — recovery and cache', () => {
     test('recovery.mode_active true when releaseMode is recovery', async () => {
         const { buildSupportBundle, setSupportBundleStateProvider } = await loadDiagnostics();

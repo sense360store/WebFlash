@@ -241,26 +241,76 @@
                     <!-- Step 1: Get started -->
                     <div class="wizard-step step" id="step-1" role="region" aria-labelledby="step-1-heading">
                 <h2 id="step-1-heading">Pick a starting point</h2>
-                <p class="step-intro">Choose a tested preset to jump straight to firmware selection, or configure each module yourself.</p>
+                <p class="step-intro">Choose how you want to configure WebFlash. Pick your kit or SKU if you bought a Sense360 bundle, or jump into the manual flow if you know your exact modules.</p>
 
-                <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
-                    <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
-                        <span class="quick-start-card__badge">Most popular</span>
-                        <span class="quick-start-card__title">Ceiling + AirIQ over PoE</span>
-                        <span class="quick-start-card__description">Full air-quality stack powered over Ethernet. Recommended for most rooms.</span>
-                        <span class="quick-start-card__meta">PoE PSU &middot; Sense360 AirIQ &middot; no fan driver</span>
-                    </button>
-                    <button class="quick-start-card btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
-                        <span class="quick-start-card__title">Ceiling Core over USB</span>
-                        <span class="quick-start-card__description">Just the Sense360 Core, powered from USB. Fastest way to get going.</span>
-                        <span class="quick-start-card__meta">USB power &middot; no expansion modules</span>
-                    </button>
+                <fieldset class="config-mode-picker" data-config-mode-picker aria-describedby="config-mode-picker-help">
+                    <legend class="sr-only">Configuration mode</legend>
+                    <p id="config-mode-picker-help" class="config-mode-picker__help">Use this if you bought a Sense360 kit and have the product name, SKU, or kit label. Switch to manual if you are building a custom setup or know your exact modules.</p>
+                    <div class="config-mode-picker__options">
+                        <label class="config-mode-option">
+                            <input type="radio" name="configMode" value="kit" data-config-mode-input checked>
+                            <div class="config-mode-option__content">
+                                <div class="config-mode-option__title">I know my kit or SKU</div>
+                                <div class="config-mode-option__description">Use this if you bought a Sense360 kit and have the product name, SKU, or kit label.</div>
+                            </div>
+                        </label>
+                        <label class="config-mode-option">
+                            <input type="radio" name="configMode" value="manual" data-config-mode-input>
+                            <div class="config-mode-option__content">
+                                <div class="config-mode-option__title">Choose hardware manually</div>
+                                <div class="config-mode-option__description">Use this if you are building a custom setup or know your exact modules.</div>
+                            </div>
+                        </label>
+                    </div>
+                </fieldset>
+
+                <section class="kit-mode-panel" data-kit-mode-panel aria-label="Kit selection">
+                    <label class="kit-select__label" for="kit-select">Enter your kit SKU or choose from the list.</label>
+                    <div class="kit-select">
+                        <input
+                            class="kit-select__search"
+                            type="search"
+                            id="kit-select-search"
+                            list="kit-select-options"
+                            data-kit-select-search
+                            placeholder="Search by SKU or product name"
+                            autocomplete="off"
+                            aria-describedby="kit-select-help"
+                        >
+                        <datalist id="kit-select-options" data-kit-select-datalist></datalist>
+                        <select id="kit-select" class="kit-select__dropdown" data-kit-select aria-label="Choose a kit from the list">
+                            <option value="">Select a kit&hellip;</option>
+                        </select>
+                    </div>
+                    <p id="kit-select-help" class="kit-select__help">Tip: kit SKUs start with <code>S360-KIT-</code>. Check the box label or your order confirmation.</p>
+                    <p class="kit-select__error" data-kit-select-error role="alert" hidden></p>
+                    <div class="kit-summary" data-kit-summary hidden aria-live="polite"></div>
+                    <div class="kit-mode-actions">
+                        <button class="btn btn-primary btn-next" type="button" data-kit-mode-next disabled>Continue with this kit &rarr;</button>
+                        <button class="btn btn-link" type="button" data-kit-mode-switch-manual>Choose hardware manually instead</button>
+                    </div>
                 </section>
 
-                <div class="manual-path">
-                    <p class="manual-path__label">Building something different?</p>
-                    <button class="btn btn-secondary btn-next" type="button" data-next>Configure manually &rarr;</button>
-                </div>
+                <section class="manual-mode-panel" data-manual-mode-panel hidden>
+                    <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
+                        <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
+                            <span class="quick-start-card__badge">Most popular</span>
+                            <span class="quick-start-card__title">Ceiling + AirIQ over PoE</span>
+                            <span class="quick-start-card__description">Full air-quality stack powered over Ethernet. Recommended for most rooms.</span>
+                            <span class="quick-start-card__meta">PoE PSU &middot; Sense360 AirIQ &middot; no fan driver</span>
+                        </button>
+                        <button class="quick-start-card btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
+                            <span class="quick-start-card__title">Ceiling Core over USB</span>
+                            <span class="quick-start-card__description">Just the Sense360 Core, powered from USB. Fastest way to get going.</span>
+                            <span class="quick-start-card__meta">USB power &middot; no expansion modules</span>
+                        </button>
+                    </section>
+
+                    <div class="manual-path">
+                        <p class="manual-path__label">Building something different?</p>
+                        <button class="btn btn-secondary btn-next" type="button" data-next>Configure manually &rarr;</button>
+                    </div>
+                </section>
 
                 <input type="hidden" name="mounting" value="ceiling" data-mounting-default>
 

@@ -141,7 +141,9 @@ const sessionState = {
     recoveryAcknowledged: false,
     bootloaderInstructionsShown: false,
     cacheClearRequested: null,
-    updateAvailable: false
+    updateAvailable: false,
+    configurationMode: 'manual',
+    selectedKitSku: null
 };
 
 export function recordUsbTestResult({ result, error = null, timestamp = null } = {}) {
@@ -180,6 +182,30 @@ export function recordUpdateAvailable(value) {
     sessionState.updateAvailable = Boolean(value);
 }
 
+/**
+ * Records which configuration mode the user is in. Called by the kit-mode
+ * controller and by the manual-flow defaults. Mode is included in the
+ * diagnostics bundle so support can tell whether a customer used the
+ * kit picker or the per-module flow without inferring it from UI state.
+ *
+ * @param {string} mode - "kit" or "manual"
+ */
+export function setConfigurationMode(mode) {
+    sessionState.configurationMode = mode === 'kit' ? 'kit' : 'manual';
+}
+
+/**
+ * Records the SKU the user selected in kit mode. Stored verbatim — the
+ * SKU is a product identifier, not customer-identifying data.
+ *
+ * @param {string|null} sku
+ */
+export function setSelectedKitSku(sku) {
+    sessionState.selectedKitSku = typeof sku === 'string' && sku.trim().length > 0
+        ? sku.trim().toUpperCase()
+        : null;
+}
+
 export function getSessionDiagnosticsState() {
     return { ...sessionState };
 }
@@ -193,6 +219,8 @@ export function resetSessionDiagnosticsStateForTests() {
     sessionState.bootloaderInstructionsShown = false;
     sessionState.cacheClearRequested = null;
     sessionState.updateAvailable = false;
+    sessionState.configurationMode = 'manual';
+    sessionState.selectedKitSku = null;
     delete sessionState.lastUsbTestError;
     delete sessionState.lastRecoveryError;
 }
@@ -343,6 +371,39 @@ function buildWizardSection({ stepInfo, configuration, currentFirmware }) {
     };
 }
 
+function buildConfigurationSection({ configuration, kitMetadata, currentFirmware, sessionSnapshot }) {
+    const config = configuration && typeof configuration === 'object' ? configuration : {};
+    const moduleKeys = ['roomiq', 'airiq', 'ventiq', 'fan', 'led'];
+    const selectedModules = moduleKeys.filter(key => {
+        const value = config[key];
+        return value && value !== 'none';
+    });
+    const selectedCore = config.voice && config.voice !== 'none' ? config.voice : 'core';
+    const mode = sessionSnapshot.configurationMode === 'kit' ? 'kit' : 'manual';
+
+    if (mode === 'kit') {
+        return {
+            mode: 'kit',
+            sku: sessionSnapshot.selectedKitSku || null,
+            kit_display_name: kitMetadata?.display_name || null,
+            kit_sample: Boolean(kitMetadata?.sample),
+            resolved_core: selectedCore,
+            resolved_modules: selectedModules,
+            resolved_power: config.power || null,
+            resolved_firmware_config: kitMetadata?.firmware_config_string
+                || currentFirmware?.config_string
+                || null
+        };
+    }
+
+    return {
+        mode: 'manual',
+        selected_core: selectedCore,
+        selected_modules: selectedModules,
+        selected_power: config.power || null
+    };
+}
+
 function buildPreflightSection({ envCaps, sessionSnapshot }) {
     return {
         browser_supported: Boolean(envCaps?.isSupported),
@@ -452,11 +513,33 @@ function buildFlashSection() {
 }
 
 let stateProvider = () => ({});
+let activeKitMetadata = null;
 
 export function setSupportBundleStateProvider(provider) {
     if (typeof provider === 'function') {
         stateProvider = provider;
     }
+}
+
+/**
+ * Records the kit currently selected in kit mode so the diagnostics bundle
+ * can include the kit's friendly display name and resolved firmware
+ * config_string. Pass null to clear (for example when the user switches
+ * back to manual mode).
+ *
+ * @param {Object|null} kit
+ */
+export function setActiveKitMetadata(kit) {
+    if (!kit || typeof kit !== 'object') {
+        activeKitMetadata = null;
+        return;
+    }
+    activeKitMetadata = {
+        sku: kit.sku || null,
+        display_name: kit.display_name || null,
+        firmware_config_string: kit.firmware_config_string || null,
+        sample: Boolean(kit.sample)
+    };
 }
 
 export function buildSupportBundle() {
@@ -492,6 +575,12 @@ export function buildSupportBundle() {
             stepInfo: providerInput.stepInfo || null,
             configuration: providerInput.configuration || null,
             currentFirmware: providerInput.currentFirmware || null
+        }),
+        configuration: buildConfigurationSection({
+            configuration: providerInput.configuration || null,
+            kitMetadata: providerInput.kitMetadata || activeKitMetadata,
+            currentFirmware: providerInput.currentFirmware || null,
+            sessionSnapshot
         }),
         preflight: buildPreflightSection({ envCaps, sessionSnapshot }),
         recovery: buildRecoverySection({

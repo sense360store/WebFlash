@@ -41,8 +41,8 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v2';
-const CACHE_VERSION = 2;
+const CACHE_NAME = 'webflash-v3';
+const CACHE_VERSION = 3;
 
 /**
  * Static assets to cache on install.
@@ -81,10 +81,12 @@ const SCRIPT_MODULES = [
     './scripts/navigation.js',
     './scripts/prefs.js',
     './scripts/recommended-bundle.js',
+    './scripts/kit-mode.js',
     './scripts/state.js',
     './scripts/ui-capability-bar.js',
     './scripts/wizard-state-observer.js',
     './scripts/data/module-requirements.js',
+    './scripts/data/kits.json',
     './scripts/content/option-tooltips.js',
     './scripts/layout/about-panel.js',
     './scripts/layout/firmware-note.js',
@@ -106,6 +108,7 @@ const SCRIPT_MODULES = [
     './scripts/utils/file-download.js',
     './scripts/utils/firmware-provenance.js',
     './scripts/utils/flash-history.js',
+    './scripts/utils/kit-config.js',
     './scripts/utils/preset-storage.js',
     './scripts/utils/release-channels.js',
     './scripts/utils/url-config.js'
