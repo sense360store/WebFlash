@@ -18,11 +18,12 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 try:
     from packaging.version import Version as _PackagingVersion
@@ -252,6 +253,11 @@ class FirmwareMetadata:
     hardware_requirements: List[str] = field(default_factory=list)
     improv: bool = True
     custom_directory: Optional[str] = None
+    changelog: List[str] = field(default_factory=list)
+    known_issues: List[str] = field(default_factory=list)
+    deprecated: bool = False
+    deprecation_reason: Optional[str] = None
+    signed_by: Optional[str] = None
 
     def normalized_filename(self) -> str:
         return f"Sense360-{self.name_part}-v{self.version}-{self.channel}.bin"
@@ -446,8 +452,16 @@ class FirmwareArtifact:
     signature: str
     file_size: int
     build_date: str
+    source_commit: Optional[str] = None
+    source_url: Optional[str] = None
 
     def manifest_entry(self) -> Dict[str, object]:
+        changelog = list(self.metadata.changelog) if self.metadata.changelog else []
+        if not changelog and self.metadata.channel == "stable":
+            # Stable firmware must ship at least one changelog line so the
+            # runtime install gate has something to surface to the user.
+            changelog = [synth_changelog_entry(self.metadata)]
+
         entry: Dict[str, object] = {
             "device_type": self.metadata.device_type,
             "version": self.metadata.version,
@@ -471,8 +485,13 @@ class FirmwareArtifact:
             "signature": self.signature,
             "features": list(self.metadata.features),
             "hardware_requirements": list(self.metadata.hardware_requirements),
-            "known_issues": [],
-            "changelog": [],
+            "known_issues": list(self.metadata.known_issues),
+            "changelog": changelog,
+            "source_commit": self.source_commit,
+            "source_url": self.source_url,
+            "signed_by": self.metadata.signed_by,
+            "deprecated": bool(self.metadata.deprecated),
+            "deprecation_reason": self.metadata.deprecation_reason,
         }
         if self.metadata.is_configuration:
             entry.update(
@@ -496,6 +515,92 @@ class FirmwareArtifact:
 
 
 SIGNATURE_SALT = b"Sense360 Firmware Signing Salt v1"
+
+# Required provenance fields for the runtime install gate. Mirrored in
+# scripts/utils/firmware-provenance.js — keep the lists aligned.
+REQUIRED_PROVENANCE_FIELDS: Tuple[str, ...] = (
+    "sha256",
+    "signature",
+    "source_commit",
+    "file_size",
+    "changelog",
+)
+
+# Default repository URL used to build per-build `source_url` links when a
+# source commit is known. Override at the CLI with --source-url-template.
+DEFAULT_SOURCE_URL_TEMPLATE = "https://github.com/sense360store/WebFlash/commit/{commit}"
+
+
+def detect_source_commit(repo_root: Path) -> Optional[str]:
+    """Best-effort source commit lookup, used so each manifest entry can be
+    traced back to the tree that produced it.
+
+    Order of preference:
+      1. ``WEBFLASH_SOURCE_COMMIT`` env var (CI-friendly override).
+      2. ``git rev-parse HEAD`` from ``repo_root``.
+    Returns ``None`` if neither path yields a SHA.
+    """
+
+    override = os.environ.get("WEBFLASH_SOURCE_COMMIT", "").strip()
+    if override:
+        return override
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        sha = result.stdout.strip()
+        return sha or None
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        return None
+
+
+def load_sidecar_metadata(bin_path: Path) -> Dict[str, Any]:
+    """Optional sidecar JSON keyed off the firmware filename. Lets release
+    pipelines attach hand-curated provenance (signed_by, deprecated flag,
+    upstream changelog, etc.) without modifying the binary.
+    """
+
+    sidecar = bin_path.with_suffix(bin_path.suffix + ".meta.json")
+    if not sidecar.exists():
+        sidecar = bin_path.with_suffix(".meta.json")
+    if not sidecar.exists():
+        return {}
+    try:
+        with sidecar.open("r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, ValueError) as exc:
+        print(
+            f"[warn] Unable to read sidecar metadata {sidecar}: {exc}",
+            file=sys.stderr,
+        )
+        return {}
+    if not isinstance(data, dict):
+        print(
+            f"[warn] Sidecar metadata {sidecar} did not contain a JSON object; ignoring.",
+            file=sys.stderr,
+        )
+        return {}
+    return data
+
+
+def synth_changelog_entry(metadata: "FirmwareMetadata") -> str:
+    """Synthesise a single changelog line from filename metadata.
+
+    Stable firmware needs a non-empty changelog at runtime. When the
+    publishing pipeline has not provided hand-written notes (or a sidecar),
+    we still want the manifest to ship a one-line summary so the install
+    gate can verify "what changed". Real release notes (.md sidecar) take
+    precedence over this synthesised entry.
+    """
+
+    descriptor = metadata.config_string or metadata.model or "Sense360"
+    return (
+        f"{metadata.channel.title()} build of Sense360 {descriptor} v{metadata.version}."
+    )
 
 
 def compute_digests(path: Path) -> Tuple[str, str, str]:
@@ -555,12 +660,33 @@ def _version_sort_key(version: str) -> Tuple[Tuple[int, ...], int, str]:
     return (neg_parts, -stability, suffix)
 
 
+def _apply_sidecar_metadata(metadata: FirmwareMetadata, sidecar: Dict[str, Any]) -> None:
+    if not sidecar:
+        return
+    changelog = sidecar.get("changelog")
+    if isinstance(changelog, list):
+        metadata.changelog = [str(entry) for entry in changelog if str(entry).strip()]
+    elif isinstance(changelog, str) and changelog.strip():
+        metadata.changelog = [changelog.strip()]
+    known_issues = sidecar.get("known_issues")
+    if isinstance(known_issues, list):
+        metadata.known_issues = [str(entry) for entry in known_issues if str(entry).strip()]
+    if "deprecated" in sidecar:
+        metadata.deprecated = bool(sidecar.get("deprecated"))
+    if sidecar.get("deprecation_reason"):
+        metadata.deprecation_reason = str(sidecar["deprecation_reason"]).strip() or None
+    if sidecar.get("signed_by"):
+        metadata.signed_by = str(sidecar["signed_by"]).strip() or None
+
+
 def collect_firmware(
     firmware_dir: Path,
     repo_root: Path,
     *,
     dry_run: bool = False,
     default_channel: str = DEFAULT_CHANNEL,
+    source_commit: Optional[str] = None,
+    source_url_template: str = DEFAULT_SOURCE_URL_TEMPLATE,
 ) -> List[FirmwareArtifact]:
     artifacts: List[FirmwareArtifact] = []
     if not firmware_dir.exists():
@@ -579,6 +705,8 @@ def collect_firmware(
             )
         except ValueError as exc:  # pragma: no cover - fatal validation
             raise SystemExit(f"Unable to parse metadata from {bin_path}: {exc}") from exc
+        sidecar = load_sidecar_metadata(bin_path)
+        _apply_sidecar_metadata(metadata, sidecar)
         target_path = metadata.target_path(firmware_dir)
         source_path = bin_path
         if bin_path.resolve() != target_path.resolve():
@@ -598,6 +726,21 @@ def collect_firmware(
         stat = source_path.stat()
         build_date = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
         rel_path = Path(os.path.relpath(target_path, repo_root)).as_posix()
+        per_build_commit = sidecar.get("source_commit") if isinstance(sidecar, dict) else None
+        if isinstance(per_build_commit, str) and per_build_commit.strip():
+            commit_value: Optional[str] = per_build_commit.strip()
+        else:
+            commit_value = source_commit
+        per_build_url = sidecar.get("source_url") if isinstance(sidecar, dict) else None
+        if isinstance(per_build_url, str) and per_build_url.strip():
+            url_value: Optional[str] = per_build_url.strip()
+        elif commit_value and source_url_template:
+            try:
+                url_value = source_url_template.format(commit=commit_value)
+            except (KeyError, IndexError, ValueError):
+                url_value = None
+        else:
+            url_value = None
         artifacts.append(
             FirmwareArtifact(
                 path=target_path,
@@ -609,6 +752,8 @@ def collect_firmware(
                 signature=signature,
                 file_size=stat.st_size,
                 build_date=build_date,
+                source_commit=commit_value,
+                source_url=url_value,
             )
         )
     return artifacts
@@ -825,6 +970,16 @@ def validate_manifest_metadata(
                     "consider adding a release-notes .md so users get context."
                 )
 
+        # 5. provenance requirements: stable firmware must have a source commit
+        # so it's traceable to a specific tree. Lack of a source commit is a hard
+        # finding because the runtime install gate refuses to flash without it.
+        if meta.channel == "stable" and not artifact.source_commit:
+            findings.append(
+                f"{name}: stable build is missing source_commit. Set "
+                "WEBFLASH_SOURCE_COMMIT or run inside a git checkout so manifest "
+                "entries are traceable to a specific tree."
+            )
+
     return findings
 
 
@@ -902,6 +1057,10 @@ def write_individual_manifests(
                     "md5": artifact.md5,
                     "sha256": artifact.sha256,
                     "signature": artifact.signature,
+                    "file_size": artifact.file_size,
+                    "source_commit": artifact.source_commit,
+                    "source_url": artifact.source_url,
+                    "deprecated": bool(artifact.metadata.deprecated),
                 }
             ],
         }
@@ -1019,6 +1178,23 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             "suspicious. Default: %(default)s. Set to 0 to disable the size check."
         ),
     )
+    parser.add_argument(
+        "--source-commit",
+        default=None,
+        help=(
+            "Override the source commit recorded for every build. Defaults to the "
+            "WEBFLASH_SOURCE_COMMIT environment variable, then `git rev-parse HEAD`."
+        ),
+    )
+    parser.add_argument(
+        "--source-url-template",
+        default=DEFAULT_SOURCE_URL_TEMPLATE,
+        help=(
+            "Format string used to build per-build source_url links. Must contain "
+            "the substring '{commit}'. Set to an empty string to disable source URL "
+            "generation. Default: %(default)s."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -1028,11 +1204,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     firmware_dir = (repo_root / args.firmware_dir).resolve()
     manifest_path = (repo_root / args.manifest_path).resolve()
     manifest_prefix = Path(args.manifest_prefix)
+    source_commit = (args.source_commit or "").strip() or detect_source_commit(repo_root)
+    if source_commit:
+        print(f"Recording source_commit={source_commit} on every build entry.")
+    else:
+        print(
+            "[warn] No source_commit detected; stable builds will fail provenance "
+            "validation. Set WEBFLASH_SOURCE_COMMIT or pass --source-commit.",
+            file=sys.stderr,
+        )
     artifacts = collect_firmware(
         firmware_dir,
         repo_root,
         dry_run=args.dry_run,
         default_channel=DEFAULT_CHANNEL,
+        source_commit=source_commit,
+        source_url_template=args.source_url_template or "",
     )
     if not artifacts:
         message = f"No firmware binaries found in {firmware_dir}"

@@ -4,6 +4,11 @@ import { MODULE_REQUIREMENT_MATRIX, getModuleMatrixEntry, getModuleVariantEntry 
 import { parseConfigParams, mapToWizardConfiguration } from './utils/url-config.js';
 import { recordFlashStart, recordFlashSuccess, recordFlashError, exportFlashHistoryText } from './utils/flash-history.js';
 import { copyTextToClipboard } from './utils/copy-to-clipboard.js';
+import {
+    validateFirmwareProvenance,
+    describeVerificationChecks,
+    pickDefaultEligibleBuilds
+} from './utils/firmware-provenance.js';
 // Import error logging service early to capture all errors including manifest load failures
 import './services/error-log.js';
 
@@ -3262,13 +3267,34 @@ async function verifyCurrentFirmwareIntegrity() {
         return;
     }
 
+    // Run the static provenance gate before touching the network. If a stable
+    // build is missing required metadata (sha256/signature/source_commit/etc.)
+    // we refuse to even attempt the SHA-256 download so the install path stays
+    // closed.
+    const provenanceReport = validateFirmwareProvenance(firmware);
+    window.latestFirmwareProvenance = provenanceReport;
+    if (!provenanceReport.ok) {
+        firmwareVerificationState = {
+            status: 'failed',
+            message: provenanceReport.summary || 'Firmware provenance validation failed.',
+            parts: new Map(),
+            firmwareId: firmware.firmwareId || null,
+            provenance: provenanceReport
+        };
+        renderSelectedFirmware();
+        updateFirmwareControls();
+        refreshPreflightDiagnostics();
+        return;
+    }
+
     const parts = getFirmwarePartsMetadata(firmware);
     if (!parts.length) {
         firmwareVerificationState = {
             status: 'failed',
             message: 'No firmware files available for verification.',
             parts: new Map(),
-            firmwareId: firmware.firmwareId || null
+            firmwareId: firmware.firmwareId || null,
+            provenance: provenanceReport
         };
         renderSelectedFirmware();
         updateFirmwareControls();
@@ -3290,7 +3316,8 @@ async function verifyCurrentFirmwareIntegrity() {
             status: 'failed',
             message: 'Firmware verification is not supported in this browser.',
             parts: failureMap,
-            firmwareId: firmware.firmwareId || null
+            firmwareId: firmware.firmwareId || null,
+            provenance: provenanceReport
         };
         renderSelectedFirmware();
         updateFirmwareControls();
@@ -3310,7 +3337,8 @@ async function verifyCurrentFirmwareIntegrity() {
         status: 'pending',
         message: 'Verifying firmware…',
         parts: pendingMap,
-        firmwareId: firmware.firmwareId || null
+        firmwareId: firmware.firmwareId || null,
+        provenance: provenanceReport
     };
     renderSelectedFirmware();
     updateFirmwareControls();
@@ -3345,7 +3373,8 @@ async function verifyCurrentFirmwareIntegrity() {
             status: overallStatus,
             message: overallMessage,
             parts: resultMap,
-            firmwareId: firmware.firmwareId || null
+            firmwareId: firmware.firmwareId || null,
+            provenance: provenanceReport
         };
     } catch (error) {
         if (token !== firmwareVerificationToken) {
@@ -3365,7 +3394,8 @@ async function verifyCurrentFirmwareIntegrity() {
             status: 'failed',
             message: 'Unexpected error verifying firmware.',
             parts: failureMap,
-            firmwareId: firmware.firmwareId || null
+            firmwareId: firmware.firmwareId || null,
+            provenance: provenanceReport
         };
     } finally {
         if (token === firmwareVerificationToken) {
@@ -3387,6 +3417,78 @@ function buildFirmwarePartsClipboardText(parts) {
             return `${part.fileName} @ ${offsetLabel} -> ${part.resolvedUrl}`;
         })
         .join('\n');
+}
+
+function renderFirmwareProvenanceSection(firmware) {
+    if (!firmware) {
+        return '';
+    }
+
+    const { entries, report } = describeVerificationChecks(firmware);
+    if (!entries.length) {
+        return '';
+    }
+
+    const overallStatus = report.status;
+    const overallLabel = overallStatus === 'pass'
+        ? 'Provenance verified'
+        : overallStatus === 'warn'
+            ? 'Provenance has warnings'
+            : 'Provenance check failed';
+
+    const sourceCommit = (firmware.source_commit || '').toString().trim();
+    const sourceUrl = (firmware.source_url || '').toString().trim();
+    const signedBy = (firmware.signed_by || '').toString().trim();
+
+    const checksHtml = entries
+        .map(entry => `
+            <li class="firmware-provenance__check status-${escapeHtml(entry.ok ? 'pass' : 'fail')}">
+                <span class="firmware-provenance__check-icon" aria-hidden="true">${entry.ok ? '✓' : '✕'}</span>
+                <div class="firmware-provenance__check-body">
+                    <span class="firmware-provenance__check-label">${escapeHtml(entry.label)}</span>
+                    <span class="firmware-provenance__check-detail">${escapeHtml(entry.detail)}</span>
+                </div>
+            </li>
+        `)
+        .join('');
+
+    const factsHtml = (() => {
+        const facts = [];
+        if (sourceCommit) {
+            const commitDisplay = sourceCommit.length > 12 ? `${sourceCommit.slice(0, 12)}…` : sourceCommit;
+            const linkHtml = sourceUrl
+                ? `<a class="firmware-provenance__commit-link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer"><code>${escapeHtml(commitDisplay)}</code></a>`
+                : `<code>${escapeHtml(commitDisplay)}</code>`;
+            facts.push(`<div class="firmware-provenance__fact"><span class="firmware-provenance__fact-label">Source commit</span>${linkHtml}</div>`);
+        }
+        if (signedBy) {
+            facts.push(`<div class="firmware-provenance__fact"><span class="firmware-provenance__fact-label">Signed by</span><span>${escapeHtml(signedBy)}</span></div>`);
+        }
+        if (Number.isFinite(Number(firmware.file_size)) && Number(firmware.file_size) > 0) {
+            const bytes = Number(firmware.file_size);
+            const kb = bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
+            facts.push(`<div class="firmware-provenance__fact"><span class="firmware-provenance__fact-label">File size</span><span>${escapeHtml(kb)}</span></div>`);
+        }
+        if (report.deprecated) {
+            facts.push(`<div class="firmware-provenance__fact firmware-provenance__fact--warning"><span class="firmware-provenance__fact-label">Lifecycle</span><span>Deprecated</span></div>`);
+        }
+        return facts.length
+            ? `<div class="firmware-provenance__facts">${facts.join('')}</div>`
+            : '';
+    })();
+
+    return `
+        <section class="firmware-provenance" data-firmware-provenance="${escapeHtml(overallStatus)}" aria-label="Firmware verification status">
+            <header class="firmware-provenance__header">
+                <span class="firmware-provenance__badge status-${escapeHtml(overallStatus)}">${escapeHtml(overallLabel)}</span>
+                <p class="firmware-provenance__summary">${escapeHtml(report.summary)}</p>
+            </header>
+            ${factsHtml}
+            <ul class="firmware-provenance__checks" data-firmware-provenance-checks>
+                ${checksHtml}
+            </ul>
+        </section>
+    `;
 }
 
 function renderFirmwarePartsSection(firmware) {
@@ -3564,6 +3666,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
         : '';
 
     const partsSectionHtml = renderFirmwarePartsSection(firmware);
+    const provenanceSectionHtml = renderFirmwareProvenanceSection(firmware);
 
     const descriptionHtml = firmware.description
         ? `<p class="firmware-description">${escapeHtml(firmware.description)}</p>`
@@ -3605,6 +3708,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                     </esp-web-install-button>
                 </div>
             </div>
+            ${provenanceSectionHtml}
             ${partsSectionHtml}
             ${metadataBlock}
             <div class="release-notes-section" id="${escapeHtml(releaseNotesId)}" data-release-notes-container data-loaded="false" style="display: none;">
@@ -3800,8 +3904,12 @@ function renderFirmwareSelector() {
         const option = document.createElement('option');
         const channelInfo = getChannelDisplayInfo(build.channel);
         const versionLabel = build.version ? `v${build.version}` : 'Unknown version';
+        const deprecatedSuffix = build.deprecated === true ? ' · Deprecated' : '';
         option.value = build.firmwareId;
-        option.textContent = `${versionLabel} · ${channelInfo.label}`;
+        option.textContent = `${versionLabel} · ${channelInfo.label}${deprecatedSuffix}`;
+        if (build.deprecated === true) {
+            option.dataset.deprecated = 'true';
+        }
         firmwareVersionSelect.appendChild(option);
     });
 
@@ -4005,7 +4113,12 @@ function selectDefaultFirmware() {
         return;
     }
 
-    selectFirmwareById(firmwareOptions[0].firmwareId);
+    // Prefer non-deprecated builds for the default selection. Deprecated
+    // entries remain visible in the dropdown so users can still install them
+    // intentionally, but they should never be auto-selected.
+    const eligible = pickDefaultEligibleBuilds(firmwareOptions);
+    const target = eligible.length ? eligible[0] : firmwareOptions[0];
+    selectFirmwareById(target.firmwareId);
 }
 
 function renderSelectedFirmware() {
@@ -4850,7 +4963,9 @@ export const __testHooks = Object.freeze({
     copyDiagnosticsBundle,
     parseConfigStringState,
     formatConfigSegment,
-    MODULE_VARIANT_LABELS
+    MODULE_VARIANT_LABELS,
+    verifyCurrentFirmwareIntegrity,
+    renderFirmwareProvenanceSection
 });
 
 export {
