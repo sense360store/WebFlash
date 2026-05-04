@@ -1132,6 +1132,115 @@ function isManifestReady() {
     return manifestData !== null;
 }
 
+function captureManifestMetadata(data) {
+    if (!data || typeof data !== 'object') {
+        manifestMetadata = null;
+        return;
+    }
+    manifestMetadata = {
+        manifest_version: typeof data.manifest_version === 'number' ? data.manifest_version : null,
+        generated_at: typeof data.generated_at === 'string' ? data.generated_at : null,
+        source_commit: typeof data.source_commit === 'string' ? data.source_commit : null
+    };
+    if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+        document.dispatchEvent(new CustomEvent('webflash:manifest-metadata-updated'));
+    }
+}
+
+function setManifestFreshnessState(verdict, detail = null) {
+    const next = (verdict === 'current' || verdict === 'stale') ? verdict : 'unknown';
+    const changed = next !== manifestFreshnessState;
+    manifestFreshnessState = next;
+    manifestFreshnessDetail = detail || null;
+    if (changed) {
+        // A genuinely new verdict invalidates any prior acknowledgement —
+        // the user should re-acknowledge if the new state is 'unknown'.
+        manifestFreshnessAck = false;
+    }
+    if (typeof notifyFreshnessBanner === 'function') {
+        try {
+            notifyFreshnessBanner(manifestFreshnessState, manifestFreshnessAck);
+        } catch (error) {
+            console.warn('[state] freshness banner notify failed:', error);
+        }
+    }
+    if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+        document.dispatchEvent(new CustomEvent('webflash:manifest-freshness-updated'));
+    }
+    try {
+        updateFirmwareControls();
+    } catch (error) {
+        // updateFirmwareControls may be hoisted but DOM bindings might
+        // not exist during early init — swallow noisily but don't throw.
+        console.warn('[state] updateFirmwareControls during freshness change:', error);
+    }
+}
+
+function setManifestFreshnessAcknowledgement(value) {
+    const next = Boolean(value);
+    if (manifestFreshnessAck === next) {
+        return;
+    }
+    manifestFreshnessAck = next;
+    if (typeof notifyFreshnessBanner === 'function') {
+        try {
+            notifyFreshnessBanner(manifestFreshnessState, manifestFreshnessAck);
+        } catch (error) {
+            console.warn('[state] freshness banner notify failed:', error);
+        }
+    }
+    try {
+        updateFirmwareControls();
+    } catch (error) {
+        console.warn('[state] updateFirmwareControls during freshness ack:', error);
+    }
+}
+
+async function checkManifestFreshnessNow(options = {}) {
+    const { force = false } = options;
+    if (manifestFreshnessCheckPromise && !force) {
+        return manifestFreshnessCheckPromise;
+    }
+    manifestFreshnessCheckPromise = (async () => {
+        const result = await checkManifestFreshness(manifestMetadata);
+        manifestFreshnessHasRun = true;
+        setManifestFreshnessState(result.verdict, result);
+        return result;
+    })();
+    try {
+        return await manifestFreshnessCheckPromise;
+    } finally {
+        manifestFreshnessCheckPromise = null;
+    }
+}
+
+/**
+ * Trigger the freshness check on first reach of the review step. Repeat
+ * triggers on the same step are ignored unless `force` is set, so the
+ * network is not hammered on every re-render.
+ */
+function triggerManifestFreshnessCheckIfNeeded() {
+    if (manifestFreshnessHasRun) {
+        return Promise.resolve(null);
+    }
+    manifestFreshnessHasRun = true;
+    return checkManifestFreshnessNow().catch(() => null);
+}
+
+function getManifestMetadata() {
+    return manifestMetadata
+        ? { ...manifestMetadata, freshness: manifestFreshnessState }
+        : null;
+}
+
+/**
+ * Stable getter consumed by app.js -> initAboutPanel(). Decoupled from
+ * the rest of the wizard's state surface to avoid an import cycle.
+ */
+export function getManifestMetadataForAbout() {
+    return getManifestMetadata();
+}
+
 async function loadManifestData(options = {}) {
     const { forceReload = false, maxRetries = 3 } = options;
 
@@ -1208,6 +1317,31 @@ async function handleRetryManifestLoad() {
 }
 
 const manifestReadyPromise = loadManifestData().catch(() => null);
+
+// Freshness is verified lazily — the check fires on first reach of the
+// review step (see triggerManifestFreshnessCheckIfNeeded(), wired into
+// setStep below). This avoids a network round-trip on initial wizard
+// load and keeps non-flashing flows zero-cost.
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('webflash:acknowledge-manifest-freshness', () => {
+        setManifestFreshnessAcknowledgement(true);
+    });
+}
+
+// Re-render install controls whenever the service worker update state
+// changes (e.g. a waiting worker installs, or the user dismisses the
+// pending update). The first invocation runs synchronously and is a no-op
+// if the install button isn't in the DOM yet.
+if (typeof subscribeServiceWorkerState === 'function') {
+    subscribeServiceWorkerState(() => {
+        try {
+            updateFirmwareControls();
+        } catch (error) {
+            // DOM bindings may not exist yet during early init.
+        }
+    });
+}
 
 const firmwareSelectorWrapper = document.getElementById('firmware-selector');
 const firmwareVersionSelect = document.getElementById('firmware-version-select');
@@ -2304,6 +2438,13 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
         currentStep = targetStep;
     }
 
+    // First reach of the review step kicks off the manifest freshness
+    // check (network-first re-fetch). The check is idempotent across
+    // re-entries; see triggerManifestFreshnessCheckIfNeeded().
+    if (currentStep === totalSteps) {
+        triggerManifestFreshnessCheckIfNeeded();
+    }
+
     updateFirmwareControls();
     updateBottomDetailsVisibility(currentStep);
 
@@ -2591,7 +2732,25 @@ function updateFirmwareControls() {
     const channelBlockingReason = channelAcksSatisfied
         ? ''
         : 'Acknowledge the firmware-channel warning before installing.';
-    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall && channelAcksSatisfied;
+
+    // CACHE FRESHNESS POLICY (see comment block near top of this file).
+    const swState = (typeof getServiceWorkerState === 'function')
+        ? getServiceWorkerState()
+        : { updateAvailable: false, updateDismissed: false };
+    const swUpdateBlocking = Boolean(swState.updateAvailable) && !swState.updateDismissed;
+    const manifestStaleBlocking = manifestFreshnessState === 'stale';
+    const manifestUnknownBlocking = manifestFreshnessState === 'unknown' && !manifestFreshnessAck;
+    let freshnessBlockingReason = '';
+    if (swUpdateBlocking) {
+        freshnessBlockingReason = 'A WebFlash update is available. Reload before flashing to use the latest installer and firmware metadata.';
+    } else if (manifestStaleBlocking) {
+        freshnessBlockingReason = 'A newer firmware manifest is available. Reload before flashing.';
+    } else if (manifestUnknownBlocking) {
+        freshnessBlockingReason = 'WebFlash could not confirm that the firmware manifest is current. Acknowledge the warning above or reload.';
+    }
+    const freshnessOk = !swUpdateBlocking && !manifestStaleBlocking && !manifestUnknownBlocking;
+
+    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall && channelAcksSatisfied && freshnessOk;
 
     if (downloadBtn) {
         downloadBtn.hidden = !onReviewStep;
@@ -2611,6 +2770,8 @@ function updateFirmwareControls() {
                 downloadBtn.title = channelBlockingReason;
             } else if (!preflightPolicy.canInstall && blockingReason) {
                 downloadBtn.title = blockingReason;
+            } else if (!freshnessOk && freshnessBlockingReason) {
+                downloadBtn.title = freshnessBlockingReason;
             } else {
                 downloadBtn.removeAttribute('title');
             }
@@ -2640,6 +2801,8 @@ function updateFirmwareControls() {
             copyUrlBtn.title = channelBlockingReason;
         } else if (!preflightPolicy.canInstall && blockingReason) {
             copyUrlBtn.title = blockingReason;
+        } else if (!freshnessOk && freshnessBlockingReason) {
+            copyUrlBtn.title = freshnessBlockingReason;
         } else {
             copyUrlBtn.removeAttribute('title');
         }
@@ -2671,6 +2834,8 @@ function updateFirmwareControls() {
                     installButton.title = channelBlockingReason;
                 } else if (!preflightPolicy.canInstall && blockingReason) {
                     installButton.title = blockingReason;
+                } else if (!freshnessOk && freshnessBlockingReason) {
+                    installButton.title = freshnessBlockingReason;
                 } else {
                     installButton.removeAttribute('title');
                 }
@@ -2703,6 +2868,10 @@ function updateFirmwareControls() {
         }
         if (!preflightPolicy.canInstall && blockingReason) {
             return { text: blockingReason, isError: true, isWarning: false };
+        }
+        if (!freshnessOk && freshnessBlockingReason) {
+            const isHardBlock = swUpdateBlocking || manifestStaleBlocking;
+            return { text: freshnessBlockingReason, isError: isHardBlock, isWarning: !isHardBlock };
         }
         if (preflightPolicy.requiresWarnAcknowledgement) {
             return { text: 'Warnings detected. Check “Accept preflight warnings” to continue installation.', isError: false, isWarning: true };
@@ -5285,7 +5454,13 @@ export const __testHooks = Object.freeze({
     getOutstandingChannelAcknowledgements,
     selectDefaultFirmware,
     setFirmwareOptions,
-    isFirmwareRecommendedDefault
+    isFirmwareRecommendedDefault,
+    captureManifestMetadata,
+    setManifestFreshnessState,
+    setManifestFreshnessAcknowledgement,
+    checkManifestFreshnessNow,
+    getManifestMetadata,
+    DIAGNOSTICS_SCHEMA_VERSION
 });
 
 export {

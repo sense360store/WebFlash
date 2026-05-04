@@ -8,6 +8,7 @@
 import "./scripts/theme-toggle.js";
 import "./scripts/wizard-state-observer.js";
 import "./scripts/state.js";
+import { getManifestMetadataForAbout } from "./scripts/state.js";
 import "./scripts/recommended-bundle.js";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
@@ -29,8 +30,10 @@ initSupportBundleActions();
 import "./scripts/utils/esp-web-tools-overrides.js";
 
 /**
- * Register service worker for offline support.
- * Only registers in production (served over HTTPS or localhost).
+ * Register service worker for offline support. The new sw-update service
+ * owns registration + update detection so the freshness banner and the
+ * install gate can react to a waiting SW. Only registers in production
+ * (served over HTTPS or localhost).
  */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

@@ -1,11 +1,48 @@
 /**
  * @fileoverview Service Worker for WebFlash offline support.
- * Caches static assets and firmware manifests for offline access.
+ *
+ * CACHE POLICY (kept in sync with the README "Cache and version policy"
+ * section). The policy is intentionally per-asset-class because firmware
+ * binaries and the manifest list have very different freshness needs from
+ * the static app shell.
+ *
+ *   App shell (HTML / CSS / JS / icons / module scripts):
+ *     stale-while-revalidate. Pages render immediately from cache and the
+ *     SW refreshes in the background. Update detection lives in
+ *     scripts/services/sw-update.js — when a new SW is installed, the
+ *     freshness banner prompts a reload before flashing.
+ *
+ *   manifest.json (and firmware/rescue/manifest.json):
+ *     network-first. We never silently serve a stale manifest, because the
+ *     wizard binds firmware selection to it. The page additionally
+ *     re-fetches manifest.json with `cache: 'no-store'` before flashing
+ *     (see scripts/services/manifest-freshness.js) so it can show the user
+ *     a freshness verdict.
+ *
+ *   Firmware binaries (*.bin):
+ *     network-first. Cached on success so the rescue flow can run after a
+ *     successful first flash, but a network re-fetch is always preferred
+ *     so the user gets the freshly published binary if one exists. NB: we
+ *     do NOT use cache-only or cache-first here — flashing a stale binary
+ *     would silently regress the device.
+ *
+ *   Cross-origin requests (e.g. unpkg ESP Web Tools):
+ *     left to the browser; the SW does not intercept them.
+ *
+ * CACHE NAME LIFECYCLE:
+ *   `webflash-v1` shipped with the original release. `webflash-v2` was
+ *   introduced when the freshness/version banners were added so existing
+ *   installs would purge the v1 cache once and re-prime with the new
+ *   asset list (the new modules under scripts/services/ and the new
+ *   freshness banner are not in the v1 manifest). The activate handler
+ *   below removes any cache that starts with `webflash-` but is not the
+ *   current name — keep that pattern stable so future bumps just work.
+ *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v1';
-const CACHE_VERSION = 1;
+const CACHE_NAME = 'webflash-v2';
+const CACHE_VERSION = 2;
 
 /**
  * Static assets to cache on install.
@@ -30,8 +67,13 @@ const STATIC_ASSETS = [
 
 /**
  * Script modules to cache.
+ *
+ * IMPORTANT: any new top-level script imported by index.html or app.js
+ * must be listed here, otherwise it will be unavailable when the page is
+ * loaded offline (the `import` statement will 404 against the SW cache).
  */
 const SCRIPT_MODULES = [
+    './scripts/build-info.js',
     './scripts/capabilities.js',
     './scripts/compat-config.js',
     './scripts/init-review.js',
@@ -43,7 +85,9 @@ const SCRIPT_MODULES = [
     './scripts/wizard-state-observer.js',
     './scripts/data/module-requirements.js',
     './scripts/content/option-tooltips.js',
+    './scripts/layout/about-panel.js',
     './scripts/layout/firmware-note.js',
+    './scripts/layout/freshness-banner.js',
     './scripts/layout/init-splitview.js',
     './scripts/layout/option-info-popover.js',
     './scripts/layout/preflight-banner.js',
@@ -75,7 +119,10 @@ self.addEventListener('install', (event) => {
             })
             .then(() => {
                 console.log('[SW] Static assets cached');
-                return self.skipWaiting();
+                // Note: we do NOT call skipWaiting() here. The page-side
+                // sw-update.js controls activation timing so the user can
+                // confirm the update before it takes over (see
+                // SKIP_WAITING handler below).
             })
             .catch((error) => {
                 console.error('[SW] Failed to cache static assets:', error);
@@ -107,8 +154,8 @@ self.addEventListener('activate', (event) => {
 });
 
 /**
- * Fetch event - serve from cache, fall back to network.
- * Uses a "stale-while-revalidate" strategy for most assets.
+ * Fetch event - per-asset-class strategy. See the cache-policy block at
+ * the top of this file for the rationale.
  */
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
@@ -123,7 +170,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For firmware binaries (.bin), use network-first strategy
+    // Firmware binaries: network-first. Cached on success for rescue
+    // fallback, but never returned cache-only when the network is healthy
+    // (flashing a stale binary would silently regress the device).
     if (url.pathname.endsWith('.bin')) {
         event.respondWith(
             fetch(event.request)
@@ -141,7 +190,9 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For manifest.json, use network-first to get latest firmware list
+    // Manifests: network-first. The page additionally re-fetches with
+    // `cache: 'no-store'` before flashing to compute a freshness verdict
+    // — that bypasses the SW entirely and goes straight to the network.
     if (url.pathname.endsWith('manifest.json')) {
         event.respondWith(
             fetch(event.request)
@@ -159,7 +210,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For static assets, use stale-while-revalidate
+    // App shell (HTML / CSS / module scripts / icons): stale-while-revalidate.
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
@@ -181,18 +232,30 @@ self.addEventListener('fetch', (event) => {
 });
 
 /**
- * Message event - handle cache clearing requests.
+ * Message event handlers.
+ *
+ *   CLEAR_CACHE  — wipes the WebFlash-owned cache. Triggered by the
+ *                  "Clear cached installer data" button.
+ *   SKIP_WAITING — activates a waiting SW immediately. Triggered by the
+ *                  "Reload now" button on the freshness banner.
  */
 self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'CLEAR_CACHE') {
+    if (!event.data || typeof event.data.type !== 'string') {
+        return;
+    }
+    if (event.data.type === 'CLEAR_CACHE') {
         event.waitUntil(
             caches.delete(CACHE_NAME)
                 .then(() => {
                     console.log('[SW] Cache cleared');
-                    if (event.ports[0]) {
+                    if (event.ports && event.ports[0]) {
                         event.ports[0].postMessage({ success: true });
                     }
                 })
         );
+        return;
+    }
+    if (event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
     }
 });

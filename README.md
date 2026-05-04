@@ -245,6 +245,102 @@ Step 5 renders a **Provenance verified** panel inside the firmware card listing 
 - **Firmware verification = Warning/Fail**: wait for verification to finish or reselect firmware/retry download if verification fails.
 - **User acknowledgement = Warning**: check the **Before you flash** acknowledgement checkbox.
 
+## Cache and version policy
+
+WebFlash refuses to flash firmware while the running installer code or the
+loaded firmware manifest may be stale. Three independent surfaces enforce
+this; all three are visible in the **About this installer** panel and in the
+**Copy diagnostics** payload.
+
+### App build / version metadata
+
+- Source of truth: [`scripts/build-info.js`](scripts/build-info.js), which
+  exports `BUILD_INFO = { appVersion, buildCommit, buildTimestamp }`.
+- A future build pipeline may overwrite this file at release time, but the
+  app must tolerate any field being missing or set to `'unknown'` /
+  `'0.0.0-dev'` without crashing. Diagnostics renders missing fields as
+  `unknown` rather than redacting or omitting them.
+
+### Manifest version / generated metadata
+
+- `manifest.json` carries top-level `manifest_version` (schema number),
+  `generated_at` (ISO 8601 UTC), and `source_commit` (git SHA), injected
+  by [`scripts/gen-manifests.py`](scripts/gen-manifests.py). The git SHA
+  is reused from the existing `detect_source_commit()` helper.
+- The wizard captures these on initial manifest load and exposes them via
+  the About panel and `Copy diagnostics`.
+
+### Service worker update behavior
+
+- Registration and update detection live in
+  [`scripts/services/sw-update.js`](scripts/services/sw-update.js).
+- When the SW reports a waiting worker, the freshness banner shows
+  *"A WebFlash update is available. Reload before flashing."* with a
+  **Reload now** action. Clicking **Reload now** posts `SKIP_WAITING` to
+  the waiting worker and reloads once it takes control.
+- A secondary **Continue without reloading** button dismisses the block
+  and downgrades the banner to a warning. See the install gating policy
+  below for the resulting behavior.
+
+### Manifest freshness behavior
+
+- After the wizard loads `manifest.json` it re-fetches the same URL with
+  `cache: 'no-store'` (see
+  [`scripts/services/manifest-freshness.js`](scripts/services/manifest-freshness.js))
+  and compares the live `generated_at` to the loaded one. The verdict is
+  one of:
+  - `current` — install allowed.
+  - `stale` — a newer manifest is published; install is blocked until the
+    user reloads.
+  - `unknown` — the network call failed or `generated_at` was missing /
+    unparseable. The freshness banner shows
+    *"WebFlash could not confirm that the firmware manifest is current.
+    Check your connection or reload before flashing."* The user must click
+    **Acknowledge and continue** before the install gate opens.
+
+### Install gating policy (the matrix)
+
+The same matrix is enforced in
+[`scripts/state.js`](scripts/state.js) under the `CACHE FRESHNESS POLICY`
+comment block (search for that string). It composes with — does not
+replace — the existing pre-flash checklist, preflight policy, and
+release-channel acknowledgements.
+
+| Condition                                        | Install button | Visible UI                       |
+| ------------------------------------------------ | -------------- | -------------------------------- |
+| SW update pending **and not** dismissed          | **Disabled**   | Block-level banner + Reload now  |
+| SW update pending **and** dismissed              | Allowed        | Warning banner + Reload now      |
+| Manifest freshness `current`                     | Allowed        | (no banner)                      |
+| Manifest freshness `stale`                       | **Disabled**   | Block-level banner + Reload now  |
+| Manifest freshness `unknown`, **not** ack'd      | **Disabled**   | Warning banner + Acknowledge     |
+| Manifest freshness `unknown`, ack'd              | Allowed        | Warning banner stays visible     |
+
+### Cache clear behavior
+
+- The About panel exposes **Clear cached installer data**. Implemented in
+  [`scripts/services/cache-clear.js`](scripts/services/cache-clear.js).
+- It posts `CLEAR_CACHE` to the active service worker (which deletes the
+  WebFlash-owned cache only), unregisters the worker, and reloads the
+  page. **It does not modify or erase your device.** It does not touch
+  cookies, localStorage outside the WebFlash namespace, IndexedDB, or any
+  caches outside the SW.
+
+### Per-asset cache policy
+
+Documented in the comment block at the top of
+[`sw.js`](sw.js):
+
+| Asset class                 | Strategy                  | Why                                                  |
+| --------------------------- | ------------------------- | ---------------------------------------------------- |
+| App shell (HTML/CSS/JS/img) | stale-while-revalidate    | Update detection drives the reload prompt.           |
+| `manifest.json`             | network-first             | Page also re-fetches with `cache: 'no-store'`.       |
+| Firmware binaries (`*.bin`) | network-first             | Cache only as a rescue fallback; never serve stale.  |
+| Cross-origin (unpkg ESPWT)  | not intercepted           | Browser-managed.                                     |
+
+`CACHE_NAME` is `webflash-v2`. The `activate` handler purges any cache
+that starts with `webflash-` but is not the current name, so subsequent
+bumps just work.
+
 ## Installation Process
 
 1. **Connect Device**: Plug device into computer via USB

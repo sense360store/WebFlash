@@ -1677,3 +1677,56 @@
 .preflight-help-modal__test-result[data-level="fail"] {
     color: var(--danger, #dc2626);
 }
+
+/* About / Support panel — version, build, manifest metadata, and the
+   "Clear cached installer data" action. Rendered by
+   scripts/layout/about-panel.js. */
+.about-panel {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    border-radius: 8px;
+    background: var(--surface-muted, #f9fafb);
+    color: var(--color-text, #1f2937);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.about-panel__title {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.about-panel__list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0;
+}
+
+.about-panel__list dt {
+    font-weight: 500;
+    color: var(--color-text-muted, #6b7280);
+}
+
+.about-panel__list dd {
+    margin: 0;
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", "Monaco", monospace;
+    font-size: 0.88rem;
+    word-break: break-all;
+}
+
+.about-panel__actions {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.about-panel__note {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--color-text-muted, #6b7280);
+}
