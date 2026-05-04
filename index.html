@@ -745,11 +745,53 @@
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     </div>
                 </div>
-                <p class="help-text post-flash-guidance">
-                    After the install finishes, keep the hub powered on and connected to the same network as Home Assistant. Discovery usually happens within a minute. If the device doesn&rsquo;t appear, open the integrations dashboard and follow the
-                    <a href="https://esphome.io/guides/getting_started_hassio/#connecting-your-device-to-home-assistant" target="_blank" rel="noopener noreferrer">ESPHome adoption steps</a>
-                    to add it manually.
-                </p>
+                <section
+                    class="post-flash-panel"
+                    data-post-flash-panel
+                    data-state="not_started"
+                    data-tone="idle"
+                    aria-live="polite"
+                    aria-label="Post-flash result"
+                    hidden
+                    aria-hidden="true"
+                >
+                    <header class="post-flash-panel__header" data-post-flash-header>
+                        <h3 class="post-flash-panel__title" data-post-flash-title></h3>
+                        <p class="post-flash-panel__summary" data-post-flash-summary></p>
+                    </header>
+                    <dl class="post-flash-firmware" data-post-flash-firmware-meta></dl>
+                    <h4 class="post-flash-section-heading" data-post-flash-next-steps-heading hidden aria-hidden="true">Next steps</h4>
+                    <ol class="post-flash-next-steps" data-post-flash-next-steps hidden aria-hidden="true"></ol>
+                    <ul class="post-flash-validation" data-post-flash-validation-list hidden></ul>
+                    <section class="post-flash-handoff post-flash-handoff--ha" data-post-flash-handoff="home-assistant" hidden aria-hidden="true">
+                        <h4 class="post-flash-section-heading">Home Assistant next steps</h4>
+                        <ol class="post-flash-handoff__steps" data-post-flash-ha-steps></ol>
+                        <button type="button" class="btn btn-primary" data-post-flash-ha-open>Open Home Assistant</button>
+                    </section>
+                    <section class="post-flash-handoff post-flash-handoff--wifi" data-post-flash-handoff="wifi" hidden aria-hidden="true">
+                        <h4 class="post-flash-section-heading">Wi-Fi setup</h4>
+                        <p class="post-flash-handoff__status" data-post-flash-wifi-status></p>
+                    </section>
+                    <section class="post-flash-handoff post-flash-handoff--recovery" data-post-flash-handoff="recovery" hidden aria-hidden="true">
+                        <h4 class="post-flash-section-heading">Recovery</h4>
+                        <p class="post-flash-handoff__status">If the device no longer boots or the wrong firmware may have been installed, open Rescue / Recovery Mode.</p>
+                        <button type="button" class="btn btn-secondary" data-post-flash-recovery-open data-rescue-open>Open Rescue &amp; Recovery</button>
+                        <details class="post-flash-handoff__fallback" data-post-flash-recovery-fallback hidden>
+                            <summary>Manual BOOT/RESET steps</summary>
+                            <ol>
+                                <li>Unplug the device from USB.</li>
+                                <li>Hold the BOOT button.</li>
+                                <li>Plug in USB while still holding BOOT.</li>
+                                <li>Release BOOT after 2 seconds.</li>
+                                <li>Press Install again to retry.</li>
+                            </ol>
+                        </details>
+                    </section>
+                    <footer class="post-flash-support" data-prominence="subtle" hidden aria-hidden="true">
+                        <button type="button" class="btn btn-secondary" data-post-flash-copy-bundle data-copy-support-bundle>Copy support bundle</button>
+                        <button type="button" class="btn btn-tertiary" data-post-flash-view-diagnostics>View / copy diagnostics</button>
+                    </footer>
+                </section>
                 <aside class="customize-callout">
                     <p class="customize-callout__text">
                         <strong>Need more control?</strong> Build custom firmware with our

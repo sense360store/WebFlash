@@ -501,10 +501,56 @@ export function buildSupportBundle() {
             sessionSnapshot,
             manifestFreshness: providerInput.manifestFreshness || 'unknown'
         }),
-        flash: buildFlashSection()
+        flash: buildFlashSection(),
+        post_flash: buildPostFlashSection({
+            postFlashSnapshot: providerInput.postFlashSnapshot || null
+        })
     };
 
     return redactValue(bundle);
+}
+
+function buildPostFlashSection({ postFlashSnapshot }) {
+    if (!postFlashSnapshot || typeof postFlashSnapshot !== 'object') {
+        return {
+            status: 'not_started',
+            selected_firmware_version: null,
+            selected_config: null,
+            validation_attempted: false,
+            validation_result: 'unknown',
+            validation_checks: [],
+            home_assistant_handoff_shown: false,
+            wifi_handoff_shown: false,
+            recovery_handoff_shown: false
+        };
+    }
+    const checks = Array.isArray(postFlashSnapshot.validation_checks)
+        ? postFlashSnapshot.validation_checks.map(check => ({
+            name: check?.name || null,
+            status: check?.status || 'not_available',
+            detail: check?.detail || null
+        }))
+        : [];
+    return {
+        status: postFlashSnapshot.status || 'not_started',
+        selected_firmware_version: postFlashSnapshot.selected_firmware_version || null,
+        selected_firmware_name: postFlashSnapshot.selected_firmware_name || null,
+        selected_config: postFlashSnapshot.selected_config || null,
+        selected_channel: postFlashSnapshot.selected_channel || null,
+        selected_commit: postFlashSnapshot.selected_commit || null,
+        selected_improv_supported: postFlashSnapshot.selected_improv_supported ?? null,
+        validation_attempted: Boolean(postFlashSnapshot.validation_attempted),
+        validation_result: postFlashSnapshot.validation_result || 'unknown',
+        validation_checks: checks,
+        home_assistant_handoff_shown: Boolean(postFlashSnapshot.home_assistant_handoff_shown),
+        wifi_handoff_shown: Boolean(postFlashSnapshot.wifi_handoff_shown),
+        wifi_handoff_status: postFlashSnapshot.wifi_handoff_status || null,
+        recovery_handoff_shown: Boolean(postFlashSnapshot.recovery_handoff_shown),
+        last_error_message: postFlashSnapshot.last_error_message || null,
+        started_at: postFlashSnapshot.started_at || null,
+        finished_at: postFlashSnapshot.finished_at || null,
+        duration_ms: postFlashSnapshot.duration_ms ?? null
+    };
 }
 
 function showLocalToast(message, duration = 2400) {

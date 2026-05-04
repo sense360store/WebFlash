@@ -353,6 +353,81 @@ bumps just work.
 8. **Wait**: Installation takes 1-2 minutes
 9. **Complete**: Device reboots automatically when finished
 
+## After Flashing: Validation & Handoff
+
+WebFlash distinguishes "firmware was flashed" from "the device is actually
+ready to use" via a structured post-flash result panel that appears on the
+review/install step. The panel reports one of eight states:
+`not_started`, `in_progress`, `completed`, `completed_validation_passed`,
+`completed_validation_unknown`, `completed_validation_failed`, `failed`,
+`cancelled`.
+
+### What WebFlash can validate
+
+After a flash completes, WebFlash performs a best-effort, read-only
+validation pass against the device:
+
+- **Serial reconnect** — does the host see the device come back on
+  `navigator.serial`?
+- **Improv-reported firmware identity** — does the device's Improv frame
+  report a firmware family that matches the selected build?
+- **Version match** — does the Improv-reported version equal the selected
+  build version?
+- **Improv endpoint reachability** — for builds that advertise
+  `improv: true`, did we receive an Improv frame at all?
+- **Wi-Fi provisioning** — only marked passed/failed when the user
+  actually engages the Improv Wi-Fi step and the host emits a
+  provisioning result. WebFlash never reads, displays, logs, or stores
+  the SSID or password.
+
+### What WebFlash cannot validate
+
+- **Cryptographic authenticity at runtime.** Browser-side signature
+  verification is out of scope; provenance is checked from the manifest at
+  install time, not against the running device.
+- **Sensor health or on-device behaviour.** Whether the BMP581 actually
+  reads pressure or whether ESPHome boots cleanly is the device's job;
+  WebFlash only knows what the device reports back over USB.
+- **User cancellation with certainty.** ESP Web Tools does not surface a
+  clean "user cancelled" signal. If the installer returns to idle without
+  reaching `finished` or `error` and without a `detail.error`, WebFlash
+  reports `cancelled` heuristically.
+
+### `passed`, `failed`, and `unknown`
+
+- `passed` — every check observed evidence of success.
+- `failed` — at least one check observed evidence of failure (e.g. a
+  firmware-family mismatch or an Improv error).
+- `unknown` — at least one check could not gather evidence either way.
+  This is the **honest default** and is the expected outcome for many
+  builds, including any build that doesn't expose Improv. It does not
+  mean the flash failed.
+
+### Home Assistant handoff
+
+The Home Assistant next-steps block is shown only when the selected
+build advertises `improv: true` (i.e. ESPHome-style firmware that exposes
+discovery). Rescue and other non-ESPHome builds suppress it.
+
+### Wi-Fi provisioning handoff
+
+Shown when the build advertises Improv Serial. The status string is one
+of `continue`, `already_done`, `unavailable`, or `failed`. Wi-Fi
+credentials are never persisted in URLs, `localStorage`, the support
+bundle, or the flash history.
+
+### When to use Rescue / Recovery Mode
+
+- The flash failed mid-write.
+- The device no longer boots after flashing.
+- The validation panel reports `failed` and the device reports a
+  different firmware family than the selected build.
+- Repeated installs are returning `unknown` and the device never
+  appears in Home Assistant.
+
+The post-flash panel offers a one-click "Open Rescue & Recovery" button
+when the flash fails or is cancelled.
+
 ## Wi-Fi Configuration
 
 After flashing, the device will prompt for Wi-Fi credentials via Improv Serial protocol:
