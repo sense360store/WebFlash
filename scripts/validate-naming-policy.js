@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const DEFAULT_DIR = path.join('firmware', 'configurations');
-const CANONICAL_PATTERN = /^Sense360-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*-v\d+\.\d+\.\d+-(stable|preview|beta)\.(bin|md)$/;
+const CANONICAL_PATTERN = /^Sense360-[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*-v\d+\.\d+\.\d+-(stable|preview|beta)\.(bin|md|meta\.json)$/;
 
 const DISALLOWED_TOKEN_MIGRATIONS = {
   AirIQProv: 'AirIQ',
@@ -41,7 +41,7 @@ function validateFileName(name, baseDir = DEFAULT_DIR) {
     }
   }
 
-  const channel = name.match(/-(stable|preview|beta)\.(bin|md)$/)?.[1];
+  const channel = name.match(/-(stable|preview|beta)\.(bin|md|meta\.json)$/)?.[1];
   const extension = path.extname(name);
   if (extension === '.md' && channel !== 'stable') {
     issues.push({

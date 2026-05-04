@@ -1,0 +1,5 @@
+{
+  "deprecated": true,
+  "deprecation_reason": "Superseded by v2.0.0; older stable build retained for diagnostic comparison only.",
+  "signed_by": "Sense360 release pipeline"
+}
