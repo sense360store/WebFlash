@@ -46,6 +46,8 @@ const SCRIPT_MODULES = [
     './scripts/layout/firmware-note.js',
     './scripts/layout/init-splitview.js',
     './scripts/layout/option-info-popover.js',
+    './scripts/layout/preflight-banner.js',
+    './scripts/layout/preflight-help-modal.js',
     './scripts/layout/rescue-entry.js',
     './scripts/layout/rescue-modal.js',
     './scripts/layout/state-summary.js',

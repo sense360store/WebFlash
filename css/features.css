@@ -1464,3 +1464,216 @@
         align-items: flex-start;
     }
 }
+
+/* ============================================================================
+   Preflight banner — early browser/USB compatibility surface above the wizard.
+   ============================================================================ */
+
+.preflight-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin: 0 0 1rem;
+    border-radius: 12px;
+    border: 1px solid var(--color-border, #e5e7eb);
+    background: var(--color-surface-alt, var(--bg-elev-1, #f9fafb));
+}
+
+.preflight-banner[data-level="ok"] {
+    border-color: color-mix(in srgb, var(--brand-green, #16a34a) 35%, var(--color-border, #e5e7eb));
+    background: color-mix(in srgb, var(--brand-green, #16a34a) 8%, var(--color-surface, #fff));
+}
+
+.preflight-banner[data-level="warn"] {
+    border-color: color-mix(in srgb, var(--color-warning, #c2410c) 40%, var(--color-border, #e5e7eb));
+    background: color-mix(in srgb, var(--color-warning, #c2410c) 8%, var(--color-surface, #fff));
+}
+
+.preflight-banner[data-level="block"] {
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 45%, var(--color-border, #e5e7eb));
+    background: color-mix(in srgb, var(--danger, #dc2626) 10%, var(--color-surface, #fff));
+}
+
+.preflight-banner__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.preflight-banner__icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.preflight-banner[data-level="ok"] .preflight-banner__icon {
+    color: var(--brand-green, #16a34a);
+}
+
+.preflight-banner[data-level="warn"] .preflight-banner__icon {
+    color: var(--color-warning, #c2410c);
+}
+
+.preflight-banner[data-level="block"] .preflight-banner__icon {
+    color: var(--danger, #dc2626);
+}
+
+.preflight-banner__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.preflight-banner__eyebrow {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary, #6b7280);
+}
+
+.preflight-banner__title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-text, #1f2937);
+}
+
+.preflight-banner__summary {
+    margin: 0;
+    color: var(--color-text, #1f2937);
+    line-height: 1.5;
+}
+
+.preflight-banner__reasons {
+    margin: 0.25rem 0 0;
+    padding-left: 1.1rem;
+    color: var(--color-text, #1f2937);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.preflight-banner__reasons li {
+    margin-bottom: 0.2rem;
+}
+
+.preflight-banner__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.preflight-banner__dismiss {
+    padding: 0.4rem 0.85rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: var(--color-text-secondary, #6b7280);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.preflight-banner__dismiss:hover {
+    background: var(--color-surface-hover, var(--bg-elev-1, #f3f4f6));
+    color: var(--color-text, #1f2937);
+}
+
+.preflight-banner__dismiss:focus-visible {
+    outline: 3px solid var(--focus-ring, color-mix(in srgb, var(--brand-green, #16a34a) 45%, transparent));
+    outline-offset: 2px;
+}
+
+/* ============================================================================
+   Preflight help modal — sits on top of the rescue-modal styles.
+   ============================================================================ */
+
+.preflight-help-modal__container {
+    max-width: 720px;
+}
+
+.preflight-help-modal__body {
+    padding-bottom: 1rem;
+}
+
+.preflight-help-modal__section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.preflight-help-modal__section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.preflight-help-modal__list {
+    margin: 0.4rem 0 0;
+    padding-left: 1.2rem;
+    color: var(--color-text, #1f2937);
+    line-height: 1.5;
+}
+
+.preflight-help-modal__list li {
+    margin-bottom: 0.25rem;
+}
+
+.preflight-help-modal__reasons {
+    margin: 0.4rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.preflight-help-modal__reasons li {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border-left: 3px solid var(--color-border, #e5e7eb);
+    background: var(--color-surface-alt, var(--bg-elev-1, #f9fafb));
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--color-text, #1f2937);
+}
+
+.preflight-help-modal__reasons li[data-severity="block"] {
+    border-left-color: var(--danger, #dc2626);
+    background: color-mix(in srgb, var(--danger, #dc2626) 8%, var(--color-surface, #fff));
+}
+
+.preflight-help-modal__reasons li[data-severity="warn"] {
+    border-left-color: var(--color-warning, #c2410c);
+    background: color-mix(in srgb, var(--color-warning, #c2410c) 8%, var(--color-surface, #fff));
+}
+
+.preflight-help-modal__readiness-ok {
+    margin: 0.5rem 0 0;
+    color: var(--brand-green, #16a34a);
+    font-size: 0.92rem;
+}
+
+.preflight-help-modal__test {
+    margin-top: 0.5rem;
+}
+
+.preflight-help-modal__test-result {
+    margin: 0.5rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--color-text, #1f2937);
+}
+
+.preflight-help-modal__test-result[data-level="pass"] {
+    color: var(--brand-green, #16a34a);
+}
+
+.preflight-help-modal__test-result[data-level="warn"] {
+    color: var(--color-warning, #c2410c);
+}
+
+.preflight-help-modal__test-result[data-level="fail"] {
+    color: var(--danger, #dc2626);
+}

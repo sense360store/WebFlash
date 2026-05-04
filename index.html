@@ -51,6 +51,8 @@
             </button>
         </header>
 
+        <div class="preflight-banner-mount" data-preflight-banner-mount></div>
+
         <details class="prereq-panel" aria-labelledby="prereq-panel-title">
             <summary class="prereq-panel__summary">
                 <span class="prereq-panel__summary-icon" aria-hidden="true">
@@ -85,6 +87,7 @@
             </ul>
             <p class="prereq-panel__fallback">
                 If your hub isn&rsquo;t detected when you click Install, hold <strong>BOOT</strong>, tap <strong>RESET</strong>, then release BOOT to enter recovery mode and try again. Most devices don&rsquo;t need this step.
+                <button type="button" class="prereq-panel__fallback-action" data-preflight-help-open aria-haspopup="dialog">Test browser &amp; USB setup</button>
                 <button type="button" class="prereq-panel__fallback-action" data-rescue-open aria-haspopup="dialog">Open Rescue / Recovery Mode</button>
             </p>
         </details>
