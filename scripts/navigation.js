@@ -4,6 +4,7 @@
  */
 
 import { getStep, setStep, getTotalSteps, getMaxReachableStep } from './state.js';
+import { announce } from './utils/a11y.js';
 
 /**
  * Normalizes a step index to be within valid bounds.
@@ -37,7 +38,17 @@ function normalizeIndex(index) {
  */
 export function goToStep(index, options = {}) {
     const normalized = normalizeIndex(index);
-    return setStep(normalized + 1, options);
+    const previousStep = getStep();
+    const result = setStep(normalized + 1, options);
+    const newStep = getStep();
+    if (newStep !== previousStep) {
+        const totalSteps = getTotalSteps();
+        const stepEl = document.getElementById(`step-${newStep}`);
+        const heading = stepEl?.querySelector('h2, h3');
+        const headingText = heading ? heading.textContent.trim() : `Step ${newStep}`;
+        announce(`Step ${newStep} of ${totalSteps}: ${headingText}`);
+    }
+    return result;
 }
 
 function resolveEventTarget(event) {
@@ -118,7 +129,31 @@ function ensureInitialStep() {
     goToStep(0, { animate: false, skipUrlUpdate: true });
 }
 
+// Activate progress-step anchors with Enter/Space for keyboard parity with
+// click handling. Anchors with hrefs already activate on Enter, but Space is
+// not handled by anchors in browsers — we add it explicitly so keyboard users
+// can still use the stepper without a mouse.
+function handleStepperKeydown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') {
+        return;
+    }
+    const target = resolveEventTarget(event);
+    if (!target) return;
+    const progressTrigger = target.closest('.progress-step[data-step]');
+    if (!progressTrigger) return;
+    const stepValue = Number.parseInt(progressTrigger.getAttribute('data-step'), 10);
+    if (Number.isNaN(stepValue)) return;
+    const maxReachable = getMaxReachableStep();
+    if (stepValue > maxReachable) {
+        event.preventDefault();
+        return;
+    }
+    event.preventDefault();
+    setStep(stepValue, { animate: true });
+}
+
 document.addEventListener('click', handleWizardNavigation);
+document.addEventListener('keydown', handleStepperKeydown);
 
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
     ensureInitialStep();

@@ -4,6 +4,7 @@
  */
 
 import { generateQRCodeSVG } from '../utils/qr-code.js';
+import { trapFocus, restoreFocus } from './../utils/a11y.js';
 
 /** @type {HTMLElement|null} */
 let modalElement = null;
@@ -16,6 +17,12 @@ let urlDisplay = null;
 
 /** @type {string|null} */
 let currentUrl = null;
+
+/** @type {HTMLElement|null} */
+let lastTrigger = null;
+
+/** @type {(() => void) | null} */
+let releaseFocusTrap = null;
 
 /**
  * Creates the QR code modal element and appends it to the document.
@@ -90,10 +97,13 @@ function createModal() {
 /**
  * Opens the QR code modal with the given URL.
  * @param {string} url - The URL to encode as a QR code
+ * @param {{ trigger?: HTMLElement|null }} [options]
  */
-export function openQRCodeModal(url) {
+export function openQRCodeModal(url, options = {}) {
     const modal = createModal();
     currentUrl = url;
+    lastTrigger = options.trigger
+        || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
 
     // Generate QR code
     if (qrContainer) {
@@ -126,9 +136,23 @@ export function openQRCodeModal(url) {
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('qr-modal-open');
 
-    // Focus the modal for accessibility
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+    }
+    const container = modal.querySelector('.qr-code-modal__content') || modal;
+    if (!container.hasAttribute('tabindex')) {
+        container.setAttribute('tabindex', '-1');
+    }
+    releaseFocusTrap = trapFocus(container);
+
+    // Focus the close button for keyboard users
     requestAnimationFrame(() => {
-        modal.focus();
+        const closeBtn = modal.querySelector('[data-qr-modal-close]');
+        if (closeBtn && typeof closeBtn.focus === 'function') {
+            closeBtn.focus();
+        } else {
+            modal.focus();
+        }
     });
 }
 
@@ -141,6 +165,12 @@ export function closeModal() {
         modalElement.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('qr-modal-open');
     }
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+        releaseFocusTrap = null;
+    }
+    restoreFocus(lastTrigger);
+    lastTrigger = null;
 }
 
 /**

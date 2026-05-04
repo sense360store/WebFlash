@@ -4,6 +4,7 @@
  */
 
 import { getErrorLog, getLogCounts, clearErrorLog, subscribe, formatTimestamp, exportLog } from '../services/error-log.js';
+import { trapFocus, restoreFocus } from '../utils/a11y.js';
 
 /** @type {HTMLElement|null} */
 let modalElement = null;
@@ -16,6 +17,12 @@ let currentFilter = 'all';
 
 /** @type {Function|null} */
 let unsubscribe = null;
+
+/** @type {HTMLElement|null} */
+let lastTrigger = null;
+
+/** @type {(() => void) | null} */
+let releaseFocusTrap = null;
 
 /**
  * Creates the error log modal element.
@@ -36,7 +43,7 @@ function createModal() {
 
     modalElement.innerHTML = `
         <div class="error-log-modal__backdrop" data-error-log-backdrop></div>
-        <div class="error-log-modal__container">
+        <div class="error-log-modal__container" tabindex="-1">
             <div class="error-log-modal__header">
                 <h2 id="error-log-modal-title" class="error-log-modal__title">
                     <svg class="error-log-modal__title-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -142,9 +149,13 @@ function createModal() {
 
 /**
  * Opens the error log modal.
+ * @param {{ trigger?: HTMLElement|null }} [options]
  */
-export function openErrorLogModal() {
+export function openErrorLogModal(options = {}) {
     const modal = createModal();
+
+    lastTrigger = options.trigger
+        || (document.activeElement instanceof HTMLElement ? document.activeElement : null);
 
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
@@ -157,6 +168,12 @@ export function openErrorLogModal() {
             updateBadge();
         }
     });
+
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+    }
+    const container = modal.querySelector('.error-log-modal__container') || modal;
+    releaseFocusTrap = trapFocus(container);
 
     // Focus the close button
     setTimeout(() => {
@@ -195,11 +212,20 @@ export function closeModal() {
     // Restore body scroll
     document.body.style.overflow = '';
 
-    // Return focus to trigger element if available
-    const triggerBtn = document.querySelector('[data-error-log-trigger]');
-    if (triggerBtn) {
-        triggerBtn.focus();
+    if (releaseFocusTrap) {
+        releaseFocusTrap();
+        releaseFocusTrap = null;
     }
+
+    if (lastTrigger && document.contains(lastTrigger)) {
+        restoreFocus(lastTrigger);
+    } else {
+        const triggerBtn = document.querySelector('[data-error-log-trigger]');
+        if (triggerBtn) {
+            restoreFocus(triggerBtn);
+        }
+    }
+    lastTrigger = null;
 }
 
 /**
@@ -431,7 +457,7 @@ export function initErrorLogModal() {
     document.addEventListener('click', (e) => {
         const trigger = e.target.closest('[data-error-log-trigger]');
         if (trigger) {
-            openErrorLogModal();
+            openErrorLogModal({ trigger });
         }
     });
 }
