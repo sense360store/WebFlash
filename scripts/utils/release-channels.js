@@ -22,7 +22,7 @@
 const STABLE_ALIASES = Object.freeze(['stable', 'general', 'ga', 'release', 'prod', 'production', 'lts']);
 const BETA_ALIASES = Object.freeze(['beta', 'rc', 'candidate']);
 const PREVIEW_ALIASES = Object.freeze(['preview', 'prerelease']);
-const DEVELOPMENT_ALIASES = Object.freeze(['dev', 'development', 'alpha', 'nightly', 'canary', 'experimental']);
+const DEVELOPMENT_ALIASES = Object.freeze(['dev', 'development', 'alpha', 'nightly', 'canary', 'experimental', 'test', 'testing']);
 const RESCUE_ALIASES = Object.freeze(['rescue', 'recovery', 'rollback', 'restore', 'unbrick']);
 
 const ALIAS_TO_CANONICAL = (() => {
@@ -142,15 +142,21 @@ const FROZEN_CHANNEL_POLICY = Object.freeze(
     )
 );
 
+// Unknown / unrecognised release channel. Conservative defaults: never
+// auto-selected, surface a visible warning, and require explicit
+// acknowledgement before install/download/copy can be enabled. Treating an
+// unknown channel as silently equivalent to stable would let a typo or a
+// hand-edited manifest skip the entire risk-acknowledgement layer, which
+// the hardened provenance model explicitly forbids.
 const DEFAULT_POLICY = Object.freeze({
     key: 'unknown',
-    label: 'Firmware Build',
-    shortLabel: 'Build',
-    tone: 'info',
-    description: 'Details for this firmware build.',
-    warning: '',
-    requiresAcknowledgement: false,
-    acknowledgementLabel: '',
+    label: 'Unknown channel',
+    shortLabel: 'Unknown',
+    tone: 'warning',
+    description: 'This firmware reports an unrecognised release channel.',
+    warning: 'This firmware build reports an unrecognised release channel. WebFlash cannot determine whether it is a stable, beta, or development build; treat it with caution and only proceed if you trust its source.',
+    requiresAcknowledgement: true,
+    acknowledgementLabel: 'I understand this firmware reports an unrecognised release channel and accept the risk of installing it.',
     defaultSelectable: false,
     hiddenByDefault: false,
     reveal: null,

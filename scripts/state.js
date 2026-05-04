@@ -235,33 +235,50 @@ function getReleaseMode() {
     return currentReleaseMode;
 }
 
+function applyReleaseMode(nextMode) {
+    const target = VALID_RELEASE_MODES.has(nextMode) ? nextMode : 'normal';
+    if (currentReleaseMode === target) {
+        return;
+    }
+    currentReleaseMode = target;
+    // A mode change re-filters which firmware tiers are visible (e.g. dev
+    // builds appearing/disappearing). Channel acknowledgements for the
+    // previously-selected firmware must not silently carry over to a
+    // newly-revealed build, so clear them and force the user to re-consent
+    // for the firmware they actually pick in the new mode.
+    try {
+        if (typeof channelAcknowledgements?.clear === 'function') {
+            channelAcknowledgements.clear();
+        }
+    } catch {
+        /* defensive */
+    }
+}
+
 function setReleaseModeFromUrl(searchParams) {
     if (!searchParams || typeof searchParams.get !== 'function') {
-        currentReleaseMode = 'normal';
+        applyReleaseMode('normal');
         return;
     }
     const requested = (searchParams.get('mode') || '').toString().trim().toLowerCase();
     if (VALID_RELEASE_MODES.has(requested)) {
-        currentReleaseMode = requested;
+        applyReleaseMode(requested);
         return;
     }
     if (requested === 'rescue') {
-        currentReleaseMode = 'recovery';
+        applyReleaseMode('recovery');
         return;
     }
     if (requested === 'dev' || requested === 'debug') {
-        currentReleaseMode = 'development';
+        applyReleaseMode('development');
         return;
     }
-    currentReleaseMode = 'normal';
+    // Unknown / invalid mode parameter falls back to safe normal mode.
+    applyReleaseMode('normal');
 }
 
 function setReleaseModeForTests(mode) {
-    if (VALID_RELEASE_MODES.has(mode)) {
-        currentReleaseMode = mode;
-    } else {
-        currentReleaseMode = 'normal';
-    }
+    applyReleaseMode(mode);
 }
 const CONNECTION_QUALITY_THRESHOLDS = Object.freeze({
     failDisconnects: 3,
@@ -3260,19 +3277,40 @@ async function refreshPreflightDiagnostics() {
 // supplies a state provider so the bundle can reach private module
 // variables (configuration, currentStep, manifestData, manifestFreshness,
 // currentFirmware, releaseMode) without exporting them.
-setSupportBundleStateProvider(() => ({
-    configuration: { ...configuration },
-    stepInfo: { current: currentStep, maxReachable: getMaxReachableStep() },
-    manifestData: getManifestData(),
-    // Diagnostics surfaces the freshness *verdict* (current/stale/unknown)
-    // produced by the freshness check service, not the manifest-load
-    // lifecycle ('loading'/'error'). The verdict is what the freshness
-    // banner and install gate use, so support snapshots must match.
-    manifestFreshness: manifestFreshnessState,
-    currentFirmware: typeof window !== 'undefined' ? window.currentFirmware : null,
-    releaseMode: getReleaseMode(),
-    postFlashSnapshot: postFlashService.getSnapshot()
-}));
+setSupportBundleStateProvider(() => {
+    const firmware = typeof window !== 'undefined' ? window.currentFirmware : null;
+    // Recommended-default is derived (not stored on the firmware entry) so it
+    // must be computed at snapshot time. Acknowledgement completion is read
+    // from the live `channelAcknowledgements` Map rather than the DOM so the
+    // diagnostics bundle reflects state even before the panel renders.
+    let firmwareIsRecommendedDefault = false;
+    let channelAcknowledgementsCompleted = true;
+    try {
+        firmwareIsRecommendedDefault = isFirmwareRecommendedDefault(firmware);
+    } catch {
+        firmwareIsRecommendedDefault = false;
+    }
+    try {
+        channelAcknowledgementsCompleted = getOutstandingChannelAcknowledgements(firmware).length === 0;
+    } catch {
+        channelAcknowledgementsCompleted = false;
+    }
+    return {
+        configuration: { ...configuration },
+        stepInfo: { current: currentStep, maxReachable: getMaxReachableStep() },
+        manifestData: getManifestData(),
+        // Diagnostics surfaces the freshness *verdict* (current/stale/unknown)
+        // produced by the freshness check service, not the manifest-load
+        // lifecycle ('loading'/'error'). The verdict is what the freshness
+        // banner and install gate use, so support snapshots must match.
+        manifestFreshness: manifestFreshnessState,
+        currentFirmware: firmware,
+        releaseMode: getReleaseMode(),
+        firmwareIsRecommendedDefault,
+        channelAcknowledgementsCompleted,
+        postFlashSnapshot: postFlashService.getSnapshot()
+    };
+});
 
 
 
@@ -3907,11 +3945,32 @@ function renderFirmwarePartsSection(firmware) {
     `;
 }
 
+// Builds whose static provenance gate fails should never be auto-selected as
+// the default. The install gate would block them anyway, but defaulting to a
+// failing build is a confusing UX and risks normalising bad provenance state.
+// Wraps `pickDefaultBuild` from release-channels with an extra provenance
+// pre-filter so the safety filters compose: mode visibility → channel
+// defaultSelectable → non-deprecated → non-failing-provenance.
+function pickProvenanceSafeDefaultBuild(builds) {
+    const releaseMode = getReleaseMode();
+    if (!Array.isArray(builds) || builds.length === 0) {
+        return null;
+    }
+    const safeBuilds = builds.filter(build => {
+        try {
+            return validateFirmwareProvenance(build).ok;
+        } catch {
+            return false;
+        }
+    });
+    return pickDefaultBuild(safeBuilds, { mode: releaseMode });
+}
+
 function isFirmwareRecommendedDefault(firmware) {
     if (!firmware) {
         return false;
     }
-    const candidate = pickDefaultBuild(firmwareOptions, { mode: getReleaseMode() });
+    const candidate = pickProvenanceSafeDefaultBuild(firmwareOptions);
     return Boolean(candidate && candidate.firmwareId === firmware.firmwareId);
 }
 
@@ -4010,6 +4069,12 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
     }
     if (sizeLabel) {
         factRows.push({ label: 'File size', value: escapeHtml(sizeLabel) });
+    }
+    const artifactType = (typeof firmware.artifact_type === 'string' && firmware.artifact_type.trim())
+        ? firmware.artifact_type.trim()
+        : '';
+    if (artifactType) {
+        factRows.push({ label: 'Artifact type', value: escapeHtml(artifactType) });
     }
     factRows.push({
         label: 'Rollback',
@@ -4142,8 +4207,16 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
 
     const manifestIndex = escapeHtml(String(firmware.manifestIndex));
 
+    // Surface the canonical release-channel taxonomy on the card so the DOM
+    // reflects the hardened mapping (e.g. unknown → 'unknown', rc → 'beta',
+    // recovery → 'rescue'). The legacy `channelInfo.key` is still used
+    // internally for release-notes lookup but it can silently treat unknown
+    // channels as stable, which is exactly what the hardened gate forbids
+    // surfacing to the UI.
+    const canonicalChannelKey = normaliseReleaseChannel(firmware.channel);
+
     return `
-        <div class="${cardClassName}" data-firmware-detail data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-channel="${escapeHtml(channelInfo.key)}" data-recommended="${recommended ? 'true' : 'false'}" data-deprecated="${firmware.deprecated === true ? 'true' : 'false'}">
+        <div class="${cardClassName}" data-firmware-detail data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-channel="${escapeHtml(canonicalChannelKey)}" data-recommended="${recommended ? 'true' : 'false'}" data-deprecated="${firmware.deprecated === true ? 'true' : 'false'}">
             <div class="firmware-item">
                 <div class="firmware-info">
                     <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
@@ -4370,7 +4443,7 @@ function renderFirmwareSelector() {
         return;
     }
 
-    const recommendedDefault = pickDefaultBuild(firmwareOptions, { mode: getReleaseMode() });
+    const recommendedDefault = pickProvenanceSafeDefaultBuild(firmwareOptions);
     firmwareOptions.forEach(build => {
         const option = document.createElement('option');
         const policy = getChannelPolicy(build.channel);
@@ -4595,13 +4668,19 @@ function selectDefaultFirmware() {
         return;
     }
 
-    // Default selection rules:
-    //   1. Prefer a build whose channel is `defaultSelectable` (stable only).
-    //   2. Skip deprecated builds — they stay user-selectable in the dropdown
-    //      but should never be auto-picked.
-    //   3. Fall back to the first non-deprecated build, then to the first
-    //      build of any kind, so the dropdown is never left empty.
-    const channelDefault = pickDefaultBuild(firmwareOptions, { mode: getReleaseMode() });
+    // Default selection rules (composed of safety filters in order):
+    //   1. Mode visibility — strip dev/rescue tiers in normal mode.
+    //   2. defaultSelectable channel — stable only.
+    //   3. Non-deprecated — deprecated stays user-selectable but never auto-picked.
+    //   4. Non-failing provenance — never auto-pick a build whose static gate
+    //      already failed; the install gate would block it anyway and
+    //      defaulting to it implies trust we cannot assert.
+    // If every build is filtered out, we fall back to the first non-deprecated
+    // build, then to the first build of any kind, so the dropdown is never
+    // left empty. The user keeps the choice, but they have to make it
+    // explicitly and the install gate still blocks bad provenance / channel
+    // acknowledgements.
+    const channelDefault = pickProvenanceSafeDefaultBuild(firmwareOptions);
     if (channelDefault) {
         selectFirmwareById(channelDefault.firmwareId);
         return;
@@ -5501,6 +5580,17 @@ function updateUrlFromConfiguration() {
         }
     } catch (_error) {
         // ignore — preserving these params is best-effort.
+    }
+
+    // Preserve the release mode opt-in (?mode=recovery / ?mode=development) so
+    // it survives same-session navigation. We re-emit the canonical, validated
+    // value from getReleaseMode() rather than passing through the raw URL
+    // param, which means an invalid `mode=foo` is silently dropped on the
+    // first navigation. Channel acknowledgements are intentionally NOT
+    // preserved — the user must re-consent on every fresh load.
+    const activeMode = getReleaseMode();
+    if (activeMode && activeMode !== 'normal') {
+        params.set('mode', activeMode);
     }
 
     const paramString = params.toString();

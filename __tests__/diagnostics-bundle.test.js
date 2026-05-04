@@ -140,23 +140,32 @@ describe('buildSupportBundle — firmware and provenance', () => {
                 config_string: 'Ceiling-POE-AirIQ',
                 version: '2.0.0',
                 channel: 'stable',
-                recommended: true,
                 deprecated: false,
                 source_commit: 'abc123',
                 source_url: 'https://github.com/example/repo/commit/abc123',
                 sha256: 'deadbeef',
                 signature: 'sig'
-            }
+            },
+            // `recommended` is a derived presentation flag — the state
+            // provider supplies it from pickDefaultBuild, never from the
+            // firmware/manifest itself.
+            firmwareIsRecommendedDefault: true
         }));
         const bundle = buildSupportBundle();
         expect(bundle.firmware.selected_config).toBe('Ceiling-POE-AirIQ');
         expect(bundle.firmware.selected_version).toBe('2.0.0');
         expect(bundle.firmware.channel).toBe('stable');
+        expect(bundle.firmware.selected_channel).toBe('stable');
         expect(bundle.firmware.recommended).toBe(true);
         expect(bundle.firmware.deprecated).toBe(false);
         expect(bundle.firmware.sha256_present).toBe(true);
         expect(bundle.firmware.signature_present).toBe(true);
         expect(bundle.firmware.provenance_status).toBe('warn');
+        // Stable, non-deprecated builds need no acknowledgement and emit a
+        // 'none' release-warning level.
+        expect(bundle.firmware.release_warning_level).toBe('none');
+        expect(bundle.firmware.acknowledgement_required).toBe(false);
+        expect(bundle.firmware.acknowledgement_completed).toBe(true);
     });
 
     test('firmware sha256/signature only reported as booleans, never raw values', async () => {
