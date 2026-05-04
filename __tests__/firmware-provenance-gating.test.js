@@ -88,7 +88,7 @@ describe('firmware provenance gating in state.js', () => {
 
         expect(window.latestFirmwareProvenance.ok).toBe(false);
         expect(window.latestFirmwareProvenance.blockingReasons.join(' ')).toMatch(
-            /source commit identifier/i
+            /source commit/i
         );
     });
 
@@ -108,9 +108,34 @@ describe('firmware provenance gating in state.js', () => {
 
         expect(html).toContain('Source commit');
         expect(html).toContain('eec461a4f6d8');
-        expect(html).toContain('Provenance verified');
+        // Panel header is now explicit about what passed: provenance metadata
+        // checks, not signature verification.
+        expect(html).toContain('Provenance metadata verified');
         // Each required field should produce a passing check.
         expect(html.match(/status-pass/g).length).toBeGreaterThanOrEqual(5);
+        // The signature_verified check should always be rendered as 'skip'
+        // (status-info) — never as a passing cryptographic-verification claim.
+        expect(html).toMatch(/data-check-id="signature_verified"[^>]*data-check-status="skip"/);
+    });
+
+    test('renderFirmwareProvenanceSection does NOT claim cryptographic signature verification', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const html = __testHooks.renderFirmwareProvenanceSection({ ...VALID_STABLE_FIRMWARE });
+
+        // The label exposes the explicit "not yet implemented" disclosure so
+        // users cannot mistake metadata-presence for cryptographic
+        // authenticity.
+        expect(html.toLowerCase()).toContain('not yet implemented');
+        // Forbidden phrasings that would overclaim verification.
+        const forbidden = [
+            /signature verified/i,
+            /signed firmware verified/i,
+            /cryptographically verified firmware/i,
+            /verified signature/i
+        ];
+        for (const pattern of forbidden) {
+            expect(html).not.toMatch(pattern);
+        }
     });
 
     test('renderFirmwareProvenanceSection marks deprecated firmware in the panel', async () => {
@@ -135,7 +160,74 @@ describe('firmware provenance gating in state.js', () => {
         expect(window.latestFirmwareProvenance.ok).toBe(false);
         expect(window.latestFirmwareProvenance.sizeClassification).toBe('suspicious');
         expect(window.latestFirmwareProvenance.blockingReasons.join(' ')).toMatch(
-            /below the plausible-firmware threshold/i
+            /below the .*plausible threshold/i
         );
+    });
+
+    test('beta firmware missing sha256 fails BEFORE any download starts', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const broken = { ...VALID_STABLE_FIRMWARE, channel: 'beta', sha256: '' };
+        window.currentFirmware = broken;
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        // Critical primitives are blocking on every flashable channel; no
+        // network fetch should be issued for the firmware binary.
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining('firmware/configurations/'),
+            expect.anything()
+        );
+        expect(window.latestFirmwareProvenance.ok).toBe(false);
+        expect(window.latestFirmwareProvenance.missingRequired).toContain('sha256');
+    });
+
+    test('rescue firmware missing sha256 fails BEFORE any download starts', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const broken = { ...VALID_STABLE_FIRMWARE, channel: 'rescue', sha256: '' };
+        window.currentFirmware = broken;
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining('firmware/configurations/'),
+            expect.anything()
+        );
+        expect(window.latestFirmwareProvenance.ok).toBe(false);
+    });
+
+    test('mutable source_url on a stable build blocks install before any download', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const broken = {
+            ...VALID_STABLE_FIRMWARE,
+            source_url: 'https://github.com/sense360store/WebFlash/tree/main/firmware'
+        };
+        window.currentFirmware = broken;
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining('firmware/configurations/'),
+            expect.anything()
+        );
+        expect(window.latestFirmwareProvenance.ok).toBe(false);
+        expect(window.latestFirmwareProvenance.sourceUrlMutable).toBe(true);
+    });
+
+    test('static provenance failure leaves the firmware verification state in failed state', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        // Suspicious size between placeholder and threshold should fail before
+        // network IO is even attempted.
+        window.currentFirmware = { ...VALID_STABLE_FIRMWARE, file_size: 8192 };
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        // No firmware fetch, and the verification state surfaces 'failed' so
+        // the install button cannot enter a 'ready' state on top of it.
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining('firmware/configurations/'),
+            expect.anything()
+        );
+        expect(window.latestFirmwareProvenance.ok).toBe(false);
+        expect(window.latestFirmwareProvenance.status).toBe('fail');
     });
 });

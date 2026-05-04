@@ -774,6 +774,11 @@ let manifestFreshness = 'unknown';
 let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
+let manifestFreshnessState = 'unknown';
+let manifestFreshnessDetail = null;
+let manifestFreshnessAck = false;
+let manifestFreshnessHasRun = false;
+let manifestMetadata = null;
 
 function getManifestFreshness() {
     return manifestFreshness;
@@ -3039,7 +3044,7 @@ async function refreshPreflightDiagnostics() {
                 key: 'firmware-verification',
                 label: 'Firmware verification',
                 state: 'pass',
-                detail: firmwareVerificationState.message || 'Checksum and signature verified.',
+                detail: firmwareVerificationState.message || 'SHA-256 integrity check passed.',
                 blocking: false
             });
         }
@@ -3352,7 +3357,7 @@ function getPartVerificationContext(part) {
         return { status: 'failed', message: state.message || 'Verification failed.' };
     }
     if (globalStatus === 'verified') {
-        return { status: 'verified', message: 'Checksum and signature verified.' };
+        return { status: 'verified', message: 'SHA-256 integrity check passed.' };
     }
 
     return { status: 'unknown', message: '' };
@@ -3487,14 +3492,18 @@ async function verifyFirmwarePart(part) {
         result.signatureMatch = computedSignature === result.expectedSignature;
 
         if (result.sha256Match && result.signatureMatch) {
+            // The "signature" field in the manifest is a salted SHA-256
+            // hash with a public salt, NOT a public-key signature. We
+            // recompute it after download as a redundant integrity check;
+            // a passing match does not prove cryptographic authenticity.
             result.status = 'verified';
-            result.message = 'Checksum and signature verified.';
+            result.message = 'SHA-256 integrity check passed (signature metadata format check passed).';
         } else if (!result.sha256Match) {
-            result.message = `Checksum mismatch for ${targetName}.`;
+            result.message = `SHA-256 mismatch for ${targetName}.`;
         } else if (!result.signatureMatch) {
-            result.message = `Signature mismatch for ${targetName}.`;
+            result.message = `Signature metadata mismatch for ${targetName}.`;
         } else {
-            result.message = `Verification failed for ${targetName}.`;
+            result.message = `Integrity check failed for ${targetName}.`;
         }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Verification failed.';
@@ -3703,7 +3712,7 @@ function renderFirmwareProvenanceSection(firmware) {
 
     const overallStatus = report.status;
     const overallLabel = overallStatus === 'pass'
-        ? 'Provenance verified'
+        ? 'Provenance metadata verified'
         : overallStatus === 'warn'
             ? 'Provenance has warnings'
             : 'Provenance check failed';
@@ -3712,16 +3721,28 @@ function renderFirmwareProvenanceSection(firmware) {
     const sourceUrl = (firmware.source_url || '').toString().trim();
     const signedBy = (firmware.signed_by || '').toString().trim();
 
+    const iconForStatus = (status) => {
+        if (status === 'pass') return '✓';
+        if (status === 'warn') return '⚠';
+        if (status === 'fail') return '✕';
+        return '–';
+    };
+
     const checksHtml = entries
-        .map(entry => `
-            <li class="firmware-provenance__check status-${escapeHtml(entry.ok ? 'pass' : 'fail')}">
-                <span class="firmware-provenance__check-icon" aria-hidden="true">${entry.ok ? '✓' : '✕'}</span>
+        .map(entry => {
+            // Map skip → status-info so consumers can style it as "not
+            // applicable" rather than reading it as a passing check.
+            const statusClass = entry.status === 'skip' ? 'info' : entry.status;
+            return `
+            <li class="firmware-provenance__check status-${escapeHtml(statusClass)}" data-check-id="${escapeHtml(entry.id || entry.key)}" data-check-status="${escapeHtml(entry.status)}">
+                <span class="firmware-provenance__check-icon" aria-hidden="true">${iconForStatus(entry.status)}</span>
                 <div class="firmware-provenance__check-body">
                     <span class="firmware-provenance__check-label">${escapeHtml(entry.label)}</span>
                     <span class="firmware-provenance__check-detail">${escapeHtml(entry.detail)}</span>
                 </div>
             </li>
-        `)
+        `;
+        })
         .join('');
 
     const factsHtml = (() => {
@@ -3797,11 +3818,11 @@ function renderFirmwarePartsSection(firmware) {
             const partStatus = normaliseVerificationStatus(verification.status);
             const statusMessage = verification.message
                 || (partStatus === 'verified'
-                    ? 'Checksum and signature verified.'
+                    ? 'SHA-256 integrity check passed.'
                     : partStatus === 'pending'
-                        ? 'Verification pending…'
+                        ? 'Integrity check pending…'
                         : partStatus === 'failed'
-                            ? 'Verification failed.'
+                            ? 'Integrity check failed.'
                             : '');
             const checksumValue = part.sha256 || '';
             const signatureValue = part.signature || '';
@@ -5517,7 +5538,6 @@ export const __testHooks = Object.freeze({
     setManifestFreshnessAcknowledgement,
     checkManifestFreshnessNow,
     getManifestMetadata,
-    DIAGNOSTICS_SCHEMA_VERSION,
     postFlashService
 });
 

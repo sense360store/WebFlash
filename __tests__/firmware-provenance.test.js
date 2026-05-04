@@ -4,13 +4,18 @@ import path from 'node:path';
 import {
     REQUIRED_PROVENANCE_FIELDS,
     CRITICAL_PROVENANCE_FIELDS,
+    CHECK_IDS,
+    ARTIFACT_TYPES,
     MIN_PLAUSIBLE_FIRMWARE_SIZE_BYTES,
     PLACEHOLDER_FIRMWARE_SIZE_BYTES,
     validateFirmwareProvenance,
     pickDefaultEligibleBuilds,
     describeVerificationChecks,
     changelogSeverityForChannel,
-    changelogLooksSynthesised
+    changelogLooksSynthesised,
+    changelogLooksFiller,
+    isMutableSourceUrl,
+    sourceUrlMatchesCommit
 } from '../scripts/utils/firmware-provenance.js';
 
 const VALID_STABLE_BUILD = Object.freeze({
@@ -42,15 +47,20 @@ function valueless(build, field, value) {
     return { ...build, [field]: value };
 }
 
+function findCheck(report, id) {
+    return report.checks.find(check => check.id === id);
+}
+
 describe('validateFirmwareProvenance — required fields', () => {
     test('valid stable build passes with no missing fields and an upbeat summary', () => {
         const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
         expect(report.ok).toBe(true);
         expect(report.status).toBe('pass');
+        expect(report.blocking).toBe(false);
         expect(report.missingRequired).toEqual([]);
-        expect(report.blockingReasons).toEqual([]);
+        expect(report.failures).toEqual([]);
         expect(report.warnings).toEqual([]);
-        expect(report.summary).toMatch(/provenance verified/i);
+        expect(report.summary).toMatch(/provenance metadata verified/i);
         expect(report.verifiedFields).toEqual(
             expect.arrayContaining([...REQUIRED_PROVENANCE_FIELDS, 'file_size_plausible'])
         );
@@ -60,8 +70,9 @@ describe('validateFirmwareProvenance — required fields', () => {
         const report = validateFirmwareProvenance(withoutField(VALID_STABLE_BUILD, 'signature'));
         expect(report.ok).toBe(false);
         expect(report.status).toBe('fail');
+        expect(report.blocking).toBe(true);
         expect(report.missingRequired).toContain('signature');
-        expect(report.blockingReasons.join(' ')).toMatch(/firmware signature/i);
+        expect(report.blockingReasons.join(' ')).toMatch(/signature metadata/i);
     });
 
     test('stable build missing sha256 is blocked from install', () => {
@@ -92,13 +103,29 @@ describe('validateFirmwareProvenance — required fields', () => {
         expect(report.missingRequired).toContain('file_size');
     });
 
-    test('non-stable channel records missing fields as warnings, not blockers', () => {
+    test('beta build missing critical primitive (source_commit) blocks install', () => {
         const betaBuild = { ...VALID_STABLE_BUILD, channel: 'beta' };
         const report = validateFirmwareProvenance(withoutField(betaBuild, 'source_commit'));
-        expect(report.ok).toBe(true);
-        expect(report.status).toBe('warn');
-        expect(report.blockingReasons).toEqual([]);
-        expect(report.warnings.join(' ')).toMatch(/missing provenance metadata/i);
+        // Critical primitives are blocking on ANY remotely flashable channel,
+        // not just stable. This is the change introduced by the provenance
+        // hardening pass.
+        expect(report.ok).toBe(false);
+        expect(report.status).toBe('fail');
+        expect(report.blockingReasons.join(' ')).toMatch(/source commit/i);
+    });
+
+    test('beta build missing sha256 blocks install (not just warns)', () => {
+        const betaBuild = { ...VALID_STABLE_BUILD, channel: 'beta' };
+        const report = validateFirmwareProvenance(withoutField(betaBuild, 'sha256'));
+        expect(report.ok).toBe(false);
+        expect(report.blockingReasons.join(' ')).toMatch(/sha-256/i);
+    });
+
+    test('rescue build missing sha256 blocks install', () => {
+        const rescueBuild = { ...VALID_STABLE_BUILD, channel: 'rescue' };
+        const report = validateFirmwareProvenance(withoutField(rescueBuild, 'sha256'));
+        expect(report.ok).toBe(false);
+        expect(report.blockingReasons.join(' ')).toMatch(/sha-256/i);
     });
 
     test('REQUIRED_PROVENANCE_FIELDS includes the documented set', () => {
@@ -120,14 +147,14 @@ describe('validateFirmwareProvenance — file size sanity', () => {
         expect(report.ok).toBe(true);
     });
 
-    test('suspiciously small binaries trigger a blocking warning', () => {
+    test('suspiciously small application binaries trigger a blocking warning', () => {
         const truncatedBuild = { ...VALID_STABLE_BUILD, file_size: 4096 };
         const report = validateFirmwareProvenance(truncatedBuild);
         expect(report.ok).toBe(false);
         expect(report.status).toBe('fail');
         expect(report.sizeClassification).toBe('suspicious');
         expect(report.blockingReasons.join(' ')).toMatch(
-            /below the plausible-firmware threshold/i
+            /below the 102400-byte plausible threshold|below the .* plausible threshold/i
         );
     });
 
@@ -150,8 +177,181 @@ describe('validateFirmwareProvenance — file size sanity', () => {
     });
 });
 
+describe('validateFirmwareProvenance — artifact-type-aware size validation', () => {
+    test('rescue artifact accepts a smaller plausible threshold than application', () => {
+        const rescueBuild = {
+            ...VALID_STABLE_BUILD,
+            channel: 'rescue',
+            artifact_type: ARTIFACT_TYPES.RESCUE,
+            file_size: 60 * 1024  // below application threshold but above rescue threshold
+        };
+        const report = validateFirmwareProvenance(rescueBuild);
+        // For rescue, 60 KB > 50 KB minimum is plausible.
+        expect(report.sizeClassification).toBe('plausible');
+        expect(report.ok).toBe(true);
+    });
+
+    test('test_fixture artifact is exempt from size sanity in test mode', () => {
+        const fixture = {
+            ...VALID_STABLE_BUILD,
+            channel: 'test',
+            artifact_type: ARTIFACT_TYPES.TEST_FIXTURE,
+            file_size: 18
+        };
+        const report = validateFirmwareProvenance(fixture, { mode: 'test' });
+        expect(report.ok).toBe(true);
+        const sizeCheck = findCheck(report, CHECK_IDS.FILE_SIZE_PLAUSIBLE);
+        expect(sizeCheck.detail).toMatch(/test fixture/i);
+    });
+
+    test('partition_table allows tiny sizes', () => {
+        const partition = {
+            ...VALID_STABLE_BUILD,
+            artifact_type: ARTIFACT_TYPES.PARTITION_TABLE,
+            file_size: 3072
+        };
+        const report = validateFirmwareProvenance(partition);
+        expect(report.sizeClassification).toBe('plausible');
+        expect(report.ok).toBe(true);
+    });
+});
+
+describe('validateFirmwareProvenance — channel modes', () => {
+    test('dev channel build is blocked in production mode', () => {
+        const devBuild = { ...VALID_STABLE_BUILD, channel: 'dev' };
+        const report = validateFirmwareProvenance(devBuild, { mode: 'production' });
+        expect(report.ok).toBe(false);
+        const channelCheck = findCheck(report, CHECK_IDS.CHANNEL_ALLOWED_FOR_MODE);
+        expect(channelCheck.status).toBe('fail');
+        expect(channelCheck.severity).toBe('block');
+        expect(report.blockingReasons.join(' ')).toMatch(/development\/test mode/i);
+    });
+
+    test('dev channel build is permitted in development mode', () => {
+        const devBuild = { ...VALID_STABLE_BUILD, channel: 'dev' };
+        const report = validateFirmwareProvenance(devBuild, { mode: 'development' });
+        expect(report.ok).toBe(true);
+        const channelCheck = findCheck(report, CHECK_IDS.CHANNEL_ALLOWED_FOR_MODE);
+        expect(channelCheck.status).toBe('pass');
+    });
+
+    test('test channel build still requires critical primitives in development mode', () => {
+        const testBuild = { ...VALID_STABLE_BUILD, channel: 'test', sha256: '' };
+        const report = validateFirmwareProvenance(testBuild, { mode: 'development' });
+        expect(report.ok).toBe(false);
+        expect(report.missingRequired).toContain('sha256');
+    });
+});
+
+describe('validateFirmwareProvenance — source_url immutability', () => {
+    test('valid commit-pinned URL passes', () => {
+        const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
+        const check = findCheck(report, CHECK_IDS.SOURCE_URL_IMMUTABLE);
+        expect(check.status).toBe('pass');
+    });
+
+    test('source_url with /tree/main fails in production mode', () => {
+        const build = {
+            ...VALID_STABLE_BUILD,
+            source_url: 'https://github.com/sense360store/WebFlash/tree/main/firmware'
+        };
+        const report = validateFirmwareProvenance(build, { mode: 'production' });
+        expect(report.ok).toBe(false);
+        const check = findCheck(report, CHECK_IDS.SOURCE_URL_IMMUTABLE);
+        expect(check.status).toBe('fail');
+        expect(check.severity).toBe('block');
+    });
+
+    test('source_url with /blob/main fails in production mode', () => {
+        const build = {
+            ...VALID_STABLE_BUILD,
+            source_url: 'https://github.com/sense360store/WebFlash/blob/main/manifest.json'
+        };
+        const report = validateFirmwareProvenance(build, { mode: 'production' });
+        expect(report.ok).toBe(false);
+    });
+
+    test('source_url with /releases/latest fails in production mode', () => {
+        const build = {
+            ...VALID_STABLE_BUILD,
+            source_url: 'https://github.com/sense360store/WebFlash/releases/latest'
+        };
+        const report = validateFirmwareProvenance(build, { mode: 'production' });
+        expect(report.ok).toBe(false);
+    });
+
+    test('mutable source_url downgrades to warning in development mode', () => {
+        const build = {
+            ...VALID_STABLE_BUILD,
+            source_url: 'https://github.com/sense360store/WebFlash/tree/main/firmware'
+        };
+        const report = validateFirmwareProvenance(build, { mode: 'development' });
+        // Critical primitives still pass; mutable URL only warns.
+        const check = findCheck(report, CHECK_IDS.SOURCE_URL_IMMUTABLE);
+        expect(check.status).toBe('fail');
+        expect(check.severity).toBe('warn');
+        expect(report.ok).toBe(true);
+    });
+
+    test('source_url that does not include source_commit fails in production', () => {
+        const build = {
+            ...VALID_STABLE_BUILD,
+            source_url: 'https://example.com/builds/some-tag'
+        };
+        const report = validateFirmwareProvenance(build, { mode: 'production' });
+        expect(report.ok).toBe(false);
+        const check = findCheck(report, CHECK_IDS.SOURCE_URL_IMMUTABLE);
+        expect(check.detail).toMatch(/source_commit/i);
+    });
+
+    test('isMutableSourceUrl helper detects branch and latest references', () => {
+        expect(isMutableSourceUrl('https://github.com/x/y/tree/main')).toBe(true);
+        expect(isMutableSourceUrl('https://github.com/x/y/blob/master/file')).toBe(true);
+        expect(isMutableSourceUrl('https://github.com/x/y/releases/latest')).toBe(true);
+        expect(isMutableSourceUrl('https://github.com/x/y/raw/develop/path')).toBe(true);
+        expect(isMutableSourceUrl('https://github.com/x/y/commit/abcdef')).toBe(false);
+        expect(isMutableSourceUrl('https://github.com/x/y/tree/abcdef1')).toBe(false);
+        expect(isMutableSourceUrl('')).toBe(false);
+        expect(isMutableSourceUrl(null)).toBe(false);
+    });
+
+    test('sourceUrlMatchesCommit accepts both full and short SHA', () => {
+        expect(sourceUrlMatchesCommit(
+            'https://github.com/x/y/commit/abcdef1234567890',
+            'abcdef1234567890'
+        )).toBe(true);
+        expect(sourceUrlMatchesCommit(
+            'https://github.com/x/y/commit/abcdef1',
+            'abcdef1234567890'
+        )).toBe(true);
+        expect(sourceUrlMatchesCommit('', 'abc')).toBe(false);
+        expect(sourceUrlMatchesCommit('https://x/y', '')).toBe(false);
+    });
+});
+
+describe('validateFirmwareProvenance — signature verification claim', () => {
+    test('signature_verified is reported as skip with explicit limitation', () => {
+        const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
+        const check = findCheck(report, CHECK_IDS.SIGNATURE_VERIFIED);
+        expect(check.status).toBe('skip');
+        expect(check.detail).toMatch(/not yet implemented/i);
+        expect(check.detail).toMatch(/cryptographic authenticity/i);
+    });
+
+    test('signature_metadata_present is distinct from signature_verified', () => {
+        const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
+        const meta = findCheck(report, CHECK_IDS.SIGNATURE_METADATA_PRESENT);
+        const verified = findCheck(report, CHECK_IDS.SIGNATURE_VERIFIED);
+        expect(meta.status).toBe('pass');
+        expect(verified.status).toBe('skip');
+        // The metadata-present check should not claim cryptographic
+        // verification — its detail is purely about field presence.
+        expect(meta.detail.toLowerCase()).not.toContain('cryptograph');
+    });
+});
+
 describe('validateFirmwareProvenance — deprecated firmware', () => {
-    test('deprecated builds surface a warning but do not block install', () => {
+    test('deprecated builds with a reason surface a warning but do not block install', () => {
         const deprecatedBuild = {
             ...VALID_STABLE_BUILD,
             deprecated: true,
@@ -163,6 +363,19 @@ describe('validateFirmwareProvenance — deprecated firmware', () => {
         expect(report.ok).toBe(true);
         expect(report.warnings.join(' ')).toMatch(/deprecated/i);
         expect(report.warnings.join(' ')).toMatch(/Superseded by v2\.0\.0\./);
+    });
+
+    test('deprecated build WITHOUT a reason is flagged as a content failure (still non-blocking)', () => {
+        const deprecatedBuild = {
+            ...VALID_STABLE_BUILD,
+            deprecated: true,
+            deprecation_reason: null
+        };
+        const report = validateFirmwareProvenance(deprecatedBuild);
+        const lifecycle = findCheck(report, CHECK_IDS.LIFECYCLE_STATUS);
+        expect(lifecycle.status).toBe('fail');
+        expect(lifecycle.severity).toBe('warn');
+        expect(report.warnings.join(' ')).toMatch(/deprecation_reason/i);
     });
 
     test('pickDefaultEligibleBuilds removes deprecated entries while keeping order', () => {
@@ -182,7 +395,7 @@ describe('validateFirmwareProvenance — deprecated firmware', () => {
 });
 
 describe('describeVerificationChecks — UI surface', () => {
-    test('produces an entry per required field with a pass/fail flag', () => {
+    test('produces an entry per legacy key with a pass/fail flag', () => {
         const { entries } = describeVerificationChecks(VALID_STABLE_BUILD);
         const labels = entries.map(entry => entry.key);
         expect(labels).toEqual(
@@ -196,6 +409,8 @@ describe('describeVerificationChecks — UI surface', () => {
                 'deprecated'
             ])
         );
+        // Every check on a valid build either passes or is skipped (e.g.
+        // signature_verified) — none should be marked failing.
         for (const entry of entries) {
             expect(entry.ok).toBe(true);
         }
@@ -250,6 +465,23 @@ describe('manifest.json — provenance integration', () => {
             expect(changelogLooksSynthesised(build.changelog)).toBe(false);
         }
     });
+
+    test('every flashable build has a commit-pinned source_url', () => {
+        for (const build of manifest.builds) {
+            if (!build.source_url) continue;
+            expect(isMutableSourceUrl(build.source_url)).toBe(false);
+            if (build.source_commit) {
+                expect(sourceUrlMatchesCommit(build.source_url, build.source_commit)).toBe(true);
+            }
+        }
+    });
+
+    test('every flashable build declares an artifact_type', () => {
+        for (const build of manifest.builds) {
+            expect(typeof build.artifact_type).toBe('string');
+            expect(build.artifact_type.length).toBeGreaterThan(0);
+        }
+    });
 });
 
 describe('changelog policy — channel severity ladder', () => {
@@ -280,9 +512,9 @@ describe('changelog policy — channel severity ladder', () => {
         expect(report.warnings.join(' ')).toMatch(/human-authored changelog/i);
     });
 
-    test('dev build with missing changelog passes silently', () => {
+    test('dev build with missing changelog passes silently in development mode', () => {
         const devBuild = { ...VALID_STABLE_BUILD, channel: 'dev', changelog: [] };
-        const report = validateFirmwareProvenance(devBuild);
+        const report = validateFirmwareProvenance(devBuild, { mode: 'development' });
         expect(report.ok).toBe(true);
         expect(report.status).toBe('pass');
         expect(report.warnings).toEqual([]);
@@ -305,13 +537,12 @@ describe('changelog policy — channel severity ladder', () => {
         ]);
     });
 
-    test('dev build still fails when a critical primitive is missing', () => {
+    test('dev build with missing critical primitive fails (regardless of mode)', () => {
         const devBuild = { ...VALID_STABLE_BUILD, channel: 'dev', signature: '' };
-        const report = validateFirmwareProvenance(devBuild);
-        expect(report.warnings.join(' ')).toMatch(/missing provenance metadata/i);
-        // Critical fields downgrade to a warning for non-stable, but the
-        // missingRequired list still reports the primitive.
+        const report = validateFirmwareProvenance(devBuild, { mode: 'development' });
+        expect(report.ok).toBe(false);
         expect(report.missingRequired).toContain('signature');
+        expect(report.blockingReasons.join(' ')).toMatch(/signature metadata/i);
     });
 });
 
@@ -390,9 +621,95 @@ describe('changelog policy — synthesised changelog detection', () => {
             channel: 'dev',
             changelog: ['Dev build of Sense360 Ceiling-USB v9.9.9.']
         };
-        const { entries } = describeVerificationChecks(synthDev);
+        const { entries } = describeVerificationChecks(synthDev, { mode: 'development' });
         const changelogEntry = entries.find(e => e.key === 'changelog');
         expect(changelogEntry.ok).toBe(true);
         expect(changelogEntry.detail).toMatch(/tolerated/i);
+    });
+});
+
+describe('changelog policy — generic-filler detection', () => {
+    test.each([
+        ['Initial release.'],
+        ['First release'],
+        ['TBD'],
+        ['Placeholder'],
+        ['N/A.'],
+        ['See release notes.']
+    ])('flags generic filler entry %j', (entry) => {
+        expect(changelogLooksFiller([entry])).toBe(true);
+    });
+
+    test('does not flag substantive entries as filler', () => {
+        expect(changelogLooksFiller([
+            'Initial tracked stable release for the Sense360 Ceiling-POE-AirIQ configuration.'
+        ])).toBe(false);
+        expect(changelogLooksFiller([])).toBe(false);
+    });
+
+    test('stable build with generic filler changelog blocks install', () => {
+        const build = { ...VALID_STABLE_BUILD, changelog: ['Initial release.'] };
+        const report = validateFirmwareProvenance(build);
+        expect(report.ok).toBe(false);
+        expect(report.changelogFiller).toBe(true);
+        expect(report.blockingReasons.join(' ')).toMatch(/boilerplate/i);
+    });
+});
+
+describe('Stable provenance result shape — machine-readable contract', () => {
+    test('checks array exposes stable IDs with status and severity', () => {
+        const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
+        expect(Array.isArray(report.checks)).toBe(true);
+
+        const ids = report.checks.map(c => c.id);
+        expect(ids).toEqual(expect.arrayContaining([
+            CHECK_IDS.SHA256_METADATA_PRESENT,
+            CHECK_IDS.SIGNATURE_METADATA_PRESENT,
+            CHECK_IDS.SIGNATURE_VERIFIED,
+            CHECK_IDS.SOURCE_COMMIT_PRESENT,
+            CHECK_IDS.SOURCE_URL_IMMUTABLE,
+            CHECK_IDS.FIRMWARE_PATH_PRESENT,
+            CHECK_IDS.ARTIFACT_IDENTITY_PRESENT,
+            CHECK_IDS.FILE_SIZE_PRESENT,
+            CHECK_IDS.FILE_SIZE_PLAUSIBLE,
+            CHECK_IDS.CHANGELOG_PRESENT,
+            CHECK_IDS.LIFECYCLE_STATUS,
+            CHECK_IDS.CHANNEL_ALLOWED_FOR_MODE
+        ]));
+
+        for (const check of report.checks) {
+            expect(typeof check.id).toBe('string');
+            expect(typeof check.label).toBe('string');
+            expect(['pass', 'warn', 'fail', 'skip']).toContain(check.status);
+            expect(['block', 'warn', 'info']).toContain(check.severity);
+            expect(typeof check.detail).toBe('string');
+        }
+    });
+
+    test('failures array is empty for a valid build', () => {
+        const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
+        expect(report.failures).toEqual([]);
+        expect(report.blocking).toBe(false);
+    });
+
+    test('failures array enumerates blocked checks for an invalid build', () => {
+        const broken = { ...VALID_STABLE_BUILD, sha256: '', source_commit: '' };
+        const report = validateFirmwareProvenance(broken);
+        const failureIds = report.failures.map(f => f.id);
+        expect(failureIds).toEqual(expect.arrayContaining([
+            CHECK_IDS.SHA256_METADATA_PRESENT,
+            CHECK_IDS.SOURCE_COMMIT_PRESENT
+        ]));
+        expect(report.blocking).toBe(true);
+        // Every failure has a stable id, label, and detail — never just a free string.
+        for (const f of report.failures) {
+            expect(typeof f.id).toBe('string');
+            expect(typeof f.label).toBe('string');
+            expect(typeof f.detail).toBe('string');
+        }
+    });
+
+    test('CHECK_IDS is frozen so consumers can rely on the IDs', () => {
+        expect(Object.isFrozen(CHECK_IDS)).toBe(true);
     });
 });
