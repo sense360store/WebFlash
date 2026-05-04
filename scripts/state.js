@@ -21,6 +21,7 @@ import {
 } from './utils/release-channels.js';
 // Import error logging service early to capture all errors including manifest load failures
 import './services/error-log.js';
+import { detectCapabilities, evaluateBrowserReadiness } from './capabilities.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -2934,15 +2935,21 @@ async function refreshPreflightDiagnostics() {
         });
     };
 
+    const browserReadiness = evaluateBrowserReadiness(detectCapabilities());
+    const browserCheckState = browserReadiness.level === 'block'
+        ? 'fail'
+        : browserReadiness.level === 'warn' ? 'warn' : 'pass';
+    const browserCheckDetail = browserReadiness.level === 'ok'
+        ? `Web Serial is available in ${browserReadiness.capabilities.browserName || 'this browser'}.`
+        : (browserReadiness.reasons[0]?.message || 'Browser readiness check failed.');
+
     const checks = [
         createCheck({
             key: 'browser-support',
             label: 'Browser support',
-            state: navigator?.serial ? 'pass' : 'fail',
-            detail: navigator?.serial
-                ? 'Web Serial API is available in this browser.'
-                : 'This browser does not support Web Serial. Use a compatible Chromium-based browser.',
-            blocking: !navigator?.serial
+            state: browserCheckState,
+            detail: browserCheckDetail,
+            blocking: browserCheckState === 'fail'
         }),
         getDeviceVisibilityCheck(),
         getConnectionQualityCheck(),
