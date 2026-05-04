@@ -52,6 +52,7 @@
         </header>
 
         <div class="preflight-banner-mount" data-preflight-banner-mount></div>
+        <div class="preflight-banner-mount" data-freshness-banner-mount></div>
 
         <details class="prereq-panel" aria-labelledby="prereq-panel-title">
             <summary class="prereq-panel__summary">
@@ -865,6 +866,11 @@
                 </p>
             </div>
         </div>
+
+        <!-- About / Support panel: app version, manifest metadata, and the
+             "Clear cached installer data" action. Rendered by
+             scripts/layout/about-panel.js. -->
+        <div class="about-panel-mount" data-about-panel-mount></div>
 </div>
 
     <!-- Dynamically load app.js so it works from both / and /WebFlash/ -->
