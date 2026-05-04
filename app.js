@@ -16,7 +16,12 @@ import "./scripts/layout/firmware-note.js";
 import "./scripts/layout/init-splitview.js";
 import "./scripts/layout/option-info-popover.js";
 import "./scripts/layout/rescue-entry.js";
+import { initPreflightHelpModal } from "./scripts/layout/preflight-help-modal.js";
+import { initPreflightBanner } from "./scripts/layout/preflight-banner.js";
 import "./scripts/navigation.js";
+
+initPreflightHelpModal();
+initPreflightBanner();
 
 // ESP Web Tools enhancements - checkSameFirmware override for detecting installed firmware
 import "./scripts/utils/esp-web-tools-overrides.js";
