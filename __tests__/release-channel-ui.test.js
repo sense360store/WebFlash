@@ -361,4 +361,166 @@ describe('release-channel UI wiring in state.js', () => {
         expect(card.textContent).toContain('Bluetooth pairing pending firmware update.');
         expect(card.textContent).toContain('Improv Wi-Fi onboarding');
     });
+
+    test('default selection skips a stable build with failed provenance and falls through', async () => {
+        // Two stable builds: one with a mutable source_url (provenance-fails
+        // in production mode), one valid. Expect the valid one to be picked
+        // even though the failing build sorts first by manifestIndex.
+        const { __testHooks } = await import('../scripts/state.js');
+        const builds = [
+            makeBuild({
+                firmwareId: 'firmware-stable-broken',
+                channel: 'stable',
+                version: '2.1.0',
+                manifestIndex: 0,
+                source_url: 'https://github.com/sense360store/WebFlash/tree/main/firmware'
+            }),
+            makeBuild({
+                firmwareId: 'firmware-stable-good',
+                channel: 'stable',
+                version: '2.0.0',
+                manifestIndex: 1
+            })
+        ];
+        __testHooks.setFirmwareOptions(builds, 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+
+        expect(window.currentFirmware?.firmwareId).toBe('firmware-stable-good');
+        expect(__testHooks.isFirmwareRecommendedDefault(window.currentFirmware)).toBe(true);
+    });
+
+    test('rc/candidate build on the beta channel still requires an acknowledgement', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-rc',
+            channel: 'rc',
+            version: '3.0.0-rc.1'
+        });
+        __testHooks.setFirmwareOptions([build], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+
+        const panel = document.querySelector('[data-channel-acknowledgement-panel]');
+        expect(panel.hidden).toBe(false);
+        // 'rc' is a beta alias — gate is keyed by the canonical channel.
+        expect(panel.querySelector('[data-acknowledgement-key="channel:beta"]')).not.toBeNull();
+        expect(__testHooks.getOutstandingChannelAcknowledgements(build).length).toBe(1);
+    });
+
+    test('unknown channel mounts an unknown-channel acknowledgement panel', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-mystery',
+            channel: 'wibble',
+            version: '4.0.0'
+        });
+        __testHooks.setFirmwareOptions([build], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+
+        const panel = document.querySelector('[data-channel-acknowledgement-panel]');
+        expect(panel.hidden).toBe(false);
+        expect(panel.querySelector('[data-acknowledgement-key="channel:unknown"]')).not.toBeNull();
+        const card = document.querySelector('#compatible-firmware [data-firmware-detail]');
+        expect(card.dataset.channel).toBe('unknown');
+        // Unknown channel must NOT be auto-selected as recommended even when
+        // it is the only build available.
+        expect(__testHooks.isFirmwareRecommendedDefault(window.currentFirmware)).toBe(false);
+    });
+
+    test('switching firmware (beta → deprecated) clears stale acknowledgements', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const beta = makeBuild({
+            firmwareId: 'firmware-beta',
+            channel: 'beta',
+            version: '2.1.0',
+            manifestIndex: 0
+        });
+        const deprecated = makeBuild({
+            firmwareId: 'firmware-stable-old',
+            channel: 'stable',
+            version: '1.0.0',
+            deprecated: true,
+            deprecation_reason: 'Superseded by v2.0.0.',
+            manifestIndex: 1
+        });
+        __testHooks.setFirmwareOptions([beta, deprecated], 'Ceiling-USB');
+        // Force-select beta first and acknowledge it.
+        const select = document.getElementById('firmware-version-select');
+        select.value = 'firmware-beta';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(beta).length).toBe(0);
+
+        // Switching to the deprecated build must reset acknowledgements; the
+        // beta ack must NOT silently satisfy the deprecated gate.
+        select.value = 'firmware-stable-old';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(deprecated);
+        expect(outstanding.map(item => item.key)).toContain('deprecated');
+    });
+
+    test('changing release mode resets acknowledgements', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setReleaseModeForTests('normal');
+
+        const beta = makeBuild({
+            firmwareId: 'firmware-beta',
+            channel: 'beta',
+            version: '2.1.0'
+        });
+        __testHooks.setFirmwareOptions([beta], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(beta).length).toBe(0);
+
+        __testHooks.setReleaseModeForTests('development');
+        // Mode flip clears the acknowledgement Map so a freshly-revealed dev
+        // build cannot silently inherit consent given for a beta firmware.
+        expect(__testHooks.getOutstandingChannelAcknowledgements(beta).length).toBeGreaterThan(0);
+    });
+
+    test('renderFirmwareDetailsPanel surfaces artifact_type when present', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            artifact_type: 'application'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: false });
+        expect(html).toContain('Artifact type');
+        expect(html).toContain('application');
+    });
+
+    test('renderFirmwareDetailsPanel does not assert cryptographic verification language', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        // Forbidden trust language; the panel describes facts, not claims.
+        const forbidden = [
+            /signature verified/i,
+            /cryptographically verified/i,
+            /trusted firmware/i,
+            /authenticity verified/i,
+            /signed firmware verified/i
+        ];
+        for (const pattern of forbidden) {
+            expect(html).not.toMatch(pattern);
+        }
+    });
+
+    test('signature_verified provenance check renders with status="skip", never as a passing claim', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareProvenanceSection(build);
+        expect(html).toMatch(/data-check-id="signature_verified"[^>]*data-check-status="skip"/);
+        expect(html).not.toMatch(/data-check-id="signature_verified"[^>]*data-check-status="pass"/);
+    });
 });

@@ -92,6 +92,26 @@ describe('release-channels — taxonomy', () => {
         expect(isKnownChannel(null)).toBe(false);
     });
 
+    test('test/testing channel aliases route to development', () => {
+        // The provenance layer flags these as development-only channels in
+        // production mode; the release-channel module must agree so the UI
+        // hides them in normal mode and surfaces a development warning.
+        expect(normaliseReleaseChannel('test')).toBe('development');
+        expect(normaliseReleaseChannel('Testing')).toBe('development');
+        expect(getChannelPolicy('test').hiddenByDefault).toBe(true);
+        expect(getChannelPolicy('test').reveal).toBe('development');
+    });
+
+    test('unknown channels are conservative: warning + acknowledgement, never default-selectable, never silently treated as stable', () => {
+        const unknown = getChannelPolicy('made-up');
+        expect(unknown.key).toBe('unknown');
+        expect(unknown.defaultSelectable).toBe(false);
+        expect(unknown.requiresAcknowledgement).toBe(true);
+        expect(unknown.acknowledgementLabel).toMatch(/unrecognised release channel/i);
+        expect(unknown.warning).toMatch(/unrecognised release channel/i);
+        expect(unknown.tone).not.toBe('positive');
+    });
+
     test('getChannelPolicy returns frozen policy for each channel', () => {
         const stable = getChannelPolicy('stable');
         expect(stable.label).toBe('Stable');
@@ -253,6 +273,13 @@ describe('release-channels — acknowledgements', () => {
     test('rescue builds do not gate install behind an acknowledgement (the warning copy is enough)', () => {
         // Entering recovery mode is itself the explicit consent gesture.
         expect(getRequiredAcknowledgements(RESCUE_BUILD)).toEqual([]);
+    });
+
+    test('builds on an unknown channel still require an acknowledgement', () => {
+        const acks = getRequiredAcknowledgements({ firmwareId: 'fw-mystery', channel: 'mystery' });
+        expect(acks).toHaveLength(1);
+        expect(acks[0].key).toBe('channel:unknown');
+        expect(acks[0].label).toMatch(/unrecognised/i);
     });
 });
 

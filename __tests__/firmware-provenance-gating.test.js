@@ -213,6 +213,40 @@ describe('firmware provenance gating in state.js', () => {
         expect(window.latestFirmwareProvenance.sourceUrlMutable).toBe(true);
     });
 
+    test('beta firmware with failed provenance stays blocked even when the channel acknowledgement is checked', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        // Beta build with a mutable source_url — provenance fails in
+        // production mode regardless of channel.
+        const broken = {
+            ...VALID_STABLE_FIRMWARE,
+            firmwareId: 'firmware-beta-broken',
+            channel: 'beta',
+            source_url: 'https://github.com/sense360store/WebFlash/tree/main/firmware'
+        };
+        __testHooks.setFirmwareOptions([broken], 'Ceiling-USB');
+        // Force-select via dropdown so the firmware is registered as the
+        // current selection in the firmwareOptionsMap (not just on window).
+        const select = document.getElementById('firmware-version-select');
+        select.value = broken.firmwareId;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        // Acknowledge the beta channel. This must NOT clear the provenance
+        // failure — channel acknowledgement and provenance gating are
+        // independent layers.
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+
+        expect(window.latestFirmwareProvenance.ok).toBe(false);
+        expect(window.latestFirmwareProvenance.sourceUrlMutable).toBe(true);
+        // Verification state must remain failed; otherwise the install gate
+        // would let the user proceed on a bad-provenance build.
+        const installButton = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
+        if (installButton) {
+            expect(installButton.disabled).toBe(true);
+        }
+    });
+
     test('static provenance failure leaves the firmware verification state in failed state', async () => {
         const { __testHooks } = await import('../scripts/state.js');
         // Suspicious size between placeholder and threshold should fail before

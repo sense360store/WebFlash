@@ -17,6 +17,11 @@ import { copyTextToClipboard } from '../utils/copy-to-clipboard.js';
 import { downloadJsonFile } from '../utils/file-download.js';
 import { getFlashHistory } from '../utils/flash-history.js';
 import { validateFirmwareProvenance } from '../utils/firmware-provenance.js';
+import {
+    getChannelPolicy,
+    getRequiredAcknowledgements,
+    normaliseReleaseChannel
+} from '../utils/release-channels.js';
 import { announce } from '../utils/a11y.js';
 import { getServiceWorkerState } from './sw-update.js';
 
@@ -309,19 +314,39 @@ function buildManifestSection({ manifestData, manifestFreshness }) {
     };
 }
 
-function buildFirmwareSection({ currentFirmware }) {
+// Severity ranking used to derive the warning level surfaced via diagnostics.
+// 'positive' (stable) → none; everything else escalates from 'info' → 'danger'.
+const RELEASE_WARNING_LEVEL_BY_TONE = Object.freeze({
+    positive: 'none',
+    info: 'info',
+    warning: 'warning',
+    danger: 'danger'
+});
+
+function buildFirmwareSection({
+    currentFirmware,
+    releaseMode = 'normal',
+    firmwareIsRecommendedDefault = null,
+    channelAcknowledgementsCompleted = null
+}) {
     if (!currentFirmware || typeof currentFirmware !== 'object') {
         return {
             selected_config: null,
             selected_version: null,
             channel: null,
+            selected_channel: null,
             recommended: false,
             deprecated: false,
+            deprecation_reason: null,
             source_commit: null,
             source_url: null,
             sha256_present: false,
             signature_present: false,
-            provenance_status: 'unknown'
+            provenance_status: 'unknown',
+            release_warning_level: 'none',
+            acknowledgement_required: false,
+            acknowledgement_completed: false,
+            mode: releaseMode || 'normal'
         };
     }
 
@@ -338,6 +363,25 @@ function buildFirmwareSection({ currentFirmware }) {
     const signaturePresent = Boolean(currentFirmware.signature
         || (Array.isArray(currentFirmware.parts) && currentFirmware.parts.some(p => p && p.signature)));
 
+    const policy = getChannelPolicy(currentFirmware.channel);
+    const canonicalChannel = normaliseReleaseChannel(currentFirmware.channel);
+    const requiredAcks = getRequiredAcknowledgements(currentFirmware);
+    const acknowledgementRequired = requiredAcks.length > 0;
+    // Prefer the explicit "completed" boolean from the state provider when it
+    // is wired through; fall back to "no acks required" → trivially complete.
+    const acknowledgementCompleted = typeof channelAcknowledgementsCompleted === 'boolean'
+        ? channelAcknowledgementsCompleted
+        : !acknowledgementRequired;
+    // Recommended is a presentation flag computed from the firmware list, not
+    // a persisted manifest field. The state provider passes the result of
+    // pickDefaultBuild here; treat anything else as "no default known".
+    const recommended = firmwareIsRecommendedDefault === true;
+    const releaseWarningLevel = RELEASE_WARNING_LEVEL_BY_TONE[policy.tone] || 'info';
+    const deprecationReason = (typeof currentFirmware.deprecation_reason === 'string'
+        && currentFirmware.deprecation_reason.trim())
+        ? currentFirmware.deprecation_reason.trim()
+        : null;
+
     return {
         selected_config: currentFirmware.config_string
             || currentFirmware.device_type
@@ -345,13 +389,21 @@ function buildFirmwareSection({ currentFirmware }) {
             || null,
         selected_version: currentFirmware.version || null,
         channel: currentFirmware.channel || null,
-        recommended: Boolean(currentFirmware.recommended),
+        // Canonical-key alias for downstream consumers that don't want to
+        // re-implement alias mapping (e.g. correlating 'rc' with 'beta').
+        selected_channel: canonicalChannel,
+        recommended,
         deprecated: Boolean(currentFirmware.deprecated),
+        deprecation_reason: deprecationReason,
         source_commit: currentFirmware.source_commit || null,
         source_url: currentFirmware.source_url || null,
         sha256_present: sha256Present,
         signature_present: signaturePresent,
-        provenance_status: provenanceStatus
+        provenance_status: provenanceStatus,
+        release_warning_level: releaseWarningLevel,
+        acknowledgement_required: acknowledgementRequired,
+        acknowledgement_completed: acknowledgementCompleted,
+        mode: releaseMode || 'normal'
     };
 }
 
@@ -597,7 +649,12 @@ export function buildSupportBundle() {
             manifestFreshness: providerInput.manifestFreshness || 'unknown'
         }),
         firmware: buildFirmwareSection({
-            currentFirmware: providerInput.currentFirmware || null
+            currentFirmware: providerInput.currentFirmware || null,
+            releaseMode: providerInput.releaseMode || 'normal',
+            firmwareIsRecommendedDefault: providerInput.firmwareIsRecommendedDefault === true,
+            channelAcknowledgementsCompleted: typeof providerInput.channelAcknowledgementsCompleted === 'boolean'
+                ? providerInput.channelAcknowledgementsCompleted
+                : null
         }),
         wizard: buildWizardSection({
             stepInfo: providerInput.stepInfo || null,
