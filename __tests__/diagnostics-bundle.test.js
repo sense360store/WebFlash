@@ -64,10 +64,10 @@ describe('buildSupportBundle — schema and shape', () => {
         expect(bundle.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     });
 
-    test('all nine top-level sections are present', async () => {
+    test('all top-level sections are present', async () => {
         const { buildSupportBundle } = await loadDiagnostics();
         const bundle = buildSupportBundle();
-        ['app', 'environment', 'manifest', 'firmware', 'wizard', 'preflight', 'recovery', 'cache', 'flash'].forEach(key => {
+        ['app', 'environment', 'manifest', 'firmware', 'wizard', 'preflight', 'recovery', 'cache', 'flash', 'post_flash'].forEach(key => {
             expect(bundle).toHaveProperty(key);
             expect(typeof bundle[key]).toBe('object');
         });

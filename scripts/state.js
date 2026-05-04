@@ -28,6 +28,7 @@ import {
     redactValue,
     setSupportBundleStateProvider
 } from './services/diagnostics.js';
+import { postFlashService } from './services/post-flash.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -1277,6 +1278,9 @@ async function loadManifestData(options = {}) {
             manifestLoadError = null;
             manifestFreshness = 'current';
             buildManifestContext(data);
+            try {
+                postFlashService.captureManifest(data);
+            } catch { /* defensive — do not block manifest load on post-flash wiring */ }
             return data;
         } catch (error) {
             if (attempt < maxRetries) {
@@ -1384,6 +1388,15 @@ function handleInstallStateEvent(event) {
 
     if (!state) {
         return;
+    }
+
+    // Forward the lifecycle event to the post-flash service so it can drive
+    // the post-flash result panel without each event handler tracking its
+    // own state.
+    try {
+        postFlashService.dispatchLifecycle(detail);
+    } catch (err) {
+        console.warn('[state] postFlashService.dispatchLifecycle failed', err);
     }
 
     if (state === 'preparing' || state === 'manifest' || state === 'initializing') {
@@ -3215,7 +3228,8 @@ setSupportBundleStateProvider(() => ({
     manifestData: getManifestData(),
     manifestFreshness: getManifestFreshness(),
     currentFirmware: typeof window !== 'undefined' ? window.currentFirmware : null,
-    releaseMode: getReleaseMode()
+    releaseMode: getReleaseMode(),
+    postFlashSnapshot: postFlashService.getSnapshot()
 }));
 
 
@@ -4481,6 +4495,10 @@ function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelecto
     firmwareVerificationToken += 1;
     firmwareVerificationState = createEmptyVerificationState();
 
+    try {
+        postFlashService.captureSelectedBuild(firmware);
+    } catch { /* defensive */ }
+
     if (updateConfigString) {
         if (firmware.config_string) {
             window.currentConfigString = firmware.config_string;
@@ -5460,7 +5478,8 @@ export const __testHooks = Object.freeze({
     setManifestFreshnessAcknowledgement,
     checkManifestFreshnessNow,
     getManifestMetadata,
-    DIAGNOSTICS_SCHEMA_VERSION
+    DIAGNOSTICS_SCHEMA_VERSION,
+    postFlashService
 });
 
 export {

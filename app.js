@@ -17,6 +17,7 @@ import "./scripts/layout/firmware-note.js";
 import "./scripts/layout/init-splitview.js";
 import "./scripts/layout/option-info-popover.js";
 import "./scripts/layout/rescue-entry.js";
+import "./scripts/layout/post-flash-panel.js";
 import { initPreflightHelpModal } from "./scripts/layout/preflight-help-modal.js";
 import { initPreflightBanner } from "./scripts/layout/preflight-banner.js";
 import { initSupportBundleActions, recordUpdateAvailable } from "./scripts/services/diagnostics.js";

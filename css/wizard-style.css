@@ -3083,21 +3083,190 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     line-height: 1.45;
 }
 
-.post-flash-guidance {
-    margin-top: 12px;
-    max-width: 640px;
-    font-size: 12px;
+/* Post-flash result panel — replaces the old .post-flash-guidance text. */
+.post-flash-panel {
+    margin-top: 16px;
+    padding: 16px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border, #d0d7de);
+    background: var(--color-surface, #ffffff);
+    max-width: 760px;
     line-height: 1.5;
 }
 
-.post-flash-guidance a {
-    color: var(--brand-green-contrast);
-    text-decoration: none;
+.post-flash-panel[data-tone="busy"],
+.post-flash-panel[data-tone="pending"] {
+    border-color: #b6cffb;
+    background: #f0f7ff;
 }
 
-.post-flash-guidance a:hover {
-    color: var(--brand-green-contrast-hover);
-    text-decoration: underline;
+.post-flash-panel[data-tone="success"] {
+    border-color: #b8e3c1;
+    background: #effdf3;
+}
+
+.post-flash-panel[data-tone="unknown"] {
+    border-color: #f0d496;
+    background: #fff8e6;
+}
+
+.post-flash-panel[data-tone="warn"] {
+    border-color: #f3b97a;
+    background: #fff3e6;
+}
+
+.post-flash-panel[data-tone="error"],
+.post-flash-panel[data-tone="cancelled"] {
+    border-color: #e9a3a3;
+    background: #fdecec;
+}
+
+.post-flash-panel__title {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.post-flash-panel__summary {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--color-text-secondary, #4d5660);
+}
+
+.post-flash-firmware {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 14px;
+    margin: 0 0 12px;
+    font-size: 13px;
+}
+
+.post-flash-firmware dt {
+    color: var(--color-text-secondary, #4d5660);
+}
+
+.post-flash-firmware dd {
+    margin: 0;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.post-flash-section-heading {
+    margin: 12px 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary, #4d5660);
+}
+
+.post-flash-next-steps {
+    margin: 0 0 12px;
+    padding-left: 22px;
+    font-size: 13px;
+}
+
+.post-flash-next-steps li {
+    margin-bottom: 4px;
+}
+
+.post-flash-validation {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.post-flash-validation li {
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    gap: 4px 12px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+}
+
+.post-flash-validation__detail {
+    grid-column: 1 / -1;
+    font-size: 12px;
+    color: var(--color-text-secondary, #4d5660);
+}
+
+.post-flash-validation__status {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.post-flash-validation__status--passed {
+    background: #d6f3df;
+    color: #155724;
+}
+
+.post-flash-validation__status--failed {
+    background: #f8d7da;
+    color: #842029;
+}
+
+.post-flash-validation__status--not_available {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--color-text-secondary, #4d5660);
+}
+
+.post-flash-handoff {
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.post-flash-handoff__steps {
+    margin: 0 0 10px;
+    padding-left: 22px;
+    font-size: 13px;
+}
+
+.post-flash-handoff__steps li {
+    margin-bottom: 4px;
+}
+
+.post-flash-handoff__status {
+    margin: 0 0 10px;
+    font-size: 13px;
+}
+
+.post-flash-handoff__fallback summary {
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 8px;
+}
+
+.post-flash-handoff__fallback ol {
+    padding-left: 22px;
+    margin: 8px 0 0;
+    font-size: 13px;
+}
+
+.post-flash-support {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.post-flash-support[data-prominence="subtle"] .btn {
+    font-size: 12px;
+    padding: 4px 10px;
+}
+
+.post-flash-support[data-prominence="prominent"] .btn {
+    font-weight: 600;
 }
 
 /* Release notes styles */
