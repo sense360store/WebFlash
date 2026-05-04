@@ -18,6 +18,7 @@ import { downloadJsonFile } from '../utils/file-download.js';
 import { getFlashHistory } from '../utils/flash-history.js';
 import { validateFirmwareProvenance } from '../utils/firmware-provenance.js';
 import { announce } from '../utils/a11y.js';
+import { getServiceWorkerState } from './sw-update.js';
 
 export const SCHEMA_VERSION = 1;
 
@@ -439,6 +440,33 @@ function buildCacheSection({ sessionSnapshot, manifestFreshness }) {
     };
 }
 
+function buildServiceWorkerSection() {
+    let snap;
+    try {
+        snap = getServiceWorkerState();
+    } catch {
+        snap = null;
+    }
+    if (!snap || typeof snap !== 'object') {
+        const fallbackSupported = typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+        const fallbackControlled = fallbackSupported && Boolean(navigator.serviceWorker?.controller);
+        return {
+            supported: fallbackSupported,
+            controlled: fallbackControlled,
+            update_available: false,
+            update_dismissed: false,
+            cache_clear_requested: false
+        };
+    }
+    return {
+        supported: Boolean(snap.supported),
+        controlled: Boolean(snap.controlled),
+        update_available: Boolean(snap.updateAvailable),
+        update_dismissed: Boolean(snap.updateDismissed),
+        cache_clear_requested: Boolean(snap.cacheClearRequested)
+    };
+}
+
 const ERROR_CODE_PATTERNS = [
     { pattern: /securityerror|permission denied|blocked access/i, code: 'permission_denied' },
     { pattern: /failed to connect|failed to initialize/i, code: 'connect_failed' },
@@ -591,6 +619,7 @@ export function buildSupportBundle() {
             sessionSnapshot,
             manifestFreshness: providerInput.manifestFreshness || 'unknown'
         }),
+        service_worker: buildServiceWorkerSection(),
         flash: buildFlashSection(),
         post_flash: buildPostFlashSection({
             postFlashSnapshot: providerInput.postFlashSnapshot || null

@@ -1158,6 +1158,12 @@ function setManifestFreshnessState(verdict, detail = null) {
     const changed = next !== manifestFreshnessState;
     manifestFreshnessState = next;
     manifestFreshnessDetail = detail || null;
+    // Setting an explicit verdict implies a freshness check has been
+    // performed — flip the "has run" flag so the install gate starts
+    // honouring the verdict. Without this, callers that bypass
+    // checkManifestFreshnessNow (tests, future direct setters) would
+    // silently leave the gate inert.
+    manifestFreshnessHasRun = true;
     if (changed) {
         // A genuinely new verdict invalidates any prior acknowledgement —
         // the user should re-acknowledge if the new state is 'unknown'.
@@ -2777,8 +2783,14 @@ function updateFirmwareControls() {
         ? getServiceWorkerState()
         : { updateAvailable: false, updateDismissed: false };
     const swUpdateBlocking = Boolean(swState.updateAvailable) && !swState.updateDismissed;
-    const manifestStaleBlocking = manifestFreshnessState === 'stale';
-    const manifestUnknownBlocking = manifestFreshnessState === 'unknown' && !manifestFreshnessAck;
+    // The freshness gate only kicks in once the freshness check has
+    // actually been performed (or an explicit verdict has been set).
+    // Until then the default 'unknown' state is the bootstrap state —
+    // not evidence of a stale manifest — and must not block the user.
+    const manifestStaleBlocking = manifestFreshnessHasRun && manifestFreshnessState === 'stale';
+    const manifestUnknownBlocking = manifestFreshnessHasRun
+        && manifestFreshnessState === 'unknown'
+        && !manifestFreshnessAck;
     let freshnessBlockingReason = '';
     if (swUpdateBlocking) {
         freshnessBlockingReason = 'A WebFlash update is available. Reload before flashing to use the latest installer and firmware metadata.';
@@ -3252,7 +3264,11 @@ setSupportBundleStateProvider(() => ({
     configuration: { ...configuration },
     stepInfo: { current: currentStep, maxReachable: getMaxReachableStep() },
     manifestData: getManifestData(),
-    manifestFreshness: getManifestFreshness(),
+    // Diagnostics surfaces the freshness *verdict* (current/stale/unknown)
+    // produced by the freshness check service, not the manifest-load
+    // lifecycle ('loading'/'error'). The verdict is what the freshness
+    // banner and install gate use, so support snapshots must match.
+    manifestFreshness: manifestFreshnessState,
     currentFirmware: typeof window !== 'undefined' ? window.currentFirmware : null,
     releaseMode: getReleaseMode(),
     postFlashSnapshot: postFlashService.getSnapshot()
