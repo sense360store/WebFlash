@@ -36,8 +36,11 @@ const MODULE_KEYS = Object.freeze(['voice', 'led', 'roomiq', 'airiq', 'fan', 've
 
 // Hardware accessory modules whose availability is governed by the module
 // matrix (conflicts) rather than firmware/manifest presence. Their option
-// cards must never display a manifest-derived "not available" message.
-const ALWAYS_AVAILABLE_MODULE_KEYS = Object.freeze(new Set(['fan', 'led', 'roomiq']));
+// cards must never display a manifest-derived "not available" message — the
+// user picks the SKUs they have, and any unsupported combination surfaces as
+// a "Partial support" hint in updateModuleAvailabilityMessage instead of
+// being silently locked out at the toggle.
+const ALWAYS_AVAILABLE_MODULE_KEYS = Object.freeze(new Set(['fan', 'led', 'roomiq', 'airiq', 'ventiq']));
 
 function isAlwaysAvailableModuleKey(key) {
     return ALWAYS_AVAILABLE_MODULE_KEYS.has(key);
