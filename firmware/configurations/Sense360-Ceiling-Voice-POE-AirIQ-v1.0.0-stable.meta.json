@@ -1,0 +1,6 @@
+{
+  "signed_by": "Sense360 release pipeline",
+  "changelog": [
+    "Initial tracked stable release for the Sense360 Ceiling-Voice-POE-AirIQ configuration; bundles the Voice variant of the Core with the AirIQ sensor stack."
+  ]
+}

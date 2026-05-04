@@ -1,0 +1,6 @@
+{
+  "signed_by": "Sense360 release pipeline",
+  "changelog": [
+    "Stable v2.0.0 rollout for Sense360 Ceiling-POE-AirIQ; supersedes v1.0.0 as the recommended build."
+  ]
+}

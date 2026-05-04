@@ -42,7 +42,7 @@ const VALID_STABLE_FIRMWARE = Object.freeze({
     source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     file_size: 524288,
-    changelog: ['Stable build of Sense360 Ceiling-USB v2.0.0.'],
+    changelog: ['Stable v2.0.0 rollout for Sense360 Ceiling-USB; baseline build for production deployments.'],
     parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v2.0.0-stable.bin', offset: 0 }],
     deprecated: false
 });

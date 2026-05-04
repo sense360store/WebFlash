@@ -25,6 +25,16 @@ export const REQUIRED_PROVENANCE_FIELDS = Object.freeze([
     'changelog'
 ]);
 
+// Required fields whose absence is *always* a blocking failure regardless of
+// channel. These are verification primitives — without them we cannot even
+// compute provenance, so dev/test builds are not exempt.
+export const CRITICAL_PROVENANCE_FIELDS = Object.freeze([
+    'sha256',
+    'signature',
+    'source_commit',
+    'file_size'
+]);
+
 // Real ESP32-S3 application partitions are roughly half a megabyte. Anything
 // between the placeholder sentinel and this threshold is almost certainly a
 // truncated build and gets a blocking warning.
@@ -45,6 +55,40 @@ const STABLE_CHANNEL_ALIASES = new Set([
     'lts'
 ]);
 
+// Channels where missing changelog is a non-blocking warning. Users opting
+// into preview/beta accept that documentation may be in flight.
+const SOFT_CHANGELOG_CHANNELS = new Set([
+    'preview',
+    'prerelease',
+    'beta',
+    'rc',
+    'candidate'
+]);
+
+// Channels where missing changelog is silent. Dev / rescue builds are
+// internal/expert tooling and a release-note requirement adds friction
+// without protecting any real user.
+const PERMISSIVE_CHANGELOG_CHANNELS = new Set([
+    'dev',
+    'alpha',
+    'nightly',
+    'canary',
+    'experimental',
+    'test',
+    'rescue'
+]);
+
+// Detects auto-synthesised changelog lines historically emitted by
+// gen-manifests.py. The shape was always exactly:
+//
+//   "<Channel> build of Sense360 <Descriptor> v<Version>."
+//
+// A real human note will not collapse into that single sentence. If the
+// changelog is exactly one entry that matches this pattern we treat it as
+// effectively missing — a generated changelog proves only that the
+// generator ran, not that a human documented the release.
+const SYNTH_CHANGELOG_PATTERN = /^(?:stable|general|preview|beta|dev|rescue)\s+build\s+of\s+sense360\s+.+\s+v\d+(?:\.\d+)*\.?$/i;
+
 function normaliseChannel(channel) {
     if (!channel && channel !== 0) {
         return '';
@@ -54,6 +98,46 @@ function normaliseChannel(channel) {
 
 function isStableChannel(channel) {
     return STABLE_CHANNEL_ALIASES.has(normaliseChannel(channel));
+}
+
+/**
+ * Decide how missing/synthesised changelog entries should be treated for a
+ * given channel.
+ *   - 'fail' = block install (stable channels)
+ *   - 'warn' = surface warning, do not block (preview/beta)
+ *   - 'allow' = silent, dev/rescue builds
+ */
+export function changelogSeverityForChannel(channel) {
+    const key = normaliseChannel(channel);
+    if (STABLE_CHANNEL_ALIASES.has(key)) {
+        return 'fail';
+    }
+    if (PERMISSIVE_CHANGELOG_CHANNELS.has(key)) {
+        return 'allow';
+    }
+    if (SOFT_CHANGELOG_CHANNELS.has(key)) {
+        return 'warn';
+    }
+    // Unknown channel — be cautious and surface a warning rather than silently
+    // accepting whatever metadata showed up.
+    return 'warn';
+}
+
+/**
+ * Return true when the only changelog entry matches the historical
+ * gen-manifests.py auto-synthesis pattern. Multi-entry changelogs that
+ * include the synth line plus real notes are not flagged — only the
+ * "generator ran but nobody wrote anything" case.
+ */
+export function changelogLooksSynthesised(changelog) {
+    if (!Array.isArray(changelog) || changelog.length !== 1) {
+        return false;
+    }
+    const entry = changelog[0];
+    if (typeof entry !== 'string') {
+        return false;
+    }
+    return SYNTH_CHANGELOG_PATTERN.test(entry.trim());
 }
 
 function fieldIsPresent(build, field) {
@@ -146,22 +230,28 @@ export function validateFirmwareProvenance(build, options = {}) {
     const channel = normaliseChannel(build?.channel);
     const stable = isStableChannel(channel);
     const deprecated = build?.deprecated === true;
+    const changelogSeverity = changelogSeverityForChannel(channel);
 
     const missingRequired = [];
     const warnings = [];
     const blockingReasons = [];
     const verifiedFields = [];
 
-    REQUIRED_PROVENANCE_FIELDS.forEach(field => {
+    // First, check the critical primitives. Missing sha256/signature/source
+    // commit/file size always fail — without them we can't verify anything,
+    // so dev/test builds are not exempt.
+    const missingCritical = [];
+    CRITICAL_PROVENANCE_FIELDS.forEach(field => {
         if (fieldIsPresent(build, field)) {
             verifiedFields.push(field);
         } else {
             missingRequired.push(field);
+            missingCritical.push(field);
         }
     });
 
-    if (missingRequired.length > 0) {
-        const human = missingRequired.map(describeMissingField).join(', ');
+    if (missingCritical.length > 0) {
+        const human = missingCritical.map(describeMissingField).join(', ');
         if (stable) {
             blockingReasons.push(
                 `Stable firmware is missing required provenance metadata: ${human}.`
@@ -171,6 +261,33 @@ export function validateFirmwareProvenance(build, options = {}) {
                 `Firmware is missing provenance metadata: ${human}.`
             );
         }
+    }
+
+    // Changelog gets its own channel-aware severity ladder. A generated
+    // (synthesised) changelog is treated identically to a missing one — the
+    // whole point of requiring a changelog is human authorship.
+    const rawChangelog = build?.changelog;
+    const hasChangelog = fieldIsPresent(build, 'changelog');
+    const synthesised = changelogLooksSynthesised(rawChangelog);
+    const changelogMissing = !hasChangelog || synthesised;
+
+    if (!changelogMissing) {
+        verifiedFields.push('changelog');
+    } else {
+        missingRequired.push('changelog');
+        const detail = synthesised
+            ? 'changelog appears auto-generated (no human-authored release notes provided)'
+            : 'changelog entry';
+        if (changelogSeverity === 'fail') {
+            blockingReasons.push(
+                `Stable firmware requires a human-authored changelog (${detail}).`
+            );
+        } else if (changelogSeverity === 'warn') {
+            warnings.push(
+                `Firmware is missing a human-authored changelog (${detail}).`
+            );
+        }
+        // 'allow' channels: silent
     }
 
     const sizeReport = classifySize(build?.file_size, { minPlausibleSize, placeholderSize });
@@ -225,7 +342,9 @@ export function validateFirmwareProvenance(build, options = {}) {
         verifiedFields,
         summary,
         sizeClassification: sizeReport.classification,
-        sizeBytes: sizeReport.value ?? null
+        sizeBytes: sizeReport.value ?? null,
+        changelogSeverity,
+        changelogSynthesised: synthesised
     };
 }
 
@@ -271,7 +390,35 @@ export function describeVerificationChecks(build, options = {}) {
     recordRequired('signature', 'Firmware signature');
     recordRequired('source_commit', 'Source commit');
     recordRequired('file_size', 'Declared file size');
-    recordRequired('changelog', 'Changelog');
+
+    // Changelog gets a richer status because it has channel-aware severity
+    // *and* a separate "synthesised" failure mode beyond simple presence.
+    {
+        const severity = changelogSeverityForChannel(build?.channel);
+        const synth = changelogLooksSynthesised(build?.changelog);
+        const present = fieldIsPresent(build, 'changelog') && !synth;
+        const ok = present || severity === 'allow';
+        let detail;
+        if (present) {
+            detail = 'Human-authored changelog provided.';
+        } else if (synth) {
+            detail = severity === 'allow'
+                ? 'Auto-generated changelog tolerated for this channel.'
+                : 'Changelog appears auto-generated; a human-authored entry is required.';
+        } else {
+            detail = severity === 'allow'
+                ? 'No changelog (allowed for this channel).'
+                : severity === 'warn'
+                    ? 'No human-authored changelog (warning).'
+                    : 'No human-authored changelog (required).';
+        }
+        entries.push({
+            key: 'changelog',
+            label: 'Changelog',
+            ok,
+            detail
+        });
+    }
 
     const sizeReport = classifySize(build?.file_size, {
         minPlausibleSize: options.minPlausibleSize ?? MIN_PLAUSIBLE_FIRMWARE_SIZE_BYTES,

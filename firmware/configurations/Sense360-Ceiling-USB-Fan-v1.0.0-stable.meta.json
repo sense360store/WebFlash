@@ -1,0 +1,6 @@
+{
+  "signed_by": "Sense360 release pipeline",
+  "changelog": [
+    "Initial tracked stable release for the Sense360 Ceiling-USB-Fan configuration; covers the Fan Relay/PWM/DAC/TRIAC driver SKUs on a USB-powered Core."
+  ]
+}

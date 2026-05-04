@@ -1,0 +1,6 @@
+{
+  "signed_by": "Sense360 release pipeline",
+  "changelog": [
+    "Initial tracked stable release for the minimal Sense360 Ceiling-USB configuration (Core only, USB power, no expansion modules)."
+  ]
+}
