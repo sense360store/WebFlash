@@ -1,5 +1,21 @@
-# CORS headers for GitHub Pages
-# These headers ensure ESP Web Tools can access firmware files and manifests
+# Deployment headers for WebFlash.
+#
+# IMPORTANT: this `_headers` file follows the Netlify / Cloudflare Pages
+# convention. The current production deployment is GitHub Pages
+# (https://sense360store.github.io/WebFlash/), and GitHub Pages does NOT
+# honor `_headers` — the directives below are silently ignored there. The
+# file is kept under version control so that a future migration to Netlify
+# or Cloudflare Pages automatically gets the full security header set, and
+# so that `npm run check:headers -- <URL>` can verify parity once such a
+# deployment exists.
+#
+# On GitHub Pages today the effective Content-Security-Policy comes from
+# the `<meta http-equiv="Content-Security-Policy">` tag in `index.html`,
+# which mirrors the CSP directive below minus directives that meta tags
+# cannot enforce (frame-ancestors, report-uri, sandbox).
+#
+# Run `npm run check:headers -- <URL>` to audit any deployment's response
+# headers. See README.md → "Deployment & security headers" for details.
 
 /*
   Access-Control-Allow-Origin: *

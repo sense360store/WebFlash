@@ -73,6 +73,7 @@ const STATIC_ASSETS = [
  * loaded offline (the `import` statement will 404 against the SW cache).
  */
 const SCRIPT_MODULES = [
+    './scripts/bootstrap.js',
     './scripts/build-info.js',
     './scripts/capabilities.js',
     './scripts/compat-config.js',

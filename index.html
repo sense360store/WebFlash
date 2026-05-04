@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--
+      Content-Security-Policy fallback for hosts that ignore the repo-root
+      `_headers` file (notably GitHub Pages). Mirrors the policy in `_headers`
+      minus directives that cannot be enforced from a meta tag
+      (frame-ancestors, report-uri, sandbox). X-Frame-Options / frame-ancestors
+      clickjacking protection is therefore unavailable on GitHub Pages and is
+      a known limitation documented in README.md → "Deployment & security
+      headers". Run `npm run check:headers -- <URL>` to audit a deployment.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob:; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -918,12 +928,8 @@
         <div class="about-panel-mount" data-about-panel-mount></div>
 </div>
 
-    <!-- Dynamically load app.js so it works from both / and /WebFlash/ -->
-    <script type="module">
-        const { pathname } = window.location;
-        const inRepoSubpath = pathname === '/WebFlash' || pathname.startsWith('/WebFlash/');
-        const scriptPath = inRepoSubpath ? '/WebFlash/app.js' : '/app.js';
-        import(scriptPath);
-    </script>
+    <!-- Externalized loader: keeps the meta CSP `script-src 'self'` without
+         needing 'unsafe-inline' or per-deploy hashes. -->
+    <script type="module" src="./scripts/bootstrap.js"></script>
 </body>
 </html>

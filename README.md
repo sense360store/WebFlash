@@ -341,6 +341,44 @@ Documented in the comment block at the top of
 that starts with `webflash-` but is not the current name, so subsequent
 bumps just work.
 
+## Deployment & security headers
+
+The live site is hosted on GitHub Pages
+(<https://sense360store.github.io/WebFlash/>). GitHub Pages does **not**
+honor the `_headers` file at the repo root — that file follows the
+Netlify / Cloudflare Pages convention and is committed so a future
+migration to one of those hosts automatically gets the full security
+header set (CSP, Permissions-Policy, COOP, CORP, Referrer-Policy,
+X-Frame-Options).
+
+On GitHub Pages today the effective Content-Security-Policy reaches
+browsers via a `<meta http-equiv="Content-Security-Policy">` tag in
+`index.html` that mirrors the directives in `_headers`. Meta tags cannot
+enforce `frame-ancestors`, `report-uri`, or `sandbox`, so clickjacking
+protection (X-Frame-Options / frame-ancestors) is unavailable on GitHub
+Pages and is a known limitation of this hosting choice.
+
+To audit any deployment's response headers, run:
+
+```bash
+npm run check:headers -- https://sense360store.github.io/WebFlash/
+```
+
+The script (`scripts/check-headers.js`) classifies each finding as
+`pass`, `warn`, or `fail` and exits non-zero on any failure. Localhost
+hosts (for `python3 -m http.server`-style local dev) and `*.github.io`
+hosts get an automatic downgrade so the missing CSP / Permissions-Policy
+on those hosts is reported as `warn` rather than `fail`. Pass `--json`
+for machine-readable output suitable for CI.
+
+The only third-party runtime dependency is
+`https://unpkg.com/esp-web-tools@10/dist/web/install-button.js`, allowed
+by the CSP `script-src`. Fonts come from `fonts.googleapis.com` and
+`fonts.gstatic.com`. There are no analytics, no other CDNs, and no
+inline scripts — the bootstrap loader was externalized to
+`scripts/bootstrap.js` so the CSP `script-src` can remain `'self'` plus
+the documented unpkg origin without `'unsafe-inline'`.
+
 ## Installation Process
 
 1. **Connect Device**: Plug device into computer via USB
