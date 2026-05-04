@@ -258,6 +258,8 @@ class FirmwareMetadata:
     deprecated: bool = False
     deprecation_reason: Optional[str] = None
     signed_by: Optional[str] = None
+    artifact_type: str = "application"
+    local_only: bool = False
 
     def normalized_filename(self) -> str:
         return f"Sense360-{self.name_part}-v{self.version}-{self.channel}.bin"
@@ -337,6 +339,7 @@ def parse_firmware_metadata(
             hardware_requirements=[],
             improv=False,
             custom_directory="rescue",
+            artifact_type="rescue",
         )
         return metadata
     first_token = config_tokens[0] if config_tokens else ""
@@ -495,6 +498,8 @@ class FirmwareArtifact:
             "signed_by": self.metadata.signed_by,
             "deprecated": bool(self.metadata.deprecated),
             "deprecation_reason": self.metadata.deprecation_reason,
+            "artifact_type": self.metadata.artifact_type or "application",
+            "local_only": bool(self.metadata.local_only),
         }
         if self.metadata.is_configuration:
             entry.update(
@@ -529,9 +534,94 @@ REQUIRED_PROVENANCE_FIELDS: Tuple[str, ...] = (
     "changelog",
 )
 
+# Critical provenance primitives — blocking for any remotely flashable
+# firmware regardless of channel. Mirrors CRITICAL_PROVENANCE_FIELDS in
+# scripts/utils/firmware-provenance.js.
+CRITICAL_PROVENANCE_FIELDS: Tuple[str, ...] = (
+    "sha256",
+    "signature",
+    "source_commit",
+    "file_size",
+)
+
+# Channels only allowed in development/test mode. Production manifests must
+# not expose them.
+DEVELOPMENT_ONLY_CHANNELS = frozenset({"dev", "alpha", "nightly", "canary",
+                                      "experimental", "test"})
+
+# Trust-mode names for manifest validation. `production` is the public
+# default and rejects any weak provenance. `development` and `test` are
+# explicit opt-ins for fixtures and bench builds.
+VALIDATION_MODES = ("production", "development", "test")
+
 # Default repository URL used to build per-build `source_url` links when a
 # source commit is known. Override at the CLI with --source-url-template.
 DEFAULT_SOURCE_URL_TEMPLATE = "https://github.com/sense360store/WebFlash/commit/{commit}"
+
+# URL fragments that mark a source_url as MUTABLE (branch, latest tag, HEAD).
+# Mirrors MUTABLE_SOURCE_URL_PATTERNS in scripts/utils/firmware-provenance.js.
+_MUTABLE_SOURCE_URL_PATTERNS = [
+    re.compile(r"/tree/(?:main|master|develop|dev|trunk|head)(?:/|$|\?|#)", re.IGNORECASE),
+    re.compile(r"/blob/(?:main|master|develop|dev|trunk|head)(?:/|$|\?|#)", re.IGNORECASE),
+    re.compile(r"/commits/(?:main|master|develop|dev|trunk|head)(?:/|$|\?|#)", re.IGNORECASE),
+    re.compile(r"/raw/(?:main|master|develop|dev|trunk|head)(?:/|$|\?|#)", re.IGNORECASE),
+    re.compile(r"/releases/latest(?:/|$|\?|#)", re.IGNORECASE),
+    re.compile(r"[?&]ref=(?:main|master|develop|dev|trunk|head)(?:&|$)", re.IGNORECASE),
+]
+
+# Generic boilerplate that must NOT be accepted as a hand-authored changelog
+# for stable builds. Sidecar metadata is otherwise free to paper over missing
+# provenance with filler text.
+_GENERIC_CHANGELOG_FILLERS = [
+    re.compile(r"^initial release\.?$", re.IGNORECASE),
+    re.compile(r"^first release\.?$", re.IGNORECASE),
+    re.compile(r"^firmware release\.?$", re.IGNORECASE),
+    re.compile(r"^see release notes\.?$", re.IGNORECASE),
+    re.compile(r"^see release\.?$", re.IGNORECASE),
+    re.compile(r"^tbd\.?$", re.IGNORECASE),
+    re.compile(r"^todo\.?$", re.IGNORECASE),
+    re.compile(r"^n/?a\.?$", re.IGNORECASE),
+    re.compile(r"^placeholder\.?$", re.IGNORECASE),
+    re.compile(r"^no changes\.?$", re.IGNORECASE),
+    re.compile(r"^nothing to report\.?$", re.IGNORECASE),
+]
+
+
+def _is_mutable_source_url(url: Optional[str]) -> bool:
+    if not isinstance(url, str):
+        return False
+    value = url.strip()
+    if not value:
+        return False
+    return any(pattern.search(value) for pattern in _MUTABLE_SOURCE_URL_PATTERNS)
+
+
+def _source_url_matches_commit(url: Optional[str], commit: Optional[str]) -> bool:
+    if not isinstance(url, str) or not isinstance(commit, str):
+        return False
+    u = url.strip()
+    c = commit.strip()
+    if not u or not c:
+        return False
+    if c in u:
+        return True
+    if len(c) >= 7 and c[:7] in u:
+        return True
+    return False
+
+
+def _changelog_looks_filler(changelog: Sequence[Any]) -> bool:
+    if not isinstance(changelog, list) or not changelog:
+        return False
+    for entry in changelog:
+        if not isinstance(entry, str):
+            return False
+        text = entry.strip()
+        if not text:
+            continue
+        if not any(pattern.match(text) for pattern in _GENERIC_CHANGELOG_FILLERS):
+            return False
+    return True
 
 
 def detect_source_commit(repo_root: Path) -> Optional[str]:
@@ -664,6 +754,13 @@ def _apply_sidecar_metadata(metadata: FirmwareMetadata, sidecar: Dict[str, Any])
         metadata.deprecation_reason = str(sidecar["deprecation_reason"]).strip() or None
     if sidecar.get("signed_by"):
         metadata.signed_by = str(sidecar["signed_by"]).strip() or None
+    if sidecar.get("artifact_type"):
+        candidate = str(sidecar["artifact_type"]).strip().lower()
+        if candidate in {"application", "rescue", "bootloader",
+                          "partition_table", "test_fixture"}:
+            metadata.artifact_type = candidate
+    if "local_only" in sidecar:
+        metadata.local_only = bool(sidecar.get("local_only"))
 
 
 def collect_firmware(
@@ -939,24 +1036,40 @@ def validate_manifest_metadata(
     artifacts: Sequence[FirmwareArtifact],
     *,
     min_firmware_size: int = DEFAULT_MIN_FIRMWARE_SIZE_BYTES,
+    mode: str = "production",
     strict: bool = False,
+    informational_findings: Optional[List[str]] = None,
 ) -> List[str]:
     """Run trust-signal checks across the generated manifest entries.
 
-    Findings are returned as a list of human-readable strings. When ``strict`` is
-    set, the caller should treat a non-empty list as a build failure; otherwise
-    they're informational warnings printed to stderr.
+    Findings are returned as a list of human-readable strings. When ``strict``
+    is set (or ``mode == 'production'``), the caller should treat a non-empty
+    list as a build failure; otherwise they're informational warnings printed
+    to stderr.
+
+    Modes:
+      * ``production`` — the public-default. ANY weak provenance is a finding:
+        missing critical primitives, mutable source_url, deprecated builds
+        without a deprecation_reason, dev/test channels, sidecar boilerplate.
+      * ``development`` — relaxes channel and source-URL strictness for bench
+        builds, but still demands every critical primitive.
+      * ``test`` — also tolerates test fixtures (artifact_type=test_fixture).
     """
 
+    if mode not in VALIDATION_MODES:
+        raise ValueError(
+            f"Unknown validation mode {mode!r}; expected one of {VALIDATION_MODES}"
+        )
+
     findings: List[str] = []
+    is_production = mode == "production"
 
     for artifact in artifacts:
         meta = artifact.metadata
         name = artifact.path.name
+        channel = canonical_channel(meta.channel, DEFAULT_CHANNEL)
 
-        # 1. description should reference the config_string for configuration builds.
-        # Rescue is exempt: it ships a hand-written human description rather than
-        # the boilerplate "{Channel} firmware for Sense360 X configuration." form.
+        # ---- (a) description / module / config-string drift -----------------
         if meta.is_configuration and meta.config_string and meta.channel != "rescue":
             description = (meta.description or "").lower()
             if description and meta.config_string.lower() not in description:
@@ -964,8 +1077,6 @@ def validate_manifest_metadata(
                     f"{name}: description does not reference config_string "
                     f"'{meta.config_string}' (got: {meta.description!r})."
                 )
-
-        # 2. every entry in modules should appear in config_string (case-insensitive).
         if meta.is_configuration and meta.modules and meta.config_string:
             cs_lower = meta.config_string.lower()
             stray = [m for m in meta.modules if m.lower() not in cs_lower]
@@ -975,38 +1086,100 @@ def validate_manifest_metadata(
                     f"'{meta.config_string}'."
                 )
 
-        # 3. file_size sanity. Skip entries we deliberately ship as placeholders.
-        if PLACEHOLDER_FIRMWARE_SIZE_BYTES < artifact.file_size < min_firmware_size:
+        # ---- (b) channel allowed for mode -----------------------------------
+        if is_production and channel in DEVELOPMENT_ONLY_CHANNELS:
             findings.append(
-                f"{name}: file_size={artifact.file_size} bytes is below the "
-                f"plausible-firmware threshold ({min_firmware_size} bytes). "
-                "Verify this isn't a truncated build."
+                f"{name}: channel '{meta.channel}' is only allowed in "
+                "development/test mode and must not appear in a production "
+                "manifest. Move the binary outside firmware/configurations or "
+                "regenerate with --mode development."
             )
 
-        # 4. stable channel without any release-note signal at all.
+        # ---- (c) critical metadata primitives ------------------------------
+        # These are blocking for any remotely flashable firmware. Test
+        # fixtures (artifact_type=test_fixture) running in test/development
+        # mode are exempt from file_size only.
+        artifact_type = (meta.artifact_type or "application").lower()
+        is_test_fixture = artifact_type == "test_fixture"
+
+        if not artifact.sha256:
+            findings.append(f"{name}: missing sha256.")
+        if not artifact.signature:
+            findings.append(f"{name}: missing signature metadata.")
+        if not artifact.source_commit:
+            findings.append(
+                f"{name}: missing source_commit. Set WEBFLASH_SOURCE_COMMIT or "
+                "run inside a git checkout so manifest entries are traceable "
+                "to a specific tree."
+            )
+        if not artifact.file_size and not (is_test_fixture and not is_production):
+            findings.append(f"{name}: missing file_size.")
+
+        # ---- (d) firmware path + artifact identity --------------------------
+        if not artifact.relative_path:
+            findings.append(f"{name}: missing firmware path.")
+        if meta.is_configuration:
+            if not (meta.config_string and meta.config_string.strip()):
+                findings.append(f"{name}: missing artifact identity (config_string).")
+        else:
+            if not (meta.model and meta.model.strip()):
+                findings.append(f"{name}: missing artifact identity (model).")
+
+        # ---- (e) source URL immutability -----------------------------------
+        if artifact.source_url:
+            if _is_mutable_source_url(artifact.source_url):
+                msg = (
+                    f"{name}: source_url '{artifact.source_url}' references a "
+                    "mutable branch/tag (e.g. /tree/main, /releases/latest); "
+                    "pin to a commit SHA."
+                )
+                if is_production:
+                    findings.append(msg)
+                else:
+                    print(f"[warn] {msg}", file=sys.stderr)
+            elif (artifact.source_commit
+                  and not _source_url_matches_commit(
+                      artifact.source_url, artifact.source_commit)):
+                msg = (
+                    f"{name}: source_url '{artifact.source_url}' does not "
+                    f"contain source_commit ({artifact.source_commit[:12]}…)."
+                )
+                if is_production:
+                    findings.append(msg)
+                else:
+                    print(f"[warn] {msg}", file=sys.stderr)
+
+        # ---- (f) file_size sanity (artifact-type-aware in production) -------
+        if not is_test_fixture:
+            if PLACEHOLDER_FIRMWARE_SIZE_BYTES < artifact.file_size < min_firmware_size:
+                findings.append(
+                    f"{name}: file_size={artifact.file_size} bytes is below the "
+                    f"plausible-firmware threshold ({min_firmware_size} bytes). "
+                    "Verify this isn't a truncated build."
+                )
+        elif is_production:
+            findings.append(
+                f"{name}: artifact_type=test_fixture must not appear in a "
+                "production manifest."
+            )
+
+        # ---- (g) stable channel changelog rules ----------------------------
+        # The features/hardware-requirements check is a CONTENT SUGGESTION,
+        # not a provenance correctness failure. Surface it as an
+        # informational warning so production mode does not fail the build
+        # over a missing release-notes hint.
         if meta.channel == "stable" and meta.is_configuration:
             has_features = bool(meta.features)
             has_hardware = bool(meta.hardware_requirements)
             if not has_features and not has_hardware:
-                findings.append(
+                msg = (
                     f"{name}: stable build has no features and no hardware_requirements; "
                     "consider adding a release-notes .md so users get context."
                 )
-
-        # 5. provenance requirements: stable firmware must have a source commit
-        # so it's traceable to a specific tree. Lack of a source commit is a hard
-        # finding because the runtime install gate refuses to flash without it.
-        if meta.channel == "stable" and not artifact.source_commit:
-            findings.append(
-                f"{name}: stable build is missing source_commit. Set "
-                "WEBFLASH_SOURCE_COMMIT or run inside a git checkout so manifest "
-                "entries are traceable to a specific tree."
-            )
-
-        # 6. stable builds need a human-authored changelog. The runtime install
-        # gate rejects empty changelogs *and* changelogs that look like the old
-        # auto-synthesised one-liner. Flag both at generate-time so the failure
-        # surfaces in CI before users see a blocked install.
+                if informational_findings is not None:
+                    informational_findings.append(msg)
+                else:
+                    print(f"[info] {msg}", file=sys.stderr)
         if meta.channel == "stable":
             if not meta.changelog:
                 findings.append(
@@ -1020,6 +1193,29 @@ def validate_manifest_metadata(
                     f"({meta.changelog[0]!r}). Replace it with a human-authored "
                     "release note in the firmware sidecar."
                 )
+            elif _changelog_looks_filler(meta.changelog):
+                findings.append(
+                    f"{name}: stable build changelog only contains generic "
+                    f"boilerplate ({meta.changelog!r}). Replace with substantive "
+                    "release notes in the sidecar."
+                )
+
+        # ---- (h) deprecated builds without a deprecation_reason ------------
+        if meta.deprecated and not (
+            isinstance(meta.deprecation_reason, str)
+            and meta.deprecation_reason.strip()
+        ):
+            findings.append(
+                f"{name}: deprecated build is missing deprecation_reason. "
+                "Add `deprecation_reason` to the sidecar so users learn why "
+                "the build is being kept around."
+            )
+
+        # ---- (i) known_issues must be a list when present ------------------
+        if meta.known_issues is not None and not isinstance(meta.known_issues, list):
+            findings.append(
+                f"{name}: known_issues must be an array; got {type(meta.known_issues).__name__}."
+            )
 
     return findings
 
@@ -1206,8 +1402,22 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--strict-validate",
         action="store_true",
         help=(
-            "Promote manifest-metadata validation findings (description / module / size "
-            "drift) from warnings to build failures."
+            "Alias for --mode=production. Promotes any provenance finding "
+            "(missing critical primitive, mutable source_url, sidecar "
+            "boilerplate, deprecated without reason, dev/test channel) to a "
+            "build failure."
+        ),
+    )
+    parser.add_argument(
+        "--mode",
+        choices=list(VALIDATION_MODES),
+        default=None,
+        help=(
+            "Validation mode. 'production' (the default) blocks on any weak "
+            "provenance and is what CI should run. 'development' relaxes "
+            "channel and source-URL strictness. 'test' additionally tolerates "
+            "test_fixture artifacts. --strict-validate is an alias for "
+            "--mode=production."
         ),
     )
     parser.add_argument(
@@ -1279,16 +1489,36 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
     validate_structured_config_consistency(ordered)
+    # --mode wins over --strict-validate; --strict-validate is the legacy
+    # alias for --mode=production. If neither is set, default to
+    # 'production' so a CI invocation cannot silently downgrade.
+    if args.mode is not None:
+        validation_mode = args.mode
+    elif args.strict_validate:
+        validation_mode = "production"
+    else:
+        validation_mode = "production"
+    informational_findings: List[str] = []
     metadata_findings = validate_manifest_metadata(
         ordered,
         min_firmware_size=args.min_firmware_size,
+        mode=validation_mode,
         strict=args.strict_validate,
+        informational_findings=informational_findings,
     )
     metadata_findings.extend(validate_no_placeholder_descriptions(ordered))
+    if informational_findings:
+        print(
+            "Manifest metadata informational notes:\n  - "
+            + "\n  - ".join(informational_findings),
+            file=sys.stderr,
+        )
     if metadata_findings:
-        header = "Manifest metadata validation findings:"
+        header = (
+            f"Manifest metadata validation findings (mode={validation_mode}):"
+        )
         body = "\n  - " + "\n  - ".join(metadata_findings)
-        if args.strict_validate:
+        if validation_mode == "production":
             raise SystemExit(header + body)
         print(header + body, file=sys.stderr)
     manifest = build_manifest(ordered, source_commit=source_commit)
