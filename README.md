@@ -138,7 +138,7 @@ Every `manifest.json` `builds[]` entry must carry:
 | `source_url` | Optional URL pointing at the source release/commit | Built from `--source-url-template` (default: GitHub commit URL) |
 | `signed_by` | Optional identifier of the signing party (CI, release engineer) | Sidecar `*.meta.json` |
 | `file_size` | Declared file size, validated to be plausible (≥100 KB) at runtime | `gen-manifests.py` (`stat`) |
-| `changelog` | Non-empty list of human-readable change notes | Sidecar `*.meta.json`, otherwise auto-synthesised for stable builds |
+| `changelog` | Non-empty list of **human-authored** change notes (auto-generated lines are rejected for stable builds) | Sidecar `*.meta.json` or release-notes file — never auto-synthesised |
 | `deprecated` | Marks builds that should not be auto-selected | Sidecar `*.meta.json` (default `false`) |
 | `deprecation_reason` | Free-form rationale shown next to deprecated entries | Sidecar `*.meta.json` |
 
@@ -165,16 +165,29 @@ Supported keys (all optional):
 }
 ```
 
-When no sidecar is present, `gen-manifests.py` falls back to git for `source_commit`/`source_url` and synthesises a one-line changelog summary so stable builds always have something to verify against.
+When no sidecar is present, `gen-manifests.py` falls back to git for `source_commit`/`source_url`. Changelogs are **never** auto-synthesised — a generated changelog proves only that the generator ran, not that a human documented the release. Stable builds without a sidecar-provided changelog will fail the runtime provenance gate (see "Changelog severity ladder" below).
 
 ### Runtime install gate
 
 Before any binary is downloaded, `scripts/utils/firmware-provenance.js` runs `validateFirmwareProvenance(build)`:
 
-- **Stable channel**: any missing required field produces a `fail` status with a blocking install reason; the wizard refuses to fetch the binary or enable the install button.
-- **Other channels (preview/beta/dev)**: missing fields surface as warnings but do not block install (downstream channels are explicitly opted into).
+- **Stable channel**: any missing critical primitive (sha256, signature, source_commit, file_size) **or** a missing/auto-generated changelog produces a `fail` status with a blocking install reason; the wizard refuses to fetch the binary or enable the install button.
+- **Other channels (preview/beta/dev)**: missing critical primitives surface as warnings but do not block install (downstream channels are explicitly opted into).
 - **File size sanity**: a `file_size` between the placeholder sentinel (≤64 bytes, used by repo fixtures) and the plausible-firmware threshold (`<100 KB`) blocks install regardless of channel — this catches truncated builds.
 - **Deprecated builds**: `deprecated: true` removes the build from default selection (`pickDefaultEligibleBuilds`) and tags the dropdown entry with "· Deprecated". Users can still pick it manually; doing so surfaces a warning and the deprecation reason in the verification panel.
+
+### Changelog severity ladder
+
+The changelog has its own channel-aware severity ladder so stable releases are held to a higher bar than experimental builds:
+
+| Channel(s) | Missing changelog | Auto-generated changelog (matches the historical synth pattern) |
+|---|---|---|
+| `stable` / `general` / `production` / `lts` | **Fail** — blocks install | **Fail** — treated identically to missing |
+| `preview` / `beta` / `rc` / `candidate` | Warning — install allowed once acknowledged | Warning |
+| `dev` / `nightly` / `experimental` / `rescue` / `test` | Allowed (silent) | Allowed (silent) |
+| Unknown channel | Warning | Warning |
+
+The auto-generated detection matches the exact one-line pattern `<Channel> build of Sense360 <Descriptor> v<Version>.` produced by older versions of `gen-manifests.py`. Multi-entry changelogs that include such a line alongside real notes are not flagged — only the "generator ran but nobody wrote anything" case is rejected.
 
 ### What the user sees
 

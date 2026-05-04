@@ -456,11 +456,14 @@ class FirmwareArtifact:
     source_url: Optional[str] = None
 
     def manifest_entry(self) -> Dict[str, object]:
+        # Changelogs are intentionally NOT synthesised here — a generated
+        # changelog proves only that the generator ran, not that a human
+        # documented the release. Stable builds without a sidecar-provided
+        # changelog will fail the runtime provenance gate, which is the
+        # desired behaviour: the publishing pipeline must produce a real,
+        # human-authored entry (typically via a `.meta.json` sidecar or a
+        # release-notes file).
         changelog = list(self.metadata.changelog) if self.metadata.changelog else []
-        if not changelog and self.metadata.channel == "stable":
-            # Stable firmware must ship at least one changelog line so the
-            # runtime install gate has something to surface to the user.
-            changelog = [synth_changelog_entry(self.metadata)]
 
         entry: Dict[str, object] = {
             "device_type": self.metadata.device_type,
@@ -585,22 +588,6 @@ def load_sidecar_metadata(bin_path: Path) -> Dict[str, Any]:
         )
         return {}
     return data
-
-
-def synth_changelog_entry(metadata: "FirmwareMetadata") -> str:
-    """Synthesise a single changelog line from filename metadata.
-
-    Stable firmware needs a non-empty changelog at runtime. When the
-    publishing pipeline has not provided hand-written notes (or a sidecar),
-    we still want the manifest to ship a one-line summary so the install
-    gate can verify "what changed". Real release notes (.md sidecar) take
-    precedence over this synthesised entry.
-    """
-
-    descriptor = metadata.config_string or metadata.model or "Sense360"
-    return (
-        f"{metadata.channel.title()} build of Sense360 {descriptor} v{metadata.version}."
-    )
 
 
 def compute_digests(path: Path) -> Tuple[str, str, str]:
@@ -911,6 +898,27 @@ DEFAULT_MIN_FIRMWARE_SIZE_BYTES = 100 * 1024
 # size. Production firmware will not produce values this low.
 PLACEHOLDER_FIRMWARE_SIZE_BYTES = 64
 
+# Mirrors SYNTH_CHANGELOG_PATTERN in scripts/utils/firmware-provenance.js. Used to
+# defensively detect changelogs that look like an old auto-synthesised line so
+# they are not silently accepted as human-authored content.
+_SYNTH_CHANGELOG_RE = re.compile(
+    r"^(?:stable|general|preview|beta|dev|rescue)\s+build\s+of\s+sense360\s+.+\s+v\d+(?:\.\d+)*\.?$",
+    re.IGNORECASE,
+)
+
+
+def _changelog_looks_synthesised(changelog: Sequence[Any]) -> bool:
+    """Return True when the changelog has exactly one entry and it matches the
+    historical auto-synth template. Multi-entry changelogs that include a
+    synth-style line plus real notes are not flagged."""
+
+    if not isinstance(changelog, list) or len(changelog) != 1:
+        return False
+    entry = changelog[0]
+    if not isinstance(entry, str):
+        return False
+    return bool(_SYNTH_CHANGELOG_RE.match(entry.strip()))
+
 
 def validate_manifest_metadata(
     artifacts: Sequence[FirmwareArtifact],
@@ -979,6 +987,24 @@ def validate_manifest_metadata(
                 "WEBFLASH_SOURCE_COMMIT or run inside a git checkout so manifest "
                 "entries are traceable to a specific tree."
             )
+
+        # 6. stable builds need a human-authored changelog. The runtime install
+        # gate rejects empty changelogs *and* changelogs that look like the old
+        # auto-synthesised one-liner. Flag both at generate-time so the failure
+        # surfaces in CI before users see a blocked install.
+        if meta.channel == "stable":
+            if not meta.changelog:
+                findings.append(
+                    f"{name}: stable build has no changelog. Add one via a "
+                    "`*.meta.json` sidecar (`changelog: [\"...\"]`) or a release-notes "
+                    "file — auto-generated changelogs are no longer accepted."
+                )
+            elif _changelog_looks_synthesised(meta.changelog):
+                findings.append(
+                    f"{name}: stable build changelog looks auto-generated "
+                    f"({meta.changelog[0]!r}). Replace it with a human-authored "
+                    "release note in the firmware sidecar."
+                )
 
     return findings
 

@@ -3,11 +3,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
     REQUIRED_PROVENANCE_FIELDS,
+    CRITICAL_PROVENANCE_FIELDS,
     MIN_PLAUSIBLE_FIRMWARE_SIZE_BYTES,
     PLACEHOLDER_FIRMWARE_SIZE_BYTES,
     validateFirmwareProvenance,
     pickDefaultEligibleBuilds,
-    describeVerificationChecks
+    describeVerificationChecks,
+    changelogSeverityForChannel,
+    changelogLooksSynthesised
 } from '../scripts/utils/firmware-provenance.js';
 
 const VALID_STABLE_BUILD = Object.freeze({
@@ -21,7 +24,9 @@ const VALID_STABLE_BUILD = Object.freeze({
     source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     file_size: 524288,
-    changelog: ['Stable build of Sense360 Ceiling-POE-AirIQ v2.0.0.'],
+    // Hand-authored changelog; the synth-detection pattern must NOT match it,
+    // otherwise the fixture would block install on its own.
+    changelog: ['Stable v2.0.0 rollout for Sense360 Ceiling-POE-AirIQ; supersedes v1.0.0 as the recommended build.'],
     parts: [{ path: 'firmware/configurations/Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin', offset: 0 }],
     deprecated: false,
     deprecation_reason: null
@@ -73,11 +78,12 @@ describe('validateFirmwareProvenance — required fields', () => {
         expect(report.blockingReasons.join(' ')).toMatch(/source commit/i);
     });
 
-    test('stable build missing changelog is blocked from install', () => {
+    test('stable build missing changelog is blocked with the human-authored requirement message', () => {
         const report = validateFirmwareProvenance(valueless(VALID_STABLE_BUILD, 'changelog', []));
         expect(report.ok).toBe(false);
         expect(report.missingRequired).toContain('changelog');
-        expect(report.blockingReasons.join(' ')).toMatch(/changelog/i);
+        expect(report.changelogSeverity).toBe('fail');
+        expect(report.blockingReasons.join(' ')).toMatch(/human-authored changelog/i);
     });
 
     test('stable build missing file_size is blocked from install', () => {
@@ -233,5 +239,160 @@ describe('manifest.json — provenance integration', () => {
     test('at least one build is marked deprecated to exercise the dropdown skip', () => {
         const deprecated = manifest.builds.filter(build => build.deprecated === true);
         expect(deprecated.length).toBeGreaterThan(0);
+    });
+
+    test('every stable build ships a hand-authored (non-synthesised) changelog', () => {
+        const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
+        expect(stableBuilds.length).toBeGreaterThan(0);
+        for (const build of stableBuilds) {
+            expect(Array.isArray(build.changelog)).toBe(true);
+            expect(build.changelog.length).toBeGreaterThan(0);
+            expect(changelogLooksSynthesised(build.changelog)).toBe(false);
+        }
+    });
+});
+
+describe('changelog policy — channel severity ladder', () => {
+    test('stable channels treat missing changelog as a fail', () => {
+        for (const channel of ['stable', 'general', 'GA', 'production']) {
+            expect(changelogSeverityForChannel(channel)).toBe('fail');
+        }
+    });
+
+    test('beta and preview channels treat missing changelog as a warning', () => {
+        for (const channel of ['preview', 'beta', 'rc', 'candidate', 'prerelease']) {
+            expect(changelogSeverityForChannel(channel)).toBe('warn');
+        }
+    });
+
+    test('dev/rescue channels are permissive', () => {
+        for (const channel of ['dev', 'nightly', 'experimental', 'rescue', 'test']) {
+            expect(changelogSeverityForChannel(channel)).toBe('allow');
+        }
+    });
+
+    test('beta build with missing changelog warns but does not block install', () => {
+        const betaBuild = { ...VALID_STABLE_BUILD, channel: 'beta', changelog: [] };
+        const report = validateFirmwareProvenance(betaBuild);
+        expect(report.ok).toBe(true);
+        expect(report.status).toBe('warn');
+        expect(report.changelogSeverity).toBe('warn');
+        expect(report.warnings.join(' ')).toMatch(/human-authored changelog/i);
+    });
+
+    test('dev build with missing changelog passes silently', () => {
+        const devBuild = { ...VALID_STABLE_BUILD, channel: 'dev', changelog: [] };
+        const report = validateFirmwareProvenance(devBuild);
+        expect(report.ok).toBe(true);
+        expect(report.status).toBe('pass');
+        expect(report.warnings).toEqual([]);
+        expect(report.changelogSeverity).toBe('allow');
+    });
+
+    test('rescue channel does not warn about empty changelog', () => {
+        const rescueBuild = { ...VALID_STABLE_BUILD, channel: 'rescue', changelog: [] };
+        const report = validateFirmwareProvenance(rescueBuild);
+        expect(report.ok).toBe(true);
+        expect(report.warnings).toEqual([]);
+    });
+
+    test('CRITICAL_PROVENANCE_FIELDS lists the always-block primitives only', () => {
+        expect(CRITICAL_PROVENANCE_FIELDS).toEqual([
+            'sha256',
+            'signature',
+            'source_commit',
+            'file_size'
+        ]);
+    });
+
+    test('dev build still fails when a critical primitive is missing', () => {
+        const devBuild = { ...VALID_STABLE_BUILD, channel: 'dev', signature: '' };
+        const report = validateFirmwareProvenance(devBuild);
+        expect(report.warnings.join(' ')).toMatch(/missing provenance metadata/i);
+        // Critical fields downgrade to a warning for non-stable, but the
+        // missingRequired list still reports the primitive.
+        expect(report.missingRequired).toContain('signature');
+    });
+});
+
+describe('changelog policy — synthesised changelog detection', () => {
+    test.each([
+        'Stable build of Sense360 Ceiling-POE-AirIQ v2.0.0.',
+        'stable build of sense360 ceiling-usb-fan v1.0.0',
+        'Beta build of Sense360 Ceiling-POE-AirIQ v1.0.1.',
+        'Rescue build of Sense360 Rescue v1.0.0.'
+    ])('detects auto-synth pattern: %s', (entry) => {
+        expect(changelogLooksSynthesised([entry])).toBe(true);
+    });
+
+    test('does not flag a hand-authored changelog as synthesised', () => {
+        expect(changelogLooksSynthesised([
+            'Initial tracked stable release for the Sense360 Ceiling-POE-AirIQ configuration; establishes the manifest baseline on this hardware revision.'
+        ])).toBe(false);
+        expect(changelogLooksSynthesised([
+            'Fixes mmWave driver init crash on cold boot.'
+        ])).toBe(false);
+    });
+
+    test('multi-entry changelog is never treated as synthesised even if one line matches', () => {
+        expect(changelogLooksSynthesised([
+            'Stable build of Sense360 Ceiling-POE-AirIQ v2.0.0.',
+            'Fixes mmWave driver init crash on cold boot.'
+        ])).toBe(false);
+    });
+
+    test('handles non-array, non-string, and empty inputs gracefully', () => {
+        expect(changelogLooksSynthesised(null)).toBe(false);
+        expect(changelogLooksSynthesised(undefined)).toBe(false);
+        expect(changelogLooksSynthesised([])).toBe(false);
+        expect(changelogLooksSynthesised([42])).toBe(false);
+    });
+
+    test('synthesised changelog blocks install for stable builds', () => {
+        const synthBuild = {
+            ...VALID_STABLE_BUILD,
+            changelog: ['Stable build of Sense360 Ceiling-POE-AirIQ v2.0.0.']
+        };
+        const report = validateFirmwareProvenance(synthBuild);
+        expect(report.ok).toBe(false);
+        expect(report.changelogSynthesised).toBe(true);
+        expect(report.missingRequired).toContain('changelog');
+        expect(report.blockingReasons.join(' ')).toMatch(/auto-generated/i);
+    });
+
+    test('synthesised changelog only warns for beta builds', () => {
+        const synthBuild = {
+            ...VALID_STABLE_BUILD,
+            channel: 'beta',
+            changelog: ['Beta build of Sense360 Ceiling-POE-AirIQ v1.0.1.']
+        };
+        const report = validateFirmwareProvenance(synthBuild);
+        expect(report.ok).toBe(true);
+        expect(report.status).toBe('warn');
+        expect(report.changelogSynthesised).toBe(true);
+        expect(report.warnings.join(' ')).toMatch(/auto-generated/i);
+    });
+
+    test('describeVerificationChecks marks synthesised changelog as failing for stable', () => {
+        const synthBuild = {
+            ...VALID_STABLE_BUILD,
+            changelog: ['Stable build of Sense360 Ceiling-USB v1.0.0.']
+        };
+        const { entries } = describeVerificationChecks(synthBuild);
+        const changelogEntry = entries.find(e => e.key === 'changelog');
+        expect(changelogEntry.ok).toBe(false);
+        expect(changelogEntry.detail).toMatch(/auto-generated/i);
+    });
+
+    test('describeVerificationChecks tolerates synthesised changelog on dev channel', () => {
+        const synthDev = {
+            ...VALID_STABLE_BUILD,
+            channel: 'dev',
+            changelog: ['Dev build of Sense360 Ceiling-USB v9.9.9.']
+        };
+        const { entries } = describeVerificationChecks(synthDev);
+        const changelogEntry = entries.find(e => e.key === 'changelog');
+        expect(changelogEntry.ok).toBe(true);
+        expect(changelogEntry.detail).toMatch(/tolerated/i);
     });
 });

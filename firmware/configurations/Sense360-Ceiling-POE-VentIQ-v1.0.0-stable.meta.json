@@ -1,0 +1,6 @@
+{
+  "signed_by": "Sense360 release pipeline",
+  "changelog": [
+    "Initial tracked stable release for the bathroom-focused Sense360 Ceiling-POE-VentIQ configuration; ships SGP41 default calibration and the standard PoE preset."
+  ]
+}

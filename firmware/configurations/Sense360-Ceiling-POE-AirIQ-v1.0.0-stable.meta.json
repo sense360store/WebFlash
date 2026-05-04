@@ -1,5 +1,8 @@
 {
   "deprecated": true,
   "deprecation_reason": "Superseded by v2.0.0; older stable build retained for diagnostic comparison only.",
-  "signed_by": "Sense360 release pipeline"
+  "signed_by": "Sense360 release pipeline",
+  "changelog": [
+    "Initial tracked stable release for the Sense360 Ceiling-POE-AirIQ configuration; establishes the manifest baseline on this hardware revision."
+  ]
 }
