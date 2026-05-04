@@ -52,9 +52,46 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 - **Sense360 TRIAC** (`S360-320`): Phase dimmer for mains fan or lamp.
 
 ### Release Channels
-- **Stable**: Production-ready firmware
-- **Preview**: Early access to upcoming features
-- **Beta**: Testing releases (not recommended for production)
+
+WebFlash organises every firmware build under one of seven release tiers. The
+wizard surfaces the channel as a badge, displays the warning copy described
+below, and gates the install button on the matching acknowledgements before
+ESP Web Tools is allowed to start.
+
+| Channel | Audience | Default? | Visibility | Warning copy | Acknowledgement |
+|---|---|---|---|---|---|
+| **Stable** | All customers / production deployments | ✅ Default when compatible and not deprecated | Always visible | None | None |
+| **Beta** | Testers willing to accept regressions ahead of stable | ❌ Never default | Always visible | "Beta firmware is intended for testers…" (visible warning) | Required tickbox before install |
+| **Preview** | Experimenters evaluating upcoming capabilities | ❌ Never default | Always visible | "Preview firmware is experimental…" (stronger warning) | Required tickbox before install |
+| **Development** | Internal engineers / advanced users running unsupported builds | ❌ Never default | **Hidden** unless the wizard is loaded with `?mode=development` | "Development firmware is intended for internal testing…" (danger banner) | Required tickbox before install |
+| **Recovery** (rescue) | Users intentionally entering the unbrick / rollback / factory-restore path | ❌ Never default | **Hidden** unless the wizard is loaded with `?mode=recovery` | "Recovery firmware is for unbricking, factory restore, or rollback only…" (danger banner) | Channel itself is the consent gesture; warning copy is shown |
+| **Deprecated** | Lifecycle-retired builds retained for diagnostic comparison | ❌ Never default | Visible alongside its channel | "This firmware build is deprecated…" (warning banner with reason) | Required tickbox before install |
+| **Recommended** | Not a channel — a presentation flag | — | Renders as an extra badge on the auto-selected default | None | None |
+
+Notes on the policy:
+
+- **Stable is the only `defaultSelectable` tier.** When the user finishes the
+  wizard, the firmware version dropdown auto-picks the newest non-deprecated
+  stable build. Beta / preview / dev / rescue stay user-selectable but never
+  become the default.
+- **Deprecated is orthogonal to channel.** A deprecated stable build still
+  shows the `Stable` badge plus a separate `Deprecated` badge, and requires a
+  deprecation acknowledgement on top of any channel acknowledgement.
+- **Hidden tiers must be opted into via URL.** Recovery firmware appears only
+  when the page is loaded with `?mode=recovery`; development firmware appears
+  only with `?mode=development`. Production deployments must never link to
+  those modes from public marketing surfaces.
+- **No browser-side cryptographic signature verification is implied.** The
+  channel UI displays the provenance results produced by the existing
+  validation layer (PR #362 / PR #363) but does not perform cryptographic
+  signature verification in the browser; signatures are checked at publish
+  time by the release pipeline.
+- **Channel synonyms.** `general`, `ga`, `release`, `prod`, `production`,
+  `lts` map to **Stable**. `rc`, `candidate` map to **Beta**. `prerelease`
+  maps to **Preview**. `alpha`, `nightly`, `canary`, `experimental` map to
+  **Development**. `recovery`, `rollback`, `restore`, `unbrick` map to
+  **Recovery**. The full alias map lives in
+  [`scripts/utils/release-channels.js`](scripts/utils/release-channels.js).
 
 
 ## Canonical Option Inventory Table

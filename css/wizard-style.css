@@ -2760,9 +2760,260 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: color-mix(in srgb, var(--danger) 60%, white);
 }
 
-.firmware-channel-tag.is-dev {
+.firmware-channel-tag.is-dev,
+.firmware-channel-tag.is-development {
     background: color-mix(in srgb, var(--danger) 18%, transparent);
     color: color-mix(in srgb, var(--danger) 60%, white);
+}
+
+.firmware-channel-tag.is-recommended {
+    background: color-mix(in srgb, var(--success) 22%, transparent);
+    color: color-mix(in srgb, var(--success) 65%, var(--color-text-primary));
+    border: 1px solid color-mix(in srgb, var(--success) 35%, transparent);
+}
+
+.firmware-channel-tag.is-deprecated {
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    color: color-mix(in srgb, var(--danger) 65%, white);
+    border: 1px dashed color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+.firmware-badges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Channel warning banner shown above the install button on the firmware card. */
+.firmware-channel-warning {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.firmware-channel-warning__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid transparent;
+}
+
+.firmware-channel-warning__item.severity-info {
+    background: color-mix(in srgb, var(--info, #3b82f6) 10%, transparent);
+    border-color: color-mix(in srgb, var(--info, #3b82f6) 35%, transparent);
+    color: color-mix(in srgb, var(--info, #3b82f6) 80%, var(--color-text-primary));
+}
+
+.firmware-channel-warning__item.severity-warning {
+    background: color-mix(in srgb, var(--warning) 14%, transparent);
+    border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+    color: color-mix(in srgb, var(--warning) 75%, var(--color-text-primary));
+}
+
+.firmware-channel-warning__item.severity-danger {
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 38%, transparent);
+    color: color-mix(in srgb, var(--danger) 80%, var(--color-text-primary));
+}
+
+.firmware-channel-warning__icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: currentColor;
+    color: var(--color-bg, #fff);
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.firmware-channel-warning__message {
+    flex: 1;
+}
+
+/* Firmware details panel — surfaces version, channel, source, deprecation, etc. */
+.firmware-details-panel {
+    margin-top: 16px;
+    padding: 18px 20px;
+    border-radius: 10px;
+    background: var(--surface-elevated, color-mix(in srgb, var(--color-bg) 92%, var(--color-text-primary) 8%));
+    border: 1px solid var(--border, color-mix(in srgb, var(--color-text-primary) 15%, transparent));
+}
+
+.firmware-details-panel.tone-warning {
+    border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+}
+
+.firmware-details-panel.tone-danger {
+    border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.firmware-details-panel__header {
+    margin-bottom: 12px;
+}
+
+.firmware-details-panel__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.firmware-details-panel__description {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.firmware-details-panel__facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 6px 24px;
+    margin: 0;
+}
+
+.firmware-details-panel__row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--border, color-mix(in srgb, var(--color-text-primary) 15%, transparent));
+}
+
+.firmware-details-panel__row:last-child {
+    border-bottom: 0;
+}
+
+.firmware-details-panel__label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+}
+
+.firmware-details-panel__value {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-primary);
+    word-break: break-word;
+}
+
+.firmware-details-panel__channel {
+    font-weight: 600;
+}
+
+.firmware-details-panel__channel.tone-positive {
+    color: color-mix(in srgb, var(--success) 65%, var(--color-text-primary));
+}
+
+.firmware-details-panel__channel.tone-info {
+    color: color-mix(in srgb, var(--accent) 65%, var(--color-text-primary));
+}
+
+.firmware-details-panel__channel.tone-warning {
+    color: color-mix(in srgb, var(--warning) 70%, var(--color-text-primary));
+}
+
+.firmware-details-panel__channel.tone-danger {
+    color: color-mix(in srgb, var(--danger) 75%, var(--color-text-primary));
+}
+
+.firmware-details-panel__yes {
+    color: color-mix(in srgb, var(--success) 65%, var(--color-text-primary));
+    font-weight: 600;
+}
+
+.firmware-details-panel__no {
+    color: var(--color-text-secondary);
+}
+
+.firmware-details-panel__deprecated {
+    color: color-mix(in srgb, var(--danger) 75%, var(--color-text-primary));
+    font-weight: 600;
+}
+
+.firmware-details-panel__active {
+    color: color-mix(in srgb, var(--success) 65%, var(--color-text-primary));
+}
+
+.firmware-details-panel__link {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.firmware-details-panel__section {
+    margin-top: 14px;
+}
+
+.firmware-details-panel__section h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+}
+
+.firmware-details-panel__section ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--color-text-primary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Acknowledgement panel — keeps the install button gated behind explicit consent. */
+.channel-acknowledgement-panel {
+    margin-top: 18px;
+    padding: 18px 20px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--warning) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+}
+
+.channel-acknowledgement-panel[hidden] {
+    display: none;
+}
+
+.channel-acknowledgement-panel__title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--warning) 75%, var(--color-text-primary));
+}
+
+.channel-acknowledgement-panel__intro {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.channel-acknowledgement-panel__items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.channel-acknowledgement-panel__item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.channel-acknowledgement-panel__item input[type="checkbox"] {
+    margin-top: 3px;
 }
 
 /* Firmware not available styles */
