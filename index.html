@@ -650,7 +650,10 @@
                     <div class="preflight-panel__header">
                         <h3 id="preflight-checks-heading">Preflight checks</h3>
                         <p>We run these diagnostics before flashing so you can confirm your setup is ready. Each result explains why it was assigned and what to do next.</p>
-                        <button class="btn btn-copy" type="button" data-copy-diagnostics aria-label="Copy preflight diagnostics">Copy diagnostics</button>
+                        <div class="preflight-panel__actions">
+                            <button class="btn btn-copy" type="button" data-copy-support-bundle aria-label="Copy support bundle">Copy support bundle</button>
+                            <button class="btn btn-copy" type="button" data-download-support-bundle aria-label="Download support bundle as JSON">Download JSON</button>
+                        </div>
                     </div>
                     <ul class="preflight-panel__list" data-preflight-list role="status" aria-live="polite" aria-label="Preflight diagnostics">
                         <li class="preflight-panel__item" data-preflight-item="browser-support" data-status="pending">

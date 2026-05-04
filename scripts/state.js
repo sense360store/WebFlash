@@ -22,13 +22,12 @@ import {
 // Import error logging service early to capture all errors including manifest load failures
 import './services/error-log.js';
 import { detectCapabilities, evaluateBrowserReadiness } from './capabilities.js';
-import { BUILD_INFO } from './build-info.js';
-import { checkManifestFreshness } from './services/manifest-freshness.js';
 import {
-    getServiceWorkerState,
-    subscribeServiceWorkerState
-} from './services/sw-update.js';
-import { notifyManifestFreshness as notifyFreshnessBanner } from './layout/freshness-banner.js';
+    buildSupportBundle,
+    copySupportBundle,
+    redactValue,
+    setSupportBundleStateProvider
+} from './services/diagnostics.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -282,38 +281,6 @@ const connectionQualityMetrics = {
     retryCount: 0,
     stabilityWindowStart: Date.now()
 };
-
-const DIAGNOSTICS_SCHEMA_VERSION = '1.1.0';
-const SENSITIVE_KEY_PATTERN = /(id|uuid|serial|mac|token|secret|signature|checksum|key|path|url)/i;
-
-// ---------------------------------------------------------------------------
-// CACHE FRESHNESS POLICY
-// ---------------------------------------------------------------------------
-// Install gating combines service-worker update state with the manifest
-// freshness verdict. The matrix below is enforced by readyToFlash /
-// updateFirmwareControls and by the freshness banner UI.
-//
-//   sw update pending & NOT dismissed  -> install DISABLED
-//   sw update pending & dismissed      -> install ALLOWED w/ warning banner
-//   manifest freshness 'current'       -> install ALLOWED
-//   manifest freshness 'stale'         -> install DISABLED until reload
-//   manifest freshness 'unknown'       -> install ALLOWED only after the
-//                                         user explicitly acknowledges via
-//                                         the freshness banner
-//
-// The same matrix is documented in README.md ("Cache and version policy").
-// Keep them in sync.
-// ---------------------------------------------------------------------------
-let manifestMetadata = null;
-// Default to 'current' so the freshness gate is a no-op until we have
-// actually attempted a check (network-first, on entering step 5). Without
-// this, pre-flash UI tests that don't run a freshness check would be
-// gated off solely because we never asked the network.
-let manifestFreshnessState = 'current';
-let manifestFreshnessAck = false;
-let manifestFreshnessDetail = null;
-let manifestFreshnessCheckPromise = null;
-let manifestFreshnessHasRun = false;
 
 function getConnectionQualitySnapshot() {
     return {
@@ -802,9 +769,18 @@ function collectActiveConflictMessages(state) {
 let manifestLoadPromise = null;
 let manifestData = null;
 let manifestLoadError = null;
+let manifestFreshness = 'unknown';
 let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
+
+function getManifestFreshness() {
+    return manifestFreshness;
+}
+
+function getManifestData() {
+    return manifestData;
+}
 
 const SIGNATURE_SALT_TEXT = 'Sense360 Firmware Signing Salt v1';
 const signatureSaltBytes = typeof TextEncoder !== 'undefined'
@@ -1282,11 +1258,13 @@ async function loadManifestData(options = {}) {
         manifestLoadError = null;
     }
 
+    manifestFreshness = 'loading';
     const attemptFetch = async (attempt = 1) => {
         if (typeof fetch !== 'function') {
             const error = new Error('fetch API is not available in this environment');
             manifestLoadError = error;
             manifestLoadPromise = null;
+            manifestFreshness = 'error';
             throw error;
         }
         try {
@@ -1297,7 +1275,7 @@ async function loadManifestData(options = {}) {
             const data = await response.json();
             manifestData = data;
             manifestLoadError = null;
-            captureManifestMetadata(data);
+            manifestFreshness = 'current';
             buildManifestContext(data);
             return data;
         } catch (error) {
@@ -1309,6 +1287,7 @@ async function loadManifestData(options = {}) {
             }
             manifestLoadError = error;
             manifestLoadPromise = null;
+            manifestFreshness = 'error';
             console.error('Failed to load manifest after all retries:', error);
             throw error;
         }
@@ -3226,117 +3205,18 @@ async function refreshPreflightDiagnostics() {
     return checks;
 }
 
-function redactDiagnosticsValue(value, keyPath = '') {
-    if (Array.isArray(value)) {
-        return value.map((entry, index) => redactDiagnosticsValue(entry, `${keyPath}[${index}]`));
-    }
-
-    if (value && typeof value === 'object') {
-        return Object.entries(value).reduce((accumulator, [key, nestedValue]) => {
-            const nextPath = keyPath ? `${keyPath}.${key}` : key;
-            accumulator[key] = redactDiagnosticsValue(nestedValue, nextPath);
-            return accumulator;
-        }, {});
-    }
-
-    if (SENSITIVE_KEY_PATTERN.test(keyPath)) {
-        return '[REDACTED]';
-    }
-
-    return value;
-}
-
-function buildDiagnosticsBundle() {
-    const checks = Array.isArray(window.latestPreflightChecks) ? window.latestPreflightChecks : [];
-    const selectedFirmware = window.currentFirmware || null;
-    const swState = (typeof getServiceWorkerState === 'function')
-        ? getServiceWorkerState()
-        : { supported: false, controlled: false, updateAvailable: false, updateDismissed: false, cacheClearRequested: false };
-
-    // Build info is read defensively — the module ships with safe
-    // fallbacks but a missing property must not crash diagnostics.
-    const safeBuildInfo = (BUILD_INFO && typeof BUILD_INFO === 'object') ? BUILD_INFO : {};
-
-    return redactDiagnosticsValue({
-        schemaVersion: DIAGNOSTICS_SCHEMA_VERSION,
-        createdAt: new Date().toISOString(),
-        wizardStep: currentStep,
-        browserCapability: {
-            webSerialAvailable: Boolean(navigator?.serial),
-            clipboardApiAvailable: Boolean(navigator?.clipboard)
-        },
-        serialAvailability: {
-            canConnect: Boolean(navigator?.serial),
-            connectionQuality: getConnectionQualitySnapshot()
-        },
-        preflightResults: checks.map(check => ({
-            key: check.key,
-            label: check.label,
-            state: check.state,
-            detail: check.detail,
-            blocking: Boolean(check.blocking)
-        })),
-        selectedConfiguration: { ...configuration },
-        firmwareTarget: selectedFirmware
-            ? {
-                model: selectedFirmware.model || null,
-                variant: selectedFirmware.variant || null,
-                sensorAddon: selectedFirmware.sensor_addon || null,
-                channel: normalizeChannelKey(selectedFirmware.channel || 'stable'),
-                version: selectedFirmware.version || null,
-                firmwareId: selectedFirmware.firmwareId || null
-            }
-            : null,
-        firmwareVerification: {
-            status: firmwareVerificationState.status || 'idle',
-            message: firmwareVerificationState.message || ''
-        },
-        compatibilityVerdict: evaluatePreflightPolicy(checks),
-        app: {
-            app_version: typeof safeBuildInfo.appVersion === 'string' ? safeBuildInfo.appVersion : 'unknown',
-            build_commit: typeof safeBuildInfo.buildCommit === 'string' ? safeBuildInfo.buildCommit : 'unknown',
-            build_timestamp: typeof safeBuildInfo.buildTimestamp === 'string' ? safeBuildInfo.buildTimestamp : 'unknown'
-        },
-        manifest: {
-            manifest_version: manifestMetadata && typeof manifestMetadata.manifest_version === 'number'
-                ? manifestMetadata.manifest_version
-                : null,
-            generated_at: manifestMetadata && typeof manifestMetadata.generated_at === 'string'
-                ? manifestMetadata.generated_at
-                : null,
-            source_commit: manifestMetadata && typeof manifestMetadata.source_commit === 'string'
-                ? manifestMetadata.source_commit
-                : null,
-            freshness: manifestFreshnessState
-        },
-        service_worker: {
-            supported: Boolean(swState.supported),
-            controlled: Boolean(swState.controlled),
-            update_available: Boolean(swState.updateAvailable),
-            update_dismissed: Boolean(swState.updateDismissed),
-            cache_clear_requested: Boolean(swState.cacheClearRequested)
-        }
-    });
-}
-
-async function copyDiagnosticsBundle(trigger = null) {
-    const payload = JSON.stringify(buildDiagnosticsBundle(), null, 2);
-
-    try {
-        await copyTextToClipboard(payload);
-        if (trigger) {
-            trigger.dataset.copyState = 'success';
-        }
-        showToast('Diagnostics copied');
-        return true;
-    } catch (error) {
-        if (trigger) {
-            trigger.dataset.copyState = 'error';
-        }
-        showToast('Copy failed');
-        return false;
-    }
-}
+// Diagnostics builder lives in scripts/services/diagnostics.js. State.js
+// supplies a state provider so the bundle can reach private module
+// variables (configuration, currentStep, manifestData, manifestFreshness,
+// currentFirmware, releaseMode) without exporting them.
+setSupportBundleStateProvider(() => ({
+    configuration: { ...configuration },
+    stepInfo: { current: currentStep, maxReachable: getMaxReachableStep() },
+    manifestData: getManifestData(),
+    manifestFreshness: getManifestFreshness(),
+    currentFirmware: typeof window !== 'undefined' ? window.currentFirmware : null,
+    releaseMode: getReleaseMode()
+}));
 
 
 
@@ -5303,12 +5183,8 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('click', async event => {
-    const diagnosticsTrigger = event.target.closest('[data-copy-diagnostics]');
-    if (diagnosticsTrigger) {
-        event.preventDefault();
-        await copyDiagnosticsBundle(diagnosticsTrigger);
-        return;
-    }
+    // [data-copy-diagnostics] and [data-copy-support-bundle] are handled by
+    // initSupportBundleActions() in scripts/services/diagnostics.js.
 
     const trigger = event.target.closest('[data-copy-text]');
     if (!trigger) {
@@ -5561,9 +5437,10 @@ export const __testHooks = Object.freeze({
     setPreflightWarningsAcknowledgement,
     evaluatePreflightPolicy,
     updateConnectionQualityMetrics,
-    buildDiagnosticsBundle,
-    redactDiagnosticsValue,
-    copyDiagnosticsBundle,
+    buildDiagnosticsBundle: buildSupportBundle,
+    redactDiagnosticsValue: redactValue,
+    copyDiagnosticsBundle: copySupportBundle,
+    getManifestFreshness,
     parseConfigStringState,
     formatConfigSegment,
     MODULE_VARIANT_LABELS,

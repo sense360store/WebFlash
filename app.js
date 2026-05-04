@@ -19,15 +19,12 @@ import "./scripts/layout/option-info-popover.js";
 import "./scripts/layout/rescue-entry.js";
 import { initPreflightHelpModal } from "./scripts/layout/preflight-help-modal.js";
 import { initPreflightBanner } from "./scripts/layout/preflight-banner.js";
-import { initFreshnessBanner } from "./scripts/layout/freshness-banner.js";
-import { initAboutPanel } from "./scripts/layout/about-panel.js";
-import { initServiceWorkerUpdates } from "./scripts/services/sw-update.js";
+import { initSupportBundleActions, recordUpdateAvailable } from "./scripts/services/diagnostics.js";
 import "./scripts/navigation.js";
 
 initPreflightHelpModal();
 initPreflightBanner();
-initFreshnessBanner();
-initAboutPanel(getManifestMetadataForAbout);
+initSupportBundleActions();
 
 // ESP Web Tools enhancements - checkSameFirmware override for detecting installed firmware
 import "./scripts/utils/esp-web-tools-overrides.js";
@@ -40,6 +37,25 @@ import "./scripts/utils/esp-web-tools-overrides.js";
  */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        initServiceWorkerUpdates('./sw.js');
+        navigator.serviceWorker.register('./sw.js')
+            .then((registration) => {
+                console.log('[WebFlash] Service worker registered:', registration.scope);
+
+                // Check for updates periodically
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('[WebFlash] New version available');
+                                recordUpdateAvailable(true);
+                            }
+                        });
+                    }
+                });
+            })
+            .catch((error) => {
+                console.warn('[WebFlash] Service worker registration failed:', error);
+            });
     });
 }

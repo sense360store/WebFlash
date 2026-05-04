@@ -416,6 +416,16 @@ Most devices auto-enter bootloader mode when ESP Web Tools opens the serial port
 
 For additional help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
+## Support Diagnostics
+
+When something goes wrong (preflight failure, install error, recovery flash, stale cache), WebFlash can produce a structured **support bundle** — a single redacted JSON document that captures everything support needs to reproduce your issue.
+
+- **What it contains.** App and build version, browser environment (browser, version, platform, secure context, Web Serial support), manifest source (`manifest_version`, `generated_at`, `source_commit`, `freshness`), selected firmware (config, version, channel, provenance status, `sha256_present`/`signature_present` booleans), wizard state (current step, modules), preflight results, recovery context (mode, acknowledgements, last result), cache state (service worker, update availability), and the latest flash attempt. The bundle does **not** include firmware binaries, raw `sha256`/`signature` values, or Wi-Fi passwords.
+- **How to capture.** "Copy support bundle" or "Download JSON" buttons appear on the Step 5 preflight panel, the rescue / recovery modal, the browser & USB setup help modal, and the error log modal. Clicking copy puts the bundle on your clipboard; download writes a `webflash-support-bundle-<timestamp>.json` file you can attach to a support email.
+- **Privacy and redaction.** Before the bundle leaves the page, WebFlash strips Wi-Fi passwords, tokens, API keys, authorization headers, cookies, MAC addresses, filesystem paths, and URL query strings. Sensitive values become `[REDACTED_PASSWORD]`, `[REDACTED_TOKEN]`, `[REDACTED_MAC]`, `[REDACTED_PATH]`, etc. Free-form error messages are scrubbed for embedded paths, MACs, and bearer tokens. Review the JSON before sharing if your environment is sensitive.
+- **Versioned schema.** The top-level `schema_version: 1` lets support tooling pin to a known shape. Field names are stable; new fields will be added under existing sections rather than reshaping the document.
+- **Session-scoped.** The bundle reflects the *current* page session. Refreshing the page resets `last_usb_test_result`, recovery acknowledgements, `cache_clear_requested`, and similar transient signals. Persistent flash history is captured from `localStorage`, but always redacted before inclusion.
+
 ## Custom Firmware & Source Code
 
 For users who want to build custom firmware configurations or modify the ESPHome YAML source files:

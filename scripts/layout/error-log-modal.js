@@ -82,6 +82,9 @@ function createModal() {
                         </svg>
                         Clear
                     </button>
+                    <button type="button" class="btn btn-sm btn-secondary" data-download-support-bundle>
+                        Download support bundle
+                    </button>
                 </div>
             </div>
             <div class="error-log-modal__body">
