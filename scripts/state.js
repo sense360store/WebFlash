@@ -9,6 +9,16 @@ import {
     describeVerificationChecks,
     pickDefaultEligibleBuilds
 } from './utils/firmware-provenance.js';
+import {
+    getChannelPolicy,
+    getFirmwareBadges,
+    getFirmwareWarnings,
+    getRequiredAcknowledgements,
+    filterBuildsForMode,
+    isBuildVisibleInMode,
+    pickDefaultBuild,
+    normaliseReleaseChannel
+} from './utils/release-channels.js';
 // Import error logging service early to capture all errors including manifest load failures
 import './services/error-log.js';
 
@@ -196,8 +206,55 @@ let activeModuleGroupKey = null;
 
 let preFlashAcknowledged = false;
 let preflightWarningsAcknowledged = false;
+// Acknowledgements per channel-warning key (e.g. 'channel:beta', 'deprecated').
+// Keyed acknowledgements let beta + deprecated be tracked independently without
+// the user having to re-tick a single combined checkbox each time.
+const channelAcknowledgements = new Map();
 let currentFlashEntryId = null;
 let flashStartTime = null;
+
+// Release mode controls which channels are visible in the install path.
+//   'normal'      — production install (default). Hides development + rescue.
+//   'recovery'    — reveals rescue firmware so the user can rollback / unbrick.
+//   'development' — reveals development builds for internal testing.
+// The mode is opt-in via the URL (?mode=recovery / ?mode=development) so we
+// never expose those builds without an explicit, intentional gesture from
+// the user. See README "Release channels" for the policy.
+const VALID_RELEASE_MODES = Object.freeze(new Set(['normal', 'recovery', 'development']));
+let currentReleaseMode = 'normal';
+
+function getReleaseMode() {
+    return currentReleaseMode;
+}
+
+function setReleaseModeFromUrl(searchParams) {
+    if (!searchParams || typeof searchParams.get !== 'function') {
+        currentReleaseMode = 'normal';
+        return;
+    }
+    const requested = (searchParams.get('mode') || '').toString().trim().toLowerCase();
+    if (VALID_RELEASE_MODES.has(requested)) {
+        currentReleaseMode = requested;
+        return;
+    }
+    if (requested === 'rescue') {
+        currentReleaseMode = 'recovery';
+        return;
+    }
+    if (requested === 'dev' || requested === 'debug') {
+        currentReleaseMode = 'development';
+        return;
+    }
+    currentReleaseMode = 'normal';
+}
+
+function setReleaseModeForTests(mode) {
+    if (VALID_RELEASE_MODES.has(mode)) {
+        currentReleaseMode = mode;
+    } else {
+        currentReleaseMode = 'normal';
+    }
+}
 const CONNECTION_QUALITY_THRESHOLDS = Object.freeze({
     failDisconnects: 3,
     failSerialFailures: 3,
@@ -312,6 +369,45 @@ function setPreflightWarningsAcknowledgement(value) {
     updateFirmwareControls();
 }
 
+function getChannelAcknowledgements(firmware) {
+    return getRequiredAcknowledgements(firmware || window.currentFirmware);
+}
+
+function isChannelAcknowledged(key) {
+    return channelAcknowledgements.get(key) === true;
+}
+
+function setChannelAcknowledgement(key, value) {
+    if (!key) {
+        return;
+    }
+    const next = Boolean(value);
+    if (channelAcknowledgements.get(key) === next) {
+        return;
+    }
+    if (next) {
+        channelAcknowledgements.set(key, true);
+    } else {
+        channelAcknowledgements.delete(key);
+    }
+    renderChannelAcknowledgementPanel();
+    updateFirmwareControls();
+    refreshPreflightDiagnostics();
+}
+
+function resetChannelAcknowledgements() {
+    if (channelAcknowledgements.size === 0) {
+        return;
+    }
+    channelAcknowledgements.clear();
+    renderChannelAcknowledgementPanel();
+    updateFirmwareControls();
+}
+
+function getOutstandingChannelAcknowledgements(firmware) {
+    return getChannelAcknowledgements(firmware).filter(item => !isChannelAcknowledged(item.key));
+}
+
 function evaluatePreflightPolicy(checks = []) {
     const normalizedChecks = Array.isArray(checks) ? checks : [];
     const failChecks = normalizedChecks.filter(check => check?.state === 'fail');
@@ -340,6 +436,7 @@ function resetPreFlashAcknowledgement() {
 
     setPreFlashAcknowledgement(false);
     setPreflightWarningsAcknowledgement(false);
+    resetChannelAcknowledgements();
 }
 
 function applyModuleRecommendations() {
@@ -2472,7 +2569,12 @@ function updateFirmwareControls() {
     const preflightChecks = Array.isArray(window.latestPreflightChecks) ? window.latestPreflightChecks : [];
     const preflightPolicy = evaluatePreflightPolicy(preflightChecks);
     const blockingReason = preflightPolicy.blockingReasons[0] || '';
-    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall;
+    const outstandingChannelAcks = getOutstandingChannelAcknowledgements(window.currentFirmware);
+    const channelAcksSatisfied = outstandingChannelAcks.length === 0;
+    const channelBlockingReason = channelAcksSatisfied
+        ? ''
+        : 'Acknowledge the firmware-channel warning before installing.';
+    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall && channelAcksSatisfied;
 
     if (downloadBtn) {
         downloadBtn.hidden = !onReviewStep;
@@ -2488,6 +2590,8 @@ function updateFirmwareControls() {
                 downloadBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
             } else if (!isAcknowledged) {
                 downloadBtn.title = 'Acknowledge the pre-flash checklist to continue.';
+            } else if (!channelAcksSatisfied) {
+                downloadBtn.title = channelBlockingReason;
             } else if (!preflightPolicy.canInstall && blockingReason) {
                 downloadBtn.title = blockingReason;
             } else {
@@ -2515,6 +2619,8 @@ function updateFirmwareControls() {
             copyUrlBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
         } else if (!isAcknowledged) {
             copyUrlBtn.title = 'Acknowledge the pre-flash checklist to continue.';
+        } else if (!channelAcksSatisfied) {
+            copyUrlBtn.title = channelBlockingReason;
         } else if (!preflightPolicy.canInstall && blockingReason) {
             copyUrlBtn.title = blockingReason;
         } else {
@@ -2544,6 +2650,8 @@ function updateFirmwareControls() {
                     installButton.title = message;
                 } else if (!isAcknowledged) {
                     installButton.title = 'Acknowledge the pre-flash checklist to continue.';
+                } else if (!channelAcksSatisfied) {
+                    installButton.title = channelBlockingReason;
                 } else if (!preflightPolicy.canInstall && blockingReason) {
                     installButton.title = blockingReason;
                 } else {
@@ -2573,6 +2681,9 @@ function updateFirmwareControls() {
         if (isVerified && !isAcknowledged) {
             return { text: 'Review the pre-flash checklist and acknowledge before continuing.', isError: false, isWarning: true };
         }
+        if (!channelAcksSatisfied) {
+            return { text: channelBlockingReason, isError: false, isWarning: true };
+        }
         if (!preflightPolicy.canInstall && blockingReason) {
             return { text: blockingReason, isError: true, isWarning: false };
         }
@@ -2599,6 +2710,8 @@ function updateFirmwareControls() {
                 summaryInstallButton.title = message;
             } else if (!isAcknowledged) {
                 summaryInstallButton.title = 'Acknowledge the pre-flash checklist to continue.';
+            } else if (!channelAcksSatisfied) {
+                summaryInstallButton.title = channelBlockingReason;
             } else if (!preflightPolicy.canInstall && blockingReason) {
                 summaryInstallButton.title = blockingReason;
             } else {
@@ -3598,6 +3711,162 @@ function renderFirmwarePartsSection(firmware) {
     `;
 }
 
+function isFirmwareRecommendedDefault(firmware) {
+    if (!firmware) {
+        return false;
+    }
+    const candidate = pickDefaultBuild(firmwareOptions, { mode: getReleaseMode() });
+    return Boolean(candidate && candidate.firmwareId === firmware.firmwareId);
+}
+
+function renderFirmwareBadges(firmware, { recommended }) {
+    const badges = getFirmwareBadges(firmware, { recommended });
+    if (!badges.length) {
+        return '';
+    }
+    return badges
+        .map(badge => `<span
+                class="firmware-channel-tag is-${escapeHtml(badge.key)} tone-${escapeHtml(badge.tone)}"
+                data-firmware-badge="${escapeHtml(badge.key)}"
+                title="${escapeHtml(badge.description || '')}"
+            >${escapeHtml(badge.label)}</span>`)
+        .join('');
+}
+
+function renderFirmwareWarningsBlock(firmware) {
+    const warnings = getFirmwareWarnings(firmware);
+    if (!warnings.length) {
+        return '';
+    }
+    const items = warnings
+        .map(warning => `
+            <li class="firmware-channel-warning__item severity-${escapeHtml(warning.severity)}" data-warning-key="${escapeHtml(warning.key)}">
+                <span class="firmware-channel-warning__icon" aria-hidden="true">!</span>
+                <span class="firmware-channel-warning__message">${escapeHtml(warning.message)}</span>
+            </li>
+        `)
+        .join('');
+    return `
+        <ul class="firmware-channel-warning" data-firmware-channel-warning>
+            ${items}
+        </ul>
+    `;
+}
+
+function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
+    if (!firmware) {
+        return '';
+    }
+    const policy = getChannelPolicy(firmware.channel);
+    const fileSize = Number(firmware.file_size);
+    const sizeLabel = Number.isFinite(fileSize) && fileSize > 0
+        ? (fileSize >= 1024 ? `${(fileSize / 1024).toFixed(1)} KB` : `${fileSize} B`)
+        : '';
+    const buildDate = firmware.build_date ? new Date(firmware.build_date) : null;
+    const buildDateLabel = buildDate && !Number.isNaN(buildDate.getTime()) ? buildDate.toLocaleString() : '';
+    const sourceCommit = (firmware.source_commit || '').toString().trim();
+    const sourceUrl = (firmware.source_url || '').toString().trim();
+    const knownIssues = Array.isArray(firmware.known_issues) ? firmware.known_issues : [];
+    const changelog = Array.isArray(firmware.changelog) ? firmware.changelog : [];
+    const rollbackSupported = firmware.rollback_supported === true;
+    const channelKey = normaliseReleaseChannel(firmware.channel);
+
+    const factRows = [];
+    if (firmware.version) {
+        factRows.push({
+            label: 'Version',
+            value: escapeHtml(`v${firmware.version}`)
+        });
+    }
+    factRows.push({
+        label: 'Channel',
+        value: `<span class="firmware-details-panel__channel tone-${escapeHtml(policy.tone)}">${escapeHtml(policy.label)}</span>`
+    });
+    factRows.push({
+        label: 'Recommended',
+        value: recommended
+            ? '<span class="firmware-details-panel__yes">Yes — default for this configuration</span>'
+            : '<span class="firmware-details-panel__no">No</span>'
+    });
+    factRows.push({
+        label: 'Lifecycle',
+        value: firmware.deprecated === true
+            ? `<span class="firmware-details-panel__deprecated">Deprecated${firmware.deprecation_reason ? ` — ${escapeHtml(firmware.deprecation_reason)}` : ''}</span>`
+            : '<span class="firmware-details-panel__active">Active</span>'
+    });
+    if (buildDateLabel) {
+        factRows.push({ label: 'Build date', value: escapeHtml(buildDateLabel) });
+    }
+    if (sourceCommit) {
+        const display = sourceCommit.length > 12 ? `${sourceCommit.slice(0, 12)}…` : sourceCommit;
+        factRows.push({
+            label: 'Source commit',
+            value: sourceUrl
+                ? `<a class="firmware-details-panel__link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer"><code>${escapeHtml(display)}</code></a>`
+                : `<code>${escapeHtml(display)}</code>`
+        });
+    }
+    if (sourceUrl && !sourceCommit) {
+        factRows.push({
+            label: 'Source',
+            value: `<a class="firmware-details-panel__link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>`
+        });
+    }
+    if (sizeLabel) {
+        factRows.push({ label: 'File size', value: escapeHtml(sizeLabel) });
+    }
+    factRows.push({
+        label: 'Rollback',
+        value: rollbackSupported
+            ? '<span class="firmware-details-panel__yes">Supported via Recovery firmware</span>'
+            : '<span class="firmware-details-panel__no">Use Recovery firmware to roll back</span>'
+    });
+
+    const factsHtml = factRows
+        .map(row => `
+            <div class="firmware-details-panel__row">
+                <dt class="firmware-details-panel__label">${escapeHtml(row.label)}</dt>
+                <dd class="firmware-details-panel__value">${row.value}</dd>
+            </div>
+        `)
+        .join('');
+
+    const knownIssuesHtml = knownIssues.length
+        ? `
+            <section class="firmware-details-panel__section firmware-details-panel__section--issues">
+                <h4>Known issues</h4>
+                <ul>${knownIssues.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+            </section>
+        `
+        : '';
+
+    const changelogHtml = changelog.length
+        ? `
+            <section class="firmware-details-panel__section firmware-details-panel__section--changelog">
+                <h4>Changelog</h4>
+                <ul>${changelog.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+            </section>
+        `
+        : '';
+
+    return `
+        <section
+            class="firmware-details-panel tone-${escapeHtml(policy.tone)}"
+            data-firmware-details-panel
+            data-firmware-channel="${escapeHtml(channelKey)}"
+            aria-label="Firmware details"
+        >
+            <header class="firmware-details-panel__header">
+                <h3 class="firmware-details-panel__title">Firmware details</h3>
+                <p class="firmware-details-panel__description">${escapeHtml(policy.description)}</p>
+            </header>
+            <dl class="firmware-details-panel__facts">${factsHtml}</dl>
+            ${knownIssuesHtml}
+            ${changelogHtml}
+        </section>
+    `;
+}
+
 function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'primary', cardClassName = 'firmware-card' } = {}) {
     if (!firmware) {
         return '';
@@ -3605,9 +3874,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
 
     const metadataSections = [
         { key: 'features', title: 'Key Features' },
-        { key: 'hardware_requirements', title: 'Hardware Requirements' },
-        { key: 'known_issues', title: 'Known Issues' },
-        { key: 'changelog', title: 'Changelog' }
+        { key: 'hardware_requirements', title: 'Hardware Requirements' }
     ];
 
     const metadataHtml = metadataSections
@@ -3632,6 +3899,8 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
         .join('');
 
     const channelInfo = getChannelDisplayInfo(firmware.channel);
+    const policy = getChannelPolicy(firmware.channel);
+    const recommended = isFirmwareRecommendedDefault(firmware);
     const firmwareName = getFirmwareDisplayName(firmware, configString);
     const fileSize = Number(firmware.file_size);
     const sizeLabel = Number.isFinite(fileSize) && fileSize > 0 ? `${(fileSize / 1024).toFixed(1)} KB` : '';
@@ -3667,6 +3936,9 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
 
     const partsSectionHtml = renderFirmwarePartsSection(firmware);
     const provenanceSectionHtml = renderFirmwareProvenanceSection(firmware);
+    const detailsPanelHtml = renderFirmwareDetailsPanel(firmware, { recommended });
+    const warningsHtml = renderFirmwareWarningsBlock(firmware);
+    const badgeHtml = renderFirmwareBadges(firmware, { recommended });
 
     const descriptionHtml = firmware.description
         ? `<p class="firmware-description">${escapeHtml(firmware.description)}</p>`
@@ -3675,18 +3947,19 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
     const manifestIndex = escapeHtml(String(firmware.manifestIndex));
 
     return `
-        <div class="${cardClassName}" data-firmware-detail data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-channel="${escapeHtml(channelInfo.key)}">
+        <div class="${cardClassName}" data-firmware-detail data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-channel="${escapeHtml(channelInfo.key)}" data-recommended="${recommended ? 'true' : 'false'}" data-deprecated="${firmware.deprecated === true ? 'true' : 'false'}">
             <div class="firmware-item">
                 <div class="firmware-info">
                     <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
                     <div class="firmware-header">
                         <div class="firmware-name">${escapeHtml(firmwareName)}</div>
-                        <span class="firmware-channel-tag is-${escapeHtml(channelInfo.key)}">${escapeHtml(channelInfo.label)}</span>
+                        <div class="firmware-badges" data-firmware-badges>${badgeHtml}</div>
                     </div>
                     <div class="firmware-details">
                         ${metaParts.join('')}
                     </div>
                     ${descriptionHtml}
+                    ${warningsHtml}
                 </div>
                 <div class="firmware-actions">
                     <esp-web-install-button manifest="firmware-${manifestIndex}.json" data-firmware-id="${escapeHtml(firmware.firmwareId)}" data-webflash-install>
@@ -3708,6 +3981,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                     </esp-web-install-button>
                 </div>
             </div>
+            ${detailsPanelHtml}
             ${provenanceSectionHtml}
             ${partsSectionHtml}
             ${metadataBlock}
@@ -3900,15 +4174,23 @@ function renderFirmwareSelector() {
         return;
     }
 
+    const recommendedDefault = pickDefaultBuild(firmwareOptions, { mode: getReleaseMode() });
     firmwareOptions.forEach(build => {
         const option = document.createElement('option');
-        const channelInfo = getChannelDisplayInfo(build.channel);
+        const policy = getChannelPolicy(build.channel);
         const versionLabel = build.version ? `v${build.version}` : 'Unknown version';
         const deprecatedSuffix = build.deprecated === true ? ' · Deprecated' : '';
+        const recommendedSuffix = recommendedDefault && build.firmwareId === recommendedDefault.firmwareId
+            ? ' · Recommended'
+            : '';
         option.value = build.firmwareId;
-        option.textContent = `${versionLabel} · ${channelInfo.label}${deprecatedSuffix}`;
+        option.textContent = `${versionLabel} · ${policy.label}${deprecatedSuffix}${recommendedSuffix}`;
+        option.dataset.channel = policy.key;
         if (build.deprecated === true) {
             option.dataset.deprecated = 'true';
+        }
+        if (recommendedSuffix) {
+            option.dataset.recommended = 'true';
         }
         firmwareVersionSelect.appendChild(option);
     });
@@ -4113,12 +4395,77 @@ function selectDefaultFirmware() {
         return;
     }
 
-    // Prefer non-deprecated builds for the default selection. Deprecated
-    // entries remain visible in the dropdown so users can still install them
-    // intentionally, but they should never be auto-selected.
+    // Default selection rules:
+    //   1. Prefer a build whose channel is `defaultSelectable` (stable only).
+    //   2. Skip deprecated builds — they stay user-selectable in the dropdown
+    //      but should never be auto-picked.
+    //   3. Fall back to the first non-deprecated build, then to the first
+    //      build of any kind, so the dropdown is never left empty.
+    const channelDefault = pickDefaultBuild(firmwareOptions, { mode: getReleaseMode() });
+    if (channelDefault) {
+        selectFirmwareById(channelDefault.firmwareId);
+        return;
+    }
     const eligible = pickDefaultEligibleBuilds(firmwareOptions);
     const target = eligible.length ? eligible[0] : firmwareOptions[0];
     selectFirmwareById(target.firmwareId);
+}
+
+function renderChannelAcknowledgementPanel() {
+    const panel = document.querySelector('[data-channel-acknowledgement-panel]');
+    if (!panel) {
+        return;
+    }
+    const firmware = window.currentFirmware;
+    const acknowledgements = getChannelAcknowledgements(firmware);
+    if (!firmware || acknowledgements.length === 0) {
+        panel.hidden = true;
+        panel.setAttribute('aria-hidden', 'true');
+        panel.innerHTML = '';
+        return;
+    }
+
+    panel.hidden = false;
+    panel.setAttribute('aria-hidden', 'false');
+
+    const heading = '<h3 class="channel-acknowledgement-panel__title">Acknowledgement required</h3>';
+    const intro = '<p class="channel-acknowledgement-panel__intro">Confirm you have read the warnings above before installing this firmware.</p>';
+    const items = acknowledgements
+        .map(item => {
+            const checked = isChannelAcknowledged(item.key) ? 'checked' : '';
+            return `
+                <label class="channel-acknowledgement-panel__item">
+                    <input
+                        type="checkbox"
+                        data-channel-acknowledgement-input
+                        data-acknowledgement-key="${escapeHtml(item.key)}"
+                        ${checked}
+                    >
+                    <span>${escapeHtml(item.label)}</span>
+                </label>
+            `;
+        })
+        .join('');
+    panel.innerHTML = `${heading}${intro}<div class="channel-acknowledgement-panel__items">${items}</div>`;
+}
+
+function bindChannelAcknowledgementPanel() {
+    const panel = document.querySelector('[data-channel-acknowledgement-panel]');
+    if (!panel || panel.dataset.bound === 'true') {
+        return;
+    }
+    panel.dataset.bound = 'true';
+    panel.addEventListener('change', event => {
+        const target = event.target;
+        if (!target || !target.matches('[data-channel-acknowledgement-input]')) {
+            return;
+        }
+        const key = target.dataset.acknowledgementKey;
+        if (!key) {
+            return;
+        }
+        setChannelAcknowledgement(key, Boolean(target.checked));
+    });
 }
 
 function renderSelectedFirmware() {
@@ -4171,6 +4518,8 @@ function renderSelectedFirmware() {
     container.innerHTML = sections.join('');
 
     attachInstallButtonListeners();
+    renderChannelAcknowledgementPanel();
+    bindChannelAcknowledgementPanel();
     updateCompatibleFirmwareHeading();
 }
 
@@ -4183,12 +4532,15 @@ function attachInstallButtonListeners() {
         if (activateButton && activateButton.dataset.installBound !== 'true') {
             activateButton.addEventListener('click', event => {
                 const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
-                if (!policy.canInstall) {
+                const outstandingAcks = getOutstandingChannelAcknowledgements(window.currentFirmware);
+                if (!policy.canInstall || outstandingAcks.length > 0) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
                     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
                     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
-                    const message = policy.blockingReasons[0] || 'Resolve preflight checks before installing.';
+                    const message = outstandingAcks.length > 0
+                        ? 'Acknowledge the firmware-channel warning before installing.'
+                        : (policy.blockingReasons[0] || 'Resolve preflight checks before installing.');
                     [detailHelper, primaryHelper].filter(Boolean).forEach(helper => {
                         helper.textContent = message;
                         helper.classList.add('is-visible', 'is-error');
@@ -4247,7 +4599,7 @@ function bindSummaryInstallButton() {
     summaryButton.addEventListener('click', event => {
         event.preventDefault();
         const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
-        if (!policy.canInstall) {
+        if (!policy.canInstall || getOutstandingChannelAcknowledgements(window.currentFirmware).length > 0) {
             updateFirmwareControls();
             return;
         }
@@ -4308,7 +4660,13 @@ async function findCompatibleFirmware() {
     try {
         await loadManifestData();
 
-        const { configGroups, modelBuckets } = groupBuildsByConfig(manifestBuildsWithIndex);
+        // Apply release-mode visibility before grouping. In normal mode this
+        // strips development + rescue builds from every config bucket so they
+        // never appear in the install path. Recovery / development modes
+        // re-reveal the relevant tier; the user opted in via ?mode=… on the URL.
+        const releaseMode = getReleaseMode();
+        const visibleBuilds = filterBuildsForMode(manifestBuildsWithIndex, releaseMode);
+        const { configGroups, modelBuckets } = groupBuildsByConfig(visibleBuilds);
         const sortedBuilds = sortBuildsByChannelAndVersion(configGroups.get(configString) || []);
 
         const bucketMap = new Map();
@@ -4784,6 +5142,7 @@ function downloadFirmware() {
 
 function initializeFromUrl() {
     const searchParams = new URLSearchParams(window.location.search || '');
+    setReleaseModeFromUrl(searchParams);
     const parsed = parseConfigParams(searchParams);
     const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
 
@@ -4965,7 +5324,16 @@ export const __testHooks = Object.freeze({
     formatConfigSegment,
     MODULE_VARIANT_LABELS,
     verifyCurrentFirmwareIntegrity,
-    renderFirmwareProvenanceSection
+    renderFirmwareProvenanceSection,
+    renderFirmwareDetailsPanel,
+    renderChannelAcknowledgementPanel,
+    setReleaseModeForTests,
+    getReleaseMode,
+    setChannelAcknowledgement,
+    getOutstandingChannelAcknowledgements,
+    selectDefaultFirmware,
+    setFirmwareOptions,
+    isFirmwareRecommendedDefault
 });
 
 export {

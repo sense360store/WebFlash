@@ -50,6 +50,7 @@ const SCRIPT_MODULES = [
     './scripts/utils/firmware-provenance.js',
     './scripts/utils/flash-history.js',
     './scripts/utils/preset-storage.js',
+    './scripts/utils/release-channels.js',
     './scripts/utils/url-config.js'
 ];
 

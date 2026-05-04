@@ -376,6 +376,13 @@ describe('firmware download interactions', () => {
         acknowledgementControl.checked = true;
         acknowledgementControl.dispatchEvent(new Event('change', { bubbles: true }));
 
+        // Beta firmware additionally requires the channel-warning acknowledgement
+        // gate landed in PR #2 of the release-channel work. Tick every outstanding
+        // channel acknowledgement so the install gate flips to enabled.
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(window.currentFirmware);
+        outstanding.forEach(item => __testHooks.setChannelAcknowledgement(item.key, true));
+        __testHooks.updateFirmwareControls();
+
         expect(downloadBtn.disabled).toBe(false);
         expect(copyBtn.disabled).toBe(false);
     });
