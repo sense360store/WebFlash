@@ -159,6 +159,11 @@ export function recordUsbTestResult({ result, error = null, timestamp = null } =
         : new Date().toISOString();
     if (error && typeof error === 'object') {
         sessionState.lastUsbTestError = error.name || error.message || null;
+    } else {
+        // Clear any stale error from a previous attempt so a 'pass' /
+        // 'cancelled' result doesn't carry forward an old error message
+        // into diagnostics.
+        delete sessionState.lastUsbTestError;
     }
 }
 
