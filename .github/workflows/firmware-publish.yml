@@ -79,7 +79,25 @@ jobs:
           set -euo pipefail
           node scripts/validate-naming-policy.js firmware/configurations
 
+      - name: Install firmware-signing dependencies
+        # Ed25519 firmware signing requires the `cryptography` package.
+        # Failing to install here would cause gen-manifests.py to refuse
+        # to sign, which in turn would fail the production-mode validation
+        # gate (manifests without signature_ed25519 are rejected).
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install cryptography
+
       - name: Generate firmware manifests
+        env:
+          # Production runs override the committed dev key with the real
+          # signing key from CI secrets. Falls back to the dev key when
+          # the secret is absent (e.g. PR builds), so manifests still sign
+          # for verification testing — but those signatures are NOT
+          # accepted on the public deployment, which pins production keys.
+          WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
+          WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
         run: |
           set -euo pipefail
           python scripts/gen-manifests.py \

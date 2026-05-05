@@ -351,6 +351,8 @@ function buildFirmwareSection({
             source_url: null,
             sha256_present: false,
             signature_present: false,
+            ed25519_signature_present: false,
+            signature_key_id: null,
             provenance_status: 'unknown',
             release_warning_level: 'none',
             acknowledgement_required: false,
@@ -371,6 +373,12 @@ function buildFirmwareSection({
         || (Array.isArray(currentFirmware.parts) && currentFirmware.parts.some(p => p && p.sha256)));
     const signaturePresent = Boolean(currentFirmware.signature
         || (Array.isArray(currentFirmware.parts) && currentFirmware.parts.some(p => p && p.signature)));
+    const ed25519SignaturePresent = Boolean(currentFirmware.signature_ed25519
+        || (Array.isArray(currentFirmware.parts) && currentFirmware.parts.some(p => p && p.signature_ed25519)));
+    const signatureKeyId = (typeof currentFirmware.signature_key_id === 'string' && currentFirmware.signature_key_id.trim())
+        || (Array.isArray(currentFirmware.parts)
+            ? (currentFirmware.parts.find(p => p && p.signature_key_id)?.signature_key_id || null)
+            : null);
 
     const policy = getChannelPolicy(currentFirmware.channel);
     const canonicalChannel = normaliseReleaseChannel(currentFirmware.channel);
@@ -408,6 +416,12 @@ function buildFirmwareSection({
         source_url: currentFirmware.source_url || null,
         sha256_present: sha256Present,
         signature_present: signaturePresent,
+        // Real Ed25519 signature metadata. `signature_present` above is the
+        // legacy salted-SHA256 'signature' field — useful for diagnosing
+        // older fixtures, but only `ed25519_signature_present` is the
+        // primitive that drives authenticity verification.
+        ed25519_signature_present: ed25519SignaturePresent,
+        signature_key_id: signatureKeyId,
         provenance_status: provenanceStatus,
         release_warning_level: releaseWarningLevel,
         acknowledgement_required: acknowledgementRequired,
