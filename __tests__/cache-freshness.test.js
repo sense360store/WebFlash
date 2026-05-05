@@ -597,3 +597,127 @@ describe('cache freshness — install gating policy', () => {
         expect(summaryButton.title).toMatch(/newer firmware manifest/i);
     });
 });
+
+// Service-worker update state is set by the sw-update.js module via
+// internal lifecycle events (the public surface only exposes a snapshot
+// reader and `dismissPendingUpdate`). To drive `updateAvailable` / the
+// dismissed flag deterministically we mock the sw-update module per test.
+// The freshness-banner and diagnostics modules import the same module —
+// the mock provides every export so importing state.js (which transitively
+// loads diagnostics.js) does not blow up.
+function mockSwUpdate(snapshot = {}) {
+    jest.unstable_mockModule('../scripts/services/sw-update.js', () => ({
+        getServiceWorkerState: () => ({
+            supported: true,
+            controlled: true,
+            updateAvailable: false,
+            updateDismissed: false,
+            cacheClearRequested: false,
+            ...snapshot
+        }),
+        subscribeServiceWorkerState: () => () => {},
+        initServiceWorkerUpdates: () => Promise.resolve(null),
+        dismissPendingUpdate: () => {},
+        triggerSkipWaitingAndReload: () => {},
+        markCacheClearRequested: () => {},
+        __resetForTests: () => {}
+    }));
+}
+
+describe('cache freshness — install gating with SW update waiting', () => {
+    beforeEach(() => {
+        jest.resetModules();
+        renderDom();
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ builds: [] }) }));
+        Object.defineProperty(global.navigator, 'serial', { value: { getPorts: jest.fn(() => Promise.resolve([])) }, configurable: true });
+        window.confirm = jest.fn(() => true);
+        window.currentFirmware = { parts: [{ path: 'fw.bin', offset: 0 }] };
+    });
+
+    function injectInstallControls() {
+        const container = document.getElementById('compatible-firmware');
+        container.innerHTML = `
+          <p data-ready-helper></p>
+          <esp-web-install-button data-webflash-install>
+            <button slot="activate"></button>
+          </esp-web-install-button>
+        `;
+    }
+
+    function registerFirmware(__testHooks) {
+        const build = {
+            firmwareId: 'test-build-1',
+            channel: 'stable',
+            version: '1.0.0',
+            config_string: 'Ceiling-USB',
+            parts: [{ path: 'fw.bin', offset: 0 }],
+            source_commit: 'abc1234',
+            changelog: ['initial'],
+            md5: '0'.repeat(32),
+            sha256: '0'.repeat(64)
+        };
+        __testHooks.setFirmwareOptions([build], 'Ceiling-USB');
+        window.currentFirmware = build;
+    }
+
+    function seedAllPassPreflight(__testHooks) {
+        __testHooks.updateConnectionQualityMetrics({
+            disconnects: 0,
+            reconnectAttempts: 0,
+            serialReadFailures: 0,
+            serialWriteFailures: 0,
+            retryCount: 0,
+            stabilityWindowStart: Date.now() - 35000
+        });
+        window.latestPreflightChecks = [
+            { key: 'browser-support', state: 'pass', detail: 'ok', blocking: false },
+            { key: 'device-visibility', state: 'pass', detail: 'ok', blocking: false },
+            { key: 'connection-quality', state: 'pass', detail: 'ok', blocking: false },
+            { key: 'firmware-verification', state: 'pass', detail: 'ok', blocking: false },
+            { key: 'user-acknowledgement', state: 'pass', detail: 'ok', blocking: false }
+        ];
+    }
+
+    test('evaluateFreshnessGate reports a block when a SW update is waiting and not dismissed', async () => {
+        mockSwUpdate({ updateAvailable: true, updateDismissed: false });
+        const { __testHooks } = await import('../scripts/state.js');
+        const verdict = __testHooks.evaluateFreshnessGate();
+        expect(verdict.ok).toBe(false);
+        expect(verdict.swUpdateBlocking).toBe(true);
+        expect(verdict.blockingReason).toMatch(/WebFlash update is available/i);
+    });
+
+    test('evaluateFreshnessGate clears the SW-update block once the user dismisses the pending update', async () => {
+        mockSwUpdate({ updateAvailable: true, updateDismissed: true });
+        const { __testHooks } = await import('../scripts/state.js');
+        const verdict = __testHooks.evaluateFreshnessGate();
+        expect(verdict.swUpdateBlocking).toBe(false);
+        // No other freshness signal is set, so the gate is fully open.
+        expect(verdict.ok).toBe(true);
+        expect(verdict.blockingReason).toBe('');
+    });
+
+    test('install button and summary install button both block with SW-update reason when an update is waiting', async () => {
+        mockSwUpdate({ updateAvailable: true, updateDismissed: false });
+        const { __testHooks, setStep } = await import('../scripts/state.js');
+        setStep(5, { animate: false, skipUrlUpdate: true });
+        registerFirmware(__testHooks);
+        injectInstallControls();
+        seedAllPassPreflight(__testHooks);
+        __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+        __testHooks.setPreFlashAcknowledgement(true);
+        // Manifest is fresh; only the SW-update path should block install.
+        __testHooks.setManifestFreshnessState('current');
+        __testHooks.updateFirmwareControls();
+
+        const installButton = document.querySelector('esp-web-install-button button[slot="activate"]');
+        expect(installButton).not.toBeNull();
+        expect(installButton.disabled).toBe(true);
+        expect(installButton.title).toMatch(/WebFlash update is available/i);
+
+        const summaryButton = document.querySelector('[data-module-summary-install]');
+        expect(summaryButton).not.toBeNull();
+        expect(summaryButton.disabled).toBe(true);
+        expect(summaryButton.title).toMatch(/WebFlash update is available/i);
+    });
+});

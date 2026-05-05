@@ -30,6 +30,7 @@ import {
     setSupportBundleStateProvider
 } from './services/diagnostics.js';
 import { postFlashService } from './services/post-flash.js';
+import { getServiceWorkerState, subscribeServiceWorkerState } from './services/sw-update.js';
 
 let currentStep = 1;
 const totalSteps = 5;
