@@ -17,6 +17,25 @@
  * The module is pure data + helpers: no DOM, no state. Anything UI- or
  * state-dependent (default selection, install gating) consumes the policy
  * returned here.
+ *
+ * Acknowledgement scoping
+ * -----------------------
+ * Risky firmware (beta, preview, development, deprecated, unknown channel)
+ * gates install behind explicit consent. To prevent a user acknowledging one
+ * risky build and then accidentally flashing a *different* risky build with
+ * the same channel, every acknowledgement is bound to a firmware-identity
+ * signature derived from:
+ *
+ *   - canonical release channel
+ *   - firmware/build ID (and binary URL if present)
+ *   - version string
+ *   - hardware/configuration profile (config_string)
+ *   - deprecated flag and deprecation reason
+ *
+ * `getFirmwareAcknowledgementSignature(build)` is the single source of truth
+ * for that signature. The install-gating layer in `state.js` stores each ack
+ * with the signature it was given against and treats it as unsatisfied the
+ * moment any of those fields change.
  */
 
 const STABLE_ALIASES = Object.freeze(['stable', 'general', 'ga', 'release', 'prod', 'production', 'lts']);
@@ -329,6 +348,70 @@ export function getRequiredAcknowledgements(build) {
 }
 
 /**
+ * Stable identity signature for an acknowledgement context. Two builds with
+ * different signatures MUST be treated as independent acknowledgement
+ * contexts: a user who accepted the risk of one beta/preview/dev/deprecated
+ * build has not implicitly accepted the risk of any other.
+ *
+ * The signature is intentionally a simple delimited string (not a hash) so
+ * it is auditable in tests and diagnostics. Field order is fixed; new fields
+ * must be appended, never inserted, so older serialized signatures remain
+ * comparable for the lifetime of a single session (signatures are session-
+ * scoped — they are never persisted).
+ *
+ * Returns null for falsy / non-object input so callers can treat "no
+ * firmware selected" as "no signature can match".
+ */
+export function getFirmwareAcknowledgementSignature(build) {
+    if (!build || typeof build !== 'object') {
+        return null;
+    }
+    const channel = normaliseReleaseChannel(build.channel);
+    const buildId = stringField(build.firmwareId) || stringField(build.firmware_id) || '';
+    const url = stringField(build.url)
+        || stringField(build.href)
+        || stringField(build.binary_url)
+        || stringField(build.download_url)
+        || partsSignature(build.parts)
+        || '';
+    const version = stringField(build.version);
+    const config = stringField(build.config_string);
+    const deprecated = build.deprecated === true ? 'yes' : 'no';
+    const deprecationReason = stringField(build.deprecation_reason);
+    return [
+        `c=${channel}`,
+        `id=${buildId}`,
+        `url=${url}`,
+        `v=${version}`,
+        `cfg=${config}`,
+        `d=${deprecated}`,
+        `dr=${deprecationReason}`
+    ].join('|');
+}
+
+function stringField(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value).trim();
+}
+
+function partsSignature(parts) {
+    if (!Array.isArray(parts) || parts.length === 0) {
+        return '';
+    }
+    return parts
+        .map(part => {
+            const path = stringField(part?.path);
+            const offset = part?.offset !== undefined && part?.offset !== null
+                ? String(part.offset)
+                : '';
+            return `${path}@${offset}`;
+        })
+        .join(',');
+}
+
+/**
  * Filter a list of builds to those visible in a given mode.
  *
  * Modes:
@@ -409,5 +492,6 @@ export function getChannelPriority(channel) {
 export const __testHelpers = Object.freeze({
     DEPRECATED_BADGE,
     RECOMMENDED_BADGE,
-    DEFAULT_POLICY
+    DEFAULT_POLICY,
+    partsSignature
 });
