@@ -4075,6 +4075,7 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
         return '';
     }
     const policy = getChannelPolicy(firmware.channel);
+    const channelKey = normaliseReleaseChannel(firmware.channel);
     const fileSize = Number(firmware.file_size);
     const sizeLabel = Number.isFinite(fileSize) && fileSize > 0
         ? (fileSize >= 1024 ? `${(fileSize / 1024).toFixed(1)} KB` : `${fileSize} B`)
@@ -4086,9 +4087,75 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
     const knownIssues = Array.isArray(firmware.known_issues) ? firmware.known_issues : [];
     const changelog = Array.isArray(firmware.changelog) ? firmware.changelog : [];
     const rollbackSupported = firmware.rollback_supported === true;
-    const channelKey = normaliseReleaseChannel(firmware.channel);
+    const configString = (firmware.config_string || '').toString().trim();
+    const chipFamily = (firmware.chipFamily || '').toString().trim();
+    const sha256 = (firmware.sha256 || '').toString().trim();
+    const hasSignatureMetadata = typeof firmware.signature === 'string'
+        && firmware.signature.trim().length > 0;
+    const signedBy = (firmware.signed_by || '').toString().trim();
+    const firmwareTarget = getFirmwareDisplayName(firmware, configString);
+    const artifactType = (typeof firmware.artifact_type === 'string' && firmware.artifact_type.trim())
+        ? firmware.artifact_type.trim()
+        : '';
+    const isRescueArtifact = artifactType === 'rescue';
+    const firmwarePath = (() => {
+        if (Array.isArray(firmware.parts)) {
+            const part = firmware.parts.find(p => p && typeof p.path === 'string' && p.path.trim());
+            if (part) {
+                return part.path.trim();
+            }
+        }
+        if (typeof firmware.path === 'string' && firmware.path.trim()) {
+            return firmware.path.trim();
+        }
+        return '';
+    })();
+
+    let provenanceSummary = null;
+    try {
+        const { entries, report } = describeVerificationChecks(firmware);
+        const counts = entries.reduce((acc, entry) => {
+            const key = entry.status || 'unknown';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {});
+        provenanceSummary = { counts, status: report.status, summary: report.summary };
+    } catch {
+        provenanceSummary = null;
+    }
+
+    // Recap the channel/recommended/deprecated badges inside the panel so the
+    // user can inspect everything in one place. We append a Recovery badge
+    // when artifact_type === 'rescue' and the channel badge isn't already
+    // surfacing 'Recovery' (avoids duplication on the rescue channel).
+    const panelBadges = getFirmwareBadges(firmware, { recommended }).map(badge => ({ ...badge }));
+    if (isRescueArtifact && !panelBadges.some(badge => badge.key === 'rescue')) {
+        panelBadges.push({
+            key: 'rescue',
+            label: 'Recovery',
+            tone: 'danger',
+            description: 'Recovery / rollback firmware artifact.'
+        });
+    }
+    const badgesHtml = panelBadges.length
+        ? `
+            <div class="firmware-details-panel__badges" data-firmware-details-badges>
+                ${panelBadges.map(badge => `
+                    <span
+                        class="firmware-channel-tag is-${escapeHtml(badge.key)} tone-${escapeHtml(badge.tone)}"
+                        data-firmware-panel-badge="${escapeHtml(badge.key)}"
+                        title="${escapeHtml(badge.description || '')}"
+                    >${escapeHtml(badge.label)}</span>
+                `).join('')}
+            </div>
+        `
+        : '';
 
     const factRows = [];
+    factRows.push({
+        label: 'Firmware target',
+        value: `<code class="firmware-details-panel__code">${escapeHtml(firmwareTarget)}</code>`
+    });
     if (firmware.version) {
         factRows.push({
             label: 'Version',
@@ -4111,6 +4178,15 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
             ? `<span class="firmware-details-panel__deprecated">Deprecated${firmware.deprecation_reason ? ` — ${escapeHtml(firmware.deprecation_reason)}` : ''}</span>`
             : '<span class="firmware-details-panel__active">Active</span>'
     });
+    if (configString) {
+        factRows.push({
+            label: 'Configuration profile',
+            value: `<code class="firmware-details-panel__code">${escapeHtml(configString)}</code>`
+        });
+    }
+    if (chipFamily) {
+        factRows.push({ label: 'Chip family', value: escapeHtml(chipFamily) });
+    }
     if (buildDateLabel) {
         factRows.push({ label: 'Build date', value: escapeHtml(buildDateLabel) });
     }
@@ -4129,21 +4205,54 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
             value: `<a class="firmware-details-panel__link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>`
         });
     }
+    if (firmwarePath) {
+        factRows.push({
+            label: 'Firmware path',
+            value: `<code class="firmware-details-panel__code">${escapeHtml(firmwarePath)}</code>`
+        });
+    }
     if (sizeLabel) {
         factRows.push({ label: 'File size', value: escapeHtml(sizeLabel) });
     }
-    const artifactType = (typeof firmware.artifact_type === 'string' && firmware.artifact_type.trim())
-        ? firmware.artifact_type.trim()
-        : '';
     if (artifactType) {
         factRows.push({ label: 'Artifact type', value: escapeHtml(artifactType) });
     }
+
+    factRows.push({
+        label: 'SHA-256',
+        value: sha256
+            ? `<code class="firmware-details-panel__code firmware-details-panel__hash" title="${escapeHtml(sha256)}">${escapeHtml(sha256.length > 24 ? `${sha256.slice(0, 12)}…${sha256.slice(-8)}` : sha256)}</code> <span class="firmware-details-panel__hint">Metadata present in manifest. Browser hashes the downloaded binary and compares against this value before flashing.</span>`
+            : '<span class="firmware-details-panel__no">Metadata missing from manifest entry.</span>'
+    });
+
+    factRows.push({
+        label: 'Signature metadata',
+        value: hasSignatureMetadata
+            ? `<span class="firmware-details-panel__yes">Signature metadata present</span>${signedBy ? ` <span class="firmware-details-panel__hint">Signed by ${escapeHtml(signedBy)}.</span>` : ''} <span class="firmware-details-panel__hint">Browser-side cryptographic signature checks are not performed; treat this as integrity metadata, not authenticity.</span>`
+            : '<span class="firmware-details-panel__no">Missing from manifest entry.</span>'
+    });
+
     factRows.push({
         label: 'Rollback',
         value: rollbackSupported
             ? '<span class="firmware-details-panel__yes">Supported via Recovery firmware</span>'
             : '<span class="firmware-details-panel__no">Use Recovery firmware to roll back</span>'
     });
+
+    if (provenanceSummary) {
+        const counts = provenanceSummary.counts || {};
+        const tallyParts = [];
+        if (counts.pass) tallyParts.push(`${counts.pass} pass`);
+        if (counts.warn) tallyParts.push(`${counts.warn} warn`);
+        if (counts.fail) tallyParts.push(`${counts.fail} fail`);
+        if (counts.skip) tallyParts.push(`${counts.skip} not applicable`);
+        const tallyText = tallyParts.join(' · ') || '—';
+        const summaryText = provenanceSummary.summary || '';
+        factRows.push({
+            label: 'Verification checks',
+            value: `<span class="firmware-details-panel__verification status-${escapeHtml(provenanceSummary.status)}">${escapeHtml(tallyText)}</span>${summaryText ? ` <span class="firmware-details-panel__hint">${escapeHtml(summaryText)}</span>` : ''}`
+        });
+    }
 
     const factsHtml = factRows
         .map(row => `
@@ -4182,6 +4291,7 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
             <header class="firmware-details-panel__header">
                 <h3 class="firmware-details-panel__title">Firmware details</h3>
                 <p class="firmware-details-panel__description">${escapeHtml(policy.description)}</p>
+                ${badgesHtml}
             </header>
             <dl class="firmware-details-panel__facts">${factsHtml}</dl>
             ${knownIssuesHtml}
