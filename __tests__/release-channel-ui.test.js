@@ -523,6 +523,167 @@ describe('release-channel UI wiring in state.js', () => {
         expect(html).toMatch(/data-check-id="signature_verified"[^>]*data-check-status="skip"/);
         expect(html).not.toMatch(/data-check-id="signature_verified"[^>]*data-check-status="pass"/);
     });
+
+    test('renderFirmwareDetailsPanel surfaces firmware target, configuration profile, chip family, and firmware path', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            chipFamily: 'ESP32-S3',
+            config_string: 'Ceiling-USB',
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v2.0.0-stable.bin', offset: 0 }]
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        expect(html).toContain('Firmware target');
+        expect(html).toContain('Sense360-Ceiling-USB-v2.0.0-stable.bin');
+        expect(html).toContain('Configuration profile');
+        expect(html).toContain('Ceiling-USB');
+        expect(html).toContain('Chip family');
+        expect(html).toContain('ESP32-S3');
+        expect(html).toContain('Firmware path');
+        expect(html).toContain('firmware/configurations/Sense360-Ceiling-USB-v2.0.0-stable.bin');
+    });
+
+    test('renderFirmwareDetailsPanel surfaces SHA-256 metadata status with careful, fact-only language', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        // Truncated digest fingerprint is shown so the user can confirm identity.
+        expect(html).toContain('c9674b9df0ab');
+        expect(html).toContain('Metadata present in manifest');
+        // The browser-side hashing behaviour is described as a fact, not a claim of authenticity.
+        expect(html).toMatch(/Browser hashes the downloaded binary/i);
+    });
+
+    test('renderFirmwareDetailsPanel surfaces signature metadata status without claiming cryptographic verification', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            signed_by: 'Sense360 release pipeline'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        expect(html).toContain('Signature metadata');
+        expect(html).toContain('Signature metadata present');
+        expect(html).toContain('Signed by Sense360 release pipeline');
+        // Careful copy: the panel must explicitly note that browser-side
+        // cryptographic verification is NOT performed, so users do not
+        // misread "metadata present" as authenticity.
+        expect(html).toMatch(/Browser-side cryptographic signature checks are not performed/i);
+    });
+
+    test('renderFirmwareDetailsPanel surfaces a Verification checks tally from describeVerificationChecks', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        expect(html).toContain('Verification checks');
+        // Tally uses ' · ' separators with at least one passing check.
+        expect(html).toMatch(/\d+ pass/);
+        expect(html).toMatch(/firmware-details-panel__verification status-(pass|warn|fail)/);
+    });
+
+    test('renderFirmwareDetailsPanel renders a Recovery badge for rescue artifact_type even when channel is not rescue', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-rescue-fixture',
+            channel: 'stable',
+            version: '2.0.0',
+            artifact_type: 'rescue'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: false });
+        expect(html).toContain('data-firmware-panel-badge="rescue"');
+        expect(html).toContain('Recovery');
+    });
+
+    test('renderFirmwareDetailsPanel recaps the channel and recommended badges inside the panel header', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        expect(html).toContain('data-firmware-panel-badge="stable"');
+        expect(html).toContain('data-firmware-panel-badge="recommended"');
+    });
+
+    test('renderFirmwareDetailsPanel reports missing SHA-256 metadata explicitly', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            sha256: ''
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: false });
+        expect(html).toContain('Metadata missing from manifest entry');
+    });
+
+    test('renderFirmwareDetailsPanel groups fact rows into Identity / Compatibility / Integrity / Verification sections', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            chipFamily: 'ESP32-S3',
+            artifact_type: 'application'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+
+        document.body.innerHTML = `<div id="probe">${html}</div>`;
+        const groups = Array.from(document.querySelectorAll('[data-firmware-details-group]'));
+        const groupKeys = groups.map(group => group.getAttribute('data-firmware-details-group'));
+        expect(groupKeys).toEqual(['identity', 'compatibility', 'integrity', 'verification']);
+
+        const identity = document.querySelector('[data-firmware-details-group="identity"]');
+        const compatibility = document.querySelector('[data-firmware-details-group="compatibility"]');
+        const integrity = document.querySelector('[data-firmware-details-group="integrity"]');
+        const verification = document.querySelector('[data-firmware-details-group="verification"]');
+
+        expect(identity.querySelector('.firmware-details-panel__group-title').textContent).toBe('Identity');
+        expect(compatibility.querySelector('.firmware-details-panel__group-title').textContent).toBe('Compatibility');
+        expect(integrity.querySelector('.firmware-details-panel__group-title').textContent).toBe('Integrity metadata');
+        expect(verification.querySelector('.firmware-details-panel__group-title').textContent).toBe('Verification summary');
+
+        expect(identity.textContent).toMatch(/Firmware target/);
+        expect(identity.textContent).toMatch(/Firmware path/);
+        expect(identity.textContent).toMatch(/Version/);
+        expect(identity.textContent).toMatch(/Channel/);
+        expect(compatibility.textContent).toMatch(/Configuration profile/);
+        expect(compatibility.textContent).toMatch(/Chip family/);
+        expect(compatibility.textContent).toMatch(/Artifact type/);
+        expect(integrity.textContent).toMatch(/SHA-256/);
+        expect(integrity.textContent).toMatch(/Signature metadata/);
+        expect(verification.textContent).toMatch(/Verification checks/);
+    });
+
+    test('renderFirmwareDetailsPanel skips empty groups when their rows are absent', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        // No chipFamily, no config_string, no artifact_type → Compatibility
+        // group should not render at all rather than rendering an empty box.
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            chipFamily: '',
+            config_string: '',
+            artifact_type: ''
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: false });
+        document.body.innerHTML = `<div id="probe">${html}</div>`;
+        expect(document.querySelector('[data-firmware-details-group="compatibility"]')).toBeNull();
+        expect(document.querySelector('[data-firmware-details-group="identity"]')).not.toBeNull();
+    });
 });
 
 describe('release-channel acknowledgement scoping (identity-bound consent)', () => {
