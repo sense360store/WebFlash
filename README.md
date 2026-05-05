@@ -227,6 +227,18 @@ Notes on the policy:
   **Development**. `recovery`, `rollback`, `restore`, `unbrick` map to
   **Recovery**. The full alias map lives in
   [`scripts/utils/release-channels.js`](scripts/utils/release-channels.js).
+- **Acknowledgement is bound to firmware identity.** Consent ticked for one
+  risky build does **not** carry over to a different risky build. Each
+  acknowledgement is internally bound to a firmware-identity signature
+  derived from `(channel, build ID/URL, version, config_string, deprecated,
+  deprecation_reason)`. If any of those fields change — including a hardware-
+  profile switch in step 4, a new beta/preview/dev version appearing in the
+  manifest, the deprecated flag flipping, or the deprecation reason being
+  rewritten — the gate treats prior consent as stale and forces the user to
+  acknowledge again. The signature helper is
+  `getFirmwareAcknowledgementSignature` in
+  [`scripts/utils/release-channels.js`](scripts/utils/release-channels.js); the
+  prune-on-mismatch enforcement lives in `state.js`.
 
 
 ## Canonical Option Inventory Table

@@ -8,6 +8,7 @@ import {
     getFirmwareBadges,
     getFirmwareWarnings,
     getRequiredAcknowledgements,
+    getFirmwareAcknowledgementSignature,
     filterBuildsForMode,
     isBuildVisibleInMode,
     pickDefaultBuild,
@@ -342,5 +343,98 @@ describe('release-channels — default selection', () => {
         // anyway, so this is mostly a regression test.
         const default_ = pickDefaultBuild([DEV_BUILD, STABLE_BUILD], { mode: 'normal' });
         expect(default_).toBe(STABLE_BUILD);
+    });
+});
+
+describe('release-channels — getFirmwareAcknowledgementSignature', () => {
+    test('returns null for non-objects', () => {
+        expect(getFirmwareAcknowledgementSignature(null)).toBeNull();
+        expect(getFirmwareAcknowledgementSignature(undefined)).toBeNull();
+        expect(getFirmwareAcknowledgementSignature('beta')).toBeNull();
+        expect(getFirmwareAcknowledgementSignature(42)).toBeNull();
+    });
+
+    test('two builds with the same identity produce the same signature', () => {
+        const a = { ...BETA_BUILD, config_string: 'Ceiling-USB' };
+        const b = { ...BETA_BUILD, config_string: 'Ceiling-USB' };
+        expect(getFirmwareAcknowledgementSignature(a))
+            .toBe(getFirmwareAcknowledgementSignature(b));
+    });
+
+    test('signature changes when the version changes', () => {
+        const v1 = { ...BETA_BUILD, version: '2.1.0' };
+        const v2 = { ...BETA_BUILD, version: '2.2.0' };
+        expect(getFirmwareAcknowledgementSignature(v1))
+            .not.toBe(getFirmwareAcknowledgementSignature(v2));
+    });
+
+    test('signature changes when the channel changes', () => {
+        const beta = { ...BETA_BUILD };
+        const preview = { ...BETA_BUILD, channel: 'preview' };
+        expect(getFirmwareAcknowledgementSignature(beta))
+            .not.toBe(getFirmwareAcknowledgementSignature(preview));
+    });
+
+    test('signature normalises channel synonyms', () => {
+        const rc = { ...BETA_BUILD, channel: 'rc' };
+        const beta = { ...BETA_BUILD, channel: 'beta' };
+        // 'rc' is a beta alias and therefore must yield the same signature as
+        // an otherwise-identical 'beta' build — otherwise switching between
+        // aliases would silently force an extra acknowledgement that has no
+        // user-visible distinction.
+        expect(getFirmwareAcknowledgementSignature(rc))
+            .toBe(getFirmwareAcknowledgementSignature(beta));
+    });
+
+    test('signature changes when the firmware ID changes', () => {
+        const a = { ...BETA_BUILD, firmwareId: 'fw-beta-A' };
+        const b = { ...BETA_BUILD, firmwareId: 'fw-beta-B' };
+        expect(getFirmwareAcknowledgementSignature(a))
+            .not.toBe(getFirmwareAcknowledgementSignature(b));
+    });
+
+    test('signature changes when the binary URL / parts path changes', () => {
+        const a = {
+            ...BETA_BUILD,
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v2.1.0-beta.bin', offset: 0 }]
+        };
+        const b = {
+            ...BETA_BUILD,
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-POE-v2.1.0-beta.bin', offset: 0 }]
+        };
+        expect(getFirmwareAcknowledgementSignature(a))
+            .not.toBe(getFirmwareAcknowledgementSignature(b));
+    });
+
+    test('signature changes when the hardware/configuration profile changes', () => {
+        const usb = { ...BETA_BUILD, config_string: 'Ceiling-USB' };
+        const poe = { ...BETA_BUILD, config_string: 'Ceiling-POE' };
+        expect(getFirmwareAcknowledgementSignature(usb))
+            .not.toBe(getFirmwareAcknowledgementSignature(poe));
+    });
+
+    test('signature changes when deprecated flag flips', () => {
+        const live = { ...STABLE_BUILD, deprecated: false };
+        const retired = { ...STABLE_BUILD, deprecated: true };
+        expect(getFirmwareAcknowledgementSignature(live))
+            .not.toBe(getFirmwareAcknowledgementSignature(retired));
+    });
+
+    test('signature changes when deprecation reason changes', () => {
+        const a = { ...DEPRECATED_STABLE, deprecation_reason: 'Superseded by v2.0.0.' };
+        const b = { ...DEPRECATED_STABLE, deprecation_reason: 'Pulled due to provisioning bug.' };
+        expect(getFirmwareAcknowledgementSignature(a))
+            .not.toBe(getFirmwareAcknowledgementSignature(b));
+    });
+
+    test('signature is stable across irrelevant fields (e.g. file_size, hash)', () => {
+        // Acknowledgement scope is the user-visible install context. Adding
+        // fields that don't affect it (size, sha256, source_commit) must NOT
+        // shift the signature, otherwise a new manifest run could spuriously
+        // wipe consent that the user just gave for the same logical build.
+        const base = { ...BETA_BUILD, config_string: 'Ceiling-USB' };
+        const enriched = { ...base, file_size: 524288, sha256: 'a'.repeat(64), source_commit: 'abc1234' };
+        expect(getFirmwareAcknowledgementSignature(base))
+            .toBe(getFirmwareAcknowledgementSignature(enriched));
     });
 });

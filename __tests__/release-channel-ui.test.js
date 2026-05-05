@@ -524,3 +524,228 @@ describe('release-channel UI wiring in state.js', () => {
         expect(html).not.toMatch(/data-check-id="signature_verified"[^>]*data-check-status="pass"/);
     });
 });
+
+describe('release-channel acknowledgement scoping (identity-bound consent)', () => {
+    beforeEach(() => {
+        jest.resetModules();
+        renderDom();
+        global.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ builds: [] })
+        }));
+        Object.defineProperty(global.navigator, 'serial', {
+            value: { getPorts: jest.fn(() => Promise.resolve([])) },
+            configurable: true
+        });
+        Object.defineProperty(window, 'crypto', { value: undefined, configurable: true });
+        delete window.currentFirmware;
+        delete window.currentConfigString;
+    });
+
+    test('acknowledging beta v1 does not satisfy the gate for beta v2', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const v1 = makeBuild({
+            firmwareId: 'firmware-beta-v1',
+            channel: 'beta',
+            version: '2.1.0',
+            manifestIndex: 0,
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v2.1.0-beta.bin', offset: 0 }]
+        });
+        const v2 = makeBuild({
+            firmwareId: 'firmware-beta-v2',
+            channel: 'beta',
+            version: '2.2.0',
+            manifestIndex: 1,
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v2.2.0-beta.bin', offset: 0 }]
+        });
+        __testHooks.setFirmwareOptions([v1, v2], 'Ceiling-USB');
+
+        const select = document.getElementById('firmware-version-select');
+        select.value = 'firmware-beta-v1';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(v1).length).toBe(0);
+
+        // Switching to a different beta version must require a fresh ack —
+        // the consent the user gave was for v1, not for "any beta build".
+        select.value = 'firmware-beta-v2';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(v2);
+        expect(outstanding.map(item => item.key)).toContain('channel:beta');
+    });
+
+    test('acknowledging beta on hardware A does not satisfy the gate for the same beta on hardware B', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const usbBeta = makeBuild({
+            firmwareId: 'firmware-beta-usb',
+            channel: 'beta',
+            version: '2.1.0',
+            config_string: 'Ceiling-USB',
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v2.1.0-beta.bin', offset: 0 }]
+        });
+        __testHooks.setFirmwareOptions([usbBeta], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(usbBeta).length).toBe(0);
+
+        // Re-render the firmware list under a different hardware profile
+        // (e.g. user toggled USB → POE in step 4). The build is still "beta
+        // v2.1.0" by name, but it is a different binary for different
+        // hardware: the prior ack must not silently satisfy the gate.
+        const poeBeta = makeBuild({
+            firmwareId: 'firmware-beta-poe',
+            channel: 'beta',
+            version: '2.1.0',
+            config_string: 'Ceiling-POE',
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-POE-v2.1.0-beta.bin', offset: 0 }]
+        });
+        __testHooks.setFirmwareOptions([poeBeta], 'Ceiling-POE');
+        __testHooks.selectDefaultFirmware();
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(poeBeta);
+        expect(outstanding.map(item => item.key)).toContain('channel:beta');
+    });
+
+    test('acknowledging a deprecated build does not satisfy the gate for a different deprecated build', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const oldA = makeBuild({
+            firmwareId: 'firmware-stable-1.0.0',
+            channel: 'stable',
+            version: '1.0.0',
+            deprecated: true,
+            deprecation_reason: 'Superseded by v2.0.0.',
+            manifestIndex: 0
+        });
+        const oldB = makeBuild({
+            firmwareId: 'firmware-stable-1.1.0',
+            channel: 'stable',
+            version: '1.1.0',
+            deprecated: true,
+            deprecation_reason: 'Pulled due to provisioning bug.',
+            manifestIndex: 1,
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v1.1.0-stable.bin', offset: 0 }]
+        });
+        __testHooks.setFirmwareOptions([oldA, oldB], 'Ceiling-USB');
+
+        const select = document.getElementById('firmware-version-select');
+        select.value = 'firmware-stable-1.0.0';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        __testHooks.setChannelAcknowledgement('deprecated', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(oldA).length).toBe(0);
+
+        select.value = 'firmware-stable-1.1.0';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(oldB);
+        expect(outstanding.map(item => item.key)).toContain('deprecated');
+    });
+
+    test('changing the deprecation reason alone forces re-acknowledgement', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const original = makeBuild({
+            firmwareId: 'firmware-stable-old',
+            channel: 'stable',
+            version: '1.0.0',
+            deprecated: true,
+            deprecation_reason: 'Superseded by v2.0.0.'
+        });
+        __testHooks.setFirmwareOptions([original], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+        __testHooks.setChannelAcknowledgement('deprecated', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(original).length).toBe(0);
+
+        // Manifest update flips the deprecation reason — semantically a new
+        // risk profile (e.g. "merely superseded" vs. "actively pulled for a
+        // bug"). Re-render with the updated build and confirm the gate
+        // demands a fresh ack.
+        const updated = { ...original, deprecation_reason: 'Pulled due to provisioning bug.' };
+        __testHooks.setFirmwareOptions([updated], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(updated);
+        expect(outstanding.map(item => item.key)).toContain('deprecated');
+    });
+
+    test('acknowledging beta does not satisfy a preview gate (cross-channel leak protection)', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const beta = makeBuild({
+            firmwareId: 'firmware-beta',
+            channel: 'beta',
+            version: '2.1.0',
+            manifestIndex: 0
+        });
+        const preview = makeBuild({
+            firmwareId: 'firmware-preview',
+            channel: 'preview',
+            version: '3.0.0-rc.1',
+            manifestIndex: 1,
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v3.0.0-rc.1-preview.bin', offset: 0 }]
+        });
+        __testHooks.setFirmwareOptions([beta, preview], 'Ceiling-USB');
+
+        const select = document.getElementById('firmware-version-select');
+        select.value = 'firmware-beta';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+
+        select.value = 'firmware-preview';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(preview);
+        expect(outstanding.map(item => item.key)).toContain('channel:preview');
+    });
+
+    test('re-acknowledging the same firmware (same identity) preserves consent', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-beta',
+            channel: 'beta',
+            version: '2.1.0'
+        });
+        __testHooks.setFirmwareOptions([build], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+        expect(__testHooks.getOutstandingChannelAcknowledgements(build).length).toBe(0);
+
+        // A no-op manifest refresh — same build, same identity. The ack must
+        // survive: forcing the user to retick on every render would be a UX
+        // regression and would spuriously change diagnostics state.
+        __testHooks.setFirmwareOptions([build], 'Ceiling-USB');
+        expect(__testHooks.getOutstandingChannelAcknowledgements(build).length).toBe(0);
+    });
+
+    test('refusing to acknowledge with no firmware selected leaves the Map empty', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        // Try to record an ack with no firmware in scope. Without a signature
+        // there is nothing to bind it to; the gate must reject the request
+        // rather than silently storing a context-free "true".
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+        const stub = { firmwareId: 'fw-late', channel: 'beta', version: '2.1.0', config_string: 'Ceiling-USB' };
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(stub);
+        expect(outstanding.map(item => item.key)).toContain('channel:beta');
+    });
+
+    test('signature pruning drops stale entries when the active firmware changes silently', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const beta = makeBuild({
+            firmwareId: 'firmware-beta',
+            channel: 'beta',
+            version: '2.1.0'
+        });
+        __testHooks.setFirmwareOptions([beta], 'Ceiling-USB');
+        __testHooks.selectDefaultFirmware();
+        __testHooks.setChannelAcknowledgement('channel:beta', true);
+
+        // Swap window.currentFirmware out from under the gate. This simulates
+        // a code path that updates the live selection without going through
+        // selectFirmwareById (e.g. an external manifest refresh that mutates
+        // the build object). pruneStaleChannelAcknowledgements is the
+        // defence-in-depth layer that catches this case.
+        const replacement = makeBuild({
+            firmwareId: 'firmware-beta',
+            channel: 'beta',
+            version: '2.2.0'
+        });
+        window.currentFirmware = replacement;
+        const pruned = __testHooks.pruneStaleChannelAcknowledgements();
+        expect(pruned).toBe(true);
+        const outstanding = __testHooks.getOutstandingChannelAcknowledgements(replacement);
+        expect(outstanding.map(item => item.key)).toContain('channel:beta');
+    });
+});

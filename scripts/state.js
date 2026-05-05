@@ -14,6 +14,7 @@ import {
     getFirmwareBadges,
     getFirmwareWarnings,
     getRequiredAcknowledgements,
+    getFirmwareAcknowledgementSignature,
     filterBuildsForMode,
     isBuildVisibleInMode,
     pickDefaultBuild,
@@ -215,8 +216,16 @@ let activeModuleGroupKey = null;
 let preFlashAcknowledged = false;
 let preflightWarningsAcknowledged = false;
 // Acknowledgements per channel-warning key (e.g. 'channel:beta', 'deprecated').
-// Keyed acknowledgements let beta + deprecated be tracked independently without
-// the user having to re-tick a single combined checkbox each time.
+// Keyed acknowledgements let beta + deprecated be tracked independently
+// without the user having to re-tick a single combined checkbox each time.
+//
+// Each entry stores the firmware-identity signature it was given against so
+// that consent for one risky build cannot silently satisfy the gate for a
+// *different* risky build that happens to share a channel. When the
+// currently-selected firmware's signature differs from the stored one, the
+// ack is treated as unsatisfied and pruned on the next read.
+//
+//   Map<key, { signature: string, value: true }>
 const channelAcknowledgements = new Map();
 let currentFlashEntryId = null;
 let flashStartTime = null;
@@ -395,8 +404,20 @@ function getChannelAcknowledgements(firmware) {
     return getRequiredAcknowledgements(firmware || window.currentFirmware);
 }
 
-function isChannelAcknowledged(key) {
-    return channelAcknowledgements.get(key) === true;
+function getCurrentFirmwareSignature(firmware) {
+    return getFirmwareAcknowledgementSignature(firmware || window.currentFirmware);
+}
+
+function isChannelAcknowledged(key, firmware) {
+    const entry = channelAcknowledgements.get(key);
+    if (!entry || entry.value !== true) {
+        return false;
+    }
+    const expected = getCurrentFirmwareSignature(firmware);
+    if (!expected) {
+        return false;
+    }
+    return entry.signature === expected;
 }
 
 function setChannelAcknowledgement(key, value) {
@@ -404,14 +425,26 @@ function setChannelAcknowledgement(key, value) {
         return;
     }
     const next = Boolean(value);
-    if (channelAcknowledgements.get(key) === next) {
+    const signature = getCurrentFirmwareSignature();
+    const existing = channelAcknowledgements.get(key);
+    const matches = existing
+        && existing.value === next
+        && (next ? existing.signature === signature : true);
+    if (matches) {
         return;
     }
     if (next) {
-        channelAcknowledgements.set(key, true);
+        if (!signature) {
+            // Refuse to record an ack with no firmware context — there is
+            // nothing to bind it to and a later signature change could not
+            // safely invalidate it.
+            return;
+        }
+        channelAcknowledgements.set(key, { signature, value: true });
     } else {
         channelAcknowledgements.delete(key);
     }
+    pruneStaleChannelAcknowledgements();
     renderChannelAcknowledgementPanel();
     updateFirmwareControls();
     refreshPreflightDiagnostics();
@@ -426,8 +459,37 @@ function resetChannelAcknowledgements() {
     updateFirmwareControls();
 }
 
+/**
+ * Drop any acknowledgements that no longer match the currently-selected
+ * firmware's identity signature. Defensive layer: even if a code path forgets
+ * to call resetPreFlashAcknowledgement after silently swapping the active
+ * build, the next gate read will see a clean Map rather than stale consent.
+ *
+ * Returns true when the Map was modified so callers that need to re-render
+ * the ack panel can do so.
+ */
+function pruneStaleChannelAcknowledgements(firmware) {
+    if (channelAcknowledgements.size === 0) {
+        return false;
+    }
+    const expected = getCurrentFirmwareSignature(firmware);
+    if (!expected) {
+        channelAcknowledgements.clear();
+        return true;
+    }
+    let pruned = false;
+    for (const [key, entry] of channelAcknowledgements) {
+        if (!entry || entry.signature !== expected) {
+            channelAcknowledgements.delete(key);
+            pruned = true;
+        }
+    }
+    return pruned;
+}
+
 function getOutstandingChannelAcknowledgements(firmware) {
-    return getChannelAcknowledgements(firmware).filter(item => !isChannelAcknowledged(item.key));
+    pruneStaleChannelAcknowledgements(firmware);
+    return getChannelAcknowledgements(firmware).filter(item => !isChannelAcknowledged(item.key, firmware));
 }
 
 function evaluatePreflightPolicy(checks = []) {
@@ -4423,6 +4485,15 @@ function setFirmwareOptions(builds, configString, modelBuckets = new Map()) {
     renderSelectedFirmware();
     if (!firmwareOptions.length) {
         resetPreFlashAcknowledgement();
+    } else {
+        // The manifest set may have shifted under the user (e.g. a hardware
+        // toggle in step 4 swapped which beta/preview build is offered). Drop
+        // any acknowledgement that is no longer bound to the live selection's
+        // identity so consent for the previous build cannot satisfy the gate
+        // for whatever is now in `window.currentFirmware`.
+        if (pruneStaleChannelAcknowledgements()) {
+            renderChannelAcknowledgementPanel();
+        }
     }
     updateFirmwareControls();
 }
@@ -4696,6 +4767,10 @@ function renderChannelAcknowledgementPanel() {
         return;
     }
     const firmware = window.currentFirmware;
+    // Drop any acks bound to a previous firmware identity before we paint —
+    // otherwise the panel could render a stale "checked" tick that no longer
+    // satisfies the gate.
+    pruneStaleChannelAcknowledgements(firmware);
     const acknowledgements = getChannelAcknowledgements(firmware);
     if (!firmware || acknowledgements.length === 0) {
         panel.hidden = true;
@@ -4711,7 +4786,7 @@ function renderChannelAcknowledgementPanel() {
     const intro = '<p class="channel-acknowledgement-panel__intro">Confirm you have read the warnings above before installing this firmware.</p>';
     const items = acknowledgements
         .map(item => {
-            const checked = isChannelAcknowledged(item.key) ? 'checked' : '';
+            const checked = isChannelAcknowledged(item.key, firmware) ? 'checked' : '';
             return `
                 <label class="channel-acknowledgement-panel__item">
                     <input
@@ -5636,6 +5711,9 @@ export const __testHooks = Object.freeze({
     getReleaseMode,
     setChannelAcknowledgement,
     getOutstandingChannelAcknowledgements,
+    isChannelAcknowledged,
+    pruneStaleChannelAcknowledgements,
+    getCurrentFirmwareSignature,
     selectDefaultFirmware,
     setFirmwareOptions,
     isFirmwareRecommendedDefault,
