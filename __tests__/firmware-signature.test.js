@@ -87,11 +87,27 @@ describe('firmware-trusted-keys — pinned trust list shape', () => {
             expect(typeof entry.kid).toBe('string');
             expect(entry.kid.length).toBeGreaterThan(0);
             expect(entry.algo).toBe(FIRMWARE_SIGNATURE_ALGORITHM);
-            expect(['active', 'superseded', 'revoked', 'placeholder']).toContain(entry.status);
+            expect(['active', 'superseded', 'revoked', 'placeholder', 'test_only']).toContain(entry.status);
             expect(typeof entry.public_key_b64).toBe('string');
             const pub = b64ToBytes(entry.public_key_b64);
             expect(pub.length).toBe(FIRMWARE_SIGNATURE_INTERNALS.ED25519_PUBLIC_KEY_BYTES);
         }
+    });
+
+    test('CRITICAL: no committed test_only key has status active in the trust list', () => {
+        // Backstop check: the dev/CI key under firmware-signing/keys/ has its
+        // PRIVATE half committed to the public repo. Promoting any such key
+        // to status='active' would let any reader of the repo sign forged
+        // firmware that the wizard would happily install. The trust list
+        // MUST mark these keys as 'test_only' so production-mode
+        // verification refuses them.
+        const fixturePublicB64 = fs.readFileSync(
+            path.join(process.cwd(), 'firmware-signing/keys/dev-2026-01-public.raw.b64'),
+            'utf8'
+        ).trim();
+        const matched = FIRMWARE_TRUSTED_KEYS.find(e => e.public_key_b64 === fixturePublicB64);
+        expect(matched).not.toBeUndefined();
+        expect(matched.status).toBe('test_only');
     });
 
     test('JSON mirror at firmware-signing/trusted-keys.json matches the JS source of truth', () => {
@@ -129,12 +145,26 @@ describe('firmware-trusted-keys — pinned trust list shape', () => {
         expect(findTrustedKey(null)).toBeNull();
     });
 
-    test('listAcceptableKeys returns active entries by default', () => {
+    test('listAcceptableKeys in production mode returns ONLY active entries', () => {
         const list = listAcceptableKeys();
-        expect(list.length).toBeGreaterThan(0);
         for (const entry of list) {
+            // The repo currently only ships a 'test_only' key, so the
+            // production list may be empty. What it MUST NOT do is
+            // include test_only keys.
             expect(entry.status).toBe('active');
         }
+        const productionList = listAcceptableKeys({ mode: 'production' });
+        for (const entry of productionList) {
+            expect(entry.status).toBe('active');
+        }
+    });
+
+    test('listAcceptableKeys in test mode also returns test_only entries', () => {
+        const list = listAcceptableKeys({ mode: 'test' });
+        const statuses = new Set(list.map(e => e.status));
+        // Repo currently ships exactly one test_only fixture key.
+        expect(list.length).toBeGreaterThan(0);
+        expect(statuses.has('test_only')).toBe(true);
     });
 
     test('isKeyAcceptable rejects revoked keys even when allowSuperseded is true', () => {
@@ -146,6 +176,21 @@ describe('firmware-trusted-keys — pinned trust list shape', () => {
         const placeholder = { kid: 'fake-placeholder', algo: 'ed25519', status: 'placeholder' };
         expect(isKeyAcceptable(placeholder)).toBe(false);
         expect(isKeyAcceptable(placeholder, { allowSuperseded: true })).toBe(false);
+    });
+
+    test('isKeyAcceptable rejects test_only keys in production mode', () => {
+        const fixture = { kid: 'fake-fixture', algo: 'ed25519', status: 'test_only' };
+        expect(isKeyAcceptable(fixture)).toBe(false);
+        expect(isKeyAcceptable(fixture, { mode: 'production' })).toBe(false);
+        // Even allowSuperseded does NOT relax the production-mode test_only
+        // refusal — superseded ≠ test_only and they have different threats.
+        expect(isKeyAcceptable(fixture, { mode: 'production', allowSuperseded: true })).toBe(false);
+    });
+
+    test('isKeyAcceptable accepts test_only keys in test/development modes', () => {
+        const fixture = { kid: 'fake-fixture', algo: 'ed25519', status: 'test_only' };
+        expect(isKeyAcceptable(fixture, { mode: 'test' })).toBe(true);
+        expect(isKeyAcceptable(fixture, { mode: 'development' })).toBe(true);
     });
 });
 
@@ -160,10 +205,16 @@ describe('verifyFirmwareSignature — capability probe', () => {
 });
 
 describe('verifyFirmwareSignature — happy path', () => {
-    test('valid signature against a pinned active key verifies', async () => {
+    // The committed dev-2026-01 key is marked 'test_only' in the trust list
+    // because its private half is in the public repo. To exercise the
+    // happy path we must opt into 'test' mode — the same path tests and
+    // local development use. The deployed wizard NEVER passes mode='test'.
+    const TEST_MODE = { mode: 'test' };
+
+    test('valid signature against a pinned test_only key verifies in test mode', async () => {
         const message = new TextEncoder().encode('test fixture firmware payload');
         const sigB64 = signWithDevKey(message);
-        const result = await verifyFirmwareSignature(message, sigB64);
+        const result = await verifyFirmwareSignature(message, sigB64, TEST_MODE);
         expect(result.ok).toBe(true);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.VERIFIED);
         expect(result.keyId).toBe('dev-2026-01');
@@ -173,7 +224,7 @@ describe('verifyFirmwareSignature — happy path', () => {
     test('verification works when an explicit key id is supplied', async () => {
         const message = new TextEncoder().encode('explicit key id');
         const sigB64 = signWithDevKey(message);
-        const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'dev-2026-01' });
+        const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'dev-2026-01', ...TEST_MODE });
         expect(result.ok).toBe(true);
         expect(result.keyId).toBe('dev-2026-01');
     });
@@ -182,14 +233,16 @@ describe('verifyFirmwareSignature — happy path', () => {
         const message = new TextEncoder().encode('array buffer payload');
         const sigB64 = signWithDevKey(message);
         const arrayBuffer = message.buffer.slice(message.byteOffset, message.byteOffset + message.byteLength);
-        const result = await verifyFirmwareSignature(arrayBuffer, sigB64);
+        const result = await verifyFirmwareSignature(arrayBuffer, sigB64, TEST_MODE);
         expect(result.ok).toBe(true);
     });
 
-    test('verifies the actual binary fixtures shipped in the manifest', async () => {
-        // Round-trip the production manifest: every signed binary in the
+    test('verifies the actual binary fixtures shipped in the manifest (test mode)', async () => {
+        // Round-trip the development manifest: every signed binary in the
         // committed `manifest.json` must verify against the pinned dev
-        // key. Catches regressions where signing and verification drift.
+        // key under TEST mode. The deployed wizard runs in production
+        // mode and would refuse these — that stricter behaviour is
+        // covered by the dedicated production-refusal tests below.
         const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'manifest.json'), 'utf8'));
         const signed = manifest.builds.filter(b => b.signature_ed25519);
         expect(signed.length).toBeGreaterThan(0);
@@ -199,7 +252,7 @@ describe('verifyFirmwareSignature — happy path', () => {
             const result = await verifyFirmwareSignature(
                 new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength),
                 build.signature_ed25519,
-                { keyId: build.signature_key_id }
+                { keyId: build.signature_key_id, ...TEST_MODE }
             );
             if (!result.ok) {
                 throw new Error(
@@ -212,33 +265,106 @@ describe('verifyFirmwareSignature — happy path', () => {
     });
 });
 
+describe('verifyFirmwareSignature — production-mode refusal of test_only keys', () => {
+    test('signature from test_only key is REFUSED with KEY_TEST_ONLY_IN_PRODUCTION in production mode', async () => {
+        const message = new TextEncoder().encode('production install attempt');
+        const sigB64 = signWithDevKey(message);
+        // mode defaults to 'production' — the same default the deployed
+        // wizard uses. The signature is mathematically valid AND the
+        // named key is on the trust list, but its status is 'test_only'
+        // so the install gate must refuse.
+        const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'dev-2026-01' });
+        expect(result.ok).toBe(false);
+        expect(result.code).toBe(SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION);
+        expect(result.keyId).toBe('dev-2026-01');
+        expect(result.keyStatus).toBe('test_only');
+        expect(result.message).toMatch(/test_only/i);
+    });
+
+    test('signature from test_only key without explicit keyId is also refused', async () => {
+        // No keyId supplied — verifier walks the acceptable-keys list.
+        // In production mode, that list excludes test_only entries, so
+        // verification falls through to SIGNATURE_INVALID rather than
+        // happily verifying against the dev key.
+        const message = new TextEncoder().encode('production install attempt');
+        const sigB64 = signWithDevKey(message);
+        const result = await verifyFirmwareSignature(message, sigB64);
+        expect(result.ok).toBe(false);
+        expect([
+            SIGNATURE_RESULT_CODES.SIGNATURE_INVALID,
+            SIGNATURE_RESULT_CODES.UNKNOWN_KEY
+        ]).toContain(result.code);
+    });
+
+    test('every fixture binary in manifest.json is REFUSED in production mode', async () => {
+        // The single most important regression test: the committed
+        // manifest, signed by the test_only key, must NOT install via
+        // the wizard's production-mode install gate.
+        const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'manifest.json'), 'utf8'));
+        const signed = manifest.builds.filter(b => b.signature_ed25519);
+        expect(signed.length).toBeGreaterThan(0);
+        for (const build of signed) {
+            const binPath = build.parts[0].path;
+            const bytes = fs.readFileSync(path.join(process.cwd(), binPath));
+            const result = await verifyFirmwareSignature(
+                new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength),
+                build.signature_ed25519,
+                { keyId: build.signature_key_id }
+                // Note: no `mode` option ⇒ production default
+            );
+            expect(result.ok).toBe(false);
+            expect(result.code).toBe(SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION);
+        }
+    });
+
+    test('production mode refusal is by-design: all current signed fixtures fail', async () => {
+        // Asserts the explicit policy contract: in production mode, NO
+        // currently-shipped fixture verifies, because all of them are
+        // signed by test_only keys. If this test starts passing, it
+        // means a real production key has been added — at which point
+        // the trust-list test_only marker on dev-2026-01 may need to be
+        // re-checked too.
+        const message = new TextEncoder().encode('outsider firmware');
+        const sigB64 = signWithDevKey(message);
+        const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'dev-2026-01', mode: 'production' });
+        expect(result.ok).toBe(false);
+    });
+});
+
 describe('verifyFirmwareSignature — failure modes', () => {
+    // Most failure-mode assertions verify the SHAPE of a verification
+    // failure (wrong code, wrong key, malformed signature). To exercise
+    // those code paths we need at least one acceptable key — the test
+    // mode lets the test_only dev key count, since the trust list does
+    // not currently ship an active production key.
+    const TEST_MODE = { mode: 'test' };
+
     test('signature over different bytes is rejected', async () => {
         const message = new TextEncoder().encode('payload A');
         const tampered = new TextEncoder().encode('payload B');
         const sigB64 = signWithDevKey(message);
-        const result = await verifyFirmwareSignature(tampered, sigB64);
+        const result = await verifyFirmwareSignature(tampered, sigB64, TEST_MODE);
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.SIGNATURE_INVALID);
     });
 
     test('missing signature returns MISSING_SIGNATURE', async () => {
         const message = new TextEncoder().encode('whatever');
-        const result = await verifyFirmwareSignature(message, '');
+        const result = await verifyFirmwareSignature(message, '', TEST_MODE);
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.MISSING_SIGNATURE);
     });
 
     test('null signature returns MISSING_SIGNATURE', async () => {
         const message = new TextEncoder().encode('whatever');
-        const result = await verifyFirmwareSignature(message, null);
+        const result = await verifyFirmwareSignature(message, null, TEST_MODE);
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.MISSING_SIGNATURE);
     });
 
     test('malformed base64 signature returns MALFORMED_SIGNATURE', async () => {
         const message = new TextEncoder().encode('whatever');
-        const result = await verifyFirmwareSignature(message, 'not really base64!!!');
+        const result = await verifyFirmwareSignature(message, 'not really base64!!!', TEST_MODE);
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.MALFORMED_SIGNATURE);
     });
@@ -246,26 +372,31 @@ describe('verifyFirmwareSignature — failure modes', () => {
     test('signature with wrong byte length returns MALFORMED_SIGNATURE', async () => {
         const message = new TextEncoder().encode('whatever');
         // Valid base64 but only 8 bytes.
-        const result = await verifyFirmwareSignature(message, Buffer.from(new Uint8Array(8)).toString('base64'));
+        const result = await verifyFirmwareSignature(
+            message,
+            Buffer.from(new Uint8Array(8)).toString('base64'),
+            TEST_MODE
+        );
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.MALFORMED_SIGNATURE);
     });
 
     test('non-ArrayBuffer/Uint8Array input returns INVALID_INPUT', async () => {
-        const result = await verifyFirmwareSignature('a string is not bytes', 'AAAA');
+        const result = await verifyFirmwareSignature('a string is not bytes', 'AAAA', TEST_MODE);
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.INVALID_INPUT);
     });
 
     test('unknown key id with non-verifying signature returns UNKNOWN_KEY', async () => {
         // Sign with a brand-new untrusted key, supply a key id we have
-        // never heard of. The verifier still tries every active key as a
-        // fallback, fails to verify, and surfaces UNKNOWN_KEY so support
-        // sees the kid mismatch.
+        // never heard of. The verifier still tries every acceptable key
+        // as a fallback (under TEST mode that includes the dev key),
+        // fails to verify, and surfaces UNKNOWN_KEY so support sees the
+        // kid mismatch.
         const { privateKey } = generateKeyPairSync('ed25519');
         const message = new TextEncoder().encode('outsider payload');
         const sigB64 = nodeSign(null, Buffer.from(message), privateKey).toString('base64');
-        const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'never-heard-of-this-key' });
+        const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'never-heard-of-this-key', ...TEST_MODE });
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.UNKNOWN_KEY);
         expect(result.keyId).toBe('never-heard-of-this-key');
@@ -279,9 +410,23 @@ describe('verifyFirmwareSignature — failure modes', () => {
         const { privateKey } = generateKeyPairSync('ed25519');
         const message = new TextEncoder().encode('outsider payload');
         const sigB64 = nodeSign(null, Buffer.from(message), privateKey).toString('base64');
-        const result = await verifyFirmwareSignature(message, sigB64);
+        const result = await verifyFirmwareSignature(message, sigB64, TEST_MODE);
         expect(result.ok).toBe(false);
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.SIGNATURE_INVALID);
+    });
+
+    test('production-mode call with no acceptable key returns UNKNOWN_KEY', async () => {
+        // The repo currently ships ZERO active keys (only test_only).
+        // Production-mode callers should get a clear "no trusted keys"
+        // signal so support can guide users toward whatever the issue
+        // actually is (missing trust-list rotation, downgrade, etc).
+        const { privateKey } = generateKeyPairSync('ed25519');
+        const message = new TextEncoder().encode('production attempt');
+        const sigB64 = nodeSign(null, Buffer.from(message), privateKey).toString('base64');
+        const result = await verifyFirmwareSignature(message, sigB64);
+        expect(result.ok).toBe(false);
+        expect(result.code).toBe(SIGNATURE_RESULT_CODES.UNKNOWN_KEY);
+        expect(result.message).toMatch(/no active production firmware signing keys/i);
     });
 });
 
@@ -314,16 +459,19 @@ describe('extractSignatureFromBuild', () => {
 });
 
 describe('verifyFirmwareSignature — applySignatureVerificationResult integration', () => {
-    test('runtime verification result merges into the static provenance report', async () => {
-        // End-to-end shape check: take a static provenance report whose
-        // signature_verified entry is in 'pending' state, run a real
-        // verification, and merge — the report should flip to 'pass' and
-        // the authenticity tier should report 'pass'.
+    test('runtime verification result merges into the static provenance report (test mode)', async () => {
+        // End-to-end shape check under test mode: take a static
+        // provenance report whose signature_verified entry is 'pending',
+        // run a real verification with the test_only dev key, and merge
+        // — the report should flip to 'pass' and the authenticity tier
+        // should report 'pass'. This proves the merge mechanics work
+        // even with the test key. The production-mode refusal is
+        // covered by separate tests.
         const { validateFirmwareProvenance, applySignatureVerificationResult, TRUST_TIERS } =
             await import('../scripts/utils/firmware-provenance.js');
         const message = new TextEncoder().encode('integration payload');
         const sigB64 = signWithDevKey(message);
-        const sigResult = await verifyFirmwareSignature(message, sigB64);
+        const sigResult = await verifyFirmwareSignature(message, sigB64, { mode: 'test' });
         expect(sigResult.ok).toBe(true);
 
         const build = {
@@ -341,12 +489,36 @@ describe('verifyFirmwareSignature — applySignatureVerificationResult integrati
             artifact_type: 'application',
             deprecated: false
         };
-        const staticReport = validateFirmwareProvenance(build);
+        const staticReport = validateFirmwareProvenance(build, { mode: 'test' });
         expect(staticReport.tiers[TRUST_TIERS.AUTHENTICITY]).toBe('pending');
 
         const merged = applySignatureVerificationResult(staticReport, sigResult);
         expect(merged.tiers[TRUST_TIERS.AUTHENTICITY]).toBe('pass');
         expect(merged.summary).toMatch(/Ed25519 signature authenticated/i);
+    });
+
+    test('production mode static gate REFUSES test_only-signed stable build before runtime check', async () => {
+        const { validateFirmwareProvenance, TRUST_TIERS } =
+            await import('../scripts/utils/firmware-provenance.js');
+        const build = {
+            channel: 'stable',
+            sha256: 'a'.repeat(64),
+            signature: 'AAAA',
+            signature_ed25519: 'kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==',
+            signature_key_id: 'dev-2026-01',
+            source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
+            source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
+            file_size: 524288,
+            changelog: ['Hand-authored release notes for stable v1.0.0.'],
+            parts: [{ path: 'firmware/configurations/Sense360-Ceiling-USB-v1.0.0-stable.bin', offset: 0 }],
+            config_string: 'Ceiling-USB',
+            artifact_type: 'application',
+            deprecated: false
+        };
+        const report = validateFirmwareProvenance(build);  // mode defaults to 'production'
+        expect(report.ok).toBe(false);
+        expect(report.tiers[TRUST_TIERS.METADATA]).toBe('fail');
+        expect(report.blockingReasons.join(' ')).toMatch(/test_only/);
     });
 
     test('runtime verification failure flips authenticity tier to fail', async () => {

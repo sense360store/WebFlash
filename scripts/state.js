@@ -3596,7 +3596,7 @@ async function computeSignatureBase64(buffer) {
     return arrayBufferToBase64(digest);
 }
 
-async function verifyFirmwarePart(part, { signatureB64 = '', keyId = '' } = {}) {
+async function verifyFirmwarePart(part, { signatureB64 = '', keyId = '', mode = 'production' } = {}) {
     const result = {
         resolvedUrl: part.resolvedUrl,
         fileName: part.fileName,
@@ -3654,7 +3654,7 @@ async function verifyFirmwarePart(part, { signatureB64 = '', keyId = '' } = {}) 
         // attacker can satisfy by editing both files together.
         if (signatureB64) {
             result.ed25519.attempted = true;
-            const sigResult = await verifyFirmwareSignature(buffer, signatureB64, { keyId });
+            const sigResult = await verifyFirmwareSignature(buffer, signatureB64, { keyId, mode });
             result.ed25519.ok = sigResult.ok === true;
             result.ed25519.code = sigResult.code;
             result.ed25519.message = sigResult.message;
@@ -3809,9 +3809,17 @@ async function verifyCurrentFirmwareIntegrity() {
 
     try {
         const sigInfo = extractSignatureFromBuild(firmware) || {};
+        // The deployed wizard ALWAYS verifies in production mode — that
+        // means signatures from test_only / dev keys are refused at the
+        // install gate even when the named key id is on the trust list.
+        // The mode is hard-coded here rather than read from a URL param
+        // or runtime flag because relaxing it would let any reader of
+        // the public repo install forged firmware on end-user devices.
+        const installTrustMode = 'production';
         const results = await Promise.all(parts.map(part => verifyFirmwarePart(part, {
             signatureB64: sigInfo.signatureB64 || '',
-            keyId: sigInfo.keyId || ''
+            keyId: sigInfo.keyId || '',
+            mode: installTrustMode
         })));
         if (token !== firmwareVerificationToken) {
             return;

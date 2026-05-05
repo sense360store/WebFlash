@@ -27,11 +27,16 @@ const VALID_STABLE_BUILD = Object.freeze({
     md5: '1eb1fea3994bbbeea11080159dbbe611',
     signature: 'KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=',
     // Real Ed25519 signature metadata. The bytes here are not a real
-    // signature over the test fixture — verification of the bytes happens
-    // in firmware-signature.test.js. The provenance gate only checks that
-    // the field is *present* and refers to a key id we know about.
+    // signature over the test fixture — verification of the bytes
+    // happens in firmware-signature.test.js. The provenance gate only
+    // checks that the field is *present* and (in production mode) does
+    // not refer to a 'test_only' key in the trust list. We use a
+    // synthetic key id that is not on the trust list so the static gate
+    // accepts it; the production-mode refusal of the committed dev key
+    // (which IS on the trust list as test_only) is exercised separately
+    // in firmware-signature.test.js.
     signature_ed25519: 'kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==',
-    signature_key_id: 'dev-2026-01',
+    signature_key_id: 'unit-test-fixture-key',
     source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     file_size: 524288,
@@ -478,17 +483,46 @@ describe('manifest.json — provenance integration', () => {
     const manifestPath = path.join(process.cwd(), 'manifest.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-    test('every stable build in manifest.json passes the provenance gate', () => {
+    test('every stable build in manifest.json passes the provenance gate UNDER TEST MODE', () => {
+        // The committed manifest is signed by the test_only dev key (its
+        // private half is in the public repo for fixture signing). The
+        // deployed wizard runs in PRODUCTION mode and refuses these; the
+        // stricter behaviour is asserted in the next test. Here we just
+        // confirm that, *given* the test_only key is acceptable (i.e.
+        // mode='test'), the rest of the metadata is well-formed.
         const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
         expect(stableBuilds.length).toBeGreaterThan(0);
         for (const build of stableBuilds) {
-            const report = validateFirmwareProvenance(build);
+            const report = validateFirmwareProvenance(build, { mode: 'test' });
             if (!report.ok) {
                 throw new Error(
                     `Stable build ${build?.parts?.[0]?.path || build?.config_string} failed provenance: ${report.summary}`
                 );
             }
             expect(report.ok).toBe(true);
+        }
+    });
+
+    test('every stable build in manifest.json is REFUSED by the production-mode static gate', () => {
+        // Backstop check: the committed manifest must not be installable
+        // from the deployed wizard while it ships test_only signatures.
+        // If this test starts failing, it means either:
+        //   (a) the trust list now contains an 'active' key whose
+        //       private half is in CI secrets and the publish pipeline
+        //       has been migrated — at which point the manifest may be
+        //       legitimately installable, OR
+        //   (b) something has weakened the production-mode refusal of
+        //       test_only keys, which is a security regression.
+        // Either way, anyone updating this test must understand which
+        // case applies.
+        const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
+        expect(stableBuilds.length).toBeGreaterThan(0);
+        for (const build of stableBuilds) {
+            const report = validateFirmwareProvenance(build);  // mode defaults to 'production'
+            expect(report.ok).toBe(false);
+            // The blocking reason should mention test_only so support and
+            // operators can quickly identify the cause.
+            expect(report.blockingReasons.join(' ')).toMatch(/test_only/i);
         }
     });
 

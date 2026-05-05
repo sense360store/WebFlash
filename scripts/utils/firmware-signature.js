@@ -69,6 +69,12 @@ export const SIGNATURE_RESULT_CODES = Object.freeze({
     /** Signature mathematically verifies, but the issuing key is not active.
      * Surfaced separately so support can spot rotation gaps. */
     KEY_REVOKED: 'key_revoked',
+    /** Signature mathematically verifies, but the issuing key is `test_only`
+     * and the wizard is running in production mode. Anyone with read access
+     * to the public repo could forge such a signature, so the install gate
+     * MUST refuse it. Distinct from SIGNATURE_INVALID so support sees the
+     * "wrong key class" reason and can guide users to a real release build. */
+    KEY_TEST_ONLY_IN_PRODUCTION: 'key_test_only_in_production',
     /** Signature names a key id we have never trusted. */
     UNKNOWN_KEY: 'unknown_key',
     /** No pinned key produced a verifying signature for these bytes. */
@@ -249,6 +255,14 @@ async function tryVerifyAgainstKey({ subtle, entry, signatureBytes, messageBytes
  * @param {boolean} [options.allowSuperseded] When true, also accept keys
  *     in `status: 'superseded'`. Used by diagnostics, NEVER at install
  *     time. Defaults to false.
+ * @param {'production'|'development'|'test'} [options.mode] Trust mode.
+ *     The default is 'production', which only accepts keys with
+ *     `status: 'active'`. Tests and local development can pass
+ *     'development' or 'test' to also accept `status: 'test_only'` keys
+ *     (whose private halves are intentionally exposed in the public repo
+ *     for fixture signing). The deployed wizard MUST always run in
+ *     'production' mode for the install path; 'test_only' keys would
+ *     otherwise let any reader of the repo forge installable firmware.
  * @returns {Promise<{ok:boolean, code:string, message:string,
  *     keyId?:string, keyStatus?:string}>}
  */
@@ -322,15 +336,17 @@ export async function verifyFirmwareSignature(firmwareBytes, signatureB64, optio
 
     const requestedKeyId = typeof options.keyId === 'string' ? options.keyId.trim() : '';
     const allowSuperseded = options.allowSuperseded === true;
+    const mode = options.mode || 'production';
+    const modeOpts = { allowSuperseded, mode };
 
     if (requestedKeyId) {
         const entry = findTrustedKey(requestedKeyId);
         if (!entry) {
-            // We still try verification against active keys — it's possible
-            // someone signed under a key we trust but mislabelled the kid.
-            // But surface UNKNOWN_KEY when no fallback verifies either, so
-            // operators see it.
-            for (const candidate of listAcceptableKeys({ allowSuperseded })) {
+            // We still try verification against acceptable keys — it's
+            // possible someone signed under a key we trust but mislabelled
+            // the kid. But surface UNKNOWN_KEY when no fallback verifies
+            // either, so operators see it.
+            for (const candidate of listAcceptableKeys(modeOpts)) {
                 if (await tryVerifyAgainstKey({ subtle, entry: candidate, signatureBytes, messageBytes })) {
                     return makeResult(
                         SIGNATURE_RESULT_CODES.VERIFIED,
@@ -345,12 +361,24 @@ export async function verifyFirmwareSignature(firmwareBytes, signatureB64, optio
                 { keyId: requestedKeyId }
             );
         }
-        if (!isKeyAcceptable(entry, { allowSuperseded })) {
-            // Verify against the named key purely so we can return KEY_REVOKED
-            // (vs SIGNATURE_INVALID) when the math actually checks out — that
-            // distinction matters for support and rotation diagnostics.
+        if (!isKeyAcceptable(entry, modeOpts)) {
+            // Verify against the named key purely so we can return a
+            // specific reason code (KEY_REVOKED / KEY_TEST_ONLY_IN_PRODUCTION
+            // vs the generic SIGNATURE_INVALID) when the math actually
+            // checks out — that distinction matters for support and
+            // rotation diagnostics.
             const matches = await tryVerifyAgainstKey({ subtle, entry, signatureBytes, messageBytes });
             if (matches) {
+                if (entry.status === 'test_only') {
+                    // Production-mode refusal of a fixture/CI key. Anyone
+                    // with read access to the repo can sign these, so the
+                    // install gate must hard-fail.
+                    return makeResult(
+                        SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION,
+                        `Signature verifies against key '${entry.kid}', but that key is marked 'test_only' and cannot authorise installs in production mode (its private half is exposed for fixture signing).`,
+                        { keyId: entry.kid, keyStatus: entry.status }
+                    );
+                }
                 return makeResult(
                     SIGNATURE_RESULT_CODES.KEY_REVOKED,
                     `Signature verifies against key '${entry.kid}', but that key is marked '${entry.status}' and cannot authorise an install.`,
@@ -379,11 +407,13 @@ export async function verifyFirmwareSignature(firmwareBytes, signatureB64, optio
     }
 
     // No key id supplied — try every acceptable key in order.
-    const candidates = listAcceptableKeys({ allowSuperseded });
+    const candidates = listAcceptableKeys(modeOpts);
     if (candidates.length === 0) {
         return makeResult(
             SIGNATURE_RESULT_CODES.UNKNOWN_KEY,
-            'No active firmware signing keys are pinned in the trust list.'
+            mode === 'production'
+                ? 'No active production firmware signing keys are pinned in the trust list.'
+                : 'No acceptable firmware signing keys for the current trust mode.'
         );
     }
     for (const candidate of candidates) {

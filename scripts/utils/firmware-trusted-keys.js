@@ -26,7 +26,20 @@
  *                   raw form here matches what `crypto.subtle.importKey('raw',
  *                   ..., 'Ed25519', ...)` expects in the browser.
  *   status          'active'      — currently signs production firmware.
- *                   'superseded'  — was active; legacy artifacts still verify.
+ *                                   Acceptable in any mode.
+ *                   'superseded'  — was active; legacy artifacts still
+ *                                   verify in diagnostics. NOT acceptable
+ *                                   for new installs without explicit
+ *                                   opt-in.
+ *                   'test_only'   — fixture/CI key. Public AND private
+ *                                   halves are intentionally exposed (e.g.
+ *                                   committed to a public repo) so test
+ *                                   fixtures can be signed end-to-end.
+ *                                   The wizard MUST refuse signatures
+ *                                   from these keys in production mode —
+ *                                   anyone with read access could forge
+ *                                   them. Acceptable only when explicitly
+ *                                   in development/test mode.
  *                   'revoked'     — must NOT verify any new install.
  *                   'placeholder' — slot reserved for a not-yet-issued key
  *                                   (never accepted as a verifier).
@@ -36,10 +49,13 @@
  * --- Trust evaluation ---
  *
  * `verifyFirmwareSignature` accepts a signature if AND ONLY IF a key in this
- * list has `status === 'active'`, `algo === 'ed25519'`, and the Ed25519
- * verification call returns true. `superseded` keys verify only when the
- * caller explicitly opts in (used by diagnostics to identify legacy
- * artifacts); `revoked` and `placeholder` keys never verify.
+ * list passes `isKeyAcceptable` for the supplied mode AND the Ed25519
+ * verification call returns true. The default mode is 'production', which
+ * accepts only `active` keys — `test_only`, `superseded`, `revoked`, and
+ * `placeholder` keys are all refused. Tests, diagnostics, or local
+ * development opt in to relaxed acceptance with `mode: 'test'` (or
+ * `'development'`) and/or `allowSuperseded: true`. The deployed wizard
+ * (production build) NEVER passes these flags.
  */
 
 export const FIRMWARE_TRUST_SCHEMA_VERSION = 1;
@@ -55,14 +71,29 @@ export const FIRMWARE_TRUSTED_KEYS = Object.freeze([
         kid: 'dev-2026-01',
         algo: 'ed25519',
         public_key_b64: 'UAg82k9y+Ob+204H+3mmL6/lzdjJnT6+BACL/cmP5OM=',
-        status: 'active',
+        // CRITICAL: status MUST stay 'test_only' as long as the matching
+        // PRIVATE key is committed to this repository under
+        // firmware-signing/keys/dev-2026-01-private.*. Anyone with git
+        // access can read the private key and forge signatures, so the
+        // wizard must refuse this key in production mode. The fixture
+        // binaries in the repo are signed by it purely so end-to-end
+        // tests exercise the real verification path; they are NOT
+        // installable from the deployed wizard.
+        status: 'test_only',
         issued_at: '2026-05-05',
-        comment: 'Development/CI signing key. Both halves are intentionally committed under firmware-signing/keys/ so the placeholder fixtures shipped in this repo can exercise the real verification path. MUST be rotated and marked \'revoked\' before this repo publishes real firmware. See firmware-signing/README.md.'
+        comment: 'Development/CI fixture key. Private half is committed to the public repo (see firmware-signing/keys/), so this key MUST NEVER be promoted to \'active\' — anyone with read access could sign forged firmware. Production deployments MUST publish manifests signed by a separate \'active\' key whose private half lives only in CI secrets. See firmware-signing/README.md for the rotation procedure.'
     })
 ]);
 
-const ACCEPTABLE_STATUSES_FOR_INSTALL = new Set(['active']);
-const ACCEPTABLE_STATUSES_FOR_DIAGNOSTICS = new Set(['active', 'superseded']);
+// Acceptable-status policy by mode. The deployed wizard (production build)
+// passes mode='production' (or omits it, since that's the default). Tests
+// and local development can pass mode='test' or 'development' to broaden
+// acceptance. Note: revoked and placeholder are NEVER acceptable.
+const ACCEPTABLE_STATUSES_BY_MODE = Object.freeze({
+    production: new Set(['active']),
+    development: new Set(['active', 'test_only']),
+    test: new Set(['active', 'test_only'])
+});
 
 /**
  * Return the trust-list entry for `kid`, or null if the kid is unknown.
@@ -75,30 +106,68 @@ export function findTrustedKey(kid) {
     return FIRMWARE_TRUSTED_KEYS.find(entry => entry.kid === kid) || null;
 }
 
+function normaliseTrustMode(mode) {
+    const key = String(mode || '').trim().toLowerCase();
+    if (key === 'development' || key === 'dev' || key === 'debug') {
+        return 'development';
+    }
+    if (key === 'test' || key === 'testing') {
+        return 'test';
+    }
+    return 'production';
+}
+
 /**
- * Return true when a key is currently allowed to authorise an install.
- * Diagnostics may opt in to also accept `superseded` keys via
+ * Return true when a key is currently allowed to authorise an install
+ * UNDER THE GIVEN MODE.
+ *
+ *   - In 'production' (the default), only `active` keys verify. Keys
+ *     marked `test_only` are NEVER acceptable in production, even if the
+ *     signature mathematically checks out — anyone with read access to
+ *     the public repo can forge signatures from such keys.
+ *   - In 'development' or 'test', `test_only` keys are also acceptable
+ *     so test fixtures can exercise the real verification path.
+ *
+ *  Diagnostics may opt in to also accept `superseded` keys via
  * `{ allowSuperseded: true }`; install-time callers MUST NOT.
  */
-export function isKeyAcceptable(entry, { allowSuperseded = false } = {}) {
+export function isKeyAcceptable(entry, { allowSuperseded = false, mode = 'production' } = {}) {
     if (!entry || typeof entry !== 'object') {
         return false;
     }
     if (entry.algo !== FIRMWARE_SIGNATURE_ALGORITHM) {
         return false;
     }
-    const allowedSet = allowSuperseded
-        ? ACCEPTABLE_STATUSES_FOR_DIAGNOSTICS
-        : ACCEPTABLE_STATUSES_FOR_INSTALL;
-    return allowedSet.has(entry.status);
+    const trustMode = normaliseTrustMode(mode);
+    const baseSet = ACCEPTABLE_STATUSES_BY_MODE[trustMode] || ACCEPTABLE_STATUSES_BY_MODE.production;
+    if (baseSet.has(entry.status)) {
+        return true;
+    }
+    if (allowSuperseded && entry.status === 'superseded') {
+        return true;
+    }
+    return false;
 }
 
 /**
  * Iterate the trust list, yielding entries that are currently acceptable
- * for the given purpose. Order is preserved so the first 'active' entry is
- * tried first by the verifier (small but consistent ordering optimisation
- * when there are multiple concurrently-active keys, e.g. during rotation).
+ * for the given purpose. Order is preserved so the first acceptable entry
+ * is tried first by the verifier (small but consistent ordering
+ * optimisation when there are multiple concurrently-active keys, e.g.
+ * during rotation).
  */
-export function listAcceptableKeys({ allowSuperseded = false } = {}) {
-    return FIRMWARE_TRUSTED_KEYS.filter(entry => isKeyAcceptable(entry, { allowSuperseded }));
+export function listAcceptableKeys({ allowSuperseded = false, mode = 'production' } = {}) {
+    return FIRMWARE_TRUSTED_KEYS.filter(entry =>
+        isKeyAcceptable(entry, { allowSuperseded, mode })
+    );
+}
+
+/**
+ * Test-only check that surfaces test_only keys explicitly. Lets the
+ * static gate produce a "this build is signed by a test/dev key — refuse
+ * for stable in production" verdict without re-implementing the status
+ * lookup.
+ */
+export function isTestOnlyKey(entry) {
+    return Boolean(entry && entry.status === 'test_only');
 }

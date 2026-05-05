@@ -666,12 +666,10 @@ def load_signing_key(
     )
 
 
-def assert_key_pinned_in_trust_list(repo_root: Path, key_id: str, public_key_b64: str) -> None:
-    """Fail the build when the signing key id is not present (and active)
-    in the JSON trust list. Catches the common mistake of rotating the
-    private key without rotating the public-key entry — manifests would
-    publish with a kid the wizard does not trust, so install would fail
-    silently for every user.
+def lookup_trusted_key(repo_root: Path, key_id: str) -> Dict[str, Any]:
+    """Return the trust-list entry for ``key_id``. Raises :class:`SystemExit`
+    when the entry is missing or the public key on disk does not match the
+    pinned value — both indicate a misconfigured signing pipeline.
     """
 
     trusted_path = repo_root / TRUSTED_KEYS_RELATIVE_PATH
@@ -703,13 +701,34 @@ def assert_key_pinned_in_trust_list(repo_root: Path, key_id: str, public_key_b64
             "Add it (with the matching public key) before publishing, or "
             "rotate to an existing trusted key."
         )
-    if matched.get("status") not in {"active"}:
-        raise SystemExit(
-            f"Signing key id {key_id!r} has status "
-            f"{matched.get('status')!r} in {trusted_path}; only 'active' "
-            "keys may sign new firmware."
-        )
+    return matched
+
+
+def assert_key_pinned_in_trust_list(
+    repo_root: Path,
+    key_id: str,
+    public_key_b64: str,
+    *,
+    mode: str = "production",
+) -> Dict[str, Any]:
+    """Fail the build when the signing key id is not pinned with an
+    acceptable status, OR when the matching public key on disk has been
+    rotated without updating trusted-keys.json.
+
+    Returns the matched trust entry so the caller can use the status field.
+
+    Mode semantics mirror ``verifyFirmwareSignature`` / ``isKeyAcceptable``
+    in the JS layer:
+      * ``production`` — only ``status: 'active'`` keys may sign. Rejects
+        ``test_only`` so the public-repo dev key cannot sign a real
+        production manifest.
+      * ``development`` / ``test`` — also accepts ``status: 'test_only'``.
+    """
+
+    matched = lookup_trusted_key(repo_root, key_id)
+    status = matched.get("status")
     pinned_pub = (matched.get("public_key_b64") or "").strip()
+
     if pinned_pub != public_key_b64:
         raise SystemExit(
             f"Signing key id {key_id!r} public key does not match the "
@@ -717,6 +736,30 @@ def assert_key_pinned_in_trust_list(repo_root: Path, key_id: str, public_key_b64
             "been rotated without updating trusted-keys.json, or the wrong "
             "key id was supplied."
         )
+
+    accepted_statuses = {"active"}
+    if mode in {"development", "test"}:
+        accepted_statuses.add("test_only")
+
+    if status not in accepted_statuses:
+        if status == "test_only" and mode == "production":
+            raise SystemExit(
+                f"Signing key id {key_id!r} is marked 'test_only' (its "
+                f"private half is exposed in the repo). It MUST NOT sign "
+                f"production manifests — anyone with read access could "
+                f"forge installable firmware. Pass --mode development for "
+                f"local fixture builds, or rotate to an 'active' key whose "
+                f"private half lives only in CI secrets. See "
+                f"firmware-signing/README.md."
+            )
+        raise SystemExit(
+            f"Signing key id {key_id!r} has status {status!r} in "
+            f"{repo_root / TRUSTED_KEYS_RELATIVE_PATH}; only "
+            f"{sorted(accepted_statuses)} keys may sign new firmware in "
+            f"mode={mode!r}."
+        )
+
+    return matched
 
 
 def sign_firmware_bytes(
@@ -1250,6 +1293,7 @@ def validate_manifest_metadata(
     mode: str = "production",
     strict: bool = False,
     informational_findings: Optional[List[str]] = None,
+    repo_root: Optional[Path] = None,
 ) -> List[str]:
     """Run trust-signal checks across the generated manifest entries.
 
@@ -1274,6 +1318,25 @@ def validate_manifest_metadata(
 
     findings: List[str] = []
     is_production = mode == "production"
+
+    # Pre-load the trust list once so per-artifact key-status checks don't
+    # hit the disk N times. When called without a repo_root (e.g. from a
+    # test) we fall back to skipping the trust-status check; the caller
+    # signing path is the primary enforcement surface anyway.
+    trusted_keys_by_kid: Dict[str, Dict[str, Any]] = {}
+    if repo_root is not None:
+        trusted_path = repo_root / TRUSTED_KEYS_RELATIVE_PATH
+        if trusted_path.exists():
+            try:
+                trusted_data = json.loads(trusted_path.read_text(encoding="utf-8"))
+                for entry in trusted_data.get("keys", []):
+                    if isinstance(entry, dict) and entry.get("kid"):
+                        trusted_keys_by_kid[entry["kid"]] = entry
+            except (OSError, ValueError):
+                # If the trust list is broken, the lookup_trusted_key path
+                # already surfaces a hard error during the signing step;
+                # don't double-report here.
+                pass
 
     for artifact in artifacts:
         meta = artifact.metadata
@@ -1330,6 +1393,34 @@ def validate_manifest_metadata(
                 "is empty; the wizard cannot resolve which trusted key to "
                 "verify against."
             )
+        elif is_production and channel in {"stable", "rescue"}:
+            # Stable/rescue builds in production mode MUST be signed by an
+            # 'active' trust-list key, not a 'test_only' fixture key. The
+            # wizard's install gate enforces the same rule at runtime; the
+            # check here stops a publish run from emitting a manifest the
+            # wizard would later refuse for every user.
+            trust_entry = trusted_keys_by_kid.get(artifact.signature_key_id)
+            if trust_entry is None:
+                findings.append(
+                    f"{name}: signature_key_id={artifact.signature_key_id!r} "
+                    f"is not present in {TRUSTED_KEYS_RELATIVE_PATH}; the "
+                    "wizard would refuse this build because the key cannot "
+                    "be resolved."
+                )
+            elif trust_entry.get("status") == "test_only":
+                findings.append(
+                    f"{name}: signature_key_id={artifact.signature_key_id!r} "
+                    "is marked 'test_only' (its private half is exposed in "
+                    "the public repo). Production stable/rescue firmware "
+                    "MUST be signed by an 'active' key whose private half "
+                    "lives only in CI secrets. See firmware-signing/README.md."
+                )
+            elif trust_entry.get("status") not in {"active"}:
+                findings.append(
+                    f"{name}: signature_key_id={artifact.signature_key_id!r} "
+                    f"has status {trust_entry.get('status')!r}; only "
+                    "'active' keys may sign production stable/rescue firmware."
+                )
         if not artifact.source_commit:
             findings.append(
                 f"{name}: missing source_commit. Set WEBFLASH_SOURCE_COMMIT or "
@@ -1722,6 +1813,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             "validation. Set WEBFLASH_SOURCE_COMMIT or pass --source-commit.",
             file=sys.stderr,
         )
+    # --mode wins over --strict-validate; --strict-validate is the legacy
+    # alias for --mode=production. If neither is set, default to
+    # 'production' so a CI invocation cannot silently downgrade.
+    if args.mode is not None:
+        validation_mode = args.mode
+    elif args.strict_validate:
+        validation_mode = "production"
+    else:
+        validation_mode = "production"
+
     signing_key = None
     signing_key_id = None
     if args.no_sign:
@@ -1738,10 +1839,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.signing_key_id:
             signing_key_id = args.signing_key_id
         # Compute the matching public key and assert it is pinned in the
-        # JSON trust list. This catches the most common mis-configuration:
-        # rotating the signing key without updating the wizard's trust
-        # anchor, which would publish a manifest the front-end refuses to
-        # install for every user.
+        # JSON trust list with an *acceptable* status for the active mode.
+        # In production mode this rejects the committed dev key so the
+        # publish pipeline cannot accidentally ship a manifest the wizard
+        # would refuse to install for every user.
         try:
             from cryptography.hazmat.primitives import serialization as _serialization
         except ImportError as exc:  # pragma: no cover - cryptography is required when signing
@@ -1754,10 +1855,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 format=_serialization.PublicFormat.Raw,
             )
         ).decode("ascii")
-        assert_key_pinned_in_trust_list(repo_root, signing_key_id, public_key_b64)
+        trust_entry = assert_key_pinned_in_trust_list(
+            repo_root, signing_key_id, public_key_b64, mode=validation_mode
+        )
         print(
             f"Signing firmware with key id={signing_key_id} "
-            f"(pub={public_key_b64[:12]}…). Trusted-list match confirmed."
+            f"status={trust_entry.get('status')!r} pub={public_key_b64[:12]}…. "
+            f"Trusted-list match confirmed for mode={validation_mode!r}."
         )
 
     artifacts = collect_firmware(
@@ -1787,15 +1891,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
     validate_structured_config_consistency(ordered)
-    # --mode wins over --strict-validate; --strict-validate is the legacy
-    # alias for --mode=production. If neither is set, default to
-    # 'production' so a CI invocation cannot silently downgrade.
-    if args.mode is not None:
-        validation_mode = args.mode
-    elif args.strict_validate:
-        validation_mode = "production"
-    else:
-        validation_mode = "production"
+    # validation_mode was already resolved above (so it could gate the
+    # signing key load). Reuse it here for the metadata findings sweep.
     informational_findings: List[str] = []
     metadata_findings = validate_manifest_metadata(
         ordered,
@@ -1803,6 +1900,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         mode=validation_mode,
         strict=args.strict_validate,
         informational_findings=informational_findings,
+        repo_root=repo_root,
     )
     metadata_findings.extend(validate_no_placeholder_descriptions(ordered))
     if informational_findings:

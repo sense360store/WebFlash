@@ -1,3 +1,5 @@
+import { findTrustedKey, isTestOnlyKey } from './firmware-trusted-keys.js';
+
 /**
  * @fileoverview Firmware provenance and manifest validation.
  *
@@ -686,13 +688,30 @@ export function validateFirmwareProvenance(build, options = {}) {
         ? 'block'
         : (localOnly ? 'warn' : 'block');
     if (ed25519Sig && ed25519KeyId) {
-        checks.push(makeCheck(
-            CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
-            'Ed25519 signature metadata',
-            'pass',
-            signatureMetaSeverity,
-            `Manifest entry carries an Ed25519 signature attributed to key '${ed25519KeyId}'.`
-        ));
+        // Static gate also refuses signatures from a test/fixture key
+        // when the wizard is running in production mode AND this is a
+        // production-channel build. The runtime verifier would also catch
+        // this, but failing closed at the static gate stops the network
+        // download from even starting.
+        const trustedEntry = findTrustedKey(ed25519KeyId);
+        const isTestKey = isTestOnlyKey(trustedEntry);
+        if (isTestKey && mode === 'production' && (stable || channel === 'rescue')) {
+            checks.push(makeCheck(
+                CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+                'Ed25519 signature metadata',
+                'fail',
+                'block',
+                `Manifest entry is signed by key '${ed25519KeyId}', which is marked 'test_only' in the pinned trust list (its private half is exposed for fixture signing). Production ${stable ? 'stable' : 'rescue'} firmware MUST be signed by an 'active' production key.`
+            ));
+        } else {
+            checks.push(makeCheck(
+                CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+                'Ed25519 signature metadata',
+                'pass',
+                signatureMetaSeverity,
+                `Manifest entry carries an Ed25519 signature attributed to key '${ed25519KeyId}'${trustedEntry ? ` (status: ${trustedEntry.status})` : ' (key id not on trust list yet)'}.`
+            ));
+        }
     } else if (ed25519Sig && !ed25519KeyId) {
         checks.push(makeCheck(
             CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,

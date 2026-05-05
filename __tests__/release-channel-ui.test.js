@@ -35,11 +35,14 @@ const VALID_PROVENANCE = {
     sha256: 'c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397',
     md5: '1eb1fea3994bbbeea11080159dbbe611',
     signature: 'KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=',
-    // Real Ed25519 metadata is now required for stable builds to pass the
-    // static gate. The byte content here is not a real signature over the
-    // test fixture; the static gate only verifies metadata presence.
+    // Real Ed25519 metadata is required for stable builds to pass the
+    // static gate. The byte content here is not a real signature over
+    // the test fixture; the static gate only verifies metadata presence
+    // and (in production mode) refuses test_only key ids. We use a
+    // synthetic key id that is not on the trust list so the static gate
+    // accepts it.
     signature_ed25519: 'kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==',
-    signature_key_id: 'dev-2026-01',
+    signature_key_id: 'unit-test-fixture-key',
     source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     file_size: 524288,
