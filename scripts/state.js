@@ -4151,94 +4151,95 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
         `
         : '';
 
-    const factRows = [];
-    factRows.push({
-        label: 'Firmware target',
-        value: `<code class="firmware-details-panel__code">${escapeHtml(firmwareTarget)}</code>`
-    });
-    if (firmware.version) {
-        factRows.push({
-            label: 'Version',
-            value: escapeHtml(`v${firmware.version}`)
-        });
+    const factRow = (label, value) => ({ label, value });
+
+    const identityRows = [];
+    identityRows.push(factRow(
+        'Firmware target',
+        `<code class="firmware-details-panel__code">${escapeHtml(firmwareTarget)}</code>`
+    ));
+    if (firmwarePath) {
+        identityRows.push(factRow(
+            'Firmware path',
+            `<code class="firmware-details-panel__code">${escapeHtml(firmwarePath)}</code>`
+        ));
     }
-    factRows.push({
-        label: 'Channel',
-        value: `<span class="firmware-details-panel__channel tone-${escapeHtml(policy.tone)}">${escapeHtml(policy.label)}</span>`
-    });
-    factRows.push({
-        label: 'Recommended',
-        value: recommended
+    if (firmware.version) {
+        identityRows.push(factRow('Version', escapeHtml(`v${firmware.version}`)));
+    }
+    identityRows.push(factRow(
+        'Channel',
+        `<span class="firmware-details-panel__channel tone-${escapeHtml(policy.tone)}">${escapeHtml(policy.label)}</span>`
+    ));
+    identityRows.push(factRow(
+        'Recommended',
+        recommended
             ? '<span class="firmware-details-panel__yes">Yes — default for this configuration</span>'
             : '<span class="firmware-details-panel__no">No</span>'
-    });
-    factRows.push({
-        label: 'Lifecycle',
-        value: firmware.deprecated === true
+    ));
+    identityRows.push(factRow(
+        'Lifecycle',
+        firmware.deprecated === true
             ? `<span class="firmware-details-panel__deprecated">Deprecated${firmware.deprecation_reason ? ` — ${escapeHtml(firmware.deprecation_reason)}` : ''}</span>`
             : '<span class="firmware-details-panel__active">Active</span>'
-    });
-    if (configString) {
-        factRows.push({
-            label: 'Configuration profile',
-            value: `<code class="firmware-details-panel__code">${escapeHtml(configString)}</code>`
-        });
-    }
-    if (chipFamily) {
-        factRows.push({ label: 'Chip family', value: escapeHtml(chipFamily) });
-    }
+    ));
     if (buildDateLabel) {
-        factRows.push({ label: 'Build date', value: escapeHtml(buildDateLabel) });
+        identityRows.push(factRow('Build date', escapeHtml(buildDateLabel)));
     }
     if (sourceCommit) {
         const display = sourceCommit.length > 12 ? `${sourceCommit.slice(0, 12)}…` : sourceCommit;
-        factRows.push({
-            label: 'Source commit',
-            value: sourceUrl
+        identityRows.push(factRow(
+            'Source commit',
+            sourceUrl
                 ? `<a class="firmware-details-panel__link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer"><code>${escapeHtml(display)}</code></a>`
                 : `<code>${escapeHtml(display)}</code>`
-        });
+        ));
     }
     if (sourceUrl && !sourceCommit) {
-        factRows.push({
-            label: 'Source',
-            value: `<a class="firmware-details-panel__link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>`
-        });
+        identityRows.push(factRow(
+            'Source',
+            `<a class="firmware-details-panel__link" href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(sourceUrl)}</a>`
+        ));
     }
-    if (firmwarePath) {
-        factRows.push({
-            label: 'Firmware path',
-            value: `<code class="firmware-details-panel__code">${escapeHtml(firmwarePath)}</code>`
-        });
-    }
-    if (sizeLabel) {
-        factRows.push({ label: 'File size', value: escapeHtml(sizeLabel) });
-    }
-    if (artifactType) {
-        factRows.push({ label: 'Artifact type', value: escapeHtml(artifactType) });
-    }
-
-    factRows.push({
-        label: 'SHA-256',
-        value: sha256
-            ? `<code class="firmware-details-panel__code firmware-details-panel__hash" title="${escapeHtml(sha256)}">${escapeHtml(sha256.length > 24 ? `${sha256.slice(0, 12)}…${sha256.slice(-8)}` : sha256)}</code> <span class="firmware-details-panel__hint">Metadata present in manifest. Browser hashes the downloaded binary and compares against this value before flashing.</span>`
-            : '<span class="firmware-details-panel__no">Metadata missing from manifest entry.</span>'
-    });
-
-    factRows.push({
-        label: 'Signature metadata',
-        value: hasSignatureMetadata
-            ? `<span class="firmware-details-panel__yes">Signature metadata present</span>${signedBy ? ` <span class="firmware-details-panel__hint">Signed by ${escapeHtml(signedBy)}.</span>` : ''} <span class="firmware-details-panel__hint">Browser-side cryptographic signature checks are not performed; treat this as integrity metadata, not authenticity.</span>`
-            : '<span class="firmware-details-panel__no">Missing from manifest entry.</span>'
-    });
-
-    factRows.push({
-        label: 'Rollback',
-        value: rollbackSupported
+    identityRows.push(factRow(
+        'Rollback',
+        rollbackSupported
             ? '<span class="firmware-details-panel__yes">Supported via Recovery firmware</span>'
             : '<span class="firmware-details-panel__no">Use Recovery firmware to roll back</span>'
-    });
+    ));
 
+    const compatibilityRows = [];
+    if (configString) {
+        compatibilityRows.push(factRow(
+            'Configuration profile',
+            `<code class="firmware-details-panel__code">${escapeHtml(configString)}</code>`
+        ));
+    }
+    if (chipFamily) {
+        compatibilityRows.push(factRow('Chip family', escapeHtml(chipFamily)));
+    }
+    if (artifactType) {
+        compatibilityRows.push(factRow('Artifact type', escapeHtml(artifactType)));
+    }
+
+    const integrityRows = [];
+    integrityRows.push(factRow(
+        'SHA-256',
+        sha256
+            ? `<code class="firmware-details-panel__code firmware-details-panel__hash" title="${escapeHtml(sha256)}">${escapeHtml(sha256.length > 24 ? `${sha256.slice(0, 12)}…${sha256.slice(-8)}` : sha256)}</code> <span class="firmware-details-panel__hint">Metadata present in manifest. Browser hashes the downloaded binary and compares against this value before flashing.</span>`
+            : '<span class="firmware-details-panel__no">Metadata missing from manifest entry.</span>'
+    ));
+    integrityRows.push(factRow(
+        'Signature metadata',
+        hasSignatureMetadata
+            ? `<span class="firmware-details-panel__yes">Signature metadata present</span>${signedBy ? ` <span class="firmware-details-panel__hint">Signed by ${escapeHtml(signedBy)}.</span>` : ''} <span class="firmware-details-panel__hint">Browser-side cryptographic signature checks are not performed; treat this as integrity metadata, not authenticity.</span>`
+            : '<span class="firmware-details-panel__no">Missing from manifest entry.</span>'
+    ));
+    if (sizeLabel) {
+        integrityRows.push(factRow('File size', escapeHtml(sizeLabel)));
+    }
+
+    const verificationRows = [];
     if (provenanceSummary) {
         const counts = provenanceSummary.counts || {};
         const tallyParts = [];
@@ -4248,20 +4249,34 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
         if (counts.skip) tallyParts.push(`${counts.skip} not applicable`);
         const tallyText = tallyParts.join(' · ') || '—';
         const summaryText = provenanceSummary.summary || '';
-        factRows.push({
-            label: 'Verification checks',
-            value: `<span class="firmware-details-panel__verification status-${escapeHtml(provenanceSummary.status)}">${escapeHtml(tallyText)}</span>${summaryText ? ` <span class="firmware-details-panel__hint">${escapeHtml(summaryText)}</span>` : ''}`
-        });
+        verificationRows.push(factRow(
+            'Verification checks',
+            `<span class="firmware-details-panel__verification status-${escapeHtml(provenanceSummary.status)}">${escapeHtml(tallyText)}</span>${summaryText ? ` <span class="firmware-details-panel__hint">${escapeHtml(summaryText)}</span>` : ''}`
+        ));
     }
 
-    const factsHtml = factRows
-        .map(row => `
-            <div class="firmware-details-panel__row">
-                <dt class="firmware-details-panel__label">${escapeHtml(row.label)}</dt>
-                <dd class="firmware-details-panel__value">${row.value}</dd>
-            </div>
-        `)
-        .join('');
+    const renderRows = rows => rows.map(row => `
+        <div class="firmware-details-panel__row">
+            <dt class="firmware-details-panel__label">${escapeHtml(row.label)}</dt>
+            <dd class="firmware-details-panel__value">${row.value}</dd>
+        </div>
+    `).join('');
+
+    const groups = [
+        { key: 'identity', title: 'Identity', rows: identityRows },
+        { key: 'compatibility', title: 'Compatibility', rows: compatibilityRows },
+        { key: 'integrity', title: 'Integrity metadata', rows: integrityRows },
+        { key: 'verification', title: 'Verification summary', rows: verificationRows }
+    ];
+
+    const groupsHtml = groups
+        .filter(group => group.rows.length > 0)
+        .map(group => `
+            <section class="firmware-details-panel__group" data-firmware-details-group="${escapeHtml(group.key)}">
+                <h4 class="firmware-details-panel__group-title">${escapeHtml(group.title)}</h4>
+                <dl class="firmware-details-panel__facts">${renderRows(group.rows)}</dl>
+            </section>
+        `).join('');
 
     const knownIssuesHtml = knownIssues.length
         ? `
@@ -4293,7 +4308,7 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
                 <p class="firmware-details-panel__description">${escapeHtml(policy.description)}</p>
                 ${badgesHtml}
             </header>
-            <dl class="firmware-details-panel__facts">${factsHtml}</dl>
+            <div class="firmware-details-panel__groups">${groupsHtml}</div>
             ${knownIssuesHtml}
             ${changelogHtml}
         </section>

@@ -628,6 +628,62 @@ describe('release-channel UI wiring in state.js', () => {
         const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: false });
         expect(html).toContain('Metadata missing from manifest entry');
     });
+
+    test('renderFirmwareDetailsPanel groups fact rows into Identity / Compatibility / Integrity / Verification sections', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            chipFamily: 'ESP32-S3',
+            artifact_type: 'application'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+
+        document.body.innerHTML = `<div id="probe">${html}</div>`;
+        const groups = Array.from(document.querySelectorAll('[data-firmware-details-group]'));
+        const groupKeys = groups.map(group => group.getAttribute('data-firmware-details-group'));
+        expect(groupKeys).toEqual(['identity', 'compatibility', 'integrity', 'verification']);
+
+        const identity = document.querySelector('[data-firmware-details-group="identity"]');
+        const compatibility = document.querySelector('[data-firmware-details-group="compatibility"]');
+        const integrity = document.querySelector('[data-firmware-details-group="integrity"]');
+        const verification = document.querySelector('[data-firmware-details-group="verification"]');
+
+        expect(identity.querySelector('.firmware-details-panel__group-title').textContent).toBe('Identity');
+        expect(compatibility.querySelector('.firmware-details-panel__group-title').textContent).toBe('Compatibility');
+        expect(integrity.querySelector('.firmware-details-panel__group-title').textContent).toBe('Integrity metadata');
+        expect(verification.querySelector('.firmware-details-panel__group-title').textContent).toBe('Verification summary');
+
+        expect(identity.textContent).toMatch(/Firmware target/);
+        expect(identity.textContent).toMatch(/Firmware path/);
+        expect(identity.textContent).toMatch(/Version/);
+        expect(identity.textContent).toMatch(/Channel/);
+        expect(compatibility.textContent).toMatch(/Configuration profile/);
+        expect(compatibility.textContent).toMatch(/Chip family/);
+        expect(compatibility.textContent).toMatch(/Artifact type/);
+        expect(integrity.textContent).toMatch(/SHA-256/);
+        expect(integrity.textContent).toMatch(/Signature metadata/);
+        expect(verification.textContent).toMatch(/Verification checks/);
+    });
+
+    test('renderFirmwareDetailsPanel skips empty groups when their rows are absent', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        // No chipFamily, no config_string, no artifact_type → Compatibility
+        // group should not render at all rather than rendering an empty box.
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0',
+            chipFamily: '',
+            config_string: '',
+            artifact_type: ''
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: false });
+        document.body.innerHTML = `<div id="probe">${html}</div>`;
+        expect(document.querySelector('[data-firmware-details-group="compatibility"]')).toBeNull();
+        expect(document.querySelector('[data-firmware-details-group="identity"]')).not.toBeNull();
+    });
 });
 
 describe('release-channel acknowledgement scoping (identity-bound consent)', () => {
