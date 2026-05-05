@@ -505,6 +505,38 @@ function evaluatePreflightPolicy(checks = []) {
     };
 }
 
+// Compute the install-gate verdict for cache-freshness state. Used at
+// render time by `updateFirmwareControls()` and also at click time by the
+// install/summary handlers as defense-in-depth — the rendered button is
+// already disabled when freshness blocks, but a freshness state change
+// between render and click (e.g. a waiting SW landing while the user is
+// hovering the button) must still be caught.
+function evaluateFreshnessGate() {
+    const swState = (typeof getServiceWorkerState === 'function')
+        ? getServiceWorkerState()
+        : { updateAvailable: false, updateDismissed: false };
+    const swUpdateBlocking = Boolean(swState.updateAvailable) && !swState.updateDismissed;
+    const manifestStaleBlocking = manifestFreshnessHasRun && manifestFreshnessState === 'stale';
+    const manifestUnknownBlocking = manifestFreshnessHasRun
+        && manifestFreshnessState === 'unknown'
+        && !manifestFreshnessAck;
+    let blockingReason = '';
+    if (swUpdateBlocking) {
+        blockingReason = 'A WebFlash update is available. Reload before flashing to use the latest installer and firmware metadata.';
+    } else if (manifestStaleBlocking) {
+        blockingReason = 'A newer firmware manifest is available. Reload before flashing.';
+    } else if (manifestUnknownBlocking) {
+        blockingReason = 'WebFlash could not confirm that the firmware manifest is current. Acknowledge the warning above or reload.';
+    }
+    return {
+        ok: !swUpdateBlocking && !manifestStaleBlocking && !manifestUnknownBlocking,
+        blockingReason,
+        swUpdateBlocking,
+        manifestStaleBlocking,
+        manifestUnknownBlocking
+    };
+}
+
 function resetPreFlashAcknowledgement() {
     const control = document.querySelector('[data-preflash-acknowledge]');
 
@@ -2858,27 +2890,12 @@ function updateFirmwareControls() {
         : 'Acknowledge the firmware-channel warning before installing.';
 
     // CACHE FRESHNESS POLICY (see comment block near top of this file).
-    const swState = (typeof getServiceWorkerState === 'function')
-        ? getServiceWorkerState()
-        : { updateAvailable: false, updateDismissed: false };
-    const swUpdateBlocking = Boolean(swState.updateAvailable) && !swState.updateDismissed;
     // The freshness gate only kicks in once the freshness check has
     // actually been performed (or an explicit verdict has been set).
     // Until then the default 'unknown' state is the bootstrap state —
     // not evidence of a stale manifest — and must not block the user.
-    const manifestStaleBlocking = manifestFreshnessHasRun && manifestFreshnessState === 'stale';
-    const manifestUnknownBlocking = manifestFreshnessHasRun
-        && manifestFreshnessState === 'unknown'
-        && !manifestFreshnessAck;
-    let freshnessBlockingReason = '';
-    if (swUpdateBlocking) {
-        freshnessBlockingReason = 'A WebFlash update is available. Reload before flashing to use the latest installer and firmware metadata.';
-    } else if (manifestStaleBlocking) {
-        freshnessBlockingReason = 'A newer firmware manifest is available. Reload before flashing.';
-    } else if (manifestUnknownBlocking) {
-        freshnessBlockingReason = 'WebFlash could not confirm that the firmware manifest is current. Acknowledge the warning above or reload.';
-    }
-    const freshnessOk = !swUpdateBlocking && !manifestStaleBlocking && !manifestUnknownBlocking;
+    const freshness = evaluateFreshnessGate();
+    const { ok: freshnessOk, blockingReason: freshnessBlockingReason, swUpdateBlocking, manifestStaleBlocking } = freshness;
 
     const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall && channelAcksSatisfied && freshnessOk;
 
@@ -3030,6 +3047,8 @@ function updateFirmwareControls() {
                 summaryInstallButton.title = channelBlockingReason;
             } else if (!preflightPolicy.canInstall && blockingReason) {
                 summaryInstallButton.title = blockingReason;
+            } else if (!freshnessOk && freshnessBlockingReason) {
+                summaryInstallButton.title = freshnessBlockingReason;
             } else {
                 summaryInstallButton.removeAttribute('title');
             }
@@ -5012,19 +5031,38 @@ function attachInstallButtonListeners() {
             activateButton.addEventListener('click', event => {
                 const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
                 const outstandingAcks = getOutstandingChannelAcknowledgements(window.currentFirmware);
-                if (!policy.canInstall || outstandingAcks.length > 0) {
+                const freshness = evaluateFreshnessGate();
+                if (!policy.canInstall || outstandingAcks.length > 0 || !freshness.ok) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
                     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
                     const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
-                    const message = outstandingAcks.length > 0
-                        ? 'Acknowledge the firmware-channel warning before installing.'
-                        : (policy.blockingReasons[0] || 'Resolve preflight checks before installing.');
+                    let message;
+                    if (outstandingAcks.length > 0) {
+                        message = 'Acknowledge the firmware-channel warning before installing.';
+                    } else if (!policy.canInstall) {
+                        message = policy.blockingReasons[0] || 'Resolve preflight checks before installing.';
+                    } else {
+                        message = freshness.blockingReason || 'Resolve preflight checks before installing.';
+                    }
                     [detailHelper, primaryHelper].filter(Boolean).forEach(helper => {
                         helper.textContent = message;
                         helper.classList.add('is-visible', 'is-error');
                         helper.classList.remove('is-warning');
                     });
+                    // Re-render install controls so the disabled/title state
+                    // catches up with the freshness change that just blocked
+                    // this click (covers the "freshness went stale between
+                    // render and click" case).
+                    if (!freshness.ok) {
+                        try {
+                            updateFirmwareControls();
+                        } catch (error) {
+                            // DOM may not be in a re-renderable state; the
+                            // helper-text update above is the user-facing
+                            // signal we care about.
+                        }
+                    }
                     return;
                 }
                 if (!window.confirm('Keep the device connected and powered during flashing. Continue?')) {
@@ -5078,7 +5116,10 @@ function bindSummaryInstallButton() {
     summaryButton.addEventListener('click', event => {
         event.preventDefault();
         const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
-        if (!policy.canInstall || getOutstandingChannelAcknowledgements(window.currentFirmware).length > 0) {
+        const freshness = evaluateFreshnessGate();
+        if (!policy.canInstall
+            || getOutstandingChannelAcknowledgements(window.currentFirmware).length > 0
+            || !freshness.ok) {
             updateFirmwareControls();
             return;
         }
@@ -5817,9 +5858,11 @@ export const __testHooks = Object.freeze({
     setFirmwareVerificationState: setFirmwareVerificationStateForTests,
     setFirmwareStatusMessage: setFirmwareStatusMessageForTests,
     updateFirmwareControls,
+    attachInstallButtonListeners,
     setPreFlashAcknowledgement,
     setPreflightWarningsAcknowledgement,
     evaluatePreflightPolicy,
+    evaluateFreshnessGate,
     updateConnectionQualityMetrics,
     buildDiagnosticsBundle: buildSupportBundle,
     redactDiagnosticsValue: redactValue,

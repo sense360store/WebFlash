@@ -500,4 +500,100 @@ describe('cache freshness — install gating policy', () => {
             expect(installButton.title).not.toMatch(/newer firmware manifest/i);
         }
     });
+
+    test('summary install button title explains the freshness reason when manifest is stale', async () => {
+        const { __testHooks, setStep } = await import('../scripts/state.js');
+        setStep(5, { animate: false, skipUrlUpdate: true });
+        registerFirmware(__testHooks);
+        injectInstallControls();
+        await clearOtherPreflightGates(__testHooks);
+        __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+        __testHooks.setPreFlashAcknowledgement(true);
+        __testHooks.setManifestFreshnessState('stale');
+        __testHooks.updateFirmwareControls();
+
+        const summaryButton = document.querySelector('[data-module-summary-install]');
+        expect(summaryButton).not.toBeNull();
+        expect(summaryButton.disabled).toBe(true);
+        expect(summaryButton.title).toMatch(/newer firmware manifest/i);
+    });
+
+    test("summary install button title explains the freshness reason when verdict is 'unknown' and not acknowledged", async () => {
+        const { __testHooks, setStep } = await import('../scripts/state.js');
+        setStep(5, { animate: false, skipUrlUpdate: true });
+        registerFirmware(__testHooks);
+        injectInstallControls();
+        await clearOtherPreflightGates(__testHooks);
+        __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+        __testHooks.setPreFlashAcknowledgement(true);
+        __testHooks.setManifestFreshnessState('unknown');
+        __testHooks.updateFirmwareControls();
+
+        const summaryButton = document.querySelector('[data-module-summary-install]');
+        expect(summaryButton).not.toBeNull();
+        expect(summaryButton.disabled).toBe(true);
+        expect(summaryButton.title).toMatch(/could not confirm/i);
+    });
+
+    test('install activate handler blocks the click if freshness goes stale between render and click', async () => {
+        const { __testHooks, setStep } = await import('../scripts/state.js');
+        setStep(5, { animate: false, skipUrlUpdate: true });
+        registerFirmware(__testHooks);
+        injectInstallControls();
+        await clearOtherPreflightGates(__testHooks);
+        __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+        __testHooks.setPreFlashAcknowledgement(true);
+        // Freshness is 'current' at render time so the button is enabled and
+        // the click handler is bound to the actual activate button.
+        __testHooks.setManifestFreshnessState('current');
+        __testHooks.attachInstallButtonListeners();
+        __testHooks.updateFirmwareControls();
+
+        // Now simulate a stale verdict landing after the user moused down on
+        // the button. The defensive check inside the click handler must
+        // catch this even though the button was rendered enabled.
+        __testHooks.setManifestFreshnessState('stale');
+
+        const activateButton = document.querySelector('esp-web-install-button button[slot="activate"]');
+        // Force-enable to bypass the rendered disabled state — we are
+        // exercising the click-handler defense, not the disabled state.
+        activateButton.disabled = false;
+
+        const clickEvent = new Event('click', { bubbles: true, cancelable: true });
+        activateButton.dispatchEvent(clickEvent);
+
+        expect(clickEvent.defaultPrevented).toBe(true);
+        const helper = document.querySelector('#compatible-firmware [data-ready-helper]');
+        expect(helper.textContent).toMatch(/newer firmware manifest/i);
+        expect(helper.classList.contains('is-error')).toBe(true);
+    });
+
+    test('summary install button click handler does not delegate to primary install when freshness is stale', async () => {
+        const { __testHooks, setStep } = await import('../scripts/state.js');
+        setStep(5, { animate: false, skipUrlUpdate: true });
+        registerFirmware(__testHooks);
+        injectInstallControls();
+        await clearOtherPreflightGates(__testHooks);
+        __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+        __testHooks.setPreFlashAcknowledgement(true);
+        __testHooks.setManifestFreshnessState('current');
+        __testHooks.attachInstallButtonListeners();
+        __testHooks.updateFirmwareControls();
+
+        // Stale verdict lands before the user reaches the summary button.
+        __testHooks.setManifestFreshnessState('stale');
+
+        const primaryInstall = document.querySelector('#compatible-firmware esp-web-install-button button[slot="activate"]');
+        const primarySpy = jest.spyOn(primaryInstall, 'click');
+
+        const summaryButton = document.querySelector('[data-module-summary-install]');
+        summaryButton.dispatchEvent(new Event('click', { bubbles: true, cancelable: true }));
+
+        // Summary delegates to primary only when all gates pass; freshness
+        // failure must short-circuit before the delegate call.
+        expect(primarySpy).not.toHaveBeenCalled();
+        // The summary button must show the freshness reason after the
+        // re-render triggered by its handler.
+        expect(summaryButton.title).toMatch(/newer firmware manifest/i);
+    });
 });
