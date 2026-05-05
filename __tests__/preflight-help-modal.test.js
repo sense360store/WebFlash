@@ -161,4 +161,91 @@ describe('preflight help modal', () => {
         expect(result.dataset.level).toBe('warn');
         expect(result.textContent).toMatch(/No port was selected/);
     });
+
+    test('runSetupTest does not call logError when the user cancels the picker', async () => {
+        const cancelledNames = ['NotFoundError', 'AbortError'];
+        for (const errorName of cancelledNames) {
+            logErrorMock.mockReset();
+            logInfoMock.mockReset();
+            logWarningMock.mockReset();
+
+            const requestPort = jest.fn(() => {
+                const err = new Error('No port selected');
+                err.name = errorName;
+                return Promise.reject(err);
+            });
+            Object.defineProperty(global.navigator, 'serial', {
+                value: { requestPort },
+                configurable: true
+            });
+
+            mod.openPreflightHelpModal();
+            const modal = document.querySelector('.preflight-help-modal');
+            await mod.__testHooks.runSetupTest(modal);
+            mod.__testHooks.reset();
+
+            expect(logErrorMock).not.toHaveBeenCalled();
+            // The cancellation is recorded as info so support can still see it
+            // happened, just not as a scary error log entry.
+            expect(logInfoMock).toHaveBeenCalled();
+            const [, message] = logInfoMock.mock.calls[0];
+            expect(message).toMatch(/cancelled/i);
+        }
+    });
+
+    test('runSetupTest reports permission_denied as a fail and logs an error', async () => {
+        const requestPort = jest.fn(() => {
+            const err = new Error('Permission denied');
+            err.name = 'SecurityError';
+            return Promise.reject(err);
+        });
+        Object.defineProperty(global.navigator, 'serial', {
+            value: { requestPort },
+            configurable: true
+        });
+
+        mod.openPreflightHelpModal();
+        const modal = document.querySelector('.preflight-help-modal');
+        await mod.__testHooks.runSetupTest(modal);
+        const result = modal.querySelector('[data-preflight-help-test-result]');
+        expect(result.dataset.level).toBe('fail');
+        expect(result.textContent).toMatch(/blocked the serial-port request/);
+        expect(logErrorMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('runSetupTest fails and logs an error for unknown errors', async () => {
+        const requestPort = jest.fn(() => {
+            const err = new Error('Hardware exploded unexpectedly');
+            err.name = 'WeirdError';
+            return Promise.reject(err);
+        });
+        Object.defineProperty(global.navigator, 'serial', {
+            value: { requestPort },
+            configurable: true
+        });
+
+        mod.openPreflightHelpModal();
+        const modal = document.querySelector('.preflight-help-modal');
+        await mod.__testHooks.runSetupTest(modal);
+        const result = modal.querySelector('[data-preflight-help-test-result]');
+        expect(result.dataset.level).toBe('fail');
+        expect(result.textContent).toMatch(/Setup test failed/);
+        expect(logErrorMock).toHaveBeenCalledTimes(1);
+    });
+
+    test('runSetupTest fails when navigator.serial.requestPort is unavailable', async () => {
+        Object.defineProperty(global.navigator, 'serial', {
+            value: {},
+            configurable: true
+        });
+
+        mod.openPreflightHelpModal();
+        const modal = document.querySelector('.preflight-help-modal');
+        await mod.__testHooks.runSetupTest(modal);
+        const result = modal.querySelector('[data-preflight-help-test-result]');
+        expect(result.dataset.level).toBe('fail');
+        expect(result.textContent).toMatch(/requestPort is unavailable/);
+        expect(logWarningMock).toHaveBeenCalled();
+        expect(logErrorMock).not.toHaveBeenCalled();
+    });
 });

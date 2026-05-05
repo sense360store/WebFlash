@@ -70,6 +70,30 @@ describe('USB test session state', () => {
         expect(bundle.preflight.last_usb_test_result).toBe('cancelled');
         expect(bundle.preflight.last_usb_test_timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
+
+    test('a successful pass clears any stale lastUsbTestError from a previous attempt', async () => {
+        const mod = await loadDiagnostics();
+        mod.recordUsbTestResult({
+            result: 'permission_denied',
+            error: Object.assign(new Error('blocked'), { name: 'SecurityError' })
+        });
+        expect(mod.getSessionDiagnosticsState().lastUsbTestError).toBe('SecurityError');
+
+        mod.recordUsbTestResult({ result: 'pass' });
+        expect(mod.getSessionDiagnosticsState().lastUsbTestError).toBeUndefined();
+    });
+
+    test('a cancelled result clears any stale lastUsbTestError from a previous attempt', async () => {
+        const mod = await loadDiagnostics();
+        mod.recordUsbTestResult({
+            result: 'error',
+            error: Object.assign(new Error('boom'), { name: 'WeirdError' })
+        });
+        expect(mod.getSessionDiagnosticsState().lastUsbTestError).toBe('WeirdError');
+
+        mod.recordUsbTestResult({ result: 'cancelled' });
+        expect(mod.getSessionDiagnosticsState().lastUsbTestError).toBeUndefined();
+    });
 });
 
 describe('Recovery session state', () => {

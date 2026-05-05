@@ -323,6 +323,15 @@ async function runSetupTest(modal) {
                     'No port was selected. If your hub doesn’t appear in the picker, swap the USB cable for a known-data cable, plug it directly into the computer, and try again.'
                 );
                 usbTestResult = 'cancelled';
+                // Cancellation is a benign user action — log as info so it
+                // doesn't surface as a high-severity failure in the error log
+                // or diagnostics bundle.
+                logInfo('preflight-help', 'Setup test cancelled: user dismissed the serial-port picker.', {
+                    browser: caps.browser,
+                    os: caps.os,
+                    errorName: name
+                });
+                recordUsbTestResult({ result: usbTestResult });
             } else if (name === 'SecurityError') {
                 setTestResult(
                     modal,
@@ -330,6 +339,8 @@ async function runSetupTest(modal) {
                     'The browser blocked the serial-port request. Make sure the page is loaded over HTTPS and that the OS hasn’t denied USB access for this browser.'
                 );
                 usbTestResult = 'permission_denied';
+                logError('preflight-help', error, { browser: caps.browser, os: caps.os });
+                recordUsbTestResult({ result: usbTestResult, error });
             } else {
                 setTestResult(
                     modal,
@@ -337,9 +348,9 @@ async function runSetupTest(modal) {
                     `Setup test failed: ${error?.message || name}. Check the cable, port, and OS-specific tips below.`
                 );
                 usbTestResult = 'error';
+                logError('preflight-help', error, { browser: caps.browser, os: caps.os });
+                recordUsbTestResult({ result: usbTestResult, error });
             }
-            logError('preflight-help', error, { browser: caps.browser, os: caps.os });
-            recordUsbTestResult({ result: usbTestResult, error });
         }
     } finally {
         if (button) {
