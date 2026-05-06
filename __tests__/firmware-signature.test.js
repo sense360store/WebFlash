@@ -415,18 +415,23 @@ describe('verifyFirmwareSignature — failure modes', () => {
         expect(result.code).toBe(SIGNATURE_RESULT_CODES.SIGNATURE_INVALID);
     });
 
-    test('production-mode call with no acceptable key returns UNKNOWN_KEY', async () => {
-        // The repo currently ships ZERO active keys (only test_only).
-        // Production-mode callers should get a clear "no trusted keys"
-        // signal so support can guide users toward whatever the issue
-        // actually is (missing trust-list rotation, downgrade, etc).
+    test('production-mode call against an outsider key returns SIGNATURE_INVALID', async () => {
+        // Now that an `active` production key is pinned in the trust list
+        // (sense360-prod-2026-02), production-mode verification of an
+        // outsider signature exercises the "verify against every
+        // acceptable key, none match" branch and returns
+        // SIGNATURE_INVALID — distinct from the UNKNOWN_KEY signal that
+        // only fires when zero acceptable keys are pinned at all (a
+        // configuration error). Keeping a separate production-mode case
+        // here so a regression in the trust list (e.g. accidental
+        // removal of all active keys) would resurface as a different
+        // result code than the test-mode counterpart above.
         const { privateKey } = generateKeyPairSync('ed25519');
         const message = new TextEncoder().encode('production attempt');
         const sigB64 = nodeSign(null, Buffer.from(message), privateKey).toString('base64');
         const result = await verifyFirmwareSignature(message, sigB64);
         expect(result.ok).toBe(false);
-        expect(result.code).toBe(SIGNATURE_RESULT_CODES.UNKNOWN_KEY);
-        expect(result.message).toMatch(/no active production firmware signing keys/i);
+        expect(result.code).toBe(SIGNATURE_RESULT_CODES.SIGNATURE_INVALID);
     });
 });
 
