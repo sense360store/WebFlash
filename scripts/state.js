@@ -2461,7 +2461,7 @@ function updateModuleAvailabilityMessage() {
 
     if (manifestLoadError) {
         hint.classList.add('is-error');
-        hint.innerHTML = '<strong>Unable to load compatibility data.</strong> Module availability cannot be determined right now. <button type="button" class="btn-retry-manifest">Retry</button>';
+        hint.innerHTML = '<div class="module-status-bar__content"><strong>Unable to load compatibility data.</strong> Module availability cannot be determined right now. <button type="button" class="btn-retry-manifest">Retry</button></div>';
         const retryButton = hint.querySelector('.btn-retry-manifest');
         if (retryButton) {
             retryButton.addEventListener('click', handleRetryManifestLoad, { once: true });
@@ -2509,7 +2509,7 @@ function updateModuleAvailabilityMessage() {
         const detailsHtml = detailMessages.length > 0
             ? `<ul class="module-hint-details">${detailMessages.map(message => `<li>${escapeHtml(message)}</li>`).join('')}</ul>`
             : '';
-        hint.innerHTML = `<strong>Not available${scopeLabel}:</strong> ${unavailableTags}${detailsHtml}`;
+        hint.innerHTML = `<div class="module-status-bar__content"><strong>Not available${scopeLabel}:</strong> ${unavailableTags}${detailsHtml}</div>`;
         return;
     }
 
@@ -2525,7 +2525,7 @@ function updateModuleAvailabilityMessage() {
         const conflictDetails = conflictMessages.length > 0
             ? `<ul class="module-hint-details">${conflictMessages.map(message => `<li>${escapeHtml(message)}</li>`).join('')}</ul>`
             : '';
-        hint.innerHTML = `<strong>Partial support.</strong> ${label} is supported, but not with this exact module mix. ${selectedTags}${conflictDetails}`;
+        hint.innerHTML = `<div class="module-status-bar__content"><strong>Partial support.</strong> ${label} is supported, but not with this exact module mix. ${selectedTags}${conflictDetails}</div>`;
         return;
     }
 
@@ -2535,7 +2535,7 @@ function updateModuleAvailabilityMessage() {
         .map(moduleKey => createModuleTag(formatModuleSelectionLabel(moduleKey, configuration[moduleKey]), 'success'))
         .join(' ') || createModuleTag('Core only', 'success');
     const label = combinationLabel ? escapeHtml(combinationLabel) : 'this configuration';
-    hint.innerHTML = `<strong>Fully supported.</strong> ${label} supports this module selection. ${selectedTags}`;
+    hint.innerHTML = `<div class="module-status-bar__content"><strong>Fully supported.</strong> ${label} supports this module selection. ${selectedTags}</div>`;
 }
 
 function updateConfiguration(options = {}) {
