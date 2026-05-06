@@ -2124,6 +2124,10 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: #b42318;
 }
 
+.preflight-panel__status.status-pending {
+    color: var(--color-text-secondary);
+}
+
 :root.dark-theme .preflight-panel__status.status-pass,
 [data-theme="dark"] .preflight-panel__status.status-pass {
     color: #4ade80;
@@ -2137,6 +2141,11 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 :root.dark-theme .preflight-panel__status.status-fail,
 [data-theme="dark"] .preflight-panel__status.status-fail {
     color: #f87171;
+}
+
+:root.dark-theme .preflight-panel__status.status-pending,
+[data-theme="dark"] .preflight-panel__status.status-pending {
+    color: #94a3b8;
 }
 
 .preflight-panel__detail {

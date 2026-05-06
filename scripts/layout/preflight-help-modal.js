@@ -270,6 +270,20 @@ function setTestResult(modal, level, message) {
     }
 }
 
+function notifyConnectionAttempted() {
+    // Loose-coupled signal to state.js that the user just interacted with
+    // the device through the setup-test path. State.js graduates the
+    // connection-quality / device-visibility preflight checks out of the
+    // pending state when it sees this event.
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        try {
+            window.dispatchEvent(new CustomEvent('webflash:connection-attempted'));
+        } catch {
+            /* defensive — older environments without CustomEvent */
+        }
+    }
+}
+
 async function runSetupTest(modal) {
     const button = modal.querySelector('[data-preflight-help-test]');
     if (button) {
@@ -313,6 +327,10 @@ async function runSetupTest(modal) {
             );
             logInfo('preflight-help', 'Setup test passed: serial port granted.', { vid, pid, browser: caps.browser, os: caps.os });
             recordUsbTestResult({ result: 'pass' });
+            // A successful setup test is real evidence the device is
+            // visible to the browser — graduate the pending preflight
+            // checks to a real verdict.
+            notifyConnectionAttempted();
         } catch (error) {
             const name = error?.name || 'Error';
             let usbTestResult;
@@ -332,6 +350,8 @@ async function runSetupTest(modal) {
                     errorName: name
                 });
                 recordUsbTestResult({ result: usbTestResult });
+                // Cancellation does not count as a real connection attempt
+                // — leave the preflight checks in their current state.
             } else if (name === 'SecurityError') {
                 setTestResult(
                     modal,
@@ -341,6 +361,9 @@ async function runSetupTest(modal) {
                 usbTestResult = 'permission_denied';
                 logError('preflight-help', error, { browser: caps.browser, os: caps.os });
                 recordUsbTestResult({ result: usbTestResult, error });
+                // Permission denial is a real connection attempt that
+                // failed — surface it via the preflight checks.
+                notifyConnectionAttempted();
             } else {
                 setTestResult(
                     modal,
@@ -350,6 +373,7 @@ async function runSetupTest(modal) {
                 usbTestResult = 'error';
                 logError('preflight-help', error, { browser: caps.browser, os: caps.os });
                 recordUsbTestResult({ result: usbTestResult, error });
+                notifyConnectionAttempted();
             }
         }
     } finally {
