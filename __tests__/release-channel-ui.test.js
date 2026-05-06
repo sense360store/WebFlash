@@ -697,6 +697,56 @@ describe('release-channel UI wiring in state.js', () => {
         expect(document.querySelector('[data-firmware-details-group="compatibility"]')).toBeNull();
         expect(document.querySelector('[data-firmware-details-group="identity"]')).not.toBeNull();
     });
+
+    test('renderFirmwareDetailsPanel hides the technical fact rows behind a collapsed disclosure by default', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        document.body.innerHTML = `<div id="probe">${html}</div>`;
+        const disclosure = document.querySelector('[data-firmware-details-disclosure]');
+        expect(disclosure).not.toBeNull();
+        // Native <details> defaults to closed when the `open` attribute is absent.
+        expect(disclosure.tagName.toLowerCase()).toBe('details');
+        expect(disclosure.hasAttribute('open')).toBe(false);
+        // The summary still surfaces the title + show-hint so the user knows
+        // detailed metadata is one click away.
+        const summary = disclosure.querySelector('summary');
+        expect(summary).not.toBeNull();
+        expect(summary.textContent).toMatch(/Firmware details/);
+        expect(summary.textContent).toMatch(/Show technical metadata/);
+        // The fact rows live inside the disclosure body so they render only on demand.
+        const identity = document.querySelector('[data-firmware-details-group="identity"]');
+        expect(identity.closest('[data-firmware-details-disclosure]')).toBe(disclosure);
+    });
+
+    test('renderFirmwareProvenanceSection keeps the verdict header visible and hides the per-check list behind a disclosure', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+        const html = __testHooks.renderFirmwareProvenanceSection(build);
+        document.body.innerHTML = `<div id="probe">${html}</div>`;
+        // Header (badge + summary) is rendered outside the disclosure so the
+        // one-line verification status shows by default.
+        const header = document.querySelector('.firmware-provenance__header');
+        expect(header).not.toBeNull();
+        expect(header.querySelector('.firmware-provenance__badge')).not.toBeNull();
+        const disclosure = document.querySelector('[data-firmware-provenance-disclosure]');
+        expect(disclosure).not.toBeNull();
+        expect(disclosure.tagName.toLowerCase()).toBe('details');
+        expect(disclosure.hasAttribute('open')).toBe(false);
+        // Tier list, fact rows, and the per-check list all live inside the
+        // collapsed disclosure body.
+        const checks = document.querySelector('[data-firmware-provenance-checks]');
+        expect(checks).not.toBeNull();
+        expect(checks.closest('[data-firmware-provenance-disclosure]')).toBe(disclosure);
+    });
 });
 
 describe('release-channel acknowledgement scoping (identity-bound consent)', () => {
