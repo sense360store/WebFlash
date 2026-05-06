@@ -337,6 +337,13 @@ const connectionQualityMetrics = {
     stabilityWindowStart: Date.now()
 };
 
+// Tracks whether the user has reached a point where we have actual evidence
+// about the serial link — a serial connect/disconnect event, an ESP Web Tools
+// install lifecycle event, or a successful "Test browser & USB setup" run.
+// Until then the connection-quality and device-visibility preflight checks
+// surface a neutral "pending" state instead of failing on "0 events over 0s".
+let preflightConnectionAttempted = false;
+
 function getConnectionQualitySnapshot() {
     return {
         disconnects: Number(connectionQualityMetrics.disconnects) || 0,
@@ -348,9 +355,33 @@ function getConnectionQualitySnapshot() {
     };
 }
 
+function markPreflightConnectionAttempted() {
+    if (preflightConnectionAttempted) {
+        return;
+    }
+    preflightConnectionAttempted = true;
+    if (currentStep === 5) {
+        refreshPreflightDiagnostics();
+    }
+}
+
+function hasPreflightConnectionBeenAttempted() {
+    return preflightConnectionAttempted;
+}
+
+function resetPreflightConnectionAttemptedForTests() {
+    preflightConnectionAttempted = false;
+}
+
 function updateConnectionQualityMetrics(partial = {}) {
     if (!partial || typeof partial !== 'object') {
         return getConnectionQualitySnapshot();
+    }
+    // Any metric/window update is evidence that something has happened on
+    // the serial link — flip the connection-attempted flag so the pending
+    // preflight checks can resolve to a real verdict.
+    if (Object.keys(partial).length > 0) {
+        preflightConnectionAttempted = true;
     }
     ['disconnects', 'reconnectAttempts', 'serialReadFailures', 'serialWriteFailures', 'retryCount'].forEach(key => {
         if (key in partial) {
@@ -1555,11 +1586,13 @@ function handleInstallStateEvent(event) {
     }
 
     if (state === 'preparing' || state === 'manifest' || state === 'initializing') {
+        markPreflightConnectionAttempted();
         updateConnectionQualityMetrics({ resetStabilityWindow: true });
     }
 
     if (state === 'finished') {
         setHomeAssistantIntegrationsButtonEnabled(true);
+        markPreflightConnectionAttempted();
         updateConnectionQualityMetrics({ resetStabilityWindow: true });
         // Record successful flash
         if (currentFlashEntryId) {
@@ -1573,6 +1606,7 @@ function handleInstallStateEvent(event) {
     }
 
     if (state === 'error') {
+        markPreflightConnectionAttempted();
         const snapshot = getConnectionQualitySnapshot();
         updateConnectionQualityMetrics({
             serialReadFailures: snapshot.serialReadFailures + 1,
@@ -1602,6 +1636,7 @@ function bindSerialDisconnectListener() {
     }
     navigator.serial._webflashDisconnectBound = true;
     navigator.serial.addEventListener('disconnect', () => {
+        markPreflightConnectionAttempted();
         const snapshot = getConnectionQualitySnapshot();
         updateConnectionQualityMetrics({
             disconnects: snapshot.disconnects + 1,
@@ -1610,6 +1645,7 @@ function bindSerialDisconnectListener() {
         refreshPreflightDiagnostics();
     });
     navigator.serial.addEventListener('connect', () => {
+        markPreflightConnectionAttempted();
         const snapshot = getConnectionQualitySnapshot();
         updateConnectionQualityMetrics({
             reconnectAttempts: snapshot.reconnectAttempts + 1,
@@ -2648,11 +2684,14 @@ function setStep(targetStep, { skipUrlUpdate = false, animate = true } = {}) {
 
     if (currentStep === 5) {
         if (previousStep !== 5) {
-            // Reset the connection-quality stability window when the user first
-            // arrives at the review step so the preflight check is measured
-            // against the time the device is actually expected to be connected
-            // rather than the time elapsed since page load.
-            updateConnectionQualityMetrics({ resetStabilityWindow: true });
+            // Reset the connection-quality stability window when the user
+            // first arrives at the review step so the preflight check is
+            // measured against the time the device is actually expected to
+            // be connected rather than the time elapsed since page load.
+            // This deliberately bypasses updateConnectionQualityMetrics so
+            // the "connection attempted" flag stays false — merely opening
+            // step 5 must not graduate the check out of pending.
+            connectionQualityMetrics.stabilityWindowStart = Date.now();
         }
         bindSerialDisconnectListener();
         updateConfiguration({ skipUrlUpdate: true });
@@ -3244,11 +3283,15 @@ async function refreshPreflightDiagnostics() {
             });
         }
 
+        // Before any connect/disconnect/install event, treat device visibility
+        // as "not checked yet" rather than a warning — there is no evidence of
+        // a problem, just no data. The check resolves to pass/warn once the
+        // device-info panel reports a real status.
         return createCheck({
             key: 'device-visibility',
             label: 'Device connection visibility',
-            state: 'warn',
-            detail: 'Device info has not been read yet.',
+            state: 'pending',
+            detail: 'Connect your hub to test this check.',
             blocking: false
         });
     };
@@ -3257,12 +3300,34 @@ async function refreshPreflightDiagnostics() {
         const metrics = getConnectionQualitySnapshot();
         const serialFailures = metrics.serialReadFailures + metrics.serialWriteFailures;
         const stabilitySeconds = Math.floor(metrics.stabilityWindowMs / 1000);
+        const hasFailureEvents =
+            metrics.disconnects > 0
+            || serialFailures > 0
+            || metrics.retryCount > 0;
+
+        // Until the user has actually attempted to connect (or we have
+        // captured a failure event), show a neutral pending state. Zero
+        // events over zero seconds is not evidence of an unstable link —
+        // it just means the check has not run yet.
+        if (!preflightConnectionAttempted && !hasFailureEvents) {
+            return createCheck({
+                key: 'connection-quality',
+                label: 'Connection quality',
+                state: 'pending',
+                detail: 'Connect your hub to test this check.',
+                blocking: false
+            });
+        }
 
         const fail =
-            metrics.disconnects >= CONNECTION_QUALITY_THRESHOLDS.failDisconnects ||
-            serialFailures >= CONNECTION_QUALITY_THRESHOLDS.failSerialFailures ||
-            metrics.retryCount >= CONNECTION_QUALITY_THRESHOLDS.failRetries ||
-            metrics.stabilityWindowMs < CONNECTION_QUALITY_THRESHOLDS.failStabilityWindowMs;
+            metrics.disconnects >= CONNECTION_QUALITY_THRESHOLDS.failDisconnects
+            || serialFailures >= CONNECTION_QUALITY_THRESHOLDS.failSerialFailures
+            || metrics.retryCount >= CONNECTION_QUALITY_THRESHOLDS.failRetries
+            // Stability-window threshold only fires alongside a real failure
+            // event. Otherwise a freshly-reset window misreads as instability
+            // even with zero observed problems.
+            || (hasFailureEvents
+                && metrics.stabilityWindowMs < CONNECTION_QUALITY_THRESHOLDS.failStabilityWindowMs);
 
         if (fail) {
             return createCheck({
@@ -3275,10 +3340,11 @@ async function refreshPreflightDiagnostics() {
         }
 
         const warn =
-            metrics.disconnects >= CONNECTION_QUALITY_THRESHOLDS.warnDisconnects ||
-            serialFailures >= CONNECTION_QUALITY_THRESHOLDS.warnSerialFailures ||
-            metrics.retryCount >= CONNECTION_QUALITY_THRESHOLDS.warnRetries ||
-            metrics.stabilityWindowMs < CONNECTION_QUALITY_THRESHOLDS.warnStabilityWindowMs;
+            metrics.disconnects >= CONNECTION_QUALITY_THRESHOLDS.warnDisconnects
+            || serialFailures >= CONNECTION_QUALITY_THRESHOLDS.warnSerialFailures
+            || metrics.retryCount >= CONNECTION_QUALITY_THRESHOLDS.warnRetries
+            || (hasFailureEvents
+                && metrics.stabilityWindowMs < CONNECTION_QUALITY_THRESHOLDS.warnStabilityWindowMs);
 
         if (warn) {
             return createCheck({
@@ -3356,12 +3422,14 @@ async function refreshPreflightDiagnostics() {
     const STATUS_LABELS = Object.freeze({
         pass: 'Pass',
         warn: 'Warning',
-        fail: 'Fail'
+        fail: 'Fail',
+        pending: 'Not checked yet'
     });
     const STATUS_ICONS = Object.freeze({
         pass: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6.4 11.2 3.2 8l1.1-1.1 2.1 2.1 5.3-5.3L12.8 4z"></path></svg>',
         warn: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.6 15 14H1L8 1.6zm0 4.2a.9.9 0 0 0-.9.9v3a.9.9 0 1 0 1.8 0v-3a.9.9 0 0 0-.9-.9zm0 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"></path></svg>',
-        fail: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m4.7 3.6 3.3 3.3 3.3-3.3 1.1 1.1-3.3 3.3 3.3 3.3-1.1 1.1-3.3-3.3-3.3 3.3-1.1-1.1 3.3-3.3-3.3-3.3 1.1-1.1z"></path></svg>'
+        fail: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="m4.7 3.6 3.3 3.3 3.3-3.3 1.1 1.1-3.3 3.3 3.3 3.3-1.1 1.1-3.3-3.3-3.3 3.3-1.1-1.1 3.3-3.3-3.3-3.3 1.1-1.1z"></path></svg>',
+        pending: '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zm0 1.5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm-.75 1.75v3.93l3.05 1.82.75-1.27-2.3-1.36V4.75h-1.5z"></path></svg>'
     });
 
     checks.forEach(check => {
@@ -3372,9 +3440,9 @@ async function refreshPreflightDiagnostics() {
             return;
         }
 
-        const state = check.state === 'pass' || check.state === 'warn' || check.state === 'fail' ? check.state : 'warn';
+        const state = ['pass', 'warn', 'fail', 'pending'].includes(check.state) ? check.state : 'warn';
         item.dataset.status = state;
-        statusNode.classList.remove('status-pass', 'status-warn', 'status-fail');
+        statusNode.classList.remove('status-pass', 'status-warn', 'status-fail', 'status-pending');
         statusNode.classList.add(`status-${state}`);
         statusNode.innerHTML = `${STATUS_ICONS[state]}<span>${STATUS_LABELS[state]}</span>`;
         detailNode.textContent = check.detail;
@@ -6083,6 +6151,15 @@ window.copyFirmwareUrl = copyFirmwareUrl;
 window.toggleReleaseNotes = toggleReleaseNotes;
 window.openHomeAssistantIntegrations = openHomeAssistantIntegrations;
 
+// Other modules (e.g. the preflight setup-help modal) signal that the user
+// has interacted with the device by dispatching this event on window. Keep
+// the coupling loose so callers don't need to import state.js directly.
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('webflash:connection-attempted', () => {
+        markPreflightConnectionAttempted();
+    });
+}
+
 export const __testHooks = Object.freeze({
     initializeWizard,
     loadManifestData,
@@ -6101,6 +6178,9 @@ export const __testHooks = Object.freeze({
     evaluatePreflightPolicy,
     evaluateFreshnessGate,
     updateConnectionQualityMetrics,
+    markPreflightConnectionAttempted,
+    hasPreflightConnectionBeenAttempted,
+    resetPreflightConnectionAttemptedForTests,
     buildDiagnosticsBundle: buildSupportBundle,
     redactDiagnosticsValue: redactValue,
     copyDiagnosticsBundle: copySupportBundle,
