@@ -28,10 +28,7 @@ concurrency:
 
 jobs:
   test:
-    # Surfaces unit-test results in CI. continue-on-error is set so pre-existing
-    # failing tests do not block firmware deployments while they are being
-    # cleaned up; remove the flag once the suite is fully green.
-    continue-on-error: true
+    # Unit-test gate. A failure here blocks the build and Pages deploy jobs.
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -50,6 +47,7 @@ jobs:
         run: npm test -- --ci
 
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
