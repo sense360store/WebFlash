@@ -46,6 +46,17 @@ jobs:
       - name: Run unit tests
         run: npm test -- --ci
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Python unit tests
+        # Covers the release-body sidecar automation in scripts/sync-from-releases.py
+        # (and the gen-manifests sidecar-merge surface it relies on). Uses only
+        # stdlib so no pip install is required for the test step itself.
+        run: python -m unittest discover -s __tests__/python -p 'test_*.py' -v
+
   build:
     needs: test
     runs-on: ubuntu-latest

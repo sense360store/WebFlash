@@ -433,9 +433,19 @@ Supported keys (all optional):
   "source_commit": "abcdef1234...",
   "source_url": "https://github.com/sense360store/WebFlash/commit/abcdef1234",
   "changelog": ["Fixes mmWave driver init crash on cold boot."],
-  "known_issues": ["LED ring may flash white briefly during update."]
+  "known_issues": ["LED ring may flash white briefly during update."],
+  "features": ["PoE-powered Sense360 Core configuration"],
+  "hardware_requirements": ["Sense360 Core R4 or newer"],
+  "improv": true
 }
 ```
+
+When firmware is published via a GitHub Release,
+`scripts/sync-from-releases.py` parses the release body and writes this
+sidecar automatically — see `DEVELOPER.md → Via GitHub Releases` for the
+full operator flow. Hand-authored sidecars committed alongside the
+binary are detected before generation runs and take precedence, so
+manual overrides keep working.
 
 The publishing pipeline enforces sidecar quality so sidecars cannot
 silently paper over missing provenance with boilerplate:

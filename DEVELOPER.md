@@ -288,13 +288,131 @@ git commit -m "Add Core Wall USB v1.0.0 stable firmware"
 git push origin main
 ```
 
-### Via GitHub Releases
+### Via GitHub Releases (recommended)
+
+The release-published workflow downloads the asset, derives a sidecar from
+the release body, signs the manifest, and deploys — no manual sidecar
+authoring required. The full operator flow is:
+
+1. Build the firmware binary.
+2. Create a GitHub Release.
+3. Attach a correctly-named `.bin` asset (canonical
+   `Sense360-...-vX.Y.Z-(stable|preview|beta).bin` — see "Firmware File Naming"
+   above; rescue assets follow `Sense360-Rescue-vX.Y.Z-...bin`).
+4. Fill in the release body using the four supported Markdown sections
+   (`## Changelog`, `## Known Issues`, `## Features`, `## Hardware Requirements`).
+5. Publish the release.
+6. GitHub Actions runs `scripts/sync-from-releases.py`, which:
+   - Downloads each `.bin` and stores it in `firmware/configurations/` (or
+     `firmware/rescue/` for rescue builds).
+   - Generates a matching `*.meta.json` sidecar from the release body unless
+     a hand-curated sidecar already exists (manual sidecars always win).
+   - Validates the stable-channel changelog (rejects empty/generic filler).
+   - Signs and regenerates manifests via `scripts/gen-manifests.py`
+     (`--mode production` when the `WEBFLASH_FIRMWARE_PRIVATE_KEY_B64`
+     secret is set), then deploys to GitHub Pages.
+
+#### Example release asset
+
+```
+Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin
+```
+
+#### Example release body
+
+```markdown
+## Changelog
+
+- Initial production stable release for Ceiling-POE-VentIQ-FanTRIAC-RoomIQ
+  with PoE power, VentIQ bathroom air-quality sensing, TRIAC fan switching,
+  and RoomIQ room sensing.
+
+## Known Issues
+
+- None.
+
+## Features
+
+- PoE-powered Sense360 Core configuration
+- VentIQ bathroom air-quality sensing
+- TRIAC fan switching
+- RoomIQ room sensing
+
+## Hardware Requirements
+
+- Sense360 Core R4 or newer
+- Sense360 PoE PSU
+- Sense360 VentIQ module
+- Sense360 TRIAC board
+- Sense360 RoomIQ module
+```
+
+CI will produce
+`firmware/configurations/Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.meta.json`
+with this payload:
+
+```json
+{
+  "changelog": [
+    "Initial production stable release for Ceiling-POE-VentIQ-FanTRIAC-RoomIQ ..."
+  ],
+  "known_issues": [],
+  "features": [
+    "PoE-powered Sense360 Core configuration",
+    "VentIQ bathroom air-quality sensing",
+    "TRIAC fan switching",
+    "RoomIQ room sensing"
+  ],
+  "hardware_requirements": [
+    "Sense360 Core R4 or newer",
+    "Sense360 PoE PSU",
+    "Sense360 VentIQ module",
+    "Sense360 TRIAC board",
+    "Sense360 RoomIQ module"
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": true
+}
+```
+
+Rescue assets (filename starts with `Sense360-Rescue-`) override
+`artifact_type` to `"rescue"` and `improv` to `false` automatically; everything
+else (signed_by, parsed body sections) is identical.
+
+#### Stable-channel quality gate
+
+`scripts/sync-from-releases.py` mirrors the changelog rules in
+`scripts/gen-manifests.py`. CI fails the publish run when:
+
+- The `## Changelog` section is missing or empty for a stable, non-rescue
+  asset (rescue builds and preview/beta channels do not require a changelog
+  in the release body).
+- Every `## Changelog` bullet is generic filler — `Initial release`,
+  `First release`, `Firmware release`, `See release notes`, `TBD`, `TODO`,
+  `N/A`, `Placeholder`, `No changes`, `Nothing to report`.
+- The asset filename does not match the canonical
+  `Sense360-...-vX.Y.Z-(stable|preview|beta).bin` shape.
+- A manual sidecar is malformed or otherwise rejected by
+  `gen-manifests.py`'s validation.
+- Production mode is requested but the
+  `WEBFLASH_FIRMWARE_PRIVATE_KEY_B64` / `WEBFLASH_FIRMWARE_KEY_ID` secrets
+  are not available.
+
+When a hand-authored sidecar is committed alongside the binary it takes
+precedence over the generated one; this preserves the existing manual
+workflow for builds that need bespoke metadata (e.g. deprecation reasons,
+custom `signed_by` identifiers).
+
+#### Legacy CLI (kept for reference)
 
 ```bash
 # 1. Create GitHub release
 gh release create v1.0.0 \
   --title "Sense360 v1.0.0" \
-  --notes "Release notes here" \
+  --notes "$(cat release-notes.md)" \
   firmware/*.bin
 
 # 2. Workflow automatically syncs and deploys
