@@ -997,6 +997,23 @@ def _apply_sidecar_metadata(metadata: FirmwareMetadata, sidecar: Dict[str, Any])
     known_issues = sidecar.get("known_issues")
     if isinstance(known_issues, list):
         metadata.known_issues = [str(entry) for entry in known_issues if str(entry).strip()]
+    # ``features`` and ``hardware_requirements`` flow through the same path
+    # as the other release-body sections so the generated manifest exposes
+    # the human-authored copy verbatim. Sidecar values override the
+    # parser-supplied defaults (e.g. the "rescue" feature tag) so explicit
+    # operator intent always wins.
+    if "features" in sidecar:
+        features = sidecar.get("features")
+        if isinstance(features, list):
+            metadata.features = [str(entry) for entry in features if str(entry).strip()]
+    if "hardware_requirements" in sidecar:
+        hardware_requirements = sidecar.get("hardware_requirements")
+        if isinstance(hardware_requirements, list):
+            metadata.hardware_requirements = [
+                str(entry) for entry in hardware_requirements if str(entry).strip()
+            ]
+    if "improv" in sidecar:
+        metadata.improv = bool(sidecar.get("improv"))
     if "deprecated" in sidecar:
         metadata.deprecated = bool(sidecar.get("deprecated"))
     if sidecar.get("deprecation_reason"):
