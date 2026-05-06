@@ -3380,6 +3380,17 @@ async function refreshPreflightDiagnostics() {
         detailNode.textContent = check.detail;
     });
 
+    // Support bundle controls live behind the failures/warnings — keep them
+    // hidden on the happy path so Step 5 stays simple by default. Surface
+    // them as soon as any check is non-passing so the user can grab the
+    // diagnostics they need to triage.
+    const supportActions = document.querySelector('[data-preflight-support-actions]');
+    if (supportActions) {
+        const hasIssues = checks.some(check => check.state === 'warn' || check.state === 'fail');
+        supportActions.hidden = !hasIssues;
+        supportActions.setAttribute('aria-hidden', hasIssues ? 'false' : 'true');
+    }
+
     window.latestPreflightChecks = checks;
     return checks;
 }
@@ -4100,17 +4111,29 @@ function renderFirmwareProvenanceSection(firmware) {
             : '';
     })();
 
+    const hasAdvancedDetails = Boolean(tiersHtml || factsHtml || checksHtml);
+    const advancedHtml = hasAdvancedDetails
+        ? `
+            <details class="firmware-provenance__disclosure" data-firmware-provenance-disclosure>
+                <summary class="firmware-provenance__summary-toggle">Show verification details</summary>
+                <div class="firmware-provenance__body">
+                    ${tiersHtml}
+                    ${factsHtml}
+                    <ul class="firmware-provenance__checks" data-firmware-provenance-checks>
+                        ${checksHtml}
+                    </ul>
+                </div>
+            </details>
+        `
+        : '';
+
     return `
         <section class="firmware-provenance" data-firmware-provenance="${escapeHtml(overallStatus)}" aria-label="Firmware verification status">
             <header class="firmware-provenance__header">
                 <span class="firmware-provenance__badge status-${escapeHtml(overallStatus)}">${escapeHtml(overallLabel)}</span>
                 <p class="firmware-provenance__summary">${escapeHtml(report.summary)}</p>
             </header>
-            ${tiersHtml}
-            ${factsHtml}
-            <ul class="firmware-provenance__checks" data-firmware-provenance-checks>
-                ${checksHtml}
-            </ul>
+            ${advancedHtml}
         </section>
     `;
 }
@@ -4518,14 +4541,19 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
             data-firmware-channel="${escapeHtml(channelKey)}"
             aria-label="Firmware details"
         >
-            <header class="firmware-details-panel__header">
-                <h3 class="firmware-details-panel__title">Firmware details</h3>
-                <p class="firmware-details-panel__description">${escapeHtml(policy.description)}</p>
-                ${badgesHtml}
-            </header>
-            <div class="firmware-details-panel__groups">${groupsHtml}</div>
-            ${knownIssuesHtml}
-            ${changelogHtml}
+            <details class="firmware-details-panel__disclosure" data-firmware-details-disclosure>
+                <summary class="firmware-details-panel__summary">
+                    <span class="firmware-details-panel__title">Firmware details</span>
+                    <span class="firmware-details-panel__summary-hint">Show technical metadata</span>
+                </summary>
+                <div class="firmware-details-panel__body">
+                    <p class="firmware-details-panel__description">${escapeHtml(policy.description)}</p>
+                    ${badgesHtml}
+                    <div class="firmware-details-panel__groups">${groupsHtml}</div>
+                    ${knownIssuesHtml}
+                    ${changelogHtml}
+                </div>
+            </details>
         </section>
     `;
 }
@@ -4536,12 +4564,12 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
     }
 
     const metadataSections = [
-        { key: 'features', title: 'Key Features' },
-        { key: 'hardware_requirements', title: 'Hardware Requirements' }
+        { key: 'features', title: 'Key Features', collapsible: false },
+        { key: 'hardware_requirements', title: 'Hardware Requirements', collapsible: true }
     ];
 
     const metadataHtml = metadataSections
-        .map(({ key, title }) => {
+        .map(({ key, title, collapsible }) => {
             const items = firmware[key];
             if (!Array.isArray(items) || items.length === 0) {
                 return '';
@@ -4551,8 +4579,21 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                 .map(item => `<li>${escapeHtml(item)}</li>`)
                 .join('');
 
+            const sectionClass = `firmware-meta-section firmware-${key.replace(/_/g, '-')}`;
+
+            if (collapsible) {
+                return `
+                    <section class="${sectionClass}">
+                        <details class="firmware-meta-section__disclosure" data-firmware-meta-disclosure="${escapeHtml(key)}">
+                            <summary class="firmware-meta-section__summary"><h4>${escapeHtml(title)}</h4></summary>
+                            <ul>${listItems}</ul>
+                        </details>
+                    </section>
+                `;
+            }
+
             return `
-                <section class="firmware-meta-section firmware-${key.replace(/_/g, '-')}">
+                <section class="${sectionClass}">
                     <h4>${escapeHtml(title)}</h4>
                     <ul>${listItems}</ul>
                 </section>

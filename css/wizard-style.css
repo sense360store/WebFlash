@@ -2049,6 +2049,17 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     line-height: 1.4;
 }
 
+.preflight-panel__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.preflight-panel__actions[hidden] {
+    display: none;
+}
+
 .preflight-panel__list {
     list-style: none;
     padding: 0;
@@ -2869,6 +2880,63 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     margin-bottom: 12px;
 }
 
+.firmware-details-panel__disclosure {
+    margin: 0;
+}
+
+.firmware-details-panel__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+    padding: 4px 0;
+    color: var(--color-text-primary);
+}
+
+.firmware-details-panel__summary::-webkit-details-marker {
+    display: none;
+}
+
+.firmware-details-panel__summary::after {
+    content: '+';
+    font-size: 16px;
+    line-height: 1;
+    width: 1.25em;
+    text-align: center;
+    color: var(--color-text-secondary);
+    transition: transform 0.15s ease;
+}
+
+.firmware-details-panel__disclosure[open] > .firmware-details-panel__summary::after {
+    content: '−';
+}
+
+.firmware-details-panel__summary:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.firmware-details-panel__summary-hint {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+    margin-left: auto;
+}
+
+.firmware-details-panel__disclosure[open] > .firmware-details-panel__summary > .firmware-details-panel__summary-hint {
+    display: none;
+}
+
+.firmware-details-panel__body {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .firmware-details-panel__title {
     margin: 0;
     font-size: 16px;
@@ -3423,6 +3491,51 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     font-size: 14px;
     color: var(--color-text-tertiary);
     line-height: 1.5;
+}
+
+.firmware-meta-section__disclosure {
+    margin: 0;
+    padding: 0;
+}
+
+.firmware-meta-section__summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-text-primary);
+}
+
+.firmware-meta-section__summary::-webkit-details-marker {
+    display: none;
+}
+
+.firmware-meta-section__summary::before {
+    content: '+';
+    font-size: 16px;
+    line-height: 1;
+    width: 1.25em;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.firmware-meta-section__disclosure[open] > .firmware-meta-section__summary::before {
+    content: '−';
+}
+
+.firmware-meta-section__summary > h4 {
+    margin: 0;
+}
+
+.firmware-meta-section__summary:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.firmware-meta-section__disclosure[open] > .firmware-meta-section__summary {
+    margin-bottom: 12px;
 }
 
 .release-notes-content {
@@ -4338,6 +4451,54 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     margin: 0;
     font-size: 13px;
     color: var(--color-text-primary);
+}
+
+.firmware-provenance__disclosure {
+    margin-top: 10px;
+}
+
+.firmware-provenance__summary-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    padding: 4px 0;
+}
+
+.firmware-provenance__summary-toggle::-webkit-details-marker {
+    display: none;
+}
+
+.firmware-provenance__summary-toggle::before {
+    content: '+';
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.firmware-provenance__disclosure[open] > .firmware-provenance__summary-toggle::before {
+    content: '−';
+}
+
+.firmware-provenance__disclosure[open] > .firmware-provenance__summary-toggle {
+    margin-bottom: 8px;
+}
+
+.firmware-provenance__summary-toggle:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.firmware-provenance__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .firmware-provenance__facts {
