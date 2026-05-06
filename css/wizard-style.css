@@ -389,7 +389,7 @@ h2 {
     background: var(--color-surface-soft);
     border: 1px solid var(--color-border-subtle);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     font-size: 13px;
     line-height: 1.4;
@@ -403,6 +403,12 @@ h2 {
     border-radius: 50%;
     background: var(--color-border);
     flex: 0 0 auto;
+    margin-top: 5px;
+}
+
+.module-status-bar__content {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .module-status-bar strong {
