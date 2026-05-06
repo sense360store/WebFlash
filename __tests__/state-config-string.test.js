@@ -47,16 +47,20 @@ describe('formatConfigSegment emits canonical tokens only', () => {
         expect(formatConfigSegment('led', 'none')).toBe('');
     });
 
-    test('Fan collapses every variant to a single canonical Fan token', () => {
-        expect(formatConfigSegment('fan', 'relay')).toBe('-Fan');
-        expect(formatConfigSegment('fan', 'pwm')).toBe('-Fan');
-        expect(formatConfigSegment('fan', 'analog')).toBe('-Fan');
-        expect(formatConfigSegment('fan', 'triac')).toBe('-Fan');
+    test('Fan preserves the selected variant in the config string token', () => {
+        expect(formatConfigSegment('fan', 'relay')).toBe('-FanRelay');
+        expect(formatConfigSegment('fan', 'pwm')).toBe('-FanPWM');
+        expect(formatConfigSegment('fan', 'analog')).toBe('-FanDAC');
+        expect(formatConfigSegment('fan', 'triac')).toBe('-FanTRIAC');
         expect(formatConfigSegment('fan', 'none')).toBe('');
     });
 
     test('formatter never emits validator-disallowed tokens', () => {
-        const disallowed = /(FanPWM|FanAnalog|FanRelay|FanTRIAC|AirIQBase|AirIQPro|BathroomAirIQ)/;
+        // FanPWM, FanRelay, FanTRIAC, and FanDAC are now the canonical
+        // variant-specific tokens. The legacy generic `Fan` and the
+        // historical `FanAnalog` (replaced by FanDAC) remain disallowed
+        // for new builds.
+        const disallowed = /(FanAnalog|AirIQBase|AirIQPro|BathroomAirIQ)/;
         const samples = [
             ['roomiq', 'roomiq'],
             ['airiq', 'airiq'],
@@ -81,7 +85,11 @@ describe('formatConfigSegment and parseConfigStringState round-trip cleanly', ()
             { state: { airiq: 'airiq' }, fragment: '-AirIQ', stateKey: 'airiq', expected: 'airiq' },
             { state: { ventiq: 'ventiq' }, fragment: '-VentIQ', stateKey: 'ventiq', expected: 'ventiq' },
             { state: { roomiq: 'roomiq' }, fragment: '-RoomIQ', stateKey: 'roomiq', expected: 'roomiq' },
-            { state: { led: 'led' }, fragment: '-LED', stateKey: 'led', expected: 'led' }
+            { state: { led: 'led' }, fragment: '-LED', stateKey: 'led', expected: 'led' },
+            { state: { fan: 'relay' }, fragment: '-FanRelay', stateKey: 'fan', expected: 'relay' },
+            { state: { fan: 'pwm' }, fragment: '-FanPWM', stateKey: 'fan', expected: 'pwm' },
+            { state: { fan: 'analog' }, fragment: '-FanDAC', stateKey: 'fan', expected: 'analog' },
+            { state: { fan: 'triac' }, fragment: '-FanTRIAC', stateKey: 'fan', expected: 'triac' }
         ];
         for (const { state, fragment, stateKey, expected } of cases) {
             for (const [moduleKey, value] of Object.entries(state)) {
@@ -105,10 +113,17 @@ describe('parseConfigStringState handles both legacy and current tokens', () => 
         expect(corePrefixed).toMatchObject({ mounting: 'ceiling', power: 'poe' });
     });
 
-    test('still parses legacy FanPWM / FanRelay / FanTRIAC tokens for old shareable links', () => {
-        expect(parseConfigStringState('Ceiling-USB-FanPWM').fan).toBe('pwm');
+    test('parses canonical Fan{Variant} tokens into the matching wizard value', () => {
         expect(parseConfigStringState('Ceiling-USB-FanRelay').fan).toBe('relay');
+        expect(parseConfigStringState('Ceiling-USB-FanPWM').fan).toBe('pwm');
+        expect(parseConfigStringState('Ceiling-USB-FanDAC').fan).toBe('analog');
         expect(parseConfigStringState('Ceiling-USB-FanTRIAC').fan).toBe('triac');
+    });
+
+    test('still parses the legacy FanAnalog token for old shareable links', () => {
+        // FanAnalog was the historical token before the SKU was renamed to
+        // "Sense360 Fan DAC" (S360-312); old share-links must still resolve.
+        expect(parseConfigStringState('Ceiling-USB-FanAnalog').fan).toBe('analog');
     });
 
     test('manifest config_strings either parse cleanly or are recognised legacy formats', () => {

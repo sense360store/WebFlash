@@ -99,14 +99,14 @@ The Python script still carries a legacy `model` / `variant` code path for binar
 `scripts/validate-naming-policy.js` enforces:
 
 - Canonical filename shape `Sense360-...-vX.Y.Z-(stable|preview|beta).(bin|md)`.
-- Disallowed token migrations: `AirIQProv` → `AirIQPro`, `AirIQBase` → `AirIQ`, `BathroomAirIQ` → `Bathroom`, `FanPWM`/`FanAnalog` → `Fan`.
+- Disallowed token migrations: `AirIQProv` → `AirIQPro`, `AirIQBase` → `AirIQ`, `BathroomAirIQ` → `Bathroom`, `FanAnalog` → `FanDAC`. Fan variants are now preserved as variant-specific tokens (`FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`) so each driver SKU lands on a different firmware binary; the legacy generic `Fan` token must not be used in new firmware.
 - Channel placement: only `*-stable.md` is allowed under `firmware/configurations/`. Preview/beta/dev release notes belong in `firmware/previews/`.
 
-`.github/workflows/firmware-publish.yml` runs unit tests, the naming-policy validator, the manifest generator, and a `REQUIRED_CONFIGS` allowlist that fails the build if any of the expected `config_string` values are missing from `manifest.json`. The current allowlist holds 9 entries (`Ceiling-POE-AirIQ`, `Ceiling-POE-VentIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-AirIQ`, `Ceiling-USB-Fan`, `Ceiling-Voice-POE-AirIQ`, `Ceiling-Voice-USB`, `Rescue`); the live array in the workflow file is the source of truth. When updating that allowlist, search the workflow for `REQUIRED_CONFIGS` — adding a new firmware also means adding its config_string there if it is meant to be permanent.
+`.github/workflows/firmware-publish.yml` runs unit tests, the naming-policy validator, the manifest generator, and a `REQUIRED_CONFIGS` allowlist that fails the build if any of the expected `config_string` values are missing from `manifest.json`. The current allowlist holds 9 entries (`Ceiling-POE-AirIQ`, `Ceiling-POE-VentIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-AirIQ`, `Ceiling-USB-FanPWM`, `Ceiling-Voice-POE-AirIQ`, `Ceiling-Voice-USB`, `Rescue`); the live array in the workflow file is the source of truth. When updating that allowlist, search the workflow for `REQUIRED_CONFIGS` — adding a new firmware also means adding its config_string there if it is meant to be permanent.
 
 ### Frontend ↔ pipeline contract
 
-The wizard's selection is reduced to a `config_string` (e.g. `Ceiling-POE-AirIQ`) and matched against `build.config_string` in `manifest.json`. `parseConfigStringState` in `state.js` and the canonical token formatters in `MODULE_SEGMENT_FORMATTERS` define how segments encode/decode (`AirIQ` → `airiq=airiq`, `VentIQ` → `ventiq=airiq`, `FanPWM` → `fan=pwm`, etc.). When you add a new module token, update both:
+The wizard's selection is reduced to a `config_string` (e.g. `Ceiling-POE-AirIQ`) and matched against `build.config_string` in `manifest.json`. `parseConfigStringState` in `state.js` and the canonical token formatters in `MODULE_SEGMENT_FORMATTERS` define how segments encode/decode (`AirIQ` → `airiq=airiq`, `VentIQ` → `ventiq=airiq`, `FanRelay` → `fan=relay`, `FanPWM` → `fan=pwm`, `FanDAC` → `fan=analog`, `FanTRIAC` → `fan=triac`, etc.). When you add a new module token, update both:
 
 1. The wizard's segment formatter and `parseConfigStringState` in `scripts/state.js`.
 2. `CANONICAL_MODULE_TOKENS` / token-handling logic in `scripts/gen-manifests.py`.

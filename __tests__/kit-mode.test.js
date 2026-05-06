@@ -48,7 +48,7 @@ const sampleCatalog = {
                 bathroom: false,
                 fan: 'pwm'
             },
-            firmware_config_string: 'Ceiling-USB-Fan'
+            firmware_config_string: 'Ceiling-USB-FanPWM'
         }
     ]
 };

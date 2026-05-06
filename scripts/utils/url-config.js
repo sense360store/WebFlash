@@ -144,12 +144,16 @@ const CONFIG_PARAM_DEFINITIONS = Object.freeze({
         required: false,
         aliases: Object.freeze(['fan']),
         defaultOption: 'none',
+        // Fan variants encode to variant-specific config segments so the
+        // firmware-selection layer can pick a driver-correct binary. See
+        // FAN_VARIANT_SEGMENT_TOKENS in scripts/state.js for the canonical
+        // table; the segments here must match it 1:1.
         options: new Map([
             ['none', { wizardValue: 'none', configSegment: null }],
-            ['relay', { wizardValue: 'relay', configSegment: 'Fan' }],
-            ['pwm', { wizardValue: 'pwm', configSegment: 'Fan' }],
-            ['analog', { wizardValue: 'analog', configSegment: 'Fan' }],
-            ['triac', { wizardValue: 'triac', configSegment: 'Fan' }]
+            ['relay', { wizardValue: 'relay', configSegment: 'FanRelay' }],
+            ['pwm', { wizardValue: 'pwm', configSegment: 'FanPWM' }],
+            ['analog', { wizardValue: 'analog', configSegment: 'FanDAC' }],
+            ['triac', { wizardValue: 'triac', configSegment: 'FanTRIAC' }]
         ]),
         allowedValues: Object.freeze(['none', 'relay', 'pwm', 'analog', 'triac']),
         legacyValues: new Map([

@@ -183,7 +183,11 @@ jobs:
           # config_string segments are Mounting-Power-Modules, where:
           #   Mounting: Ceiling
           #   Power:    USB | POE | PWR
-          #   Modules:  AirIQ | VentIQ | Fan (Bathroom drives AirIQ ↔ VentIQ)
+          #   Modules:  AirIQ | VentIQ |
+          #             FanRelay | FanPWM | FanDAC | FanTRIAC
+          #             (Bathroom drives AirIQ ↔ VentIQ; fan variants are
+          #              variant-specific because each driver SKU needs a
+          #              different binary).
           # Rescue is a standalone unbricking build.
           # =============================================================
 
@@ -193,7 +197,7 @@ jobs:
             "Ceiling-PWR-AirIQ"
             "Ceiling-USB"
             "Ceiling-USB-AirIQ"
-            "Ceiling-USB-Fan"
+            "Ceiling-USB-FanPWM"
             "Ceiling-Voice-POE-AirIQ"
             "Ceiling-Voice-USB"
             "Rescue"

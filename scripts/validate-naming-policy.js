@@ -12,8 +12,7 @@ const DISALLOWED_TOKEN_MIGRATIONS = {
   BathroomAirIQ: 'VentIQ',
   BathroomAirIQBase: 'VentIQ',
   BathroomAirIQPro: 'VentIQ',
-  FanPWM: 'Fan',
-  FanAnalog: 'Fan'
+  FanAnalog: 'FanDAC'
 };
 
 function validateFileName(name, baseDir = DEFAULT_DIR) {

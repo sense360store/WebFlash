@@ -156,6 +156,9 @@ CANONICAL_MODULE_TOKENS: Dict[str, str] = {
     "bathroomairiqbase": "VentIQ",
     "bathroomairiqpro": "VentIQ",
     "ventiqpro": "VentIQ",
+    # Fan DAC was historically called "Fan Analog"; canonicalise legacy
+    # FanAnalog tokens in firmware filenames to the current FanDAC SKU name.
+    "fananalog": "FanDAC",
 }
 
 LEGACY_MODULE_TOKENS = frozenset(CANONICAL_MODULE_TOKENS.keys())

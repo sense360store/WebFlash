@@ -187,11 +187,28 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
     ['led', 'LED Ring']
 ], { allowedKeys: MODULE_KEYS });
 
+// Fan variants are preserved as variant-specific tokens so the firmware-selection
+// layer can pick the right binary per driver SKU. Different fan drivers (Relay,
+// PWM, DAC, TRIAC) expose different pins/components/YAML substitutions, so
+// collapsing them to a single "Fan" token would let the wizard hand a relay
+// build to a PWM device. Mapping:
+//   relay  -> FanRelay   (Sense360 Fan Relay, S360-310)
+//   pwm    -> FanPWM     (Sense360 Fan PWM,   S360-311)
+//   analog -> FanDAC     (Sense360 Fan DAC,   S360-312 — wizard value stays
+//                         `analog` for share-link/preset back-compat)
+//   triac  -> FanTRIAC   (Sense360 TRIAC,     S360-320)
+const FAN_VARIANT_SEGMENT_TOKENS = Object.freeze({
+    relay: 'FanRelay',
+    pwm: 'FanPWM',
+    analog: 'FanDAC',
+    triac: 'FanTRIAC'
+});
+
 const MODULE_SEGMENT_FORMATTERS = createValidatedMap('MODULE_SEGMENT_FORMATTERS', [
     ['roomiq', value => value === 'roomiq' ? 'RoomIQ' : ''],
     ['airiq', value => value === 'airiq' ? 'AirIQ' : ''],
     ['ventiq', value => value === 'ventiq' ? 'VentIQ' : ''],
-    ['fan', value => (value && value !== 'none') ? 'Fan' : ''],
+    ['fan', value => FAN_VARIANT_SEGMENT_TOKENS[value] || ''],
     ['voice', () => 'Core'],
     ['led', value => value === 'led' ? 'LED' : '']
 ], { allowedKeys: MODULE_KEYS });
@@ -1183,8 +1200,13 @@ function parseConfigStringState(configString) {
             const suffix = segment.substring('AirIQ'.length);
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'airiq');
         } else if (segment.startsWith('Fan')) {
-            const suffix = segment.substring('Fan'.length);
-            moduleState.fan = normaliseModuleValue('fan', suffix ? suffix.toLowerCase() : 'none');
+            const suffix = segment.substring('Fan'.length).toLowerCase();
+            // `dac` is the canonical token suffix for the Fan DAC SKU; the
+            // wizard value is still `analog`. Empty suffix is the legacy
+            // `Fan` token (variant unknown) — fall through to `none` so the
+            // user is prompted to pick a driver explicitly.
+            const variantValue = suffix === 'dac' ? 'analog' : (suffix || 'none');
+            moduleState.fan = normaliseModuleValue('fan', variantValue);
         } else if (segment.startsWith('Voice')) {
             moduleState.voice = 'none';
         } else if (segment === 'LED' || segment.startsWith('LED')) {
