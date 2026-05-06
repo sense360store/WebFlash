@@ -68,6 +68,19 @@ export const FIRMWARE_SIGNATURE_CONTEXT_LABEL = 'sense360-firmware-v1';
 
 export const FIRMWARE_TRUSTED_KEYS = Object.freeze([
     Object.freeze({
+        kid: 'sense360-prod-2026-02',
+        algo: 'ed25519',
+        public_key_b64: 'wmKfWDXhpdjQP92/FnAjaWCV5bVV3coholhtNxJF99M=',
+        // First active production signing key. The matching private half
+        // lives ONLY in the WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 GitHub
+        // Actions secret and is never written to this repository. See
+        // firmware-signing/README.md → "Production signing key setup"
+        // for the cutover runbook and rotation procedure.
+        status: 'active',
+        issued_at: '2026-05-06',
+        comment: 'First active production signing key. Private half is held only in the WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 GitHub Actions secret. See firmware-signing/README.md.'
+    }),
+    Object.freeze({
         kid: 'dev-2026-01',
         algo: 'ed25519',
         public_key_b64: 'UAg82k9y+Ob+204H+3mmL6/lzdjJnT6+BACL/cmP5OM=',

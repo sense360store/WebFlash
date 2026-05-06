@@ -12,6 +12,14 @@
   },
   "keys": [
     {
+      "kid": "sense360-prod-2026-02",
+      "algo": "ed25519",
+      "public_key_b64": "wmKfWDXhpdjQP92/FnAjaWCV5bVV3coholhtNxJF99M=",
+      "status": "active",
+      "issued_at": "2026-05-06",
+      "comment": "First active production signing key. Private half is held only in the WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 GitHub Actions secret. See firmware-signing/README.md."
+    },
+    {
       "kid": "dev-2026-01",
       "algo": "ed25519",
       "public_key_b64": "UAg82k9y+Ob+204H+3mmL6/lzdjJnT6+BACL/cmP5OM=",
