@@ -42,6 +42,7 @@ import {
 } from './services/diagnostics.js';
 import { postFlashService } from './services/post-flash.js';
 import { getServiceWorkerState, subscribeServiceWorkerState } from './services/sw-update.js';
+import { findNearbyConfigStrings, getMismatchHighlights } from './utils/firmware-nearest.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -3499,7 +3500,9 @@ setSupportBundleStateProvider(() => {
         releaseMode: getReleaseMode(),
         firmwareIsRecommendedDefault,
         channelAcknowledgementsCompleted,
-        postFlashSnapshot: postFlashService.getSnapshot()
+        postFlashSnapshot: postFlashService.getSnapshot(),
+        firmwareStatusMessage: firmwareStatusMessage ? { ...firmwareStatusMessage } : null,
+        configStringRequested: typeof window !== 'undefined' ? window.currentConfigString || null : null
     };
 });
 
@@ -5181,6 +5184,10 @@ function setFirmwareStatusMessageForTests(message) {
     firmwareStatusMessage = message;
 }
 
+function getFirmwareStatusMessageForTests() {
+    return firmwareStatusMessage ? { ...firmwareStatusMessage } : null;
+}
+
 function selectFirmwareById(firmwareId, { updateConfigString = true, syncSelector = true, renderDetails = true } = {}) {
     if (!firmwareId || !firmwareOptionsMap.has(firmwareId)) {
         return;
@@ -5323,6 +5330,89 @@ function bindChannelAcknowledgementPanel() {
     });
 }
 
+function renderFirmwareNotAvailable(status) {
+    const configString = status?.configString || '';
+    const sanitizedConfig = escapeHtml(configString);
+    const expectedFilename = status?.expectedFilename || `Sense360-${configString}-v1.0.0-stable.bin`;
+    const sanitizedFilename = escapeHtml(expectedFilename);
+    const nearby = Array.isArray(status?.nearbyConfigStrings) ? status.nearbyConfigStrings : [];
+    const highlights = Array.isArray(status?.mismatchHighlights) ? status.mismatchHighlights : [];
+    const selectedHardware = Array.isArray(status?.selectedHardware) ? status.selectedHardware : [];
+    const mode = status?.configurationMode === 'kit' ? 'kit' : 'manual';
+
+    const selectedHardwareHtml = selectedHardware.length
+        ? `<ul class="firmware-not-available__hardware-list">${selectedHardware
+            .map(item => `<li><span class="firmware-not-available__hardware-label">${escapeHtml(item.label)}:</span> <span class="firmware-not-available__hardware-value">${escapeHtml(item.value)}</span></li>`)
+            .join('')}</ul>`
+        : '<p class="firmware-not-available__hardware-empty">No additional hardware selected.</p>';
+
+    const highlightsHtml = highlights.length
+        ? `
+            <p class="firmware-not-available__check">Check that your selected modules are correct, especially:</p>
+            <ul class="firmware-not-available__highlights">${highlights
+                .map(item => `<li>${escapeHtml(item.label)}</li>`)
+                .join('')}</ul>
+        `
+        : '';
+
+    const nearbyHtml = nearby.length
+        ? `
+            <h5 class="firmware-not-available__section-heading">Nearby available firmware</h5>
+            <ul class="firmware-not-available__nearby" data-firmware-not-available-nearby>${nearby
+                .map(value => `<li><code>${escapeHtml(value)}</code></li>`)
+                .join('')}</ul>
+            <p class="firmware-not-available__nearby-note">These are nearby published builds, not recommended replacements. Only flash one if it actually matches your hardware.</p>
+        `
+        : '<p class="firmware-not-available__nearby-empty" data-firmware-not-available-nearby-empty>No nearby firmware builds are currently published for this mounting and power option.</p>';
+
+    let nextSteps;
+    if (nearby.length) {
+        nextSteps = 'If one of these matches your actual hardware, go back and adjust your selections. Otherwise contact support.';
+    } else {
+        nextSteps = 'No nearby firmware builds are currently published. Contact support or publish firmware for this configuration.';
+    }
+    if (mode === 'kit') {
+        nextSteps += ' Check that you selected the correct kit or SKU from your order.';
+    } else {
+        nextSteps += ' Go back and confirm each installed module.';
+    }
+
+    return `
+        <div class="firmware-not-available" role="alert" data-firmware-not-available data-firmware-not-available-mode="${escapeHtml(mode)}">
+            <h4>Firmware not available for this exact hardware combination</h4>
+            <p class="firmware-not-available__lead">This exact combination has not been published yet.</p>
+
+            <h5 class="firmware-not-available__section-heading">Selected configuration</h5>
+            <p class="config-string" data-firmware-not-available-config>${sanitizedConfig}</p>
+
+            <h5 class="firmware-not-available__section-heading">Selected hardware</h5>
+            <div data-firmware-not-available-hardware>${selectedHardwareHtml}</div>
+
+            ${highlightsHtml}
+
+            ${nearbyHtml}
+
+            <details class="firmware-not-available__details">
+                <summary>Technical details</summary>
+                <p class="firmware-not-available__filename-label">Expected firmware:</p>
+                <p class="config-string" data-firmware-not-available-filename>${sanitizedFilename}</p>
+            </details>
+
+            <p class="firmware-not-available__next-steps" data-firmware-not-available-next-steps>${escapeHtml(nextSteps)}</p>
+
+            <div class="firmware-not-available__actions">
+                <button
+                    type="button"
+                    class="firmware-not-available__support-button"
+                    data-copy-support-bundle
+                    data-firmware-not-available-support
+                >Copy support bundle</button>
+                <span class="firmware-not-available__support-hint">Includes the missing-firmware diagnostics so support can help faster.</span>
+            </div>
+        </div>
+    `;
+}
+
 function renderSelectedFirmware() {
     const container = document.getElementById('compatible-firmware');
     if (!container) {
@@ -5337,15 +5427,7 @@ function renderSelectedFirmware() {
         const configContext = firmware.config_string || window.currentConfigString || '';
         sections.push(createFirmwareCardHtml(firmware, { configString: configContext, contextKey: 'primary' }));
     } else if (firmwareStatusMessage?.type === 'not-available' && firmwareStatusMessage.configString) {
-        const sanitizedConfig = escapeHtml(firmwareStatusMessage.configString);
-        sections.push(`
-            <div class="firmware-not-available">
-                <h4>Firmware Not Available</h4>
-                <p>The firmware for this configuration has not been built yet:</p>
-                <p class="config-string">Sense360-${sanitizedConfig}-v1.0.0-stable.bin</p>
-                <p class="help-text">Please contact support or check back later for this specific configuration.</p>
-            </div>
-        `);
+        sections.push(renderFirmwareNotAvailable(firmwareStatusMessage));
     } else if (firmwareStatusMessage?.type === 'error' && firmwareStatusMessage.message) {
         sections.push(`
             <div class="firmware-error">
@@ -5574,7 +5656,7 @@ async function findCompatibleFirmware() {
             setFirmwareOptions(sortedBuilds, configString, bucketMap);
             selectDefaultFirmware();
         } else {
-            firmwareStatusMessage = { type: 'not-available', configString };
+            firmwareStatusMessage = buildNotAvailableStatusMessage(configString, visibleBuilds);
             setFirmwareOptions([], configString, bucketMap);
         }
     } catch (error) {
@@ -5585,6 +5667,84 @@ async function findCompatibleFirmware() {
         };
         setFirmwareOptions([], configString);
     }
+}
+
+function buildNotAvailableStatusMessage(configString, availableBuilds) {
+    const expectedFilename = `Sense360-${configString}-v1.0.0-stable.bin`;
+    const availableConfigStrings = Array.from(new Set(
+        (availableBuilds || [])
+            .map(build => build && typeof build.config_string === 'string' ? build.config_string : null)
+            .filter(value => Boolean(value) && value !== configString)
+    ));
+    const nearbyConfigStrings = findNearbyConfigStrings(configString, availableConfigStrings, { limit: 3 });
+    const mismatchHighlights = getMismatchHighlights(configString, nearbyConfigStrings);
+    const selectedHardware = describeSelectedHardware();
+    const configurationMode = getConfigurationModeForDiagnostics();
+    return {
+        type: 'not-available',
+        configString,
+        expectedFilename,
+        nearbyConfigStrings,
+        mismatchHighlights,
+        selectedHardware,
+        configurationMode
+    };
+}
+
+function describeSelectedHardware() {
+    const items = [];
+    if (configuration.mounting) {
+        const label = MOUNT_LABELS[configuration.mounting] || configuration.mounting;
+        items.push({ key: 'mounting', label: 'Mounting', value: label });
+    }
+    if (configuration.power) {
+        const label = POWER_LABELS[configuration.power] || configuration.power.toUpperCase();
+        items.push({ key: 'power', label: 'Power', value: label });
+    }
+    if (configuration.bathroom === true) {
+        items.push({ key: 'bathroom', label: 'Bathroom', value: 'Yes' });
+    }
+    MODULE_KEYS.forEach(moduleKey => {
+        const value = configuration[moduleKey];
+        if (!value || value === 'none') {
+            return;
+        }
+        const moduleLabel = MODULE_LABELS[moduleKey] || moduleKey;
+        const variantLabel = MODULE_VARIANT_LABELS[moduleKey]?.[value] || value;
+        items.push({ key: moduleKey, label: moduleLabel, value: variantLabel });
+    });
+    return items;
+}
+
+function getConfigurationModeForDiagnostics() {
+    try {
+        const modePicker = typeof document !== 'undefined'
+            ? document.querySelector('[data-config-mode-picker] [data-mode-input]:checked')
+            : null;
+        const value = modePicker?.value;
+        if (value === 'kit' || value === 'manual') {
+            return value;
+        }
+    } catch {
+        /* defensive */
+    }
+    const sku = getSelectedKitSkuForDiagnostics();
+    return sku ? 'kit' : 'manual';
+}
+
+function getSelectedKitSkuForDiagnostics() {
+    try {
+        const select = typeof document !== 'undefined'
+            ? document.querySelector('[data-kit-select]')
+            : null;
+        const value = select?.value;
+        if (typeof value === 'string' && value.trim()) {
+            return value.trim().toUpperCase();
+        }
+    } catch {
+        /* defensive */
+    }
+    return null;
 }
 
 if (firmwareVersionSelect) {
@@ -6223,6 +6383,9 @@ export const __testHooks = Object.freeze({
     refreshPreflightDiagnostics,
     setFirmwareVerificationState: setFirmwareVerificationStateForTests,
     setFirmwareStatusMessage: setFirmwareStatusMessageForTests,
+    getFirmwareStatusMessage: getFirmwareStatusMessageForTests,
+    buildNotAvailableStatusMessage,
+    describeSelectedHardware,
     updateFirmwareControls,
     attachInstallButtonListeners,
     setPreFlashAcknowledgement,

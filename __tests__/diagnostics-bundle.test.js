@@ -67,7 +67,7 @@ describe('buildSupportBundle — schema and shape', () => {
     test('all top-level sections are present', async () => {
         const { buildSupportBundle } = await loadDiagnostics();
         const bundle = buildSupportBundle();
-        ['app', 'environment', 'manifest', 'firmware', 'wizard', 'preflight', 'recovery', 'cache', 'flash', 'post_flash'].forEach(key => {
+        ['app', 'environment', 'manifest', 'firmware', 'wizard', 'preflight', 'recovery', 'cache', 'flash', 'post_flash', 'missing_firmware'].forEach(key => {
             expect(bundle).toHaveProperty(key);
             expect(typeof bundle[key]).toBe('object');
         });
@@ -286,6 +286,114 @@ describe('buildSupportBundle — configuration mode', () => {
         const bundle = buildSupportBundle();
         expect(bundle.configuration.mode).toBe('manual');
         expect(bundle.configuration.sku).toBeUndefined();
+    });
+});
+
+describe('buildSupportBundle — missing firmware', () => {
+    test('reports status=available when no firmware status message is set', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setSupportBundleStateProvider(() => ({
+            currentFirmware: { config_string: 'Ceiling-POE-AirIQ' },
+            firmwareStatusMessage: null,
+            configStringRequested: 'Ceiling-POE-AirIQ'
+        }));
+        const bundle = buildSupportBundle();
+        expect(bundle.missing_firmware).toBeDefined();
+        expect(bundle.missing_firmware.status).toBe('available');
+        expect(bundle.missing_firmware.requested_config_string).toBe('Ceiling-POE-AirIQ');
+        expect(bundle.missing_firmware.expected_build_name).toBeNull();
+        expect(bundle.missing_firmware.nearby_config_strings).toEqual([]);
+    });
+
+    test('reports status=unavailable with full no-firmware diagnostics', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setSupportBundleStateProvider(() => ({
+            currentFirmware: null,
+            configStringRequested: 'Ceiling-POE-VentIQ-FanTRIAC-RoomIQ',
+            firmwareStatusMessage: {
+                type: 'not-available',
+                configString: 'Ceiling-POE-VentIQ-FanTRIAC-RoomIQ',
+                expectedFilename: 'Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin',
+                nearbyConfigStrings: ['Ceiling-POE-VentIQ-FanTRIAC', 'Ceiling-POE-VentIQ'],
+                mismatchHighlights: [
+                    { key: 'presence', label: 'RoomIQ' },
+                    { key: 'fan', label: 'Fan / Switching: TRIAC' }
+                ],
+                selectedHardware: [
+                    { key: 'mounting', label: 'Mounting', value: 'Ceiling mount' },
+                    { key: 'power', label: 'Power', value: 'PoE module' },
+                    { key: 'ventiq', label: 'VentIQ', value: 'Sense360 VentIQ' },
+                    { key: 'fan', label: 'Fan / Switching', value: 'Sense360 TRIAC' }
+                ],
+                configurationMode: 'manual'
+            }
+        }));
+        const bundle = buildSupportBundle();
+        expect(bundle.missing_firmware.status).toBe('unavailable');
+        expect(bundle.missing_firmware.requested_config_string).toBe('Ceiling-POE-VentIQ-FanTRIAC-RoomIQ');
+        expect(bundle.missing_firmware.expected_build_name).toBe('Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin');
+        expect(bundle.missing_firmware.nearby_config_strings).toEqual([
+            'Ceiling-POE-VentIQ-FanTRIAC',
+            'Ceiling-POE-VentIQ'
+        ]);
+        expect(bundle.missing_firmware.mismatch_highlights).toEqual([
+            { key: 'presence', label: 'RoomIQ' },
+            { key: 'fan', label: 'Fan / Switching: TRIAC' }
+        ]);
+        expect(bundle.missing_firmware.selected_hardware.length).toBe(4);
+        expect(bundle.missing_firmware.configuration_mode).toBe('manual');
+    });
+
+    test('kit mode propagates the kit/SKU into the missing-firmware section', async () => {
+        const {
+            buildSupportBundle,
+            setSupportBundleStateProvider,
+            setConfigurationMode,
+            setSelectedKitSku,
+            setActiveKitMetadata,
+            resetSessionDiagnosticsStateForTests
+        } = await loadDiagnostics();
+        resetSessionDiagnosticsStateForTests();
+        setConfigurationMode('kit');
+        setSelectedKitSku('S360-KIT-CEILING-POE-VENTIQ-TRIAC-ROOMIQ');
+        setActiveKitMetadata({
+            sku: 'S360-KIT-CEILING-POE-VENTIQ-TRIAC-ROOMIQ',
+            display_name: 'Sense360 Ceiling VentIQ + TRIAC + RoomIQ Kit (PoE)',
+            firmware_config_string: 'Ceiling-POE-VentIQ-FanTRIAC-RoomIQ'
+        });
+        setSupportBundleStateProvider(() => ({
+            firmwareStatusMessage: {
+                type: 'not-available',
+                configString: 'Ceiling-POE-VentIQ-FanTRIAC-RoomIQ',
+                expectedFilename: 'Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin',
+                nearbyConfigStrings: ['Ceiling-POE-VentIQ-FanTRIAC'],
+                mismatchHighlights: [],
+                selectedHardware: [],
+                configurationMode: 'kit'
+            }
+        }));
+        const bundle = buildSupportBundle();
+        expect(bundle.missing_firmware.status).toBe('unavailable');
+        expect(bundle.missing_firmware.configuration_mode).toBe('kit');
+        expect(bundle.missing_firmware.selected_kit_sku).toBe('S360-KIT-CEILING-POE-VENTIQ-TRIAC-ROOMIQ');
+        expect(bundle.missing_firmware.kit_display_name).toBe('Sense360 Ceiling VentIQ + TRIAC + RoomIQ Kit (PoE)');
+    });
+
+    test('missing_firmware section is part of the top-level bundle keys', async () => {
+        const { buildSupportBundle } = await loadDiagnostics();
+        const bundle = buildSupportBundle();
+        expect(bundle).toHaveProperty('missing_firmware');
+        expect(typeof bundle.missing_firmware).toBe('object');
     });
 });
 
