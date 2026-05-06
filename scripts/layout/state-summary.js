@@ -40,14 +40,22 @@ let mobileSummaryRefs = createEmptyMobileSummaryRefs();
 let mobileSummaryMediaQuery = null;
 
 (function () {
+    // Module-toggle fields (roomiq, airiq, ventiq, led) use a hidden <input type="radio">
+    // that has no .option-card ancestor, so readFieldMeta cannot scrape a card title for
+    // them. The moduleKey hint lets readFieldMeta resolve their display label via
+    // getModuleVariantEntry. The bathroom flag controls airiq vs ventiq visibility,
+    // mirroring getVisibleModuleGroupKeys in scripts/state.js.
     const FIELD_MAP = [
-        { key: 'voice', name: 'voice', label: 'Core Type' },
+        { key: 'voice', name: 'voice', label: 'Core Type', moduleKey: 'voice' },
         { key: 'mount', name: 'mounting', label: 'Mount' },
         { key: 'power', name: 'power', label: 'Power' },
-        { key: 'airiq', name: 'airiq', label: 'AirIQ' },
-        { key: 'fan', name: 'fan', label: 'Fan' }
+        { key: 'roomiq', name: 'roomiq', label: 'RoomIQ', moduleKey: 'roomiq' },
+        { key: 'airiq', name: 'airiq', label: 'AirIQ', moduleKey: 'airiq', bathroom: false },
+        { key: 'ventiq', name: 'ventiq', label: 'VentIQ', moduleKey: 'ventiq', bathroom: true },
+        { key: 'fan', name: 'fan', label: 'Fan', moduleKey: 'fan' },
+        { key: 'led', name: 'led', label: 'LED Ring', moduleKey: 'led' }
     ];
-    const MODULE_VARIANT_KEYS = ['voice', 'airiq', 'fan'];
+    const MODULE_VARIANT_KEYS = ['voice', 'roomiq', 'airiq', 'ventiq', 'fan', 'led'];
     const CORE_REVISION_PATTERN = /rev\s*([a-z])/i;
     const subscribers = new Set();
     const MOBILE_SUMMARY_BREAKPOINT = '(max-width: 720px)';
@@ -70,6 +78,14 @@ let mobileSummaryMediaQuery = null;
 
         if (!input) {
             input = document.querySelector(`[data-selected="true"][name="${name}"]`);
+        }
+
+        // Step 1's mounting selector is a hidden input (the wizard exposes
+        // only Ceiling), and :checked never matches type="hidden". Fall back
+        // to the hidden input so the summary shows "Mount: Ceiling" and the
+        // bathroom-ceiling visibility branch in renderSummaryList can fire.
+        if (!input) {
+            input = document.querySelector(`input[type="hidden"][name="${name}"]`);
         }
 
         let value = input ? input.value ?? input.getAttribute('value') : null;
@@ -110,6 +126,13 @@ let mobileSummaryMediaQuery = null;
             }
         }
 
+        if (!display && field.moduleKey && value && value !== 'none') {
+            const variantEntry = getModuleVariantEntry(field.moduleKey, value);
+            if (variantEntry?.label) {
+                display = variantEntry.label;
+            }
+        }
+
         if (!display) {
             display = formatValue(value);
         }
@@ -137,12 +160,18 @@ let mobileSummaryMediaQuery = null;
         return meta;
     }
 
+    function readBathroomState() {
+        const checkbox = document.querySelector('input[name="bathroom"]');
+        return checkbox ? checkbox.checked === true : false;
+    }
+
     function getState() {
         const meta = captureStateMeta();
         const state = {};
         FIELD_MAP.forEach(field => {
             state[field.key] = meta[field.key].value || null;
         });
+        state.bathroom = readBathroomState();
         return state;
     }
 
@@ -151,8 +180,12 @@ let mobileSummaryMediaQuery = null;
             voice: state.voice || 'none',
             mounting: state.mount || null,
             power: state.power || null,
+            bathroom: Boolean(state.bathroom),
+            roomiq: state.roomiq || 'none',
             airiq: state.airiq || 'none',
-            fan: state.fan || 'none'
+            ventiq: state.ventiq || 'none',
+            fan: state.fan || 'none',
+            led: state.led || 'none'
         };
     }
 
@@ -272,6 +305,7 @@ let mobileSummaryMediaQuery = null;
         FIELD_MAP.forEach(field => {
             state[field.key] = meta[field.key].value || null;
         });
+        state.bathroom = readBathroomState();
 
         subscribers.forEach(callback => {
             try {
@@ -1317,7 +1351,13 @@ let mobileSummaryMediaQuery = null;
             list.removeChild(list.firstChild);
         }
 
-        FIELD_MAP.forEach(field => {
+        const isBathroomCeiling = meta.mount?.value === 'ceiling' && readBathroomState();
+
+        FIELD_MAP.filter(field => {
+            if (field.bathroom === true) return isBathroomCeiling;
+            if (field.bathroom === false) return !isBathroomCeiling;
+            return true;
+        }).forEach(field => {
             if (variant === 'module' || variant === 'review') {
                 const item = document.createElement('div');
                 item.className = 'module-summary-card__item';
