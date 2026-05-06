@@ -30,7 +30,7 @@ import { announce } from './utils/a11y.js';
 const POWER_LABELS = Object.freeze({
     usb: 'USB',
     poe: 'PoE PSU',
-    pwr: 'Mains PSU'
+    pwr: '240v PSU'
 });
 
 const MOUNT_LABELS = Object.freeze({

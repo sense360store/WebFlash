@@ -10,9 +10,9 @@ describe('MODULE_VARIANT_LABELS uses canonical Sense360 friendly names', () => {
         expect(MODULE_VARIANT_LABELS.roomiq.roomiq).toBe('Sense360 RoomIQ');
         expect(MODULE_VARIANT_LABELS.airiq.airiq).toBe('Sense360 AirIQ');
         expect(MODULE_VARIANT_LABELS.ventiq.ventiq).toBe('Sense360 VentIQ');
-        expect(MODULE_VARIANT_LABELS.fan.relay).toBe('Sense360 Fan Relay');
-        expect(MODULE_VARIANT_LABELS.fan.pwm).toBe('Sense360 Fan PWM');
-        expect(MODULE_VARIANT_LABELS.fan.analog).toBe('Sense360 Fan DAC');
+        expect(MODULE_VARIANT_LABELS.fan.relay).toBe('Sense360 Relay');
+        expect(MODULE_VARIANT_LABELS.fan.pwm).toBe('Sense360 PWM');
+        expect(MODULE_VARIANT_LABELS.fan.analog).toBe('Sense360 DAC');
         expect(MODULE_VARIANT_LABELS.fan.triac).toBe('Sense360 TRIAC');
         expect(MODULE_VARIANT_LABELS.led.led).toBe('Sense360 LED');
     });
@@ -122,7 +122,7 @@ describe('parseConfigStringState handles both legacy and current tokens', () => 
 
     test('still parses the legacy FanAnalog token for old shareable links', () => {
         // FanAnalog was the historical token before the SKU was renamed to
-        // "Sense360 Fan DAC" (S360-312); old share-links must still resolve.
+        // "Sense360 DAC" (S360-312); old share-links must still resolve.
         expect(parseConfigStringState('Ceiling-USB-FanAnalog').fan).toBe('analog');
     });
 

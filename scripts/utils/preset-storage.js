@@ -855,10 +855,10 @@ function formatModuleName(moduleKey, value) {
             ventiq: 'VentIQ'
         },
         fan: {
-            relay: 'Fan Relay',
-            pwm: 'Fan PWM',
-            analog: 'Fan DAC',
-            triac: 'Fan TRIAC'
+            relay: 'Relay',
+            pwm: 'PWM',
+            analog: 'DAC',
+            triac: 'TRIAC'
         }
     };
 

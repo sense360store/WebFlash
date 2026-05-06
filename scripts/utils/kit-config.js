@@ -266,7 +266,7 @@ function mapKitToWizardState(kit) {
 
 /**
  * Returns a human-readable list of selected modules for the explanation
- * panel ("This kit maps to: AirIQ, Fan PWM ...").
+ * panel ("This kit maps to: AirIQ, PWM ...").
  *
  * @param {Object} kit
  * @returns {string[]}
@@ -288,7 +288,7 @@ function summariseKitModules(kit) {
         summaries.push('RoomIQ');
     }
     if (state.fan && state.fan !== 'none') {
-        const labels = { relay: 'Fan Relay', pwm: 'Fan PWM', analog: 'Fan DAC', triac: 'TRIAC' };
+        const labels = { relay: 'Relay', pwm: 'PWM', analog: 'DAC', triac: 'TRIAC' };
         summaries.push(labels[state.fan] || 'Fan driver');
     }
     if (state.led && state.led !== 'none') {

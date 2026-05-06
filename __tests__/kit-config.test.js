@@ -190,7 +190,7 @@ describe('mapKitToWizardState', () => {
 describe('summariseKitModules', () => {
     test('lists selected modules in human-readable form', () => {
         const kit = { wizard_state: { airiq: 'airiq', fan: 'pwm', led: 'led' } };
-        expect(summariseKitModules(kit)).toEqual(['AirIQ', 'Fan PWM', 'LED']);
+        expect(summariseKitModules(kit)).toEqual(['AirIQ', 'PWM', 'LED']);
     });
 
     test('returns empty array when no modules are selected', () => {

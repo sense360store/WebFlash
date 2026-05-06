@@ -7,14 +7,14 @@ This document tracks implemented and planned features for the WebFlash firmware 
 ### Core Wizard Interface
 - [x] Step-by-step wizard interface (5 steps: Mount → Power → Modules → Review → Install)
 - [x] Ceiling mount support (Wall is documented as legacy and not selectable)
-- [x] Power source options (USB, Sense360 PoE PSU, Sense360 Mains PSU)
+- [x] Power source options (USB, Sense360 PoE PSU, Sense360 240v PSU)
 - [x] Visual progress indicator with step navigation
 - [x] Desktop Chromium browsers only (Web Serial requirement)
 
 ### Module Support
 - [x] Sense360 AirIQ (`S360-210`) — CO₂, VOC, gas; optional PM/HCHO connectors
 - [x] Sense360 VentIQ (`S360-211`) — Bathroom-focused air quality (Ceiling + Bathroom mode only)
-- [x] Sense360 Fan drivers — Relay (`S360-310`), PWM (`S360-311`), DAC (`S360-312`)
+- [x] Sense360 Drivers — Relay (`S360-310`), PWM (`S360-311`), DAC (`S360-312`)
 - [x] Sense360 LED (`S360-300`) — addressable WS2812B ring; carries the I2S microphone for voice builds
 
 ### Configuration & Compatibility

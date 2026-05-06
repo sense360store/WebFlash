@@ -25,7 +25,7 @@
     // Sense360 friendly names come first; the legacy Base/Pro/Analog tokens are kept
     // as fallbacks so cached pages with the old markup still parse.
     state.airiq    = pickByGroup('AirIQ',    { 'None':'none','Sense360 AirIQ':'airiq','Sense360 VentIQ':'ventiq','Base':'airiq','Pro':'ventiq' });
-    state.fan      = pickByGroup('Fan',      { 'None':'none','Sense360 Fan Relay':'relay','Sense360 Fan PWM':'pwm','Sense360 Fan DAC':'analog','Sense360 TRIAC':'triac','Relay':'relay','PWM':'pwm','Analog':'analog','TRIAC':'triac' });
+    state.fan      = pickByGroup('Fan',      { 'None':'none','Sense360 Relay':'relay','Sense360 PWM':'pwm','Sense360 DAC':'analog','Sense360 TRIAC':'triac','Sense360 Fan Relay':'relay','Sense360 Fan PWM':'pwm','Sense360 Fan DAC':'analog','Relay':'relay','PWM':'pwm','Analog':'analog','TRIAC':'triac' });
     emit();
   }
 

@@ -66,8 +66,8 @@
         },
         {
             "sku": "S360-KIT-CEILING-AIRIQ-PWR",
-            "display_name": "Sense360 Ceiling AirIQ Kit (Mains PSU)",
-            "description": "Ceiling Core with the AirIQ air-quality module, powered from the Sense360 mains PSU.",
+            "display_name": "Sense360 Ceiling AirIQ Kit (240v PSU)",
+            "description": "Ceiling Core with the AirIQ air-quality module, powered from the Sense360 240v PSU.",
             "recommended": false,
             "sample": true,
             "wizard_state": {
@@ -84,7 +84,7 @@
             "components": [
                 { "sku": "S360-100", "label": "Sense360 Core" },
                 { "sku": "S360-210", "label": "Sense360 AirIQ" },
-                { "sku": "S360-400", "label": "Sense360 Mains PSU" }
+                { "sku": "S360-400", "label": "Sense360 240v PSU" }
             ],
             "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
             "firmware_config_string": "Ceiling-PWR-AirIQ",
@@ -137,7 +137,7 @@
             },
             "components": [
                 { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-311", "label": "Sense360 Fan PWM" }
+                { "sku": "S360-311", "label": "Sense360 PWM" }
             ],
             "headers_required": ["12vFan_PWM_PulseCounter"],
             "firmware_config_string": "Ceiling-USB-FanPWM",

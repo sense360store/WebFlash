@@ -106,7 +106,7 @@ describe('config URL parser', () => {
   });
 
   test('fan=analog emits the canonical FanDAC config segment', () => {
-    // The Sense360 Fan DAC SKU (S360-312) was historically referred to as
+    // The Sense360 DAC SKU (S360-312) was historically referred to as
     // "Analog"; the wizard value is still `analog` for share-link/preset
     // back-compat, but the firmware token uses the current SKU name.
     const params = new URLSearchParams('core=core&mount=ceiling&power=usb&fan=analog');

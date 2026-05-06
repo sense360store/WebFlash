@@ -354,7 +354,7 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-PWR-AirIQ configuration powered by the Sense360 Mains PSU."
+        "Initial tracked stable release for the Sense360 Ceiling-PWR-AirIQ configuration powered by the Sense360 240v PSU."
       ],
       "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
       "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
@@ -534,7 +534,7 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-USB-FanPWM configuration; targets the Sense360 Fan PWM (S360-311) driver on a USB-powered Core."
+        "Initial tracked stable release for the Sense360 Ceiling-USB-FanPWM configuration; targets the Sense360 PWM (S360-311) driver on a USB-powered Core."
       ],
       "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
       "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",

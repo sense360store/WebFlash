@@ -83,8 +83,8 @@ const optionTooltips = {
             }
         },
         pwr: {
-            title: 'Sense360 Mains PSU',
-            summary: 'Use the Sense360 Mains PSU (S360-400, HLK-5M05) when a building low-voltage feed is available.',
+            title: 'Sense360 240v PSU',
+            summary: 'Use the Sense360 240v PSU (S360-400, HLK-5M05) when a building low-voltage feed is available.',
             pros: [
                 'Accepts 12–24 VDC input, enabling centralized power supplies.',
                 'Integrated surge suppression protects downstream modules.'
@@ -183,7 +183,7 @@ const optionTooltips = {
             }
         },
         relay: {
-            title: 'Sense360 Fan Relay',
+            title: 'Sense360 Relay',
             summary: 'Simple on/off relay output for bathroom fans, exhaust fans, and similar low-current loads.',
             pros: [
                 'Single drop-in board with the S360-Relay-C harness.',
@@ -203,7 +203,7 @@ const optionTooltips = {
             }
         },
         pwm: {
-            title: 'PWM Fan Module',
+            title: 'Sense360 PWM',
             summary: 'Provides 25 kHz PWM output for EC fans and in-duct boosters requiring precise speed control.',
             pros: [
                 'Fine-grained 0–100 % speed setpoints with automatic ramp profiles.',
@@ -223,7 +223,7 @@ const optionTooltips = {
             }
         },
         analog: {
-            title: 'Analog Fan Module',
+            title: 'Sense360 DAC',
             summary: 'Controls legacy HVAC blowers using a 0–10 V analog output stage.',
             pros: [
                 'Compatible with VFDs, economizers, and dampers expecting 0–10 V control.',
@@ -243,7 +243,7 @@ const optionTooltips = {
             }
         },
         triac: {
-            title: 'TRIAC Fan Module',
+            title: 'Sense360 TRIAC',
             summary: 'Phase dimmer for mains-voltage fans and lamps via the TRIAC_Board harness.',
             pros: [
                 'Drives line-voltage AC fans, exhaust units, and dimmable lamps without an external dimmer.',

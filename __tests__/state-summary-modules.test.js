@@ -14,7 +14,7 @@ async function loadStateSummaryModule() {
             if (variant === 'airiq') return { label: 'Sense360 AirIQ' };
             if (variant === 'ventiq') return { label: 'Sense360 VentIQ' };
             if (variant === 'led') return { label: 'Sense360 LED' };
-            if (variant === 'relay') return { label: 'Sense360 Fan Relay' };
+            if (variant === 'relay') return { label: 'Sense360 Relay' };
             return null;
         })
     }));
@@ -131,7 +131,7 @@ describe('state-summary module rows', () => {
         expect(rows.RoomIQ).toBe('Sense360 RoomIQ');
         expect(rows.AirIQ).toBe('Sense360 AirIQ');
         expect(rows['LED Ring']).toBe('Sense360 LED');
-        expect(rows.Fan).toBe('Sense360 Fan Relay');
+        expect(rows.Fan).toBe('Sense360 Relay');
     });
 
     test('renders None for unselected modules instead of hiding them', async () => {

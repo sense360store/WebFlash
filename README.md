@@ -22,8 +22,8 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 1. Navigate to https://sense360store.github.io/WebFlash/
 2. Configure your device:
    - Select mounting type (Ceiling only)
-   - Choose power source (USB, Sense360 PoE PSU, or Sense360 Mains PSU)
-   - Enable optional modules (Sense360 RoomIQ, Sense360 AirIQ or Sense360 VentIQ, Sense360 LED, Sense360 Fan Relay/PWM/DAC, Sense360 TRIAC)
+   - Choose power source (USB, Sense360 PoE PSU, or Sense360 240v PSU)
+   - Enable optional modules (Sense360 RoomIQ, Sense360 AirIQ or Sense360 VentIQ, Sense360 LED, Sense360 Relay/PWM/DAC, Sense360 TRIAC)
 3. Review the recommended firmware configuration
 4. Wait for the firmware integrity check to complete
 5. Acknowledge **Before you flash** checklist
@@ -39,16 +39,16 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 ### Power Source
 - **USB Power**: USB-C connection direct to the Core.
 - **Sense360 PoE PSU** (`S360-410`): Power over Ethernet backplate.
-- **Sense360 Mains PSU** (`S360-400`): Mains-to-5V supply (HLK-5M05).
+- **Sense360 240v PSU** (`S360-400`): 240V mains-to-5V supply (HLK-5M05).
 
 ### Expansion Modules
 - **Sense360 RoomIQ** (`S360-200`): Room sensor board with PIR, mmWave presence (LD2450), light (LTR-303ALS), temperature/humidity (SHT4x), and pressure (BMP581).
 - **Sense360 AirIQ** (`S360-210`): Air-quality board with CO₂ (SCD41), VOC (SGP41), and gas (MICS-4514). Optional connectors for SPS30 (PM) and SFA30 (HCHO).
 - **Sense360 VentIQ** (`S360-211`): Bathroom-focused air-quality board (SGP41 onboard, IR-temp + SPS30 connectors). Only appears when Bathroom mode is on; mutually exclusive with AirIQ.
 - **Sense360 LED** (`S360-300`): WS2812B addressable LED ring.
-- **Sense360 Fan Relay** (`S360-310`): On/off relay for bathroom fans.
-- **Sense360 Fan PWM** (`S360-311`): 12V PWM driver, up to 4 fans with tach feedback.
-- **Sense360 Fan DAC** (`S360-312`): 0–10V analog driver (e.g. Cloudlift S12). Conflicts with AirIQ on the shared DAC bus.
+- **Sense360 Relay** (`S360-310`): On/off relay for bathroom fans.
+- **Sense360 PWM** (`S360-311`): 12V PWM driver, up to 4 fans with tach feedback.
+- **Sense360 DAC** (`S360-312`): 0–10V analog driver (e.g. Cloudlift S12). Conflicts with AirIQ on the shared DAC bus.
 - **Sense360 TRIAC** (`S360-320`): Phase dimmer for mains fan or lamp.
 
 ### Kit / SKU configuration mode
@@ -252,14 +252,14 @@ The table below is the **documentation source for operator-facing names**, mirro
 | Sensor | Sense360 AirIQ | S360-210 | Air-quality sensor board. |
 | Sensor | Sense360 VentIQ | S360-211 | Bathroom-focused air-quality board; only on Ceiling + Bathroom mode and mutually exclusive with AirIQ. |
 | Indicator | Sense360 LED | S360-300 | Addressable WS2812B LED ring. |
-| Driver | Sense360 Fan Relay | S360-310 | On/off relay for bathroom fans. |
-| Driver | Sense360 Fan PWM | S360-311 | 12V PWM driver, up to 4 fans with tach feedback. |
-| Driver | Sense360 Fan DAC | S360-312 | 0–10V analog driver. Conflicts with AirIQ on the shared DAC bus. |
+| Driver | Sense360 Relay | S360-310 | On/off relay for bathroom fans. |
+| Driver | Sense360 PWM | S360-311 | 12V PWM driver, up to 4 fans with tach feedback. |
+| Driver | Sense360 DAC | S360-312 | 0–10V analog driver. Conflicts with AirIQ on the shared DAC bus. |
 | Driver | Sense360 TRIAC | S360-320 | Phase dimmer for mains fan or lamp. |
 | Mount | Ceiling Mount | — | The only mount currently enabled in the UI. |
 | Power | USB Power | — | Direct USB-C to the Core. |
 | Power | Sense360 PoE PSU | S360-410 | Selected via `power=poe`. |
-| Power | Sense360 Mains PSU | S360-400 | Selected via `power=pwr`. |
+| Power | Sense360 240v PSU | S360-400 | Selected via `power=pwr`. |
 
 Each SKU is its own product. Modules are selected individually — nothing is bundled.
 
@@ -269,7 +269,7 @@ Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allo
 
 ### Mount × Power compatibility (current UI)
 
-| Mount \ Power | USB | Sense360 PoE PSU | Sense360 Mains PSU |
+| Mount \ Power | USB | Sense360 PoE PSU | Sense360 240v PSU |
 |---|---:|---:|---:|
 | Ceiling | ✅ | ✅ | ✅ |
 
@@ -284,7 +284,7 @@ Legend: ✅ allowed, 🚫 blocked by current UI logic, ⚠️ conditionally allo
 
 | Combination | Result | Constraint source |
 |---|---|---|
-| Sense360 AirIQ + Sense360 Fan DAC | 🚫 blocked | Shared DAC bus conflict metadata in module requirements. |
+| Sense360 AirIQ + Sense360 DAC | 🚫 blocked | Shared DAC bus conflict metadata in module requirements. |
 | Sense360 AirIQ + Sense360 VentIQ | 🚫 blocked | AirIQ and VentIQ are mutually exclusive; the Bathroom toggle drives which one is visible on Ceiling mounts. |
 | Mount != Ceiling | VentIQ hidden and reset to `none` | UI logic auto-hides VentIQ unless Ceiling + Bathroom. |
 
