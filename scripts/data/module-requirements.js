@@ -57,7 +57,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                     {
                         module: 'fan',
                         variants: ['analog'],
-                        message: 'Conflicts with Fan DAC — analog control uses the shared DAC header.',
+                        message: 'Conflicts with DAC — analog control uses the shared DAC header.',
                         detail: 'Select PWM, Relay, or TRIAC fan control or remove the AirIQ module to free the DAC bus.'
                     },
                     {
@@ -118,7 +118,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: []
             },
             relay: {
-                label: 'Sense360 Fan Relay',
+                label: 'Sense360 Relay',
                 sku: 'S360-310',
                 coreRevision: 'R4',
                 headers: ['S360-Relay-C'],
@@ -127,7 +127,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 recommended: true
             },
             pwm: {
-                label: 'Sense360 Fan PWM',
+                label: 'Sense360 PWM',
                 sku: 'S360-311',
                 coreRevision: 'R4',
                 headers: ['12vFan_PWM_PulseCounter'],
@@ -135,7 +135,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 conflicts: []
             },
             analog: {
-                label: 'Sense360 Fan DAC',
+                label: 'Sense360 DAC',
                 sku: 'S360-312',
                 coreRevision: 'R4',
                 headers: ['Fan_GP8403'],

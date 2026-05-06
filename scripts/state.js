@@ -164,9 +164,9 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
         ventiq: 'Sense360 VentIQ'
     })],
     ['fan', Object.freeze({
-        relay: 'Sense360 Fan Relay',
-        pwm: 'Sense360 Fan PWM',
-        analog: 'Sense360 Fan DAC',
+        relay: 'Sense360 Relay',
+        pwm: 'Sense360 PWM',
+        analog: 'Sense360 DAC',
         triac: 'Sense360 TRIAC'
     })],
     ['voice', Object.freeze({
@@ -192,11 +192,11 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
 // PWM, DAC, TRIAC) expose different pins/components/YAML substitutions, so
 // collapsing them to a single "Fan" token would let the wizard hand a relay
 // build to a PWM device. Mapping:
-//   relay  -> FanRelay   (Sense360 Fan Relay, S360-310)
-//   pwm    -> FanPWM     (Sense360 Fan PWM,   S360-311)
-//   analog -> FanDAC     (Sense360 Fan DAC,   S360-312 — wizard value stays
+//   relay  -> FanRelay   (Sense360 Relay, S360-310)
+//   pwm    -> FanPWM     (Sense360 PWM,   S360-311)
+//   analog -> FanDAC     (Sense360 DAC,   S360-312 — wizard value stays
 //                         `analog` for share-link/preset back-compat)
-//   triac  -> FanTRIAC   (Sense360 TRIAC,     S360-320)
+//   triac  -> FanTRIAC   (Sense360 TRIAC, S360-320)
 const FAN_VARIANT_SEGMENT_TOKENS = Object.freeze({
     relay: 'FanRelay',
     pwm: 'FanPWM',
@@ -1201,7 +1201,7 @@ function parseConfigStringState(configString) {
             moduleState.airiq = normaliseModuleValue('airiq', suffix ? suffix.toLowerCase() : 'airiq');
         } else if (segment.startsWith('Fan')) {
             const suffix = segment.substring('Fan'.length).toLowerCase();
-            // `dac` is the canonical token suffix for the Fan DAC SKU; the
+            // `dac` is the canonical token suffix for the DAC SKU; the
             // wizard value is still `analog`. Empty suffix is the legacy
             // `Fan` token (variant unknown) — fall through to `none` so the
             // user is prompted to pick a driver explicitly.

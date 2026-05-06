@@ -27,17 +27,17 @@ This is the **authoritative SKU list** for the supported hardware. The **Friendl
 | Ceiling | Sensor | Sense360 AirIQ | S360-210 | R4 | `AirlQ Ceiling` (typo in old name) | Air quality board. CO2 (SCD41), VOC (SGP41), gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30). |
 | Ceiling | Sensor | Sense360 VentIQ | S360-211 | R4 | Bathroom Pro | Smaller air quality board for bathrooms. SGP41 on board. Connectors for IR temp and SPS30. |
 | Ceiling | Indicator | Sense360 LED | S360-300 | R4 | LED Ring | Ring of WS2812B LEDs. |
-| Inline | Driver | Sense360 Fan Relay | S360-310 | R4 | `S360-Relay-C` | On / off relay for bathroom fans. |
-| Inline | Driver | Sense360 Fan PWM | S360-311 | R4 | `12vFan_PWM_PulseCounter` | 12V PWM fan driver, up to 4 fans with tach feedback. |
-| Inline | Driver | Sense360 Fan DAC | S360-312 | R4 | `Fan_GP8403` | 0 to 10V analog fan driver, for example Cloudlift S12. |
+| Inline | Driver | Sense360 Relay | S360-310 | R4 | `S360-Relay-C`, `Sense360 Fan Relay` | On / off relay for bathroom fans. |
+| Inline | Driver | Sense360 PWM | S360-311 | R4 | `12vFan_PWM_PulseCounter`, `Sense360 Fan PWM` | 12V PWM fan driver, up to 4 fans with tach feedback. |
+| Inline | Driver | Sense360 DAC | S360-312 | R4 | `Fan_GP8403`, `Sense360 Fan DAC` | 0 to 10V analog fan driver, for example Cloudlift S12. |
 | Inline | Driver | Sense360 TRIAC | S360-320 | R4 | `TRIAC_Board` | Phase dimmer for mains fan or lamp. |
-| Power | PSU | Sense360 Mains PSU | S360-400 | R4 | PWR Module | Mains to 5V using HLK-5M05. |
+| Power | PSU | Sense360 240v PSU | S360-400 | R4 | PWR Module, `Sense360 Mains PSU` | 240V mains to 5V using HLK-5M05. |
 | Power | PSU | Sense360 PoE PSU | S360-410 | R4 | PoE Module | PoE to 5V. |
 
 Notes:
 
 - The current wizard exposes Ceiling mount only; a "Wall" branch lingers in markup/legacy aliases but is not a supported product.
-- **Wizard coverage of the table:** the sensor/driver/indicator SKUs are *separately selectable* via `scripts/data/module-requirements.js` (RoomIQ S360-200, AirIQ S360-210, VentIQ S360-211, LED S360-300, Fan Relay S360-310, Fan PWM S360-311, Fan DAC S360-312, TRIAC S360-320). Nothing is bundled — each SKU is its own product, and the user picks every module they have. The Core (S360-100) is the one exception: it is implicit because every flashable device is a Core. The Mains PSU (S360-400) and PoE PSU (S360-410) are surfaced through the `power` selection (`pwr` / `poe`) rather than as their own module entries. When introducing a new *selectable* SKU, add it to `module-requirements.js` and update the wizard SKU labels in `state.js` (`MODULE_LABELS`, `MODULE_VARIANT_LABELS`, `MODULE_SEGMENT_FORMATTERS`) — do not regress to model/variant nomenclature, and do not describe any SKU as "bundled".
+- **Wizard coverage of the table:** the sensor/driver/indicator SKUs are *separately selectable* via `scripts/data/module-requirements.js` (RoomIQ S360-200, AirIQ S360-210, VentIQ S360-211, LED S360-300, Relay S360-310, PWM S360-311, DAC S360-312, TRIAC S360-320). Nothing is bundled — each SKU is its own product, and the user picks every module they have. The Core (S360-100) is the one exception: it is implicit because every flashable device is a Core. The 240v PSU (S360-400) and PoE PSU (S360-410) are surfaced through the `power` selection (`pwr` / `poe`) rather than as their own module entries. When introducing a new *selectable* SKU, add it to `module-requirements.js` and update the wizard SKU labels in `state.js` (`MODULE_LABELS`, `MODULE_VARIANT_LABELS`, `MODULE_SEGMENT_FORMATTERS`) — do not regress to model/variant nomenclature, and do not describe any SKU as "bundled".
 
 ## Commands
 
