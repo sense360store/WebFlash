@@ -1,4 +1,5 @@
 import { findTrustedKey, isTestOnlyKey } from './firmware-trusted-keys.js';
+import { SIGNATURE_RESULT_CODES, userFacingAuthenticityCopy } from './firmware-signature.js';
 
 /**
  * @fileoverview Firmware provenance and manifest validation.
@@ -8,15 +9,17 @@ import { findTrustedKey, isTestOnlyKey } from './firmware-trusted-keys.js';
  * WebFlash is a supply-chain-sensitive surface — the wizard hands a binary
  * to ESP Web Tools that overwrites the device's flash. The provenance layer
  * is designed to be HONEST about what it actually does, so the install gate
- * is hard to bypass and is not confused with cryptographic authenticity.
+ * is hard to bypass and the difference between integrity and cryptographic
+ * authenticity is never blurred in copy or in code.
  *
  * Concretely, the layer separates seven concerns. Each maps to one or more
  * checks in the result, with a stable machine-readable id:
  *
  *   1. Metadata presence — did the manifest entry ship the fields we need
  *      to even reason about provenance? (sha256_metadata_present,
- *      signature_metadata_present, source_commit_present, file_size_present,
- *      firmware_path_present, artifact_identity_present)
+ *      signature_metadata_present, signature_ed25519_metadata_present,
+ *      source_commit_present, file_size_present, firmware_path_present,
+ *      artifact_identity_present)
  *
  *   2. Hash integrity metadata — does the entry expose a SHA-256 we can
  *      check the binary against once it has been downloaded?
@@ -27,17 +30,22 @@ import { findTrustedKey, isTestOnlyKey } from './firmware-trusted-keys.js';
  *      compared to the manifest's `sha256`. That happens OUTSIDE this
  *      module; the static gate here only verifies the metadata is present.
  *
- *   4. Signature metadata presence — does the entry carry a `signature`
- *      blob? Important: the existing `signature` is a salted SHA-256 with a
+ *   4. Legacy signature metadata presence — does the entry carry the
+ *      pre-Ed25519 `signature` blob? That field is a salted SHA-256 with a
  *      publicly-known salt; it is *integrity metadata*, NOT a public-key
  *      signature, and possession of the salt alone is not authentication.
+ *      The fields below carry the actual cryptographic authenticity.
  *      (signature_metadata_present)
  *
- *   5. Actual cryptographic signature verification — NOT IMPLEMENTED. The
- *      browser does not verify the firmware against a pinned trusted public
- *      key. The check `signature_verified` is therefore reported with
- *      `status: 'skip'` so consumers cannot accidentally interpret a `pass`
- *      as cryptographic authenticity.
+ *   5. Actual cryptographic signature verification — IMPLEMENTED. The
+ *      manifest entry must carry an Ed25519 signature (`signature_ed25519`)
+ *      and a key id (`signature_key_id`) pinned to the WebFlash trust list.
+ *      The static gate here verifies that metadata; the runtime layer
+ *      (state.js + firmware-signature.js) downloads the binary and runs
+ *      `crypto.subtle.verify('Ed25519', …)`. The combined verdict is
+ *      surfaced via the `signature_verified` check id, which starts
+ *      `'pending'` and flips to `'pass'` or `'fail'` once
+ *      `applySignatureVerificationResult` is called.
  *
  *   6. Source provenance — does the entry name the source commit and a
  *      stable, IMMUTABLE source URL (e.g. /commit/<sha>, not /tree/main)?
@@ -737,24 +745,27 @@ export function validateFirmwareProvenance(build, options = {}) {
 
     // The actual `crypto.subtle.verify` call cannot run synchronously here —
     // it needs the binary bytes. We surface the result as a separate check
-    // id so the UI can show "authenticity verification pending…" before the
-    // download finishes; state.js calls `applySignatureVerificationResult`
-    // (below) to upgrade this entry once `verifyFirmwareSignature` returns.
+    // id so the UI can show "authenticity will be verified before flashing"
+    // before the download finishes; state.js calls
+    // `applySignatureVerificationResult` (below) to upgrade this entry once
+    // `verifyFirmwareSignature` returns.
     if (ed25519Sig) {
+        const pending = userFacingAuthenticityCopy(null, { stable });
         checks.push(makeCheck(
             CHECK_IDS.SIGNATURE_VERIFIED,
             'Cryptographic signature verification',
             'pending',
             signatureMetaSeverity,
-            'Awaiting Ed25519 verification against the pinned trust list. The downloaded firmware bytes must verify before install is allowed.'
+            pending.message
         ));
     } else {
+        const missing = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.MISSING_SIGNATURE, { stable });
         checks.push(makeCheck(
             CHECK_IDS.SIGNATURE_VERIFIED,
             'Cryptographic signature verification',
             'fail',
             signatureMetaSeverity,
-            'No Ed25519 signature available; cryptographic authenticity cannot be established.'
+            missing.message
         ));
     }
 
@@ -1101,7 +1112,7 @@ export function computeTrustTiersFromChecks(checks, { stable = false } = {}) {
 
     const authCheck = byId.get(CHECK_IDS.SIGNATURE_VERIFIED);
     let authenticityStatus = TIER_STATUSES.PENDING;
-    let authenticityDetail = 'Awaiting Ed25519 verification against the pinned trust list.';
+    let authenticityDetail = userFacingAuthenticityCopy(null, { stable }).message;
     if (metadata.status === TIER_STATUSES.FAIL) {
         authenticityStatus = TIER_STATUSES.FAIL;
         authenticityDetail = 'Authenticity cannot be established because manifest metadata is incomplete.';
@@ -1156,25 +1167,27 @@ export function applySignatureVerificationResult(report, sigResult) {
         return report;
     }
     const previous = checks[idx];
+    const stable = Boolean(report.stable);
 
     let nextStatus = previous.status;
     let nextSeverity = previous.severity;
-    let detail = sigResult.message || previous.detail;
+    const userCopy = userFacingAuthenticityCopy(sigResult.code, { stable });
+    const detail = userCopy.message;
 
-    if (sigResult.ok || sigResult.code === 'verified') {
+    if (sigResult.ok || sigResult.code === SIGNATURE_RESULT_CODES.VERIFIED) {
         nextStatus = 'pass';
         // Once verification has actually run and passed, severity stays
         // 'block' — i.e. its weight in the gate logic is unchanged, but
         // the status flips from pending to pass.
-    } else if (sigResult.code === 'unsupported_runtime') {
+    } else if (sigResult.code === SIGNATURE_RESULT_CODES.UNSUPPORTED_RUNTIME) {
         // Browser does not support Ed25519. For stable channels this is
         // still blocking (we cannot prove authenticity); the UI surfaces
-        // a "browser unsupported" message via the authenticity tier.
-        nextStatus = report.stable ? 'fail' : 'warn';
-        nextSeverity = report.stable ? 'block' : 'warn';
+        // a "browser cannot verify" message via the authenticity tier.
+        nextStatus = stable ? 'fail' : 'warn';
+        nextSeverity = stable ? 'block' : 'warn';
     } else {
         // Any other failure mode: signature_invalid, key_revoked, malformed,
-        // missing, unknown_key — all block install.
+        // missing, unknown_key, key_test_only_in_production — all block install.
         nextStatus = 'fail';
         nextSeverity = 'block';
     }
@@ -1185,6 +1198,8 @@ export function applySignatureVerificationResult(report, sigResult) {
         severity: nextSeverity,
         detail,
         verificationCode: sigResult.code,
+        verificationDetail: userCopy.detail,
+        technicalDetail: sigResult.message || '',
         keyId: sigResult.keyId || previous.keyId,
         keyStatus: sigResult.keyStatus || previous.keyStatus
     };

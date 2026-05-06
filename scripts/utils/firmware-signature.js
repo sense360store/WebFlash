@@ -449,6 +449,82 @@ export function authenticityTierForCode(code) {
     return 'failed';
 }
 
+/**
+ * Canonical user-facing copy for each authenticity verification result.
+ * The browser actually performs Ed25519 verification, so the UI must
+ * distinguish between (1) signature metadata that has not yet been
+ * verified, (2) verification that passed, and (3) the various ways
+ * verification can fail. The returned `{ message, detail }` strings are
+ * what the firmware-details panel and provenance tier detail render —
+ * the technical messages produced by `verifyFirmwareSignature` continue
+ * to live on `result.message` for diagnostics.
+ *
+ * `stable` controls the "stable firmware cannot be installed" suffix used
+ * for blocking states; non-stable channels get a generic suffix because
+ * preview/dev installs may still be allowed.
+ */
+export function userFacingAuthenticityCopy(code, { stable = true } = {}) {
+    const blockingSuffix = stable
+        ? 'stable firmware cannot be installed'
+        : 'firmware cannot be installed';
+    switch (code) {
+        case SIGNATURE_RESULT_CODES.VERIFIED:
+            return {
+                message: 'Firmware authenticity verified with pinned Sense360 production key.',
+                detail: 'The downloaded firmware bytes were verified against an Ed25519 signature using a pinned Sense360 production public key.'
+            };
+        case SIGNATURE_RESULT_CODES.UNSUPPORTED_RUNTIME:
+            return {
+                message: `This browser cannot verify firmware authenticity; ${blockingSuffix}.`,
+                detail: 'Web Crypto Ed25519 verification is required and is not available in this browser.'
+            };
+        case SIGNATURE_RESULT_CODES.MISSING_SIGNATURE:
+            return {
+                message: `Firmware signature metadata is missing; ${blockingSuffix}.`,
+                detail: 'No Ed25519 signature was provided for this build, so authenticity cannot be established.'
+            };
+        case SIGNATURE_RESULT_CODES.MALFORMED_SIGNATURE:
+            return {
+                message: `Firmware signature metadata is malformed; ${blockingSuffix}.`,
+                detail: 'The provided signature could not be decoded as a 64-byte Ed25519 value.'
+            };
+        case SIGNATURE_RESULT_CODES.UNKNOWN_KEY:
+            return {
+                message: `Firmware was signed by an unknown key; ${blockingSuffix}.`,
+                detail: 'The signing key id is not on the pinned Sense360 trust list.'
+            };
+        case SIGNATURE_RESULT_CODES.KEY_REVOKED:
+            return {
+                message: `Firmware was signed by a revoked key; ${blockingSuffix}.`,
+                detail: 'The signing key has been revoked and is no longer authorised to sign installable firmware.'
+            };
+        case SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION:
+            return {
+                message: 'Firmware was signed with a test-only key and cannot be installed by the production WebFlash app.',
+                detail: 'The signing key is marked test_only — its private half is exposed for fixture signing, so the production install gate refuses it.'
+            };
+        case SIGNATURE_RESULT_CODES.SIGNATURE_INVALID:
+            return {
+                message: 'Firmware authenticity verification failed.',
+                detail: 'Do not install this firmware. The downloaded firmware could not be authenticated against the pinned Sense360 trust list.'
+            };
+        case SIGNATURE_RESULT_CODES.INVALID_INPUT:
+            return {
+                message: 'Firmware authenticity verification failed.',
+                detail: 'The verifier received malformed input and could not authenticate the firmware bytes.'
+            };
+        default:
+            // Unknown / not-yet-classified state — the only honest answer is
+            // that authenticity has not been established yet. Used both for
+            // pre-download "metadata present, awaiting verification" and as
+            // a safe fallback for any code we have not enumerated.
+            return {
+                message: 'Signature metadata present; authenticity will be verified before flashing.',
+                detail: 'Authenticity is verified by checking the downloaded firmware bytes against an Ed25519 signature whose public key is pinned in the WebFlash trust list.'
+            };
+    }
+}
+
 export const FIRMWARE_SIGNATURE_INTERNALS = Object.freeze({
     base64ToBytes,
     ED25519_SIGNATURE_BYTES,

@@ -350,7 +350,11 @@ describe('validateFirmwareProvenance — signature verification claim', () => {
         const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
         const check = findCheck(report, CHECK_IDS.SIGNATURE_VERIFIED);
         expect(check.status).toBe('pending');
-        expect(check.detail).toMatch(/awaiting/i);
+        // Pending copy: explicit that authenticity has NOT been verified yet
+        // and will be verified before flashing. Must not claim authenticity
+        // has passed.
+        expect(check.detail).toMatch(/authenticity will be verified before flashing/i);
+        expect(check.detail).not.toMatch(/authenticity verified with/i);
         expect(report.pending).toBe(true);
     });
 
