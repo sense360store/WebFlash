@@ -499,7 +499,7 @@ describe('release-channel UI wiring in state.js', () => {
         expect(html).toContain('application');
     });
 
-    test('renderFirmwareDetailsPanel does not assert cryptographic verification language', async () => {
+    test('renderFirmwareDetailsPanel does not assert cryptographic verification before runtime check runs', async () => {
         const { __testHooks } = await import('../scripts/state.js');
         const build = makeBuild({
             firmwareId: 'firmware-stable',
@@ -507,7 +507,9 @@ describe('release-channel UI wiring in state.js', () => {
             version: '2.0.0'
         });
         const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
-        // Forbidden trust language; the panel describes facts, not claims.
+        // Forbidden pre-verification trust language; the panel must not
+        // claim authenticity has passed before the runtime Ed25519
+        // verification has actually run.
         const forbidden = [
             /signature verified/i,
             /cryptographically verified/i,
@@ -573,7 +575,7 @@ describe('release-channel UI wiring in state.js', () => {
         expect(html).toMatch(/Browser hashes the downloaded binary/i);
     });
 
-    test('renderFirmwareDetailsPanel surfaces signature metadata status without claiming cryptographic verification', async () => {
+    test('renderFirmwareDetailsPanel surfaces signature metadata as awaiting verification before runtime check runs', async () => {
         const { __testHooks } = await import('../scripts/state.js');
         const build = makeBuild({
             firmwareId: 'firmware-stable',
@@ -583,12 +585,58 @@ describe('release-channel UI wiring in state.js', () => {
         });
         const html = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
         expect(html).toContain('Signature metadata');
-        expect(html).toContain('Signature metadata present');
         expect(html).toContain('Signed by Sense360 release pipeline');
-        // Careful copy: the panel must explicitly note that browser-side
-        // cryptographic verification is NOT performed, so users do not
-        // misread "metadata present" as authenticity.
-        expect(html).toMatch(/Browser-side cryptographic signature checks are not performed/i);
+        // The browser DOES perform Ed25519 verification, but it cannot run
+        // before the binary is downloaded. The pre-verification copy must
+        // describe that future state honestly — never claim authenticity
+        // has passed, and never resurrect the legacy "browser-side
+        // signature checks are not performed" disclaimer.
+        expect(html).toMatch(/authenticity will be verified before flashing/i);
+        expect(html).not.toMatch(/Browser-side cryptographic signature checks are not performed/i);
+        expect(html).not.toMatch(/authenticity verified/i);
+    });
+
+    test('renderFirmwareDetailsPanel never surfaces both legacy disclaimer and authenticity-pass copy together', async () => {
+        // Belt-and-braces: even after we update individual rows we must
+        // not ship a UI that contradicts itself. Asserting the absence of
+        // the legacy "checks are not performed" copy on every render path
+        // (pending, pass, fail) keeps the regression cost loud if a
+        // future edit reintroduces it next to a real verification verdict.
+        const { __testHooks } = await import('../scripts/state.js');
+        const build = makeBuild({
+            firmwareId: 'firmware-stable',
+            channel: 'stable',
+            version: '2.0.0'
+        });
+
+        // Pending render — verification has not run.
+        const pendingHtml = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        expect(pendingHtml).not.toMatch(/Browser-side cryptographic signature checks are not performed/i);
+
+        // Simulate a successful verification by populating the merged
+        // provenance state. The panel must NOT then carry both the legacy
+        // disclaimer AND the "Cryptographic authenticity: pass" copy.
+        const { applySignatureVerificationResult, validateFirmwareProvenance, TRUST_TIERS } =
+            await import('../scripts/utils/firmware-provenance.js');
+        const staticReport = validateFirmwareProvenance(build);
+        const merged = applySignatureVerificationResult(staticReport, {
+            ok: true,
+            code: 'verified',
+            keyId: 'sense360-prod-2026-02',
+            keyStatus: 'active',
+            message: 'Signature verified.'
+        });
+        __testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Firmware verified successfully.',
+            firmwareId: build.firmwareId,
+            parts: [],
+            provenance: merged,
+            authenticity: merged.tiers[TRUST_TIERS.AUTHENTICITY]
+        });
+        const passHtml = __testHooks.renderFirmwareDetailsPanel(build, { recommended: true });
+        expect(passHtml).not.toMatch(/Browser-side cryptographic signature checks are not performed/i);
+        expect(passHtml).toMatch(/Firmware authenticity verified with pinned Sense360 production key/i);
     });
 
     test('renderFirmwareDetailsPanel surfaces a Verification checks tally from describeVerificationChecks', async () => {

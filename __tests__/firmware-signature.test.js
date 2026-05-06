@@ -37,6 +37,7 @@ const {
     SIGNATURE_RESULT_CODES,
     isWebCryptoEd25519Available,
     authenticityTierForCode,
+    userFacingAuthenticityCopy,
     __resetEd25519CapabilityProbeForTests,
     FIRMWARE_SIGNATURE_INTERNALS
 } = await import('../scripts/utils/firmware-signature.js');
@@ -534,7 +535,7 @@ describe('verifyFirmwareSignature — applySignatureVerificationResult integrati
             sha256: 'a'.repeat(64),
             signature: 'AAAA',
             signature_ed25519: 'kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==',
-            signature_key_id: 'dev-2026-01',
+            signature_key_id: 'unit-test-fixture-key',
             source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
             source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
             file_size: 524288,
@@ -553,7 +554,11 @@ describe('verifyFirmwareSignature — applySignatureVerificationResult integrati
         const merged = applySignatureVerificationResult(staticReport, failedSig);
         expect(merged.ok).toBe(false);
         expect(merged.tiers[TRUST_TIERS.AUTHENTICITY]).toBe('fail');
-        expect(merged.blockingReasons.join(' ')).toMatch(/did not verify/i);
+        // Canonical user-facing failure copy — the legacy diagnostic
+        // string ("Signature did not verify…") still lives on the result
+        // for support, but `blockingReasons` and the tier detail render
+        // the user-friendly version to keep the UI consistent.
+        expect(merged.blockingReasons.join(' ')).toMatch(/Firmware authenticity verification failed/i);
     });
 
     test('UNSUPPORTED_RUNTIME flips authenticity tier to unavailable for stable builds', async () => {
@@ -605,5 +610,77 @@ describe('authenticityTierForCode', () => {
         expect(authenticityTierForCode(SIGNATURE_RESULT_CODES.MALFORMED_SIGNATURE)).toBe('failed');
         expect(authenticityTierForCode(SIGNATURE_RESULT_CODES.KEY_REVOKED)).toBe('failed');
         expect(authenticityTierForCode(SIGNATURE_RESULT_CODES.UNKNOWN_KEY)).toBe('failed');
+    });
+});
+
+describe('userFacingAuthenticityCopy — canonical UI strings', () => {
+    // The strings asserted here are the contract: the firmware-details
+    // panel and provenance tier detail render them verbatim (after
+    // escapeHtml, which does not change ASCII). If the contract changes,
+    // these tests change too — but the bar for changing them is "the UI
+    // copy actually changed and was reviewed", not a casual edit.
+
+    test('pre-verification copy promises authenticity will be verified before flashing', () => {
+        // Passing a code we have not enumerated returns the pending copy.
+        const copy = userFacingAuthenticityCopy(null);
+        expect(copy.message).toBe('Signature metadata present; authenticity will be verified before flashing.');
+        // Pending copy must NEVER claim authenticity has passed.
+        expect(copy.message).not.toMatch(/authenticity verified/i);
+    });
+
+    test('successful Ed25519 verification copy says authenticity verified with pinned production key', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.VERIFIED);
+        expect(copy.message).toBe('Firmware authenticity verified with pinned Sense360 production key.');
+        expect(copy.detail).toMatch(/Ed25519 signature/i);
+        expect(copy.detail).toMatch(/pinned Sense360 production public key/i);
+    });
+
+    test('failed signature verification copy says authenticity failed and warns not to install', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.SIGNATURE_INVALID);
+        expect(copy.message).toBe('Firmware authenticity verification failed.');
+        expect(copy.detail).toMatch(/Do not install this firmware/);
+        expect(copy.detail).toMatch(/pinned Sense360 trust list/i);
+    });
+
+    test('unsupported runtime copy says stable firmware cannot be installed', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.UNSUPPORTED_RUNTIME);
+        expect(copy.message).toBe('This browser cannot verify firmware authenticity; stable firmware cannot be installed.');
+    });
+
+    test('missing signature copy is blocking for stable firmware', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.MISSING_SIGNATURE);
+        expect(copy.message).toBe('Firmware signature metadata is missing; stable firmware cannot be installed.');
+    });
+
+    test('malformed signature copy is blocking for stable firmware', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.MALFORMED_SIGNATURE);
+        expect(copy.message).toBe('Firmware signature metadata is malformed; stable firmware cannot be installed.');
+    });
+
+    test('unknown signing key copy is blocking', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.UNKNOWN_KEY);
+        expect(copy.message).toBe('Firmware was signed by an unknown key; stable firmware cannot be installed.');
+    });
+
+    test('revoked signing key copy is blocking', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.KEY_REVOKED);
+        expect(copy.message).toBe('Firmware was signed by a revoked key; stable firmware cannot be installed.');
+    });
+
+    test('test-only signing key in production copy is specific and not generic', () => {
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION);
+        expect(copy.message).toBe('Firmware was signed with a test-only key and cannot be installed by the production WebFlash app.');
+        // Must not collapse into the generic "verification failed" copy —
+        // support needs to recognise the specific key-class refusal.
+        expect(copy.message).not.toMatch(/^Firmware authenticity verification failed\.$/);
+    });
+
+    test('non-stable channels get the generic blocking suffix', () => {
+        // Preview/dev channels are still blocked at install time when the
+        // signature is missing/malformed, but the user-facing copy avoids
+        // calling them "stable firmware" — which they aren't.
+        const copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.MISSING_SIGNATURE, { stable: false });
+        expect(copy.message).toMatch(/firmware cannot be installed/);
+        expect(copy.message).not.toMatch(/stable firmware cannot be installed/);
     });
 });

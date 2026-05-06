@@ -17,7 +17,8 @@ import {
     verifyFirmwareSignature,
     extractSignatureFromBuild,
     SIGNATURE_RESULT_CODES,
-    isWebCryptoEd25519Available
+    isWebCryptoEd25519Available,
+    userFacingAuthenticityCopy
 } from './utils/firmware-signature.js';
 import {
     getChannelPolicy,
@@ -3812,7 +3813,9 @@ function setFirmwareVerificationStateForTests(state) {
         status: state.status || 'idle',
         message: state.message || '',
         parts: new Map(partsEntries),
-        firmwareId: state.firmwareId || null
+        firmwareId: state.firmwareId || null,
+        provenance: state.provenance || null,
+        authenticity: state.authenticity || null
     };
 }
 
@@ -3932,7 +3935,7 @@ async function verifyCurrentFirmwareIntegrity() {
         let aggregatedSigResult = {
             ok: true,
             code: SIGNATURE_RESULT_CODES.VERIFIED,
-            message: 'All parts authenticated against pinned trust list.'
+            message: 'Firmware authenticity verified with pinned Sense360 production key.'
         };
         let aggregatedHash = { matches: true, message: '' };
 
@@ -4376,6 +4379,57 @@ function renderFirmwareWarningsBlock(firmware) {
     `;
 }
 
+// Build the "Signature metadata" row body for the firmware details panel.
+// The wizard now performs real Ed25519 verification, so this row must
+// reflect the actual verification state — not a static "we don't verify"
+// disclaimer. Drives the copy from the merged provenance report when
+// available, falling back to "metadata present, awaiting verification"
+// when the verifier has not yet run.
+function renderSignatureMetadataRowValue(firmware, { hasSignatureMetadata, signedBy }) {
+    if (!hasSignatureMetadata) {
+        return '<span class="firmware-details-panel__no">Missing from manifest entry.</span>';
+    }
+    const channel = normaliseReleaseChannel(firmware?.channel);
+    const stable = channel === 'stable';
+
+    const merged = (firmwareVerificationState
+        && firmwareVerificationState.firmwareId === (firmware.firmwareId || null)
+        && firmwareVerificationState.provenance
+        && Array.isArray(firmwareVerificationState.provenance.checks))
+        ? firmwareVerificationState.provenance
+        : null;
+    const verifiedCheck = merged
+        ? merged.checks.find(c => c && c.id === 'signature_verified')
+        : null;
+
+    let copy;
+    let toneClass;
+    if (verifiedCheck && verifiedCheck.status === 'pass') {
+        copy = userFacingAuthenticityCopy(SIGNATURE_RESULT_CODES.VERIFIED, { stable });
+        toneClass = 'firmware-details-panel__yes';
+    } else if (verifiedCheck && verifiedCheck.status === 'fail') {
+        copy = userFacingAuthenticityCopy(verifiedCheck.verificationCode, { stable });
+        toneClass = 'firmware-details-panel__no';
+    } else if (verifiedCheck && verifiedCheck.status === 'warn') {
+        copy = userFacingAuthenticityCopy(verifiedCheck.verificationCode, { stable });
+        toneClass = 'firmware-details-panel__warn';
+    } else {
+        // Pending — verification has not yet run, or this firmware is not
+        // the one currently being verified. Either way, do not claim
+        // authenticity has passed.
+        copy = userFacingAuthenticityCopy(null, { stable });
+        toneClass = 'firmware-details-panel__pending';
+    }
+
+    const signedByHint = signedBy
+        ? ` <span class="firmware-details-panel__hint">Signed by ${escapeHtml(signedBy)}.</span>`
+        : '';
+    const detailHint = copy.detail
+        ? ` <span class="firmware-details-panel__hint">${escapeHtml(copy.detail)}</span>`
+        : '';
+    return `<span class="${toneClass}">${escapeHtml(copy.message)}</span>${signedByHint}${detailHint}`;
+}
+
 function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
     if (!firmware) {
         return '';
@@ -4537,9 +4591,7 @@ function renderFirmwareDetailsPanel(firmware, { recommended } = {}) {
     ));
     integrityRows.push(factRow(
         'Signature metadata',
-        hasSignatureMetadata
-            ? `<span class="firmware-details-panel__yes">Signature metadata present</span>${signedBy ? ` <span class="firmware-details-panel__hint">Signed by ${escapeHtml(signedBy)}.</span>` : ''} <span class="firmware-details-panel__hint">Browser-side cryptographic signature checks are not performed; treat this as integrity metadata, not authenticity.</span>`
-            : '<span class="firmware-details-panel__no">Missing from manifest entry.</span>'
+        renderSignatureMetadataRowValue(firmware, { hasSignatureMetadata, signedBy })
     ));
     if (sizeLabel) {
         integrityRows.push(factRow('File size', escapeHtml(sizeLabel)));
