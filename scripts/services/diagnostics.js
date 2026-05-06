@@ -706,10 +706,76 @@ export function buildSupportBundle() {
         flash: buildFlashSection(),
         post_flash: buildPostFlashSection({
             postFlashSnapshot: providerInput.postFlashSnapshot || null
+        }),
+        missing_firmware: buildMissingFirmwareSection({
+            firmwareStatusMessage: providerInput.firmwareStatusMessage || null,
+            configStringRequested: providerInput.configStringRequested || null,
+            kitMetadata: providerInput.kitMetadata || activeKitMetadata,
+            sessionSnapshot
         })
     };
 
     return redactValue(bundle);
+}
+
+function buildMissingFirmwareSection({ firmwareStatusMessage, configStringRequested, kitMetadata, sessionSnapshot }) {
+    const isUnavailable = firmwareStatusMessage
+        && typeof firmwareStatusMessage === 'object'
+        && firmwareStatusMessage.type === 'not-available';
+
+    if (!isUnavailable) {
+        return {
+            status: 'available',
+            requested_config_string: configStringRequested || null,
+            expected_build_name: null,
+            nearby_config_strings: [],
+            mismatch_highlights: [],
+            selected_hardware: [],
+            configuration_mode: sessionSnapshot.configurationMode === 'kit' ? 'kit' : 'manual',
+            selected_kit_sku: sessionSnapshot.selectedKitSku || null,
+            kit_display_name: kitMetadata?.display_name || null
+        };
+    }
+
+    const requested = firmwareStatusMessage.configString || configStringRequested || null;
+    // expected_build_name carries the canonical Sense360-…-vX.Y.Z-channel.bin
+    // that the wizard generated for the user's selection. It contains no
+    // user-identifying data, but is named *_build_name (rather than
+    // *_filename) on purpose so the diagnostic redaction layer doesn't treat
+    // it as a filesystem path and replace it with [REDACTED_PATH].
+    const expectedBuildName = firmwareStatusMessage.expectedFilename
+        || (requested ? `Sense360-${requested}-v1.0.0-stable.bin` : null);
+    const nearbyConfigStrings = Array.isArray(firmwareStatusMessage.nearbyConfigStrings)
+        ? firmwareStatusMessage.nearbyConfigStrings.slice()
+        : [];
+    const mismatchHighlights = Array.isArray(firmwareStatusMessage.mismatchHighlights)
+        ? firmwareStatusMessage.mismatchHighlights.map(item => ({
+            key: item?.key || null,
+            label: item?.label || null
+        }))
+        : [];
+    const selectedHardware = Array.isArray(firmwareStatusMessage.selectedHardware)
+        ? firmwareStatusMessage.selectedHardware.map(item => ({
+            key: item?.key || null,
+            label: item?.label || null,
+            value: item?.value || null
+        }))
+        : [];
+    const configurationMode = firmwareStatusMessage.configurationMode === 'kit'
+        ? 'kit'
+        : (sessionSnapshot.configurationMode === 'kit' ? 'kit' : 'manual');
+
+    return {
+        status: 'unavailable',
+        requested_config_string: requested,
+        expected_build_name: expectedBuildName,
+        nearby_config_strings: nearbyConfigStrings,
+        mismatch_highlights: mismatchHighlights,
+        selected_hardware: selectedHardware,
+        configuration_mode: configurationMode,
+        selected_kit_sku: sessionSnapshot.selectedKitSku || null,
+        kit_display_name: kitMetadata?.display_name || null
+    };
 }
 
 function buildPostFlashSection({ postFlashSnapshot }) {

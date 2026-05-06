@@ -122,6 +122,7 @@ const SCRIPT_MODULES = [
     './scripts/utils/copy-to-clipboard.js',
     './scripts/utils/escape-html.js',
     './scripts/utils/file-download.js',
+    './scripts/utils/firmware-nearest.js',
     './scripts/utils/firmware-provenance.js',
     './scripts/utils/firmware-signature.js',
     './scripts/utils/firmware-trusted-keys.js',
