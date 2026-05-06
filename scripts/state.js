@@ -2804,63 +2804,60 @@ function updateSummary() {
         return;
     }
 
-    let summaryHtml = '<div class="summary-grid">';
+    const isCeilingBathroom = configuration.mounting === 'ceiling' && configuration.bathroom === true;
+    const rows = [];
 
-    // Mounting
-    summaryHtml += `
+    rows.push({
+        label: 'Mounting Type:',
+        value: configuration.mounting
+            ? (MOUNT_LABELS[configuration.mounting] || configuration.mounting)
+            : 'Not selected'
+    });
+
+    rows.push({
+        label: 'Power Option:',
+        value: configuration.power
+            ? (POWER_LABELS[configuration.power] || configuration.power.toUpperCase())
+            : 'Not selected'
+    });
+
+    // Step 4 module ordering: RoomIQ → AirIQ/VentIQ → Fan → LED.
+    // Voice is omitted because the Core has a single variant. AirIQ and
+    // VentIQ are mutually exclusive — bathroom toggle picks which one
+    // is shown, mirroring getVisibleModuleGroupKeys above.
+    const summaryModuleKeys = ['roomiq', 'airiq', 'ventiq', 'fan', 'led'];
+    summaryModuleKeys.forEach(moduleKey => {
+        const variant = configuration[moduleKey];
+        if (!variant || variant === 'none') return;
+        if (moduleKey === 'airiq' && isCeilingBathroom) return;
+        if (moduleKey === 'ventiq' && !isCeilingBathroom) return;
+
+        const moduleLabel = MODULE_LABELS[moduleKey] || moduleKey;
+        const variantLabel = MODULE_VARIANT_LABELS[moduleKey]?.[variant]
+            || (variant.charAt(0).toUpperCase() + variant.slice(1));
+        const description = getModuleVariantEntry(moduleKey, variant)?.description || '';
+
+        rows.push({
+            label: `${moduleLabel}:`,
+            value: variantLabel,
+            description
+        });
+    });
+
+    const itemsHtml = rows.map(row => {
+        const sensors = row.description
+            ? `<div class="summary-sensors">${escapeHtml(row.description)}</div>`
+            : '';
+        return `
         <div class="summary-item">
-            <div class="summary-label">Mounting Type:</div>
-            <div class="summary-value">${configuration.mounting ? configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1) : 'Not selected'}</div>
+            <div class="summary-label">${escapeHtml(row.label)}</div>
+            <div class="summary-value">${escapeHtml(row.value)}</div>
+            ${sensors}
         </div>
     `;
+    }).join('');
 
-    // Power
-    summaryHtml += `
-        <div class="summary-item">
-            <div class="summary-label">Power Option:</div>
-            <div class="summary-value">${configuration.power ? configuration.power.toUpperCase() : 'Not selected'}</div>
-        </div>
-    `;
-
-    // AirIQ
-    if (configuration.airiq !== 'none') {
-        const airiqSensors = {
-            base: ['SGP41', 'SCD41', 'MiCS4514']
-        };
-        summaryHtml += `
-            <div class="summary-item">
-                <div class="summary-label">AirIQ Module:</div>
-                <div class="summary-value">${configuration.airiq.charAt(0).toUpperCase() + configuration.airiq.slice(1)}</div>
-                <div class="summary-sensors">Includes: ${airiqSensors[configuration.airiq].join(', ')}</div>
-            </div>
-        `;
-    }
-
-    // Fan
-    if (configuration.fan !== 'none') {
-        const fanTypes = {
-            'relay': 'On / off relay for bathroom fans',
-            'pwm': '12V PWM fan driver, up to 4 fans with tach feedback',
-            'analog': '0 to 10V analog fan driver',
-            'triac': 'Phase dimmer for mains fan or lamp'
-        };
-        const fanLabels = {
-            'relay': 'Relay',
-            'pwm': 'PWM',
-            'analog': 'Analog',
-            'triac': 'TRIAC'
-        };
-        summaryHtml += `
-            <div class="summary-item">
-                <div class="summary-label">Fan / Switching:</div>
-                <div class="summary-value">${fanLabels[configuration.fan] || configuration.fan.toUpperCase()}</div>
-                <div class="summary-sensors">${fanTypes[configuration.fan] || ''}</div>
-            </div>
-        `;
-    }
-
-    summaryHtml += '</div>';
-    summaryContainer.innerHTML = summaryHtml;
+    summaryContainer.innerHTML = `<div class="summary-grid">${itemsHtml}</div>`;
 }
 
 function updateFirmwareControls() {
