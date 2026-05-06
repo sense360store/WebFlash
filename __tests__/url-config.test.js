@@ -8,7 +8,7 @@ describe('config URL parser', () => {
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.configKey).toBe('Ceiling-PWR-Fan');
+    expect(result.configKey).toBe('Ceiling-PWR-FanPWM');
     expect(result.sanitizedConfig.core).toBe('none');
     expect(result.sanitizedConfig.mount).toBe('ceiling');
     expect(result.sanitizedConfig.power).toBe('pwr');
@@ -52,7 +52,23 @@ describe('config URL parser', () => {
     expect(result.isValid).toBe(true);
     expect(result.forcedFanNone).toBe(false);
     expect(result.sanitizedConfig.fan).toBe('pwm');
-    expect(result.configKey).toBe('Ceiling-USB-Fan');
+    expect(result.configKey).toBe('Ceiling-USB-FanPWM');
+  });
+
+  test('emits variant-specific config segments for every fan SKU', () => {
+    const cases = [
+      { fan: 'relay', expected: 'Ceiling-USB-FanRelay' },
+      { fan: 'pwm', expected: 'Ceiling-USB-FanPWM' },
+      { fan: 'analog', expected: 'Ceiling-USB-FanDAC' },
+      { fan: 'triac', expected: 'Ceiling-USB-FanTRIAC' }
+    ];
+    for (const { fan, expected } of cases) {
+      const params = new URLSearchParams(`core=core&mount=ceiling&power=usb&fan=${fan}`);
+      const result = parseConfigParams(params);
+      expect(result.isValid).toBe(true);
+      expect(result.configKey).toBe(expected);
+      expect(result.sanitizedConfig.fan).toBe(fan);
+    }
   });
 
   test('coerces legacy mount=wall to ceiling for old shareable URLs', () => {
@@ -89,13 +105,16 @@ describe('config URL parser', () => {
     expect(result.sanitizedConfig.power).toBe('pwr');
   });
 
-  test('legacy fan=analog still parses but emits canonical Fan token', () => {
+  test('fan=analog emits the canonical FanDAC config segment', () => {
+    // The Sense360 Fan DAC SKU (S360-312) was historically referred to as
+    // "Analog"; the wizard value is still `analog` for share-link/preset
+    // back-compat, but the firmware token uses the current SKU name.
     const params = new URLSearchParams('core=core&mount=ceiling&power=usb&fan=analog');
     const result = parseConfigParams(params);
 
     expect(result.isValid).toBe(true);
     expect(result.errors).toHaveLength(0);
-    expect(result.configKey).toBe('Ceiling-USB-Fan');
+    expect(result.configKey).toBe('Ceiling-USB-FanDAC');
     expect(result.sanitizedConfig.fan).toBe('analog');
   });
 

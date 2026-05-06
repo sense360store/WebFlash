@@ -140,7 +140,7 @@
                 { "sku": "S360-311", "label": "Sense360 Fan PWM" }
             ],
             "headers_required": ["12vFan_PWM_PulseCounter"],
-            "firmware_config_string": "Ceiling-USB-Fan",
+            "firmware_config_string": "Ceiling-USB-FanPWM",
             "firmware_channel": "stable",
             "notes": [],
             "known_limitations": []
