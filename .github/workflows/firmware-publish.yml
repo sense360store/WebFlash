@@ -79,13 +79,41 @@ jobs:
           set -euo pipefail
           node scripts/validate-naming-policy.js firmware/configurations
 
-      - name: Generate firmware manifests
+      - name: Install firmware-signing dependencies
+        # Ed25519 firmware signing requires the `cryptography` package.
+        # Failing to install here would cause gen-manifests.py to refuse
+        # to sign, which in turn would fail the production-mode validation
+        # gate (manifests without signature_ed25519 are rejected).
         run: |
           set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install cryptography
+
+      - name: Generate firmware manifests
+        env:
+          # Production runs override the committed dev key with the real
+          # signing key from CI secrets. The dev key shipped in the repo
+          # is marked 'test_only' in the trust list — gen-manifests.py
+          # refuses to use it in --mode production. PR builds (no
+          # secret available) therefore drop to --mode development so
+          # they can still produce a manifest for end-to-end testing,
+          # but those manifests are NOT accepted by the deployed wizard.
+          WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
+          WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${WEBFLASH_FIRMWARE_PRIVATE_KEY_B64:-}" ]; then
+            echo "Production signing key provided; running gen-manifests in --mode production."
+            SIGN_MODE="production"
+          else
+            echo "::warning::No production signing key in CI secrets; falling back to --mode development with the committed test_only dev key. The resulting manifest will NOT be accepted by the deployed wizard."
+            SIGN_MODE="development"
+          fi
           python scripts/gen-manifests.py \
             --firmware-dir firmware \
             --manifest-path manifest.json \
             --manifest-prefix firmware- \
+            --mode "${SIGN_MODE}" \
             --summary
 
       - name: Report manifest metadata findings
@@ -94,12 +122,21 @@ jobs:
         # findings are visible in CI logs without blocking firmware deployment.
         # Tighten to --strict-validate once existing stable builds gain release notes.
         continue-on-error: true
+        env:
+          WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
+          WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
         run: |
           set -euo pipefail
+          if [ -n "${WEBFLASH_FIRMWARE_PRIVATE_KEY_B64:-}" ]; then
+            SIGN_MODE="production"
+          else
+            SIGN_MODE="development"
+          fi
           python scripts/gen-manifests.py \
             --firmware-dir firmware \
             --manifest-path manifest.json \
             --manifest-prefix firmware- \
+            --mode "${SIGN_MODE}" \
             --dry-run
 
       - name: Validate release-note channel policy
@@ -115,8 +152,16 @@ jobs:
           echo "✅ Release-note policy validated (stable-only in firmware/configurations)."
 
       - name: List firmware & dry-run summary
+        env:
+          WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
+          WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
         run: |
           set -euo pipefail
+          if [ -n "${WEBFLASH_FIRMWARE_PRIVATE_KEY_B64:-}" ]; then
+            SIGN_MODE="production"
+          else
+            SIGN_MODE="development"
+          fi
           echo "== .bin files =="
           find firmware -type f -name '*.bin' -printf '%p\n' | sort
           echo "== gen-manifests dry-run summary =="
@@ -124,6 +169,7 @@ jobs:
             --firmware-dir firmware \
             --manifest-path manifest.json \
             --manifest-prefix firmware- \
+            --mode "${SIGN_MODE}" \
             --summary --dry-run
 
       - name: Assert required configs present

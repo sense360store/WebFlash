@@ -1,0 +1,23 @@
+{
+  "_comment": "Canonical Ed25519 trust list shared by scripts/gen-manifests.py and the WebFlash wizard. Mirror of scripts/utils/firmware-trusted-keys.js — keep them aligned (enforced by __tests__/firmware-trusted-keys.test.js). See firmware-signing/README.md for rotation procedure and the meaning of each status value.",
+  "schema_version": 1,
+  "algorithm": "ed25519",
+  "context_label": "sense360-firmware-v1",
+  "status_values": {
+    "active": "Currently signs production firmware. Acceptable in any mode.",
+    "superseded": "Was active; legacy artifacts still verify in diagnostics. NOT acceptable for new installs without explicit opt-in.",
+    "test_only": "Fixture/CI key whose private half is intentionally exposed (e.g. committed to a public repo). The wizard refuses signatures from these keys in production mode — anyone with read access could forge them. Acceptable only in development/test mode.",
+    "revoked": "Must NOT verify any new install.",
+    "placeholder": "Slot reserved for a not-yet-issued key. Never accepted as a verifier."
+  },
+  "keys": [
+    {
+      "kid": "dev-2026-01",
+      "algo": "ed25519",
+      "public_key_b64": "UAg82k9y+Ob+204H+3mmL6/lzdjJnT6+BACL/cmP5OM=",
+      "status": "test_only",
+      "issued_at": "2026-05-05",
+      "comment": "Development/CI fixture key. Private half is committed to the public repo under firmware-signing/keys/dev-2026-01-private.* so this key MUST NEVER be promoted to 'active' — anyone with read access could sign forged firmware. Production deployments MUST publish manifests signed by a separate 'active' key whose private half lives only in CI secrets. The placeholder fixtures shipped in this repo are signed by this key purely so end-to-end tests exercise the real verification path; they are NOT installable from the deployed wizard."
+    }
+  ]
+}

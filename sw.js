@@ -50,7 +50,7 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v4';
+const CACHE_NAME = 'webflash-v5';
 const CACHE_VERSION = 4;
 
 /**
@@ -123,6 +123,8 @@ const SCRIPT_MODULES = [
     './scripts/utils/escape-html.js',
     './scripts/utils/file-download.js',
     './scripts/utils/firmware-provenance.js',
+    './scripts/utils/firmware-signature.js',
+    './scripts/utils/firmware-trusted-keys.js',
     './scripts/utils/flash-history.js',
     './scripts/utils/kit-config.js',
     './scripts/utils/preset-storage.js',

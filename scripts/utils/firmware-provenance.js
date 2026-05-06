@@ -1,3 +1,5 @@
+import { findTrustedKey, isTestOnlyKey } from './firmware-trusted-keys.js';
+
 /**
  * @fileoverview Firmware provenance and manifest validation.
  *
@@ -84,6 +86,8 @@ export const CHECK_IDS = Object.freeze({
     SHA256_METADATA_PRESENT: 'sha256_metadata_present',
     SIGNATURE_METADATA_PRESENT: 'signature_metadata_present',
     SIGNATURE_VERIFIED: 'signature_verified',
+    SIGNATURE_ED25519_METADATA_PRESENT: 'signature_ed25519_metadata_present',
+    SIGNATURE_KEY_PINNED: 'signature_key_pinned',
     SOURCE_COMMIT_PRESENT: 'source_commit_present',
     SOURCE_URL_IMMUTABLE: 'source_url_immutable',
     FIRMWARE_PATH_PRESENT: 'firmware_path_present',
@@ -93,6 +97,36 @@ export const CHECK_IDS = Object.freeze({
     CHANGELOG_PRESENT: 'changelog_present',
     LIFECYCLE_STATUS: 'lifecycle_status',
     CHANNEL_ALLOWED_FOR_MODE: 'channel_allowed_for_mode'
+});
+
+// Trust tiers shown in the UI. Each tier rolls up several `CHECK_IDS`
+// and is the simplified mental model the user sees:
+//
+//   metadata     — the manifest entry carries the fields we need to even
+//                  reason about provenance (sha256, signature_ed25519,
+//                  source_commit, file_size, etc.).
+//   integrity    — the downloaded firmware bytes match the SHA-256 the
+//                  manifest claims.
+//   authenticity — the downloaded firmware bytes verify against an
+//                  Ed25519 signature whose public key is pinned in
+//                  `firmware-trusted-keys.js`.
+//
+// Lower tiers must pass before higher tiers can pass. The static gate
+// here cannot satisfy `integrity` or `authenticity` on its own — those
+// require the actual binary download — so this module reports them as
+// `'pending'` and `state.js` upgrades them after the network round-trip.
+export const TRUST_TIERS = Object.freeze({
+    METADATA: 'metadata',
+    INTEGRITY: 'integrity',
+    AUTHENTICITY: 'authenticity'
+});
+
+export const TIER_STATUSES = Object.freeze({
+    PASS: 'pass',
+    PENDING: 'pending',
+    WARN: 'warn',
+    FAIL: 'fail',
+    UNAVAILABLE: 'unavailable'
 });
 
 // Artifact-type taxonomy for size validation. The default is `application`,
@@ -633,17 +667,96 @@ export function validateFirmwareProvenance(build, options = {}) {
         ));
     }
 
-    // 5. Cryptographic signature verification (NOT IMPLEMENTED) -------------
-    // We always emit this check so consumers see explicitly that browser-side
-    // signature verification is out of scope. status='skip' so a 'pass' on
-    // signature_metadata_present cannot be misread as authenticity.
-    checks.push(makeCheck(
-        CHECK_IDS.SIGNATURE_VERIFIED,
-        'Cryptographic signature verification',
-        'skip',
-        'info',
-        'Browser-side signature verification is not yet implemented. Signature metadata presence does not by itself prove cryptographic authenticity.'
-    ));
+    // 5. Cryptographic signature verification --------------------------------
+    // Two-stage check.
+    //
+    //   a) Static metadata gate (this module): does the manifest entry carry
+    //      the `signature_ed25519` and `signature_key_id` fields that the
+    //      runtime verifier needs? If not, fail closed for stable builds in
+    //      production mode — the runtime gate cannot recover.
+    //   b) Runtime verification (state.js + firmware-signature.js): after
+    //      the binary is downloaded, run Ed25519 verification against the
+    //      pinned trust list. The result of that check is reported as a
+    //      separate `signature_verified` check ID and is initially 'pending'.
+    const ed25519Sig = typeof build?.signature_ed25519 === 'string'
+        ? build.signature_ed25519.trim()
+        : '';
+    const ed25519KeyId = typeof build?.signature_key_id === 'string'
+        ? build.signature_key_id.trim()
+        : '';
+    const signatureMetaSeverity = (mode === 'production' && (stable || channel === 'rescue'))
+        ? 'block'
+        : (localOnly ? 'warn' : 'block');
+    if (ed25519Sig && ed25519KeyId) {
+        // Static gate also refuses signatures from a test/fixture key
+        // when the wizard is running in production mode AND this is a
+        // production-channel build. The runtime verifier would also catch
+        // this, but failing closed at the static gate stops the network
+        // download from even starting.
+        const trustedEntry = findTrustedKey(ed25519KeyId);
+        const isTestKey = isTestOnlyKey(trustedEntry);
+        if (isTestKey && mode === 'production' && (stable || channel === 'rescue')) {
+            checks.push(makeCheck(
+                CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+                'Ed25519 signature metadata',
+                'fail',
+                'block',
+                `Manifest entry is signed by key '${ed25519KeyId}', which is marked 'test_only' in the pinned trust list (its private half is exposed for fixture signing). Production ${stable ? 'stable' : 'rescue'} firmware MUST be signed by an 'active' production key.`
+            ));
+        } else {
+            checks.push(makeCheck(
+                CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+                'Ed25519 signature metadata',
+                'pass',
+                signatureMetaSeverity,
+                `Manifest entry carries an Ed25519 signature attributed to key '${ed25519KeyId}'${trustedEntry ? ` (status: ${trustedEntry.status})` : ' (key id not on trust list yet)'}.`
+            ));
+        }
+    } else if (ed25519Sig && !ed25519KeyId) {
+        checks.push(makeCheck(
+            CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+            'Ed25519 signature metadata',
+            'fail',
+            signatureMetaSeverity,
+            'Ed25519 signature is present but signature_key_id is missing; cannot resolve which trusted key to verify against.'
+        ));
+    } else {
+        // For non-stable, non-rescue builds in dev/test mode, surface as a
+        // warning rather than block; this lets local builds keep installing
+        // unsigned firmware without the install button locking up.
+        const status = 'fail';
+        const severity = signatureMetaSeverity;
+        checks.push(makeCheck(
+            CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+            'Ed25519 signature metadata',
+            status,
+            severity,
+            'Manifest entry has no signature_ed25519 (real cryptographic signature). The wizard cannot prove this firmware was authorised by Sense360.'
+        ));
+    }
+
+    // The actual `crypto.subtle.verify` call cannot run synchronously here —
+    // it needs the binary bytes. We surface the result as a separate check
+    // id so the UI can show "authenticity verification pending…" before the
+    // download finishes; state.js calls `applySignatureVerificationResult`
+    // (below) to upgrade this entry once `verifyFirmwareSignature` returns.
+    if (ed25519Sig) {
+        checks.push(makeCheck(
+            CHECK_IDS.SIGNATURE_VERIFIED,
+            'Cryptographic signature verification',
+            'pending',
+            signatureMetaSeverity,
+            'Awaiting Ed25519 verification against the pinned trust list. The downloaded firmware bytes must verify before install is allowed.'
+        ));
+    } else {
+        checks.push(makeCheck(
+            CHECK_IDS.SIGNATURE_VERIFIED,
+            'Cryptographic signature verification',
+            'fail',
+            signatureMetaSeverity,
+            'No Ed25519 signature available; cryptographic authenticity cannot be established.'
+        ));
+    }
 
     // 6. File size sanity ---------------------------------------------------
     const sizeReport = classifySize(build?.file_size, { minPlausibleSize, placeholderSize });
@@ -792,6 +905,12 @@ export function validateFirmwareProvenance(build, options = {}) {
     // ---------------------------------------------------------------------
     // Aggregate
     // ---------------------------------------------------------------------
+    // Note: `'pending'` is intentionally NOT a static-gate blocker. The
+    // signature_verified check enters its 'pending' state when metadata is
+    // present but the runtime verification has not yet executed; the
+    // install gate in state.js refuses to flash while authenticity is
+    // pending, but the static report itself stays `ok` so the UI can
+    // distinguish "metadata bad" from "metadata good, awaiting signature".
     const failures = checks
         .filter(check => check.status === 'fail' && check.severity === 'block')
         .map(check => ({ id: check.id, label: check.label, detail: check.detail }));
@@ -802,6 +921,8 @@ export function validateFirmwareProvenance(build, options = {}) {
         .map(check => check.detail);
 
     const blockingReasons = failures.map(f => f.detail);
+
+    const pendingChecks = checks.filter(check => check.status === 'pending');
 
     // ----- legacy back-compat fields ---------------------------------------
     const missingRequired = [];
@@ -859,10 +980,14 @@ export function validateFirmwareProvenance(build, options = {}) {
             : 'Provenance metadata verified.';
     }
 
+    const tiers = computeTrustTiersFromChecks(checks, { stable });
+
     return {
         ok: !blocking,
         status,
         blocking,
+        pending: pendingChecks.length > 0,
+        tiers,
         checks,
         failures,
         warnings: warningCheckDetails,
@@ -883,6 +1008,246 @@ export function validateFirmwareProvenance(build, options = {}) {
         sourceUrlMutable: isMutableSourceUrl(sourceUrl),
         localOnly
     };
+}
+
+// ---------------------------------------------------------------------------
+// Three-tier trust rollup
+// ---------------------------------------------------------------------------
+
+const METADATA_TIER_CHECK_IDS = Object.freeze([
+    CHECK_IDS.SHA256_METADATA_PRESENT,
+    CHECK_IDS.SIGNATURE_METADATA_PRESENT,
+    CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
+    CHECK_IDS.SOURCE_COMMIT_PRESENT,
+    CHECK_IDS.FILE_SIZE_PRESENT,
+    CHECK_IDS.FIRMWARE_PATH_PRESENT,
+    CHECK_IDS.ARTIFACT_IDENTITY_PRESENT
+]);
+
+/**
+ * Reduce the per-check report into the three tiers the UI surfaces:
+ * `metadata`, `integrity`, `authenticity`. Each tier resolves to one of
+ * the `TIER_STATUSES` values:
+ *
+ *   pass         — every input check passed.
+ *   pending      — at least one input check is in 'pending' (typically
+ *                  because runtime verification has not run yet).
+ *   warn         — input check failed with non-blocking severity.
+ *   fail         — input check failed with severity 'block'.
+ *   unavailable  — runtime cannot perform the check (e.g. browser does
+ *                  not implement Ed25519 in WebCrypto).
+ *
+ * The static gate cannot satisfy `integrity` or `authenticity` on its own
+ * — those depend on the actual download. They start as `'pending'` and
+ * `state.js` upgrades them via `applySignatureVerificationResult` /
+ * `applyHashVerificationResult` once results are in.
+ */
+export function computeTrustTiersFromChecks(checks, { stable = false } = {}) {
+    const byId = new Map();
+    for (const check of (Array.isArray(checks) ? checks : [])) {
+        if (check && typeof check.id === 'string') {
+            byId.set(check.id, check);
+        }
+    }
+
+    const reduceTier = (ids) => {
+        let worst = TIER_STATUSES.PASS;
+        let detail = '';
+        const rank = (status) => {
+            switch (status) {
+                case TIER_STATUSES.FAIL: return 4;
+                case TIER_STATUSES.UNAVAILABLE: return 3;
+                case TIER_STATUSES.PENDING: return 2;
+                case TIER_STATUSES.WARN: return 1;
+                default: return 0;
+            }
+        };
+        for (const id of ids) {
+            const check = byId.get(id);
+            if (!check) {
+                continue;
+            }
+            let mapped = TIER_STATUSES.PASS;
+            if (check.status === 'pending') {
+                mapped = TIER_STATUSES.PENDING;
+            } else if (check.status === 'fail') {
+                mapped = check.severity === 'block' ? TIER_STATUSES.FAIL : TIER_STATUSES.WARN;
+            } else if (check.status === 'warn') {
+                mapped = TIER_STATUSES.WARN;
+            } else if (check.status === 'pass' || check.status === 'skip') {
+                mapped = TIER_STATUSES.PASS;
+            }
+            if (rank(mapped) > rank(worst)) {
+                worst = mapped;
+                detail = check.detail || '';
+            }
+        }
+        return { status: worst, detail };
+    };
+
+    const metadata = reduceTier(METADATA_TIER_CHECK_IDS);
+
+    // Integrity (SHA-256 byte-level) is a runtime-only check — until
+    // state.js calls `applyHashVerificationResult`, the static report
+    // exposes integrity as 'pending' so the UI shows the right copy.
+    const integrity = {
+        status: metadata.status === TIER_STATUSES.FAIL
+            ? TIER_STATUSES.FAIL
+            : TIER_STATUSES.PENDING,
+        detail: metadata.status === TIER_STATUSES.FAIL
+            ? 'Integrity check is blocked because metadata is incomplete.'
+            : 'SHA-256 integrity check runs after the firmware download finishes.'
+    };
+
+    const authCheck = byId.get(CHECK_IDS.SIGNATURE_VERIFIED);
+    let authenticityStatus = TIER_STATUSES.PENDING;
+    let authenticityDetail = 'Awaiting Ed25519 verification against the pinned trust list.';
+    if (metadata.status === TIER_STATUSES.FAIL) {
+        authenticityStatus = TIER_STATUSES.FAIL;
+        authenticityDetail = 'Authenticity cannot be established because manifest metadata is incomplete.';
+    } else if (authCheck) {
+        if (authCheck.status === 'fail') {
+            authenticityStatus = TIER_STATUSES.FAIL;
+            authenticityDetail = authCheck.detail;
+        } else if (authCheck.status === 'pass') {
+            authenticityStatus = TIER_STATUSES.PASS;
+            authenticityDetail = authCheck.detail;
+        } else if (authCheck.status === 'warn') {
+            authenticityStatus = TIER_STATUSES.WARN;
+            authenticityDetail = authCheck.detail;
+        } else if (authCheck.status === 'skip') {
+            authenticityStatus = stable ? TIER_STATUSES.FAIL : TIER_STATUSES.WARN;
+            authenticityDetail = authCheck.detail;
+        }
+    }
+
+    return {
+        [TRUST_TIERS.METADATA]: metadata.status,
+        [TRUST_TIERS.INTEGRITY]: integrity.status,
+        [TRUST_TIERS.AUTHENTICITY]: authenticityStatus,
+        details: {
+            [TRUST_TIERS.METADATA]: metadata.detail,
+            [TRUST_TIERS.INTEGRITY]: integrity.detail,
+            [TRUST_TIERS.AUTHENTICITY]: authenticityDetail
+        }
+    };
+}
+
+/**
+ * Merge the result of a runtime Ed25519 verification (from
+ * `verifyFirmwareSignature`) into a previously-computed provenance report.
+ * Returns a NEW report object — does not mutate the input. State.js calls
+ * this once the binary download + signature verify call resolves so the
+ * authenticity tier flips from 'pending' to 'pass' or 'fail'.
+ *
+ * @param {object} report A report previously returned by
+ *     `validateFirmwareProvenance`.
+ * @param {object} sigResult A result from
+ *     `firmware-signature.js#verifyFirmwareSignature`. Must include `code`
+ *     and either `ok: true` or a failure message.
+ */
+export function applySignatureVerificationResult(report, sigResult) {
+    if (!report || !sigResult) {
+        return report;
+    }
+    const checks = Array.isArray(report.checks) ? report.checks.slice() : [];
+    const idx = checks.findIndex(c => c && c.id === CHECK_IDS.SIGNATURE_VERIFIED);
+    if (idx < 0) {
+        return report;
+    }
+    const previous = checks[idx];
+
+    let nextStatus = previous.status;
+    let nextSeverity = previous.severity;
+    let detail = sigResult.message || previous.detail;
+
+    if (sigResult.ok || sigResult.code === 'verified') {
+        nextStatus = 'pass';
+        // Once verification has actually run and passed, severity stays
+        // 'block' — i.e. its weight in the gate logic is unchanged, but
+        // the status flips from pending to pass.
+    } else if (sigResult.code === 'unsupported_runtime') {
+        // Browser does not support Ed25519. For stable channels this is
+        // still blocking (we cannot prove authenticity); the UI surfaces
+        // a "browser unsupported" message via the authenticity tier.
+        nextStatus = report.stable ? 'fail' : 'warn';
+        nextSeverity = report.stable ? 'block' : 'warn';
+    } else {
+        // Any other failure mode: signature_invalid, key_revoked, malformed,
+        // missing, unknown_key — all block install.
+        nextStatus = 'fail';
+        nextSeverity = 'block';
+    }
+
+    const updatedCheck = {
+        ...previous,
+        status: nextStatus,
+        severity: nextSeverity,
+        detail,
+        verificationCode: sigResult.code,
+        keyId: sigResult.keyId || previous.keyId,
+        keyStatus: sigResult.keyStatus || previous.keyStatus
+    };
+    checks[idx] = updatedCheck;
+
+    const failures = checks
+        .filter(check => check.status === 'fail' && check.severity === 'block')
+        .map(check => ({ id: check.id, label: check.label, detail: check.detail }));
+    const warningCheckDetails = checks
+        .filter(check => (check.status === 'fail' && check.severity === 'warn')
+            || check.status === 'warn')
+        .map(check => check.detail);
+    const pending = checks.some(check => check.status === 'pending');
+    const blocking = failures.length > 0;
+    const status = blocking
+        ? 'fail'
+        : (warningCheckDetails.length > 0 ? 'warn' : 'pass');
+
+    let summary = report.summary;
+    if (status === 'fail') {
+        summary = failures[0]?.detail || summary;
+    } else if (status === 'pass' && updatedCheck.status === 'pass') {
+        summary = 'Provenance metadata verified and Ed25519 signature authenticated.';
+    }
+
+    return {
+        ...report,
+        ok: !blocking,
+        status,
+        blocking,
+        pending,
+        checks,
+        failures,
+        warnings: warningCheckDetails,
+        blockingReasons: failures.map(f => f.detail),
+        summary,
+        tiers: computeTrustTiersFromChecks(checks, { stable: report.stable })
+    };
+}
+
+/**
+ * Same shape as `applySignatureVerificationResult`, but for the SHA-256
+ * integrity check that state.js performs on the downloaded bytes. Lets the
+ * UI flip the integrity tier to 'pass' once the hash matches.
+ */
+export function applyHashVerificationResult(report, { matches, message } = {}) {
+    if (!report) {
+        return report;
+    }
+    const tiers = report.tiers ? { ...report.tiers, details: { ...(report.tiers.details || {}) } } : null;
+    if (!tiers) {
+        return report;
+    }
+    if (matches) {
+        tiers[TRUST_TIERS.INTEGRITY] = TIER_STATUSES.PASS;
+        tiers.details[TRUST_TIERS.INTEGRITY] = message
+            || 'Downloaded firmware bytes match the SHA-256 declared in the manifest.';
+    } else {
+        tiers[TRUST_TIERS.INTEGRITY] = TIER_STATUSES.FAIL;
+        tiers.details[TRUST_TIERS.INTEGRITY] = message
+            || 'Downloaded firmware bytes do NOT match the SHA-256 in the manifest.';
+    }
+    return { ...report, tiers };
 }
 
 /**
@@ -908,6 +1273,7 @@ export function describeVerificationChecks(build, options = {}) {
     const legacyKeyByCheckId = {
         [CHECK_IDS.SHA256_METADATA_PRESENT]: 'sha256',
         [CHECK_IDS.SIGNATURE_METADATA_PRESENT]: 'signature',
+        [CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT]: 'signature_ed25519',
         [CHECK_IDS.SOURCE_COMMIT_PRESENT]: 'source_commit',
         [CHECK_IDS.FILE_SIZE_PRESENT]: 'file_size',
         [CHECK_IDS.FILE_SIZE_PLAUSIBLE]: 'file_size_plausible',
@@ -924,6 +1290,7 @@ export function describeVerificationChecks(build, options = {}) {
         id: check.id,
         label: check.label,
         ok: check.status === 'pass' || check.status === 'skip',
+        pending: check.status === 'pending',
         status: check.status,
         severity: check.severity,
         detail: check.detail

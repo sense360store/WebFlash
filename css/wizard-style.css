@@ -4439,6 +4439,119 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     font-size: 12px;
 }
 
+/* Three-tier trust panel. Lives between the badge and the per-check list and
+ * gives users the simplified "what does each tier prove?" verdict before the
+ * detailed enumeration. Each tier is one of:
+ *   metadata     — fields needed to even reason about provenance.
+ *   integrity    — downloaded bytes match the SHA-256 in the manifest.
+ *   authenticity — bytes verify against an Ed25519 signature whose public
+ *                  key is pinned in the WebFlash trust list (the only check
+ *                  that defends against a manifest-tampering attacker).
+ */
+.firmware-provenance__tiers {
+    list-style: none;
+    margin: 0 0 12px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+@media (min-width: 720px) {
+    .firmware-provenance__tiers {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.firmware-provenance__tier {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+}
+
+.firmware-provenance__tier.status-pass {
+    border-color: color-mix(in srgb, var(--brand-green-contrast) 45%, var(--color-border));
+    background: color-mix(in srgb, var(--brand-green-contrast) 6%, var(--color-surface));
+}
+
+.firmware-provenance__tier.status-pending {
+    border-color: color-mix(in srgb, #d97706 35%, var(--color-border));
+    background: color-mix(in srgb, #d97706 6%, var(--color-surface));
+}
+
+.firmware-provenance__tier.status-warn {
+    border-color: color-mix(in srgb, #d97706 45%, var(--color-border));
+    background: color-mix(in srgb, #d97706 8%, var(--color-surface));
+}
+
+.firmware-provenance__tier.status-fail {
+    border-color: color-mix(in srgb, #dc2626 45%, var(--color-border));
+    background: color-mix(in srgb, #dc2626 8%, var(--color-surface));
+}
+
+.firmware-provenance__tier.status-unavailable {
+    border-color: color-mix(in srgb, #6b7280 35%, var(--color-border));
+    background: color-mix(in srgb, #6b7280 6%, var(--color-surface));
+}
+
+.firmware-provenance__tier-icon {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--brand-green-contrast);
+}
+
+.firmware-provenance__tier.status-fail .firmware-provenance__tier-icon { background: #dc2626; }
+.firmware-provenance__tier.status-warn .firmware-provenance__tier-icon { background: #d97706; }
+.firmware-provenance__tier.status-pending .firmware-provenance__tier-icon { background: #d97706; }
+.firmware-provenance__tier.status-unavailable .firmware-provenance__tier-icon { background: #6b7280; }
+
+.firmware-provenance__tier-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.firmware-provenance__tier-label {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 13px;
+}
+
+.firmware-provenance__tier-status {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+}
+
+.firmware-provenance__tier.status-pass .firmware-provenance__tier-status {
+    color: var(--brand-green-contrast);
+}
+
+.firmware-provenance__tier.status-fail .firmware-provenance__tier-status {
+    color: #dc2626;
+}
+
+.firmware-provenance__tier-detail {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
 /* Step 1 — Configuration mode picker (Kit / Manual). */
 .config-mode-picker {
     border: 1px solid var(--color-border);

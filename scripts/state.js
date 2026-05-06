@@ -7,8 +7,18 @@ import { copyTextToClipboard } from './utils/copy-to-clipboard.js';
 import {
     validateFirmwareProvenance,
     describeVerificationChecks,
-    pickDefaultEligibleBuilds
+    pickDefaultEligibleBuilds,
+    applySignatureVerificationResult,
+    applyHashVerificationResult,
+    TRUST_TIERS,
+    TIER_STATUSES
 } from './utils/firmware-provenance.js';
+import {
+    verifyFirmwareSignature,
+    extractSignatureFromBuild,
+    SIGNATURE_RESULT_CODES,
+    isWebCryptoEd25519Available
+} from './utils/firmware-signature.js';
 import {
     getChannelPolicy,
     getFirmwareBadges,
@@ -3586,7 +3596,7 @@ async function computeSignatureBase64(buffer) {
     return arrayBufferToBase64(digest);
 }
 
-async function verifyFirmwarePart(part) {
+async function verifyFirmwarePart(part, { signatureB64 = '', keyId = '', mode = 'production' } = {}) {
     const result = {
         resolvedUrl: part.resolvedUrl,
         fileName: part.fileName,
@@ -3597,7 +3607,17 @@ async function verifyFirmwarePart(part) {
         expectedSha256: (part.sha256 || '').toLowerCase(),
         expectedSignature: (part.signature || '').trim(),
         computedSha256: '',
-        computedSignature: ''
+        computedSignature: '',
+        // Real Ed25519 (RFC 8032) verification result. The legacy salted-
+        // SHA256 fields above remain for back-compat diagnostics; the
+        // authenticity verdict that the install gate consumes lives here.
+        ed25519: {
+            attempted: false,
+            ok: false,
+            code: SIGNATURE_RESULT_CODES.MISSING_SIGNATURE,
+            message: 'Ed25519 signature verification not yet attempted.',
+            keyId: keyId || ''
+        }
     };
 
     const targetName = part.fileName || 'firmware part';
@@ -3627,17 +3647,43 @@ async function verifyFirmwarePart(part) {
         result.computedSignature = computedSignature;
         result.signatureMatch = computedSignature === result.expectedSignature;
 
-        if (result.sha256Match && result.signatureMatch) {
-            // The "signature" field in the manifest is a salted SHA-256
-            // hash with a public salt, NOT a public-key signature. We
-            // recompute it after download as a redundant integrity check;
-            // a passing match does not prove cryptographic authenticity.
+        // Run real cryptographic authenticity verification. This is the
+        // only check that proves bytes were authorised by the holder of
+        // a pinned private key — the SHA-256 / salted-hash checks above
+        // only prove the bytes match the manifest, which a manifest-only
+        // attacker can satisfy by editing both files together.
+        if (signatureB64) {
+            result.ed25519.attempted = true;
+            const sigResult = await verifyFirmwareSignature(buffer, signatureB64, { keyId, mode });
+            result.ed25519.ok = sigResult.ok === true;
+            result.ed25519.code = sigResult.code;
+            result.ed25519.message = sigResult.message;
+            result.ed25519.keyId = sigResult.keyId || keyId || '';
+            result.ed25519.keyStatus = sigResult.keyStatus;
+        } else {
+            result.ed25519.code = SIGNATURE_RESULT_CODES.MISSING_SIGNATURE;
+            result.ed25519.message = 'Manifest entry has no signature_ed25519 field.';
+        }
+
+        // Authenticity verdict drives the overall part status. SHA-256 must
+        // also pass — if the bytes don't match the manifest's hash, the
+        // signature is moot (bytes might be tampered but happen to verify
+        // against an unrelated signature).
+        if (result.sha256Match && result.ed25519.ok) {
             result.status = 'verified';
-            result.message = 'SHA-256 integrity check passed (signature metadata format check passed).';
+            result.message = `Integrity (SHA-256) and authenticity (Ed25519, key '${result.ed25519.keyId}') verified.`;
         } else if (!result.sha256Match) {
-            result.message = `SHA-256 mismatch for ${targetName}.`;
-        } else if (!result.signatureMatch) {
-            result.message = `Signature metadata mismatch for ${targetName}.`;
+            result.status = 'failed';
+            result.message = `SHA-256 mismatch for ${targetName}; refusing to install.`;
+        } else if (!result.ed25519.ok && signatureB64) {
+            result.status = 'failed';
+            result.message = `Authenticity check failed for ${targetName}: ${result.ed25519.message}`;
+        } else if (!signatureB64) {
+            // SHA-256 matched but no Ed25519 signature was supplied. The
+            // static gate already blocked this for stable channels; this
+            // branch only fires for non-stable builds in dev mode.
+            result.status = 'failed';
+            result.message = `${targetName} has no Ed25519 signature; cannot prove authenticity.`;
         } else {
             result.message = `Integrity check failed for ${targetName}.`;
         }
@@ -3762,7 +3808,19 @@ async function verifyCurrentFirmwareIntegrity() {
     refreshPreflightDiagnostics();
 
     try {
-        const results = await Promise.all(parts.map(part => verifyFirmwarePart(part)));
+        const sigInfo = extractSignatureFromBuild(firmware) || {};
+        // The deployed wizard ALWAYS verifies in production mode — that
+        // means signatures from test_only / dev keys are refused at the
+        // install gate even when the named key id is on the trust list.
+        // The mode is hard-coded here rather than read from a URL param
+        // or runtime flag because relaxing it would let any reader of
+        // the public repo install forged firmware on end-user devices.
+        const installTrustMode = 'production';
+        const results = await Promise.all(parts.map(part => verifyFirmwarePart(part, {
+            signatureB64: sigInfo.signatureB64 || '',
+            keyId: sigInfo.keyId || '',
+            mode: installTrustMode
+        })));
         if (token !== firmwareVerificationToken) {
             return;
         }
@@ -3770,6 +3828,15 @@ async function verifyCurrentFirmwareIntegrity() {
         const resultMap = new Map();
         let overallStatus = 'verified';
         let overallMessage = 'Firmware verified successfully.';
+        // Authenticity rolls up across all parts: a single failed
+        // signature blocks the whole install. We carry the worst result so
+        // the merged provenance report shows it on the authenticity tier.
+        let aggregatedSigResult = {
+            ok: true,
+            code: SIGNATURE_RESULT_CODES.VERIFIED,
+            message: 'All parts authenticated against pinned trust list.'
+        };
+        let aggregatedHash = { matches: true, message: '' };
 
         results.forEach(result => {
             const status = normaliseVerificationStatus(result.status);
@@ -3777,21 +3844,54 @@ async function verifyCurrentFirmwareIntegrity() {
                 status,
                 message: result.message || '',
                 sha256Match: result.sha256Match,
-                signatureMatch: result.signatureMatch
+                signatureMatch: result.signatureMatch,
+                ed25519: result.ed25519 || null
             });
 
             if (status !== 'verified' && overallStatus === 'verified') {
                 overallStatus = 'failed';
                 overallMessage = result.message || 'Firmware verification failed.';
             }
+
+            // Track the worst hash + signature result for the tiered UI.
+            if (!result.sha256Match && aggregatedHash.matches) {
+                aggregatedHash = {
+                    matches: false,
+                    message: result.message || `SHA-256 mismatch for ${result.fileName || 'firmware part'}.`
+                };
+            }
+            const sig = result.ed25519 || {};
+            if (aggregatedSigResult.ok && (!sig.ok || !sig.attempted)) {
+                aggregatedSigResult = {
+                    ok: false,
+                    code: sig.code || SIGNATURE_RESULT_CODES.MISSING_SIGNATURE,
+                    message: sig.message
+                        || (sig.attempted
+                            ? `Signature verification failed for ${result.fileName || 'firmware part'}.`
+                            : 'No Ed25519 signature was supplied for this firmware part.'),
+                    keyId: sig.keyId,
+                    keyStatus: sig.keyStatus
+                };
+            }
         });
+
+        // Merge the runtime results back into the provenance report so the
+        // metadata / integrity / authenticity tiers all reflect what
+        // actually happened rather than the static-only snapshot.
+        let mergedProvenance = applySignatureVerificationResult(provenanceReport, aggregatedSigResult);
+        mergedProvenance = applyHashVerificationResult(mergedProvenance, aggregatedHash);
+        window.latestFirmwareProvenance = mergedProvenance;
 
         firmwareVerificationState = {
             status: overallStatus,
             message: overallMessage,
             parts: resultMap,
             firmwareId: firmware.firmwareId || null,
-            provenance: provenanceReport
+            provenance: mergedProvenance,
+            // Top-level field that's easy to read for diagnostics: the
+            // authenticity tier is what the install gate ultimately keys
+            // off of.
+            authenticity: mergedProvenance.tiers?.[TRUST_TIERS.AUTHENTICITY] || TIER_STATUSES.PENDING
         };
     } catch (error) {
         if (token !== firmwareVerificationToken) {
@@ -3841,10 +3941,34 @@ function renderFirmwareProvenanceSection(firmware) {
         return '';
     }
 
-    const { entries, report } = describeVerificationChecks(firmware);
-    if (!entries.length) {
+    const { entries: rawEntries, report: staticReport } = describeVerificationChecks(firmware);
+    if (!rawEntries.length) {
         return '';
     }
+
+    // When the runtime layer has produced a merged report (post-download),
+    // surface that one. Otherwise show the static gate's verdict — its
+    // signature_verified check sits in 'pending' until the bytes are
+    // hashed and verified.
+    const mergedReport = (firmwareVerificationState
+        && firmwareVerificationState.firmwareId === (firmware.firmwareId || null)
+        && firmwareVerificationState.provenance
+        && firmwareVerificationState.provenance.checks)
+        ? firmwareVerificationState.provenance
+        : null;
+    const report = mergedReport || staticReport;
+    const entries = mergedReport
+        ? report.checks.map(check => ({
+            key: check.id,
+            id: check.id,
+            label: check.label,
+            ok: check.status === 'pass' || check.status === 'skip',
+            pending: check.status === 'pending',
+            status: check.status,
+            severity: check.severity,
+            detail: check.detail
+        }))
+        : rawEntries;
 
     const overallStatus = report.status;
     const overallLabel = overallStatus === 'pass'
@@ -3856,13 +3980,61 @@ function renderFirmwareProvenanceSection(firmware) {
     const sourceCommit = (firmware.source_commit || '').toString().trim();
     const sourceUrl = (firmware.source_url || '').toString().trim();
     const signedBy = (firmware.signed_by || '').toString().trim();
+    const signatureKeyId = (firmware.signature_key_id || '').toString().trim();
 
     const iconForStatus = (status) => {
         if (status === 'pass') return '✓';
         if (status === 'warn') return '⚠';
         if (status === 'fail') return '✕';
+        if (status === 'pending') return '…';
         return '–';
     };
+
+    // Three-tier trust panel (metadata / integrity / authenticity).
+    // Renders ABOVE the per-check list so the user reads the simplified
+    // "what does this prove?" verdict before the long enumeration.
+    const tiersHtml = (() => {
+        const tiers = report.tiers;
+        if (!tiers) {
+            return '';
+        }
+        const tierMeta = [
+            {
+                key: TRUST_TIERS.METADATA,
+                label: 'Manifest metadata',
+                tooltip: 'Manifest entry carries the fields needed to even reason about provenance: SHA-256, signature, source commit, file size, build path.'
+            },
+            {
+                key: TRUST_TIERS.INTEGRITY,
+                label: 'Byte-level integrity',
+                tooltip: 'Downloaded firmware bytes match the SHA-256 declared in the manifest. Proves the bytes are exactly what the manifest expected.'
+            },
+            {
+                key: TRUST_TIERS.AUTHENTICITY,
+                label: 'Cryptographic authenticity',
+                tooltip: 'Downloaded firmware bytes verify against an Ed25519 signature whose public key is pinned in the WebFlash trust list. Proves the bytes were authorised by Sense360 (or whoever holds the pinned key) — the only check that defends against a manifest-tampering attacker.'
+            }
+        ];
+        const tierItems = tierMeta.map(meta => {
+            const status = tiers[meta.key] || 'pending';
+            const detail = (tiers.details && tiers.details[meta.key]) || '';
+            return `
+                <li class="firmware-provenance__tier status-${escapeHtml(status)}" data-trust-tier="${escapeHtml(meta.key)}" data-trust-tier-status="${escapeHtml(status)}">
+                    <span class="firmware-provenance__tier-icon" aria-hidden="true">${iconForStatus(status)}</span>
+                    <div class="firmware-provenance__tier-body">
+                        <span class="firmware-provenance__tier-label">${escapeHtml(meta.label)}</span>
+                        <span class="firmware-provenance__tier-status">${escapeHtml(status)}</span>
+                        <span class="firmware-provenance__tier-detail">${escapeHtml(detail || meta.tooltip)}</span>
+                    </div>
+                </li>
+            `;
+        }).join('');
+        return `
+            <ol class="firmware-provenance__tiers" data-firmware-provenance-tiers aria-label="Trust tiers">
+                ${tierItems}
+            </ol>
+        `;
+    })();
 
     const checksHtml = entries
         .map(entry => {
@@ -3893,6 +4065,9 @@ function renderFirmwareProvenanceSection(firmware) {
         if (signedBy) {
             facts.push(`<div class="firmware-provenance__fact"><span class="firmware-provenance__fact-label">Signed by</span><span>${escapeHtml(signedBy)}</span></div>`);
         }
+        if (signatureKeyId) {
+            facts.push(`<div class="firmware-provenance__fact"><span class="firmware-provenance__fact-label">Signing key</span><code>${escapeHtml(signatureKeyId)}</code></div>`);
+        }
         if (Number.isFinite(Number(firmware.file_size)) && Number(firmware.file_size) > 0) {
             const bytes = Number(firmware.file_size);
             const kb = bytes >= 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
@@ -3912,6 +4087,7 @@ function renderFirmwareProvenanceSection(firmware) {
                 <span class="firmware-provenance__badge status-${escapeHtml(overallStatus)}">${escapeHtml(overallLabel)}</span>
                 <p class="firmware-provenance__summary">${escapeHtml(report.summary)}</p>
             </header>
+            ${tiersHtml}
             ${factsHtml}
             <ul class="firmware-provenance__checks" data-firmware-provenance-checks>
                 ${checksHtml}

@@ -457,6 +457,13 @@ class FirmwareArtifact:
     build_date: str
     source_commit: Optional[str] = None
     source_url: Optional[str] = None
+    # Real Ed25519 signature (RFC 8032) over the raw firmware bytes. Mirrors
+    # the `signature_ed25519` / `signature_key_id` fields the wizard
+    # verifies via Web Crypto. Unsigned artifacts (e.g. when --no-sign is
+    # passed for a smoke test) leave both fields empty and the runtime gate
+    # blocks the install.
+    signature_ed25519: str = ""
+    signature_key_id: str = ""
 
     def manifest_entry(self) -> Dict[str, object]:
         # Changelogs are intentionally NOT synthesised here — a generated
@@ -468,27 +475,32 @@ class FirmwareArtifact:
         # release-notes file).
         changelog = list(self.metadata.changelog) if self.metadata.changelog else []
 
+        part_entry: Dict[str, object] = {
+            "path": self.relative_path,
+            "offset": 0,
+            "md5": self.md5,
+            "sha256": self.sha256,
+            "signature": self.signature,
+        }
+        if self.signature_ed25519:
+            part_entry["signature_ed25519"] = self.signature_ed25519
+            part_entry["signature_key_id"] = self.signature_key_id
+
         entry: Dict[str, object] = {
             "device_type": self.metadata.device_type,
             "version": self.metadata.version,
             "channel": self.metadata.channel,
             "description": self.metadata.description or "",
             "chipFamily": self.chip_family,
-            "parts": [
-                {
-                    "path": self.relative_path,
-                    "offset": 0,
-                    "md5": self.md5,
-                    "sha256": self.sha256,
-                    "signature": self.signature,
-                }
-            ],
+            "parts": [part_entry],
             "build_date": self.build_date,
             "file_size": self.file_size,
             "improv": self.metadata.improv,
             "md5": self.md5,
             "sha256": self.sha256,
             "signature": self.signature,
+            "signature_ed25519": self.signature_ed25519,
+            "signature_key_id": self.signature_key_id,
             "features": list(self.metadata.features),
             "hardware_requirements": list(self.metadata.hardware_requirements),
             "known_issues": list(self.metadata.known_issues),
@@ -523,6 +535,240 @@ class FirmwareArtifact:
 
 
 SIGNATURE_SALT = b"Sense360 Firmware Signing Salt v1"
+
+# --- Ed25519 firmware signing -----------------------------------------------
+#
+# WebFlash refuses to flash production (`stable`-channel) firmware unless the
+# binary's bytes verify against an Ed25519 (RFC 8032) signature produced by a
+# private key whose matching public key is pinned in
+# `scripts/utils/firmware-trusted-keys.js`. The signature is computed over
+# the raw firmware bytes themselves — no manifest canonicalisation step.
+#
+# Key resolution order (signing pipeline):
+#   1. --signing-key <path> CLI flag.
+#   2. WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 env var (raw 32-byte seed, base64).
+#   3. WEBFLASH_FIRMWARE_PRIVATE_KEY_PATH env var.
+#   4. firmware-signing/keys/dev-2026-01-private.raw.b64 (committed dev key).
+# When --no-sign is set, every artifact ships with empty signature_ed25519
+# fields and the wizard refuses to install. That mode exists for offline
+# smoke tests, never for production.
+
+DEFAULT_DEV_KEY_ID = "dev-2026-01"
+DEFAULT_DEV_KEY_RELATIVE_PATH = (
+    "firmware-signing/keys/dev-2026-01-private.raw.b64"
+)
+TRUSTED_KEYS_RELATIVE_PATH = "firmware-signing/trusted-keys.json"
+
+
+def _decode_b64(value: str) -> bytes:
+    return base64.b64decode(value.strip().encode("ascii"), validate=True)
+
+
+def load_signing_key(
+    *,
+    repo_root: Path,
+    cli_path: Optional[str] = None,
+) -> Tuple[Optional["ed25519.Ed25519PrivateKey"], Optional[str]]:
+    """Return ``(private_key, key_id)`` or ``(None, None)`` when signing is
+    disabled. Raises :class:`SystemExit` when a key was requested but cannot
+    be loaded (e.g. the path does not exist) — silent fallback would let a
+    publish run produce unsigned artifacts that the wizard would refuse to
+    install, surfacing the failure far too late.
+    """
+
+    try:
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from cryptography.hazmat.primitives import serialization
+    except ImportError as exc:  # pragma: no cover - exercised in CI
+        raise SystemExit(
+            "The 'cryptography' package is required to sign firmware. "
+            "Install it via `pip install cryptography` or pass --no-sign for "
+            "an unsigned (non-installable) manifest."
+        ) from exc
+
+    env_key_id = os.environ.get("WEBFLASH_FIRMWARE_KEY_ID", "").strip()
+
+    def _from_raw_b64(raw_b64: str, source: str) -> "ed25519.Ed25519PrivateKey":
+        try:
+            seed = _decode_b64(raw_b64)
+        except (ValueError, base64.binascii.Error) as exc:
+            raise SystemExit(
+                f"Signing key from {source} is not valid base64: {exc}"
+            ) from exc
+        if len(seed) != 32:
+            raise SystemExit(
+                f"Signing key from {source} must decode to 32 bytes (got {len(seed)})."
+            )
+        return ed25519.Ed25519PrivateKey.from_private_bytes(seed)
+
+    def _from_path(path: Path) -> "ed25519.Ed25519PrivateKey":
+        if not path.exists():
+            raise SystemExit(
+                f"Signing key path {path} does not exist. Pass --no-sign for "
+                "an explicitly unsigned (non-installable) manifest."
+            )
+        raw = path.read_bytes()
+        # Accept both PEM (PKCS#8) and raw-base64 forms; the dev key on disk
+        # is raw-base64, but operators rotating to a production key may keep
+        # the PEM emitted by `openssl genpkey`.
+        text = raw.decode("ascii", errors="ignore").strip()
+        if text.startswith("-----BEGIN"):
+            try:
+                key = serialization.load_pem_private_key(raw, password=None)
+            except Exception as exc:  # pragma: no cover - cryptography raises various subclasses
+                raise SystemExit(f"Unable to load PEM signing key {path}: {exc}") from exc
+            if not isinstance(key, ed25519.Ed25519PrivateKey):
+                raise SystemExit(
+                    f"Signing key {path} is not an Ed25519 key; firmware "
+                    "authenticity verification only supports Ed25519."
+                )
+            return key
+        return _from_raw_b64(text, str(path))
+
+    # 1. CLI flag.
+    if cli_path:
+        priv = _from_path(Path(cli_path))
+        kid = env_key_id or Path(cli_path).stem.replace("-private", "").replace(".raw", "")
+        return priv, kid
+
+    # 2. Env var (raw base64 seed).
+    env_b64 = os.environ.get("WEBFLASH_FIRMWARE_PRIVATE_KEY_B64", "").strip()
+    if env_b64:
+        priv = _from_raw_b64(env_b64, "WEBFLASH_FIRMWARE_PRIVATE_KEY_B64")
+        if not env_key_id:
+            raise SystemExit(
+                "WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 was set but "
+                "WEBFLASH_FIRMWARE_KEY_ID is missing. Set it to the kid that "
+                "matches the corresponding entry in trusted-keys.json."
+            )
+        return priv, env_key_id
+
+    # 3. Env var (path).
+    env_path = os.environ.get("WEBFLASH_FIRMWARE_PRIVATE_KEY_PATH", "").strip()
+    if env_path:
+        priv = _from_path(Path(env_path))
+        kid = env_key_id or Path(env_path).stem.replace("-private", "").replace(".raw", "")
+        return priv, kid
+
+    # 4. Default committed dev key (signs placeholder fixtures only).
+    default_path = repo_root / DEFAULT_DEV_KEY_RELATIVE_PATH
+    if default_path.exists():
+        priv = _from_path(default_path)
+        kid = env_key_id or DEFAULT_DEV_KEY_ID
+        return priv, kid
+
+    # No key found at all.
+    raise SystemExit(
+        f"Could not locate a firmware signing key. Tried CLI flag, "
+        f"WEBFLASH_FIRMWARE_PRIVATE_KEY_B64, WEBFLASH_FIRMWARE_PRIVATE_KEY_PATH, "
+        f"and {default_path}. Pass --no-sign to opt out (the resulting "
+        "manifest will not be installable)."
+    )
+
+
+def lookup_trusted_key(repo_root: Path, key_id: str) -> Dict[str, Any]:
+    """Return the trust-list entry for ``key_id``. Raises :class:`SystemExit`
+    when the entry is missing or the public key on disk does not match the
+    pinned value — both indicate a misconfigured signing pipeline.
+    """
+
+    trusted_path = repo_root / TRUSTED_KEYS_RELATIVE_PATH
+    if not trusted_path.exists():
+        raise SystemExit(
+            f"Trusted keys file {trusted_path} not found; cannot verify the "
+            "signing key against the pinned trust list."
+        )
+    try:
+        data = json.loads(trusted_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"Unable to read {trusted_path}: {exc}") from exc
+
+    keys = data.get("keys") if isinstance(data, dict) else None
+    if not isinstance(keys, list):
+        raise SystemExit(
+            f"{trusted_path} is missing a 'keys' array; cannot verify trust."
+        )
+
+    matched = next(
+        (entry for entry in keys
+         if isinstance(entry, dict)
+         and entry.get("kid") == key_id),
+        None,
+    )
+    if matched is None:
+        raise SystemExit(
+            f"Signing key id {key_id!r} is not pinned in {trusted_path}. "
+            "Add it (with the matching public key) before publishing, or "
+            "rotate to an existing trusted key."
+        )
+    return matched
+
+
+def assert_key_pinned_in_trust_list(
+    repo_root: Path,
+    key_id: str,
+    public_key_b64: str,
+    *,
+    mode: str = "production",
+) -> Dict[str, Any]:
+    """Fail the build when the signing key id is not pinned with an
+    acceptable status, OR when the matching public key on disk has been
+    rotated without updating trusted-keys.json.
+
+    Returns the matched trust entry so the caller can use the status field.
+
+    Mode semantics mirror ``verifyFirmwareSignature`` / ``isKeyAcceptable``
+    in the JS layer:
+      * ``production`` — only ``status: 'active'`` keys may sign. Rejects
+        ``test_only`` so the public-repo dev key cannot sign a real
+        production manifest.
+      * ``development`` / ``test`` — also accepts ``status: 'test_only'``.
+    """
+
+    matched = lookup_trusted_key(repo_root, key_id)
+    status = matched.get("status")
+    pinned_pub = (matched.get("public_key_b64") or "").strip()
+
+    if pinned_pub != public_key_b64:
+        raise SystemExit(
+            f"Signing key id {key_id!r} public key does not match the "
+            f"pinned trust list entry. Either the private key on disk has "
+            "been rotated without updating trusted-keys.json, or the wrong "
+            "key id was supplied."
+        )
+
+    accepted_statuses = {"active"}
+    if mode in {"development", "test"}:
+        accepted_statuses.add("test_only")
+
+    if status not in accepted_statuses:
+        if status == "test_only" and mode == "production":
+            raise SystemExit(
+                f"Signing key id {key_id!r} is marked 'test_only' (its "
+                f"private half is exposed in the repo). It MUST NOT sign "
+                f"production manifests — anyone with read access could "
+                f"forge installable firmware. Pass --mode development for "
+                f"local fixture builds, or rotate to an 'active' key whose "
+                f"private half lives only in CI secrets. See "
+                f"firmware-signing/README.md."
+            )
+        raise SystemExit(
+            f"Signing key id {key_id!r} has status {status!r} in "
+            f"{repo_root / TRUSTED_KEYS_RELATIVE_PATH}; only "
+            f"{sorted(accepted_statuses)} keys may sign new firmware in "
+            f"mode={mode!r}."
+        )
+
+    return matched
+
+
+def sign_firmware_bytes(
+    private_key: "ed25519.Ed25519PrivateKey", payload: bytes
+) -> str:
+    """Return base64 of the raw 64-byte Ed25519 signature over ``payload``."""
+
+    signature = private_key.sign(payload)
+    return base64.b64encode(signature).decode("ascii")
 
 # Required provenance fields for the runtime install gate. Mirrored in
 # scripts/utils/firmware-provenance.js — keep the lists aligned.
@@ -771,6 +1017,8 @@ def collect_firmware(
     default_channel: str = DEFAULT_CHANNEL,
     source_commit: Optional[str] = None,
     source_url_template: str = DEFAULT_SOURCE_URL_TEMPLATE,
+    signing_key: Optional["ed25519.Ed25519PrivateKey"] = None,
+    signing_key_id: Optional[str] = None,
 ) -> List[FirmwareArtifact]:
     artifacts: List[FirmwareArtifact] = []
     if not firmware_dir.exists():
@@ -825,6 +1073,10 @@ def collect_firmware(
                 url_value = None
         else:
             url_value = None
+        signature_ed25519 = ""
+        if signing_key is not None and signing_key_id:
+            payload = source_path.read_bytes()
+            signature_ed25519 = sign_firmware_bytes(signing_key, payload)
         artifacts.append(
             FirmwareArtifact(
                 path=target_path,
@@ -838,6 +1090,8 @@ def collect_firmware(
                 build_date=build_date,
                 source_commit=commit_value,
                 source_url=url_value,
+                signature_ed25519=signature_ed25519,
+                signature_key_id=signing_key_id if signature_ed25519 else "",
             )
         )
     return artifacts
@@ -1039,6 +1293,7 @@ def validate_manifest_metadata(
     mode: str = "production",
     strict: bool = False,
     informational_findings: Optional[List[str]] = None,
+    repo_root: Optional[Path] = None,
 ) -> List[str]:
     """Run trust-signal checks across the generated manifest entries.
 
@@ -1063,6 +1318,25 @@ def validate_manifest_metadata(
 
     findings: List[str] = []
     is_production = mode == "production"
+
+    # Pre-load the trust list once so per-artifact key-status checks don't
+    # hit the disk N times. When called without a repo_root (e.g. from a
+    # test) we fall back to skipping the trust-status check; the caller
+    # signing path is the primary enforcement surface anyway.
+    trusted_keys_by_kid: Dict[str, Dict[str, Any]] = {}
+    if repo_root is not None:
+        trusted_path = repo_root / TRUSTED_KEYS_RELATIVE_PATH
+        if trusted_path.exists():
+            try:
+                trusted_data = json.loads(trusted_path.read_text(encoding="utf-8"))
+                for entry in trusted_data.get("keys", []):
+                    if isinstance(entry, dict) and entry.get("kid"):
+                        trusted_keys_by_kid[entry["kid"]] = entry
+            except (OSError, ValueError):
+                # If the trust list is broken, the lookup_trusted_key path
+                # already surfaces a hard error during the signing step;
+                # don't double-report here.
+                pass
 
     for artifact in artifacts:
         meta = artifact.metadata
@@ -1106,6 +1380,47 @@ def validate_manifest_metadata(
             findings.append(f"{name}: missing sha256.")
         if not artifact.signature:
             findings.append(f"{name}: missing signature metadata.")
+        if not artifact.signature_ed25519:
+            findings.append(
+                f"{name}: missing signature_ed25519 (real cryptographic "
+                "signature). Run gen-manifests.py with a signing key (see "
+                "firmware-signing/README.md) — production firmware must be "
+                "authenticatable against a pinned trust anchor."
+            )
+        elif not artifact.signature_key_id:
+            findings.append(
+                f"{name}: signature_ed25519 is present but signature_key_id "
+                "is empty; the wizard cannot resolve which trusted key to "
+                "verify against."
+            )
+        elif is_production and channel in {"stable", "rescue"}:
+            # Stable/rescue builds in production mode MUST be signed by an
+            # 'active' trust-list key, not a 'test_only' fixture key. The
+            # wizard's install gate enforces the same rule at runtime; the
+            # check here stops a publish run from emitting a manifest the
+            # wizard would later refuse for every user.
+            trust_entry = trusted_keys_by_kid.get(artifact.signature_key_id)
+            if trust_entry is None:
+                findings.append(
+                    f"{name}: signature_key_id={artifact.signature_key_id!r} "
+                    f"is not present in {TRUSTED_KEYS_RELATIVE_PATH}; the "
+                    "wizard would refuse this build because the key cannot "
+                    "be resolved."
+                )
+            elif trust_entry.get("status") == "test_only":
+                findings.append(
+                    f"{name}: signature_key_id={artifact.signature_key_id!r} "
+                    "is marked 'test_only' (its private half is exposed in "
+                    "the public repo). Production stable/rescue firmware "
+                    "MUST be signed by an 'active' key whose private half "
+                    "lives only in CI secrets. See firmware-signing/README.md."
+                )
+            elif trust_entry.get("status") not in {"active"}:
+                findings.append(
+                    f"{name}: signature_key_id={artifact.signature_key_id!r} "
+                    f"has status {trust_entry.get('status')!r}; only "
+                    "'active' keys may sign production stable/rescue firmware."
+                )
         if not artifact.source_commit:
             findings.append(
                 f"{name}: missing source_commit. Set WEBFLASH_SOURCE_COMMIT or "
@@ -1271,6 +1586,17 @@ def write_individual_manifests(
         else:
             path.unlink()
     for index, artifact in enumerate(artifacts):
+        part_entry: Dict[str, object] = {
+            "path": artifact.relative_path,
+            "offset": 0,
+            "md5": artifact.md5,
+            "sha256": artifact.sha256,
+            "signature": artifact.signature,
+        }
+        if artifact.signature_ed25519:
+            part_entry["signature_ed25519"] = artifact.signature_ed25519
+            part_entry["signature_key_id"] = artifact.signature_key_id
+
         data = {
             "name": "Sense360 ESP32 Firmware - Core Module",
             "version": artifact.metadata.version,
@@ -1281,19 +1607,13 @@ def write_individual_manifests(
             "builds": [
                 {
                     "chipFamily": artifact.chip_family,
-                    "parts": [
-                        {
-                            "path": artifact.relative_path,
-                            "offset": 0,
-                            "md5": artifact.md5,
-                            "sha256": artifact.sha256,
-                            "signature": artifact.signature,
-                        }
-                    ],
+                    "parts": [part_entry],
                     "improv": artifact.metadata.improv,
                     "md5": artifact.md5,
                     "sha256": artifact.sha256,
                     "signature": artifact.signature,
+                    "signature_ed25519": artifact.signature_ed25519,
+                    "signature_key_id": artifact.signature_key_id,
                     "file_size": artifact.file_size,
                     "source_commit": artifact.source_commit,
                     "source_url": artifact.source_url,
@@ -1446,6 +1766,35 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             "generation. Default: %(default)s."
         ),
     )
+    parser.add_argument(
+        "--signing-key",
+        default=None,
+        help=(
+            "Path to the Ed25519 private key used to sign each firmware binary. "
+            "Accepts PEM PKCS#8 or a raw 32-byte seed encoded as base64 in a text "
+            "file. When omitted, falls back to WEBFLASH_FIRMWARE_PRIVATE_KEY_B64, "
+            "WEBFLASH_FIRMWARE_PRIVATE_KEY_PATH, then the committed dev key under "
+            "firmware-signing/keys/."
+        ),
+    )
+    parser.add_argument(
+        "--signing-key-id",
+        default=None,
+        help=(
+            "Stable identifier of the signing key (must match a 'kid' entry in "
+            "firmware-signing/trusted-keys.json). When omitted, derived from the "
+            "key file name or the WEBFLASH_FIRMWARE_KEY_ID env var."
+        ),
+    )
+    parser.add_argument(
+        "--no-sign",
+        action="store_true",
+        help=(
+            "Skip Ed25519 firmware signing entirely. The resulting manifest will "
+            "be REJECTED by the wizard's install gate. Use only for offline smoke "
+            "tests; never for a production publish."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -1464,6 +1813,57 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             "validation. Set WEBFLASH_SOURCE_COMMIT or pass --source-commit.",
             file=sys.stderr,
         )
+    # --mode wins over --strict-validate; --strict-validate is the legacy
+    # alias for --mode=production. If neither is set, default to
+    # 'production' so a CI invocation cannot silently downgrade.
+    if args.mode is not None:
+        validation_mode = args.mode
+    elif args.strict_validate:
+        validation_mode = "production"
+    else:
+        validation_mode = "production"
+
+    signing_key = None
+    signing_key_id = None
+    if args.no_sign:
+        print(
+            "[warn] --no-sign requested; manifest entries will lack a real "
+            "Ed25519 signature and the wizard will refuse to install them.",
+            file=sys.stderr,
+        )
+    else:
+        signing_key, signing_key_id = load_signing_key(
+            repo_root=repo_root,
+            cli_path=args.signing_key,
+        )
+        if args.signing_key_id:
+            signing_key_id = args.signing_key_id
+        # Compute the matching public key and assert it is pinned in the
+        # JSON trust list with an *acceptable* status for the active mode.
+        # In production mode this rejects the committed dev key so the
+        # publish pipeline cannot accidentally ship a manifest the wizard
+        # would refuse to install for every user.
+        try:
+            from cryptography.hazmat.primitives import serialization as _serialization
+        except ImportError as exc:  # pragma: no cover - cryptography is required when signing
+            raise SystemExit(
+                "The 'cryptography' package is required to sign firmware."
+            ) from exc
+        public_key_b64 = base64.b64encode(
+            signing_key.public_key().public_bytes(
+                encoding=_serialization.Encoding.Raw,
+                format=_serialization.PublicFormat.Raw,
+            )
+        ).decode("ascii")
+        trust_entry = assert_key_pinned_in_trust_list(
+            repo_root, signing_key_id, public_key_b64, mode=validation_mode
+        )
+        print(
+            f"Signing firmware with key id={signing_key_id} "
+            f"status={trust_entry.get('status')!r} pub={public_key_b64[:12]}…. "
+            f"Trusted-list match confirmed for mode={validation_mode!r}."
+        )
+
     artifacts = collect_firmware(
         firmware_dir,
         repo_root,
@@ -1471,6 +1871,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         default_channel=DEFAULT_CHANNEL,
         source_commit=source_commit,
         source_url_template=args.source_url_template or "",
+        signing_key=signing_key,
+        signing_key_id=signing_key_id,
     )
     if not artifacts:
         message = f"No firmware binaries found in {firmware_dir}"
@@ -1489,15 +1891,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
     validate_structured_config_consistency(ordered)
-    # --mode wins over --strict-validate; --strict-validate is the legacy
-    # alias for --mode=production. If neither is set, default to
-    # 'production' so a CI invocation cannot silently downgrade.
-    if args.mode is not None:
-        validation_mode = args.mode
-    elif args.strict_validate:
-        validation_mode = "production"
-    else:
-        validation_mode = "production"
+    # validation_mode was already resolved above (so it could gate the
+    # signing key load). Reuse it here for the metadata findings sweep.
     informational_findings: List[str] = []
     metadata_findings = validate_manifest_metadata(
         ordered,
@@ -1505,6 +1900,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         mode=validation_mode,
         strict=args.strict_validate,
         informational_findings=informational_findings,
+        repo_root=repo_root,
     )
     metadata_findings.extend(validate_no_placeholder_descriptions(ordered))
     if informational_findings:

@@ -35,6 +35,14 @@ const VALID_PROVENANCE = {
     sha256: 'c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397',
     md5: '1eb1fea3994bbbeea11080159dbbe611',
     signature: 'KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=',
+    // Real Ed25519 metadata is required for stable builds to pass the
+    // static gate. The byte content here is not a real signature over
+    // the test fixture; the static gate only verifies metadata presence
+    // and (in production mode) refuses test_only key ids. We use a
+    // synthetic key id that is not on the trust list so the static gate
+    // accepts it.
+    signature_ed25519: 'kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==',
+    signature_key_id: 'unit-test-fixture-key',
     source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     file_size: 524288,
@@ -512,7 +520,12 @@ describe('release-channel UI wiring in state.js', () => {
         }
     });
 
-    test('signature_verified provenance check renders with status="skip", never as a passing claim', async () => {
+    test('signature_verified provenance check renders with status="pending" until runtime check runs', async () => {
+        // Real Ed25519 verification cannot run inside the static
+        // describeVerificationChecks() pass — it needs the binary bytes.
+        // The static panel must therefore render the check as 'pending'
+        // (not 'pass') so users do not mistake metadata-presence for
+        // cryptographic authenticity.
         const { __testHooks } = await import('../scripts/state.js');
         const build = makeBuild({
             firmwareId: 'firmware-stable',
@@ -520,7 +533,7 @@ describe('release-channel UI wiring in state.js', () => {
             version: '2.0.0'
         });
         const html = __testHooks.renderFirmwareProvenanceSection(build);
-        expect(html).toMatch(/data-check-id="signature_verified"[^>]*data-check-status="skip"/);
+        expect(html).toMatch(/data-check-id="signature_verified"[^>]*data-check-status="pending"/);
         expect(html).not.toMatch(/data-check-id="signature_verified"[^>]*data-check-status="pass"/);
     });
 

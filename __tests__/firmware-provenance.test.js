@@ -26,6 +26,17 @@ const VALID_STABLE_BUILD = Object.freeze({
     sha256: 'c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397',
     md5: '1eb1fea3994bbbeea11080159dbbe611',
     signature: 'KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=',
+    // Real Ed25519 signature metadata. The bytes here are not a real
+    // signature over the test fixture — verification of the bytes
+    // happens in firmware-signature.test.js. The provenance gate only
+    // checks that the field is *present* and (in production mode) does
+    // not refer to a 'test_only' key in the trust list. We use a
+    // synthetic key id that is not on the trust list so the static gate
+    // accepts it; the production-mode refusal of the committed dev key
+    // (which IS on the trust list as test_only) is exercised separately
+    // in firmware-signature.test.js.
+    signature_ed25519: 'kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==',
+    signature_key_id: 'unit-test-fixture-key',
     source_commit: 'eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     source_url: 'https://github.com/sense360store/WebFlash/commit/eec461a4f6d85ac3d4920ee2dbd26c3be459aa40',
     file_size: 524288,
@@ -330,12 +341,28 @@ describe('validateFirmwareProvenance — source_url immutability', () => {
 });
 
 describe('validateFirmwareProvenance — signature verification claim', () => {
-    test('signature_verified is reported as skip with explicit limitation', () => {
+    test('signature_verified is reported as pending until runtime verification runs', () => {
+        // Static-gate verdict for a build that DOES carry signature_ed25519:
+        // metadata is good, but the cryptographic check itself can only run
+        // after the binary is downloaded. The check therefore enters
+        // 'pending' state — and the runtime layer flips it to pass/fail via
+        // applySignatureVerificationResult().
         const report = validateFirmwareProvenance(VALID_STABLE_BUILD);
         const check = findCheck(report, CHECK_IDS.SIGNATURE_VERIFIED);
-        expect(check.status).toBe('skip');
-        expect(check.detail).toMatch(/not yet implemented/i);
-        expect(check.detail).toMatch(/cryptographic authenticity/i);
+        expect(check.status).toBe('pending');
+        expect(check.detail).toMatch(/awaiting/i);
+        expect(report.pending).toBe(true);
+    });
+
+    test('signature_verified fails closed when no Ed25519 signature is present', () => {
+        const build = { ...VALID_STABLE_BUILD };
+        delete build.signature_ed25519;
+        delete build.signature_key_id;
+        const report = validateFirmwareProvenance(build);
+        const check = findCheck(report, CHECK_IDS.SIGNATURE_VERIFIED);
+        expect(check.status).toBe('fail');
+        expect(check.severity).toBe('block');
+        expect(report.ok).toBe(false);
     });
 
     test('signature_metadata_present is distinct from signature_verified', () => {
@@ -343,10 +370,33 @@ describe('validateFirmwareProvenance — signature verification claim', () => {
         const meta = findCheck(report, CHECK_IDS.SIGNATURE_METADATA_PRESENT);
         const verified = findCheck(report, CHECK_IDS.SIGNATURE_VERIFIED);
         expect(meta.status).toBe('pass');
-        expect(verified.status).toBe('skip');
+        // pending — metadata is present, but the actual verification call
+        // has not been executed yet.
+        expect(verified.status).toBe('pending');
         // The metadata-present check should not claim cryptographic
         // verification — its detail is purely about field presence.
         expect(meta.detail.toLowerCase()).not.toContain('cryptograph');
+    });
+
+    test('stable build with missing signature_ed25519 is blocked from install', () => {
+        const build = { ...VALID_STABLE_BUILD };
+        delete build.signature_ed25519;
+        delete build.signature_key_id;
+        const report = validateFirmwareProvenance(build);
+        expect(report.ok).toBe(false);
+        const ed25519Check = findCheck(report, CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT);
+        expect(ed25519Check.status).toBe('fail');
+        expect(ed25519Check.severity).toBe('block');
+        expect(report.blockingReasons.join(' ')).toMatch(/signature_ed25519/i);
+    });
+
+    test('stable build with signature_ed25519 but missing key id is blocked', () => {
+        const build = { ...VALID_STABLE_BUILD, signature_key_id: '' };
+        const report = validateFirmwareProvenance(build);
+        expect(report.ok).toBe(false);
+        const ed25519Check = findCheck(report, CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT);
+        expect(ed25519Check.status).toBe('fail');
+        expect(ed25519Check.detail).toMatch(/signature_key_id/i);
     });
 });
 
@@ -402,6 +452,7 @@ describe('describeVerificationChecks — UI surface', () => {
             expect.arrayContaining([
                 'sha256',
                 'signature',
+                'signature_ed25519',
                 'source_commit',
                 'file_size',
                 'changelog',
@@ -409,10 +460,13 @@ describe('describeVerificationChecks — UI surface', () => {
                 'deprecated'
             ])
         );
-        // Every check on a valid build either passes or is skipped (e.g.
-        // signature_verified) — none should be marked failing.
+        // Every check on a valid build either passes outright, is skipped
+        // (informational checks that don't apply), or is in 'pending' state
+        // (signature_verified — runtime verification has not been called
+        // yet from the static-only test path). None should fail.
         for (const entry of entries) {
-            expect(entry.ok).toBe(true);
+            const acceptable = entry.ok || entry.pending === true;
+            expect(acceptable).toBe(true);
         }
     });
 
@@ -429,17 +483,46 @@ describe('manifest.json — provenance integration', () => {
     const manifestPath = path.join(process.cwd(), 'manifest.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-    test('every stable build in manifest.json passes the provenance gate', () => {
+    test('every stable build in manifest.json passes the provenance gate UNDER TEST MODE', () => {
+        // The committed manifest is signed by the test_only dev key (its
+        // private half is in the public repo for fixture signing). The
+        // deployed wizard runs in PRODUCTION mode and refuses these; the
+        // stricter behaviour is asserted in the next test. Here we just
+        // confirm that, *given* the test_only key is acceptable (i.e.
+        // mode='test'), the rest of the metadata is well-formed.
         const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
         expect(stableBuilds.length).toBeGreaterThan(0);
         for (const build of stableBuilds) {
-            const report = validateFirmwareProvenance(build);
+            const report = validateFirmwareProvenance(build, { mode: 'test' });
             if (!report.ok) {
                 throw new Error(
                     `Stable build ${build?.parts?.[0]?.path || build?.config_string} failed provenance: ${report.summary}`
                 );
             }
             expect(report.ok).toBe(true);
+        }
+    });
+
+    test('every stable build in manifest.json is REFUSED by the production-mode static gate', () => {
+        // Backstop check: the committed manifest must not be installable
+        // from the deployed wizard while it ships test_only signatures.
+        // If this test starts failing, it means either:
+        //   (a) the trust list now contains an 'active' key whose
+        //       private half is in CI secrets and the publish pipeline
+        //       has been migrated — at which point the manifest may be
+        //       legitimately installable, OR
+        //   (b) something has weakened the production-mode refusal of
+        //       test_only keys, which is a security regression.
+        // Either way, anyone updating this test must understand which
+        // case applies.
+        const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
+        expect(stableBuilds.length).toBeGreaterThan(0);
+        for (const build of stableBuilds) {
+            const report = validateFirmwareProvenance(build);  // mode defaults to 'production'
+            expect(report.ok).toBe(false);
+            // The blocking reason should mention test_only so support and
+            // operators can quickly identify the cause.
+            expect(report.blockingReasons.join(' ')).toMatch(/test_only/i);
         }
     });
 
@@ -665,6 +748,7 @@ describe('Stable provenance result shape — machine-readable contract', () => {
         expect(ids).toEqual(expect.arrayContaining([
             CHECK_IDS.SHA256_METADATA_PRESENT,
             CHECK_IDS.SIGNATURE_METADATA_PRESENT,
+            CHECK_IDS.SIGNATURE_ED25519_METADATA_PRESENT,
             CHECK_IDS.SIGNATURE_VERIFIED,
             CHECK_IDS.SOURCE_COMMIT_PRESENT,
             CHECK_IDS.SOURCE_URL_IMMUTABLE,
@@ -680,7 +764,7 @@ describe('Stable provenance result shape — machine-readable contract', () => {
         for (const check of report.checks) {
             expect(typeof check.id).toBe('string');
             expect(typeof check.label).toBe('string');
-            expect(['pass', 'warn', 'fail', 'skip']).toContain(check.status);
+            expect(['pass', 'warn', 'fail', 'skip', 'pending']).toContain(check.status);
             expect(['block', 'warn', 'info']).toContain(check.severity);
             expect(typeof check.detail).toBe('string');
         }
