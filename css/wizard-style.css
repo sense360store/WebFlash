@@ -4439,6 +4439,106 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     border-radius: 8px;
 }
 
+.bathroom-toggle__detail {
+    margin: 8px 0 0;
+    padding-left: 30px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+}
+
+/* Helper hints inside Step 4 module groups (e.g. RoomIQ pairing note,
+   Fan firmware-impact note). Visually distinct from descriptions so
+   users notice the actionable guidance. */
+.module-group__hint {
+    display: block;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.module-group__variant-warning {
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--accent) 8%, var(--color-surface));
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+}
+
+.module-group__firmware-hint,
+.module-card__firmware-hint {
+    display: block;
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--brand-green-contrast);
+    font-weight: 500;
+}
+
+.module-group__firmware-hint[hidden] {
+    display: none !important;
+}
+
+/* Step 4 firmware-target preview: shows the assembled config string
+   that will be matched in Step 5, plus a neutral warning when no
+   matching build is published yet. */
+.firmware-target-preview {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+}
+
+.firmware-target-preview__heading {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.firmware-target-preview__description {
+    margin: 0 0 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--color-text-secondary);
+}
+
+.firmware-target-preview__value {
+    display: inline-block;
+    padding: 6px 10px;
+    background: color-mix(in srgb, var(--brand-green-contrast) 10%, var(--color-surface));
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    color: var(--color-text-primary);
+    word-break: break-all;
+}
+
+.firmware-target-preview__value--ready {
+    color: var(--brand-green-contrast);
+    font-weight: 600;
+}
+
+.firmware-target-preview__warning {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--accent) 8%, var(--color-surface));
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+}
+
+.firmware-target-preview__warning[hidden] {
+    display: none !important;
+}
+
 .prereq-panel__summary {
     display: flex;
     align-items: center;
