@@ -157,6 +157,13 @@ export const MIN_PLAUSIBLE_FIRMWARE_SIZE_BYTES = 100 * 1024;
 // Sentinel size for the placeholder stubs already committed to the repo
 // (18-byte files used for tests and CI). Anything at or below this is
 // treated as an intentional placeholder rather than suspicious data.
+//
+// Production-mode policy: a placeholder-sized binary is fixture data, not
+// real firmware. `validateFirmwareProvenance` treats it as a blocking
+// failure for stable / rescue / application firmware in production mode
+// so the install gate cannot ship a placeholder to an end user. Test and
+// development modes (or `artifact_type: 'test_fixture'`) continue to
+// tolerate placeholders so unit fixtures keep working.
 export const PLACEHOLDER_FIRMWARE_SIZE_BYTES = 64;
 
 // Per-artifact-type minimum plausible size. Bootloaders and partition tables
@@ -517,8 +524,13 @@ function makeCheck(id, label, status, severity, detail) {
  *     (used only when no `artifact_type` is set on the build).
  * @param {number} [options.placeholderSize] Override the placeholder sentinel.
  * @param {boolean} [options.allowPlaceholderSize] When true, placeholder-sized
- *     binaries (<= sentinel) are not flagged at all. Defaults to true so the
- *     fixture binaries shipped with the repo do not trip the install gate.
+ *     binaries (<= sentinel) are not flagged at all. When unset, the default
+ *     follows the active `mode`: production mode rejects placeholder-sized
+ *     stable/application firmware (the install gate must refuse fixtures
+ *     that are not real firmware), while development/test mode and
+ *     `artifact_type: 'test_fixture'` continue to tolerate placeholders so
+ *     unit fixtures keep working. Pass `true` explicitly to opt back into
+ *     the historical "always allow" behaviour.
  * @returns {object} Validation report. See `ProvenanceCheck` for the shape
  *     of each entry in `report.checks`. Top-level fields:
  *     - `ok` (bool)
@@ -537,9 +549,18 @@ export function validateFirmwareProvenance(build, options = {}) {
     const placeholderSize = Number.isFinite(options.placeholderSize)
         ? options.placeholderSize
         : PLACEHOLDER_FIRMWARE_SIZE_BYTES;
-    const allowPlaceholderSize = options.allowPlaceholderSize !== false;
     const localOnly = build?.local_only === true;
     const artifactType = normaliseArtifactType(build?.artifact_type);
+    // Placeholder-tolerance default depends on the active trust mode:
+    //   - production mode + non-test_fixture artifact: REJECT placeholders.
+    //     The install gate must refuse fixture binaries because they are
+    //     not real firmware; flashing one would brick the device.
+    //   - development / test mode, or test_fixture artifacts: ALLOW
+    //     placeholders so unit tests and CI fixtures keep working.
+    // An explicit `allowPlaceholderSize: true | false` override always wins.
+    const allowPlaceholderSize = options.allowPlaceholderSize === undefined
+        ? (mode !== 'production' || artifactType === ARTIFACT_TYPES.TEST_FIXTURE)
+        : options.allowPlaceholderSize !== false;
     // Test fixtures and bootloader-class artifacts have their own minima; for
     // application/rescue we use the per-type table with a manual override
     // available via `options.minPlausibleSize` for back-compat.
@@ -797,12 +818,16 @@ export function validateFirmwareProvenance(build, options = {}) {
                 `File size ${sizeReport.value} bytes is a known placeholder fixture.`
             ));
         } else {
+            // Production-mode rejection of placeholder firmware. The
+            // committed fixtures (18-byte stubs) are not real firmware
+            // images; the install gate must refuse them so the wizard
+            // never advertises a placeholder as installable to end users.
             checks.push(makeCheck(
                 CHECK_IDS.FILE_SIZE_PLAUSIBLE,
                 'File size sanity',
-                'warn',
-                'warn',
-                `File size ${sizeReport.value} bytes looks like a placeholder build.`
+                'fail',
+                'block',
+                `This firmware is a placeholder fixture (file size ${sizeReport.value} bytes) and cannot be installed by the production WebFlash app.`
             ));
         }
     } else if (sizeReport.classification === 'suspicious') {
