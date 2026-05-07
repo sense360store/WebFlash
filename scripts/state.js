@@ -42,6 +42,8 @@ import {
 } from './services/diagnostics.js';
 import { postFlashService } from './services/post-flash.js';
 import { getServiceWorkerState, subscribeServiceWorkerState } from './services/sw-update.js';
+import { checkManifestFreshness } from './services/manifest-freshness.js';
+import { notifyManifestFreshness as notifyFreshnessBanner } from './layout/freshness-banner.js';
 import { findNearbyConfigStrings, getMismatchHighlights } from './utils/firmware-nearest.js';
 
 let currentStep = 1;
@@ -587,7 +589,7 @@ function evaluateFreshnessGate() {
     } else if (manifestStaleBlocking) {
         blockingReason = 'A newer firmware manifest is available. Reload before flashing.';
     } else if (manifestUnknownBlocking) {
-        blockingReason = 'WebFlash could not confirm that the firmware manifest is current. Acknowledge the warning above or reload.';
+        blockingReason = 'WebFlash could not confirm that the firmware manifest is current. Use “Recheck manifest freshness” to retry, or check the acknowledgement to install with the manifest you have.';
     }
     return {
         ok: !swUpdateBlocking && !manifestStaleBlocking && !manifestUnknownBlocking,
@@ -978,6 +980,8 @@ let manifestFreshnessState = 'unknown';
 let manifestFreshnessDetail = null;
 let manifestFreshnessAck = false;
 let manifestFreshnessHasRun = false;
+let manifestFreshnessRecheckInFlight = false;
+let manifestFreshnessCheckPromise = null;
 let manifestMetadata = null;
 
 function getManifestFreshness() {
@@ -1391,6 +1395,13 @@ function setManifestFreshnessState(verdict, detail = null) {
         // not exist during early init — swallow noisily but don't throw.
         console.warn('[state] updateFirmwareControls during freshness change:', error);
     }
+    // Re-render the preflight panel so the manifest-freshness row reflects
+    // the new verdict and (when unknown) shows the inline recovery controls.
+    try {
+        refreshPreflightDiagnostics();
+    } catch (error) {
+        console.warn('[state] refreshPreflightDiagnostics during freshness change:', error);
+    }
 }
 
 function setManifestFreshnessAcknowledgement(value) {
@@ -1410,6 +1421,13 @@ function setManifestFreshnessAcknowledgement(value) {
         updateFirmwareControls();
     } catch (error) {
         console.warn('[state] updateFirmwareControls during freshness ack:', error);
+    }
+    // Mirror the ack into the preflight row's detail copy and (if applicable)
+    // the inline checkbox.
+    try {
+        refreshPreflightDiagnostics();
+    } catch (error) {
+        console.warn('[state] refreshPreflightDiagnostics during freshness ack:', error);
     }
 }
 
@@ -3490,6 +3508,57 @@ async function refreshPreflightDiagnostics() {
         ? `Web Serial is available in ${browserReadiness.capabilities.browserName || 'this browser'}.`
         : (browserReadiness.reasons[0]?.message || 'Browser readiness check failed.');
 
+    const getManifestFreshnessCheck = () => {
+        if (!manifestFreshnessHasRun) {
+            return createCheck({
+                key: 'manifest-freshness',
+                label: 'Manifest freshness',
+                state: 'pending',
+                detail: 'Manifest freshness check has not run yet. It runs automatically when you reach this step.',
+                blocking: false
+            });
+        }
+        if (manifestFreshnessState === 'current') {
+            return createCheck({
+                key: 'manifest-freshness',
+                label: 'Manifest freshness',
+                state: 'pass',
+                detail: 'Firmware manifest matches the published list.',
+                blocking: false
+            });
+        }
+        if (manifestFreshnessState === 'stale') {
+            return createCheck({
+                key: 'manifest-freshness',
+                label: 'Manifest freshness',
+                state: 'fail',
+                detail: 'A newer firmware manifest is available. Reload to pick up the latest published firmware list.',
+                blocking: true
+            });
+        }
+        // 'unknown' verdict: surface as an actionable warn until the user
+        // explicitly acknowledges the inline checkbox. Once acknowledged,
+        // resolve to pass so the preflight panel does not also require the
+        // global "Accept preflight warnings" checkbox — the freshness gate
+        // is already satisfied by manifestFreshnessAck.
+        if (manifestFreshnessAck) {
+            return createCheck({
+                key: 'manifest-freshness',
+                label: 'Manifest freshness',
+                state: 'pass',
+                detail: 'WebFlash could not confirm the firmware manifest is current. You acknowledged this and may install with the manifest you have. Use “Recheck manifest freshness” to retry the check.',
+                blocking: false
+            });
+        }
+        return createCheck({
+            key: 'manifest-freshness',
+            label: 'Manifest freshness',
+            state: 'warn',
+            detail: 'WebFlash could not confirm the firmware manifest is current. Use “Recheck manifest freshness” to retry, or check the acknowledgement to install with the manifest you have.',
+            blocking: true
+        });
+    };
+
     const checks = [
         createCheck({
             key: 'browser-support',
@@ -3509,7 +3578,8 @@ async function refreshPreflightDiagnostics() {
                 ? 'Pre-flash checklist acknowledged.'
                 : 'Review and acknowledge the pre-flash checklist before installing.',
             blocking: !preFlashAcknowledged
-        })
+        }),
+        getManifestFreshnessCheck()
     ];
     const hasWarnings = checks.some(check => check.state === 'warn');
     const warningsAcknowledgeControl = document.querySelector('[data-preflight-warn-acknowledge]');
@@ -3565,6 +3635,13 @@ async function refreshPreflightDiagnostics() {
         detailNode.textContent = check.detail;
     });
 
+    // The manifest-freshness preflight item exposes inline recovery controls
+    // (recheck button, acknowledgement checkbox). They are surfaced only when
+    // the freshness verdict is unknown or stale — on the happy path the row
+    // stays as a plain pass entry. Wiring is idempotent so repeated calls to
+    // refreshPreflightDiagnostics() do not stack listeners.
+    syncManifestFreshnessInlineControls(statusList);
+
     // Support bundle controls live behind the failures/warnings — keep them
     // hidden on the happy path so Step 5 stays simple by default. Surface
     // them as soon as any check is non-passing so the user can grab the
@@ -3578,6 +3655,83 @@ async function refreshPreflightDiagnostics() {
 
     window.latestPreflightChecks = checks;
     return checks;
+}
+
+function syncManifestFreshnessInlineControls(statusList) {
+    if (!statusList) {
+        return;
+    }
+    const item = statusList.querySelector('[data-preflight-item="manifest-freshness"]');
+    if (!item) {
+        return;
+    }
+
+    const actions = item.querySelector('[data-manifest-freshness-actions]');
+    const recheckBtn = item.querySelector('[data-manifest-freshness-recheck]');
+    const ackControl = item.querySelector('[data-manifest-freshness-ack-control]');
+    const ackInput = item.querySelector('[data-manifest-freshness-acknowledge]');
+
+    const showActions = manifestFreshnessHasRun
+        && (manifestFreshnessState === 'unknown' || manifestFreshnessState === 'stale');
+    const showAck = manifestFreshnessHasRun && manifestFreshnessState === 'unknown';
+
+    if (actions) {
+        actions.hidden = !showActions;
+        actions.setAttribute('aria-hidden', showActions ? 'false' : 'true');
+    }
+    if (ackControl) {
+        ackControl.hidden = !showAck;
+        ackControl.setAttribute('aria-hidden', showAck ? 'false' : 'true');
+    }
+
+    if (recheckBtn) {
+        if (recheckBtn.dataset.manifestFreshnessRecheckBound !== 'true') {
+            recheckBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                if (manifestFreshnessRecheckInFlight) {
+                    return;
+                }
+                manifestFreshnessRecheckInFlight = true;
+                const originalLabel = recheckBtn.textContent;
+                recheckBtn.disabled = true;
+                recheckBtn.textContent = 'Rechecking…';
+                try {
+                    await checkManifestFreshnessNow({ force: true });
+                } catch (error) {
+                    console.warn('[state] manifest freshness recheck failed:', error);
+                } finally {
+                    manifestFreshnessRecheckInFlight = false;
+                    recheckBtn.textContent = originalLabel;
+                    try {
+                        await refreshPreflightDiagnostics();
+                    } catch (error) {
+                        console.warn('[state] refresh after manifest recheck failed:', error);
+                    }
+                }
+            });
+            recheckBtn.dataset.manifestFreshnessRecheckBound = 'true';
+        }
+        recheckBtn.disabled = manifestFreshnessRecheckInFlight;
+    }
+
+    if (ackInput) {
+        if (ackInput.dataset.manifestFreshnessAckBound !== 'true') {
+            ackInput.addEventListener('change', (event) => {
+                setManifestFreshnessAcknowledgement(Boolean(event?.target?.checked));
+            });
+            ackInput.dataset.manifestFreshnessAckBound = 'true';
+        }
+        if (!showAck) {
+            // The row is no longer in the unknown state — drop any stale
+            // acknowledgement check mark so the next unknown verdict starts
+            // from an unchecked baseline.
+            if ('checked' in ackInput && ackInput.checked) {
+                ackInput.checked = false;
+            }
+        } else if ('checked' in ackInput) {
+            ackInput.checked = manifestFreshnessAck;
+        }
+    }
 }
 
 // Diagnostics builder lives in scripts/services/diagnostics.js. State.js

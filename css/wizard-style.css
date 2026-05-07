@@ -2161,6 +2161,54 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     display: none;
 }
 
+.preflight-panel__inline-actions {
+    grid-area: detail;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 6px;
+}
+
+.preflight-panel__inline-actions[hidden] {
+    display: none;
+}
+
+.preflight-panel__inline-button {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.preflight-panel__inline-acknowledge {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--color-text-primary);
+    cursor: pointer;
+}
+
+.preflight-panel__inline-acknowledge[hidden] {
+    display: none;
+}
+
+.preflight-panel__inline-acknowledge input[type="checkbox"] {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.preflight-panel__item--manifest-freshness {
+    grid-template-areas:
+        "label status"
+        "detail detail"
+        "actions actions";
+}
+
+.preflight-panel__item--manifest-freshness .preflight-panel__inline-actions {
+    grid-area: actions;
+}
+
 .preflight-panel__warn-acknowledge {
     display: flex;
     align-items: flex-start;

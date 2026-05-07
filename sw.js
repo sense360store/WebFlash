@@ -116,6 +116,7 @@ const SCRIPT_MODULES = [
     './scripts/layout/rescue-modal.js',
     './scripts/layout/state-summary.js',
     './scripts/services/diagnostics.js',
+    './scripts/services/manifest-freshness.js',
     './scripts/services/post-flash.js',
     './scripts/utils/a11y.js',
     './scripts/utils/channel-alias.js',
