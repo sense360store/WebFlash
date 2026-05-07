@@ -506,3 +506,220 @@ describe('wizard state module', () => {
         expect(stateModule.getStep()).toBe(2);
     });
 });
+
+function renderManifestFreshnessDom() {
+    document.body.innerHTML = `
+        <div id="browser-warning"></div>
+        <div data-preflight-banner-mount></div>
+        <div data-freshness-banner-mount></div>
+        <div class="progress-step" data-step="1"></div>
+        <div class="progress-step" data-step="2"></div>
+        <div class="progress-step" data-step="3"></div>
+        <div class="progress-step" data-step="4"></div>
+        <div class="progress-step" data-step="5"></div>
+        <div id="step-1" class="wizard-step"><button class="btn-next" data-next>Next</button></div>
+        <div id="step-2" class="wizard-step"><button class="btn-next" data-next>Next</button><input type="radio" name="mounting" value="wall" checked></div>
+        <div id="step-3" class="wizard-step"><button class="btn-next" data-next>Next</button><input type="radio" name="power" value="usb" checked></div>
+        <div id="step-4" class="wizard-step"></div>
+        <div id="step-5" class="wizard-step">
+            <div class="primary-action-group"><p data-ready-helper></p></div>
+            <div id="compatible-firmware">
+                <p data-ready-helper></p>
+                <esp-web-install-button data-webflash-install>
+                    <button slot="activate"></button>
+                </esp-web-install-button>
+            </div>
+            <button data-module-summary-install></button>
+            <button id="download-btn"></button>
+            <button id="copy-firmware-url-btn"></button>
+            <ul data-preflight-list>
+                <li data-preflight-item="browser-support" data-status="pending"><span data-preflight-status="browser-support"></span><span data-preflight-detail="browser-support"></span></li>
+                <li data-preflight-item="device-visibility" data-status="pending"><span data-preflight-status="device-visibility"></span><span data-preflight-detail="device-visibility"></span></li>
+                <li data-preflight-item="connection-quality" data-status="pending"><span data-preflight-status="connection-quality"></span><span data-preflight-detail="connection-quality"></span></li>
+                <li data-preflight-item="firmware-verification" data-status="pending"><span data-preflight-status="firmware-verification"></span><span data-preflight-detail="firmware-verification"></span></li>
+                <li data-preflight-item="user-acknowledgement" data-status="pending"><span data-preflight-status="user-acknowledgement"></span><span data-preflight-detail="user-acknowledgement"></span></li>
+                <li data-preflight-item="manifest-freshness" data-status="pending">
+                    <span data-preflight-status="manifest-freshness"></span>
+                    <span data-preflight-detail="manifest-freshness"></span>
+                    <div data-manifest-freshness-actions hidden aria-hidden="true">
+                        <button type="button" data-manifest-freshness-recheck>Recheck manifest freshness</button>
+                        <label data-manifest-freshness-ack-control hidden aria-hidden="true">
+                            <input type="checkbox" data-manifest-freshness-acknowledge>
+                            <span>Acknowledge</span>
+                        </label>
+                    </div>
+                </li>
+            </ul>
+        </div>`;
+}
+
+describe('manifest freshness recovery in step 5', () => {
+    beforeEach(() => {
+        jest.resetModules();
+        renderManifestFreshnessDom();
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ builds: [] }) }));
+        Object.defineProperty(global.navigator, 'serial', {
+            value: { getPorts: jest.fn(() => Promise.resolve([])) },
+            configurable: true
+        });
+    });
+
+    test("'unknown' freshness surfaces an explicit warn signal in the preflight list", async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('unknown');
+        const checks = await __testHooks.refreshPreflightDiagnostics();
+        const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck).toBeDefined();
+        expect(freshnessCheck.state).toBe('warn');
+        expect(freshnessCheck.detail).toMatch(/could not confirm/i);
+        expect(freshnessCheck.detail).toMatch(/Recheck manifest freshness/i);
+        expect(freshnessCheck.blocking).toBe(true);
+
+        const item = document.querySelector('[data-preflight-item="manifest-freshness"]');
+        expect(item.dataset.status).toBe('warn');
+
+        const actions = document.querySelector('[data-manifest-freshness-actions]');
+        expect(actions.hidden).toBe(false);
+        expect(actions.getAttribute('aria-hidden')).toBe('false');
+
+        const ackControl = document.querySelector('[data-manifest-freshness-ack-control]');
+        expect(ackControl.hidden).toBe(false);
+        const recheckBtn = document.querySelector('[data-manifest-freshness-recheck]');
+        expect(recheckBtn).not.toBeNull();
+        expect(recheckBtn.disabled).toBe(false);
+    });
+
+    test("'current' freshness collapses the preflight row to pass and hides recovery controls", async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('current');
+        const checks = await __testHooks.refreshPreflightDiagnostics();
+        const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck.state).toBe('pass');
+        expect(freshnessCheck.blocking).toBe(false);
+
+        const actions = document.querySelector('[data-manifest-freshness-actions]');
+        expect(actions.hidden).toBe(true);
+        const ackControl = document.querySelector('[data-manifest-freshness-ack-control]');
+        expect(ackControl.hidden).toBe(true);
+    });
+
+    test("'stale' freshness surfaces a fail signal that adds a blocking reason", async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('stale');
+        const checks = await __testHooks.refreshPreflightDiagnostics();
+        const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck.state).toBe('fail');
+        expect(freshnessCheck.blocking).toBe(true);
+
+        const policy = __testHooks.evaluatePreflightPolicy(checks);
+        expect(policy.canInstall).toBe(false);
+        expect(policy.blockingReasons.join(' ')).toMatch(/newer firmware manifest/i);
+
+        const actions = document.querySelector('[data-manifest-freshness-actions]');
+        expect(actions.hidden).toBe(false);
+        const ackControl = document.querySelector('[data-manifest-freshness-ack-control]');
+        // 'stale' is a hard fail — no inline acknowledgement, only reload.
+        expect(ackControl.hidden).toBe(true);
+    });
+
+    test('inline acknowledgement clears the unknown freshness gate without a reload', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('unknown');
+        await __testHooks.refreshPreflightDiagnostics();
+
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(false);
+        expect(__testHooks.evaluateFreshnessGate().blockingReason).toMatch(/Recheck manifest freshness/i);
+
+        const ackInput = document.querySelector('[data-manifest-freshness-acknowledge]');
+        ackInput.checked = true;
+        ackInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
+
+        const checks = await __testHooks.refreshPreflightDiagnostics();
+        const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck.state).toBe('pass');
+        expect(freshnessCheck.detail).toMatch(/acknowledged/i);
+    });
+
+    test('blocking copy on the unknown gate names the recheck and acknowledgement controls', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('unknown');
+        const verdict = __testHooks.evaluateFreshnessGate();
+        expect(verdict.ok).toBe(false);
+        expect(verdict.blockingReason).toMatch(/Recheck manifest freshness/i);
+        expect(verdict.blockingReason).toMatch(/acknowledgement/i);
+        expect(verdict.blockingReason).not.toMatch(/warning above/i);
+    });
+
+    test('Recheck manifest freshness button re-runs the probe and updates the verdict in-session', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.captureManifestMetadata({
+            manifest_version: 1,
+            generated_at: '2026-05-04T00:00:00.000Z',
+            source_commit: 'abc1234'
+        });
+
+        // First probe: simulate a network error → verdict 'unknown'.
+        global.fetch = jest.fn(() => Promise.reject(new Error('offline')));
+        await __testHooks.checkManifestFreshnessNow({ force: true });
+        await __testHooks.refreshPreflightDiagnostics();
+
+        let freshnessCheck = (window.latestPreflightChecks || []).find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck.state).toBe('warn');
+        expect(__testHooks.getManifestFreshness !== undefined).toBe(true);
+
+        // Now make the recheck succeed: matching generated_at → verdict 'current'.
+        global.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ generated_at: '2026-05-04T00:00:00.000Z' })
+        }));
+
+        const recheckBtn = document.querySelector('[data-manifest-freshness-recheck]');
+        expect(recheckBtn).not.toBeNull();
+        recheckBtn.click();
+
+        // Allow the async recheck + refresh to settle.
+        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        const checks = await __testHooks.refreshPreflightDiagnostics();
+        freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck.state).toBe('pass');
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
+
+        const actions = document.querySelector('[data-manifest-freshness-actions]');
+        expect(actions.hidden).toBe(true);
+    });
+
+    test('inline acknowledgement does NOT satisfy the freshness gate when the verdict is stale', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('stale');
+        // The acknowledgement is a no-op for stale (the row hides the ack
+        // control entirely). Even if a stray setter sets it, the gate must
+        // remain blocked because stale is a hard fail.
+        __testHooks.setManifestFreshnessAcknowledgement(true);
+        const verdict = __testHooks.evaluateFreshnessGate();
+        expect(verdict.ok).toBe(false);
+        expect(verdict.manifestStaleBlocking).toBe(true);
+    });
+
+    test('a fresh unknown verdict after acknowledgement re-blocks the gate', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        __testHooks.setManifestFreshnessState('unknown');
+        __testHooks.setManifestFreshnessAcknowledgement(true);
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
+
+        // Simulate a recheck that produces a different verdict and then
+        // bounces back to 'unknown'. The state setter clears ack on a real
+        // verdict change.
+        __testHooks.setManifestFreshnessState('current');
+        __testHooks.setManifestFreshnessState('unknown');
+
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(false);
+        const checks = await __testHooks.refreshPreflightDiagnostics();
+        const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+        expect(freshnessCheck.state).toBe('warn');
+    });
+});
