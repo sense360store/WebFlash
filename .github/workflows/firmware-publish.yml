@@ -248,7 +248,42 @@ jobs:
     permissions:
       pages: write
       id-token: write
+    outputs:
+      # Re-export the deployed origin so the smoke-test job can hit it.
+      # actions/deploy-pages emits e.g. https://sense360store.github.io/WebFlash/
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  smoke-test:
+    # Post-deploy production smoke test: verifies the live origin actually
+    # serves a production-acceptable manifest (correct source_commit, no
+    # dev-key signatures on stable builds, no placeholder bins, required
+    # release-one config + rescue firmware present, installer title
+    # served on the root page). Read-only HTTP — does not flash hardware
+    # and does not regenerate the manifest.
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify deployed manifest
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PAGE_URL:-}" ]; then
+            echo "❌ deploy job did not export page_url; cannot smoke-test." >&2
+            exit 1
+          fi
+          python scripts/smoke-test-deployment.py \
+            --base-url "${PAGE_URL}" \
+            --expected-commit "${GITHUB_SHA}"
