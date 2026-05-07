@@ -6327,8 +6327,16 @@ function initializeFromUrl() {
         }
     }
 
+    // A fresh visit has no manual-config URL markers (mount/power/module
+    // keys). The kit-mode flow uses its own URL namespace (configmode, sku)
+    // and stays on Step 1 until the user clicks "Continue", so links carrying
+    // only those params should also land on Step 1: Get started.
+    const hasManualConfigMarkers = parsed.presentKeys && parsed.presentKeys.size > 0;
+
     if (parsedStep) {
         targetStep = Math.min(parsedStep, maxStep);
+    } else if (!hasManualConfigMarkers) {
+        targetStep = 1;
     } else if (!configuration.mounting) {
         targetStep = 1;
     } else if (!configuration.power) {

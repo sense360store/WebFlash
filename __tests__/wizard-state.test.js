@@ -460,4 +460,49 @@ describe('wizard state module', () => {
 
         expect(stateModule.getState().voice).toBe('none');
     });
+
+    test('fresh visit with no URL params lands on Step 1: Get started', async () => {
+        window.history.replaceState(null, '', '/');
+
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+
+        expect(stateModule.getStep()).toBe(1);
+    });
+
+    test('kit-mode share link (configmode/sku only) lands on Step 1', async () => {
+        window.history.replaceState(null, '', '?configmode=kit&sku=S360-KIT-CEILING-AIRIQ');
+
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+
+        expect(stateModule.getStep()).toBe(1);
+    });
+
+    test('configmode=manual without other markers lands on Step 1', async () => {
+        window.history.replaceState(null, '', '?configmode=manual');
+
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+
+        expect(stateModule.getStep()).toBe(1);
+    });
+
+    test('manual share link with mount+power advances past Step 1', async () => {
+        window.history.replaceState(null, '', '?mount=ceiling&power=usb');
+
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+
+        expect(stateModule.getStep()).toBeGreaterThan(1);
+    });
+
+    test('explicit step= URL param is honored even with no other markers', async () => {
+        window.history.replaceState(null, '', '?step=2');
+
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+
+        expect(stateModule.getStep()).toBe(2);
+    });
 });
