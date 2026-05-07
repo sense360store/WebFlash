@@ -1282,7 +1282,60 @@ DEFAULT_MIN_FIRMWARE_SIZE_BYTES = 100 * 1024
 # Sentinel size for the placeholder stubs already committed (18-byte files). Anything
 # at or below this is treated as "intentional placeholder" rather than a suspicious
 # size. Production firmware will not produce values this low.
+#
+# Production-mode policy: a placeholder-sized binary is fixture data, not
+# real firmware. `validate_manifest_metadata` rejects placeholder stable /
+# rescue / application firmware in production mode so the publish pipeline
+# cannot ship a manifest entry whose `.bin` is just the committed stub.
+# Development / test mode (or `artifact_type=test_fixture`) tolerate
+# placeholders so unit fixtures keep working.
 PLACEHOLDER_FIRMWARE_SIZE_BYTES = 64
+
+# Known placeholder payloads that the committed fixture binaries use. The
+# 18-byte stubs in `firmware/configurations/` contain the literal bytes
+# `Binary placeholder`; we keep the list here so the production gate can
+# reject "real-sized" binaries that still happen to be a placeholder
+# masquerading as firmware (e.g. a fixture padded out to a plausible size).
+KNOWN_PLACEHOLDER_PAYLOADS: Tuple[bytes, ...] = (
+    b"Binary placeholder",
+)
+
+
+def _file_bytes_look_like_placeholder(path: Path, file_size: int) -> bool:
+    """Return True when the file at ``path`` is one of the known
+    placeholder fixtures.
+
+    A binary is considered a placeholder when:
+      * its size is <= PLACEHOLDER_FIRMWARE_SIZE_BYTES *and* its full
+        contents match one of ``KNOWN_PLACEHOLDER_PAYLOADS``, OR
+      * its first ``len(payload)`` bytes equal one of the known payloads
+        (covers placeholders padded out to a larger size).
+    """
+
+    if not path.exists():
+        return False
+    try:
+        if file_size <= PLACEHOLDER_FIRMWARE_SIZE_BYTES:
+            data = path.read_bytes()
+            for payload in KNOWN_PLACEHOLDER_PAYLOADS:
+                if data == payload:
+                    return True
+                # Tolerate trailing newline / whitespace so a placeholder
+                # written with `echo` still trips the check.
+                if data.strip() == payload.strip():
+                    return True
+            return False
+        # File is larger than the sentinel; sniff the first 64 bytes only.
+        # Reading more would defeat the streaming-friendly compute_digests
+        # path elsewhere in this script.
+        with path.open("rb") as handle:
+            head = handle.read(max((len(p) for p in KNOWN_PLACEHOLDER_PAYLOADS), default=0))
+        for payload in KNOWN_PLACEHOLDER_PAYLOADS:
+            if head.startswith(payload):
+                return True
+    except OSError:
+        return False
+    return False
 
 # Mirrors SYNTH_CHANGELOG_PATTERN in scripts/utils/firmware-provenance.js. Used to
 # defensively detect changelogs that look like an old auto-synthesised line so
@@ -1492,6 +1545,36 @@ def validate_manifest_metadata(
                     f"plausible-firmware threshold ({min_firmware_size} bytes). "
                     "Verify this isn't a truncated build."
                 )
+            # Production-mode placeholder rejection. The committed stub
+            # binaries (18-byte "Binary placeholder" files) MUST NOT ship
+            # in a production manifest; they are fixture data, not real
+            # firmware. Two checks compose:
+            #   * file_size at or below the sentinel — clearly a stub.
+            #   * file content matches a known placeholder payload — covers
+            #     stubs that were padded out to a plausible size, so an
+            #     attacker cannot smuggle a placeholder past the size gate
+            #     just by appending zeros.
+            # Only stable / rescue (the user-facing install channels) are
+            # affected; preview/beta/dev placeholders continue to be tolerated
+            # so internal fixtures keep working.
+            if is_production and channel in {"stable", "rescue"}:
+                if 0 < artifact.file_size <= PLACEHOLDER_FIRMWARE_SIZE_BYTES:
+                    findings.append(
+                        f"Production stable firmware cannot use placeholder "
+                        f"binary: {name} (file_size={artifact.file_size} bytes "
+                        f"is at or below the placeholder sentinel "
+                        f"{PLACEHOLDER_FIRMWARE_SIZE_BYTES}). Publish a real "
+                        f"signed firmware binary for this configuration."
+                    )
+                elif _file_bytes_look_like_placeholder(
+                    artifact.path, artifact.file_size
+                ):
+                    findings.append(
+                        f"Production stable firmware cannot use placeholder "
+                        f"binary: {name} (file content matches a known "
+                        f"placeholder payload). Publish a real signed firmware "
+                        f"binary for this configuration."
+                    )
         elif is_production:
             findings.append(
                 f"{name}: artifact_type=test_fixture must not appear in a "

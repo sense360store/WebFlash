@@ -268,6 +268,46 @@ describe('firmware provenance gating in state.js', () => {
         }
     });
 
+    test('placeholder file_size on a stable build blocks install before any download', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        // 18-byte placeholder fixture sentinel size — production gate must
+        // refuse it so the wizard never advertises a placeholder as
+        // installable to end users.
+        window.currentFirmware = { ...VALID_STABLE_FIRMWARE, file_size: 18 };
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        expect(global.fetch).not.toHaveBeenCalledWith(
+            expect.stringContaining('firmware/configurations/'),
+            expect.anything()
+        );
+        expect(window.latestFirmwareProvenance.ok).toBe(false);
+        expect(window.latestFirmwareProvenance.sizeClassification).toBe('placeholder');
+        expect(window.latestFirmwareProvenance.blockingReasons.join(' ')).toMatch(
+            /placeholder fixture/i
+        );
+        expect(window.latestFirmwareProvenance.blockingReasons.join(' ')).toMatch(
+            /cannot be installed by the production WebFlash app/i
+        );
+    });
+
+    test('placeholder firmware never surfaces "Firmware verified successfully" copy in production', async () => {
+        const { __testHooks } = await import('../scripts/state.js');
+        window.currentFirmware = { ...VALID_STABLE_FIRMWARE, file_size: 18 };
+
+        await __testHooks.verifyCurrentFirmwareIntegrity();
+
+        const html = __testHooks.renderFirmwareProvenanceSection({
+            ...VALID_STABLE_FIRMWARE,
+            file_size: 18
+        });
+        expect(html).not.toMatch(/firmware verified successfully/i);
+        expect(html).toMatch(/placeholder fixture/i);
+        // Provenance panel surfaces the rejection in its `data-firmware-provenance`
+        // attribute so CSS / a11y tooling can react to the failed state.
+        expect(html).toMatch(/data-firmware-provenance="fail"/);
+    });
+
     test('static provenance failure leaves the firmware verification state in failed state', async () => {
         const { __testHooks } = await import('../scripts/state.js');
         // Suspicious size between placeholder and threshold should fail before

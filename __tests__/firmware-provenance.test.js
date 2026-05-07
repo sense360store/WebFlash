@@ -151,11 +151,51 @@ describe('validateFirmwareProvenance — required fields', () => {
 });
 
 describe('validateFirmwareProvenance — file size sanity', () => {
-    test('placeholder fixture sizes are tolerated by default (matches gen-manifests.py)', () => {
+    test('placeholder fixture sizes are tolerated in development/test mode (matches gen-manifests.py --mode development)', () => {
         const placeholderBuild = { ...VALID_STABLE_BUILD, file_size: 18 };
-        const report = validateFirmwareProvenance(placeholderBuild);
+        const report = validateFirmwareProvenance(placeholderBuild, { mode: 'development' });
         expect(report.sizeClassification).toBe('placeholder');
         expect(report.ok).toBe(true);
+    });
+
+    test('placeholder stable firmware is REFUSED by the production-mode static gate', () => {
+        // The 18-byte fixtures committed to the repo are not real firmware
+        // images. The production install gate must refuse them so end users
+        // never see a placeholder advertised as installable.
+        const placeholderBuild = { ...VALID_STABLE_BUILD, file_size: 18 };
+        const report = validateFirmwareProvenance(placeholderBuild, { mode: 'production' });
+        expect(report.sizeClassification).toBe('placeholder');
+        expect(report.ok).toBe(false);
+        expect(report.status).toBe('fail');
+        expect(report.blockingReasons.join(' ')).toMatch(/placeholder fixture/i);
+        expect(report.blockingReasons.join(' ')).toMatch(/cannot be installed by the production WebFlash app/i);
+        const sizeCheck = findCheck(report, CHECK_IDS.FILE_SIZE_PLAUSIBLE);
+        expect(sizeCheck.status).toBe('fail');
+        expect(sizeCheck.severity).toBe('block');
+    });
+
+    test('placeholder firmware passes when artifact_type is test_fixture even in production mode', () => {
+        const fixture = {
+            ...VALID_STABLE_BUILD,
+            artifact_type: ARTIFACT_TYPES.TEST_FIXTURE,
+            file_size: 18
+        };
+        const report = validateFirmwareProvenance(fixture, { mode: 'production' });
+        // test_fixture artifacts are exempt from the placeholder check —
+        // their whole purpose is to be tiny stubs.
+        const sizeCheck = findCheck(report, CHECK_IDS.FILE_SIZE_PLAUSIBLE);
+        expect(sizeCheck.status).toBe('pass');
+    });
+
+    test('explicit allowPlaceholderSize:true override re-allows placeholders in production mode', () => {
+        const placeholderBuild = { ...VALID_STABLE_BUILD, file_size: 18 };
+        const report = validateFirmwareProvenance(
+            placeholderBuild,
+            { mode: 'production', allowPlaceholderSize: true }
+        );
+        const sizeCheck = findCheck(report, CHECK_IDS.FILE_SIZE_PLAUSIBLE);
+        expect(sizeCheck.status).toBe('pass');
+        expect(sizeCheck.detail).toMatch(/placeholder fixture/i);
     });
 
     test('suspiciously small application binaries trigger a blocking warning', () => {
@@ -175,12 +215,15 @@ describe('validateFirmwareProvenance — file size sanity', () => {
         expect(report.verifiedFields).toContain('file_size_plausible');
     });
 
-    test('non-default placeholder threshold can be tightened via options', () => {
+    test('explicit allowPlaceholderSize:false rejects placeholders even in development mode', () => {
         const report = validateFirmwareProvenance(
             { ...VALID_STABLE_BUILD, file_size: 18 },
-            { allowPlaceholderSize: false }
+            { mode: 'development', allowPlaceholderSize: false }
         );
-        expect(report.warnings.join(' ')).toMatch(/placeholder/i);
+        // Production-grade rejection: placeholder firmware fails closed
+        // with a blocking severity, not just a soft warning.
+        expect(report.ok).toBe(false);
+        expect(report.blockingReasons.join(' ')).toMatch(/placeholder fixture/i);
     });
 
     test('PLACEHOLDER_FIRMWARE_SIZE_BYTES is the documented sentinel', () => {
