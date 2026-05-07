@@ -751,6 +751,34 @@ function formatConfigSegment(moduleKey, moduleValue) {
     return `-${segment}`;
 }
 
+// Builds the canonical firmware-target config string from a wizard state
+// snapshot. Used both by findCompatibleFirmware (which matches against
+// manifest.builds[].config_string) and by the Step 4 firmware-target preview.
+// The two MUST share this composer so the preview cannot drift from the
+// string Step 5 actually uses to look up firmware. Returns '' if mounting
+// or power haven't been chosen yet.
+//
+// Segment order: Mount-Power[-AirIQ|-VentIQ][-Fan{Variant}][-RoomIQ][-LED]
+// Mirrors the published firmware filename convention (e.g.
+// Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin).
+function buildFirmwareTargetPreviewString(state = configuration) {
+    if (!state || !state.mounting || !state.power) {
+        return '';
+    }
+
+    const mountSegment = state.mounting.charAt(0).toUpperCase() + state.mounting.slice(1);
+    const powerSegment = state.power.toUpperCase();
+
+    let configString = `${mountSegment}-${powerSegment}`;
+    configString += formatConfigSegment('airiq', state.airiq);
+    configString += formatConfigSegment('ventiq', state.ventiq);
+    configString += formatConfigSegment('fan', state.fan);
+    configString += formatConfigSegment('roomiq', state.roomiq);
+    configString += formatConfigSegment('led', state.led);
+
+    return configString;
+}
+
 function formatHeaderList(headers = []) {
     const items = headers.filter(item => typeof item === 'string' && item.trim().length > 0);
     if (items.length === 0) {
@@ -1831,6 +1859,10 @@ function initializeWizard() {
         .then(() => {
             updateModuleOptionAvailability();
             updateModuleAvailabilityMessage();
+            // Manifest now populated → re-evaluate availability of the
+            // currently-shown firmware target so the warning toggles
+            // correctly without waiting for the next user interaction.
+            updateFirmwareTargetPreview();
 
             if (currentStep === 4) {
                 findCompatibleFirmware();
@@ -1839,6 +1871,7 @@ function initializeWizard() {
         .catch(() => {
             resetOptionAvailability();
             updateModuleAvailabilityMessage();
+            updateFirmwareTargetPreview();
         });
 }
 
@@ -2606,10 +2639,92 @@ function updateConfiguration(options = {}) {
     syncModuleToggleStates();
     updateModuleConflictBadges();
     updateModuleGroupSummaries();
+    updateModuleFirmwareImpactHints();
+    updateFirmwareTargetPreview();
 
     if (!options.skipUrlUpdate) {
         updateUrlFromConfiguration();
     }
+}
+
+// Reveals the small "Adds RoomIQ to the firmware target." / "Uses the VentIQ
+// firmware target instead of AirIQ." hints so the user understands which
+// selections actually change the firmware identifier built in
+// updateFirmwareTargetPreview() below. Hints stay hidden until their module
+// is selected so the panel does not become a wall of text.
+function updateModuleFirmwareImpactHints() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const hints = [
+        { selector: '[data-firmware-impact="roomiq"]', shouldShow: () => configuration.roomiq === 'roomiq' },
+        { selector: '[data-firmware-impact="ventiq"]', shouldShow: () => configuration.ventiq === 'ventiq' }
+    ];
+
+    hints.forEach(({ selector, shouldShow }) => {
+        const node = document.querySelector(selector);
+        if (!node) {
+            return;
+        }
+
+        const visible = Boolean(shouldShow());
+        node.hidden = !visible;
+        if (visible) {
+            node.removeAttribute('aria-hidden');
+        } else {
+            node.setAttribute('aria-hidden', 'true');
+        }
+    });
+}
+
+// Renders the Step 4 firmware-target preview block using the same config
+// string composer (buildFirmwareTargetPreviewString) that Step 5 uses to
+// match against manifest builds. The preview MUST stay aligned with the
+// actual install-time match — if it drifts, users see one identifier on
+// Step 4 and a different "not available" filename on Step 5.
+//
+// When mounting/power are not yet picked the preview prompts the user to
+// continue. When the assembled config string has no matching manifest
+// build the preview surfaces a neutral, non-blocking warning. Module
+// selection itself is never blocked here.
+function updateFirmwareTargetPreview() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const root = document.getElementById('firmware-target-preview');
+    if (!root) {
+        return;
+    }
+
+    const valueEl = root.querySelector('[data-firmware-target-preview-value]');
+    const warningEl = root.querySelector('[data-firmware-target-preview-warning]');
+
+    const configString = buildFirmwareTargetPreviewString(configuration);
+
+    if (!configString) {
+        if (valueEl) {
+            valueEl.textContent = 'Select mounting and power to generate a firmware target.';
+            valueEl.classList.remove('firmware-target-preview__value--ready');
+        }
+        if (warningEl) {
+            warningEl.hidden = true;
+        }
+        root.dataset.firmwareTargetState = 'incomplete';
+        return;
+    }
+
+    if (valueEl) {
+        valueEl.textContent = configString;
+        valueEl.classList.add('firmware-target-preview__value--ready');
+    }
+
+    const isAvailable = manifestConfigStringLookup.has(configString);
+    if (warningEl) {
+        warningEl.hidden = isAvailable;
+    }
+    root.dataset.firmwareTargetState = isAvailable ? 'available' : 'unpublished';
 }
 
 function nextStep() {
@@ -5604,14 +5719,7 @@ async function findCompatibleFirmware() {
     }
 
     const previousConfigString = window.currentConfigString;
-    let configString = '';
-
-    configString += `${configuration.mounting.charAt(0).toUpperCase() + configuration.mounting.slice(1)}`;
-    configString += `-${configuration.power.toUpperCase()}`;
-
-    configString += formatConfigSegment('airiq', configuration.airiq);
-    configString += formatConfigSegment('ventiq', configuration.ventiq);
-    configString += formatConfigSegment('fan', configuration.fan);
+    const configString = buildFirmwareTargetPreviewString(configuration);
 
     window.currentConfigString = configString;
 
@@ -6402,6 +6510,9 @@ export const __testHooks = Object.freeze({
     getManifestFreshness,
     parseConfigStringState,
     formatConfigSegment,
+    buildFirmwareTargetPreviewString,
+    updateFirmwareTargetPreview,
+    updateModuleFirmwareImpactHints,
     MODULE_VARIANT_LABELS,
     verifyCurrentFirmwareIntegrity,
     renderFirmwareProvenanceSection,
