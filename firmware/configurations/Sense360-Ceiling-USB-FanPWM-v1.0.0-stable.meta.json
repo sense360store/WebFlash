@@ -1,6 +1,0 @@
-{
-  "signed_by": "Sense360 release pipeline",
-  "changelog": [
-    "Initial tracked stable release for the Sense360 Ceiling-USB-FanPWM configuration; targets the Sense360 PWM (S360-311) driver on a USB-powered Core."
-  ]
-}

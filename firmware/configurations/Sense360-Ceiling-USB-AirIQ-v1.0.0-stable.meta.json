@@ -1,6 +1,0 @@
-{
-  "signed_by": "Sense360 release pipeline",
-  "changelog": [
-    "Initial tracked stable release for the Sense360 Ceiling-USB-AirIQ configuration; ships the AirIQ default sensor calibration tables on a USB-powered Core."
-  ]
-}

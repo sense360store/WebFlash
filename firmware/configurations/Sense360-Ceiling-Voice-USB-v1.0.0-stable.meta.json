@@ -1,6 +1,0 @@
-{
-  "signed_by": "Sense360 release pipeline",
-  "changelog": [
-    "Initial tracked stable release for the Sense360 Ceiling-Voice-USB configuration; Voice-variant Core on USB power without expansion modules."
-  ]
-}

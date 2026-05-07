@@ -1,6 +1,0 @@
-{
-  "signed_by": "Sense360 release pipeline",
-  "changelog": [
-    "Stable v1.0.1 patch for Sense360 Ceiling-PWR-AirIQ; supersedes v1.0.0 with the standard hardware probe sequence."
-  ]
-}
