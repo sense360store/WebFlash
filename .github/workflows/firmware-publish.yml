@@ -127,10 +127,9 @@ jobs:
 
       - name: Report manifest metadata findings
         # Trust-signal validation: description / modules / file-size / release-note
-        # checks. Runs in warn-only mode against the freshly generated manifest so
-        # findings are visible in CI logs without blocking firmware deployment.
-        # Tighten to --strict-validate once existing stable builds gain release notes.
-        continue-on-error: true
+        # checks against the freshly generated manifest. Fails closed so any
+        # finding (missing changelog, drifted description, suspicious size, etc.)
+        # blocks the Pages deploy job that depends on this build.
         env:
           WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
           WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
