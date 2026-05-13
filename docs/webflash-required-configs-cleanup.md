@@ -291,3 +291,59 @@ Scope of WF-CLEANUP-005 — what changed and what did not:
   itself, the Release-One import, the Rescue firmware, the `FanTRIAC`
   blocked status, and the `LED` exclusion status. No legacy configs and
   no FanTRIAC entry were re-introduced.
+
+## WF-CLEANUP-006 update
+
+WF-CLEANUP-006 adds an automated guard preventing generated manifests
+from referencing missing binaries or drifting out of sync with the
+firmware actually on disk. It ships as a single Jest suite at
+`__tests__/manifest-health.test.js` and runs as part of the existing
+`npm test -- --ci` step in `.github/workflows/firmware-publish.yml`, so
+the publish run fails before deploy if any of the following invariants
+break:
+
+* every `manifest.json` build part path resolves to a file on disk;
+* every `firmware-*.json` build part path resolves to a file on disk;
+* every `firmware/configurations/*.bin` has a sibling `.meta.json`
+  sidecar (Rescue under `firmware/rescue/` remains exempt — it uses the
+  per-product `firmware/rescue/manifest.json` instead);
+* the `firmware-*.json` set is in sync with `manifest.json` (equal build
+  counts, every per-build manifest's path is also in `manifest.json`, no
+  orphan `firmware-N.json` files);
+* no manifest build's `config_string` carries the globally blocked
+  `FanTRIAC` token, and for every `firmware/sources.json` source that
+  declares `block_tokens`, the matching manifest build contains none of
+  those tokens (this is what keeps `LED` out of the current Release-One
+  `Ceiling-POE-VentIQ-RoomIQ` without globally banning `LED` for any
+  future LED build);
+* every entry in `REQUIRED_CONFIGS` (parsed from
+  `.github/workflows/firmware-publish.yml`) appears as a `config_string`
+  in `manifest.json`.
+
+Scope of WF-CLEANUP-006 — what changed and what did not:
+
+* **Changed:** new `__tests__/manifest-health.test.js`, this document,
+  `docs/webflash-cleanup-audit.md`, and a short mention in
+  `DEVELOPER.md`'s Automated Testing section.
+* **Unchanged:** every `firmware/configurations/*.bin` and `*.meta.json`,
+  `firmware/rescue/*`, `firmware/sources.json`, `manifest.json`, every
+  `firmware-*.json`, `.github/workflows/*`, `scripts/gen-manifests.py`,
+  `scripts/validate-naming-policy.js`, `CLAUDE.md`, all firmware-signing
+  artifacts, the wizard frontend, and `sw.js`. The guard is a pure
+  read-only check — no manifest generation, signing, deploy, installer
+  UX, source importer, config-string parsing, `REQUIRED_CONFIGS`
+  allowlist, Release-One import, Rescue firmware, FanTRIAC blocked
+  status, or LED exclusion status changes.
+
+Validation at the WF-CLEANUP-006 commit (clean tree post-WF-CLEANUP-005):
+
+* `npm test -- manifest-health` — 9 of 9 tests pass.
+* `npm test -- --ci` — 52 of 55 suites pass; 756 of 759 tests pass. The
+  9 new tests all pass; the 3 pre-existing failures
+  (`kits-json.test.js`, `module-selection-guidance.test.js`,
+  `firmware-provenance.test.js`) recorded by WF-CLEANUP-005 remain and
+  are explicitly out of scope.
+* `node scripts/validate-naming-policy.js firmware/configurations` —
+  passes.
+* `python3 scripts/gen-manifests.py --summary --dry-run --mode development`
+  — passes; idempotent (2 builds, 2 per-build manifests).
