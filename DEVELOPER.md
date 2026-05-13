@@ -16,15 +16,25 @@ WebFlash uses automated manifest generation to maintain firmware catalogs. All m
 ## Quick Reference
 
 ### Add Firmware
+
+**The canonical intake path is the cross-repo importer** ([next section](#import-firmware-from-esphome-public-github-releases)). New shipping firmware should be declared in [`firmware/sources.json`](firmware/sources.json) and pulled in via [`scripts/import-firmware-sources.py`](scripts/import-firmware-sources.py), which generates the `.meta.json` sidecar from the upstream release body and refuses any asset that fails SHA256 verification or carries a blocked token (`FanTRIAC`, `LED`). The Rescue firmware (built in-tree under `firmware/rescue/`) is the only sanctioned exception.
+
+The legacy "drop a `.bin` into the directory and re-run the generator" flow is preserved below for hand-curated builds that already satisfy the sidecar / source-declaration / manifest-health expectations, but it is **not** how new Release-One firmware should arrive. The `__tests__/manifest-health.test.js` guard (WF-CLEANUP-006) fails CI if any `manifest.json` build references a missing `.bin`, or if a `firmware/configurations/*.bin` is missing its `.meta.json` sidecar.
+
 ```bash
+# Legacy direct-commit flow — use the importer (next section) for upstream
+# firmware. Use this only when you have a hand-curated build that already has
+# a matching .meta.json sidecar, satisfies block_tokens, and is recognised by
+# REQUIRED_CONFIGS.
+
 # 1. Place firmware in directory
-cp firmware.bin firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-[Channel].bin
+cp firmware.bin firmware/configurations/Sense360-[Config]-v[Version]-[Channel].bin
 
 # 2. Create release notes (optional)
 # stable notes (production-discoverable):
-nano firmware/configurations/Sense360-[CoreType]-[Config]-v[Version]-stable.md
+nano firmware/configurations/Sense360-[Config]-v[Version]-stable.md
 # preview/beta notes (non-production path):
-nano firmware/previews/Sense360-[CoreType]-[Config]-v[Version]-[Channel].md
+nano firmware/previews/Sense360-[Config]-v[Version]-[Channel].md
 
 # 3. Generate manifests
 python3 scripts/gen-manifests.py --summary
@@ -136,19 +146,24 @@ The naming-policy validator (`scripts/validate-naming-policy.js`) actively rejec
 
 ### Examples
 
+These illustrate the canonical filename shape. All use current canonical
+tokens (`AirIQ`, `VentIQ`, `FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`,
+`LED`, `Voice`) and Ceiling-mount only. `Wall`, `AirIQBase` / `AirIQPro`,
+and `VentIQBase` / `VentIQPro` are validator-rejected legacy tokens and
+must not be used in new filenames. `FanTRIAC` and `LED` are accepted by
+the naming policy validator but are currently blocked from Release-One by
+`firmware/sources.json` `block_tokens` — including them only makes sense
+once that block lifts.
+
 ```
-Sense360-Core-Wall-USB-v1.0.0-stable.bin
-Sense360-Core-Ceiling-POE-AirIQBase-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-POE-LED-v1.0.0-stable.bin
-Sense360-CoreVoice-Wall-PWR-LED-AirIQPro-v1.2.0-preview.bin
-Sense360-Core-Ceiling-POE-AirIQPro-v2.0.0-beta.bin
-Sense360-Core-Ceiling-POE-VentIQBase-v1.0.0-stable.bin
-Sense360-CoreVoice-Ceiling-PWR-LED-VentIQPro-v1.0.0-stable.bin
-Sense360-Core-Ceiling-USB-FanPWM-v1.0.0-stable.bin
-Sense360-Core-Ceiling-USB-FanDAC-v1.0.0-stable.bin
-Sense360-Core-Ceiling-USB-FanTRIAC-v1.0.0-stable.bin
-Sense360-Core-Wall-USB-LED-v1.0.0-stable.bin
-Sense360-Core-Ceiling-POE-LED-AirIQBase-v1.0.0-stable.bin
+Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin    # current Release-One
+Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin
+Sense360-Ceiling-PWR-AirIQ-v1.0.0-stable.bin
+Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin
+Sense360-Ceiling-USB-FanPWM-v1.0.0-stable.bin
+Sense360-Ceiling-USB-FanDAC-v1.0.0-stable.bin
+Sense360-Ceiling-Voice-POE-AirIQ-v1.0.0-stable.bin
+Sense360-Ceiling-Voice-USB-v1.0.0-stable.bin
 ```
 
 
@@ -296,10 +311,19 @@ open http://localhost:5000
 
 ## Firmware Publishing Workflows
 
-### Via Direct Commit
+### Via Direct Commit (legacy)
+
+> **Use the importer for upstream firmware.** Direct-commit intake is a
+> legacy path retained for hand-curated builds that already have a matching
+> `.meta.json` sidecar and would not be rejected by the manifest-health
+> guard or the `block_tokens` allowlist (`FanTRIAC` and `LED` are currently
+> blocked on the Release-One source). For Release-One imports from
+> `sense360store/esphome-public`, see
+> [Import Firmware from `esphome-public` GitHub Releases](#import-firmware-from-esphome-public-github-releases)
+> above.
 
 ```bash
-# 1. Add firmware to repository
+# 1. Add firmware to repository (legacy flow; prefer the importer for new builds).
 cp your-firmware.bin firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin
 
 # 2. Create release notes (optional)
@@ -346,8 +370,14 @@ authoring required. The full operator flow is:
 
 #### Example release asset
 
+This worked example mirrors the current Release-One firmware
+(`Ceiling-POE-VentIQ-RoomIQ`, imported from `sense360store/esphome-public`
+v1.0.0). FanTRIAC and LED are intentionally absent — both tokens are
+currently blocked from Release-One via `firmware/sources.json` `block_tokens`
+and would be rejected by the importer.
+
 ```
-Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin
+Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin
 ```
 
 #### Example release body
@@ -355,19 +385,20 @@ Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin
 ```markdown
 ## Changelog
 
-- Initial production stable release for Ceiling-POE-VentIQ-FanTRIAC-RoomIQ
-  with PoE power, VentIQ bathroom air-quality sensing, TRIAC fan switching,
-  and RoomIQ room sensing.
+- Initial production stable release for Ceiling-POE-VentIQ-RoomIQ
+  with PoE power, VentIQ bathroom air-quality sensing, and RoomIQ
+  room sensing.
 
 ## Known Issues
 
-- None.
+- Sense360 TRIAC / FanTRIAC is not included in this Release-One firmware.
+- Sense360 TRIAC remains blocked until S360-320 schematic and direct GPIO
+  / timing requirements are verified.
 
 ## Features
 
 - PoE-powered Sense360 Core configuration
 - VentIQ bathroom air-quality sensing
-- TRIAC fan switching
 - RoomIQ room sensing
 
 ## Hardware Requirements
@@ -375,32 +406,36 @@ Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin
 - Sense360 Core R4 or newer
 - Sense360 PoE PSU
 - Sense360 VentIQ module
-- Sense360 TRIAC board
 - Sense360 RoomIQ module
+- No Sense360 TRIAC module for this Release-One firmware
+- No Sense360 LED module for this Release-One firmware
 ```
 
 CI will produce
-`firmware/configurations/Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.meta.json`
+`firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.meta.json`
 with this payload:
 
 ```json
 {
   "changelog": [
-    "Initial production stable release for Ceiling-POE-VentIQ-FanTRIAC-RoomIQ ..."
+    "Initial production stable release for Ceiling-POE-VentIQ-RoomIQ ..."
   ],
-  "known_issues": [],
+  "known_issues": [
+    "Sense360 TRIAC / FanTRIAC is not included in this Release-One firmware.",
+    "Sense360 TRIAC remains blocked until S360-320 schematic and direct GPIO/timing requirements are verified."
+  ],
   "features": [
     "PoE-powered Sense360 Core configuration",
     "VentIQ bathroom air-quality sensing",
-    "TRIAC fan switching",
     "RoomIQ room sensing"
   ],
   "hardware_requirements": [
     "Sense360 Core R4 or newer",
     "Sense360 PoE PSU",
     "Sense360 VentIQ module",
-    "Sense360 TRIAC board",
-    "Sense360 RoomIQ module"
+    "Sense360 RoomIQ module",
+    "No Sense360 TRIAC module for this Release-One firmware.",
+    "No Sense360 LED module for this Release-One firmware."
   ],
   "signed_by": "Sense360 release pipeline",
   "deprecated": false,

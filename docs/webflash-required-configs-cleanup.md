@@ -147,7 +147,7 @@ known-good state at every commit.
 | **WF-CLEANUP-005** | After WF-CLEANUP-004 lands: regenerate `manifest.json` and `firmware-*.json` from the resulting disk state. For Path A configs, run `python3 scripts/import-firmware-sources.py` first; for Path B configs, just run `python3 scripts/gen-manifests.py --summary`. Commit `.bin`, `.meta.json`, `manifest.json`, and the renumbered `firmware-*.json` files together. Verify the workflow's `REQUIRED_CONFIGS` guard passes and `__tests__/firmware-signature.test.js` goes green. | `manifest.json`, `firmware-*.json`, plus any newly imported `firmware/configurations/*.bin` / `*.meta.json`. |
 | **WF-CLEANUP-006** | Prune the 6 stale duplicate manifest entries (builds 1, 2, 3, 4, 7, 8). May be folded into WF-CLEANUP-005 if regeneration naturally drops them; called out separately because pruning a `deprecated: true` build (build 1) and the older-stable shadow (build 7) is an explicit policy decision. | `manifest.json`, the renumbered `firmware-*.json`. |
 | **WF-CLEANUP-007** | Add a CI guard that fails the workflow if any `manifest.json` build references a `.bin` or `.meta.json` that is missing from disk, or whose recorded `sha256` does not match the file on disk. This would have surfaced the WF-CLEANUP-001 audit findings as a CI failure rather than a follow-up audit. (Already proposed by WF-CLEANUP-001 as WF-CLEANUP-008; renumbered here for clarity.) | New test or workflow step. |
-| **WF-CLEANUP-008 (doc-drift)** | Update `CLAUDE.md:105` from "holds 9 entries" to "holds 10 entries" and add `Ceiling-POE-VentIQ-RoomIQ` to the inline enumeration. Doc-only; can be batched with WF-CLEANUP-004 to keep the docs and the workflow in lockstep. | `CLAUDE.md`. |
+| **WF-CLEANUP-008 (doc-drift) — superseded by WF-CLEANUP-007** | Originally proposed bumping `CLAUDE.md:105` from "holds 9 entries" to "holds 10 entries" after WF-CLEANUP-004 lands. Superseded: WF-CLEANUP-004 took **Path B** for all 8 legacy entries, so the final allowlist is **2 entries** (`Ceiling-POE-VentIQ-RoomIQ` and `Rescue`), not 10. WF-CLEANUP-007 rewrote `CLAUDE.md`'s `REQUIRED_CONFIGS` paragraph against the actual 2-entry state, so this row is no longer actionable. The slot **WF-CLEANUP-008** is now reused for the GitHub Pages deployed-surface audit described below. | n/a (superseded). |
 
 `gen-manifests.py` hardening (block_tokens enforcement in the generator,
 not just in the importer) is **already shipped** by WF-CLEANUP-002's
@@ -347,3 +347,52 @@ Validation at the WF-CLEANUP-006 commit (clean tree post-WF-CLEANUP-005):
   passes.
 * `python3 scripts/gen-manifests.py --summary --dry-run --mode development`
   — passes; idempotent (2 builds, 2 per-build manifests).
+
+## WF-CLEANUP-007 update
+
+WF-CLEANUP-007 is a **docs / agent-context-only** PR. It updates stale
+agent and developer guidance so future maintainers and coding agents do
+not reintroduce the legacy 10-entry / FanTRIAC / manual-copy assumptions
+that WF-CLEANUP-004 through WF-CLEANUP-006 already retired.
+
+The proposed **WF-CLEANUP-008 (doc-drift)** row in the follow-up table
+above was based on the pre-WF-CLEANUP-004 plan where the allowlist would
+have grown from 9 to 10 entries. WF-CLEANUP-004 actually took **Path B**
+for all 8 legacy entries, leaving the allowlist at 2 entries
+(`Ceiling-POE-VentIQ-RoomIQ` + `Rescue`). WF-CLEANUP-007 rewrites
+`CLAUDE.md` against that real state, so the "bump from 9 to 10" plan no
+longer applies and is marked superseded inline. The
+**WF-CLEANUP-008** slot is reused for the GitHub Pages deployed-surface
+audit (see the closing section of `docs/webflash-cleanup-audit.md`).
+
+Scope of WF-CLEANUP-007 — what changed and what did not:
+
+* **Changed:** `CLAUDE.md` (`REQUIRED_CONFIGS` paragraph and inline
+  `config_string` examples), `DEVELOPER.md` (Quick Reference reframed
+  around the importer, "Via Direct Commit" labelled legacy, Example
+  release asset / body / sidecar swapped to the current Release-One,
+  legacy filename examples cleaned), `docs/firmware-import.md` (current
+  source-list state + manifest-health-guard pointer),
+  `docs/webflash-cleanup-audit.md` (WF-CLEANUP-007 update + new
+  WF-CLEANUP-008 follow-up), this document (this update section +
+  superseded row), and minor `README.md` example refreshes.
+* **Unchanged:** every `firmware/configurations/*.bin` and `*.meta.json`,
+  `firmware/rescue/*`, `firmware/sources.json`, `manifest.json`, every
+  `firmware-*.json`, `.github/workflows/*`, all of `scripts/`, all of
+  `__tests__/`, `sw.js`, `package.json`, the wizard frontend, all
+  firmware-signing artifacts. No code, workflow, manifest, firmware,
+  frontend, runtime, service-worker, or test behaviour changes. The
+  signing path, manifest generation behaviour, deploy behaviour,
+  installer UX, source importer behaviour, config-string parsing,
+  `REQUIRED_CONFIGS` allowlist itself, Release-One import, Rescue
+  firmware, FanTRIAC blocked status, and LED exclusion status all
+  stay exactly as they landed in WF-CLEANUP-004 through WF-CLEANUP-006.
+
+Re-import remains the only sanctioned path back to a legacy `config_string`:
+any of the 8 removed configs can be re-added to `REQUIRED_CONFIGS` once a
+corresponding `firmware/sources.json` entry lands, the importer pulls a
+real `.bin` + `.meta.json` from a future `sense360store/esphome-public`
+release, and the regenerated manifest reflects it. Manual placement of a
+`.bin` into `firmware/configurations/` is not the normal intake path —
+the manifest-health guard (WF-CLEANUP-006) will fail CI if sidecar /
+source / `REQUIRED_CONFIGS` expectations are not satisfied.

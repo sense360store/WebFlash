@@ -89,13 +89,20 @@ entry. Each kit is an object with the following fields:
 | `wizard_state` | ✅ | The exact wizard state the kit maps to. Must contain `mount: "ceiling"` and a `power` value (`usb`, `poe`, or `pwr`). All module slots default to `"none"` if omitted. Keys: `mount`, `power`, `bathroom`, `airiq`, `ventiq`, `roomiq`, `fan`, `led`, `voice`. |
 | `components` | optional | Display-only list of `{sku, label}` pairs (e.g. `S360-100 — Sense360 Core`). |
 | `headers_required` | optional | Display-only list of header names required to wire the kit up. |
-| `firmware_config_string` | ✅ | Must exactly match a `build.config_string` in `manifest.json` (e.g. `Ceiling-POE-AirIQ`). The kit-config loader rejects entries that don't resolve. |
+| `firmware_config_string` | ✅ | Must exactly match a `build.config_string` in `manifest.json` (e.g. `Ceiling-POE-VentIQ-RoomIQ`). The kit-config loader rejects entries that don't resolve. |
 | `firmware_channel` | optional | Default channel preference (`stable`, `beta`, `preview`, `dev`). The release-channel picker still requires the user to acknowledge non-stable channels — kit metadata never bypasses this. Defaults to `stable`. |
 | `notes`, `known_limitations` | optional | String arrays surfaced in the explanation panel (currently unused; reserved). |
 
 When you add a new firmware configuration to `manifest.json`, also add the
 `config_string` to `REQUIRED_CONFIGS` in
 `.github/workflows/firmware-publish.yml` so CI keeps the manifest covered.
+New shipping firmware should arrive through the cross-repo importer —
+declare it in [`firmware/sources.json`](firmware/sources.json) and run
+[`scripts/import-firmware-sources.py`](scripts/import-firmware-sources.py)
+(see [`docs/firmware-import.md`](docs/firmware-import.md)). Manual
+placement of a `.bin` into `firmware/configurations/` is reserved for
+hand-curated builds that already satisfy the `.meta.json` sidecar,
+manifest-health, and `REQUIRED_CONFIGS` expectations.
 
 Kits with malformed entries (missing `sku`, unknown `power` value,
 unsupported `firmware_channel`, …) are silently skipped at load time so a
@@ -173,7 +180,7 @@ The diagnostics bundle (`Copy diagnostics` in Step 5) carries a top-level
     "resolved_core": "core",
     "resolved_modules": ["airiq"],
     "resolved_power": "poe",
-    "resolved_firmware_config": "Ceiling-POE-AirIQ"
+    "resolved_firmware_config": "Ceiling-POE-VentIQ-RoomIQ"
   }
 }
 ```

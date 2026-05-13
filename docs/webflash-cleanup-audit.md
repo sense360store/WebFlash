@@ -581,3 +581,91 @@ WF-CLEANUP-005):
   passes.
 * `python3 scripts/gen-manifests.py --summary --dry-run --mode development`
   — passes; output is idempotent (2 builds, 2 per-build manifests).
+
+## WF-CLEANUP-007 update
+
+WF-CLEANUP-007 is a **docs / agent-context-only** PR. It updates stale
+agent and developer guidance so future maintainers and coding agents do
+not reintroduce old manifest / config assumptions that WF-CLEANUP-004,
+WF-CLEANUP-005, and WF-CLEANUP-006 already retired.
+
+Scope of WF-CLEANUP-007 — what changed and what did not:
+
+* **Changed:** `CLAUDE.md` (refresh of the `REQUIRED_CONFIGS` paragraph
+  to reflect the 2-entry allowlist — `Ceiling-POE-VentIQ-RoomIQ` and
+  `Rescue` — plus the importer / manifest-health / FanTRIAC-blocked /
+  LED-excluded policy and an updated `config_string` example),
+  `DEVELOPER.md` (Quick Reference reframed around the importer, the
+  legacy direct-commit flow explicitly labelled, the Example release
+  asset / body / sidecar swapped from the blocked
+  `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` to the current Release-One
+  `Ceiling-POE-VentIQ-RoomIQ`, validator-rejected legacy filename
+  examples removed), `docs/firmware-import.md` (added a "current
+  source-list state" note and a manifest-health-guard section),
+  `docs/webflash-cleanup-audit.md` (this section), the
+  `docs/webflash-required-configs-cleanup.md` update section, and minor
+  `README.md` example refreshes.
+* **Unchanged:** every `firmware/configurations/*.bin` and `*.meta.json`,
+  `firmware/rescue/*`, `firmware/sources.json`, `manifest.json`, every
+  `firmware-*.json`, `.github/workflows/*`, all of `scripts/`, all of
+  `__tests__/`, `sw.js`, the wizard frontend, `package.json`, all
+  firmware-signing artifacts. No code, workflow, manifest, firmware,
+  frontend, runtime, service-worker, or test behaviour changes. The
+  signing path, manifest generation behaviour, deploy behaviour,
+  installer UX, source importer behaviour, config-string parsing,
+  `REQUIRED_CONFIGS` allowlist, Release-One import, Rescue firmware,
+  FanTRIAC blocked status, and LED exclusion status all stay as they
+  landed in WF-CLEANUP-004 through WF-CLEANUP-006.
+
+Validation snapshot at the WF-CLEANUP-007 commit:
+
+* `npm test -- --ci` — recorded inline with the commit.
+* `node scripts/validate-naming-policy.js firmware/configurations` —
+  expected pass; no firmware filenames changed.
+* `python3 scripts/gen-manifests.py --summary --dry-run --mode development`
+  — expected pass; no firmware or sidecar changes, so the dry-run output
+  must remain idempotent (2 builds, 2 per-build manifests).
+* Sanity grep: `9 entries` / `10 entries` no longer appears as a current
+  claim in `CLAUDE.md`, `README.md`, `DEVELOPER.md`, or `docs/`; any
+  `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` references that remain are
+  clearly labelled as legacy / blocked / historical, not as current
+  Release-One.
+
+## Next recommended follow-up — WF-CLEANUP-008
+
+The follow-up after WF-CLEANUP-007 is **WF-CLEANUP-008 — Audit GitHub
+Pages deployed surface**. It is intentionally **not** folded into
+WF-CLEANUP-007 (which stays docs / context only) and should land as its
+own PR.
+
+Suggested scope when WF-CLEANUP-008 lands:
+
+* fetch the live GitHub Pages `manifest.json` and compare it against the
+  committed `manifest.json` (build count, `config_string` set,
+  `generated_at`, `source_commit`);
+* fetch every live `firmware-*.json` and confirm every `parts[].path`
+  resolves on the deployed site (no 404s, no stale legacy build URLs);
+* verify the service-worker cache behaviour against the cache-policy
+  block in `sw.js` (especially that the cache name and per-asset
+  strategies match what's documented in `README.md`'s "Cache and version
+  policy" / "Per-asset cache policy" sections);
+* check static HTML / JS references for any hardcoded `firmware-N.json`
+  or `config_string` that pre-dates the 2-build manifest state;
+* enumerate stale share-link / URL-parameter shapes (legacy
+  `Ceiling-POE-AirIQ` etc.) and confirm the URL parser falls back
+  cleanly when the resolved `config_string` no longer matches a
+  manifest build;
+* exercise the wizard end-to-end against deployed assets for
+  configurations that no longer have a manifest build, and check the
+  Step 5 preflight UX (`WF-CLEANUP-009 — Preflight UX for unmatched
+  configurations` is the natural follow-up if gaps are found);
+* review post-deploy smoke-test coverage in
+  `.github/workflows/firmware-publish.yml` — confirm there is (or add) a
+  step that verifies the live `manifest.json` after deploy matches the
+  same `REQUIRED_CONFIGS` invariant the build step enforces, so a stale
+  cached deploy can't outlive the source tree.
+
+WF-CLEANUP-008 is read-only / observability work plus any
+docs / CI updates that fall out of the audit; it should not itself
+modify firmware, signing keys, manifests, the importer, or the wizard
+frontend.
