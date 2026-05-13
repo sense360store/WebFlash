@@ -444,3 +444,22 @@ next auditor; these did **not** touch repository state):
   3.11). This affects only the gen-manifests dry-run path.
 
 Neither fix was committed.
+
+## WF-CLEANUP-004 update
+
+WF-CLEANUP-004 has now landed against the **REQUIRED_CONFIGS review** /
+finding #3 table above. The stakeholder call for the 8 missing-`.bin`
+entries was made: all 8 were removed from `REQUIRED_CONFIGS` in
+`.github/workflows/firmware-publish.yml` (Path B / remove). The publish
+guard now tracks only `Ceiling-POE-VentIQ-RoomIQ` and `Rescue` — the two
+configs WebFlash can actually ship today. See
+`docs/webflash-required-configs-cleanup.md` for the per-config decision
+and the explicit out-of-scope list.
+
+This update is **workflow + docs only**. None of the audit's recorded
+disk-state findings change: the 14 stale `manifest.json` builds, every
+`firmware-*.json`, the orphan-resolution status of FanTRIAC (already
+resolved by WF-CLEANUP-002), the `LED` exclusion, and the pre-existing
+`firmware-signature.test.js` ENOENT failures are all still as documented
+above. Manifest regeneration to clear those is sequenced as
+**WF-CLEANUP-005 — regenerate/prune manifests to actual disk state**.
