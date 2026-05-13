@@ -497,6 +497,17 @@ python3 -m pytest
 python3 scripts/gen-manifests.py --summary --dry-run
 ```
 
+`__tests__/manifest-health.test.js` is the WF-CLEANUP-006 guard: it runs
+under the same `npm test -- --ci` step the publish workflow already uses
+and fails CI before deploy if `manifest.json` or any `firmware-*.json`
+references a missing `.bin`, if a `firmware/configurations/*.bin` lacks
+its `.meta.json` sidecar, if the per-build manifests drift out of sync
+with `manifest.json`, if a blocked token (`FanTRIAC` globally, plus any
+`block_tokens` declared in `firmware/sources.json` for a matching
+source) reappears in a generated `config_string`, or if a
+`REQUIRED_CONFIGS` entry is missing from `manifest.json`. Run it in
+isolation with `npm test -- manifest-health`.
+
 ## Directory Structure
 
 ```
