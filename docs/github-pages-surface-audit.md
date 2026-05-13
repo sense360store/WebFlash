@@ -1,0 +1,403 @@
+# GitHub Pages Surface Audit
+
+WF-CLEANUP-008. Audit-only. No frontend, service-worker, manifest, workflow,
+script, test, or source-importer behavior was changed by this PR.
+
+## Current source of truth
+
+Per WF-CLEANUP-001 through WF-CLEANUP-007, the repo's ship-ready state is:
+
+| Item | Value |
+| --- | --- |
+| Release-One config | `Ceiling-POE-VentIQ-RoomIQ` |
+| Release-One asset | `Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` (1,087,488 B) |
+| Rescue asset | `Sense360-Rescue-v1.0.0-rescue.bin` (524,288 B) |
+| `REQUIRED_CONFIGS` (allowlist in `firmware-publish.yml:211-214`) | `Ceiling-POE-VentIQ-RoomIQ`, `Rescue` |
+| `firmware/sources.json` `block_tokens` | `["FanTRIAC", "LED"]` |
+| Firmware source | `sense360store/esphome-public` release `v1.0.0` |
+| Repo `manifest.json` `source_commit` | `31e0928fbf3a87bd10b4cca42e949c86500356cd` |
+| Repo `manifest.json` `generated_at` | `2026-05-13T14:22:17.239284+00:00` |
+| Repo `sw.js` `CACHE_NAME` | `webflash-v5` |
+| Audit branch | `claude/audit-github-pages-hSm5Z` (HEAD `31aa96f`) |
+
+## Audit method
+
+1. Re-read the local generated manifests, firmware directory, service
+   worker, deployment workflow, deploy-time smoke test, the wizard's
+   manifest-matching and direct-install URL handling, the SW-update
+   service, and the manifest-freshness service.
+2. Local `grep` sweep for stale config strings (`Ceiling-POE-AirIQ`,
+   `Ceiling-POE-VentIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`,
+   `Ceiling-USB-AirIQ`, `Ceiling-USB-FanPWM`, `Ceiling-Voice-POE-AirIQ`,
+   `Ceiling-Voice-USB`, `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`), the
+   `FanTRIAC` and `LED Ring` tokens, and SW cache-name drift.
+3. Fetched the live GitHub Pages origin `https://sense360store.github.io/WebFlash/`
+   on 2026-05-13 17:36 UTC and compared `manifest.json`, `firmware-*.json`,
+   `sw.js`, and the root HTML to the repo's tree at HEAD. HEAD-checked
+   firmware binary URLs (current and known-stale) to see what the live
+   site still serves and what 404s. Tests intentionally retain legacy
+   config_string fixtures (`Ceiling-POE-AirIQ`, `Ceiling-USB`, etc.) so
+   `__tests__/` hits were filtered out of the "stale" classification —
+   they are recorded under `legacy/reference`.
+4. Walked the wizard's stale-share-link behavior in
+   `scripts/compat-config.js`, `scripts/utils/url-config.js`, and
+   `scripts/state.js` to confirm that an old share URL fails gracefully
+   instead of silently succeeding at flash time.
+5. Ran the available validation commands. `npm test` could not execute
+   locally (no `node_modules` in this environment); the CI workflow runs
+   `npm ci --no-audit --no-fund && npm test -- --ci`, see
+   `firmware-publish.yml:44-47`. `node scripts/validate-naming-policy.js
+   firmware/configurations` **passed**. `python3 scripts/gen-manifests.py
+   --summary --dry-run --mode development` failed locally because the
+   `cryptography` C extension is not installed in this environment;
+   `firmware-publish.yml:91-99` installs it in CI.
+
+## Local static assets
+
+| Asset | State |
+| --- | --- |
+| `manifest.json` | 2 builds: `Ceiling-POE-VentIQ-RoomIQ` (stable application, dev key `dev-2026-01`, 1,087,488 B) and `Rescue` (rescue channel, 524,288 B). Signed with the in-tree dev key — production CI overrides with `WEBFLASH_FIRMWARE_PRIVATE_KEY_B64` per `firmware-publish.yml:101-126`. |
+| `firmware-0.json` | Points at `firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin`. Matches the corresponding entry in `manifest.json`. |
+| `firmware-1.json` | Points at `firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin`. Matches the corresponding entry in `manifest.json`. |
+| `firmware/configurations/` | Exactly one `.bin` + one `.meta.json` for `Ceiling-POE-VentIQ-RoomIQ`. No orphan FanTRIAC binary. |
+| `firmware/rescue/` | One bin + a per-product `manifest.json`. |
+| `firmware/sources.json` | One source (`sense360store/esphome-public` v1.0.0), `block_tokens: ["FanTRIAC", "LED"]`. |
+| `sw.js` | `CACHE_NAME = 'webflash-v5'`. Network-first for `*.bin` and `manifest.json`; stale-while-revalidate for the app shell. Precaches `manifest.json`, the rescue bin, the app shell, and every wizard script. Activate handler purges any `webflash-*` cache that isn't the current name. |
+| `_headers` | Per its own header comment (`_headers:3-10`) GitHub Pages **ignores** this file. The aggressive `Cache-Control: max-age=31536000` rule on `*.bin` therefore has no effect on the deployed site. The CSP fallback lives in `index.html`'s `<meta http-equiv="Content-Security-Policy">`. |
+| `index.html` | Title `Sense360 Firmware Installer`. References CSS via `?v=20260506` cachebuster. Loads ESP Web Tools from `https://unpkg.com/esp-web-tools@10/dist/web/install-button.js`. No `firmware-*.json` is referenced directly from the document — they are constructed at runtime by the wizard. |
+| `scripts/services/manifest-freshness.js` | Re-fetches `manifest.json` with `cache: 'no-store'`, compares `generated_at`, and produces a `'current' / 'stale' / 'unknown'` verdict. |
+| `scripts/services/sw-update.js` | Tracks waiting SW; exposes `triggerSkipWaitingAndReload()`. The activate handler in `sw.js` only purges caches that already start with `webflash-`. |
+| `scripts/layout/freshness-banner.js` | Gates install: SW update available (block) > manifest `'stale'` (block) > SW update dismissed (warn) > manifest `'unknown'` (warn). |
+| `scripts/compat-config.js` | Direct-install URL path. On no-manifest-match calls `renderNoMatch()` ("Firmware Not Found" + the requested config_string + channel). Loads `manifest.json` with `cache: 'no-store'`. |
+| `scripts/utils/url-config.js` | URL parser. Still accepts legacy aliases (`pwr` → `ac`, `airiqpro`/`airiqprov` → `ventiq`, `bathroomairiq*` → `ventiq`, `fan=triac` → `FanTRIAC` segment, etc.) so old share links resolve to a `configKey`. The resulting key then either matches a build in the live manifest or falls through to the no-match UI. |
+| `scripts/state.js` | Wizard-flow path. `groupBuildsByConfig` + `manifestConfigStringLookup` are built from `build.config_string`; no-match falls through to `buildNotAvailableStatusMessage()` which surfaces nearby-config suggestions (`state.js:5934-5953`). |
+| `scripts/data/kits.json` | 6 of 7 kit definitions reference stale `firmware_config_string` values (`Ceiling-POE-AirIQ`, `Ceiling-USB-AirIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-FanPWM`, `Ceiling-POE-VentIQ`). Today these resolve against the live (stale) manifest; after the next deploy they will not resolve and the `kit-config` loader is documented to reject entries that don't resolve (`README.md:92`). |
+| `scripts/smoke-test-deployment.py` | `DEFAULT_REQUIRED_CONFIG = "Ceiling-POE-VentIQ-FanTRIAC-RoomIQ"` (line 42). The CI step in `firmware-publish.yml:289-291` does **not** pass `--required-config`, so the default is what runs. Header docstring lines 15-17 also still cite the FanTRIAC config. |
+
+## Live Pages assets
+
+Live origin: `https://sense360store.github.io/WebFlash/`. Captured
+2026-05-13 17:36 UTC. The live site reflects an **older commit than the
+repo HEAD**:
+
+| Field | Live | Repo HEAD |
+| --- | --- | --- |
+| `manifest.json` `source_commit` | `821e33017df5e66f812cf0d570800f73c083de15` | `31e0928fbf3a87bd10b4cca42e949c86500356cd` |
+| `manifest.json` `generated_at` | `2026-05-07T10:52:31.767518+00:00` | `2026-05-13T14:22:17.239284+00:00` |
+| `manifest.json` `builds[]` count | 16 (across 10 distinct config_strings) | 2 |
+| `firmware-*.json` files served | `firmware-0.json` … `firmware-15.json` | `firmware-0.json`, `firmware-1.json` |
+| `sw.js` `CACHE_NAME` | `webflash-v5` (matches repo) | `webflash-v5` |
+| Root page `<title>` | `Sense360 Firmware Installer` (matches smoke-test expected) | `Sense360 Firmware Installer` |
+| Response `Cache-Control` (all assets) | `max-age=600` (GitHub Pages default; `_headers` is ignored) | n/a |
+
+The live `821e3301…` commit predates WF-CLEANUP-002 through WF-CLEANUP-006
+(visible on this branch ahead of `origin/main`). The repo's
+`Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` (the current
+Release-One asset) **404s** on the live site — it has not yet been
+deployed.
+
+### Live manifest configuration coverage
+
+10 distinct `config_string` values in live `manifest.json`:
+
+| Config string | In live manifest? | In repo manifest? | In `REQUIRED_CONFIGS`? |
+| --- | :---: | :---: | :---: |
+| `Ceiling-POE-AirIQ` | ✅ (5 builds, all stable/beta) | ❌ | ❌ |
+| `Ceiling-POE-VentIQ` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-PWR-AirIQ` | ✅ (3) | ❌ | ❌ |
+| `Ceiling-USB` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-USB-AirIQ` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-USB-FanPWM` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-Voice-POE-AirIQ` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-Voice-USB` | ✅ (1) | ❌ | ❌ |
+| `Ceiling-POE-VentIQ-RoomIQ` | ❌ | ✅ (build 0, stable) | ✅ |
+| `Rescue` | ✅ (1, 524,288 B) | ✅ (build 1) | ✅ |
+
+13 of the 16 live builds report `file_size: 18` — the
+`Binary placeholder` stub. `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` (934,736 B)
+and `Rescue` (524,288 B) are the only live builds with plausibly real
+firmware sizes. All 16 builds are signed with `sense360-prod-2026-02`,
+the production key.
+
+### Live firmware binary URL checks
+
+| URL | Status | Size (etag) | Notes |
+| --- | :---: | --- | --- |
+| `firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` | **404** | — | Current Release-One; not yet deployed. |
+| `firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin` | 200 | 524,288 B | Matches repo hash. |
+| `firmware/configurations/Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin` | 200 | 934,736 B | Orphan FanTRIAC binary that WF-CLEANUP-002 removed from the repo. Still served live. |
+| `firmware/configurations/Sense360-Ceiling-POE-VentIQ-v1.0.0-stable.bin` | 200 | 18 B (placeholder) | Stale. |
+| `firmware/configurations/Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin` | 200 | 18 B (placeholder) | Stale. |
+| `firmware/configurations/Sense360-Ceiling-USB-v1.0.0-stable.bin` | 200 | 18 B (placeholder) | Stale. |
+| `firmware-16.json` | 404 | — | Confirms the firmware-N namespace is finite — only the indices present in the deployed artifact serve. |
+| `docs/webflash-cleanup-audit.md` | 404 | — | Pages does not serve the repo `docs/` tree (no Jekyll site config in repo root). |
+
+### Live `firmware-*.json` per-product manifests
+
+`firmware-0.json` through `firmware-15.json` are all live. Each is the
+standard ESP Web Tools per-product manifest for the corresponding build
+index in the live `manifest.json`. Spot-checked:
+
+- `firmware-0.json` → `Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin`,
+  `file_size: 18`, signature_key_id `sense360-prod-2026-02`.
+- `firmware-1.json` → `Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin`,
+  `file_size: 18`, `deprecated: true`.
+- `firmware-15.json` → `Sense360-Rescue-v1.0.0-rescue.bin`,
+  `file_size: 524288`.
+
+After the next deploy from this branch the namespace shrinks to
+`firmware-0.json` (Release-One) and `firmware-1.json` (Rescue);
+`firmware-2.json` through `firmware-15.json` will return 404.
+
+## Service worker and cache behavior
+
+`sw.js:53` — `CACHE_NAME = 'webflash-v5'`. The activate handler at
+`sw.js:163-181` deletes every cache name that starts with `webflash-`
+and isn't the current name, so previous installs on `webflash-v1`
+through `webflash-v4` are purged on the first activation of v5. The
+live `sw.js` already serves v5 — that part of the deploy is current.
+
+Fetch strategies (`sw.js:187-258`):
+
+- `*.bin` and `*manifest.json`: **network-first**, with cache fallback
+  only when the network fails. Old firmware/manifest is never silently
+  served when the network is healthy.
+- App shell (HTML/CSS/JS/icons): **stale-while-revalidate**. Page
+  renders from cache and the SW refreshes in the background.
+
+Pages-side caching: GitHub Pages serves every asset with
+`Cache-Control: max-age=600` (10 minutes) regardless of the `_headers`
+directive on `*.bin`. After deploy, browsers and the Fastly edge that
+fronts Pages will continue to hand out the old manifest for up to ~10
+minutes — but the wizard's network-first SW + the no-store freshness
+re-fetch in `manifest-freshness.js` will both correct that within one
+page load once the cache TTL elapses.
+
+The deployed cache pinning surface that does survive across deploys is
+the **SW precache** (`STATIC_ASSETS` in `sw.js:60-82`): on an old SW
+install the precache contains an old `./manifest.json` and the rescue
+bin path. The fetch handler is network-first, so an online browser
+never serves the precached manifest; only an offline browser would, and
+even then `manifest-freshness.js` will mark the result `'unknown'` and
+the install gate will block until acknowledged.
+
+## Manifest and firmware chunk exposure
+
+After the WF-CLEANUP-005 manifest regeneration is deployed, the live
+namespace will collapse from 16 to 2 ESP Web Tools per-product
+manifests. The repo manifests and per-product files are internally
+consistent today:
+
+- Every `parts[].path` in `manifest.json` resolves to a file on disk.
+- Every `firmware-N.json` corresponds 1:1 to a `manifest.json` build at
+  the same index (confirmed by `__tests__/manifest-health.test.js` —
+  the guard added by WF-CLEANUP-006).
+
+The live numbered manifests `firmware-2.json` through `firmware-15.json`
+are not referenced by repo code (no Read- or Write-side reference; the
+wizard constructs blob URLs at runtime via `createOneOffManifest` in
+`compat-config.js:452-512` and the analogous path in `state.js`). They
+remain reachable today only because the live Pages artifact still ships
+them; the next deploy from this branch will replace the artifact and
+they will 404.
+
+## Wizard / URL parameter behavior
+
+The audit traced two stale-link entry paths:
+
+**(a) Direct install via query parameters** (`/?core=core&mount=ceiling&power=poe&airiq=airiq`).
+`scripts/utils/url-config.js:39-163` parses params and applies legacy
+aliases — `pwr → ac`, `airiqpro/airiqprov → ventiq`, `bathroomairiq*`
+variants → `ventiq`, `fan=triac` → `FanTRIAC` config segment, etc.
+The result is a canonical `configKey`. `scripts/compat-config.js:670-680`
+then filters `manifest.builds` for builds whose `config_string` matches
+case-insensitively. On no match, `renderNoMatch()` renders a "Firmware
+Not Found" message with the requested config_string and channel
+(`compat-config.js:323-360`).
+
+**(b) Wizard selection flow.** `state.js:1304-1342` indexes the loaded
+manifest by `config_string` and by parsed module availability. If the
+user's wizard selection produces a config_string that has no matching
+build, `state.js:5920-5954` constructs a `not-available` status message
+with `nearbyConfigStrings` suggestions; the install button stays gated.
+
+Both paths fail gracefully. Old `?fan=triac…` or `?airiq=pro&…` style
+share links survive URL parsing, encode to a `FanTRIAC` / `VentIQ`
+segment, and then hit the "Firmware Not Found" UI when the manifest
+lookup misses. No install attempt fires.
+
+The `?model=…&variant=…` legacy lookup branch (`compat-config.js`
+historical model/variant lookup) is retained for older share links
+but is no longer reachable from current manifest content (no build has
+`model`/`variant` fields). It is `legacy/reference` only.
+
+## Smoke test coverage
+
+`scripts/smoke-test-deployment.py` is read-only HTTP and safe to
+inspect, but it does not expose a dry-run / local mode — every check
+hits the deployed origin via `urllib.request.urlopen` (`smoke-test-deployment.py:84-96`).
+The audit did **not** execute it. The CI step that runs it is
+`firmware-publish.yml:262-291`; it passes only `--base-url` and
+`--expected-commit`, so every other parameter falls back to module
+defaults.
+
+Two defaults are stale:
+
+1. **`DEFAULT_REQUIRED_CONFIG = "Ceiling-POE-VentIQ-FanTRIAC-RoomIQ"`**
+   (`smoke-test-deployment.py:42`). The header docstring at lines 15-17
+   describes the same value. After the WF-CLEANUP-005 manifest is
+   deployed, `check_required_release_one_config()` will fail because
+   the new manifest's only stable application build is
+   `Ceiling-POE-VentIQ-RoomIQ`. The smoke test will block the deploy
+   job's success even though the deploy itself succeeded.
+
+2. **Placeholder-content / placeholder-size checks vs. today's live
+   state.** `check_no_stable_placeholder_size()` rejects any stable
+   build with `file_size <= 64` (`smoke-test-deployment.py:49,275-298`)
+   and `check_no_stable_placeholder_content()` rejects any stable build
+   that begins with the bytes `Binary placeholder`
+   (`smoke-test-deployment.py:53,301-359`). Today's live manifest has
+   13 stable builds at `file_size: 18`, so running this script against
+   the live origin **right now** would already fail those checks — the
+   script post-dates the deployed manifest. It is consistent with the
+   intended post-WF-CLEANUP-005 world.
+
+The defaults for `DEFAULT_PRODUCTION_KEY = "sense360-prod-2026-02"` and
+`DEFAULT_INSTALLER_TITLE = "Sense360 Firmware Installer"` match both
+the repo manifest and the live root page title, so those checks are
+current.
+
+## Cache invalidation / deployment risk
+
+The riskiest cache layer is Fastly / Pages CDN with its 10-minute
+`max-age`. After the next deploy:
+
+- Browsers that hit the origin during the propagation window will see
+  the old `manifest.json` for up to ~10 minutes. The wizard's
+  `manifest-freshness.js` re-fetches with `cache: 'no-store'`, which
+  bypasses the SW and asks GitHub for the freshest body — but Fastly
+  will still serve from its edge cache for the TTL. The smoke test
+  handles this with `--max-attempts 30` × `--retry-delay-seconds 10`
+  (= 5 minutes), so the workflow's smoke-test step is generally
+  tolerant of CDN lag.
+- The SW precache will be replaced the next time the new `sw.js` is
+  installed (byte-different from the cached SW), triggering
+  `updatefound` and the freshness banner; the user is asked to reload
+  before flashing, per `freshness-banner.js:99-110`.
+- The 13 stale 18-byte `.bin` files and the orphan FanTRIAC `.bin` will
+  stop being part of the deployed artifact and will return 404 from
+  the live origin after deploy. Their absence cannot regress the
+  install path because nothing in the current manifest references
+  them.
+
+Risk surfaces that survive a successful deploy:
+
+- `scripts/data/kits.json` references 6 stale `firmware_config_string`
+  values. The `kit-config` loader rejects unresolved entries
+  (per `README.md:92`), so those kit cards will silently disappear from
+  the wizard once the new manifest lands.
+- `scripts/smoke-test-deployment.py` default `--required-config` is
+  stale (FanTRIAC). On the very next deploy this will turn a successful
+  deploy into a failing workflow run.
+
+## Findings summary
+
+| Surface | Status | Evidence | Recommended action |
+| --- | --- | --- | --- |
+| Repo `manifest.json` (2 builds; Release-One + Rescue) | current | `manifest.json:11-122`, `source_commit 31e0928`, `generated_at 2026-05-13T14:22:17` | none |
+| Repo `firmware-0.json` / `firmware-1.json` | current | `firmware-0.json:13`, `firmware-1.json:13` — both `parts[].path` resolve to on-disk binaries | none |
+| Repo `firmware/configurations/` (1 bin + 1 meta) | current | 1,087,488 B `.bin`, naming-policy passes | none |
+| Repo `firmware/rescue/` (1 bin + per-product manifest) | current | 524,288 B `.bin` | none |
+| Repo `firmware/sources.json` (`block_tokens: ["FanTRIAC","LED"]`) | current | `firmware/sources.json:26-29` | none |
+| Repo `sw.js` (CACHE_NAME `webflash-v5`, network-first for bins/manifest) | current | `sw.js:53`, `sw.js:187-258` | none |
+| Repo `sw.js` precache list (rescue bin, manifests, app shell) | current | `sw.js:60-135` | none |
+| Repo wizard stale-link UX (direct-install URL path) | current | `scripts/compat-config.js:323-360`, `:670-695` — graceful "Firmware Not Found" | none |
+| Repo wizard stale-link UX (wizard-flow path) | current | `scripts/state.js:5920-5954` — `buildNotAvailableStatusMessage` with `nearbyConfigStrings` | none |
+| Repo `scripts/utils/url-config.js` legacy aliases (`pwr`, `airiqpro`, `bathroomairiq*`, `fan=triac`, …) | legacy/reference | `scripts/utils/url-config.js:39-163` — accepts old tokens, encodes to canonical segments; downstream "no match" is graceful | none — kept on purpose so old share links don't 4xx |
+| Repo `manifest-freshness.js` (`cache: 'no-store'` re-fetch) | current | `scripts/services/manifest-freshness.js:56-103` | none |
+| Repo `freshness-banner.js` (install gating on SW update / stale manifest) | current | `scripts/layout/freshness-banner.js:99-146` | none |
+| Repo `_headers` (Cache-Control directives) | legacy/reference | `_headers:3-10` (file admits Pages ignores it) | none — kept for future Netlify/Cloudflare parity |
+| Repo `.github/workflows/firmware-publish.yml` `REQUIRED_CONFIGS` (2 entries) | current | `firmware-publish.yml:211-214` | none |
+| Live `sw.js` (CACHE_NAME `webflash-v5`, matches repo) | current | live `curl -s …/sw.js`, `last-modified 2026-05-07` | none — already current; will pick up the new precache list on next deploy |
+| Live root `<title>` `Sense360 Firmware Installer` | current | live root HTML | none |
+| Live `Sense360-Rescue-v1.0.0-rescue.bin` | current | live HEAD `200`, `etag 69fc6f02-80000` (= 524,288 B) | none |
+| Live `manifest.json` (16 builds, `source_commit 821e3301`, `generated_at 2026-05-07`) | stale | live `WebFetch` of `manifest.json` | resolves automatically on the next merge-to-main + deploy from this branch; no action needed |
+| Live `firmware-2.json` … `firmware-15.json` | stale | live `curl firmware-15.json` returns `Sense360-Rescue` build; the index range belongs to the May-7 deploy | resolves on next deploy (artifact replacement) |
+| Live `Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin` (934,736 B, real) | stale | live HEAD `200`, `etag 69fc6f02-e4350` | resolves on next deploy (artifact no longer contains the file) |
+| Live `Sense360-Ceiling-POE-VentIQ-v1.0.0-stable.bin`, `Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin`, `Sense360-Ceiling-USB-v1.0.0-stable.bin`, and 10 more 18-byte placeholders | stale | live HEAD `200`, etag `69fc6f02-12` (= 18 bytes) | resolves on next deploy |
+| Live `Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` (current Release-One) | stale (missing) | live HEAD `404` | resolves on next deploy |
+| `scripts/smoke-test-deployment.py:42` `DEFAULT_REQUIRED_CONFIG = "Ceiling-POE-VentIQ-FanTRIAC-RoomIQ"` | needs-smoke-test-fix | the CI step at `firmware-publish.yml:289-291` doesn't pass `--required-config`, so the default runs in CI; after next deploy the required config check will fail because the new manifest only contains `Ceiling-POE-VentIQ-RoomIQ` | follow-up: either (a) update the constant to `Ceiling-POE-VentIQ-RoomIQ` (and the docstring at lines 15-17), or (b) pass `--required-config "${{ vars.REQUIRED_CONFIG }}"` from the workflow — sequenced as a separate PR |
+| `scripts/data/kits.json` references 6 stale `firmware_config_string` values | needs-UX-fix (post-deploy) | `scripts/data/kits.json:35,62,90,116,143,171` | after the next deploy these kits will silently disappear from the wizard (kit-config loader drops unresolved entries). Decide whether to (a) prune the kit definitions, (b) point them at `Ceiling-POE-VentIQ-RoomIQ`, or (c) wait until additional configs are re-imported — sequenced as a separate PR |
+| `CLAUDE.md:125` says "Service worker cache name is `webflash-v1`" | stale (doc-drift) | `CLAUDE.md:125` vs `sw.js:53` | record only; pick up in WF-CLEANUP-007 follow-up |
+| `CLAUDE.md:105` says `REQUIRED_CONFIGS` "holds 9 entries" and lists the 9 stale configs | stale (doc-drift) | `CLAUDE.md:105` vs `firmware-publish.yml:211-214` (now 2 entries) | record only; pick up in WF-CLEANUP-007 follow-up |
+| `CLAUDE.md:76,95,109` use `Ceiling-POE-AirIQ` as the worked example | legacy/reference | example illustrates parsing/encoding; the token is still a valid filename token (just no longer shipped) | none |
+| `README.md:92,176` use `Ceiling-POE-AirIQ` as an example config | legacy/reference | same rationale as above | none |
+| `README.md:697` claims `CACHE_NAME` is `webflash-v4` | stale (doc-drift) | sw.js is on v5 | record only; pick up in WF-CLEANUP-007 follow-up |
+| `DEVELOPER.md:350,358,383,389` walk through `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` as the import example | stale (doc-drift) | the orphan FanTRIAC binary was removed in WF-CLEANUP-002 | record only; pick up in WF-CLEANUP-007 follow-up |
+| `DEVELOPER.md:131,165,651` list `FanTRIAC` and `LED` as allowed canonical token forms | legacy/reference | the importer gates with `block_tokens`, but the naming policy still accepts the tokens for filenames; this is intentional so a future un-block can re-publish without renaming | none |
+| `FIRMWARE-DISTRIBUTION-REVIEW.md:111,220` reference legacy AirIQPro / FanPWM filenames | legacy/reference | document is a historical distribution review, not a runtime contract | none |
+| `scripts/layout/state-summary.js:56` label `"LED Ring"` | legacy/reference | UI summary row label; module key is `led`. The S360-300 canonical name is "Sense360 LED" per `CLAUDE.md:29` but the wizard summary label is independent | none |
+| `__tests__/**` references to legacy config_strings | legacy/reference | intentional test fixtures — out of scope for this PR | none |
+| Pages CDN `Cache-Control: max-age=600` on every asset (incl. firmware bins) | current (Pages default) | live response headers; `_headers` is ignored on Pages | none — wizard's network-first SW + freshness re-fetch absorb the ≤10 min staleness window |
+| Repo `docs/` tree not served by Pages | current (Jekyll not configured) | live HEAD `docs/webflash-cleanup-audit.md` returns `404` | none |
+
+## Recommended follow-up PRs
+
+1. **WF-CLEANUP-009 — Fix the deploy-time smoke test.**
+   Update `scripts/smoke-test-deployment.py:42` (`DEFAULT_REQUIRED_CONFIG`)
+   and the docstring at lines 15-17 to `Ceiling-POE-VentIQ-RoomIQ`, or
+   thread `--required-config` through `firmware-publish.yml:289-291`
+   from a workflow var. Without this, the very next successful deploy
+   will be followed by a failing smoke-test job that says the
+   release-one config is missing — even though the deploy itself is
+   correct. **High priority** — would land before the next deploy.
+
+2. **WF-CLEANUP-010 — Prune or re-point stale kit definitions in
+   `scripts/data/kits.json`.** After the next deploy, the 6 kit cards
+   that reference legacy configs will silently disappear from the
+   wizard (kit-config loader rejects unresolved entries). Decide
+   whether to delete those kits, point them at
+   `Ceiling-POE-VentIQ-RoomIQ`, or leave them inert until additional
+   configs are re-imported. Lower priority than (1) because the
+   regression is silent rather than CI-blocking.
+
+3. **WF-CLEANUP-007 (continuation) — Doc-drift fixes.** Pick up the
+   doc-drift findings recorded in the table above (`CLAUDE.md:105`
+   REQUIRED_CONFIGS enumeration, `CLAUDE.md:125` cache-name,
+   `README.md:697` cache-name, `DEVELOPER.md` FanTRIAC import
+   walkthrough). No runtime effect — informational.
+
+4. **Trigger a deploy.** Once the cleanup commits on this branch are
+   merged into `main`, the `firmware-publish.yml` workflow will rebuild
+   the Pages artifact and replace the live `manifest.json`,
+   `firmware-*.json`, and `firmware/configurations/` tree. This audit
+   identifies no blockers in the repo state for that deploy beyond
+   item (1) — the smoke-test job will fail on the FanTRIAC default
+   unless that PR lands first or is sequenced together.
+
+## Do-not-change list
+
+Per the WF-CLEANUP-008 brief, this PR did not edit any of:
+
+- `firmware/configurations/*.bin`, `firmware/configurations/*.meta.json`
+- `firmware/rescue/*`
+- `firmware/sources.json`
+- `manifest.json`, `firmware-*.json`
+- `scripts/*`, `src/*` (no `src/` exists), `public/*` (no `public/` exists)
+- `sw.js`, `index.html`, `_headers`
+- `.github/workflows/*`
+- `__tests__/*`
+- Pre-existing `docs/*.md` files (`webflash-cleanup-audit.md`,
+  `webflash-required-configs-cleanup.md`, `firmware-import.md`,
+  `ux-roadmap.md`, `pr-comment.md`)
+
+The single change is the addition of this file:
+
+- `docs/github-pages-surface-audit.md` (new)
+
+No frontend, service-worker, deploy-workflow, smoke-test, manifest-
+generation, signing, source-importer, config-string-parsing, or
+`REQUIRED_CONFIGS` behavior was modified. The current Release-One
+import, Rescue firmware, FanTRIAC blocked status, and LED exclusion
+status are unchanged.
