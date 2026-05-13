@@ -16,6 +16,14 @@ manifest generation, and deployment; `esphome-public` only publishes the raw
 | Asset          | `Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` (1,087,488 bytes)               |
 | Other assets   | `checksums-sha256.txt`, `checksums-md5.txt`, `manifest.json` (upstream build-info)     |
 
+**Current source-list state:** `firmware/sources.json` declares exactly one
+active source — Release-One above. Every other shipping config (`Rescue`) is
+built in-tree under `firmware/rescue/`; there is no longer any
+`REQUIRED_CONFIGS` entry that relies on a missing-on-disk legacy build. New
+shipping configurations expand `firmware/sources.json` (and, only after the
+matching `.bin` lands on disk, `REQUIRED_CONFIGS`); they should not arrive
+through hand-copying a `.bin` into `firmware/configurations/`.
+
 ## What gets imported
 
 For each entry in `firmware/sources.json`, the importer:
@@ -184,3 +192,28 @@ npm test -- manifest-required-configs
 * Release-One blocks `FanTRIAC` and `LED` token firmware via
   `block_tokens`. Both must remain in the default list for the v1.0.0 source
   entry until hardware verification clears them.
+
+## Post-import safety net
+
+`__tests__/manifest-health.test.js` (added by WF-CLEANUP-006) is the in-CI
+guard that catches drift between an imported `.bin`, its `.meta.json`
+sidecar, the regenerated `manifest.json` / `firmware-*.json`, and the
+`REQUIRED_CONFIGS` allowlist. It runs as part of the existing
+`npm test -- --ci` step in `.github/workflows/firmware-publish.yml` and
+fails the publish run before deploy if:
+
+* a `manifest.json` or `firmware-*.json` build references a `.bin` that is
+  not on disk;
+* a `firmware/configurations/*.bin` is missing its `.meta.json` sidecar
+  (Rescue under `firmware/rescue/` is exempt — it uses the per-product
+  `firmware/rescue/manifest.json` instead);
+* the `firmware-*.json` set has drifted out of sync with `manifest.json`;
+* a globally-blocked token (`FanTRIAC`) or a per-source `block_tokens`
+  entry (e.g. `LED` on Release-One) reappears in a generated
+  `config_string`;
+* an entry in `.github/workflows/firmware-publish.yml`'s `REQUIRED_CONFIGS`
+  is missing from `manifest.json`.
+
+If the importer succeeds locally but this guard fails in CI, the failing
+invariant is the source of truth — re-run the importer + manifest generation
+rather than weakening the guard.
