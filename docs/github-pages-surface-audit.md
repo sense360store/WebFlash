@@ -408,3 +408,40 @@ generation, signing, source-importer, config-string-parsing, or
 `REQUIRED_CONFIGS` behavior was modified. The current Release-One
 import, Rescue firmware, FanTRIAC blocked status, and LED exclusion
 status are unchanged.
+
+## WF-CLEANUP-010 update
+
+WF-CLEANUP-010 resolves the kit-catalog risk that this audit recorded as
+"needs-UX-fix (post-deploy)". The findings-table row at line 331 and the
+recommended-follow-up item 2 at lines 356-363 (`Prune or re-point stale
+kit definitions in scripts/data/kits.json`) are addressed: the 6 stale
+sample kits in `scripts/data/kits.json` are removed and replaced with a
+single Release-One sample (`S360-KIT-CEILING-VENTIQ-ROOMIQ-POE`) that
+maps to `Ceiling-POE-VentIQ-RoomIQ`. After this PR merges the
+post-deploy regression described in the original audit ("kit cards will
+silently disappear from the wizard") cannot happen — only one kit
+remains and it resolves against the cleaned manifest.
+
+The brief's other two follow-ups recorded in this audit are unchanged
+by WF-CLEANUP-010:
+
+* **WF-CLEANUP-009** (smoke-test default config) — still outstanding;
+  not touched here.
+* **WF-CLEANUP-007 (continuation) — doc-drift fixes** — still
+  outstanding; not touched here.
+
+Scope of WF-CLEANUP-010 — what changed and what did not:
+
+* **Changed:** `scripts/data/kits.json` (6 stale samples → 1
+  Release-One sample), `__tests__/kits-json.test.js` (three new guards
+  preventing kit-to-manifest drift), `docs/webflash-cleanup-audit.md`,
+  `docs/webflash-required-configs-cleanup.md`, and this document.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `manifest.json`, every `firmware-*.json`, `.github/workflows/*`,
+  `scripts/gen-manifests.py`, `scripts/import-firmware-sources.py`,
+  `scripts/validate-naming-policy.js`, `scripts/utils/kit-config.js`,
+  `sw.js`, `index.html`, and the wizard frontend. No manifest,
+  signing, deploy-workflow, smoke-test, importer, service-worker,
+  Release-One, Rescue, FanTRIAC blocked, or LED-excluded status
+  changes.

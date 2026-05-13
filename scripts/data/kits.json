@@ -6,150 +6,15 @@
         "wizard_state: state keys consumed by setState() in scripts/state.js. mount=ceiling is required (the wizard does not support wall mounts). power must be one of usb/poe/pwr. Module slots follow scripts/data/module-requirements.js.",
         "firmware_config_string: must exactly match a build.config_string in manifest.json. The kit-config.js loader rejects entries that don't resolve.",
         "firmware_channel: optional default channel preference. Provenance + release-channel UI still gate the actual install — kit metadata never bypasses those checks.",
-        "Mark kits as 'sample: true' if they are illustrative entries intended for integrators to replace with real SKUs. Sample kits are still functional but the diagnostics bundle records the sample flag so support can tell a real customer order from a demo selection."
+        "Mark kits as 'sample: true' if they are illustrative entries intended for integrators to replace with real SKUs. Sample kits are still functional but the diagnostics bundle records the sample flag so support can tell a real customer order from a demo selection.",
+        "WF-CLEANUP-010: the 6 legacy sample kits (AirIQ-POE/USB/PWR, Core-USB, Fan-USB, Bathroom-VentIQ-POE) were removed because their firmware_config_string values are no longer published in manifest.json. FanTRIAC and LED kits must not be added until the corresponding firmware ships — FanTRIAC stays blocked from Release-One and LED is excluded from Release-One via firmware/sources.json block_tokens."
     ],
     "kits": [
         {
-            "sku": "S360-KIT-CEILING-AIRIQ-POE",
-            "display_name": "Sense360 Ceiling AirIQ Kit (PoE)",
-            "description": "Ceiling Core with the AirIQ air-quality module, powered over Ethernet via the Sense360 PoE PSU.",
+            "sku": "S360-KIT-CEILING-VENTIQ-ROOMIQ-POE",
+            "display_name": "Sense360 Ceiling VentIQ + RoomIQ Kit (PoE)",
+            "description": "Release-One ceiling kit: Sense360 Core with the VentIQ bathroom air-quality module and the RoomIQ presence + comfort sensor, powered over Ethernet.",
             "recommended": true,
-            "sample": true,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "poe",
-                "bathroom": false,
-                "airiq": "airiq",
-                "ventiq": "none",
-                "roomiq": "none",
-                "fan": "none",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-210", "label": "Sense360 AirIQ" },
-                { "sku": "S360-410", "label": "Sense360 PoE PSU" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-POE-AirIQ",
-            "firmware_channel": "stable",
-            "notes": [],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-CEILING-AIRIQ-USB",
-            "display_name": "Sense360 Ceiling AirIQ Kit (USB)",
-            "description": "Ceiling Core with the AirIQ air-quality module, powered from a standard USB-C cable.",
-            "recommended": false,
-            "sample": true,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "usb",
-                "bathroom": false,
-                "airiq": "airiq",
-                "ventiq": "none",
-                "roomiq": "none",
-                "fan": "none",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-210", "label": "Sense360 AirIQ" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-USB-AirIQ",
-            "firmware_channel": "stable",
-            "notes": [],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-CEILING-AIRIQ-PWR",
-            "display_name": "Sense360 Ceiling AirIQ Kit (240v PSU)",
-            "description": "Ceiling Core with the AirIQ air-quality module, powered from the Sense360 240v PSU.",
-            "recommended": false,
-            "sample": true,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "pwr",
-                "bathroom": false,
-                "airiq": "airiq",
-                "ventiq": "none",
-                "roomiq": "none",
-                "fan": "none",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-210", "label": "Sense360 AirIQ" },
-                { "sku": "S360-400", "label": "Sense360 240v PSU" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-PWR-AirIQ",
-            "firmware_channel": "stable",
-            "notes": [],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-CEILING-CORE-USB",
-            "display_name": "Sense360 Ceiling Core Kit (USB)",
-            "description": "Just the Sense360 Core, powered from USB. Fastest way to get going.",
-            "recommended": false,
-            "sample": true,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "usb",
-                "bathroom": false,
-                "airiq": "none",
-                "ventiq": "none",
-                "roomiq": "none",
-                "fan": "none",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" }
-            ],
-            "headers_required": [],
-            "firmware_config_string": "Ceiling-USB",
-            "firmware_channel": "stable",
-            "notes": [],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-CEILING-FAN-USB",
-            "display_name": "Sense360 Ceiling Fan Driver Kit (USB)",
-            "description": "Ceiling Core with a fan driver expansion module, powered from USB.",
-            "recommended": false,
-            "sample": true,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "usb",
-                "bathroom": false,
-                "airiq": "none",
-                "ventiq": "none",
-                "roomiq": "none",
-                "fan": "pwm",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-311", "label": "Sense360 PWM" }
-            ],
-            "headers_required": ["12vFan_PWM_PulseCounter"],
-            "firmware_config_string": "Ceiling-USB-FanPWM",
-            "firmware_channel": "stable",
-            "notes": [],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-BATHROOM-VENTIQ-POE",
-            "display_name": "Sense360 Bathroom VentIQ Kit (PoE)",
-            "description": "Ceiling Core with the VentIQ bathroom-focused air-quality module, powered over Ethernet.",
-            "recommended": false,
             "sample": true,
             "wizard_state": {
                 "mount": "ceiling",
@@ -157,7 +22,7 @@
                 "bathroom": true,
                 "airiq": "none",
                 "ventiq": "ventiq",
-                "roomiq": "none",
+                "roomiq": "roomiq",
                 "fan": "none",
                 "led": "none",
                 "voice": "none"
@@ -165,10 +30,11 @@
             "components": [
                 { "sku": "S360-100", "label": "Sense360 Core" },
                 { "sku": "S360-211", "label": "Sense360 VentIQ" },
+                { "sku": "S360-200", "label": "Sense360 RoomIQ" },
                 { "sku": "S360-410", "label": "Sense360 PoE PSU" }
             ],
             "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-POE-VentIQ",
+            "firmware_config_string": "Ceiling-POE-VentIQ-RoomIQ",
             "firmware_channel": "stable",
             "notes": [],
             "known_limitations": []
