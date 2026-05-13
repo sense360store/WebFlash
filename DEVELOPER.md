@@ -35,6 +35,38 @@ git commit -m "Add [Config] v[Version] firmware"
 git push origin main
 ```
 
+### Import Firmware from `esphome-public` GitHub Releases
+
+Cross-repo firmware imports are declared in
+[`firmware/sources.json`](firmware/sources.json) and run via
+[`scripts/import-firmware-sources.py`](scripts/import-firmware-sources.py).
+The importer downloads the `.bin`, verifies its SHA256 against the upstream
+`checksums-sha256.txt`, parses the release body, generates a sidecar with
+source provenance, and stages everything under `firmware/configurations/`
+for the existing signing + manifest-generation pipeline.
+
+```bash
+# 1. Run the importer (single source, or omit flags to import everything)
+python3 scripts/import-firmware-sources.py \
+  --source-repo sense360store/esphome-public \
+  --release-tag v1.0.0
+
+# 2. Regenerate manifests + sign
+python3 scripts/gen-manifests.py --summary
+
+# 3. Commit the .bin, .meta.json, manifest.json, and firmware-N.json
+git add firmware/configurations manifest.json firmware-*.json
+git commit -m "Import Ceiling-POE-VentIQ-RoomIQ from esphome-public v1.0.0"
+```
+
+Or run [`firmware-import.yml`](.github/workflows/firmware-import.yml) via
+`workflow_dispatch` to do the same in CI; it auto-commits the result to the
+branch you dispatch from and never auto-merges or deploys directly.
+
+See [`docs/firmware-import.md`](docs/firmware-import.md) for the full
+contract: required release-body sections, blocked tokens, sidecar provenance
+fields, and the smoke-check pipeline.
+
 ### Remove Firmware
 ```bash
 # 1. Delete firmware file

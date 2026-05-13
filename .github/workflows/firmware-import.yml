@@ -1,0 +1,156 @@
+name: Firmware import
+
+# Pulls raw firmware assets from upstream GitHub releases declared in
+# firmware/sources.json (currently sense360store/esphome-public), verifies
+# checksums + release-body metadata, generates the WebFlash-owned .meta.json
+# sidecar, regenerates manifest.json + firmware-N.json, and auto-commits the
+# result to the same branch the workflow is run from.
+#
+# Boundaries:
+#   * Manual trigger only (workflow_dispatch). No webhook from esphome-public.
+#   * Auto-commits to the current branch. Does NOT auto-merge.
+#   * Does NOT auto-deploy. The firmware-publish.yml workflow already runs
+#     on the resulting push and handles deploy through the existing review
+#     and merge process.
+#   * Production signing stays in firmware-publish.yml. This workflow only
+#     stages inputs and regenerates the (dev-signed) manifest.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: 'Filter to a single source repo (e.g. sense360store/esphome-public). Leave blank to import every entry in sources.json.'
+        required: false
+        default: ''
+      release_tag:
+        description: 'Filter to a single release tag (e.g. v1.0.0). Leave blank to import every release in sources.json.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Validate everything without writing files or committing.'
+        required: false
+        default: 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: firmware-import-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Need full history so we can push the commit back to the branch.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install firmware-signing dependencies
+        # gen-manifests.py requires cryptography for Ed25519 signing. Even
+        # in development mode we touch the load_signing_key code path, so
+        # install the package up front to keep behaviour identical to
+        # firmware-publish.yml.
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install cryptography
+
+      - name: Run cross-repo importer
+        env:
+          # The default GITHUB_TOKEN can read public release assets across
+          # repositories under the same org (no PAT required for public
+          # sense360store/esphome-public).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          DRY_RUN_FLAG=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          REPO_FLAG=""
+          if [ -n "${{ inputs.source_repo }}" ]; then
+            REPO_FLAG="--source-repo ${{ inputs.source_repo }}"
+          fi
+          TAG_FLAG=""
+          if [ -n "${{ inputs.release_tag }}" ]; then
+            TAG_FLAG="--release-tag ${{ inputs.release_tag }}"
+          fi
+          python scripts/import-firmware-sources.py \
+            ${REPO_FLAG} \
+            ${TAG_FLAG} \
+            ${DRY_RUN_FLAG}
+
+      - name: Validate firmware naming policy
+        if: inputs.dry_run != 'true'
+        run: |
+          set -euo pipefail
+          node scripts/validate-naming-policy.js firmware/configurations
+
+      - name: Regenerate manifests
+        if: inputs.dry_run != 'true'
+        env:
+          # Same signing-key handshake as firmware-publish.yml. The
+          # production signing happens in the publish workflow; this
+          # regen uses whichever key is available so the committed
+          # manifest is consistent with what publish would produce.
+          WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
+          WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${WEBFLASH_FIRMWARE_PRIVATE_KEY_B64:-}" ]; then
+            SIGN_MODE="production"
+          else
+            SIGN_MODE="development"
+          fi
+          python scripts/gen-manifests.py \
+            --firmware-dir firmware \
+            --manifest-path manifest.json \
+            --manifest-prefix firmware- \
+            --mode "${SIGN_MODE}" \
+            --summary
+
+      - name: Commit imported assets
+        if: inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Stage only the files the importer is expected to produce; never
+          # `git add -A`. Anything else getting picked up is a bug we want
+          # to see fail rather than silently commit.
+          git add \
+            firmware/configurations \
+            manifest.json \
+            firmware-*.json \
+            firmware/sources.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          BRANCH="${GITHUB_REF_NAME}"
+          SUMMARY="Import firmware assets from upstream releases"
+          DETAIL=$(printf "Triggered by workflow_dispatch.\n\nsource_repo: %s\nrelease_tag: %s" \
+            "${{ inputs.source_repo }}" "${{ inputs.release_tag }}")
+          git commit -m "${SUMMARY}" -m "${DETAIL}"
+          # Push with the simple retry the repo conventions call for. Real
+          # network failures bubble up after four attempts.
+          for delay in 0 2 4 8 16; do
+            if [ "$delay" -gt 0 ]; then
+              sleep "$delay"
+            fi
+            if git push origin "HEAD:${BRANCH}"; then
+              exit 0
+            fi
+          done
+          echo "❌ Push failed after retries." >&2
+          exit 1

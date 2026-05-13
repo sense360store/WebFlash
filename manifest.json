@@ -2,7 +2,7 @@
   "name": "Sense360 Modular Platform Firmware",
   "version": "2.0.0",
   "manifest_version": 1,
-  "generated_at": "2026-05-06T13:27:09.412460+00:00",
+  "generated_at": "2026-05-13T09:52:43+00:00",
   "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
@@ -687,6 +687,72 @@
       "mounting": "Universal",
       "power": "Universal",
       "modules": []
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "stable",
+      "description": "Stable firmware for Sense360 Ceiling-POE-VentIQ-RoomIQ configuration. Recommended for production deployments.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin",
+          "offset": 0,
+          "md5": "f19b6776127acd810a2e7faffedc5690",
+          "sha256": "9169f2ce486d14d3c0e0b1d6e9adf558480db6ec301f8eac1622fda4d7ceffcc",
+          "signature": "AI6bXRN/YorXYrTs2Fb/tjPLi8FMqc+hSB+N+ETEIMo=",
+          "signature_ed25519": "onbCiFk4vULabRCT9ZSxaF7F/JUu1hFal+1vtXbM06T/IURa//0c3iXii33l5NkMQW2ydLX+KenS13KNzBqQAg==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "build_date": "2026-05-13T09:48:23.480267+00:00",
+      "file_size": 1087488,
+      "improv": true,
+      "md5": "f19b6776127acd810a2e7faffedc5690",
+      "sha256": "9169f2ce486d14d3c0e0b1d6e9adf558480db6ec301f8eac1622fda4d7ceffcc",
+      "signature": "AI6bXRN/YorXYrTs2Fb/tjPLi8FMqc+hSB+N+ETEIMo=",
+      "signature_ed25519": "onbCiFk4vULabRCT9ZSxaF7F/JUu1hFal+1vtXbM06T/IURa//0c3iXii33l5NkMQW2ydLX+KenS13KNzBqQAg==",
+      "signature_key_id": "dev-2026-01",
+      "features": [
+        "Sense360 Core ceiling hub support.",
+        "Sense360 PoE PSU configuration.",
+        "Sense360 VentIQ bathroom air-quality profile.",
+        "Sense360 RoomIQ room sensing profile.",
+        "WebFlash-compatible firmware artifact naming."
+      ],
+      "hardware_requirements": [
+        "Sense360 Core, SKU `S360-100`, Rev `R4`.",
+        "Sense360 PoE PSU, SKU `S360-410`, Rev `R4`.",
+        "Sense360 VentIQ, SKU `S360-211`, Rev `R4`.",
+        "Sense360 RoomIQ, SKU `S360-200`, Rev `R4`.",
+        "No Sense360 TRIAC module for this Release-One firmware.",
+        "No Sense360 LED module for this Release-One firmware."
+      ],
+      "known_issues": [
+        "Sense360 TRIAC / FanTRIAC is not included in this Release-One firmware.",
+        "Sense360 TRIAC remains blocked until S360-320 schematic and direct GPIO/timing requirements are verified.",
+        "VentIQ schematic verification is still pending; this build uses the current package-level VentIQ configuration."
+      ],
+      "changelog": [
+        "Production Release-One firmware for `Ceiling-POE-VentIQ-RoomIQ`.",
+        "Builds the no-TRIAC Release-One configuration while Sense360 TRIAC remains blocked pending hardware verification.",
+        "Excludes Sense360 LED because the WebFlash config string does not include `LED`."
+      ],
+      "source_commit": "6fc67dd293ddf8ac07b2ec15556b64da84f13c45",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/6fc67dd293ddf8ac07b2ec15556b64da84f13c45",
+      "signed_by": "Sense360 release pipeline",
+      "deprecated": false,
+      "deprecation_reason": null,
+      "artifact_type": "application",
+      "local_only": false,
+      "config_string": "Ceiling-POE-VentIQ-RoomIQ",
+      "core_type": null,
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "VentIQ",
+        "RoomIQ"
+      ]
     }
   ]
 }
