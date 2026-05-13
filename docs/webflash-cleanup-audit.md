@@ -351,6 +351,9 @@ known-good state at every commit.
    or move it under a quarantine path that `gen-manifests.py` does not
    scan. Do not regenerate manifests until this is resolved (see #4).
    Touches: 1 binary file.
+   **Resolved:** WF-CLEANUP-002 removed the orphan FanTRIAC `.bin` from
+   `firmware/configurations/` so manifest regeneration cannot accidentally
+   publish it.
 
 2. **WF-CLEANUP-003 — Teach `gen-manifests.py` to honour
    `firmware/sources.json` `block_tokens`.**
