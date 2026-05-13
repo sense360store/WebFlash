@@ -12,7 +12,7 @@ serves a manifest that meets the production-acceptance bar:
   * No stable, non-deprecated build has placeholder file size or
     placeholder file content (the committed 18-byte ``Binary placeholder``
     fixture).
-  * The required release-one config (``Ceiling-POE-VentIQ-FanTRIAC-RoomIQ``)
+  * The required release-one config (``Ceiling-POE-VentIQ-RoomIQ``)
     exists as a stable, non-deprecated build.
   * Rescue firmware (``Rescue`` config / ``rescue`` channel) exists.
   * The production signing key (``sense360-prod-2026-02``) is the signer
@@ -39,7 +39,11 @@ import urllib.request
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-DEFAULT_REQUIRED_CONFIG = "Ceiling-POE-VentIQ-FanTRIAC-RoomIQ"
+# Current Release-One config_string (imported from sense360store/esphome-public
+# v1.0.0). Must stay in sync with REQUIRED_CONFIGS in
+# .github/workflows/firmware-publish.yml; the drift-guard in
+# __tests__/python/test_smoke_test_deployment.py enforces that invariant.
+DEFAULT_REQUIRED_CONFIG = "Ceiling-POE-VentIQ-RoomIQ"
 DEFAULT_PRODUCTION_KEY = "sense360-prod-2026-02"
 DEFAULT_BLOCKED_KEY = "dev-2026-01"
 DEFAULT_INSTALLER_TITLE = "Sense360 Firmware Installer"

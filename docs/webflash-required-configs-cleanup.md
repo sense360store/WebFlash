@@ -396,3 +396,37 @@ release, and the regenerated manifest reflects it. Manual placement of a
 `.bin` into `firmware/configurations/` is not the normal intake path —
 the manifest-health guard (WF-CLEANUP-006) will fail CI if sidecar /
 source / `REQUIRED_CONFIGS` expectations are not satisfied.
+
+## WF-CLEANUP-009 update
+
+WF-CLEANUP-009 is a **post-deploy smoke-test fix** that aligns
+`scripts/smoke-test-deployment.py` with the `REQUIRED_CONFIGS` state
+captured in this document. The smoke test ran after every deploy with a
+stale default required config (`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`),
+which would have failed every deploy after the WF-CLEANUP-004 / 002 work
+landed because that config is neither in `REQUIRED_CONFIGS` nor in
+`manifest.json`.
+
+Scope of WF-CLEANUP-009 — what changed and what did not:
+
+* **Changed:** `scripts/smoke-test-deployment.py` (default
+  `DEFAULT_REQUIRED_CONFIG` flipped from
+  `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` to `Ceiling-POE-VentIQ-RoomIQ`;
+  module docstring updated accordingly), new
+  `__tests__/python/test_smoke_test_deployment.py` (drift guards:
+  pins the default to the current Release-One `config_string`, asserts
+  no `FanTRIAC` reference survives anywhere in the smoke-test script,
+  and asserts the default appears in the workflow's `REQUIRED_CONFIGS`
+  allowlist), short status notes in `docs/github-pages-surface-audit.md`,
+  `docs/webflash-cleanup-audit.md`, and this document.
+* **Unchanged:** every `firmware/configurations/*.bin` and `*.meta.json`,
+  `firmware/rescue/*`, `firmware/sources.json`, `manifest.json`, every
+  `firmware-*.json`, `.github/workflows/*` (including the
+  `REQUIRED_CONFIGS` bash array and the smoke-test invocation),
+  `sw.js`, `index.html`, the wizard frontend, all firmware-signing
+  artifacts. The signing path, manifest generation behaviour, deploy
+  behaviour, installer UX, source importer behaviour, config-string
+  parsing, `REQUIRED_CONFIGS` allowlist itself, Release-One import,
+  Rescue firmware, FanTRIAC blocked status, and LED exclusion status
+  all stay exactly as they landed in WF-CLEANUP-004 through
+  WF-CLEANUP-007.
