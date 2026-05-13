@@ -669,3 +669,49 @@ WF-CLEANUP-008 is read-only / observability work plus any
 docs / CI updates that fall out of the audit; it should not itself
 modify firmware, signing keys, manifests, the importer, or the wizard
 frontend.
+
+## WF-CLEANUP-010 update
+
+WF-CLEANUP-010 reconciles `scripts/data/kits.json` with the cleaned
+manifest. The six legacy sample kits surfaced as downstream failures by
+WF-CLEANUP-005 (`Ceiling-POE-AirIQ`, `Ceiling-USB-AirIQ`,
+`Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-FanPWM`,
+`Ceiling-POE-VentIQ`) all pointed at firmware that is no longer
+published. They are removed in this PR rather than remapped to
+Release-One — the underlying hardware (AirIQ / USB / 240v PSU / PWM fan)
+does not match Release-One, so silently rewriting the firmware pointer
+would have presented unsupported hardware as currently shippable. A
+single new sample kit, `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE`, replaces
+them; it maps to the only production config in `manifest.json` today,
+`Ceiling-POE-VentIQ-RoomIQ` (Sense360 Core + VentIQ + RoomIQ + PoE PSU).
+
+The two downstream test failures tracked in the WF-CLEANUP-005 table
+above — `__tests__/kits-json.test.js` and
+`__tests__/module-selection-guidance.test.js` — are resolved by this PR.
+`__tests__/firmware-provenance.test.js` (the deprecated-build backstop)
+is untouched and still tracked separately. The kits-json suite was
+strengthened with three new invariants so the drift cannot return
+silently: no active kit may reference a `FanTRIAC` firmware config, no
+active kit may enable `LED` for Release-One, and at least one active
+kit must map to `Ceiling-POE-VentIQ-RoomIQ`.
+
+Scope of WF-CLEANUP-010 — what changed and what did not:
+
+* **Changed:** `scripts/data/kits.json` (6 stale samples removed, 1
+  Release-One sample added), `__tests__/kits-json.test.js` (three new
+  guards), this document, `docs/webflash-required-configs-cleanup.md`,
+  and `docs/github-pages-surface-audit.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `manifest.json`, every `firmware-*.json`, `.github/workflows/*`,
+  `scripts/gen-manifests.py`, `scripts/import-firmware-sources.py`,
+  `scripts/validate-naming-policy.js`, `scripts/utils/kit-config.js`,
+  `sw.js`, `index.html`, the wizard frontend, and `CLAUDE.md` /
+  `DEVELOPER.md` (neither mentions kits). No manifest generation,
+  signing, deploy, installer UX, source importer, config-string
+  parsing, `REQUIRED_CONFIGS` allowlist, Release-One import, Rescue
+  firmware, FanTRIAC blocked status, or LED exclusion status changes.
+  The kit schema in `scripts/utils/kit-config.js` was not extended —
+  the brief explicitly preferred not inventing a `deprecated` /
+  `available` / `firmware_status` field unless a test proved it was
+  required, and removing the stale samples covered the goal.

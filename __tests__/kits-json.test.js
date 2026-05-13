@@ -80,4 +80,34 @@ describe('scripts/data/kits.json', () => {
             }
         });
     });
+
+    // WF-CLEANUP-010: FanTRIAC is globally blocked from Release-One via
+    // firmware/sources.json block_tokens and the manifest-health guard.
+    // No active kit can reference a FanTRIAC firmware build until the
+    // S360-320 hardware verification work lands and a separate FanTRIAC
+    // source is imported.
+    test('no active kit references a FanTRIAC firmware config', () => {
+        catalog.kits.forEach(kit => {
+            expect(kit.firmware_config_string.toLowerCase()).not.toContain('fantriac');
+        });
+    });
+
+    // WF-CLEANUP-010: LED is excluded from Release-One via the same
+    // block_tokens mechanism. No active kit can opt into LED until a
+    // dedicated LED build is imported.
+    test('no active kit enables LED for Release-One', () => {
+        catalog.kits.forEach(kit => {
+            expect(kit.wizard_state.led).toBe('none');
+            expect(kit.firmware_config_string.toLowerCase()).not.toMatch(/(^|-)led(-|$)/);
+        });
+    });
+
+    // WF-CLEANUP-010: at least one active kit must map to the current
+    // Release-One config so the kit-mode picker has a working path on
+    // the cleaned manifest.
+    test('at least one active kit maps to the current Release-One config', () => {
+        const releaseOne = 'Ceiling-POE-VentIQ-RoomIQ';
+        const matching = catalog.kits.filter(kit => kit.firmware_config_string === releaseOne);
+        expect(matching.length).toBeGreaterThanOrEqual(1);
+    });
 });

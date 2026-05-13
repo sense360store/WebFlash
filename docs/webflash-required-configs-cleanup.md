@@ -396,3 +396,40 @@ release, and the regenerated manifest reflects it. Manual placement of a
 `.bin` into `firmware/configurations/` is not the normal intake path —
 the manifest-health guard (WF-CLEANUP-006) will fail CI if sidecar /
 source / `REQUIRED_CONFIGS` expectations are not satisfied.
+
+## WF-CLEANUP-010 update
+
+WF-CLEANUP-010 reconciles `scripts/data/kits.json` with the WF-CLEANUP-004
+`REQUIRED_CONFIGS` allowlist. The 6 legacy sample kits pointed at the
+8 legacy configs Path B'd out of `REQUIRED_CONFIGS`
+(`Ceiling-POE-AirIQ`, `Ceiling-USB-AirIQ`, `Ceiling-PWR-AirIQ`,
+`Ceiling-USB`, `Ceiling-USB-FanPWM`, `Ceiling-POE-VentIQ`), so the kit
+picker would have silently lost every entry after the next deploy.
+WF-CLEANUP-010 removes those 6 samples and adds one Release-One sample
+kit (`S360-KIT-CEILING-VENTIQ-ROOMIQ-POE`) mapped to the only production
+allowlist entry, `Ceiling-POE-VentIQ-RoomIQ`. The Rescue entry stays
+untouched — it is reached through the rescue release-mode flow, not
+through `kits.json`.
+
+The kit-catalog change does **not** modify `REQUIRED_CONFIGS`, the
+manifest, the importer, or any firmware on disk. Re-import is still the
+only sanctioned path to a legacy config; bringing a legacy kit back to
+the picker would require restoring its `config_string` in `manifest.json`
+first via a fresh source-import.
+
+Scope of WF-CLEANUP-010 — what changed and what did not:
+
+* **Changed:** `scripts/data/kits.json` (6 stale samples removed, 1
+  Release-One sample added), `__tests__/kits-json.test.js` (three new
+  guards: no FanTRIAC kit, no Release-One LED kit, at least one
+  Release-One kit), `docs/webflash-cleanup-audit.md`, this document,
+  and `docs/github-pages-surface-audit.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and `*.meta.json`,
+  `firmware/rescue/*`, `firmware/sources.json`, `manifest.json`, every
+  `firmware-*.json`, `.github/workflows/*` (including the WF-CLEANUP-004
+  `REQUIRED_CONFIGS` allowlist), `scripts/gen-manifests.py`,
+  `scripts/import-firmware-sources.py`, `scripts/validate-naming-policy.js`,
+  `scripts/utils/kit-config.js`, `sw.js`, `index.html`, and the wizard
+  frontend. No manifest, signing, deploy, importer, service-worker,
+  Release-One, Rescue, FanTRIAC blocked status, or LED exclusion status
+  changes.
