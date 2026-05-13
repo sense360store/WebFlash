@@ -353,6 +353,13 @@ Risk surfaces that survive a successful deploy:
    release-one config is missing — even though the deploy itself is
    correct. **High priority** — would land before the next deploy.
 
+   **Resolved (WF-CLEANUP-009):** `DEFAULT_REQUIRED_CONFIG` is now
+   `Ceiling-POE-VentIQ-RoomIQ`, the docstring no longer cites the
+   FanTRIAC target, and `__tests__/python/test_smoke_test_deployment.py`
+   pins the default against drift (asserts the constant, the absence of
+   any `FanTRIAC` reference in the smoke-test script, and that the
+   default is one of the workflow's `REQUIRED_CONFIGS` entries).
+
 2. **WF-CLEANUP-010 — Prune or re-point stale kit definitions in
    `scripts/data/kits.json`.** After the next deploy, the 6 kit cards
    that reference legacy configs will silently disappear from the
