@@ -45,6 +45,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `.github/workflows/firmware-publish.yml`. The 9 pre-existing required
   configs are unchanged; pruning stale entries is tracked as a separate
   cleanup/audit PR.
+- Removed 8 stale legacy configs (`Ceiling-POE-AirIQ`,
+  `Ceiling-POE-VentIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`,
+  `Ceiling-USB-AirIQ`, `Ceiling-USB-FanPWM`, `Ceiling-Voice-POE-AirIQ`,
+  `Ceiling-Voice-USB`) from `REQUIRED_CONFIGS` in
+  `.github/workflows/firmware-publish.yml`. The publish guard now tracks
+  Release-One (`Ceiling-POE-VentIQ-RoomIQ`) and `Rescue` only — the two
+  configs backed by a real signed `.bin` on disk. Manifest pruning of the
+  matching stale builds is deferred to a follow-up cleanup PR.
 - Retired legacy module variants were removed from manifests and distribution artifacts.
 
 ## [2.0.0] - 2025

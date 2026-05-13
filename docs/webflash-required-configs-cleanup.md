@@ -208,3 +208,48 @@ Environment notes (recorded for the next auditor; nothing committed):
 * ✅ Follow-up PRs are proposed (WF-CLEANUP-004 … WF-CLEANUP-008).
 * ✅ No firmware/manifest/signing/deploy/installer/importer/source/config-string
   behaviour changes; only this document is added.
+
+## WF-CLEANUP-004 outcome
+
+WF-CLEANUP-004 landed **Path B (remove from `REQUIRED_CONFIGS`)** for all
+8 legacy entries listed in the table above (`Ceiling-POE-AirIQ`,
+`Ceiling-POE-VentIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`,
+`Ceiling-USB-AirIQ`, `Ceiling-USB-FanPWM`, `Ceiling-Voice-POE-AirIQ`,
+`Ceiling-Voice-USB`). None of them had a `.bin` on disk or a source entry,
+so keeping them in the workflow guard expressed intent the repo could not
+satisfy. The allowlist in `.github/workflows/firmware-publish.yml` now
+contains only the two configs WebFlash can actually ship today:
+
+* `Ceiling-POE-VentIQ-RoomIQ` (current Release-One)
+* `Rescue`
+
+Scope of WF-CLEANUP-004 — what changed and what did not:
+
+* **Changed:** `REQUIRED_CONFIGS` array and surrounding comment in
+  `.github/workflows/firmware-publish.yml`; this document; the audit
+  document at `docs/webflash-cleanup-audit.md`; a `CHANGELOG.md` bullet
+  under `[Unreleased] → Changed`.
+* **Unchanged:** `manifest.json`, every `firmware-*.json`, every
+  `firmware/configurations/*.bin` and `*.meta.json`, `firmware/rescue/*`,
+  `firmware/sources.json`, all scripts, the signing path, manifest
+  generation behaviour, deploy behaviour, installer UX, source importer
+  behaviour, config-string parsing, the Release-One import, the Rescue
+  firmware, the `FanTRIAC` blocked status, and the `LED` exclusion status.
+
+Manifest pruning, `firmware-*.json` regeneration, and the regenerated
+`gen-manifests.py` output are intentionally deferred to **WF-CLEANUP-005
+— regenerate/prune manifests to actual disk state**. Until that PR lands,
+`manifest.json` continues to carry the 14 stale build entries pointing at
+missing `.bin` files documented in the table above, and the two
+pre-existing `__tests__/firmware-signature.test.js` failures (`ENOENT` on
+`Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin` at lines 252 and 309)
+remain. Path B as applied here does **not** itself surface or hide any
+build in the deployed installer — it only stops the CI guard from
+treating those 8 legacy configs as required ship-ready configs.
+
+Re-import remains possible at any time: WF-CLEANUP-004 takes Path B for
+the current snapshot but does not foreclose Path A. Any of the 8 removed
+configs can be re-added to `REQUIRED_CONFIGS` once a corresponding entry
+lands in `firmware/sources.json`, the importer pulls the `.bin` from a
+future `sense360store/esphome-public` release, and the regenerated
+manifest reflects it.

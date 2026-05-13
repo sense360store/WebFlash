@@ -184,31 +184,32 @@ jobs:
         run: |
           set -euo pipefail
           # =============================================================
-          # Canonical configuration matrix
+          # Currently ship-ready configurations
           # =============================================================
-          # Per CLAUDE.md the wizard exposes Ceiling mount only and the
-          # firmware taxonomy is flat (no Model/Variant axis). Allowed
-          # config_string segments are Mounting-Power-Modules, where:
-          #   Mounting: Ceiling
-          #   Power:    USB | POE | PWR
-          #   Modules:  AirIQ | VentIQ |
-          #             FanRelay | FanPWM | FanDAC | FanTRIAC
-          #             (Bathroom drives AirIQ ↔ VentIQ; fan variants are
-          #              variant-specific because each driver SKU needs a
-          #              different binary).
-          # Rescue is a standalone unbricking build.
+          # REQUIRED_CONFIGS represents the configs WebFlash can actually
+          # ship today — i.e. those backed by a real signed `.bin` on disk
+          # and (for cross-repo imports) a matching entry in
+          # firmware/sources.json. The deployed installer will fail at
+          # flash-time for anything else, so the publish guard refuses to
+          # deploy unless every entry below has a manifest build.
+          #
+          # Today that is exactly two configs:
+          #   - Ceiling-POE-VentIQ-RoomIQ — current Release-One, imported
+          #     from sense360store/esphome-public v1.0.0.
+          #   - Rescue                    — standalone unbricking build.
+          #
+          # Legacy configs (Ceiling-POE-AirIQ, Ceiling-POE-VentIQ,
+          # Ceiling-PWR-AirIQ, Ceiling-USB, Ceiling-USB-AirIQ,
+          # Ceiling-USB-FanPWM, Ceiling-Voice-POE-AirIQ, Ceiling-Voice-USB)
+          # were removed by WF-CLEANUP-004 because their `.bin` files are
+          # not on disk and they have no source entry. They can be re-added
+          # here only after their firmware is re-imported (via
+          # firmware/sources.json + scripts/import-firmware-sources.py) and
+          # validated end-to-end.
           # =============================================================
 
           REQUIRED_CONFIGS=(
-            "Ceiling-POE-AirIQ"
-            "Ceiling-POE-VentIQ"
             "Ceiling-POE-VentIQ-RoomIQ"
-            "Ceiling-PWR-AirIQ"
-            "Ceiling-USB"
-            "Ceiling-USB-AirIQ"
-            "Ceiling-USB-FanPWM"
-            "Ceiling-Voice-POE-AirIQ"
-            "Ceiling-Voice-USB"
             "Rescue"
           )
 
