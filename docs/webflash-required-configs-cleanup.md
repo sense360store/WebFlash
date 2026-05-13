@@ -253,3 +253,41 @@ configs can be re-added to `REQUIRED_CONFIGS` once a corresponding entry
 lands in `firmware/sources.json`, the importer pulls the `.bin` from a
 future `sense360store/esphome-public` release, and the regenerated
 manifest reflects it.
+
+## WF-CLEANUP-005 update
+
+WF-CLEANUP-005 has now regenerated `manifest.json` and the numbered
+`firmware-*.json` files against the actual on-disk firmware assets, so
+the generated manifest state finally matches the `REQUIRED_CONFIGS`
+allowlist this document set. The 14 stale build entries and the
+corresponding stale `firmware-*.json` files that the closing paragraphs
+above predicted have been pruned by the generator. After regeneration:
+
+* `manifest.json` carries exactly 2 builds — `Ceiling-POE-VentIQ-RoomIQ`
+  (stable v1.0.0) and `Rescue` (rescue v1.0.0). Both `REQUIRED_CONFIGS`
+  entries are present.
+* Only `firmware-0.json` (`Ceiling-POE-VentIQ-RoomIQ`) and
+  `firmware-1.json` (`Rescue`) remain; the 14 stale numbered manifests
+  were deleted by the generator's glob-cleanup step.
+* Every `.bin` referenced from `manifest.json` and the surviving
+  `firmware-*.json` files exists on disk.
+* The two pre-existing `__tests__/firmware-signature.test.js` `ENOENT`
+  failures recorded above are resolved by the regeneration. See the
+  WF-CLEANUP-005 update in `docs/webflash-cleanup-audit.md` for the
+  three new downstream test failures (rooted in `scripts/data/kits.json`
+  and a deprecated-build backstop, both off-limits in this PR) and the
+  follow-up tasks tracking them.
+
+Scope of WF-CLEANUP-005 — what changed and what did not:
+
+* **Changed:** `manifest.json`, the surviving `firmware-0.json` and
+  `firmware-1.json` (regenerated), and this document plus
+  `docs/webflash-cleanup-audit.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `.github/workflows/*`, all of `scripts/`, the signing path, manifest
+  generation behaviour, deploy behaviour, installer UX, source importer
+  behaviour, config-string parsing, the `REQUIRED_CONFIGS` allowlist
+  itself, the Release-One import, the Rescue firmware, the `FanTRIAC`
+  blocked status, and the `LED` exclusion status. No legacy configs and
+  no FanTRIAC entry were re-introduced.

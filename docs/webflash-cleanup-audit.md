@@ -463,3 +463,62 @@ resolved by WF-CLEANUP-002), the `LED` exclusion, and the pre-existing
 `firmware-signature.test.js` ENOENT failures are all still as documented
 above. Manifest regeneration to clear those is sequenced as
 **WF-CLEANUP-005 — regenerate/prune manifests to actual disk state**.
+
+## WF-CLEANUP-005 update
+
+WF-CLEANUP-005 has now landed. `manifest.json` and the numbered
+`firmware-*.json` files were regenerated from the actual on-disk
+firmware assets by running
+
+```
+python3 scripts/gen-manifests.py \
+  --firmware-dir firmware \
+  --manifest-path manifest.json \
+  --manifest-prefix firmware- \
+  --mode development \
+  --summary
+```
+
+(the same invocation the publish workflow uses for PR builds without
+the production signing secret). The generator's
+`write_individual_manifests` glob-cleanup removed the 14 stale
+`firmware-*.json` files automatically. The post-regeneration generated
+state is:
+
+| File | Contents |
+|------|----------|
+| `manifest.json` | 2 builds — `Ceiling-POE-VentIQ-RoomIQ` (stable v1.0.0) and `Rescue` (rescue v1.0.0) |
+| `firmware-0.json` | `firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` |
+| `firmware-1.json` | `firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin` |
+
+Every referenced `.bin` exists on disk. None of the previously stale
+config strings (`Ceiling-POE-AirIQ`, `Ceiling-POE-VentIQ` without
+`-RoomIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-AirIQ`,
+`Ceiling-USB-FanPWM`, `Ceiling-Voice-POE-AirIQ`, `Ceiling-Voice-USB`,
+`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`) remain in any generated manifest
+file. No firmware binary, sidecar, source entry, workflow,
+script, signing key, or installer asset was touched by this PR.
+
+The two suites the audit flagged in **Pre-existing test failures**
+(`__tests__/firmware-signature.test.js`) and in **Required
+investigation** (`__tests__/manifest-required-configs.test.js`) now
+pass cleanly against the regenerated manifest. The
+`firmware-signature.test.js` `ENOENT` failures the audit recorded are
+fully resolved by this PR.
+
+Three new failures surfaced once the legacy `config_string` entries
+left the manifest. They are downstream of files that this PR is
+explicitly forbidden from touching, so they are tracked here as
+follow-ups rather than fixed inline:
+
+| Failing suite | Root cause | Suggested follow-up |
+|---|---|---|
+| `__tests__/kits-json.test.js` | `scripts/data/kits.json` still lists six legacy `firmware_config_string` values (`Ceiling-POE-AirIQ`, `Ceiling-USB-AirIQ`, `Ceiling-PWR-AirIQ`, `Ceiling-USB`, `Ceiling-USB-FanPWM`, `Ceiling-POE-VentIQ`) that no longer exist as manifest builds. | **WF-CLEANUP-006 (kits catalog)** — prune the legacy kit entries from `scripts/data/kits.json` (Path B) or re-import their firmware (Path A) once a stakeholder call is made. Out of scope for WF-CLEANUP-005 — `scripts/*` is off-limits per the brief. |
+| `__tests__/module-selection-guidance.test.js` | Same root cause: the suite asserts every `kits.json` kit resolves to a manifest build. | Resolved by the same WF-CLEANUP-006 follow-up. |
+| `__tests__/firmware-provenance.test.js` (one case: *at least one build is marked deprecated to exercise the dropdown skip*) | Backstop test that assumed at least one legacy build carried `deprecated: true`. Both regenerated builds carry `deprecated: false` (the Release-One and Rescue sidecars both set it false). | **WF-CLEANUP-007 (deprecated-build backstop)** — either land a future deprecated build, or relax the assertion. Cannot be fixed under this PR without editing a `.meta.json` sidecar (forbidden) or the test (out of scope). |
+
+Validation snapshot after regeneration:
+
+* `python3 scripts/gen-manifests.py --summary --dry-run --mode development` reports the same 2 builds and re-emits the same 2 per-build manifests (idempotent).
+* `node scripts/validate-naming-policy.js firmware/configurations` passes.
+* `npm test -- --ci`: 51 of 54 suites pass, 747 of 750 tests pass. The 3 failing suites are the new downstream failures listed above; none of them fails because of a missing `.bin`.

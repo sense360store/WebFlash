@@ -1,693 +1,14 @@
 {
   "name": "Sense360 Modular Platform Firmware",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "manifest_version": 1,
-  "generated_at": "2026-05-13T09:52:43+00:00",
-  "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
+  "generated_at": "2026-05-13T14:22:17.239284+00:00",
+  "source_commit": "31e0928fbf3a87bd10b4cca42e949c86500356cd",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 15,
   "builds": [
-    {
-      "device_type": "Core Module",
-      "version": "2.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-POE-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Stable v2.0.0 rollout for Sense360 Ceiling-POE-AirIQ; supersedes v1.0.0 as the recommended build."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-POE-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-POE-AirIQ configuration; establishes the manifest baseline on this hardware revision."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": true,
-      "deprecation_reason": "Superseded by v2.0.0; older stable build retained for diagnostic comparison only.",
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "2.0.0",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360 Ceiling-POE-AirIQ configuration. Release candidate build for broader testing ahead of stable rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-v2.0.0-beta.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": null,
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.1",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360 Ceiling-POE-AirIQ configuration. Release candidate build for broader testing ahead of stable rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-v1.0.1-beta.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": null,
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360 Ceiling-POE-AirIQ configuration. Release candidate build for broader testing ahead of stable rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-v1.0.0-beta.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.135697+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": null,
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-POE-VentIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-05-06T13:21:08.215966+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the bathroom-focused Sense360 Ceiling-POE-VentIQ configuration; ships SGP41 default calibration and the standard PoE preset."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-POE-VentIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "VentIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.1",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-v1.0.1-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Stable v1.0.1 patch for Sense360 Ceiling-PWR-AirIQ; supersedes v1.0.0 with the standard hardware probe sequence."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-PWR-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "PWR",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-PWR-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-PWR-AirIQ configuration powered by the Sense360 240v PSU."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-PWR-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "PWR",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.1",
-      "channel": "beta",
-      "description": "Beta firmware for Sense360 Ceiling-PWR-AirIQ configuration. Release candidate build for broader testing ahead of stable rollout.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-PWR-AirIQ-v1.0.1-beta.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.139560+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": null,
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-PWR-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "PWR",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-USB-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.155697+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the minimal Sense360 Ceiling-USB configuration (Core only, USB power, no expansion modules)."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-USB",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "USB",
-      "modules": []
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-USB-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.155697+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-USB-AirIQ configuration; ships the AirIQ default sensor calibration tables on a USB-powered Core."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-USB-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "USB",
-      "modules": [
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-USB-FanPWM configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-USB-FanPWM-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.155697+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-USB-FanPWM configuration; targets the Sense360 PWM (S360-311) driver on a USB-powered Core."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-USB-FanPWM",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "USB",
-      "modules": [
-        "FanPWM"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-Voice-POE-AirIQ configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-Voice-POE-AirIQ-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.155697+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-Voice-POE-AirIQ configuration; bundles the Voice variant of the Core with the AirIQ sensor stack."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-Voice-POE-AirIQ",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "POE",
-      "modules": [
-        "Voice",
-        "AirIQ"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "stable",
-      "description": "Stable firmware for Sense360 Ceiling-Voice-USB configuration. Recommended for production deployments.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/configurations/Sense360-Ceiling-Voice-USB-v1.0.0-stable.bin",
-          "offset": 0,
-          "md5": "1eb1fea3994bbbeea11080159dbbe611",
-          "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-          "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-          "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.155697+00:00",
-      "file_size": 18,
-      "improv": true,
-      "md5": "1eb1fea3994bbbeea11080159dbbe611",
-      "sha256": "c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397",
-      "signature": "KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=",
-      "signature_ed25519": "kgpXnONkJ8YZhazkL4U8NlOiFW1Xwbri37UI6jEOwfAOHzvR/YCxZ4m6NKJypOdvya8khHFjrw6rHSMaSu//Aw==",
-      "signature_key_id": "dev-2026-01",
-      "features": [],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [
-        "Initial tracked stable release for the Sense360 Ceiling-Voice-USB configuration; Voice-variant Core on USB power without expansion modules."
-      ],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": "Sense360 release pipeline",
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "application",
-      "local_only": false,
-      "config_string": "Ceiling-Voice-USB",
-      "core_type": null,
-      "mounting": "Ceiling",
-      "power": "USB",
-      "modules": [
-        "Voice"
-      ]
-    },
-    {
-      "device_type": "Core Module",
-      "version": "1.0.0",
-      "channel": "rescue",
-      "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
-      "chipFamily": "ESP32-S3",
-      "parts": [
-        {
-          "path": "firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin",
-          "offset": 0,
-          "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
-          "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
-          "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
-          "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
-          "signature_key_id": "dev-2026-01"
-        }
-      ],
-      "build_date": "2026-04-30T15:12:58.427696+00:00",
-      "file_size": 524288,
-      "improv": false,
-      "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
-      "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
-      "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
-      "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
-      "signature_key_id": "dev-2026-01",
-      "features": [
-        "rescue"
-      ],
-      "hardware_requirements": [],
-      "known_issues": [],
-      "changelog": [],
-      "source_commit": "c6b5fba48c0c561ca779df0654511e83bec377da",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c6b5fba48c0c561ca779df0654511e83bec377da",
-      "signed_by": null,
-      "deprecated": false,
-      "deprecation_reason": null,
-      "artifact_type": "rescue",
-      "local_only": false,
-      "config_string": "Rescue",
-      "core_type": null,
-      "mounting": "Universal",
-      "power": "Universal",
-      "modules": []
-    },
     {
       "device_type": "Core Module",
       "version": "1.0.0",
@@ -705,7 +26,7 @@
           "signature_key_id": "dev-2026-01"
         }
       ],
-      "build_date": "2026-05-13T09:48:23.480267+00:00",
+      "build_date": "2026-05-13T14:09:47.532501+00:00",
       "file_size": 1087488,
       "improv": true,
       "md5": "f19b6776127acd810a2e7faffedc5690",
@@ -738,8 +59,8 @@
         "Builds the no-TRIAC Release-One configuration while Sense360 TRIAC remains blocked pending hardware verification.",
         "Excludes Sense360 LED because the WebFlash config string does not include `LED`."
       ],
-      "source_commit": "6fc67dd293ddf8ac07b2ec15556b64da84f13c45",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/6fc67dd293ddf8ac07b2ec15556b64da84f13c45",
+      "source_commit": "31e0928fbf3a87bd10b4cca42e949c86500356cd",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/31e0928fbf3a87bd10b4cca42e949c86500356cd",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -753,6 +74,50 @@
         "VentIQ",
         "RoomIQ"
       ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "rescue",
+      "description": "Known-good recovery firmware that bypasses configuration checks to restore a bricked Sense360 hub.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin",
+          "offset": 0,
+          "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+          "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+          "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
+          "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "build_date": "2026-05-07T15:21:00.596882+00:00",
+      "file_size": 524288,
+      "improv": false,
+      "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+      "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+      "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
+      "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
+      "signature_key_id": "dev-2026-01",
+      "features": [
+        "rescue"
+      ],
+      "hardware_requirements": [],
+      "known_issues": [],
+      "changelog": [],
+      "source_commit": "31e0928fbf3a87bd10b4cca42e949c86500356cd",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/31e0928fbf3a87bd10b4cca42e949c86500356cd",
+      "signed_by": null,
+      "deprecated": false,
+      "deprecation_reason": null,
+      "artifact_type": "rescue",
+      "local_only": false,
+      "config_string": "Rescue",
+      "core_type": null,
+      "mounting": "Universal",
+      "power": "Universal",
+      "modules": []
     }
   ]
 }
