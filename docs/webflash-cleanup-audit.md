@@ -665,6 +665,14 @@ Suggested scope when WF-CLEANUP-008 lands:
   same `REQUIRED_CONFIGS` invariant the build step enforces, so a stale
   cached deploy can't outlive the source tree.
 
+  **Status (WF-CLEANUP-009):** the post-deploy smoke test
+  (`scripts/smoke-test-deployment.py`) had a stale default
+  (`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`); it now defaults to
+  `Ceiling-POE-VentIQ-RoomIQ` and `__tests__/python/test_smoke_test_deployment.py`
+  guards it against drifting back (and against any future `FanTRIAC`
+  reference in the smoke-test script), and asserts the default is one
+  of the workflow's `REQUIRED_CONFIGS` entries.
+
 WF-CLEANUP-008 is read-only / observability work plus any
 docs / CI updates that fall out of the audit; it should not itself
 modify firmware, signing keys, manifests, the importer, or the wizard
