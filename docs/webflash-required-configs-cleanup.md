@@ -466,3 +466,14 @@ Scope of WF-CLEANUP-009 — what changed and what did not:
   Rescue firmware, FanTRIAC blocked status, and LED exclusion status
   all stay exactly as they landed in WF-CLEANUP-004 through
   WF-CLEANUP-007.
+
+## WF-PRODUCT-001 — REQUIRED_CONFIGS cross-checked against upstream catalog
+
+The `REQUIRED_CONFIGS` allowlist is now cross-checked in CI against the
+upstream `sense360store/esphome-public` product lifecycle catalog by
+`__tests__/product-catalog-alignment.test.js`. Every entry must be either
+`Rescue` (the WebFlash-owned local exception) or present in the catalog
+with `status: production`; entries with `blocked`, `legacy-compatible`,
+`deprecated`, `removed`, `hardware-pending`, or `compile-only` status fail
+the build before deploy. The contract is enforced by tests only — the
+allowlist itself, the workflow, and the importer are unchanged.

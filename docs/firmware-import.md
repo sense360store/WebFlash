@@ -217,3 +217,34 @@ fails the publish run before deploy if:
 If the importer succeeds locally but this guard fails in CI, the failing
 invariant is the source of truth — re-run the importer + manifest generation
 rather than weakening the guard.
+
+## Product-catalog alignment (WF-PRODUCT-001)
+
+`__tests__/product-catalog-alignment.test.js` cross-checks every active
+WebFlash firmware surface (`firmware/sources.json`, `manifest.json`, every
+`firmware-*.json`, the workflow's `REQUIRED_CONFIGS`, and
+`scripts/data/kits.json`) against the upstream lifecycle catalog at
+[`sense360store/esphome-public/main/config/product-catalog.json`](https://github.com/sense360store/esphome-public/blob/main/config/product-catalog.json).
+The test fails CI if any of those surfaces references a config that is
+`blocked`, `legacy-compatible`, `deprecated`, `removed`, `hardware-pending`,
+`compile-only`, or absent from the catalog. `firmware/sources.json` and
+`REQUIRED_CONFIGS` are stricter and require `status: production`; manifests
+and kits also accept `preview`. `Rescue` is a WebFlash-owned local recovery
+build and is exempt by name from every check.
+
+The test defaults to the vendored snapshot at
+`__tests__/fixtures/esphome-product-catalog.json` so CI runs offline. To
+re-validate against a freshly downloaded upstream catalog before refreshing
+the fixture, set `PRODUCT_CATALOG_PATH` to the absolute path of the
+downloaded JSON:
+
+```bash
+curl -sLo /tmp/product-catalog.json \
+  https://raw.githubusercontent.com/sense360store/esphome-public/main/config/product-catalog.json
+PRODUCT_CATALOG_PATH=/tmp/product-catalog.json \
+  npm test -- product-catalog-alignment
+```
+
+Refresh the fixture only when upstream promotes a new config WebFlash needs
+to ship, or when a status WebFlash relies on changes (e.g. FanTRIAC leaving
+`blocked`).
