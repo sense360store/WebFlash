@@ -543,6 +543,21 @@ source) reappears in a generated `config_string`, or if a
 `REQUIRED_CONFIGS` entry is missing from `manifest.json`. Run it in
 isolation with `npm test -- manifest-health`.
 
+`__tests__/product-catalog-alignment.test.js` (WF-PRODUCT-001) is the
+companion alignment guard: it cross-checks `firmware/sources.json`,
+`manifest.json`, every `firmware-*.json`, the workflow's
+`REQUIRED_CONFIGS`, and `scripts/data/kits.json` against the upstream
+[`sense360store/esphome-public`](https://github.com/sense360store/esphome-public/blob/main/config/product-catalog.json)
+product lifecycle catalog and fails CI if any active WebFlash surface
+references a config that is `blocked`, `legacy-compatible`, `deprecated`,
+`removed`, `hardware-pending`, `compile-only`, or absent from the catalog.
+The importer and `REQUIRED_CONFIGS` paths are stricter and require
+`status: production`; manifests and kits also admit `preview`. `Rescue`
+is exempt by name. The test defaults to the vendored snapshot at
+`__tests__/fixtures/esphome-product-catalog.json`; set
+`PRODUCT_CATALOG_PATH` to a freshly downloaded copy to validate live.
+Run in isolation with `npm test -- product-catalog-alignment`.
+
 ## Directory Structure
 
 ```

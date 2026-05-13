@@ -723,3 +723,17 @@ Scope of WF-CLEANUP-010 — what changed and what did not:
   the brief explicitly preferred not inventing a `deprecated` /
   `available` / `firmware_status` field unless a test proved it was
   required, and removing the stale samples covered the goal.
+
+## WF-PRODUCT-001 — product-catalog alignment guard
+
+Tests-only PR. Adds `__tests__/product-catalog-alignment.test.js` and a
+vendored fixture at `__tests__/fixtures/esphome-product-catalog.json`. The
+guard fails CI if `firmware/sources.json`, `manifest.json`, any
+`firmware-*.json`, the publish workflow's `REQUIRED_CONFIGS`, or
+`scripts/data/kits.json` references a config that the upstream
+`sense360store/esphome-public` product catalog has marked anything other
+than WebFlash-eligible (`production` for the import + publish path,
+`production`/`preview` for manifests and kits). `Rescue` is exempt by name.
+The test defaults to the offline fixture; set `PRODUCT_CATALOG_PATH` to a
+downloaded catalog to validate against upstream live. No firmware,
+manifests, importer, generator, workflow, or UI behavior changed.
