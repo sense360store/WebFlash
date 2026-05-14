@@ -2,7 +2,7 @@
   "_comment": [
     "Vendored snapshot of the upstream esphome-public product catalog.",
     "Source: https://raw.githubusercontent.com/sense360store/esphome-public/main/config/product-catalog.json",
-    "Used by __tests__/product-catalog-alignment.test.js (WF-PRODUCT-001).",
+    "Used by __tests__/product-catalog-alignment.test.js (WF-PRODUCT-001 + WF-PRODUCT-002).",
     "CI defaults to this fixture so tests run offline. To validate WebFlash",
     "against a freshly downloaded upstream catalog, set the PRODUCT_CATALOG_PATH",
     "environment variable to the absolute path of the downloaded JSON, e.g.:",
@@ -14,10 +14,19 @@
     "This fixture is intentionally minimal: it contains only the entries",
     "needed to exercise the validator's eligibility branches (production,",
     "preview, blocked, legacy-compatible). It is not a full mirror of the",
-    "upstream catalog and must not be treated as authoritative."
+    "upstream catalog and must not be treated as authoritative.",
+    "WF-PRODUCT-002 refresh checkpoint: upstream catalog snapshot at refresh",
+    "time held 33 products = 1 production (Ceiling-POE-VentIQ-RoomIQ),",
+    "1 blocked (Ceiling-POE-VentIQ-FanTRIAC-RoomIQ), 0 preview, and",
+    "31 legacy-compatible entries enumerated by upstream PRODUCT-002. WebFlash",
+    "active surfaces (firmware/sources.json, manifest.json, firmware-*.json,",
+    "REQUIRED_CONFIGS, scripts/data/kits.json) still resolve only to",
+    "Ceiling-POE-VentIQ-RoomIQ and the WebFlash-owned Rescue build. FanTRIAC",
+    "remains blocked. LED remains excluded from Release-One; no upstream",
+    "product entry carries an LED token at refresh time."
   ],
   "schema_version": 1,
-  "description": "Product source-of-truth catalog fixture for WebFlash alignment tests.",
+  "description": "Product source-of-truth catalog fixture for WebFlash alignment tests. Refreshed under WF-PRODUCT-002 against the current upstream esphome-public product catalog.",
   "source_of_truth": [
     "docs/release-one.md",
     "docs/webflash-contract.md",
@@ -62,17 +71,17 @@
         "poe": "S360-410"
       },
       "hardware_status": "verified-for-release-one",
-      "notes": "Release-One production target. FanTRIAC blocked per HW-005; LED excluded because config string carries no LED token."
+      "notes": "Release-One production target. FanTRIAC blocked per HW-005; LED excluded because config string carries no LED token. See docs/release-one.md and docs/release-one-hardware-audit.md."
     },
     {
       "config_string": "Ceiling-POE-VentIQ-FanTRIAC-RoomIQ",
       "status": "blocked",
       "blocker": "HW-005",
-      "reason": "FanTRIAC hardware mapping unresolved.",
+      "reason": "FanTRIAC hardware mapping unresolved: S360-320 schematic uncommitted; placeholder GPIO5/GPIO6 collide with RoomIQ J10 nets; ESPHome ac_dimmer cannot run across the SX1509 expander.",
       "product_yaml": "products/sense360-ceiling-poe-ventiq-fantriac-roomiq.yaml",
       "webflash_wrapper": "products/webflash/ceiling-poe-ventiq-fantriac-roomiq.yaml",
       "webflash_build_matrix": false,
-      "notes": "Retained as blocked / reference. Not part of production Release-One while HW-005 is open."
+      "notes": "Retained as blocked / reference. Not part of production Release-One while HW-005 is open. See docs/release-one-hardware-audit.md#fantriac-mapping-resolution."
     },
     {
       "config_string": "Ceiling-POE-VentIQ-RoomIQ-Preview",
@@ -96,14 +105,14 @@
         "LED"
       ],
       "hardware_status": "verified-for-release-one",
-      "notes": "Synthetic preview entry. Exists in the fixture only so the alignment test exercises the preview eligibility branch; not present in upstream today."
+      "notes": "Synthetic preview entry. Fixture-only future-proofing row used to document the preview eligibility branch shape; not present in upstream esphome-public catalog at WF-PRODUCT-002 refresh time (upstream had 0 preview entries). Replace with the real upstream preview entry when one is promoted, and do not treat this row as evidence of an active WebFlash preview build."
     },
     {
       "product_yaml": "products/sense360-core-c-poe.yaml",
       "legacy_config_id": "sense360-core-c-poe",
       "status": "legacy-compatible",
       "webflash_build_matrix": false,
-      "notes": "Pre-WebFlash Core ceiling-mount PoE YAML; retained for manual/custom users. Not Release-One WebFlash firmware."
+      "notes": "Representative pre-WebFlash legacy-compatible YAML; retained for manual/custom users. Not Release-One WebFlash firmware. Upstream PRODUCT-002 enumerates 31 legacy-compatible YAMLs total at WF-PRODUCT-002 refresh time; this fixture intentionally carries only one representative entry so the legacy_config_id branch of the alignment test stays exercised without churning every time upstream adds another legacy YAML."
     }
   ]
 }
