@@ -785,3 +785,74 @@ Scope of WF-PRODUCT-002 — what changed and what did not:
   service-worker, source importer, `REQUIRED_CONFIGS` allowlist,
   Release-One import, Rescue firmware, FanTRIAC blocked status, or LED
   exclusion status changed.
+
+## WF-PRODUCT-003 — product-catalog fixture refresh (LED preview)
+
+Fixture-tests-and-docs refresh. Upstream `sense360store/esphome-public`
+PRODUCT-009 promoted an LED-bearing sibling product
+(`Ceiling-POE-VentIQ-RoomIQ-LED`) to a preview build with
+`status: preview`, `channel: preview`, `version: 1.0.0`, `artifact_name:
+Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`, and
+`webflash_build_matrix: true`. The vendored alignment fixture at
+`__tests__/fixtures/esphome-product-catalog.json` was re-aligned with
+the current upstream catalog: the WF-PRODUCT-002 fixture's synthetic
+`Ceiling-POE-VentIQ-RoomIQ-Preview` placeholder was removed and
+replaced with the real upstream LED preview row, so the fixture's
+preview-eligibility branch now exercises real upstream data.
+
+The upstream snapshot at WF-PRODUCT-003 refresh time held **34
+products**: **1 production** (`Ceiling-POE-VentIQ-RoomIQ`), **1
+preview** (`Ceiling-POE-VentIQ-RoomIQ-LED`), **1 blocked**
+(`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`), and **31 legacy-compatible**
+entries. The fixture stays intentionally minimal — one row per real
+upstream status WebFlash branches on, plus one representative
+legacy-compatible row — because cloning all 31 legacy YAMLs would add
+churn without expanding real coverage.
+
+**WebFlash is aware of the LED preview but has not imported, signed,
+manifested, or surfaced it.** Active WebFlash surfaces
+(`firmware/sources.json`, `manifest.json`, `firmware-*.json`,
+`REQUIRED_CONFIGS`, `scripts/data/kits.json`) still resolve only to
+Release-One (`Ceiling-POE-VentIQ-RoomIQ`) plus the WebFlash-owned
+`Rescue` build. **`REQUIRED_CONFIGS` remains production-only**.
+**FanTRIAC remains blocked** under HW-005. **Release-One remains
+LED-less**; the `firmware/sources.json` `block_tokens: ["FanTRIAC",
+"LED"]` defence on the v1.0.0 source is unchanged and the manifest-
+health guard still rejects an LED token in any generated `config_string`.
+
+`__tests__/product-catalog-alignment.test.js` gained an explicit
+`WF-PRODUCT-003 — upstream LED preview recognition` describe block
+that pins both halves of the awareness-but-non-exposure contract: the
+fixture exposes the LED preview as `status: preview` with the upstream
+artifact_name / version / channel, and each active WebFlash surface
+explicitly asserts it does **not** reference the LED preview today. A
+manifest-shape snapshot lock (`manifest.json builds resolve to exactly
+Release-One + Rescue`) and the kit-shape snapshot lock (`kits.json
+references only Release-One`) document the unchanged-by-this-PR state.
+
+Scope of WF-PRODUCT-003 — what changed and what did not:
+
+* **Changed:** `__tests__/fixtures/esphome-product-catalog.json` (the
+  synthetic preview row was removed and replaced with the real
+  upstream LED preview row; `_comment` block bumped to record the
+  WF-PRODUCT-003 refresh and the new upstream snapshot stats),
+  `__tests__/product-catalog-alignment.test.js` (added the
+  WF-PRODUCT-003 describe block and two named constants for the LED
+  preview config string + artifact name — no rule changes to the
+  existing alignment blocks), `docs/firmware-import.md`, this
+  document, `docs/webflash-required-configs-cleanup.md`, `CLAUDE.md`,
+  and `DEVELOPER.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `manifest.json`, every `firmware-*.json`, `.github/workflows/*`
+  (including the `REQUIRED_CONFIGS` bash array), all of `scripts/`,
+  `scripts/data/kits.json`, all of `__tests__/` outside the fixture
+  and the alignment test, `__tests__/python/*` (the Python importer
+  tests already negatively assert that an LED `.bin` is rejected by
+  the Release-One source's `block_tokens`; unchanged here), `sw.js`,
+  `index.html`, the wizard frontend, all firmware-signing artifacts.
+  No firmware, manifests, importer, generator, workflow, kit
+  metadata, signing path, installer UX, service-worker, source
+  importer, `REQUIRED_CONFIGS` allowlist, Release-One import, Rescue
+  firmware, FanTRIAC blocked status, or LED runtime-exposure status
+  changed.
