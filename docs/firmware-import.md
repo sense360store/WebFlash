@@ -270,3 +270,48 @@ Active WebFlash surfaces (`firmware/sources.json`, `manifest.json`,
 time. Validate against a freshly downloaded upstream catalog via the
 existing `PRODUCT_CATALOG_PATH` recipe shown above before refreshing the
 fixture again.
+
+### WF-PRODUCT-003 — fixture refresh checkpoint (LED preview)
+
+Fixture-and-docs-only refresh against the current upstream
+`sense360store/esphome-public` product catalog after upstream PRODUCT-009
+promoted an LED-bearing sibling product to a preview build. The upstream
+snapshot at refresh time held **34 products**: **1 production**
+(`Ceiling-POE-VentIQ-RoomIQ`), **1 preview**
+(`Ceiling-POE-VentIQ-RoomIQ-LED`, version `1.0.0`, channel `preview`,
+artifact `Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`,
+`webflash_build_matrix: true`), **1 blocked**
+(`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`), and **31 legacy-compatible**
+entries. The WF-PRODUCT-002 fixture's synthetic
+`Ceiling-POE-VentIQ-RoomIQ-Preview` placeholder was removed and replaced
+with the real upstream LED preview entry, so the fixture now exercises
+the preview-eligibility branch against real upstream data.
+
+**WebFlash is aware of the LED preview but has not imported, signed,
+manifested, or surfaced it.** Active WebFlash surfaces
+(`firmware/sources.json`, `manifest.json`, `firmware-*.json`,
+`REQUIRED_CONFIGS`, `scripts/data/kits.json`) still resolve only to
+Release-One (`Ceiling-POE-VentIQ-RoomIQ`) plus the WebFlash-owned
+`Rescue` build. **`REQUIRED_CONFIGS` remains production-only** —
+Release-One + Rescue. **FanTRIAC remains blocked** under HW-005.
+**Release-One remains LED-less**; `firmware/sources.json`'s
+`block_tokens: ["FanTRIAC", "LED"]` on the v1.0.0 source still applies
+and the manifest-health guard still rejects an LED token in any
+generated `config_string`.
+
+Before WebFlash can expose the LED preview, a separate change must (a)
+add a new entry to `firmware/sources.json` covering the LED preview
+artifact with appropriately-scoped `block_tokens` (LED can't be globally
+blocked on the source that imports the LED build), (b) import the
+upstream `.bin` via `scripts/import-firmware-sources.py` with checksum
+verification, (c) sign and regenerate manifests via
+`scripts/gen-manifests.py`, and (d) make a deliberate UX call on preview
+exposure (manifest-only / kit / wizard). None of that lands in
+WF-PRODUCT-003.
+
+`__tests__/product-catalog-alignment.test.js` now carries a
+`WF-PRODUCT-003 — upstream LED preview recognition` describe block that
+pins both halves of the contract: the fixture exposes the LED preview as
+`status: preview` with the upstream artifact_name/version/channel, and
+each active WebFlash surface explicitly asserts it does **not** reference
+the LED preview today.

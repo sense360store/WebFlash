@@ -499,3 +499,42 @@ to validate the alignment test against a freshly downloaded upstream
 catalog before refreshing the fixture again. WF-PRODUCT-002 is
 fixture-and-docs-only — `REQUIRED_CONFIGS`, the workflow, the importer,
 the manifest, and every firmware artifact are unchanged.
+
+## WF-PRODUCT-003 — LED preview recognised, not in REQUIRED_CONFIGS
+
+Upstream `sense360store/esphome-public` PRODUCT-009 promoted an
+LED-bearing sibling product (`Ceiling-POE-VentIQ-RoomIQ-LED`,
+`status: preview`, `channel: preview`, `version: 1.0.0`,
+`artifact_name: Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`,
+`webflash_build_matrix: true`) to the product catalog. The vendored
+fixture at `__tests__/fixtures/esphome-product-catalog.json` was
+re-aligned: the WF-PRODUCT-002 synthetic
+`Ceiling-POE-VentIQ-RoomIQ-Preview` placeholder was removed and
+replaced with the real upstream LED preview row. The upstream snapshot
+at WF-PRODUCT-003 refresh time held **34 products** = **1 production**
+(`Ceiling-POE-VentIQ-RoomIQ`) + **1 preview**
+(`Ceiling-POE-VentIQ-RoomIQ-LED`) + **1 blocked**
+(`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`) + **31 legacy-compatible**.
+
+**`REQUIRED_CONFIGS` remains production-only and unchanged: it stays
+`Ceiling-POE-VentIQ-RoomIQ` + `Rescue`.** The LED preview must **not**
+be added to `REQUIRED_CONFIGS` while it carries `status: preview`
+upstream — the cross-check in
+`__tests__/product-catalog-alignment.test.js` will fail closed if it
+ever is, because the publish allowlist admits only production-status
+configs plus the named `Rescue` exception. Even if upstream eventually
+promotes LED to production, the `REQUIRED_CONFIGS` entry can only land
+together with: (a) a `firmware/sources.json` entry for the LED build,
+(b) a checksum-verified import of the real upstream `.bin`, (c) a
+signed regenerate of `manifest.json` + `firmware-N.json`, and (d) a
+deliberate UX call on preview-channel exposure. None of that lands in
+WF-PRODUCT-003.
+
+**FanTRIAC remains blocked** under HW-005. **Release-One remains
+LED-less** — the `firmware/sources.json` `block_tokens: ["FanTRIAC",
+"LED"]` defence on the v1.0.0 source is unchanged and the
+manifest-health guard still rejects an LED token in any generated
+`config_string`. WF-PRODUCT-003 is fixture-tests-and-docs only;
+`REQUIRED_CONFIGS`, the workflow, the importer, `manifest.json`,
+every `firmware-*.json`, every `firmware/configurations/*.bin`, and
+`scripts/data/kits.json` are unchanged.

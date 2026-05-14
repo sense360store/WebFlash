@@ -562,6 +562,20 @@ upstream catalog (33 products = 1 production / 1 blocked / 0 preview /
 31 legacy-compatible at refresh time); no status WebFlash mirrors
 changed, active surfaces still resolve only to Release-One + Rescue,
 FanTRIAC remains blocked, and LED remains excluded from Release-One.
+WF-PRODUCT-003 refreshed it again after upstream PRODUCT-009 promoted
+an LED-bearing sibling product to a preview build (34 products =
+1 production / 1 preview / 1 blocked / 31 legacy-compatible at refresh
+time); the synthetic preview placeholder was removed and replaced with
+the real upstream `Ceiling-POE-VentIQ-RoomIQ-LED` preview entry
+(artifact `Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`).
+The alignment test gained an explicit `WF-PRODUCT-003 — upstream LED
+preview recognition` describe block that pins both halves of the
+contract: the fixture exposes the LED preview as `status: preview`,
+and every active WebFlash surface explicitly asserts it does not
+reference the LED preview today. WebFlash has not imported, signed,
+manifested, or surfaced the LED preview — active surfaces remain
+Release-One + Rescue only, `REQUIRED_CONFIGS` remains production-only,
+FanTRIAC remains blocked, and Release-One remains LED-less.
 
 ## Directory Structure
 

@@ -50,6 +50,19 @@ const PRODUCTION_STATUS = 'production';
 // Tracked here as a named constant so failure messages stay readable.
 const FANTRIAC_CONFIG_STRING = 'Ceiling-POE-VentIQ-FanTRIAC-RoomIQ';
 
+// WF-PRODUCT-003 — upstream promoted an LED-bearing sibling product
+// (Ceiling-POE-VentIQ-RoomIQ-LED) to status=preview, channel=preview,
+// version=1.0.0, webflash_build_matrix=true. The fixture mirrors that real
+// upstream row so the preview-eligibility branch is exercised against real
+// data instead of a synthetic placeholder. WebFlash has NOT imported,
+// signed, manifested, or surfaced this preview — the assertions below pin
+// that contract: the LED preview is recognised by the catalog fixture and
+// would be eligible for manifests/kits if explicitly added later, but it
+// must not appear in any active WebFlash surface today.
+const LED_PREVIEW_CONFIG_STRING = 'Ceiling-POE-VentIQ-RoomIQ-LED';
+const LED_PREVIEW_ARTIFACT_NAME =
+    'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
+
 function loadJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -468,5 +481,98 @@ describe('legacy-compatible upstream entries are not exposed by WebFlash', () =>
                     'be promoted to a shippable WebFlash surface.'
             );
         }
+    });
+});
+
+describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
+    // Pins the awareness-but-non-exposure contract introduced by
+    // WF-PRODUCT-003: upstream PRODUCT-009 promoted Ceiling-POE-VentIQ-RoomIQ-LED
+    // to a preview build with webflash_build_matrix=true, the fixture mirrors
+    // that real upstream row, but WebFlash has not imported, signed,
+    // manifested, or surfaced it. These tests explicitly assert both halves
+    // of that contract so a regression on either side (fixture drift OR
+    // accidental active-surface exposure) fails this guard, not just the
+    // existing eligibility rules.
+
+    test('fixture exposes the LED preview entry as status=preview', () => {
+        const entry = catalogIndex.get(LED_PREVIEW_CONFIG_STRING);
+        if (!entry) {
+            throw new Error(
+                `Catalog fixture does not contain ${LED_PREVIEW_CONFIG_STRING}. ` +
+                    'WF-PRODUCT-003 mirrored the real upstream LED preview into ' +
+                    'the fixture; if it has been removed, either upstream ' +
+                    'demoted/withdrew the preview (refresh the fixture and ' +
+                    'these tests) or the fixture was edited incorrectly.'
+            );
+        }
+        expect(entry.status).toBe('preview');
+    });
+
+    test('LED preview carries the upstream artifact_name, version, and channel', () => {
+        const entry = catalogIndex.get(LED_PREVIEW_CONFIG_STRING);
+        expect(entry).toBeDefined();
+        expect(entry.artifact_name).toBe(LED_PREVIEW_ARTIFACT_NAME);
+        expect(entry.version).toBe('1.0.0');
+        expect(entry.channel).toBe('preview');
+    });
+
+    test('LED preview status is in the manifest/kit eligibility set', () => {
+        // Documents that if a future PR imports the LED preview and adds it
+        // to manifest.json / kits.json, the existing eligibility rules will
+        // admit it (preview is part of ELIGIBLE_STATUSES). This is the
+        // "would be allowed later" half of the contract.
+        const entry = catalogIndex.get(LED_PREVIEW_CONFIG_STRING);
+        expect(entry).toBeDefined();
+        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(true);
+    });
+
+    test('firmware/sources.json does not reference the LED preview', () => {
+        // firmware/sources.json is production-only; the LED preview must not
+        // appear here until upstream promotes it to production AND WebFlash
+        // imports the signed artifact.
+        for (const source of sources.sources || []) {
+            expect(source.config_string).not.toBe(LED_PREVIEW_CONFIG_STRING);
+            expect(source.asset_name).not.toBe(LED_PREVIEW_ARTIFACT_NAME);
+        }
+    });
+
+    test('manifest.json does not reference the LED preview', () => {
+        for (const build of manifest.builds || []) {
+            expect(build.config_string).not.toBe(LED_PREVIEW_CONFIG_STRING);
+            for (const part of build.parts || []) {
+                expect(part.path).not.toContain(LED_PREVIEW_ARTIFACT_NAME);
+            }
+        }
+    });
+
+    test('REQUIRED_CONFIGS does not list the LED preview', () => {
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(LED_PREVIEW_CONFIG_STRING);
+    });
+
+    test('no active kit references the LED preview', () => {
+        for (const kit of kits.kits || []) {
+            expect(kit.firmware_config_string).not.toBe(LED_PREVIEW_CONFIG_STRING);
+        }
+    });
+
+    test('manifest.json builds resolve to exactly Release-One + Rescue', () => {
+        // Snapshot lock for WF-PRODUCT-003: the manifest is unchanged by
+        // this PR and must continue to expose only Release-One + Rescue.
+        // If a later PR legitimately adds the LED preview to the manifest,
+        // update this expectation in the same change so the contract stays
+        // self-documenting.
+        const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
+        expect(configStrings).toEqual(
+            ['Ceiling-POE-VentIQ-RoomIQ', 'Rescue'].sort()
+        );
+    });
+
+    test('scripts/data/kits.json references only Release-One', () => {
+        // Mirror lock for the kit catalog: WF-PRODUCT-003 does not add an
+        // LED kit. Update this expectation deliberately if/when a future PR
+        // ships LED through the kit-config path.
+        const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
+        expect(kitConfigs).toEqual(['Ceiling-POE-VentIQ-RoomIQ']);
     });
 });

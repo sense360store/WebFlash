@@ -1,8 +1,8 @@
 {
   "_comment": [
-    "Vendored snapshot of the upstream esphome-public product catalog.",
+    "This is a vendored/offline WebFlash alignment-test fixture, not the authoritative upstream catalog.",
     "Source: https://raw.githubusercontent.com/sense360store/esphome-public/main/config/product-catalog.json",
-    "Used by __tests__/product-catalog-alignment.test.js (WF-PRODUCT-001 + WF-PRODUCT-002).",
+    "Used by __tests__/product-catalog-alignment.test.js (WF-PRODUCT-001 / -002 / -003).",
     "CI defaults to this fixture so tests run offline. To validate WebFlash",
     "against a freshly downloaded upstream catalog, set the PRODUCT_CATALOG_PATH",
     "environment variable to the absolute path of the downloaded JSON, e.g.:",
@@ -15,18 +15,23 @@
     "needed to exercise the validator's eligibility branches (production,",
     "preview, blocked, legacy-compatible). It is not a full mirror of the",
     "upstream catalog and must not be treated as authoritative.",
-    "WF-PRODUCT-002 refresh checkpoint: upstream catalog snapshot at refresh",
-    "time held 33 products = 1 production (Ceiling-POE-VentIQ-RoomIQ),",
-    "1 blocked (Ceiling-POE-VentIQ-FanTRIAC-RoomIQ), 0 preview, and",
-    "31 legacy-compatible entries enumerated by upstream PRODUCT-002. WebFlash",
-    "active surfaces (firmware/sources.json, manifest.json, firmware-*.json,",
-    "REQUIRED_CONFIGS, scripts/data/kits.json) still resolve only to",
-    "Ceiling-POE-VentIQ-RoomIQ and the WebFlash-owned Rescue build. FanTRIAC",
-    "remains blocked. LED remains excluded from Release-One; no upstream",
-    "product entry carries an LED token at refresh time."
+    "WF-PRODUCT-003 refresh checkpoint: upstream catalog snapshot at refresh",
+    "time held 34 products = 1 production (Ceiling-POE-VentIQ-RoomIQ),",
+    "1 preview (Ceiling-POE-VentIQ-RoomIQ-LED, added by upstream PRODUCT-009),",
+    "1 blocked (Ceiling-POE-VentIQ-FanTRIAC-RoomIQ), and 31 legacy-compatible",
+    "entries enumerated by upstream PRODUCT-002. The WF-PRODUCT-002 fixture's",
+    "synthetic Ceiling-POE-VentIQ-RoomIQ-Preview placeholder was removed and",
+    "replaced with the real upstream LED preview entry — the fixture now",
+    "carries only real upstream rows plus one representative legacy-compatible.",
+    "The LED preview exists upstream only: WebFlash has not imported, signed,",
+    "manifested, or surfaced it. Release-One remains Ceiling-POE-VentIQ-RoomIQ",
+    "(LED-less). FanTRIAC remains blocked. Active WebFlash surfaces",
+    "(firmware/sources.json, manifest.json, firmware-*.json, REQUIRED_CONFIGS,",
+    "scripts/data/kits.json) still resolve only to Release-One and the",
+    "WebFlash-owned Rescue build."
   ],
   "schema_version": 1,
-  "description": "Product source-of-truth catalog fixture for WebFlash alignment tests. Refreshed under WF-PRODUCT-002 against the current upstream esphome-public product catalog.",
+  "description": "Product source-of-truth catalog fixture for WebFlash alignment tests. Refreshed under WF-PRODUCT-003 against the current upstream esphome-public product catalog (now exposing the LED preview sibling).",
   "source_of_truth": [
     "docs/release-one.md",
     "docs/webflash-contract.md",
@@ -84,13 +89,13 @@
       "notes": "Retained as blocked / reference. Not part of production Release-One while HW-005 is open. See docs/release-one-hardware-audit.md#fantriac-mapping-resolution."
     },
     {
-      "config_string": "Ceiling-POE-VentIQ-RoomIQ-Preview",
+      "config_string": "Ceiling-POE-VentIQ-RoomIQ-LED",
       "status": "preview",
-      "version": "1.1.0-preview1",
+      "version": "1.0.0",
       "channel": "preview",
-      "product_yaml": "products/sense360-ceiling-poe-ventiq-roomiq-preview.yaml",
-      "webflash_wrapper": "products/webflash/ceiling-poe-ventiq-roomiq-preview.yaml",
-      "artifact_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.1.0-preview1-preview.bin",
+      "product_yaml": "products/sense360-ceiling-poe-ventiq-roomiq-led.yaml",
+      "webflash_wrapper": "products/webflash/ceiling-poe-ventiq-roomiq-led.yaml",
+      "artifact_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
       "webflash_build_matrix": true,
       "modules": {
         "mount": "Ceiling",
@@ -98,14 +103,20 @@
         "air_quality": "VentIQ",
         "room_sense": "RoomIQ",
         "fan": "none",
-        "led": "none"
+        "led": "LED"
       },
       "blocked_modules": [
-        "FanTRIAC",
-        "LED"
+        "FanTRIAC"
       ],
-      "hardware_status": "verified-for-release-one",
-      "notes": "Synthetic preview entry. Fixture-only future-proofing row used to document the preview eligibility branch shape; not present in upstream esphome-public catalog at WF-PRODUCT-002 refresh time (upstream had 0 preview entries). Replace with the real upstream preview entry when one is promoted, and do not treat this row as evidence of an active WebFlash preview build."
+      "hardware": {
+        "core": "S360-100",
+        "ventiq": "S360-211",
+        "roomiq": "S360-200",
+        "poe": "S360-410",
+        "led": "S360-300"
+      },
+      "hardware_status": "verified-led-candidate",
+      "notes": "Real upstream LED-bearing sibling product, promoted to a preview build by upstream PRODUCT-009. PRODUCT-006 added the canonical YAML; PRODUCT-008 added the WebFlash wrapper at products/webflash/ceiling-poe-ventiq-roomiq-led.yaml and promoted the catalog entry from compile-only to preview with webflash_build_matrix=false; PRODUCT-009 flipped webflash_build_matrix to true, declared version=1.0.0 / channel=preview / artifact_name=Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin, and added the matching entry to upstream config/webflash-builds.json on the preview (non-stable) channel. No firmware artifact is built or imported by PRODUCT-009; that build / release proof remains outstanding upstream. WF-PRODUCT-003 mirrors this entry into the WebFlash alignment fixture so the preview-eligibility branch is exercised against real upstream data, but WebFlash itself has NOT imported, signed, manifested, or surfaced this preview: firmware/sources.json, manifest.json, firmware-*.json, REQUIRED_CONFIGS, and scripts/data/kits.json still resolve only to Release-One (Ceiling-POE-VentIQ-RoomIQ) and the WebFlash-owned Rescue build. Release-One stays Ceiling-POE-VentIQ-RoomIQ on stable (LED-less); FanTRIAC stays blocked under HW-005 and is carried in this entry's blocked_modules. Hardware evidence upstream: S360-300 schematic_status=verified (HW-008); ceiling LED package binds led_data_pin=GPIO38 (HW-010); LED_DATA / Sense360 LED firmware-package mapping is confirmed-ok after HW-010 (HW-009). Bench-verification open questions in upstream docs/hardware/s360-300-r4-led.md (harness rail, LED count, harness identity) remain carried as preview-stage caveats and must resolve before any production promotion. See upstream docs/product-led-preview-decision.md."
     },
     {
       "product_yaml": "products/sense360-core-c-poe.yaml",
