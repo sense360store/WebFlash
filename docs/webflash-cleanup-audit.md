@@ -737,3 +737,51 @@ than WebFlash-eligible (`production` for the import + publish path,
 The test defaults to the offline fixture; set `PRODUCT_CATALOG_PATH` to a
 downloaded catalog to validate against upstream live. No firmware,
 manifests, importer, generator, workflow, or UI behavior changed.
+
+## WF-PRODUCT-002 — product-catalog fixture refresh
+
+Fixture-and-docs-only refresh. The vendored snapshot at
+`__tests__/fixtures/esphome-product-catalog.json` was re-aligned with the
+current upstream `sense360store/esphome-public` product catalog. The
+upstream snapshot at refresh time held **33 products**: **1 production**
+(`Ceiling-POE-VentIQ-RoomIQ`), **1 blocked**
+(`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`), **0 preview**, and **31
+legacy-compatible** entries enumerated by upstream PRODUCT-002. Status
+fields on the two real entries WebFlash mirrors are unchanged; only the
+`notes` / `reason` prose was synced (doc-link additions, plus the
+GPIO5/GPIO6 / SX1509 / `ac_dimmer` rationale on the FanTRIAC blocker).
+The fixture stays intentionally minimal — one representative
+legacy-compatible row plus a clearly-labelled synthetic preview row —
+because cloning all 31 legacy YAMLs would add churn without expanding
+real coverage (the alignment test's "config_string not in catalog" branch
+already rejects unknown legacy ids).
+
+Active WebFlash surfaces (`firmware/sources.json`, `manifest.json`,
+`firmware-*.json`, `REQUIRED_CONFIGS`, `scripts/data/kits.json`) still
+resolve only to Release-One (`Ceiling-POE-VentIQ-RoomIQ`) plus the
+WebFlash-owned `Rescue` build. **FanTRIAC remains blocked.** **LED
+remains excluded from Release-One** — no upstream production or preview
+entry carried an LED token at refresh time. The
+`PRODUCT_CATALOG_PATH` environment variable remains the documented way
+to validate the alignment test against a freshly downloaded upstream
+catalog before refreshing the fixture again.
+
+Scope of WF-PRODUCT-002 — what changed and what did not:
+
+* **Changed:** `__tests__/fixtures/esphome-product-catalog.json` (prose
+  on real entries synced; `_comment` block records the refresh and the
+  upstream snapshot stats; synthetic preview and representative
+  legacy-compatible rows are now explicit about being fixture-only),
+  `docs/firmware-import.md`, this document,
+  `docs/webflash-required-configs-cleanup.md`, `CLAUDE.md`, and
+  `DEVELOPER.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and `*.meta.json`,
+  `firmware/rescue/*`, `firmware/sources.json`, `manifest.json`, every
+  `firmware-*.json`, `.github/workflows/*`, all of `scripts/`, all of
+  `__tests__/` outside the fixture (the alignment test itself was not
+  modified), `sw.js`, `index.html`, the wizard frontend, all
+  firmware-signing artifacts. No firmware, manifests, importer,
+  generator, workflow, kit metadata, signing path, installer UX,
+  service-worker, source importer, `REQUIRED_CONFIGS` allowlist,
+  Release-One import, Rescue firmware, FanTRIAC blocked status, or LED
+  exclusion status changed.

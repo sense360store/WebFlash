@@ -248,3 +248,25 @@ PRODUCT_CATALOG_PATH=/tmp/product-catalog.json \
 Refresh the fixture only when upstream promotes a new config WebFlash needs
 to ship, or when a status WebFlash relies on changes (e.g. FanTRIAC leaving
 `blocked`).
+
+### WF-PRODUCT-002 — fixture refresh checkpoint
+
+Fixture-and-docs-only refresh against the current upstream
+`sense360store/esphome-public` product catalog. The upstream snapshot at
+refresh time held **33 products**: **1 production**
+(`Ceiling-POE-VentIQ-RoomIQ`), **1 blocked**
+(`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`), **0 preview**, and **31
+legacy-compatible** entries enumerated by upstream PRODUCT-002. The two
+real entries WebFlash mirrors carried only prose-level enrichments (`notes`
+/ `reason` doc-link additions and GPIO5/GPIO6 / SX1509 / `ac_dimmer`
+rationale on the FanTRIAC blocker) — no status changes, no schema changes.
+
+Active WebFlash surfaces (`firmware/sources.json`, `manifest.json`,
+`firmware-*.json`, the publish workflow's `REQUIRED_CONFIGS`, and
+`scripts/data/kits.json`) still resolve only to Release-One
+(`Ceiling-POE-VentIQ-RoomIQ`) plus the WebFlash-owned `Rescue` build.
+**FanTRIAC remains blocked.** **LED remains excluded from Release-One**
+— no upstream production or preview entry carried an LED token at refresh
+time. Validate against a freshly downloaded upstream catalog via the
+existing `PRODUCT_CATALOG_PATH` recipe shown above before refreshing the
+fixture again.

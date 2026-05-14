@@ -557,6 +557,11 @@ is exempt by name. The test defaults to the vendored snapshot at
 `__tests__/fixtures/esphome-product-catalog.json`; set
 `PRODUCT_CATALOG_PATH` to a freshly downloaded copy to validate live.
 Run in isolation with `npm test -- product-catalog-alignment`.
+WF-PRODUCT-002 refreshed the vendored snapshot against the current
+upstream catalog (33 products = 1 production / 1 blocked / 0 preview /
+31 legacy-compatible at refresh time); no status WebFlash mirrors
+changed, active surfaces still resolve only to Release-One + Rescue,
+FanTRIAC remains blocked, and LED remains excluded from Release-One.
 
 ## Directory Structure
 

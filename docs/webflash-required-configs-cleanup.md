@@ -477,3 +477,25 @@ with `status: production`; entries with `blocked`, `legacy-compatible`,
 `deprecated`, `removed`, `hardware-pending`, or `compile-only` status fail
 the build before deploy. The contract is enforced by tests only — the
 allowlist itself, the workflow, and the importer are unchanged.
+
+## WF-PRODUCT-002 — product-catalog fixture refresh
+
+The vendored alignment fixture at
+`__tests__/fixtures/esphome-product-catalog.json` was re-aligned with the
+current upstream `sense360store/esphome-public` product catalog. The
+upstream snapshot at refresh time held **33 products** = **1 production**
+(`Ceiling-POE-VentIQ-RoomIQ`) + **1 blocked**
+(`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`) + **0 preview** + **31
+legacy-compatible** entries enumerated by upstream PRODUCT-002. Status
+fields on the two real entries WebFlash mirrors are unchanged; only the
+`notes` / `reason` prose was synced. The `REQUIRED_CONFIGS` allowlist
+established by WF-CLEANUP-004 (`Ceiling-POE-VentIQ-RoomIQ` + `Rescue`)
+remains aligned post-refresh: Release-One is still `production`,
+`Rescue` is still the WebFlash-owned exception, **FanTRIAC remains
+blocked**, and **LED remains excluded from Release-One** — no upstream
+production or preview entry carried an LED token at refresh time. The
+`PRODUCT_CATALOG_PATH` environment variable remains the documented way
+to validate the alignment test against a freshly downloaded upstream
+catalog before refreshing the fixture again. WF-PRODUCT-002 is
+fixture-and-docs-only — `REQUIRED_CONFIGS`, the workflow, the importer,
+the manifest, and every firmware artifact are unchanged.
