@@ -572,20 +572,39 @@ The alignment test gained an explicit `WF-PRODUCT-003 — upstream LED
 preview recognition` describe block that pins both halves of the
 contract: the fixture exposes the LED preview as `status: preview`,
 and every active WebFlash surface explicitly asserts it does not
-reference the LED preview today. WebFlash has not imported, signed,
-manifested, or surfaced the LED preview — active surfaces remain
-Release-One + Rescue only, `REQUIRED_CONFIGS` remains production-only,
-FanTRIAC remains blocked, and Release-One remains LED-less. WF-LED-001
-adds [`docs/led-preview-import-plan.md`](docs/led-preview-import-plan.md)
+reference the LED preview today. WF-LED-001
+added [`docs/led-preview-import-plan.md`](docs/led-preview-import-plan.md)
 — a docs-only forward-looking plan that records the upstream proof
 fields required before WebFlash may import, the future
 `firmware/sources.json` source entry shape (with
 `block_tokens: ["FanTRIAC"]` for the LED preview source while the
 Release-One source keeps `block_tokens: ["FanTRIAC", "LED"]`), the
 import + manifest-regeneration sequence, the deferred UX / kit
-decisions, and the explicit do-not-change list. WF-LED-001 imports
-no firmware, regenerates no manifests, and changes no active WebFlash
-surface; no real LED preview artifact is proven yet.
+decisions, and the explicit do-not-change list. WF-LED-002 then
+executed that import once upstream
+[`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview)
+shipped a proven artifact (SHA256
+`93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3`,
+1,135,904 bytes, release body with all four canonical H2 sections).
+WF-LED-002 added a second `firmware/sources.json` entry for the LED
+preview (`channel: preview`, `block_tokens: ["FanTRIAC"]`, pinned
+`expected_sha256`), imported the `.bin` plus `.meta.json` sidecar,
+regenerated `manifest.json` (now 3 builds — Release-One stable + LED
+preview + Rescue) and the per-build manifests (`firmware-0.json` =
+Release-One, `firmware-1.json` = LED preview, `firmware-2.json` =
+Rescue after deterministic re-indexing), and hardened
+`scripts/import-firmware-sources.py` to enforce `expected_sha256` when
+present (backward compatible when absent — preserves Release-One
+behaviour). The WF-PRODUCT-003 alignment-test describe block was
+updated to assert LED preview presence in `firmware/sources.json` +
+`manifest.json` and absence in `REQUIRED_CONFIGS` +
+`scripts/data/kits.json`. Unchanged: Release-One source entry,
+Release-One manifest build content, Rescue build content,
+`REQUIRED_CONFIGS` (still production-only), `scripts/data/kits.json`
+(still Release-One-only), every UI / wizard / `sw.js` / `index.html` /
+workflow file, and the FanTRIAC blocked status. LED preview UX
+exposure (preview-channel toggle / kit / wizard) is deferred to
+WF-LED-003.
 
 ## Directory Structure
 

@@ -1,4 +1,28 @@
-# LED preview import plan (WF-LED-001)
+# LED preview import plan (WF-LED-001 → WF-LED-002)
+
+> **WF-LED-002 status: LANDED.** The LED preview firmware
+> `Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin` (SHA256
+> `93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3`,
+> 1,135,904 bytes) has been imported from upstream release
+> [`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview)
+> via `scripts/import-firmware-sources.py`, signed via
+> `scripts/gen-manifests.py`, and surfaced in `manifest.json` as
+> `config_string: Ceiling-POE-VentIQ-RoomIQ-LED`, `channel: preview`,
+> `version: 1.0.0`. The per-build manifest now lives at `firmware-1.json`
+> (Release-One is `firmware-0.json`, Rescue is `firmware-2.json` after the
+> deterministic re-index).
+>
+> The unchanged invariants are preserved: Release-One source still carries
+> `block_tokens: ["FanTRIAC", "LED"]`, the LED preview source carries
+> `block_tokens: ["FanTRIAC"]` only, `REQUIRED_CONFIGS` stays production-only
+> (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json`
+> remains Release-One-only, FanTRIAC remains blocked, and no UI / wizard /
+> workflow / `sw.js` / `index.html` change landed in this PR. WF-LED-002
+> also hardened `scripts/import-firmware-sources.py` to enforce
+> `expected_sha256` against the downloaded asset when the field is present,
+> while preserving backward-compatible behaviour for Release-One (which
+> does not declare `expected_sha256`). The sections below remain as
+> historical planning context.
 
 This document captures WebFlash's **future** import / publish plan for the
 upstream LED preview build. It is planning material only — **no firmware is

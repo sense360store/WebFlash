@@ -301,6 +301,44 @@ def verify_sha256(
     return actual
 
 
+_HEX64_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+
+
+def assert_expected_sha256_matches(
+    entry: Dict[str, Any], actual_sha: str, asset_name: str
+) -> None:
+    """Verify the downloaded asset SHA against a pinned ``expected_sha256``.
+
+    The upstream ``checksums-sha256.txt`` verification (``verify_sha256``)
+    protects against download corruption but trusts whatever digest the
+    release ships. ``expected_sha256`` is WebFlash's own pinned
+    expectation for the source entry — defence in depth against a
+    compromised or accidentally replaced release asset whose
+    ``checksums-sha256.txt`` was swapped in lock-step.
+
+    Backward compatible: when the key is absent or empty, this is a
+    no-op so existing source entries (e.g. Release-One) keep working.
+    """
+
+    raw = entry.get("expected_sha256")
+    if raw is None or (isinstance(raw, str) and raw.strip() == ""):
+        return
+    if not isinstance(raw, str) or not _HEX64_PATTERN.match(raw.strip()):
+        raise ImportValidationError(
+            f"Source entry for '{asset_name}' has malformed 'expected_sha256': "
+            f"{raw!r}. Must be a 64-character lowercase hex SHA256 digest."
+        )
+    expected = raw.strip().lower()
+    actual = actual_sha.lower()
+    if actual != expected:
+        raise ImportValidationError(
+            f"Pinned SHA256 mismatch for '{asset_name}': source entry "
+            f"expected_sha256={expected}, downloaded file hashes to {actual}. "
+            "Either the upstream asset was replaced after the source entry "
+            "was pinned, or expected_sha256 in firmware/sources.json is stale."
+        )
+
+
 # --- Filename / token policy --------------------------------------------
 
 
@@ -531,6 +569,7 @@ def import_source_entry(
         download_to_path(asset_url("checksums-sha256.txt"), sha_tmp, token)
 
         asset_sha = verify_sha256(bin_tmp, asset_name, sha_tmp.read_text(encoding="utf-8"))
+        assert_expected_sha256_matches(entry, asset_sha, asset_name)
         assert_filename_matches_entry(asset_name, entry)
         assert_size_meets_threshold(bin_tmp, min_size_bytes, asset_name)
 
