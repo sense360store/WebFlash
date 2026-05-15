@@ -502,6 +502,179 @@ behaviour, FanTRIAC blocked status, the production-only
 `REQUIRED_CONFIGS` allowlist, and the Release-One-only kit catalog
 are all unchanged.
 
+## WF-DEPLOY-001 update — root cause of the May-7 stale deploy
+
+The previous sections of this audit recorded the symptom (live
+`manifest.json` stuck at `source_commit 821e33017df5e66f812cf0d570800f73c083de15`
+from `2026-05-07T10:52:31.767518+00:00`) and assumed the next merge to
+`main` would self-correct via the existing `firmware-publish.yml`
+deploy chain. WF-DEPLOY-001 found the *reason* every subsequent merge
+failed to deploy and unblocks the chain.
+
+### Diagnosis
+
+1. GitHub Pages is configured to use the **Actions source**
+   (`actions/upload-pages-artifact@v3` + `actions/deploy-pages@v4` at
+   `firmware-publish.yml:235-261`). No `gh-pages` branch exists in the
+   repo (verified via `mcp__github__list_branches`), so there is no
+   alternate branch-source publication path.
+2. The `firmware-publish.yml` workflow **is** triggering on every merge
+   to `main` whose file changes match the `on.push.paths` filter
+   (`firmware/**`, `manifest.json`, `firmware-*.json`, `index.html`,
+   `*.js`, `scripts/**`, `css/**`, `*.png`, `_headers`,
+   `.github/workflows/firmware-publish.yml`). The Actions UI shows runs
+   against #418 / #415 / #410 / #409 / #405 / #404 / #402 / #400.
+3. The `firmware-publish.yml` **badge for branch `main` reads
+   `failing`**. The most recent run on `fbe83f7` fails at the `test`
+   job → "Run unit tests" step with `Process completed with exit code 1`.
+   Because `build` `needs: test`, `build` is skipped, no Pages artifact
+   is uploaded, and `deploy` does not run. The live origin therefore
+   keeps serving the last successful artifact — the May-7 deploy at
+   `source_commit 821e3301…`.
+4. Reproduced locally:
+
+   ```
+   FAIL __tests__/firmware-provenance.test.js
+     ● manifest.json — provenance integration › at least one build is
+       marked deprecated to exercise the dropdown skip
+       Expected: > 0
+       Received:   0
+
+   Test Suites: 1 failed, 55 passed, 56 total
+   Tests:       1 failed, 796 passed, 797 total
+   ```
+
+   The failing assertion at `__tests__/firmware-provenance.test.js:584-587`
+   required at least one `manifest.builds[].deprecated === true` entry —
+   a stale historical assumption from the 16-build legacy manifest,
+   where shadowed older AirIQ/PWR stable versions carried
+   `deprecated: true`. After WF-CLEANUP-005 regenerated the manifest
+   down to 2 builds (and WF-LED-002 added the LED preview as build 3),
+   none of Release-One stable / LED preview / Rescue are deprecated,
+   and the assertion has been blocking every CI run since.
+
+### Resolution
+
+WF-DEPLOY-001 makes four focused changes:
+
+* **`__tests__/firmware-provenance.test.js`** — the stale
+  deprecated-build assertion at lines 584-587 is removed outright. The
+  wizard's deprecated-build skip behavior is covered by synthetic
+  fixtures elsewhere in the same file (the
+  `validateFirmwareProvenance` cases driven by `VALID_STABLE_BUILD`);
+  it is not a contract the production manifest needs to satisfy. The
+  assertion is *not* replaced with a softer structural check —
+  weakening it would just add noise without protecting anything.
+* **`__tests__/github-pages-surface.test.js`** (new, network-free) —
+  pins the deploy contract so a future cleanup or import cannot
+  silently break the same shape again: exactly 3 builds in
+  `manifest.json`; `source_commit` is not the known-bad May-7 SHA;
+  `Ceiling-POE-VentIQ-RoomIQ` is present as `stable` + non-deprecated;
+  `Ceiling-POE-VentIQ-RoomIQ-LED` is present as `preview` +
+  non-deprecated; `Rescue` is on the `rescue` channel; no FanTRIAC
+  segment; no legacy AirIQ / PWR / USB / Voice config_strings; every
+  build's `parts[].path` resolves to an on-disk file; the
+  `firmware-N.json` namespace is `firmware-0/1/2.json` only (no stale
+  higher indices); `REQUIRED_CONFIGS` is exactly
+  `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`; LED preview is **not** in
+  `REQUIRED_CONFIGS`. Live-origin verification continues to live in
+  `scripts/smoke-test-deployment.py` post-deploy.
+* **`index.html`** — bumps the static cache-buster query strings on
+  `wizard-style.css` and `layout.css` from `?v=20260506` / `?v=20260501`
+  to `?v=20260515`. `index.html` is in the workflow's `on.push.paths`
+  filter; `__tests__/` and `docs/` are not, so a tests-and-docs-only
+  PR would not trigger `firmware-publish.yml` on merge. The bump
+  guarantees this PR's merge triggers a deploy, and conveniently
+  invalidates any browser/Pages CDN cache for the CSS once the new
+  artifact is live. **No markup or runtime wizard behavior changes
+  accompany this bump.**
+* **This file** — appended this section recording the diagnostic
+  outcome, the fix, and the live-origin expectation after merge.
+
+WF-DEPLOY-001 deliberately does **not** touch
+`firmware/configurations/*`, `firmware/rescue/*`,
+`firmware/sources.json`, `manifest.json`, any `firmware-*.json`,
+`scripts/data/kits.json`, `scripts/state.js`,
+`scripts/utils/release-channels.js`, any other wizard script, `sw.js`,
+`_headers`, `.github/workflows/*`, `scripts/smoke-test-deployment.py`,
+or `REQUIRED_CONFIGS`. The repo state is already correct (3 builds,
+current source_commit, no FanTRIAC, LED on preview). The only thing
+blocking the deploy was the stale test assertion.
+
+### Live-origin expectation after merge
+
+Once this PR merges to `main`, `firmware-publish.yml` should run to
+green:
+
+1. `test` job passes (the stale assertion is gone, the other 796 tests
+   were already passing locally).
+2. `build` job runs `gen-manifests.py` in
+   `--mode production` (assumes `WEBFLASH_FIRMWARE_PRIVATE_KEY_B64` is
+   still configured in Actions secrets, as evidenced by the May-7
+   manifest having been signed with `sense360-prod-2026-02`).
+   `REQUIRED_CONFIGS` assertion passes (`Ceiling-POE-VentIQ-RoomIQ`
+   and `Rescue` are both in the manifest). Pages artifact uploads.
+3. `deploy` job runs `actions/deploy-pages@v4`. The live origin's
+   `manifest.json` flips to the new commit's `source_commit`.
+4. `smoke-test` job runs `scripts/smoke-test-deployment.py`. With the
+   production signing secret still set, this passes. If the secret has
+   been removed since the May-7 deploy, the smoke test will fail on
+   `check_no_stable_uses_blocked_key` / `check_production_key_in_use`
+   — that is an Actions environment/secrets issue to fix in repo
+   settings, not something WF-DEPLOY-001 papers over by weakening the
+   smoke-test signing checks.
+
+Manual verification after the deploy job goes green:
+
+```bash
+curl -s https://sense360store.github.io/WebFlash/manifest.json \
+  | python3 -c 'import json, sys; m = json.load(sys.stdin); \
+    print(m["source_commit"]); \
+    print(*sorted({(b["channel"], b["config_string"]) for b in m["builds"]}), sep="\n")'
+
+# Expected — the new merge SHA (not 821e3301...) followed by exactly
+# three (channel, config_string) tuples:
+#   ('preview', 'Ceiling-POE-VentIQ-RoomIQ-LED')
+#   ('rescue',  'Rescue')
+#   ('stable',  'Ceiling-POE-VentIQ-RoomIQ')
+
+# Current Release-One bin: 200
+curl -sI https://sense360store.github.io/WebFlash/firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin
+# LED preview bin: 200
+curl -sI https://sense360store.github.io/WebFlash/firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin
+# Orphan FanTRIAC bin: 404 (was 200 on the May-7 artifact)
+curl -sI https://sense360store.github.io/WebFlash/firmware/configurations/Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin
+```
+
+The live `sw.js` does not need any change. It already serves the
+correct cache strategy (`CACHE_NAME = 'webflash-v5'`, network-first
+for `*.bin` and `manifest.json`) and the activate handler purges any
+previous `webflash-*` caches. The page-side `manifest-freshness.js`
+re-fetches `manifest.json` with `cache: 'no-store'` before flashing,
+which bypasses both the SW and the Pages CDN cache, so users at the
+moment of deploy will see the new manifest within one page load.
+
+### What WF-DEPLOY-001 does not change
+
+* No `firmware/configurations/*` binary, sidecar, or rescue asset.
+* No `firmware/sources.json` source entry or `block_tokens`.
+* No `manifest.json` regeneration (the on-disk manifest is already
+  correct; `gen-manifests.py` will re-emit an equivalent manifest in
+  CI with the new merge `source_commit`).
+* No `firmware-0.json` / `firmware-1.json` / `firmware-2.json` edits
+  (same reason — CI will re-emit them).
+* No `REQUIRED_CONFIGS` change — still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
+* No kit catalog (`scripts/data/kits.json`) change.
+* No wizard / `state.js` / `release-channels.js` / module-requirements
+  change.
+* No `sw.js` change — cache name stays at `webflash-v5`.
+* No `_headers` change.
+* No `.github/workflows/*` change.
+* No `scripts/smoke-test-deployment.py` change.
+* Release-One stable behaviour, LED preview channel, FanTRIAC blocked
+  status, and the production-only `REQUIRED_CONFIGS` allowlist are all
+  unchanged.
+
 ## See also
 
 * [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — WF-UX-001
