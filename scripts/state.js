@@ -45,6 +45,7 @@ import { getServiceWorkerState, subscribeServiceWorkerState } from './services/s
 import { checkManifestFreshness } from './services/manifest-freshness.js';
 import { notifyManifestFreshness as notifyFreshnessBanner } from './layout/freshness-banner.js';
 import { findNearbyConfigStrings, getMismatchHighlights } from './utils/firmware-nearest.js';
+import { FIRMWARE_READINESS_COPY, classifyFirmwareReadiness } from './utils/firmware-readiness.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -2696,6 +2697,55 @@ function updateModuleFirmwareImpactHints() {
     });
 }
 
+// WF-UX-002 — single firmware-readiness verdict.
+//
+// Reads (does not mutate) the wizard's selection, the loaded manifest, the
+// currently selected firmware build, the last firmware status message, the
+// active release mode, and the browser capabilities. Returns one of six
+// canonical readiness tags plus the user-facing copy each render site
+// should display (see FIRMWARE_READINESS_COPY at module top).
+//
+// The helper is presentation-only: it does not touch acknowledgement
+// state, install-gate logic, channel policy, or firmware selection. The
+// existing release-channel + provenance + freshness gates remain
+// authoritative for whether install actually fires; this helper only
+// dictates the *headline* the user sees.
+function getFirmwareReadiness({
+    state = configuration,
+    capabilities,
+    firmware,
+    status,
+    mode
+} = {}) {
+    const caps = capabilities || (typeof detectCapabilities === 'function' ? detectCapabilities() : null);
+    const browserSupported = !caps || caps.webSerial !== false;
+    const selected = firmware !== undefined ? firmware : (typeof window !== 'undefined' ? window.currentFirmware : null);
+    const statusMessage = status !== undefined ? status : firmwareStatusMessage;
+    const releaseMode = mode || (typeof getReleaseMode === 'function' ? getReleaseMode() : 'normal');
+    const configString = buildFirmwareTargetPreviewString(state);
+
+    const kind = classifyFirmwareReadiness({
+        configString,
+        manifestHasConfig: Boolean(configString && manifestConfigStringLookup && manifestConfigStringLookup.has(configString)),
+        firmwareChannel: selected ? normaliseReleaseChannel(selected.channel) : null,
+        hasFirmware: Boolean(selected),
+        hasNotAvailableStatus: Boolean(statusMessage && statusMessage.type === 'not-available'),
+        browserSupported
+    });
+
+    const copy = FIRMWARE_READINESS_COPY[kind];
+    return {
+        kind,
+        headline: copy.headline,
+        body: copy.body,
+        tone: copy.tone,
+        configString,
+        firmware: selected || null,
+        releaseMode,
+        browserSupported
+    };
+}
+
 // Renders the Step 4 firmware-target preview block using the same config
 // string composer (buildFirmwareTargetPreviewString) that Step 5 uses to
 // match against manifest builds. The preview MUST stay aligned with the
@@ -2704,8 +2754,8 @@ function updateModuleFirmwareImpactHints() {
 //
 // When mounting/power are not yet picked the preview prompts the user to
 // continue. When the assembled config string has no matching manifest
-// build the preview surfaces a neutral, non-blocking warning. Module
-// selection itself is never blocked here.
+// build the preview surfaces the canonical no-build copy from
+// getFirmwareReadiness(). Module selection itself is never blocked here.
 function updateFirmwareTargetPreview() {
     if (typeof document === 'undefined') {
         return;
@@ -2740,6 +2790,9 @@ function updateFirmwareTargetPreview() {
 
     const isAvailable = manifestConfigStringLookup.has(configString);
     if (warningEl) {
+        if (!isAvailable) {
+            warningEl.textContent = FIRMWARE_READINESS_COPY['no-build'].body;
+        }
         warningEl.hidden = isAvailable;
     }
     root.dataset.firmwareTargetState = isAvailable ? 'available' : 'unpublished';
@@ -5441,12 +5494,32 @@ function updateCompatibleFirmwareHeading() {
         selectionText = getCompatibleFirmwareHeadingText(window.currentFirmware);
     }
 
+    // WF-UX-002: when no build matches, surface the canonical no-build
+    // readiness headline next to the heading so the user does not see a
+    // blank "Compatible Firmware" label paired with the not-available card
+    // below. Stable / preview / rescue paths fall through to selectionText
+    // above and never reach the no-build branch.
+    const readinessText = !selectionText && firmwareStatusMessage?.type === 'not-available'
+        ? FIRMWARE_READINESS_COPY['no-build'].headline
+        : '';
+
+    const headingHasContent = Boolean(selectionText || readinessText);
+
     const labelText = defaultCompatibleFirmwareHeadingLabel || 'Compatible Firmware';
     if (compatibleFirmwareHeadingLabel) {
-        compatibleFirmwareHeadingLabel.textContent = selectionText ? `${labelText}:` : labelText;
+        compatibleFirmwareHeadingLabel.textContent = headingHasContent ? `${labelText}:` : labelText;
     }
 
-    compatibleFirmwareHeadingSelection.textContent = selectionText;
+    if (selectionText) {
+        compatibleFirmwareHeadingSelection.textContent = selectionText;
+        compatibleFirmwareHeadingSelection.removeAttribute('data-readiness');
+    } else if (readinessText) {
+        compatibleFirmwareHeadingSelection.textContent = readinessText;
+        compatibleFirmwareHeadingSelection.setAttribute('data-readiness', 'no-build');
+    } else {
+        compatibleFirmwareHeadingSelection.textContent = '';
+        compatibleFirmwareHeadingSelection.removeAttribute('data-readiness');
+    }
 }
 
 function setFirmwareStatusMessageForTests(message) {
@@ -5648,7 +5721,7 @@ function renderFirmwareNotAvailable(status) {
 
     return `
         <div class="firmware-not-available" role="alert" data-firmware-not-available data-firmware-not-available-mode="${escapeHtml(mode)}">
-            <h4>Firmware not available for this exact hardware combination</h4>
+            <h4>${escapeHtml(FIRMWARE_READINESS_COPY['no-build'].headline)}</h4>
             <p class="firmware-not-available__lead">This exact combination has not been published yet.</p>
 
             <h5 class="firmware-not-available__section-heading">Selected configuration</h5>
@@ -6674,6 +6747,8 @@ export const __testHooks = Object.freeze({
     formatConfigSegment,
     buildFirmwareTargetPreviewString,
     updateFirmwareTargetPreview,
+    getFirmwareReadiness,
+    FIRMWARE_READINESS_COPY,
     updateModuleFirmwareImpactHints,
     MODULE_VARIANT_LABELS,
     verifyCurrentFirmwareIntegrity,
@@ -6706,5 +6781,6 @@ export {
     getStep,
     getTotalSteps,
     setStep,
-    getMaxReachableStep
+    getMaxReachableStep,
+    getFirmwareReadiness
 };

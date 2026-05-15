@@ -129,3 +129,147 @@ describe('WF-UX-QUICK-001 — admin note removed and browser-support copy normal
         expect(html).toMatch(/Chrome, Edge, or Opera/);
     });
 });
+
+describe('WF-UX-002 — quick-start presets only point to manifest-backed configs', () => {
+    // Static-only check: every quick-start preset's resolved config_string
+    // must exist in the in-repo manifest.json. Mirrors the buildFirmwareTargetPreviewString
+    // composition rules in scripts/state.js so a stale preset pointed at a
+    // dropped config_string fails this suite without needing to spin up
+    // the full wizard.
+
+    function loadManifestConfigStrings() {
+        const manifestPath = path.resolve(process.cwd(), 'manifest.json');
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+        return new Set(
+            (manifest.builds || [])
+                .map(build => (build && typeof build.config_string === 'string') ? build.config_string : null)
+                .filter(Boolean)
+        );
+    }
+
+    function presetToConfigString(preset) {
+        const mount = preset.mount || preset.mounting;
+        const power = preset.power;
+        if (!mount || !power) {
+            return '';
+        }
+        const segments = [
+            mount.charAt(0).toUpperCase() + mount.slice(1),
+            power.toUpperCase()
+        ];
+        if (preset.airiq && preset.airiq !== 'none') {
+            segments.push(preset.airiq === 'airiq' ? 'AirIQ' : preset.airiq);
+        }
+        if (preset.ventiq && preset.ventiq !== 'none') {
+            segments.push('VentIQ');
+        }
+        if (preset.fan && preset.fan !== 'none') {
+            const fanLabel = ({
+                relay: 'FanRelay',
+                pwm: 'FanPWM',
+                analog: 'FanDAC',
+                triac: 'FanTRIAC'
+            })[preset.fan] || `Fan${preset.fan}`;
+            segments.push(fanLabel);
+        }
+        if (preset.roomiq && preset.roomiq !== 'none') {
+            segments.push('RoomIQ');
+        }
+        if (preset.led && preset.led !== 'none') {
+            segments.push('LED');
+        }
+        return segments.join('-');
+    }
+
+    test('every preset in index.html resolves to a config_string present in manifest.json', () => {
+        const manifestConfigs = loadManifestConfigStrings();
+        const presetButtons = document.querySelectorAll('[data-preset-config]');
+        expect(presetButtons.length).toBeGreaterThan(0);
+
+        presetButtons.forEach(button => {
+            const raw = button.getAttribute('data-preset-config');
+            expect(raw).toBeTruthy();
+            const preset = JSON.parse(raw);
+            const configString = presetToConfigString(preset);
+            expect(configString).not.toBe('');
+            expect(manifestConfigs.has(configString)).toBe(true);
+        });
+    });
+
+    test('the recommended preset retargets to the Release-One Ceiling-POE-VentIQ-RoomIQ config', () => {
+        const recommended = document.querySelector('[data-preset="recommended"]');
+        expect(recommended).not.toBeNull();
+        const preset = JSON.parse(recommended.getAttribute('data-preset-config'));
+        // WF-UX-002: the legacy preset pointed at Ceiling-POE-AirIQ — a
+        // config dropped from manifest.json after WF-LED-002. The retargeted
+        // preset must match Release-One so the shortcut and the kit picker
+        // resolve to the same firmware.
+        expect(preset.mount).toBe('ceiling');
+        expect(preset.power).toBe('poe');
+        expect(preset.bathroom).toBe(true);
+        expect(preset.ventiq).toBe('ventiq');
+        expect(preset.roomiq).toBe('roomiq');
+        expect(preset.airiq).toBe('none');
+        expect(preset.fan).toBe('none');
+        expect(preset.led).toBe('none');
+    });
+
+    test('the stale Ceiling-USB / "minimal" preset is removed', () => {
+        const minimal = document.querySelector('[data-preset="minimal"]');
+        expect(minimal).toBeNull();
+        const presetButtons = document.querySelectorAll('[data-preset-config]');
+        presetButtons.forEach(button => {
+            const preset = JSON.parse(button.getAttribute('data-preset-config'));
+            expect(presetToConfigString(preset)).not.toBe('Ceiling-USB');
+        });
+    });
+
+    test('the "Most popular" badge survives on the recommended preset', () => {
+        const badge = document.querySelector('[data-preset="recommended"] .quick-start-card__badge');
+        expect(badge).not.toBeNull();
+        expect(badge.textContent.trim()).toBe('Most popular');
+    });
+
+    test('no preset opts into the LED preview — preview channel exposure stays gated by the module toggle', () => {
+        const presetButtons = document.querySelectorAll('[data-preset-config]');
+        presetButtons.forEach(button => {
+            const preset = JSON.parse(button.getAttribute('data-preset-config'));
+            expect(preset.led || 'none').toBe('none');
+        });
+    });
+});
+
+describe('WF-UX-002 — canonical firmware readiness copy in static index.html', () => {
+    test('Step 4 firmware-target-preview warning carries the canonical no-build body', () => {
+        const warning = document.querySelector('[data-firmware-target-preview-warning]');
+        expect(warning).not.toBeNull();
+        expect(warning.textContent.trim()).toBe(
+            'Adjust your hardware choices or pick a supported kit to find a matching build.'
+        );
+        // Warning is hidden until updateFirmwareTargetPreview promotes it.
+        expect(warning.hasAttribute('hidden')).toBe(true);
+    });
+
+    test('mobile summary firmware-empty starts on the no-selection headline', () => {
+        const empty = document.querySelector('[data-module-summary-firmware-empty]');
+        expect(empty).not.toBeNull();
+        expect(empty.textContent.trim()).toBe('Choose your hardware to find firmware');
+    });
+
+    test('legacy "No build selected yet." copy is gone from static index.html', () => {
+        expect(html).not.toMatch(/No build selected yet/i);
+    });
+
+    test('legacy "This exact firmware target is not published yet" copy is gone from static index.html', () => {
+        expect(html).not.toMatch(/firmware target is not published yet/i);
+    });
+
+    test('browser-warning panel uses the canonical unsupported-browser headline and body', () => {
+        const panel = document.getElementById('browser-warning');
+        expect(panel).not.toBeNull();
+        const heading = panel.querySelector('h3');
+        expect(heading).not.toBeNull();
+        expect(heading.textContent.trim()).toBe('Browser not supported for flashing');
+        expect(panel.textContent).toMatch(/Open this page in desktop Chrome, Edge, or Opera to install firmware over USB\./);
+    });
+});

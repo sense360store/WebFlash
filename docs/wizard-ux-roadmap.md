@@ -648,6 +648,39 @@ quickly to avoid stacking.
 > No firmware, manifest, kit, source, workflow, service-worker, install,
 > preflight, Release-One, LED-preview-exposure, or FanTRIAC-block change.
 
+> **Status:** WF-UX-002 landed — the three competing readiness strings
+> ("This exact firmware target is not published yet", "No build selected yet",
+> the blank `Compatible Firmware:` heading) collapse into a single
+> presentation-only helper `getFirmwareReadiness()` in `scripts/state.js` that
+> returns one of six canonical tags (`no-selection`, `stable-ready`,
+> `preview-ready`, `no-build`, `rescue-ready`, `unsupported-browser`) plus the
+> approved headline/body copy from the [Firmware readiness model](#firmware-readiness-model)
+> table. Three render sites read from the helper: Step 4's
+> `updateFirmwareTargetPreview()` warning, Step 5's
+> `updateCompatibleFirmwareHeading()` selection span (now non-blank under the
+> `no-build` state), and the sidebar/mobile firmware mini-card empty-state in
+> `scripts/layout/state-summary.js` (`renderFirmwareSummary` →
+> `applyFirmwareEmptyCopy`). The `renderFirmwareNotAvailable()` H4 also pulls
+> from the canonical headline so the "no published firmware" message reads
+> identically in every surface. Stable, preview, and rescue paths are
+> unchanged at the policy layer — `release-channels.js` (defaultSelectable,
+> requiresAcknowledgement, hiddenByDefault), the channel-acknowledgement
+> install gate, and the WF-LED-003 LED preview exposure model are untouched.
+> The stale Step 1 quick-start presets were resolved by retargeting the
+> "Most popular" preset to the published Release-One config
+> (`Ceiling-POE-VentIQ-RoomIQ`) — same end state as the
+> `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE` kit — and removing the second preset
+> that used to point at `Ceiling-USB`. No LED preview preset was added; the
+> LED preview path stays gated by the existing module toggle plus the
+> `channel:preview` acknowledgement. Tests live in
+> `__tests__/readiness-strings.test.js` (the new readiness contract),
+> `__tests__/a11y-static-html.test.js` (preset/manifest alignment + canonical
+> copy in static HTML), and refreshed assertions in
+> `__tests__/wizard-state.test.js`, `__tests__/firmware-not-available.test.js`,
+> and `__tests__/module-selection-guidance.test.js`. No firmware, manifest,
+> source, kit, workflow, service-worker, preflight, Release-One,
+> LED-preview-exposure, or FanTRIAC-block change.
+
 | PR | Scope | Risk | Acceptance criteria |
 | --- | --- | --- | --- |
 | **WF-UX-QUICK-001** ✅ landed | Removed the Admin note (was at [`index.html:1005`](../index.html#L1005)). Normalised browser-support copy across [`index.html:204`](../index.html#L204), [`:729`](../index.html#L729), [`:1012`](../index.html#L1012), [`scripts/init-review.js:19-21`](../scripts/init-review.js#L19), [`scripts/state.js:5075`](../scripts/state.js#L5075), [`scripts/layout/rescue-modal.js:21-23`](../scripts/layout/rescue-modal.js#L21), [`scripts/layout/sensor-health-panel.js:82`](../scripts/layout/sensor-health-panel.js#L82), [`scripts/layout/init-splitview.js:103-106`](../scripts/layout/init-splitview.js#L103), [`scripts/layout/device-info-panel.js:93`](../scripts/layout/device-info-panel.js#L93), [`scripts/compat-config.js:617`](../scripts/compat-config.js#L617), and the five `scripts/capabilities.js` messages flagged in finding #3 (including the previously self-contradictory Opera guidance), to the canonical phrase **`Chrome, Edge, or Opera`**. | Low | (a) ✅ No `Admin note` string in static HTML — pinned by `__tests__/a11y-static-html.test.js`. (b) ✅ `grep -RIn "Chrome or Edge\|Chrome/Edge\|Chrome and Edge"` against `index.html`/`scripts/` returns zero hits. (c) ✅ `__tests__/preflight-capabilities.test.js`, `__tests__/release-channel-ui.test.js`, and `npm test -- --ci` pass without modification. (d) ✅ Release-One install behaviour and LED preview exposure unchanged. |

@@ -88,7 +88,12 @@ describe('renderFirmwareNotAvailable — selected configuration and filename', (
         __testHooks.renderSelectedFirmware();
         const container = document.getElementById('compatible-firmware');
         const html = container.innerHTML;
-        expect(html).toContain('Firmware not available for this exact hardware combination');
+        // WF-UX-002: the H4 now reuses the canonical no-build readiness
+        // headline so Step 5's heading, Step 4's preview warning, and the
+        // not-available card all speak the same language. The technical
+        // "This exact combination has not been published yet." line stays
+        // as the per-card explainer.
+        expect(html).toContain('No published firmware for this exact selection');
         expect(html).toContain('This exact combination has not been published yet.');
         expect(html).not.toMatch(/No compatible manifest entry was found\./i);
         expect(html).not.toMatch(/config token mismatch/i);
