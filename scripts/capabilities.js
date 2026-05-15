@@ -43,17 +43,17 @@ const BROWSER_INFO = {
     firefox: {
         name: 'Mozilla Firefox',
         supported: false,
-        guidance: 'Firefox does not support Web Serial. Please use Chrome or Edge.'
+        guidance: 'Firefox does not support Web Serial. Please use Chrome, Edge, or Opera.'
     },
     safari: {
         name: 'Safari',
         supported: false,
-        guidance: 'Safari does not support Web Serial. Please use Chrome or Edge.'
+        guidance: 'Safari does not support Web Serial. Please use Chrome, Edge, or Opera.'
     },
     opera: {
         name: 'Opera',
         supported: true,
-        guidance: 'Opera supports Web Serial, but Chrome or Edge is recommended.'
+        guidance: 'You\'re using a supported browser.'
     },
     brave: {
         name: 'Brave',
@@ -63,7 +63,7 @@ const BROWSER_INFO = {
     other: {
         name: 'Unknown Browser',
         supported: false,
-        guidance: 'Your browser may not support Web Serial. Please use Chrome or Edge.'
+        guidance: 'Your browser may not support Web Serial. Please use Chrome, Edge, or Opera.'
     }
 };
 
@@ -272,7 +272,7 @@ export function evaluateBrowserReadiness(capabilities = detectCapabilities()) {
             code: 'untested-browser',
             severity: 'warn',
             title: 'Untested browser',
-            message: `Your browser (${capabilities.browserName || 'Unknown'}) isn’t one of the browsers Sense360 tests against. Flashing may still work — if it doesn’t, switch to Chrome or Edge.`,
+            message: `Your browser (${capabilities.browserName || 'Unknown'}) isn’t one of the browsers Sense360 tests against. Flashing may still work — if it doesn’t, switch to Chrome, Edge, or Opera.`,
             action: 'Continue at your own risk'
         });
         escalate('warn');

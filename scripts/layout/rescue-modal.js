@@ -18,9 +18,9 @@ const RESCUE_MANIFEST_URL = './firmware/rescue/manifest.json';
 const RESCUE_VERSION_LABEL = 'Sense360 Rescue v1.0.0-rescue';
 
 const BROWSER_MESSAGES = {
-    firefox: 'Firefox does not support Web Serial API. Please open this page in <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a> to flash firmware.',
-    safari: 'Safari does not support Web Serial API. Please open this page in <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a> to flash firmware.',
-    other: 'Web Serial is not available in this browser. For the best experience, switch to <a href="https://www.google.com/chrome/" target="_blank" rel="noopener noreferrer">Google Chrome</a> or <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener noreferrer">Microsoft Edge</a>.'
+    firefox: 'Firefox doesn’t support the <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Web Serial API</a>. Open this page in desktop Chrome, Edge, or Opera to flash firmware.',
+    safari: 'Safari doesn’t support the <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Web Serial API</a>. Open this page in desktop Chrome, Edge, or Opera to flash firmware.',
+    other: 'This browser doesn’t support the <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Web Serial API</a>. Open this page in desktop Chrome, Edge, or Opera to flash firmware.'
 };
 
 /** @type {HTMLElement|null} */

@@ -113,3 +113,19 @@ describe('static accessibility hooks in index.html', () => {
         expect(supportLabel).toMatch(/support/i);
     });
 });
+
+describe('WF-UX-QUICK-001 — admin note removed and browser-support copy normalized', () => {
+    test('no internal "Admin note" text appears in static index.html', () => {
+        expect(html).not.toMatch(/Admin note/i);
+    });
+
+    test('no legacy "Chrome or Edge" / "Chrome/Edge" / "Chrome and Edge" copy in static index.html', () => {
+        expect(html).not.toMatch(/Chrome or Edge/);
+        expect(html).not.toMatch(/Chrome\/Edge/);
+        expect(html).not.toMatch(/Chrome and Edge/);
+    });
+
+    test('static index.html uses the canonical "Chrome, Edge, or Opera" phrase', () => {
+        expect(html).toMatch(/Chrome, Edge, or Opera/);
+    });
+});
