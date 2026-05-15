@@ -298,16 +298,11 @@
 
                 <section class="manual-mode-panel" data-manual-mode-panel hidden>
                     <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
-                        <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","airiq":"airiq","fan":"none"}'>
+                        <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","bathroom":true,"ventiq":"ventiq","roomiq":"roomiq","airiq":"none","fan":"none","led":"none"}'>
                             <span class="quick-start-card__badge">Most popular</span>
-                            <span class="quick-start-card__title">Ceiling + AirIQ over PoE</span>
-                            <span class="quick-start-card__description">Full air-quality stack powered over Ethernet. Recommended for most rooms.</span>
-                            <span class="quick-start-card__meta">PoE PSU &middot; Sense360 AirIQ &middot; no fan driver</span>
-                        </button>
-                        <button class="quick-start-card btn-preset" type="button" data-preset="minimal" data-preset-config='{"mount":"ceiling","power":"usb","airiq":"none","fan":"none"}'>
-                            <span class="quick-start-card__title">Ceiling Core over USB</span>
-                            <span class="quick-start-card__description">Just the Sense360 Core, powered from USB. Fastest way to get going.</span>
-                            <span class="quick-start-card__meta">USB power &middot; no expansion modules</span>
+                            <span class="quick-start-card__title">Ceiling VentIQ + RoomIQ over PoE</span>
+                            <span class="quick-start-card__description">Release-One ceiling kit: bathroom air-quality plus room sensing, powered over Ethernet.</span>
+                            <span class="quick-start-card__meta">PoE PSU &middot; Sense360 VentIQ &middot; Sense360 RoomIQ</span>
                         </button>
                     </section>
 
@@ -716,7 +711,7 @@
                     <p class="firmware-target-preview__description">This is the firmware identifier that will be used in the next step, generated from your selections.</p>
                     <code class="firmware-target-preview__value" data-firmware-target-preview-value>Select mounting and power to generate a firmware target.</code>
                     <p class="firmware-target-preview__warning" data-firmware-target-preview-warning hidden>
-                        This exact firmware target is not published yet. You can still review your selection, but installation will require a matching firmware build.
+                        Adjust your hardware choices or pick a supported kit to find a matching build.
                     </p>
                 </section>
 
@@ -964,7 +959,7 @@
                             <section class="module-summary-card__firmware" aria-label="Firmware" data-module-summary-firmware>
                                 <div class="module-summary-card__firmware-header">
                                     <h4>Firmware</h4>
-                                    <p class="module-summary-card__firmware-empty" data-module-summary-firmware-empty>No build selected yet.</p>
+                                    <p class="module-summary-card__firmware-empty" data-module-summary-firmware-empty>Choose your hardware to find firmware</p>
                                 </div>
                                 <div class="module-summary-card__firmware-meta" data-module-summary-firmware-meta hidden>
                                     <p class="module-summary-card__firmware-name" data-module-summary-firmware-name></p>
@@ -1011,10 +1006,12 @@
 
         <div class="browser-check">
             <div class="browser-warning" id="browser-warning" style="display: none;">
-                <h3>Browser Not Supported</h3>
+                <h3>Browser not supported for flashing</h3>
                 <p>
-                    Web Serial works only in desktop Chrome, Edge, or Opera. Safari, Firefox, and all iOS browsers are not
-                    supported. <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more about the Web Serial API</a>.
+                    Open this page in desktop Chrome, Edge, or Opera to install firmware over USB. Safari, Firefox, and all
+                    mobile browsers do not implement the
+                    <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Web Serial API</a>
+                    that flashing requires.
                 </p>
             </div>
         </div>

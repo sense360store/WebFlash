@@ -405,6 +405,13 @@ describe('wizard state module', () => {
     });
 
     test('compatible firmware heading reflects active selection', async () => {
+        // Reset URL so the wizard starts at step 1 with no preset config —
+        // a previous test in this describe block clicks mounting+power and
+        // navigates to step 5, which leaves `?mount=wall&power=usb&step=5`
+        // in the JSDOM URL. Without this reset, initializeFromUrl would
+        // jump straight to step 5 and the WF-UX-002 no-build readiness
+        // headline would (correctly) appear before this test starts.
+        window.history.replaceState(null, '', window.location.pathname);
         const { __testHooks } = await import('../scripts/state.js');
 
         const headingSelection = document.querySelector('[data-compatible-firmware-selection]');
@@ -450,7 +457,30 @@ describe('wizard state module', () => {
         __testHooks.renderSelectedFirmware();
 
         expect(headingSelection.textContent.trim()).toBe('');
+        expect(headingSelection.hasAttribute('data-readiness')).toBe(false);
         expect(headingLabel.textContent.trim()).toBe('Compatible Firmware');
+
+        // WF-UX-002: when the wizard knows the configuration is not in the
+        // manifest, the heading surfaces the canonical no-build headline so
+        // the user is not staring at a bare "Compatible Firmware" label
+        // alongside the not-available card below.
+        window.currentFirmware = null;
+        __testHooks.setFirmwareStatusMessage({
+            type: 'not-available',
+            configString: 'Ceiling-POE-AirIQ',
+            expectedFilename: 'Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin',
+            nearbyConfigStrings: [],
+            mismatchHighlights: [],
+            selectedHardware: [],
+            configurationMode: 'manual'
+        });
+        __testHooks.renderSelectedFirmware();
+
+        expect(headingSelection.textContent.trim()).toBe('No published firmware for this exact selection');
+        expect(headingSelection.getAttribute('data-readiness')).toBe('no-build');
+        expect(headingLabel.textContent.trim()).toBe('Compatible Firmware:');
+
+        __testHooks.setFirmwareStatusMessage(null);
     });
 
     test('replaceState coerces legacy voice base to none', async () => {

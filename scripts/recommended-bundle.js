@@ -1,10 +1,19 @@
 import { getState as getWizardState, setState, setStep, getMaxReachableStep } from './state.js';
 
+// WF-UX-002: Recommended preset retargeted to the published Release-One
+// configuration (`Ceiling-POE-VentIQ-RoomIQ`). Keep this in lock-step with
+// the `[data-preset="recommended"]` button's `data-preset-config` in
+// index.html and with the kit definition in scripts/data/kits.json so the
+// quick-start shortcut and the kit picker resolve to the same firmware.
 const RECOMMENDED_STATE = Object.freeze({
     mount: 'ceiling',
     power: 'poe',
-    airiq: 'airiq',
-    fan: 'none'
+    bathroom: true,
+    ventiq: 'ventiq',
+    roomiq: 'roomiq',
+    airiq: 'none',
+    fan: 'none',
+    led: 'none'
 });
 
 function normaliseStateShape(state) {
@@ -12,16 +21,24 @@ function normaliseStateShape(state) {
         return {
             mount: null,
             power: null,
+            bathroom: false,
+            ventiq: 'none',
+            roomiq: 'none',
             airiq: 'none',
-            fan: 'none'
+            fan: 'none',
+            led: 'none'
         };
     }
 
     return {
         mount: state.mounting || null,
         power: state.power || null,
+        bathroom: Boolean(state.bathroom),
+        ventiq: state.ventiq || 'none',
+        roomiq: state.roomiq || 'none',
         airiq: state.airiq || 'none',
-        fan: state.fan || 'none'
+        fan: state.fan || 'none',
+        led: state.led || 'none'
     };
 }
 

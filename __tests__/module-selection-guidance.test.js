@@ -148,7 +148,9 @@ describe('Step 4 static copy: customer-facing module-selection guidance', () => 
         expect(warning).not.toBeNull();
         // Default state: hidden until we know the target is unpublished.
         expect(warning.hasAttribute('hidden')).toBe(true);
-        expect(warning.textContent).toMatch(/not published yet/i);
+        // WF-UX-002 retargets this warning to the canonical no-build body
+        // shared with Step 5 and the sidebar firmware card.
+        expect(warning.textContent).toMatch(/Adjust your hardware choices/i);
 
         // The preview lives inside Step 4 so users see it before reaching review.
         const step4 = preview.closest('#step-4');
@@ -258,7 +260,7 @@ function renderStep4Dom() {
             <section id="firmware-target-preview" data-firmware-target-preview>
                 <h3 class="firmware-target-preview__heading">Firmware target preview</h3>
                 <code class="firmware-target-preview__value" data-firmware-target-preview-value>Select mounting and power to generate a firmware target.</code>
-                <p class="firmware-target-preview__warning" data-firmware-target-preview-warning hidden>This exact firmware target is not published yet.</p>
+                <p class="firmware-target-preview__warning" data-firmware-target-preview-warning hidden>Adjust your hardware choices or pick a supported kit to find a matching build.</p>
             </section>
         </div>
         <div id="step-5" class="wizard-step" hidden></div>
@@ -431,7 +433,7 @@ describe('Step 4 firmware-target preview reacts to module selection', () => {
         // Manifest fetch returns a manifest that does NOT include the
         // RoomIQ-bearing config we are about to assemble. The preview
         // should still show the assembled config string and surface the
-        // neutral "not published yet" warning.
+        // canonical WF-UX-002 no-build body warning.
         window.history.replaceState(null, '', '?mount=ceiling&power=poe&step=4');
         jest.resetModules();
         global.fetch = jest.fn(() => Promise.resolve({
@@ -465,6 +467,10 @@ describe('Step 4 firmware-target preview reacts to module selection', () => {
 
         const warning = document.querySelector('[data-firmware-target-preview-warning]');
         expect(warning.hasAttribute('hidden')).toBe(false);
+        // WF-UX-002: warning text is sourced from the central readiness
+        // helper's no-build body so the wording stays in lockstep with the
+        // Step 5 heading and the sidebar firmware mini-card.
+        expect(warning.textContent.trim()).toBe('Adjust your hardware choices or pick a supported kit to find a matching build.');
 
         const root = document.getElementById('firmware-target-preview');
         expect(root.dataset.firmwareTargetState).toBe('unpublished');

@@ -21,6 +21,7 @@ import {
 } from '../utils/preset-storage.js';
 import { downloadJsonFile } from '../utils/file-download.js';
 import { verifyImportedPresetCompatibility } from '../compat-config.js';
+import { FIRMWARE_READINESS_COPY } from '../utils/firmware-readiness.js';
 
 const moduleSummaryRefs = new Map();
 const presetCache = new Map();
@@ -1504,6 +1505,22 @@ let mobileSummaryMediaQuery = null;
         return label;
     }
 
+    function applyFirmwareEmptyCopy(refs) {
+        // WF-UX-002: pull the empty-state headline from the canonical
+        // readiness copy table so the sidebar/mobile summary speaks the
+        // same language as Step 4's target preview and Step 5's
+        // compatible-firmware heading. Imported from a dependency-free
+        // module so this layout file does not transitively pull in the
+        // full state.js graph (matters for tests that mock state.js's
+        // direct dependencies).
+        if (!refs || !refs.firmwareEmpty) {
+            return;
+        }
+        const noSelection = FIRMWARE_READINESS_COPY['no-selection'];
+        refs.firmwareEmpty.textContent = noSelection.headline;
+        refs.firmwareEmpty.setAttribute('data-readiness', 'no-selection');
+    }
+
     function renderFirmwareSummary(refs) {
         if (!refs || !refs.firmwareRoot) {
             return;
@@ -1536,6 +1553,7 @@ let mobileSummaryMediaQuery = null;
                 installButton.classList.remove('is-ready');
                 installButton.removeAttribute('title');
             }
+            applyFirmwareEmptyCopy(refs);
             return;
         }
 
@@ -1562,6 +1580,7 @@ let mobileSummaryMediaQuery = null;
             if (firmwareSize) {
                 firmwareSize.textContent = '';
             }
+            applyFirmwareEmptyCopy(refs);
             return;
         }
 
