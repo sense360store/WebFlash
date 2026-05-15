@@ -581,10 +581,18 @@ describe('manifest.json — provenance integration', () => {
         }
     });
 
-    test('at least one build is marked deprecated to exercise the dropdown skip', () => {
-        const deprecated = manifest.builds.filter(build => build.deprecated === true);
-        expect(deprecated.length).toBeGreaterThan(0);
-    });
+    // WF-DEPLOY-001 — the previous "at least one build is marked
+    // deprecated" assertion was a stale historical artifact from the
+    // 16-build legacy manifest, where shadowed older AirIQ/PWR stable
+    // versions carried `deprecated: true`. After WF-CLEANUP-005 the real
+    // manifest legitimately has zero deprecated builds (Release-One
+    // stable, LED preview, Rescue — all `deprecated: false`), so that
+    // assertion blocked the CI test job on every push to main and
+    // therefore blocked the build → deploy chain. The wizard's
+    // deprecated-build skip behavior is covered by synthetic-fixture
+    // tests elsewhere in this file (see `validateFirmwareProvenance`
+    // tests against `VALID_STABLE_BUILD` with `deprecated: true`); it is
+    // not a contract the production manifest needs to satisfy.
 
     test('every stable build ships a hand-authored (non-synthesised) changelog', () => {
         const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
