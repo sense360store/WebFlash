@@ -1066,3 +1066,9 @@ list above stays in force until it does.
   WF-HW-TEST-001 operator-validation container for the LED preview
   flash path. Records live-deployment pre-flight evidence; hardware
   flash status is **pending — operator hardware test required**.
+* [`docs/product-import-readiness.md`](product-import-readiness.md) —
+  WF-PRODUCT-004 advisory readiness validator. Codifies the
+  Release-One / LED preview / FanTRIAC / legacy-compatible
+  eligibility model captured by this audit as a runnable Node CLI
+  plus Jest pin
+  (`__tests__/product-import-readiness.test.js`).

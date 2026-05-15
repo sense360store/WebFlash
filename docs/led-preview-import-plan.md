@@ -481,3 +481,10 @@ Recorded as a roadmap; none of these are part of WF-LED-001.
   WF-HW-TEST-001 operator-validation container for the LED preview
   flash path. Captures live-deployment pre-flight evidence; hardware
   flash status is **pending — operator hardware test required**.
+* [`docs/product-import-readiness.md`](product-import-readiness.md) —
+  WF-PRODUCT-004 advisory validator that classifies upstream catalog
+  entries (including the LED preview) against the four eligibility
+  dimensions: import / manifest / `REQUIRED_CONFIGS` / kit. The LED
+  preview's current state under WF-LED-003 is the live embodiment of
+  that contract — `import` and `manifest` eligible, **not**
+  `REQUIRED_CONFIGS` eligible, kit-eligible but not currently exposed.

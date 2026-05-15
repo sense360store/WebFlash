@@ -648,3 +648,13 @@ production allowlist's primary entry alongside Rescue.
 stays Release-One-only. WF-LED-003 changes no firmware, no manifest,
 no `firmware/sources.json`, no `__tests__/manifest-required-configs.test.js`,
 no workflow file, and no signing material.
+
+## See also
+
+* [`docs/product-import-readiness.md`](product-import-readiness.md) —
+  WF-PRODUCT-004 advisory validator for upstream product-catalog
+  entries. Encodes the production-only `REQUIRED_CONFIGS` policy
+  recorded in this document as a runnable check: preview entries
+  (including today's LED preview) are explicitly never
+  `REQUIRED_CONFIGS`-eligible, even when they are import / manifest
+  eligible.

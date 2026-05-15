@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:product-import-readiness": "NODE_OPTIONS=--experimental-vm-modules jest __tests__/product-import-readiness.test.js",
     "validate:naming-policy": "node scripts/validate-naming-policy.js firmware/configurations",
+    "validate:product-import-readiness": "node scripts/validate-product-import-readiness.js",
     "check:headers": "node scripts/check-headers.js"
   },
   "devDependencies": {
