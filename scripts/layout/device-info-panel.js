@@ -90,7 +90,7 @@ function createPanel() {
                 </div>
             ` : `
                 <div class="device-info-panel__unsupported">
-                    <p>Device reading requires Web Serial API, which is only available in Chrome and Edge on desktop.</p>
+                    <p>Device reading requires Web Serial API, which is only available in Chrome, Edge, or Opera on desktop.</p>
                 </div>
             `}
         </div>

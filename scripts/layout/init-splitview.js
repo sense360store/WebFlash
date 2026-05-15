@@ -100,10 +100,10 @@
                     window.renderCapabilityBar(mountPoint);
                 } catch (error) {
                     console.error('[splitview] Failed to render capability bar', error);
-                    mountPoint.textContent = 'Web Serial (Chrome/Edge)';
+                    mountPoint.textContent = 'Web Serial (Chrome, Edge, Opera)';
                 }
             } else {
-                mountPoint.textContent = 'Web Serial (Chrome/Edge)';
+                mountPoint.textContent = 'Web Serial (Chrome, Edge, Opera)';
             }
         }
 

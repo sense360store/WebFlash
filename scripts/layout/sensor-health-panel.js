@@ -79,7 +79,7 @@ function createPanel() {
                 </div>
             ` : `
                 <div class="sensor-health-panel__unsupported">
-                    <p>Sensor health check requires Web Serial API, which is only available in Chrome and Edge on desktop.</p>
+                    <p>Sensor health check requires Web Serial API, which is only available in Chrome, Edge, or Opera on desktop.</p>
                 </div>
             `}
         </div>

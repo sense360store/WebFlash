@@ -5072,7 +5072,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
                         </button>
                         <span slot="unsupported">
                             <span class="esp-web-tools-unsupported">
-                                Web Serial requires <strong>Chrome</strong> or <strong>Edge</strong> on desktop.
+                                Web Serial requires <strong>Chrome</strong>, <strong>Edge</strong>, or <strong>Opera</strong> on desktop.
                                 <a href="https://developer.mozilla.org/docs/Web/API/Web_Serial_API" target="_blank" rel="noopener noreferrer">Learn more</a>
                             </span>
                         </span>

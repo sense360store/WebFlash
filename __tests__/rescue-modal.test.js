@@ -119,7 +119,8 @@ describe('rescue-modal', () => {
         const callout = document.querySelector('[data-rescue-capability]');
         const message = document.querySelector('[data-rescue-capability-message]');
         expect(callout.hidden).toBe(false);
-        expect(message.innerHTML).toMatch(/Firefox does not support Web Serial/);
+        expect(message.innerHTML).toMatch(/Firefox doesn’t support the/);
+        expect(message.innerHTML).toMatch(/Chrome, Edge, or Opera/);
     });
 
     test('opens the error log modal when "View error log" is clicked', () => {
