@@ -445,3 +445,59 @@ Scope of WF-CLEANUP-010 — what changed and what did not:
   signing, deploy-workflow, smoke-test, importer, service-worker,
   Release-One, Rescue, FanTRIAC blocked, or LED-excluded status
   changes.
+
+## WF-LED-003 update
+
+This audit's snapshot pre-dates WF-LED-002 / WF-LED-003. The
+deployed-surface state described in the "Local static assets" /
+"Live Pages assets" / "Manifest and firmware chunk exposure" sections
+above reflects the 2-build repo manifest (Release-One stable + Rescue)
+and the older live deployment, neither of which include the LED
+preview.
+
+After WF-LED-002 the **repo** manifest holds 3 builds (Release-One
+stable, LED preview, Rescue); the corresponding `firmware-*.json`
+namespace is `firmware-0.json` (Release-One) / `firmware-1.json` (LED
+preview) / `firmware-2.json` (Rescue). The **`REQUIRED_CONFIGS`
+allowlist** in `.github/workflows/firmware-publish.yml` remains exactly
+`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]` — production-only.
+`scripts/data/kits.json` remains Release-One-only.
+
+WF-LED-003 records the deliberate UX decision for the LED preview that
+WF-LED-002 imported: **Option A — manifest-only preview, no new kit,
+no new mode toggle, no wizard / `sw.js` / `index.html` / workflow
+change.** The exposure mechanism is the existing release-channel gate
+in `scripts/utils/release-channels.js` (preview badge, experimental-
+build warning copy, `channel:preview` acknowledgement, `defaultSelectable: false`)
+combined with the existing LED module toggle wired into the wizard
+(`index.html` step 4, `state.js`'s `MODULE_KEYS` /
+`MODULE_SEGMENT_FORMATTERS` / `parseConfigStringState`, and
+`module-requirements.js`). No `?mode=preview` is introduced;
+`state.js`'s `VALID_RELEASE_MODES` stays `normal` / `recovery` /
+`development`.
+
+Implication for the **next deploy** from this branch: once
+`firmware-publish.yml` runs on a commit that includes WF-LED-002's
+manifest regeneration, the live Pages artifact will replace the older
+16-build manifest namespace with the current 3-build manifest. The
+deployed-surface findings table above (the Live Pages assets section)
+becomes stale as soon as that deploy lands; refresh the live
+`manifest.json` / `firmware-*.json` / `Sense360-…-LED-v1.0.0-preview.bin`
+HEAD checks against the new artifact at that time. Until the deploy
+runs, the live origin continues to serve the older 16-build artifact
+captured in this audit; the smoke-test follow-up recorded in
+"Recommended follow-up PRs" → WF-CLEANUP-009 (which was resolved by
+that PR) remains the only blocker for the deploy.
+
+WF-LED-003 itself changes no deployed-surface behaviour: no
+`firmware/configurations/*` change, no `manifest.json` regeneration,
+no `firmware-*.json` regeneration, no `sw.js` change, no `index.html`
+change, no workflow change, no signing operation. The single repo
+changes are doc text updates (this document plus
+`docs/led-preview-import-plan.md` / `docs/firmware-import.md` /
+`docs/webflash-cleanup-audit.md` / `docs/webflash-required-configs-cleanup.md` /
+`CLAUDE.md` / `DEVELOPER.md`) and one new policy-level test describe
+block in `__tests__/release-channel-ui.test.js`. Stable Release-One
+behaviour, FanTRIAC blocked status, the production-only
+`REQUIRED_CONFIGS` allowlist, and the Release-One-only kit catalog
+are all unchanged.

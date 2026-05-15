@@ -602,9 +602,40 @@ updated to assert LED preview presence in `firmware/sources.json` +
 Release-One manifest build content, Rescue build content,
 `REQUIRED_CONFIGS` (still production-only), `scripts/data/kits.json`
 (still Release-One-only), every UI / wizard / `sw.js` / `index.html` /
-workflow file, and the FanTRIAC blocked status. LED preview UX
-exposure (preview-channel toggle / kit / wizard) is deferred to
-WF-LED-003.
+workflow file, and the FanTRIAC blocked status. WF-LED-003 then
+resolved the deferred UX call with Option A — manifest-only preview,
+no new kit, no new mode toggle, no wizard / service-worker / workflow
+change. The exposure mechanism is the existing release-channel gate
+already implemented in `scripts/utils/release-channels.js`
+(`preview.defaultSelectable: false` so the LED build is never auto-
+selected, `preview.requiresAcknowledgement: true` so install gates on
+a `channel:preview` checkbox with experimental-build warning copy,
+`preview.hiddenByDefault: false` so the build is visible in normal
+mode) combined with the existing LED module toggle in step 4 of the
+wizard (`index.html`'s `Sense360 LED` toggle, plus the `led` module key
+wired into `MODULE_KEYS` / `MODULE_SEGMENT_FORMATTERS` /
+`parseConfigStringState` in `scripts/state.js` and the
+`Sense360 LED` (S360-300) variant entry in
+`scripts/data/module-requirements.js`). With the LED toggle off the
+stable Release-One install path is byte-identical to pre-WF-LED-002;
+with the LED toggle on the wizard produces
+`config_string: Ceiling-POE-VentIQ-RoomIQ-LED` and resolves to the
+preview build behind the existing preview gate. WF-LED-003 added a
+targeted policy-level test in
+`__tests__/release-channel-ui.test.js`
+(`WF-LED-003 — LED preview exposure model …` describe block) that
+pins the LED-preview-shaped build's identity against the policy: never
+auto-selected by `pickDefaultBuild`, stable wins when both are
+candidates, `channel:preview` acknowledgement required, visible in
+normal mode, Preview badge with warning tone, never tagged
+Recommended. WF-LED-003 changed no firmware, no manifest, no
+`firmware/sources.json`, no kit, no UI markup, no wizard runtime, no
+`sw.js`, no workflow, no signing material; `REQUIRED_CONFIGS` stays
+production-only and FanTRIAC stays blocked. A future WF-LED-004 may
+revisit the UX surface only after **either** upstream promotes the
+LED catalog entry to `status: production` **or** S360-300 bench
+verification clears the LED hardware path; neither precondition has
+landed as of WF-LED-003.
 
 ## Directory Structure
 

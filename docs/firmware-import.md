@@ -423,3 +423,67 @@ its own separate test. The
 updated to assert that the LED preview is now present in
 `firmware/sources.json` + `manifest.json` while remaining absent from
 `REQUIRED_CONFIGS` + `scripts/data/kits.json`.
+
+### WF-LED-003 — LED preview exposure decision (Option A: manifest-only)
+
+WF-LED-003 records the deliberate UX decision for the LED preview that
+WF-LED-001 deferred and WF-LED-002 left untouched. **Option A wins:
+manifest-only preview, no new kit, no new mode toggle, no wizard /
+service-worker / workflow change.**
+
+The reasoning is that the existing release-channel gate is already a
+sufficient and correct exposure mechanism for an unverified preview
+build:
+
+* `scripts/utils/release-channels.js` declares the preview policy with
+  `defaultSelectable: false` (never auto-selected, never tagged
+  Recommended), `requiresAcknowledgement: true` (install gates on a
+  `channel:preview` checkbox with experimental-build warning copy), and
+  `hiddenByDefault: false` (the build remains visible in normal mode).
+* The wizard already exposes the `LED` module: the
+  `Sense360 LED <span>S360-300</span>` toggle and its hidden radios
+  live in `index.html`, the `led` module key is wired into
+  `MODULE_KEYS` / `MODULE_SEGMENT_FORMATTERS` / `parseConfigStringState`
+  in `scripts/state.js`, and the `Sense360 LED` (S360-300) variant
+  entry lives in `scripts/data/module-requirements.js`. Picking
+  Ceiling + PoE + Bathroom + VentIQ + RoomIQ + LED produces
+  `config_string: Ceiling-POE-VentIQ-RoomIQ-LED`, which (since
+  WF-LED-002) resolves to the imported preview build.
+* The combined effect is: stable Release-One is unchanged for any user
+  who leaves the LED toggle off, and any user who turns LED on is
+  funneled through the existing Preview badge + warning + acknowledgement
+  gate before install can proceed. No fourth release mode is needed and
+  none is introduced. `state.js`'s `VALID_RELEASE_MODES` stays
+  `normal` / `recovery` / `development`.
+
+WF-LED-003 deliberately does **not**:
+
+* add an LED preview kit to `scripts/data/kits.json`;
+* add an LED preview preset to `scripts/recommended-bundle.js`;
+* introduce a `?mode=preview` URL parameter or any new release mode;
+* relax `preview.defaultSelectable` / `preview.requiresAcknowledgement`
+  / `preview.hiddenByDefault` in `scripts/utils/release-channels.js`;
+* import firmware, regenerate manifests, or touch
+  `firmware/sources.json`;
+* mark the LED preview stable, add it to `REQUIRED_CONFIGS`, or unblock
+  FanTRIAC.
+
+A single targeted policy test was added to
+`__tests__/release-channel-ui.test.js` (the
+`WF-LED-003 — LED preview exposure model …` describe block) that pins
+the LED-preview-shaped build against the exposure model: not
+auto-selected by `pickDefaultBuild` (even as the sole candidate), stable
+wins when both are candidates, `channel:preview` acknowledgement
+required, visible in normal mode, Preview badge with warning tone,
+never tagged Recommended. The pre-existing synthetic preview pins in
+`__tests__/release-channels.test.js`, the manifest-shape / kit-shape /
+`REQUIRED_CONFIGS` locks in
+`__tests__/product-catalog-alignment.test.js`, and the LED kit guards
+in `__tests__/kits-json.test.js` cover the remaining invariants.
+
+A future WF-LED-004 may revisit the UX surface once **either** upstream
+promotes the LED catalog entry to `status: production` (which would
+unblock a `REQUIRED_CONFIGS` entry) **or** S360-300 bench verification
+clears the LED hardware path (which would justify an explicit preview
+kit or a dedicated preview-channel control). Neither precondition has
+landed; WF-LED-003 does not act on either.

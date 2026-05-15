@@ -1021,3 +1021,118 @@ describe('release-channel acknowledgement scoping (identity-bound consent)', () 
         expect(outstanding.map(item => item.key)).toContain('channel:beta');
     });
 });
+
+describe('WF-LED-003 — LED preview exposure model (manifest-only + module-toggle + preview-channel gate)', () => {
+    // Policy-level interlock for the imported LED preview build's specific
+    // identity. The upstream LED preview firmware lives in manifest.json
+    // (imported by WF-LED-002) as:
+    //   config_string='Ceiling-POE-VentIQ-RoomIQ-LED'
+    //   channel='preview'
+    //   version='1.0.0'
+    //   parts[].path='firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin'
+    //
+    // WF-LED-003 records the exposure decision: the LED preview is reachable
+    // only through the existing release-channel gate. Concretely:
+    //
+    //   1. It must not be auto-selected by pickDefaultBuild — even when it
+    //      is the only build in the dropdown — because preview channels are
+    //      defaultSelectable: false.
+    //   2. It must require an explicit `channel:preview` acknowledgement
+    //      before the install gate releases.
+    //   3. It must remain visible in normal mode (no ?mode=… gate); the
+    //      opt-in is "the user explicitly ticks the LED module toggle in
+    //      step 4", not a release-mode toggle.
+    //   4. The Preview badge must render with warning tone so the channel
+    //      cannot be mistaken for stable.
+    //   5. The build must never be silently labelled Recommended.
+    //
+    // release-channels.test.js already pins each of these against synthetic
+    // preview fixtures. This block adds the LED-preview-specific
+    // interlock so a future regression that targets the LED build by name
+    // (e.g. a kit promotion or a preview.defaultSelectable flip motivated
+    // by LED bench-verification work) breaks loudly against the policy.
+
+    function makeLedPreviewBuild(overrides = {}) {
+        return {
+            firmwareId: 'firmware-ceiling-poe-ventiq-roomiq-led-preview',
+            channel: 'preview',
+            version: '1.0.0',
+            config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED',
+            deprecated: false,
+            parts: [{
+                path: 'firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin',
+                offset: 0
+            }],
+            ...overrides
+        };
+    }
+
+    test('pickDefaultBuild never auto-selects the LED preview build (only candidate)', async () => {
+        const { pickDefaultBuild } = await import('../scripts/utils/release-channels.js');
+        const led = makeLedPreviewBuild();
+        // Sole candidate, normal mode: still must not auto-select. The
+        // defaultSelectable=false guard on preview is the safety net that
+        // keeps a preview build from being treated as the recommended
+        // install when stable is absent.
+        expect(pickDefaultBuild([led])).toBeNull();
+    });
+
+    test('pickDefaultBuild prefers stable Release-One over the LED preview', async () => {
+        const { pickDefaultBuild } = await import('../scripts/utils/release-channels.js');
+        const led = makeLedPreviewBuild();
+        const releaseOne = {
+            firmwareId: 'firmware-ceiling-poe-ventiq-roomiq-stable',
+            channel: 'stable',
+            version: '1.0.0',
+            config_string: 'Ceiling-POE-VentIQ-RoomIQ',
+            deprecated: false,
+            parts: [{
+                path: 'firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin',
+                offset: 0
+            }]
+        };
+        // The two builds carry different config_strings so they would not
+        // share a wizard bucket in practice; the assertion is at the
+        // policy layer to document that stable wins when both are
+        // candidate-eligible.
+        expect(pickDefaultBuild([led, releaseOne])).toBe(releaseOne);
+    });
+
+    test('LED preview build requires the channel:preview acknowledgement', async () => {
+        const { getRequiredAcknowledgements } = await import('../scripts/utils/release-channels.js');
+        const acks = getRequiredAcknowledgements(makeLedPreviewBuild());
+        expect(acks).toHaveLength(1);
+        expect(acks[0].key).toBe('channel:preview');
+        expect(acks[0].label).toMatch(/preview/i);
+    });
+
+    test('LED preview build remains visible in normal mode (opt-in is the module toggle, not a release mode)', async () => {
+        const { filterBuildsForMode, isBuildVisibleInMode } =
+            await import('../scripts/utils/release-channels.js');
+        const led = makeLedPreviewBuild();
+        // Normal mode must keep preview builds visible — the wizard's
+        // exposure gate is the LED module toggle in step 4 plus the
+        // preview-channel acknowledgement, NOT a ?mode= URL toggle.
+        expect(isBuildVisibleInMode(led, 'normal')).toBe(true);
+        expect(filterBuildsForMode([led], 'normal')).toEqual([led]);
+    });
+
+    test('LED preview surfaces a Preview badge with warning tone', async () => {
+        const { getFirmwareBadges } = await import('../scripts/utils/release-channels.js');
+        const badges = getFirmwareBadges(makeLedPreviewBuild());
+        const previewBadge = badges.find(badge => badge.key === 'preview');
+        expect(previewBadge).toBeDefined();
+        expect(previewBadge.label).toBe('Preview');
+        expect(previewBadge.tone).toBe('warning');
+    });
+
+    test('LED preview build is never tagged Recommended by getFirmwareBadges default behaviour', async () => {
+        const { getFirmwareBadges } = await import('../scripts/utils/release-channels.js');
+        // recommended=true is caller-controlled, but the wizard only sets
+        // it when pickDefaultBuild returns the build — which it cannot for
+        // a preview build (defaultSelectable=false). Confirm the default
+        // call path does not auto-promote the LED preview.
+        const badges = getFirmwareBadges(makeLedPreviewBuild());
+        expect(badges.find(badge => badge.key === 'recommended')).toBeUndefined();
+    });
+});
