@@ -492,3 +492,29 @@ See [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md)
 for the WF-HW-TEST-001 operator-validation container for the LED
 preview flash path — pre-flight evidence is recorded there; the
 hardware flash itself is **pending — operator hardware test required**.
+
+### WF-PRODUCT-004 — import readiness validator
+
+[`docs/product-import-readiness.md`](product-import-readiness.md) and
+[`scripts/validate-product-import-readiness.js`](../scripts/validate-product-import-readiness.js)
+add an advisory validator that classifies upstream product-catalog
+entries against four independent surfaces (import / manifest /
+`REQUIRED_CONFIGS` / kits) and cross-checks the live WebFlash surfaces
+against the catalog lifecycle. It is reporting-only — it does not
+import firmware, regenerate manifests, change `REQUIRED_CONFIGS`,
+modify kits, or alter any UI / wizard / service-worker / workflow
+surface. Run it before declaring a new source (sanity-check the
+upstream catalog entry) or after regenerating manifests (confirm the
+new surface state still matches the catalog):
+
+```bash
+node scripts/validate-product-import-readiness.js
+node scripts/validate-product-import-readiness.js \
+  --catalog /tmp/upstream-product-catalog.json \
+  --config Ceiling-POE-VentIQ-RoomIQ-LED
+node scripts/validate-product-import-readiness.js --format json
+```
+
+The validator's rules are the human-readable form of the assertions in
+`__tests__/product-catalog-alignment.test.js`; see
+`__tests__/product-import-readiness.test.js` for the Jest pin.

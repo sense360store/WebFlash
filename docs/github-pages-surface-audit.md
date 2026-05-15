@@ -688,3 +688,11 @@ moment of deploy will see the new manifest within one page load.
   flash path. Records the post-WF-DEPLOY-001 live-deployment snapshot
   used as pre-flight evidence; hardware flash status is
   **pending — operator hardware test required**.
+* [`docs/product-import-readiness.md`](product-import-readiness.md) —
+  WF-PRODUCT-004 advisory validator that classifies upstream
+  product-catalog entries against the four WebFlash eligibility
+  surfaces. The deployed-surface contract pinned by this audit
+  (Release-One stable + LED preview channel + Rescue,
+  production-only `REQUIRED_CONFIGS`, FanTRIAC blocked) is exactly
+  the contract the readiness validator enforces against the
+  catalog.

@@ -639,6 +639,46 @@ LED catalog entry to `status: production` **or** S360-300 bench
 verification clears the LED hardware path; neither precondition has
 landed as of WF-LED-003.
 
+WF-PRODUCT-004 then adds an advisory readiness validator at
+[`scripts/validate-product-import-readiness.js`](scripts/validate-product-import-readiness.js)
+with the contract doc at
+[`docs/product-import-readiness.md`](docs/product-import-readiness.md)
+and the Jest pin at
+[`__tests__/product-import-readiness.test.js`](__tests__/product-import-readiness.test.js).
+The validator classifies every upstream catalog entry against four
+independent surfaces — **import-eligible**, **manifest-eligible**,
+**`REQUIRED_CONFIGS`-eligible**, **kit-eligible** — and cross-checks
+the live WebFlash surfaces against the catalog lifecycle. It is
+reporting-only and does not import firmware, regenerate manifests,
+change `REQUIRED_CONFIGS`, modify kits, or touch any UI / wizard /
+`sw.js` / workflow surface. Run it as:
+
+```bash
+# default: Markdown report against the vendored fixture
+node scripts/validate-product-import-readiness.js
+# or via npm
+npm run validate:product-import-readiness
+
+# fresh upstream catalog
+node scripts/validate-product-import-readiness.js \
+  --catalog /tmp/upstream-product-catalog.json
+
+# single-entry filter, JSON output
+node scripts/validate-product-import-readiness.js \
+  --config Ceiling-POE-VentIQ-RoomIQ-LED \
+  --format json
+```
+
+Exit codes: `0` on consistent classification, `1` on any eligibility
+or cross-surface violation, `2` on usage / load error. Today's
+classifications (unchanged by WF-PRODUCT-004): Release-One = import +
+manifest + `REQUIRED_CONFIGS` + kit eligible; LED preview = import +
+manifest + kit eligible but **not** `REQUIRED_CONFIGS` eligible
+(preview-channel only); FanTRIAC blocked entry = ineligible
+everywhere; legacy-compatible representative = ineligible everywhere;
+`Rescue` is exempt by name throughout. Run the test pin in isolation
+with `npm run test:product-import-readiness`.
+
 ## Directory Structure
 
 ```
