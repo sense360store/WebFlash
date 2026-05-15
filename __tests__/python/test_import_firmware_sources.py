@@ -416,6 +416,110 @@ class BlockedTokenTests(unittest.TestCase):
         self.assertIn("LED", str(ctx.exception))
         self.assertIn("blocked token", str(ctx.exception))
 
+    def test_led_preview_source_accepts_led_asset(self):
+        # WF-LED-002: the LED preview source uses block_tokens=["FanTRIAC"]
+        # only — LED must NOT be globally blocked, or the importer would
+        # reject the LED preview's own asset. This positive test pins that
+        # the per-source policy is per-entry, not global.
+        bin_bytes = _make_bin()
+        led_name = "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin"
+        net = _build_network(bin_bytes, asset_name=led_name)
+        entry = _entry(
+            release_tag="v1.0.0-led-preview",
+            channel="preview",
+            asset_name=led_name,
+            config_string="Ceiling-POE-VentIQ-RoomIQ-LED",
+            required_assets=[
+                led_name,
+                "checksums-sha256.txt",
+                "checksums-md5.txt",
+                "manifest.json",
+            ],
+            block_tokens=["FanTRIAC"],
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / "firmware").mkdir()
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(target.exists())
+            self.assertTrue(target.name.endswith("-preview.bin"))
+
+    def test_led_preview_source_still_rejects_fantriac(self):
+        # Companion to the test above: the LED preview source's per-source
+        # block list must still reject FanTRIAC. If someone accidentally
+        # uploads a FanTRIAC-bearing asset under the LED preview tag, the
+        # importer refuses it.
+        bin_bytes = _make_bin()
+        triac_name = "Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-LED-v1.0.0-preview.bin"
+        net = _build_network(bin_bytes, asset_name=triac_name)
+        entry = _entry(
+            release_tag="v1.0.0-led-preview",
+            channel="preview",
+            asset_name=triac_name,
+            config_string="Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-LED",
+            required_assets=[
+                triac_name,
+                "checksums-sha256.txt",
+                "checksums-md5.txt",
+                "manifest.json",
+            ],
+            block_tokens=["FanTRIAC"],
+        )
+        with self.assertRaises(ImportValidationError) as ctx:
+            _run_import(entry, net)
+        self.assertIn("FanTRIAC", str(ctx.exception))
+        self.assertIn("blocked token", str(ctx.exception))
+
+
+class ExpectedSha256Tests(unittest.TestCase):
+    """WF-LED-002: pinned ``expected_sha256`` enforcement on top of the
+    existing upstream-``checksums-sha256.txt`` verification. Backward
+    compatible — when the field is absent the importer behaves exactly as
+    before (Release-One source must keep working unchanged)."""
+
+    def test_expected_sha256_match_passes(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry(expected_sha256=hashlib.sha256(bin_bytes).hexdigest())
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / "firmware").mkdir()
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(target.exists())
+
+    def test_expected_sha256_mismatch_fails(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry(expected_sha256="f" * 64)
+        with self.assertRaises(ImportValidationError) as ctx:
+            _run_import(entry, net)
+        msg = str(ctx.exception)
+        self.assertIn("Pinned SHA256 mismatch", msg)
+        # Both digests should appear so the operator can diff them.
+        self.assertIn("f" * 64, msg)
+        self.assertIn(hashlib.sha256(bin_bytes).hexdigest(), msg)
+
+    def test_expected_sha256_absent_preserves_existing_behavior(self):
+        # Regression guard for Release-One: with no expected_sha256 key the
+        # importer must still validate via checksums-sha256.txt only.
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry()
+        self.assertNotIn("expected_sha256", entry)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / "firmware").mkdir()
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(target.exists())
+
+    def test_expected_sha256_malformed_fails_clearly(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry(expected_sha256="not-a-sha256")
+        with self.assertRaises(ImportValidationError) as ctx:
+            _run_import(entry, net)
+        self.assertIn("expected_sha256", str(ctx.exception))
+
 
 class SourcesFileTests(unittest.TestCase):
     def test_load_sources_rejects_bad_schema_version(self):

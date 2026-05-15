@@ -1,0 +1,40 @@
+{
+  "changelog": [
+    "Added the first preview firmware build for `Ceiling-POE-VentIQ-RoomIQ-LED`.",
+    "This preview extends the Release-One ceiling PoE VentIQ + RoomIQ configuration with the Sense360 LED ring.",
+    "This is a preview-channel build for validation and testing. The stable Release-One firmware remains `Ceiling-POE-VentIQ-RoomIQ`."
+  ],
+  "known_issues": [
+    "FanTRIAC is not included in this firmware and remains blocked pending HW-005.",
+    "This is a preview release. Do not treat it as the stable Release-One firmware.",
+    "LED bench-verification items remain open, including harness identity, LED count, and final install verification."
+  ],
+  "features": [
+    "PoE-powered Sense360 Core configuration",
+    "VentIQ bathroom air-quality sensing",
+    "RoomIQ room sensing",
+    "Sense360 LED ring preview support"
+  ],
+  "hardware_requirements": [
+    "Sense360 Core R4 or newer",
+    "Sense360 PoE PSU",
+    "Sense360 VentIQ module",
+    "Sense360 RoomIQ module",
+    "Sense360 LED ring (S360-300)"
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": true,
+  "source": {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.0-led-preview",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview",
+    "source_asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
+    "source_asset_sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
+    "source_manifest_git_sha": "4493e0c9b3914d5dfcf41f71b4129cf23cda75d2",
+    "source_manifest_esphome_version": "2025.3.0",
+    "imported_at": "2026-05-15T13:34:33+00:00"
+  }
+}

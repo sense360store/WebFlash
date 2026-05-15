@@ -330,3 +330,96 @@ Release-One source keeps `block_tokens: ["FanTRIAC", "LED"]`), the
 required upstream proof fields, the import + regeneration sequence,
 and the deferred UX decisions. Until the upstream proof fields land,
 active WebFlash surfaces remain Release-One + Rescue only.
+
+### WF-LED-002 — LED preview imported
+
+Upstream
+[`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview)
+shipped a proven LED preview firmware artifact with every WF-LED-001
+proof field in place (release tag, `.bin` asset with verified SHA256,
+`checksums-sha256.txt`, `checksums-md5.txt`, upstream `manifest.json`,
+and a release body containing all four canonical H2 sections —
+`Changelog`, `Known Issues`, `Features`, `Hardware Requirements`).
+WF-LED-002 imports that artifact and regenerates the WebFlash production
+manifest.
+
+**New entries**:
+
+* `firmware/sources.json` gained a second source entry alongside the
+  unchanged Release-One source:
+
+  ```json
+  {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.0-led-preview",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview",
+    "version": "1.0.0",
+    "channel": "preview",
+    "config_string": "Ceiling-POE-VentIQ-RoomIQ-LED",
+    "asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
+    "expected_sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
+    "min_size_bytes": 102400,
+    "required_assets": [...],
+    "required_release_body_sections": [...],
+    "block_tokens": ["FanTRIAC"]
+  }
+  ```
+
+* `firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`
+  (1,135,904 bytes,
+  SHA256 `93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3`)
+  plus its `.meta.json` sidecar.
+* `manifest.json` build entry with `config_string:
+  Ceiling-POE-VentIQ-RoomIQ-LED`, `channel: preview`, `version: 1.0.0`,
+  `chipFamily: ESP32-S3`, `improv: true`, `modules: ["VentIQ", "RoomIQ",
+  "LED"]`.
+* A new per-build manifest at `firmware-1.json` (the generator
+  deterministically re-indexed Rescue from `firmware-1.json` to
+  `firmware-2.json` to accommodate the new preview build between
+  Release-One and Rescue).
+
+**Importer hardening**: `scripts/import-firmware-sources.py` now enforces
+a pinned `expected_sha256` field when present in a source entry —
+the downloaded asset's SHA256 must match both the upstream
+`checksums-sha256.txt` entry *and* the source entry's `expected_sha256`.
+The Release-One source does not declare `expected_sha256` today, and
+the behaviour for sources without the field is unchanged (verification
+still runs against `checksums-sha256.txt` only).
+
+**Per-source `block_tokens` invariants** are unchanged:
+
+* Release-One source keeps `["FanTRIAC", "LED"]` — the LED block here
+  is defence-in-depth against accidentally re-importing a future
+  Release-One variant that ships an LED token.
+* LED preview source uses `["FanTRIAC"]` only — adding `LED` here
+  would make the importer reject the LED preview's own asset.
+* The manifest-health guard still rejects `FanTRIAC` globally and
+  enforces each source's `block_tokens` against its matching manifest
+  build.
+
+**Unchanged by WF-LED-002**:
+
+* Release-One source entry (byte-identical).
+* Release-One manifest build content (signatures + commit fields aside).
+* Rescue build content.
+* `REQUIRED_CONFIGS` in `.github/workflows/firmware-publish.yml` stays
+  `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`. The LED preview enters
+  `manifest.json` but **does not** enter the publish allowlist until
+  upstream promotes the LED build to `status: production`.
+* `scripts/data/kits.json` (Release-One-only). LED preview kit exposure
+  is deferred to WF-LED-003.
+* All UI / wizard / `sw.js` / `index.html` / workflow files.
+* FanTRIAC blocked status (HW-005). FanTRIAC remains blocked globally
+  by `manifest-health` and per-source by both `firmware/sources.json`
+  entries.
+
+The product-catalog alignment test's
+`firmware/sources.json ↔ product catalog` describe block was relaxed
+from production-only to admit `production` + `preview` source entries
+(mirroring the existing manifest/kit `ELIGIBLE_STATUSES`); the
+`REQUIRED_CONFIGS ↔ product catalog` block stays production-only via
+its own separate test. The
+`WF-PRODUCT-003 — upstream LED preview recognition` describe block was
+updated to assert that the LED preview is now present in
+`firmware/sources.json` + `manifest.json` while remaining absent from
+`REQUIRED_CONFIGS` + `scripts/data/kits.json`.

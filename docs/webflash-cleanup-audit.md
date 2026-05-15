@@ -903,3 +903,68 @@ Scope of WF-LED-001 — what changed and what did not:
   path, installer UX, service-worker, source importer,
   `REQUIRED_CONFIGS` allowlist, Release-One import, Rescue firmware,
   FanTRIAC blocked status, or LED runtime-exposure status changed.
+
+## WF-LED-002 — LED preview imported
+
+WF-LED-002 executes the import + manifest-regeneration sequence
+documented by WF-LED-001 now that upstream
+[`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview)
+shipped a proven LED preview artifact (SHA256
+`93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3`,
+1,135,904 bytes, release body carries all four canonical H2 sections).
+
+Scope of WF-LED-002 — what changed and what did not:
+
+* **Changed:**
+  * `firmware/sources.json` gained a second source entry for the LED
+    preview with `block_tokens: ["FanTRIAC"]` and a pinned
+    `expected_sha256` field. Release-One source entry is byte-identical.
+  * `scripts/import-firmware-sources.py` learned to enforce
+    `expected_sha256` against the downloaded asset when the field is
+    present (backward compatible when absent). The upstream
+    `checksums-sha256.txt` verification is preserved unchanged.
+  * `firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`
+    plus its `.meta.json` sidecar — imported through the regular
+    cross-repo importer flow.
+  * `manifest.json` grew from 2 builds to 3 (Release-One stable + LED
+    preview + Rescue). LED preview build: `channel: preview`,
+    `version: 1.0.0`, `chipFamily: ESP32-S3`, `improv: true`,
+    `modules: ["VentIQ", "RoomIQ", "LED"]`.
+  * `firmware-1.json` now hosts the LED preview build; the generator's
+    deterministic ordering moved Rescue from `firmware-1.json` to
+    `firmware-2.json`. Per-build manifest indices are not stable
+    identifiers, only their part-path references are.
+  * `__tests__/python/test_import_firmware_sources.py` gained four
+    positive tests covering the new `expected_sha256` enforcement paths
+    plus a positive `block_tokens: ["FanTRIAC"]` test for the LED
+    preview source (the existing Release-One LED + FanTRIAC block tests
+    are unchanged).
+  * `__tests__/product-catalog-alignment.test.js` — the
+    `firmware/sources.json ↔ product catalog` describe block relaxed
+    from production-only to admit `preview`-status sources too
+    (REQUIRED_CONFIGS stays production-only via its own separate test).
+    The `WF-PRODUCT-003 — upstream LED preview recognition` describe
+    block was updated to assert LED preview presence in
+    `firmware/sources.json` + `manifest.json` and absence in
+    `REQUIRED_CONFIGS` + `scripts/data/kits.json`.
+
+* **Unchanged:**
+  * Release-One source entry (`block_tokens: ["FanTRIAC", "LED"]` preserved).
+  * Release-One manifest build content.
+  * Rescue build content.
+  * `REQUIRED_CONFIGS` in `.github/workflows/firmware-publish.yml` stays
+    `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`. LED preview is **not**
+    added to the publish allowlist until upstream promotes the LED
+    build to `status: production`.
+  * `scripts/data/kits.json`. LED preview kit exposure is deferred to
+    WF-LED-003 (separate UX call).
+  * All UI / wizard / `sw.js` / `index.html` / workflow files.
+  * FanTRIAC blocked status under HW-005. FanTRIAC remains blocked
+    globally (`manifest-health` guard) and per-source (both
+    `firmware/sources.json` entries declare `FanTRIAC` in
+    `block_tokens`).
+  * Naming-policy validator. `Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin`
+    matches the existing canonical-filename regex and carries no
+    disallowed legacy tokens.
+  * Smoke-test default (`Ceiling-POE-VentIQ-RoomIQ`). The smoke test
+    only validates stable builds; the LED preview is channel=preview.

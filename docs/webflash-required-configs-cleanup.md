@@ -573,3 +573,34 @@ to Release-One + Rescue. WF-LED-001 is docs only; `REQUIRED_CONFIGS`,
 the workflow, the importer, `manifest.json`, every `firmware-*.json`,
 every `firmware/configurations/*.bin`, every `__tests__/*` file, and
 `scripts/data/kits.json` are unchanged.
+
+## WF-LED-002 — LED preview imported (REQUIRED_CONFIGS still production-only)
+
+Upstream
+[`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview)
+shipped a proven LED preview artifact, and WF-LED-002 imported it into
+WebFlash through the regular cross-repo importer flow.
+`firmware/sources.json` now carries a second source entry for the LED
+preview (with `block_tokens: ["FanTRIAC"]` and a pinned
+`expected_sha256`), `manifest.json` grew from 2 builds to 3 (Release-One
+stable + LED preview + Rescue), and a new per-build manifest at
+`firmware-1.json` covers the LED preview.
+
+**`REQUIRED_CONFIGS` is unchanged and remains production-only.** It
+still contains exactly `Ceiling-POE-VentIQ-RoomIQ` + `Rescue`. The LED
+preview build is now exposed in `manifest.json` because the
+manifest-level eligibility set already admits `preview`, but the
+publish-allowlist policy is stricter: only `status: production` catalog
+entries (plus the named `Rescue` exception) may appear in
+`REQUIRED_CONFIGS`, and `__tests__/product-catalog-alignment.test.js`
+fails closed if a non-production config (including the LED preview)
+ever leaks into it. Promoting the LED build to `REQUIRED_CONFIGS` is
+gated on upstream first promoting `Ceiling-POE-VentIQ-RoomIQ-LED` to
+`status: production`. Until then, the publish workflow's deploy gate
+continues to enforce Release-One + Rescue as the production allowlist.
+
+**FanTRIAC remains blocked** under HW-005. Release-One source still
+carries `block_tokens: ["FanTRIAC", "LED"]`; the new LED preview source
+carries `block_tokens: ["FanTRIAC"]` only (`LED` cannot appear there or
+the importer would reject the LED preview's own asset). The
+manifest-health guard's global FanTRIAC block is unchanged.
