@@ -856,3 +856,50 @@ Scope of WF-PRODUCT-003 — what changed and what did not:
   importer, `REQUIRED_CONFIGS` allowlist, Release-One import, Rescue
   firmware, FanTRIAC blocked status, or LED runtime-exposure status
   changed.
+
+## WF-LED-001 — LED preview import plan (docs only)
+
+WF-LED-001 is a **docs-only** PR that authors a forward-looking import
+plan for the upstream LED preview build. The plan lives at
+[`docs/led-preview-import-plan.md`](led-preview-import-plan.md) and
+records the exact future shape of a second `firmware/sources.json`
+source entry (using `block_tokens: ["FanTRIAC"]` only — `LED` would
+prevent the importer from accepting its own asset), the seven upstream
+proof fields that must land before WebFlash may import, the
+import / regeneration sequence, the expected `manifest.json` outcome
+(2 builds → 3 builds, with the new build carrying `channel: preview`),
+the deferred UX / kit decisions, and the explicit do-not-change list.
+
+**Nothing about WebFlash's current state changes under WF-LED-001.**
+Active WebFlash surfaces (`firmware/sources.json`, `manifest.json`,
+every `firmware-*.json`, the publish workflow's `REQUIRED_CONFIGS`,
+and `scripts/data/kits.json`) still resolve only to Release-One
+(`Ceiling-POE-VentIQ-RoomIQ`) plus the WebFlash-owned `Rescue` build.
+**`REQUIRED_CONFIGS` remains production-only.** **FanTRIAC remains
+blocked** under HW-005. **Release-One's source keeps
+`block_tokens: ["FanTRIAC", "LED"]`** — the `LED` block on Release-One
+is unchanged, because per-source `block_tokens` (enforced by
+`scripts/import-firmware-sources.py` and asserted by
+`__tests__/manifest-health.test.js`) let a future LED preview source
+accept `LED` builds while Release-One continues to reject them. No
+upstream LED preview artifact is proven yet.
+
+Scope of WF-LED-001 — what changed and what did not:
+
+* **Changed:** new `docs/led-preview-import-plan.md`, plus minimal
+  cross-link sentences in `docs/firmware-import.md`, this document,
+  `docs/webflash-required-configs-cleanup.md`, `CLAUDE.md`, and
+  `DEVELOPER.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `manifest.json`, every `firmware-*.json`, `.github/workflows/*`,
+  all of `scripts/`, `scripts/data/kits.json`, all of `__tests__/`
+  (the WF-PRODUCT-003 `upstream LED preview recognition` describe
+  block in `__tests__/product-catalog-alignment.test.js` is the live
+  guard that already pins the no-exposure contract; WF-LED-001
+  intentionally does not duplicate it), `sw.js`, `index.html`, the
+  wizard frontend, all firmware-signing artifacts. No firmware,
+  manifests, importer, generator, workflow, kit metadata, signing
+  path, installer UX, service-worker, source importer,
+  `REQUIRED_CONFIGS` allowlist, Release-One import, Rescue firmware,
+  FanTRIAC blocked status, or LED runtime-exposure status changed.

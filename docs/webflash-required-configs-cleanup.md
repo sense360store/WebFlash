@@ -538,3 +538,38 @@ manifest-health guard still rejects an LED token in any generated
 `REQUIRED_CONFIGS`, the workflow, the importer, `manifest.json`,
 every `firmware-*.json`, every `firmware/configurations/*.bin`, and
 `scripts/data/kits.json` are unchanged.
+
+## WF-LED-001 — LED preview import plan (docs only)
+
+WF-LED-001 is a **docs-only** PR. It authors
+[`docs/led-preview-import-plan.md`](led-preview-import-plan.md), which
+captures the future LED preview import shape, the upstream proof
+fields required before WebFlash may import (real release tag, asset,
+sha256, checksums, build-info manifest, and a release body with the
+four canonical H2 sections), the per-source `block_tokens` invariant
+(Release-One keeps `["FanTRIAC", "LED"]`; the future LED preview
+source uses `["FanTRIAC"]` only), the import / manifest-regeneration
+sequence, the expected manifest outcome, the do-not-change list, and
+the follow-up PR sequence.
+
+**`REQUIRED_CONFIGS` remains production-only and unchanged.** It
+stays `Ceiling-POE-VentIQ-RoomIQ` + `Rescue`. The LED preview must
+not be added to `REQUIRED_CONFIGS` while it carries `status: preview`
+upstream — the publish allowlist admits only production-status
+configs plus the named `Rescue` exception, and
+`__tests__/product-catalog-alignment.test.js` fails closed if a
+non-production config (including the LED preview) appears in
+`REQUIRED_CONFIGS`. Even after a future WF-LED-002 imports the LED
+preview into `manifest.json`, `REQUIRED_CONFIGS` cannot gain an LED
+entry until upstream promotes the LED build to `status: production`.
+
+**FanTRIAC remains blocked** under HW-005. **Release-One remains
+LED-less.** The `firmware/sources.json` `block_tokens: ["FanTRIAC",
+"LED"]` defence on the v1.0.0 source is unchanged. No real LED
+preview artifact is proven yet. Active WebFlash surfaces
+(`firmware/sources.json`, `manifest.json`, every `firmware-*.json`,
+`REQUIRED_CONFIGS`, and `scripts/data/kits.json`) still resolve only
+to Release-One + Rescue. WF-LED-001 is docs only; `REQUIRED_CONFIGS`,
+the workflow, the importer, `manifest.json`, every `firmware-*.json`,
+every `firmware/configurations/*.bin`, every `__tests__/*` file, and
+`scripts/data/kits.json` are unchanged.

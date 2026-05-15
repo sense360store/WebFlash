@@ -575,7 +575,17 @@ and every active WebFlash surface explicitly asserts it does not
 reference the LED preview today. WebFlash has not imported, signed,
 manifested, or surfaced the LED preview — active surfaces remain
 Release-One + Rescue only, `REQUIRED_CONFIGS` remains production-only,
-FanTRIAC remains blocked, and Release-One remains LED-less.
+FanTRIAC remains blocked, and Release-One remains LED-less. WF-LED-001
+adds [`docs/led-preview-import-plan.md`](docs/led-preview-import-plan.md)
+— a docs-only forward-looking plan that records the upstream proof
+fields required before WebFlash may import, the future
+`firmware/sources.json` source entry shape (with
+`block_tokens: ["FanTRIAC"]` for the LED preview source while the
+Release-One source keeps `block_tokens: ["FanTRIAC", "LED"]`), the
+import + manifest-regeneration sequence, the deferred UX / kit
+decisions, and the explicit do-not-change list. WF-LED-001 imports
+no firmware, regenerates no manifests, and changes no active WebFlash
+surface; no real LED preview artifact is proven yet.
 
 ## Directory Structure
 

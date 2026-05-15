@@ -315,3 +315,18 @@ pins both halves of the contract: the fixture exposes the LED preview as
 `status: preview` with the upstream artifact_name/version/channel, and
 each active WebFlash surface explicitly asserts it does **not** reference
 the LED preview today.
+
+### WF-LED-001 — LED preview import plan (docs only)
+
+The forward-looking plan for the future LED preview import lives at
+[`docs/led-preview-import-plan.md`](led-preview-import-plan.md). It is
+docs only — WF-LED-001 does **not** import firmware, regenerate
+manifests, modify `firmware/sources.json`, change `REQUIRED_CONFIGS`,
+add LED UI, add a kit, unblock FanTRIAC, or claim a real LED preview
+artifact exists yet. The plan documents the exact future
+`firmware/sources.json` shape (including the per-source
+`block_tokens: ["FanTRIAC"]` for the new LED preview source while the
+Release-One source keeps `block_tokens: ["FanTRIAC", "LED"]`), the
+required upstream proof fields, the import + regeneration sequence,
+and the deferred UX decisions. Until the upstream proof fields land,
+active WebFlash surfaces remain Release-One + Rescue only.
