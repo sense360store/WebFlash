@@ -1053,3 +1053,12 @@ What a future WF-LED-004 could do, when its precondition lands:
 
 Neither precondition has landed as of WF-LED-003; the do-not-change
 list above stays in force until it does.
+
+## See also
+
+* [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — WF-UX-001
+  live-wizard UX audit and PR roadmap (`WF-UX-QUICK-001` through
+  `WF-UX-007` plus `WF-HW-TEST-001`). Builds on the Release-One +
+  Rescue + LED-preview surface area established by the WF-CLEANUP and
+  WF-LED PRs catalogued here; preserves every do-not-change invariant
+  recorded in this audit.

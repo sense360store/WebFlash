@@ -501,3 +501,12 @@ block in `__tests__/release-channel-ui.test.js`. Stable Release-One
 behaviour, FanTRIAC blocked status, the production-only
 `REQUIRED_CONFIGS` allowlist, and the Release-One-only kit catalog
 are all unchanged.
+
+## See also
+
+* [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — WF-UX-001
+  live-wizard UX audit. Its "Live vs in-repo snapshot" section
+  consumes the live-vs-repo delta captured here as the basis for the
+  PR roadmap (`WF-UX-QUICK-001` through `WF-UX-007` plus
+  `WF-HW-TEST-001`). Refresh that section in lockstep with this audit
+  whenever a new deploy lands on GitHub Pages.
