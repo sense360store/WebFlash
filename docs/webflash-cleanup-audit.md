@@ -1062,3 +1062,7 @@ list above stays in force until it does.
   Rescue + LED-preview surface area established by the WF-CLEANUP and
   WF-LED PRs catalogued here; preserves every do-not-change invariant
   recorded in this audit.
+* [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) —
+  WF-HW-TEST-001 operator-validation container for the LED preview
+  flash path. Records live-deployment pre-flight evidence; hardware
+  flash status is **pending — operator hardware test required**.

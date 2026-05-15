@@ -487,3 +487,8 @@ unblock a `REQUIRED_CONFIGS` entry) **or** S360-300 bench verification
 clears the LED hardware path (which would justify an explicit preview
 kit or a dedicated preview-channel control). Neither precondition has
 landed; WF-LED-003 does not act on either.
+
+See [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md)
+for the WF-HW-TEST-001 operator-validation container for the LED
+preview flash path — pre-flight evidence is recorded there; the
+hardware flash itself is **pending — operator hardware test required**.

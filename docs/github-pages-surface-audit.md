@@ -683,3 +683,8 @@ moment of deploy will see the new manifest within one page load.
   PR roadmap (`WF-UX-QUICK-001` through `WF-UX-007` plus
   `WF-HW-TEST-001`). Refresh that section in lockstep with this audit
   whenever a new deploy lands on GitHub Pages.
+* [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) —
+  WF-HW-TEST-001 operator-validation container for the LED preview
+  flash path. Records the post-WF-DEPLOY-001 live-deployment snapshot
+  used as pre-flight evidence; hardware flash status is
+  **pending — operator hardware test required**.

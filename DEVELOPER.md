@@ -6,7 +6,7 @@ This guide covers firmware publishing, manifest generation, and deployment workf
 
 WebFlash uses automated manifest generation to maintain firmware catalogs. All manifests are generated from firmware files - manual editing is not required.
 
-See [`docs/wizard-ux-roadmap.md`](docs/wizard-ux-roadmap.md) for the live-wizard UX audit (WF-UX-001) and the PR sequence (`WF-UX-QUICK-001` through `WF-UX-007`, plus the operator-only `WF-HW-TEST-001`) tracking wizard-facing improvements. The roadmap is docs-only and does not change runtime UI behaviour, manifest generation, or any of the publishing steps documented below.
+See [`docs/wizard-ux-roadmap.md`](docs/wizard-ux-roadmap.md) for the live-wizard UX audit (WF-UX-001) and the PR sequence (`WF-UX-QUICK-001` through `WF-UX-007`, plus the operator-only `WF-HW-TEST-001`) tracking wizard-facing improvements. The roadmap is docs-only and does not change runtime UI behaviour, manifest generation, or any of the publishing steps documented below. The WF-HW-TEST-001 operator-validation container for the LED preview flash path lives at [`docs/led-preview-webflash-proof.md`](docs/led-preview-webflash-proof.md) (status: **pending — operator hardware test required**).
 
 ## Prerequisites
 
