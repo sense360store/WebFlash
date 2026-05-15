@@ -604,3 +604,47 @@ carries `block_tokens: ["FanTRIAC", "LED"]`; the new LED preview source
 carries `block_tokens: ["FanTRIAC"]` only (`LED` cannot appear there or
 the importer would reject the LED preview's own asset). The
 manifest-health guard's global FanTRIAC block is unchanged.
+
+## WF-LED-003 — LED preview exposure decision (REQUIRED_CONFIGS still production-only)
+
+WF-LED-003 records the deliberate UX decision for the LED preview that
+WF-LED-002 imported. **Option A: manifest-only preview, no new kit, no
+new mode toggle, no wizard / workflow / signing change.**
+`REQUIRED_CONFIGS` is **unchanged** under WF-LED-003 and remains exactly
+`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]` — the production-only
+allowlist policy this document established is preserved.
+
+The LED preview build entered `manifest.json` because the manifest-level
+eligibility set already admits `preview`, but the publish-allowlist
+policy is stricter: only `status: production` catalog entries (plus the
+named `Rescue` exception) may appear in `REQUIRED_CONFIGS`, and
+`__tests__/product-catalog-alignment.test.js` continues to fail closed
+if a non-production config (including the LED preview) leaks into the
+allowlist. Promoting the LED build to `REQUIRED_CONFIGS` is still gated
+on upstream first promoting `Ceiling-POE-VentIQ-RoomIQ-LED` from
+`status: preview` to `status: production`; WF-LED-003 does not act on
+that precondition because it has not landed.
+
+The LED preview exposure mechanism is the existing release-channel gate
+already implemented in `scripts/utils/release-channels.js` and
+exercised by `scripts/state.js`:
+
+* `preview.defaultSelectable = false` — the LED preview is never
+  auto-selected by the firmware-version dropdown, even when it is the
+  only candidate for its `config_string`.
+* `preview.requiresAcknowledgement = true` — install gates on a
+  `channel:preview` checkbox with experimental-build warning copy.
+* `preview.hiddenByDefault = false` — the build remains visible in
+  normal mode; the opt-in is the LED module toggle in step 4, not a
+  `?mode=` URL parameter.
+
+Stable Release-One install behaviour is byte-identical: with the LED
+toggle off, the wizard still produces `config_string:
+Ceiling-POE-VentIQ-RoomIQ`, which still resolves to the Release-One
+stable build, which is still in `REQUIRED_CONFIGS`, which is still the
+production allowlist's primary entry alongside Rescue.
+
+**FanTRIAC remains blocked** under HW-005. `scripts/data/kits.json`
+stays Release-One-only. WF-LED-003 changes no firmware, no manifest,
+no `firmware/sources.json`, no `__tests__/manifest-required-configs.test.js`,
+no workflow file, and no signing material.

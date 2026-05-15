@@ -968,3 +968,88 @@ Scope of WF-LED-002 — what changed and what did not:
     disallowed legacy tokens.
   * Smoke-test default (`Ceiling-POE-VentIQ-RoomIQ`). The smoke test
     only validates stable builds; the LED preview is channel=preview.
+
+## WF-LED-003 — LED preview exposure decision (Option A: manifest-only)
+
+WF-LED-003 records the deliberate UX decision for the imported LED
+preview firmware that WF-LED-001 deferred and WF-LED-002 left
+untouched. **Option A wins: manifest-only preview, no new kit, no new
+mode toggle, no wizard / service-worker / workflow change, no firmware
+or manifest regeneration.**
+
+The investigation observed that the wizard already wires the `led`
+module end-to-end (`index.html` step-4 toggle, `MODULE_KEYS` /
+`MODULE_SEGMENT_FORMATTERS` / `parseConfigStringState` in
+`scripts/state.js`, the `Sense360 LED` (S360-300) variant in
+`scripts/data/module-requirements.js`), and that the release-channel
+policy in `scripts/utils/release-channels.js` already implements an
+appropriate preview gate (`defaultSelectable: false`,
+`requiresAcknowledgement: true`, `hiddenByDefault: false`). With
+WF-LED-002 having imported the preview firmware into `manifest.json`,
+picking Ceiling + PoE + Bathroom + VentIQ + RoomIQ + LED in the wizard
+now resolves to the preview build, surfaces the Preview badge +
+experimental-build warning copy + `channel:preview` acknowledgement,
+and gates install on that acknowledgement. Stable Release-One behaviour
+is unchanged for any user who leaves the LED toggle off.
+
+WF-LED-003 therefore:
+
+* makes no firmware, manifest, source-list, kit, workflow, or wizard
+  runtime change;
+* relies on the existing release-channel gate as the single LED preview
+  exposure mechanism;
+* adds documentation in
+  [`docs/led-preview-import-plan.md`](led-preview-import-plan.md)
+  (extended LANDED banner + revised "UI and kit implications" +
+  follow-up sequence update), [`docs/firmware-import.md`](firmware-import.md)
+  (new `WF-LED-003 — LED preview exposure decision` subsection), this
+  document, [`docs/webflash-required-configs-cleanup.md`](webflash-required-configs-cleanup.md),
+  [`docs/github-pages-surface-audit.md`](github-pages-surface-audit.md),
+  `CLAUDE.md`, and `DEVELOPER.md`;
+* adds one targeted policy-level test in
+  `__tests__/release-channel-ui.test.js`
+  (`WF-LED-003 — LED preview exposure model …` describe block) that
+  pins the LED-preview-shaped build's identity against the policy:
+  never auto-selected by `pickDefaultBuild`, stable Release-One wins
+  when both are candidate-eligible, `channel:preview` acknowledgement
+  required, visible in normal mode, Preview badge with warning tone,
+  never tagged Recommended.
+
+Scope of WF-LED-003 — what changed and what did not:
+
+* **Changed:** new doc text in the files listed above, one new
+  describe block in `__tests__/release-channel-ui.test.js`. No rule
+  changes to any existing test.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `manifest.json`, every `firmware-*.json`, `.github/workflows/*`
+  (including `REQUIRED_CONFIGS`), all of `scripts/` (importer,
+  generator, validator, runtime, `state.js`, `release-channels.js`,
+  `recommended-bundle.js`, `kit-mode.js`, `gen-manifests.py`,
+  `import-firmware-sources.py`, `validate-naming-policy.js`),
+  `scripts/data/kits.json`, all of `__tests__/` outside the new
+  describe block, `sw.js`, `index.html`, the wizard frontend, all
+  firmware-signing artifacts. No firmware, manifests, importer,
+  generator, workflow, kit metadata, signing path, installer UX,
+  service-worker, source importer, `REQUIRED_CONFIGS` allowlist,
+  Release-One import, Rescue firmware, FanTRIAC blocked status, or
+  LED preview channel/version/artifact changed. Release-One stable
+  install path is byte-identical to pre-WF-LED-003.
+
+What a future WF-LED-004 could do, when its precondition lands:
+
+* If upstream `sense360store/esphome-public` promotes the
+  `Ceiling-POE-VentIQ-RoomIQ-LED` catalog entry from `status: preview`
+  to `status: production`: add the config_string to
+  `REQUIRED_CONFIGS` in `.github/workflows/firmware-publish.yml` after
+  refreshing the alignment fixture, and re-evaluate kit / wizard
+  promotion in the same PR or a follow-up.
+* If S360-300 hardware bench verification clears the LED path while
+  upstream still labels the catalog entry preview: optionally add a
+  preview-labelled kit to `scripts/data/kits.json` (with explicit
+  preview presentation in the kit UI) or add a dedicated preview-
+  channel control. Either path is acceptable; WF-LED-003 does not
+  pre-decide between them.
+
+Neither precondition has landed as of WF-LED-003; the do-not-change
+list above stays in force until it does.
