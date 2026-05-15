@@ -477,3 +477,7 @@ Recorded as a roadmap; none of these are part of WF-LED-001.
   ban tokens like LED" test).
 * `__tests__/python/test_import_firmware_sources.py` — Release-One
   source rejects LED via `block_tokens` (unchanged here).
+* [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) —
+  WF-HW-TEST-001 operator-validation container for the LED preview
+  flash path. Captures live-deployment pre-flight evidence; hardware
+  flash status is **pending — operator hardware test required**.
