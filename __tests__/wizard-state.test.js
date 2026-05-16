@@ -778,7 +778,8 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="roomiq" data-variant-on="roomiq">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 RoomIQ</span>
+                            <span class="module-group__title">Room sensing</span>
+                            <span class="module-group__meta">Sense360 RoomIQ · <span class="module-group__sku">S360-200</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
@@ -792,7 +793,8 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="airiq" data-variant-on="airiq">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 AirIQ</span>
+                            <span class="module-group__title">Air quality sensing</span>
+                            <span class="module-group__meta">Sense360 AirIQ · <span class="module-group__sku">S360-210</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
@@ -806,7 +808,8 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="ventiq" data-variant-on="ventiq">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 VentIQ</span>
+                            <span class="module-group__title">Bathroom air sensing</span>
+                            <span class="module-group__meta">Sense360 VentIQ · <span class="module-group__sku">S360-211</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
@@ -820,7 +823,8 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="led" data-variant-on="led">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 LED</span>
+                            <span class="module-group__title">Status LED ring</span>
+                            <span class="module-group__meta">Sense360 LED · <span class="module-group__sku">S360-300</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
@@ -1158,7 +1162,8 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="roomiq" data-variant-on="roomiq">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 RoomIQ</span>
+                            <span class="module-group__title">Room sensing</span>
+                            <span class="module-group__meta">Sense360 RoomIQ · <span class="module-group__sku">S360-200</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
@@ -1172,7 +1177,8 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="airiq" data-variant-on="airiq">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 AirIQ</span>
+                            <span class="module-group__title">Air quality sensing</span>
+                            <span class="module-group__meta">Sense360 AirIQ · <span class="module-group__sku">S360-210</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
@@ -1186,7 +1192,8 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
                     <label class="module-group__summary module-group__summary--toggle">
                         <input type="checkbox" data-module-toggle data-module-key="led" data-variant-on="led">
                         <span class="module-group__summary-text">
-                            <span class="module-group__title">Sense360 LED</span>
+                            <span class="module-group__title">Status LED ring</span>
+                            <span class="module-group__meta">Sense360 LED · <span class="module-group__sku">S360-300</span></span>
                             <span class="availability-pill" data-module-availability-pill hidden></span>
                             <span class="availability-detail" data-module-availability-detail hidden></span>
                         </span>
