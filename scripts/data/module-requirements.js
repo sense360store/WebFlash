@@ -1,3 +1,10 @@
+// WF-WIZARD-AVAIL-001 — each `variants[...]` entry may carry an `availability`
+// annotation. When present, it overrides any manifest-derived classification
+// in scripts/utils/module-availability.js. Use static overrides for cases the
+// manifest cannot disambiguate on its own (hardware blocks, upstream
+// schematic vs. design-pending distinction, legacy quarantines). Variants
+// without an annotation derive from the loaded manifest at runtime so adding
+// a new manifest build automatically lights up the matching module pill.
 const MODULE_REQUIREMENT_MATRIX = {
     roomiq: {
         label: 'Sense360 RoomIQ',
@@ -26,6 +33,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                     'BMP581 (pressure)'
                 ],
                 conflicts: []
+                // availability: derived from manifest. RoomIQ ships in
+                // Release-One stable today (`Ceiling-POE-VentIQ-RoomIQ`).
             }
         }
     },
@@ -46,6 +55,15 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
                 description: 'Ceiling air-quality board with CO₂ (SCD41), VOC (SGP41), and gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30).',
                 recommended: true,
+                // WF-WIZARD-AVAIL-001: documented hardware, no WebFlash build
+                // ships for a Core + AirIQ configuration today. Static override
+                // so the customer sees an honest pill in Step 4 instead of
+                // discovering it at Step 5. See scripts/utils/module-availability.js
+                // for the override resolution rules.
+                availability: {
+                    state: 'no-firmware',
+                    reasonCode: 'no-manifest-build'
+                },
                 sensors: [
                     'SCD41 (CO₂)',
                     'SGP41 (VOC)',
@@ -124,7 +142,15 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: ['S360-Relay-C'],
                 description: 'On / off relay for bathroom fans.',
                 conflicts: [],
-                recommended: true
+                recommended: true,
+                // WF-WIZARD-AVAIL-001: no S360-310 schematic has been uploaded
+                // upstream yet, so WebFlash firmware cannot be planned for this
+                // driver. Distinct from PWM/DAC which DO have upstream schematic
+                // evidence but no firmware build.
+                availability: {
+                    state: 'design-pending',
+                    reasonCode: 'design-pending'
+                }
             },
             pwm: {
                 label: 'Sense360 PWM',
@@ -132,7 +158,14 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'R4',
                 headers: ['12vFan_PWM_PulseCounter'],
                 description: '12V PWM fan driver, up to 4 fans with tach feedback.',
-                conflicts: []
+                conflicts: [],
+                // WF-WIZARD-AVAIL-001: S360-311-R4 schematic uploaded upstream
+                // (sense360store/esphome-public), but no WebFlash firmware build
+                // ships for a Core + PWM configuration yet.
+                availability: {
+                    state: 'no-firmware',
+                    reasonCode: 'no-manifest-build'
+                }
             },
             analog: {
                 label: 'Sense360 DAC',
@@ -140,6 +173,13 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'R4',
                 headers: ['Fan_GP8403'],
                 description: '0 to 10V analog fan driver, for example Cloudlift S12.',
+                // WF-WIZARD-AVAIL-001: S360-312-R4 schematic uploaded upstream
+                // (sense360store/esphome-public), but no WebFlash firmware build
+                // ships for a Core + DAC configuration yet.
+                availability: {
+                    state: 'no-firmware',
+                    reasonCode: 'no-manifest-build'
+                },
                 conflicts: [
                     {
                         module: 'airiq',
@@ -155,20 +195,37 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'R4',
                 headers: ['TRIAC_Board'],
                 description: 'Phase dimmer for mains fan or lamp.',
-                conflicts: []
+                conflicts: [],
+                // WF-WIZARD-AVAIL-001: blocked under HW-005 and COMPLIANCE-001.
+                // S360-320-R4 schematic uploaded upstream, but mains-side
+                // hardware verification + compliance work must clear before
+                // WebFlash will install TRIAC firmware.
+                availability: {
+                    state: 'blocked',
+                    reasonCode: 'hw-005'
+                }
             }
         }
     },
     voice: {
+        // WF-WIZARD-AVAIL-001: legacy quarantine. The `voice` module key is
+        // retained ONLY as the internal "Core" placeholder so legacy share-links
+        // (?voice=none → core in URL aliases) keep parsing. It is intentionally
+        // not surfaced as a customer-facing module — `moduleHasSelectableVariants`
+        // returns false for voice because the matrix has no non-`none` variant.
         label: 'Voice Module',
-        summary: 'Voice assistant integration is not currently available.',
+        summary: 'Legacy / manual only. Voice is not surfaced as a customer-selectable WebFlash module.',
         variants: {
             none: {
                 label: 'None',
                 coreRevision: null,
                 headers: [],
                 conflicts: [],
-                recommended: true
+                recommended: true,
+                availability: {
+                    state: 'legacy-only',
+                    reasonCode: 'internal-placeholder'
+                }
             }
         }
     },
@@ -194,6 +251,9 @@ const MODULE_REQUIREMENT_MATRIX = {
                     'WS2812B addressable LED ring',
                     'Integrated I2S microphone (voice models)'
                 ]
+                // availability: derived from manifest. LED currently ships only
+                // in the preview build (`Ceiling-POE-VentIQ-RoomIQ-LED`); the
+                // release-channel acknowledgement gate still applies.
             }
         }
     }

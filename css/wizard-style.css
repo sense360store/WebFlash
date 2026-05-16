@@ -1129,6 +1129,106 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     background: var(--color-surface-soft);
 }
 
+/* WF-WIZARD-AVAIL-001 — per-variant availability pill + detail copy.
+   Surfaced on every module-group toggle and on every non-`none` fan card so
+   the customer can tell installable hardware apart from documented hardware
+   BEFORE they reach Step 5. The pill is purely presentational — install
+   gating still lives in scripts/utils/release-channels.js and the preflight
+   engine. */
+.availability-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+    border: 1px solid var(--color-border-subtle, #d1d5db);
+    background: var(--color-surface-soft, #f3f4f6);
+    color: var(--color-text-secondary, #4b5563);
+    align-self: flex-start;
+}
+
+.availability-pill[hidden] {
+    display: none;
+}
+
+.availability-pill[data-availability-state="available-stable"] {
+    background: color-mix(in srgb, var(--brand-green-tint) 70%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--brand-green-contrast) 35%, var(--color-border-subtle));
+    color: color-mix(in srgb, var(--brand-green-contrast) 90%, #000);
+}
+
+.availability-pill[data-availability-state="available-preview"] {
+    background: color-mix(in srgb, var(--warning, #f59e0b) 18%, #fff);
+    border-color: color-mix(in srgb, var(--warning, #f59e0b) 55%, var(--color-border-subtle));
+    color: color-mix(in srgb, var(--warning, #f59e0b) 85%, #000);
+}
+
+.availability-pill[data-availability-state="no-firmware"],
+.availability-pill[data-availability-state="design-pending"] {
+    background: color-mix(in srgb, var(--color-text-tertiary, #6b7280) 12%, #fff);
+    border-color: color-mix(in srgb, var(--color-text-tertiary, #6b7280) 35%, var(--color-border-subtle));
+    color: var(--color-text-secondary, #4b5563);
+}
+
+.availability-pill[data-availability-state="blocked"] {
+    background: color-mix(in srgb, var(--danger, #dc2626) 18%, #fff);
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 60%, var(--danger-border, #fca5a5));
+    color: color-mix(in srgb, var(--danger, #dc2626) 90%, #000);
+}
+
+.availability-pill[data-availability-state="legacy-only"] {
+    background: var(--color-surface-soft, #f3f4f6);
+    border-color: var(--color-border-subtle, #d1d5db);
+    color: var(--color-text-tertiary, #6b7280);
+}
+
+/* Short explanatory copy paired with the pill. Stays small + secondary so
+   it informs rather than crowds the option card. */
+.availability-detail {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--color-text-secondary, #4b5563);
+}
+
+.availability-detail[hidden] {
+    display: none;
+}
+
+/* Blocked module-card affordance (currently only fan=triac under HW-005).
+   Keeps the card visible so the customer learns WHY TRIAC is unavailable,
+   but the radio is disabled and the card is dimmed + non-interactive. */
+.module-card.is-blocked {
+    cursor: not-allowed;
+}
+
+.module-card.is-blocked .module-card__inner {
+    opacity: 0.62;
+    background: color-mix(in srgb, var(--danger, #dc2626) 6%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 30%, var(--color-border));
+}
+
+.module-card.is-blocked:hover .module-card__inner,
+.module-card.is-blocked:focus-within .module-card__inner {
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 35%, var(--color-border));
+    box-shadow: none;
+    transform: none;
+}
+
+.module-card.is-blocked input[type="radio"]:checked + .module-card__inner {
+    /* If a stale share-link selected TRIAC, keep the visual non-selected
+       so the customer understands it can't actually install. */
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 35%, var(--color-border));
+    box-shadow: none;
+    transform: none;
+}
+
 .module-group--toggle .module-group__hidden-controls {
     display: none;
 }

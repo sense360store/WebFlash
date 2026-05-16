@@ -46,6 +46,12 @@ import { checkManifestFreshness } from './services/manifest-freshness.js';
 import { notifyManifestFreshness as notifyFreshnessBanner } from './layout/freshness-banner.js';
 import { findNearbyConfigStrings, getMismatchHighlights } from './utils/firmware-nearest.js';
 import { FIRMWARE_READINESS_COPY, classifyFirmwareReadiness } from './utils/firmware-readiness.js';
+import {
+    AVAILABILITY_STATES,
+    classifyModuleVariant,
+    classifyConfigString,
+    deriveManifestIndex
+} from './utils/module-availability.js';
 
 let currentStep = 1;
 const totalSteps = 5;
@@ -1014,6 +1020,16 @@ let manifestFreshness = 'unknown';
 let manifestBuildsWithIndex = [];
 let manifestConfigStringLookup = new Map();
 let manifestAvailabilityIndex = new Map();
+// WF-WIZARD-AVAIL-001 — derived from manifestBuildsWithIndex on every
+// rebuild. Module-availability classification reads from these so the
+// wizard automatically reflects manifest changes (adding a new stable build
+// lights up the matching module pill without code changes).
+let manifestAvailabilityTokens = {
+    manifestStableTokens: new Set(),
+    manifestPreviewTokens: new Set(),
+    manifestStableConfigs: new Set(),
+    manifestPreviewConfigs: new Set()
+};
 let manifestFreshnessState = 'unknown';
 let manifestFreshnessDetail = null;
 let manifestFreshnessAck = false;
@@ -1338,6 +1354,9 @@ function buildManifestContext(manifest) {
     manifestBuildsWithIndex = [];
     manifestConfigStringLookup = new Map();
     manifestAvailabilityIndex = new Map();
+    manifestAvailabilityTokens = deriveManifestIndex(
+        Array.isArray(manifest?.builds) ? manifest.builds : []
+    );
 
     const builds = Array.isArray(manifest?.builds) ? manifest.builds : [];
 
@@ -1907,6 +1926,11 @@ function initializeWizard() {
     try {
         ensureSingleActiveWizardStep();
         updateFirmwareControls();
+        // Render the static availability pills (blocked TRIAC, design-pending
+        // Relay, no-firmware AirIQ/PWM/DAC) before the manifest finishes
+        // loading so the customer never sees a flash of "everything looks
+        // installable" copy at first paint.
+        updateModuleVariantAvailability();
     } catch (error) {
         console.error('Failed to finalize wizard initialization:', error);
     }
@@ -1918,6 +1942,7 @@ function initializeWizard() {
             // Manifest now populated → re-evaluate availability of the
             // currently-shown firmware target so the warning toggles
             // correctly without waiting for the next user interaction.
+            updateModuleVariantAvailability();
             updateFirmwareTargetPreview();
 
             if (currentStep === 4) {
@@ -1927,6 +1952,7 @@ function initializeWizard() {
         .catch(() => {
             resetOptionAvailability();
             updateModuleAvailabilityMessage();
+            updateModuleVariantAvailability();
             updateFirmwareTargetPreview();
         });
 }
@@ -2696,6 +2722,7 @@ function updateConfiguration(options = {}) {
     updateModuleConflictBadges();
     updateModuleGroupSummaries();
     updateModuleFirmwareImpactHints();
+    updateModuleVariantAvailability();
     updateFirmwareTargetPreview();
 
     if (!options.skipUrlUpdate) {
@@ -2815,6 +2842,7 @@ function updateFirmwareTargetPreview() {
         }
         if (warningEl) {
             warningEl.hidden = true;
+            warningEl.removeAttribute('data-availability-state');
         }
         root.dataset.firmwareTargetState = 'incomplete';
         return;
@@ -2825,14 +2853,166 @@ function updateFirmwareTargetPreview() {
         valueEl.classList.add('firmware-target-preview__value--ready');
     }
 
-    const isAvailable = manifestConfigStringLookup.has(configString);
+    // WF-WIZARD-AVAIL-001 — classify the assembled config_string against
+    // manifest + block-token set so the Step 4 preview can expose the same
+    // availability vocabulary the per-card pills use. The visible warning
+    // body stays the canonical WF-UX-002 `no-build` copy from
+    // firmware-readiness.js so the Step 4 / Step 5 / sidebar surfaces all
+    // continue to read identically. The classification is surfaced only via
+    // the `data-availability-state` data hook (for CSS + tests) so future
+    // styling differentiation does not require breaking the readiness
+    // contract.
+    const classification = classifyConfigString(configString, {
+        manifestStableConfigs: manifestAvailabilityTokens.manifestStableConfigs,
+        manifestPreviewConfigs: manifestAvailabilityTokens.manifestPreviewConfigs
+    });
+    const isAvailable = classification.installable;
+
     if (warningEl) {
         if (!isAvailable) {
             warningEl.textContent = FIRMWARE_READINESS_COPY['no-build'].body;
+            warningEl.dataset.availabilityState = classification.state;
+        } else {
+            warningEl.removeAttribute('data-availability-state');
         }
         warningEl.hidden = isAvailable;
     }
     root.dataset.firmwareTargetState = isAvailable ? 'available' : 'unpublished';
+    root.dataset.availabilityState = classification.state;
+}
+
+// WF-WIZARD-AVAIL-001 — per-variant availability pill renderer.
+//
+// Walks every module-group / module-card in Step 4, asks the availability
+// classifier for the appropriate state, and projects the result into the
+// per-card pill + detail slots. Also disables the radio for `blocked`
+// variants (currently only `fan=triac` under HW-005) so the user cannot
+// promise an install path the wizard can never fulfil.
+//
+// The classification result is the SAME object the test suite asserts
+// against — no separate "view model" — so any test pinning a pill state
+// pins the runtime decision too.
+function getCanonicalManifestTokenForVariant(moduleKey, variantKey) {
+    if (variantKey === 'none') {
+        return null;
+    }
+    const formatter = MODULE_SEGMENT_FORMATTERS[moduleKey];
+    if (typeof formatter !== 'function') {
+        return null;
+    }
+    const token = formatter(variantKey);
+    return typeof token === 'string' && token.length > 0 ? token : null;
+}
+
+function classifyVariantForRender(moduleKey, variantKey) {
+    return classifyModuleVariant(moduleKey, variantKey, {
+        canonicalTokenFor: getCanonicalManifestTokenForVariant,
+        manifestStableTokens: manifestAvailabilityTokens.manifestStableTokens,
+        manifestPreviewTokens: manifestAvailabilityTokens.manifestPreviewTokens
+    });
+}
+
+function applyAvailabilityPill(target, classification) {
+    if (!target) {
+        return;
+    }
+
+    const pill = target.querySelector('[data-module-availability-pill]');
+    if (pill) {
+        if (classification.label) {
+            pill.textContent = classification.label;
+            pill.dataset.availabilityState = classification.state;
+            pill.dataset.availabilityTone = classification.tone;
+            pill.hidden = false;
+            pill.removeAttribute('aria-hidden');
+        } else {
+            pill.textContent = '';
+            pill.removeAttribute('data-availability-state');
+            pill.removeAttribute('data-availability-tone');
+            pill.hidden = true;
+            pill.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    const detail = target.querySelector('[data-module-availability-detail]');
+    if (detail) {
+        if (classification.detail) {
+            detail.textContent = classification.detail;
+            detail.hidden = false;
+            detail.removeAttribute('aria-hidden');
+        } else {
+            detail.textContent = '';
+            detail.hidden = true;
+            detail.setAttribute('aria-hidden', 'true');
+        }
+    }
+}
+
+function applyBlockedAffordance(input, card, classification) {
+    if (!input || !card) {
+        return;
+    }
+    const isBlocked = classification.state === AVAILABILITY_STATES.BLOCKED;
+    if (isBlocked) {
+        input.disabled = true;
+        card.classList.add('is-blocked');
+        card.setAttribute('aria-disabled', 'true');
+        card.setAttribute('data-availability-state', classification.state);
+        const titleSource = classification.detail || classification.label;
+        if (titleSource) {
+            card.setAttribute('title', titleSource);
+        }
+    } else {
+        // Only clear the blocked-specific affordance. Other code paths own
+        // input.disabled for unrelated reasons (e.g. unsupported combos in
+        // updateModuleOptionAvailability), so we don't touch input.disabled
+        // here unless it was the blocked-affordance that set it.
+        if (card.classList.contains('is-blocked')) {
+            input.disabled = false;
+        }
+        card.classList.remove('is-blocked');
+        if (card.getAttribute('aria-disabled') === 'true' && !card.classList.contains('is-unavailable')) {
+            card.removeAttribute('aria-disabled');
+        }
+        card.removeAttribute('data-availability-state');
+        if (card.getAttribute('title')) {
+            card.removeAttribute('title');
+        }
+    }
+}
+
+function updateModuleVariantAvailability() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    // Per-fan-variant cards (the only fan-group radios we render).
+    document.querySelectorAll('.module-card[data-module-card="fan"]').forEach(card => {
+        const variantKey = card.getAttribute('data-variant');
+        if (!variantKey || variantKey === 'none') {
+            return;
+        }
+        const classification = classifyVariantForRender('fan', variantKey);
+        applyAvailabilityPill(card, classification);
+        const radio = card.querySelector(`input[name="fan"][value="${variantKey}"]`);
+        applyBlockedAffordance(radio, card, classification);
+    });
+
+    // Toggle-style module groups (RoomIQ / AirIQ / VentIQ / LED). Each
+    // exposes a single non-`none` variant whose key matches data-variant-on.
+    document.querySelectorAll('.module-group--toggle[data-module-group]').forEach(group => {
+        const moduleKey = group.getAttribute('data-module-group');
+        if (!moduleKey || moduleKey === 'voice') {
+            return;
+        }
+        const toggle = group.querySelector('[data-module-toggle]');
+        const variantKey = toggle?.getAttribute('data-variant-on') || null;
+        if (!variantKey) {
+            return;
+        }
+        const classification = classifyVariantForRender(moduleKey, variantKey);
+        applyAvailabilityPill(group, classification);
+    });
 }
 
 function nextStep() {
@@ -6843,6 +7023,8 @@ export const __testHooks = Object.freeze({
     formatConfigSegment,
     buildFirmwareTargetPreviewString,
     updateFirmwareTargetPreview,
+    updateModuleVariantAvailability,
+    classifyVariantForRender,
     getFirmwareReadiness,
     FIRMWARE_READINESS_COPY,
     updateModuleFirmwareImpactHints,

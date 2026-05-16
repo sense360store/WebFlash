@@ -119,12 +119,23 @@ test('fan PWM and analog options stay available on Ceiling+PWR', async () => {
     pwrInput.checked = true;
     pwrInput.dispatchEvent(new Event('change', { bubbles: true }));
 
-    for (const value of ['none', 'relay', 'pwm', 'analog', 'triac']) {
+    // WF-WIZARD-AVAIL-001: PWM/DAC/Relay are still "not unavailable" via the
+    // manifest-driven availability path (the `is-unavailable` class). TRIAC
+    // is intentionally excluded because it gains a separate `is-blocked`
+    // affordance under HW-005 + COMPLIANCE-001 — pinned by
+    // __tests__/module-availability.test.js. Either way, the legacy
+    // manifest-mismatch lockout this test guards against must stay clear.
+    for (const value of ['none', 'relay', 'pwm', 'analog']) {
         const inspection = inspectCard('fan', value);
         expect(inspection.unavailable).toBe(false);
         expect(inspection.title).toBeNull();
         expect(inspection.statusText).toBe('');
     }
+
+    // TRIAC keeps its non-`is-unavailable` state but does gain the blocked
+    // affordance (separate class, separate title) per WF-WIZARD-AVAIL-001.
+    const triac = inspectCard('fan', 'triac');
+    expect(triac.unavailable).toBe(false);
 });
 
 test('updateConfiguration clears stale unavailable state on fan options', async () => {
