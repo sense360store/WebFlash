@@ -7,7 +7,7 @@
 
 The review was written against an older snapshot. Before acting on a recommendation, verify state against the current codebase. Confirmed deltas:
 
-- **Wizard is 5 steps**, not 4: `Mounting → Core → Power → Modules → Review`. See `getMaxReachableStep()` in `scripts/state.js` and the sidebar in `index.html`.
+- **Wizard is 5 steps**, not 4: `Start → Core → Power → Modules → Review` (WF-UX-005 canonical labels — see `docs/wizard-ux-roadmap.md` and the `WF-UX-005 — step model cleanup` describe block in `__tests__/a11y-static-html.test.js`). See `getMaxReachableStep()` in `scripts/state.js` and the sidebar in `index.html`.
 - **`esp-web-tools@10`** is loaded from `unpkg`, not v9 (`index.html` `<script type="module" src="...esp-web-tools@10/...">`).
 - Step 5 already ships several items the review flags as "improve":
   - Preflight checks panel with `Pass / Warning / Fail` semantics
@@ -40,7 +40,7 @@ into:
 
 ### 1.1 What the tool currently does
 
-- 5-step wizard: Mounting → Core → Power → Modules → Review
+- 5-step wizard: Start → Core → Power → Modules → Review (WF-UX-005)
 - Configuration matched against `manifest.json` builds (`build.config_string`)
 - Auto-rendered `<esp-web-install-button>` for the matched firmware
 - Fallback access to additional / legacy builds

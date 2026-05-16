@@ -185,11 +185,15 @@ another process holding the serial port.
    service worker is intentionally `webflash-v5`; the freshness banner
    in [`scripts/layout/freshness-banner.js`](../scripts/layout/freshness-banner.js)
    gates install until the deployed manifest matches the served one.
-3. In Step 1 (Mounting) pick **Ceiling**.
-4. In Step 2 (Power) pick **PoE**.
-5. In Step 3 turn the **Bathroom** toggle on so the VentIQ / RoomIQ
-   modules are reachable.
-6. In Step 4 (Modules) enable:
+3. Step 1 (**Start**) — leave the kit/manual picker on the manual flow
+   for this runbook (mounting defaults to Ceiling via the hidden
+   `mounting=ceiling` input; per WF-UX-005 the user is no longer asked
+   to pick a mounting in Step 1).
+4. In Step 2 (**Core**) confirm the **Core** radio is selected
+   (`voice='none'`) and click Next.
+5. In Step 3 (**Power**) pick **PoE**.
+6. In Step 4 (**Modules**) turn the **Bathroom** toggle on so the VentIQ
+   / RoomIQ modules are reachable, then enable:
    * **Sense360 VentIQ** (S360-211).
    * **Sense360 RoomIQ** (S360-200).
    * **Sense360 LED** (S360-300) — this toggle exists in
