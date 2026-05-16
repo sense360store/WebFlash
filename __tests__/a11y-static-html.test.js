@@ -439,3 +439,85 @@ describe('WF-UX-002 — canonical firmware readiness copy in static index.html',
         expect(panel.textContent).toMatch(/Open this page in desktop Chrome, Edge, or Opera to install firmware over USB\./);
     });
 });
+
+describe('WF-WIZARD-AVAIL-001 — module availability pill slots in static index.html', () => {
+    test('every selectable module group ships an availability pill + detail slot', () => {
+        // Toggle-style module groups (RoomIQ, AirIQ, VentIQ, LED). The
+        // pill + detail slots must be present in the static markup so the
+        // runtime renderer never has to insert DOM ad-hoc.
+        const groups = ['roomiq', 'airiq', 'ventiq', 'led'];
+        for (const moduleKey of groups) {
+            const section = document.getElementById(`${moduleKey}-module-section`);
+            expect(section).not.toBeNull();
+            const pill = section.querySelector('[data-module-availability-pill]');
+            expect(pill).not.toBeNull();
+            // Pill starts hidden so it never flashes before classification runs.
+            expect(pill.hasAttribute('hidden')).toBe(true);
+            const detail = section.querySelector('[data-module-availability-detail]');
+            expect(detail).not.toBeNull();
+            expect(detail.hasAttribute('hidden')).toBe(true);
+        }
+    });
+
+    test('every non-none fan card ships an availability pill + detail slot', () => {
+        // Includes TRIAC — the static markup carries the pill slot, and the
+        // runtime renderer fills it with the blocked affordance.
+        const variants = ['relay', 'pwm', 'analog', 'triac'];
+        for (const variant of variants) {
+            const card = document.querySelector(`.module-card[data-module-card="fan"][data-variant="${variant}"]`);
+            expect(card).not.toBeNull();
+            const pill = card.querySelector('[data-module-availability-pill]');
+            expect(pill).not.toBeNull();
+            expect(pill.hasAttribute('hidden')).toBe(true);
+            const detail = card.querySelector('[data-module-availability-detail]');
+            expect(detail).not.toBeNull();
+            expect(detail.hasAttribute('hidden')).toBe(true);
+        }
+    });
+
+    test('no customer-facing Voice module card is rendered in Step 4', () => {
+        // voice:none is retained as the Core placeholder for share-link
+        // back-compat; the only customer-facing voice-named input lives in
+        // the Step 2 "Core Type" section, never in Step 4's module groups.
+        const step4 = document.getElementById('step-4');
+        expect(step4).not.toBeNull();
+        const voiceCardsInStep4 = step4.querySelectorAll(
+            '[data-module-group="voice"], [data-module-card="voice"]'
+        );
+        expect(voiceCardsInStep4.length).toBe(0);
+
+        const voiceInputsInStep4 = step4.querySelectorAll('input[name="voice"]');
+        expect(voiceInputsInStep4.length).toBe(0);
+    });
+
+    test('Step 2 Core radio is the only customer-facing voice-named input', () => {
+        // Backwards-compat: voice:none = "Sense360 Core". This single radio
+        // exists so legacy ?voice= share-links keep parsing.
+        const voiceInputs = document.querySelectorAll('input[name="voice"]');
+        expect(voiceInputs.length).toBe(1);
+        const radio = voiceInputs[0];
+        expect(radio.getAttribute('value')).toBe('none');
+        expect(radio.closest('#step-2')).not.toBeNull();
+    });
+
+    test('static "Voice Module" title is not rendered as a customer-facing module card', () => {
+        // The matrix entry exists for backwards-compat parsing, but the
+        // wizard never shows a "Voice Module" headline.
+        const step4 = document.getElementById('step-4');
+        expect(step4).not.toBeNull();
+        expect(step4.textContent).not.toMatch(/Voice Module/i);
+    });
+
+    test('TRIAC card is present in static markup so customers learn WHY it is blocked', () => {
+        // Visibility-with-context is the WF-WIZARD-AVAIL-001 contract for
+        // blocked modules. The runtime renderer adds the .is-blocked class
+        // and disables the radio.
+        const triacCard = document.querySelector(
+            '.module-card[data-module-card="fan"][data-variant="triac"]'
+        );
+        expect(triacCard).not.toBeNull();
+        // SKU surfaced inline so the customer can map "blocked TRIAC" back
+        // to the S360-320 hardware they may have ordered.
+        expect(triacCard.textContent).toMatch(/S360-320/);
+    });
+});
