@@ -568,3 +568,179 @@ describe('Existing kit/SKU mode behaviour stays unchanged', () => {
         }
     });
 });
+
+describe('WF-UX-007 — Step 4 primary labels are outcome-first; technical names move to the secondary tier', () => {
+    beforeAll(() => {
+        loadStep4Markup();
+    });
+
+    // Pairs the Step 4 toggle-group selector with its outcome-first primary
+    // label and its expected technical-secondary "<Friendly name> · <SKU>"
+    // string. Tests below assert that the primary title element carries the
+    // outcome wording (not the Friendly name on its own) and that the
+    // Friendly name + SKU appear in the .module-group__meta line.
+    const toggleGroupCases = [
+        {
+            key: 'roomiq',
+            primary: 'Room sensing',
+            technicalName: 'Sense360 RoomIQ',
+            sku: 'S360-200',
+        },
+        {
+            key: 'airiq',
+            primary: 'Air quality sensing',
+            technicalName: 'Sense360 AirIQ',
+            sku: 'S360-210',
+        },
+        {
+            key: 'ventiq',
+            primary: 'Bathroom air sensing',
+            technicalName: 'Sense360 VentIQ',
+            sku: 'S360-211',
+        },
+        {
+            key: 'led',
+            primary: 'Status LED ring',
+            technicalName: 'Sense360 LED',
+            sku: 'S360-300',
+        },
+    ];
+
+    test.each(toggleGroupCases)(
+        '$key: primary title is outcome-first ("$primary"); Friendly name + SKU live in the meta tier',
+        ({ key, primary, technicalName, sku }) => {
+            const section = document.querySelector(`[data-module-group="${key}"]`);
+            const title = section?.querySelector('.module-group__title');
+            const meta = section?.querySelector('.module-group__meta');
+
+            expect(title?.textContent.trim()).toBe(primary);
+            expect(title?.textContent).not.toContain(technicalName);
+            expect(title?.textContent).not.toContain(sku);
+
+            const metaText = meta?.textContent.replace(/\s+/g, ' ').trim() || '';
+            expect(metaText).toContain(technicalName);
+            expect(metaText).toContain(sku);
+            expect(metaText).toContain('·');
+        }
+    );
+
+    const fanVariantCases = [
+        {
+            variant: 'relay',
+            primary: 'Fan relay control',
+            technicalName: 'Sense360 Relay',
+            sku: 'S360-310',
+        },
+        {
+            variant: 'pwm',
+            primary: 'PWM fan control',
+            technicalName: 'Sense360 PWM',
+            sku: 'S360-311',
+        },
+        {
+            variant: 'analog',
+            primary: 'Analog fan control',
+            technicalName: 'Sense360 DAC',
+            sku: 'S360-312',
+        },
+        {
+            variant: 'triac',
+            primary: 'TRIAC fan control',
+            technicalName: 'Sense360 TRIAC',
+            sku: 'S360-320',
+        },
+    ];
+
+    test.each(fanVariantCases)(
+        'fan card variant=$variant: primary is outcome-first ("$primary"); meta line carries "$technicalName · $sku"',
+        ({ variant, primary, technicalName, sku }) => {
+            const card = document.querySelector(`[data-module-card="fan"][data-variant="${variant}"]`);
+            const title = card?.querySelector('.module-card__title');
+            const meta = card?.querySelector('.module-card__meta');
+
+            expect(title?.textContent.trim()).toBe(primary);
+            expect(title?.textContent).not.toContain(technicalName);
+            expect(title?.textContent).not.toContain(sku);
+
+            const metaText = meta?.textContent.replace(/\s+/g, ' ').trim() || '';
+            expect(metaText).toBe(`${technicalName} · ${sku}`);
+        }
+    );
+
+    test('Fan / Switching group H3 reads "Fan and switching control"; chevron aria-label matches', () => {
+        const fanSection = document.querySelector('[data-module-group="fan"]');
+        const heading = fanSection?.querySelector('h3.module-group__title');
+        expect(heading?.textContent.trim()).toBe('Fan and switching control');
+
+        const chevron = fanSection?.querySelector('[data-module-group-toggle]');
+        expect(chevron?.getAttribute('aria-label')).toBe('Change fan and switching control');
+    });
+
+    test('AirIQ / VentIQ / RoomIQ / LED are no longer the standalone primary card label anywhere in Step 4', () => {
+        const technicalOnlyLabels = [
+            'AirIQ',
+            'VentIQ',
+            'RoomIQ',
+            'LED',
+        ];
+
+        // Collect every primary title element in Step 4 module markup.
+        const primarySelectors = [
+            '[data-module-group="roomiq"] .module-group__title',
+            '[data-module-group="airiq"] .module-group__title',
+            '[data-module-group="ventiq"] .module-group__title',
+            '[data-module-group="led"] .module-group__title',
+            '[data-module-card="fan"] .module-card__title',
+        ];
+        const primaryTitles = primarySelectors.flatMap(selector =>
+            Array.from(document.querySelectorAll(selector))
+        );
+
+        for (const element of primaryTitles) {
+            const text = element.textContent.trim();
+            for (const technical of technicalOnlyLabels) {
+                expect(text).not.toBe(technical);
+            }
+        }
+    });
+
+    test('module-card__specs definition lists still expose SKU / Core / Headers for every fan variant', () => {
+        // Pin/header technical detail must stay discoverable in the
+        // secondary spec tier so support can still reference J3/J4/etc.
+        const fanCardsWithSpecs = ['relay', 'pwm', 'analog', 'triac'];
+        for (const variant of fanCardsWithSpecs) {
+            const card = document.querySelector(`[data-module-card="fan"][data-variant="${variant}"]`);
+            const specs = card?.querySelector('.module-card__specs');
+            expect(specs).not.toBeNull();
+
+            const labels = Array.from(specs.querySelectorAll('dt')).map(dt => dt.textContent.trim());
+            expect(labels).toEqual(expect.arrayContaining(['SKU', 'Core', 'Headers']));
+        }
+    });
+
+    test('locked bathroom / firmware-target / RoomIQ pairing copy is preserved (WF-UX-002/004 invariants)', () => {
+        // WF-UX-007 must not regress the locked secondary-copy strings that
+        // explain *why* AirIQ vs VentIQ swap and how Step 5 firmware is
+        // resolved. These all live outside the primary title surface and
+        // remain intentionally jargon-bearing.
+        const bathroomDescription = document.querySelector('.bathroom-toggle__description');
+        expect(bathroomDescription?.textContent.trim()).toBe(
+            'Use VentIQ instead of AirIQ for bathroom-focused air-quality sensing.'
+        );
+
+        const roomiqHint = document.querySelector('[data-roomiq-pairing-hint]');
+        expect(roomiqHint?.textContent.trim()).toBe(
+            'RoomIQ can be used with either AirIQ or VentIQ.'
+        );
+
+        const ventiqFirmwareHint = document.querySelector('[data-firmware-impact="ventiq"]');
+        expect(ventiqFirmwareHint?.textContent).toMatch(/VentIQ firmware target/i);
+        expect(ventiqFirmwareHint?.textContent).toMatch(/instead of AirIQ/i);
+
+        const fanVariantWarning = document.querySelector('[data-fan-variant-warning]');
+        expect(fanVariantWarning?.textContent).toMatch(/Relay/);
+        expect(fanVariantWarning?.textContent).toMatch(/PWM/);
+        expect(fanVariantWarning?.textContent).toMatch(/DAC/);
+        expect(fanVariantWarning?.textContent).toMatch(/TRIAC/);
+    });
+});

@@ -122,46 +122,6 @@ const optionTooltips = {
                 href: 'https://docs.sense360.com/modules/airiq'
             }
         },
-        base: {
-            title: 'AirIQ',
-            summary: 'Balanced sensing for air quality metrics in offices, classrooms, and hospitality spaces.',
-            pros: [
-                'Combines gas, particulate, and pressure sensors for cross-validated readings.',
-                'Factory-calibrated profiles with weekly self-check routines.'
-            ],
-            cons: [
-                'Consumes one expansion slot and increases power budget by 1.8 W.',
-                'Requires filter replacement every 18 months for peak accuracy.'
-            ],
-            measurements: [
-                'SGP41 VOC index resolution: 1 point, warm-up < 30 s.',
-                'SCD41 CO₂ accuracy: ±40 ppm between 400–1000 ppm.'
-            ],
-            learnMore: {
-                label: 'AirIQ specifications',
-                href: 'https://docs.sense360.com/modules/airiq-base'
-            }
-        },
-        pro: {
-            title: 'AirIQ',
-            summary: 'Comprehensive air quality analytics with industrial-grade particulate and formaldehyde sensing.',
-            pros: [
-                'Adds SPS30 laser particulate counter and SEN0321 formaldehyde sensor.',
-                'Provides automatic trend exports for BMS integrations.'
-            ],
-            cons: [
-                'Draws 2.6 W and benefits from continuous airflow—avoid enclosed cabinets.',
-                'Requires quarterly filter cleaning in dusty environments.'
-            ],
-            measurements: [
-                'PM2.5 accuracy: ±10 µg/m³ at 25 °C and 40 % RH.',
-                'Formaldehyde detection range: 0–5 ppm with 0.01 ppm resolution.'
-            ],
-            learnMore: {
-                label: 'AirIQ deployment tips',
-                href: 'https://docs.sense360.com/modules/airiq-pro'
-            }
-        }
     },
     fan: {
         none: {

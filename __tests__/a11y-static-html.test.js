@@ -833,3 +833,171 @@ describe('WF-UX-006 — Step 1 kit / custom / recovery path split', () => {
         expect(legacyPicker.getAttribute('aria-hidden')).toBe('true');
     });
 });
+
+describe('WF-UX-007 — outcome-first Step 4 module labels with technical secondary tier', () => {
+    const groupCases = [
+        {
+            key: 'roomiq',
+            primary: 'Room sensing',
+            technicalName: 'Sense360 RoomIQ',
+            sku: 'S360-200',
+        },
+        {
+            key: 'airiq',
+            primary: 'Air quality sensing',
+            technicalName: 'Sense360 AirIQ',
+            sku: 'S360-210',
+        },
+        {
+            key: 'ventiq',
+            primary: 'Bathroom air sensing',
+            technicalName: 'Sense360 VentIQ',
+            sku: 'S360-211',
+        },
+        {
+            key: 'led',
+            primary: 'Status LED ring',
+            technicalName: 'Sense360 LED',
+            sku: 'S360-300',
+        },
+    ];
+
+    test.each(groupCases)(
+        '$key toggle group: primary title is "$primary" and meta line carries "$technicalName · $sku"',
+        ({ key, primary, technicalName, sku }) => {
+            const section = document.querySelector(`[data-module-group="${key}"]`);
+            expect(section).not.toBeNull();
+
+            const title = section.querySelector('.module-group__title');
+            expect(title).not.toBeNull();
+            expect(title.textContent.trim()).toBe(primary);
+            expect(title.textContent).not.toContain(technicalName);
+
+            const meta = section.querySelector('.module-group__meta');
+            expect(meta).not.toBeNull();
+            const metaText = meta.textContent.replace(/\s+/g, ' ').trim();
+            expect(metaText).toContain(technicalName);
+            expect(metaText).toContain(sku);
+            expect(metaText).toContain('·');
+
+            const skuSpan = meta.querySelector('.module-group__sku');
+            expect(skuSpan).not.toBeNull();
+            expect(skuSpan.textContent.trim()).toBe(sku);
+        }
+    );
+
+    const fanVariantCases = [
+        {
+            variant: 'relay',
+            primary: 'Fan relay control',
+            technicalName: 'Sense360 Relay',
+            sku: 'S360-310',
+        },
+        {
+            variant: 'pwm',
+            primary: 'PWM fan control',
+            technicalName: 'Sense360 PWM',
+            sku: 'S360-311',
+        },
+        {
+            variant: 'analog',
+            primary: 'Analog fan control',
+            technicalName: 'Sense360 DAC',
+            sku: 'S360-312',
+        },
+        {
+            variant: 'triac',
+            primary: 'TRIAC fan control',
+            technicalName: 'Sense360 TRIAC',
+            sku: 'S360-320',
+        },
+    ];
+
+    test.each(fanVariantCases)(
+        'fan card variant=$variant: primary title is "$primary" and meta line carries "$technicalName · $sku"',
+        ({ variant, primary, technicalName, sku }) => {
+            const card = document.querySelector(`[data-module-card="fan"][data-variant="${variant}"]`);
+            expect(card).not.toBeNull();
+
+            const title = card.querySelector('.module-card__title');
+            expect(title).not.toBeNull();
+            expect(title.textContent.trim()).toBe(primary);
+            expect(title.textContent).not.toContain(technicalName);
+
+            const meta = card.querySelector('.module-card__meta');
+            expect(meta).not.toBeNull();
+            const metaText = meta.textContent.replace(/\s+/g, ' ').trim();
+            expect(metaText).toBe(`${technicalName} · ${sku}`);
+
+            // The SKU also stays discoverable in the existing specs <dl> so
+            // support keeps the technical surface in the secondary tier.
+            const specs = card.querySelector('.module-card__specs');
+            expect(specs).not.toBeNull();
+            expect(specs.textContent).toContain(sku);
+        }
+    );
+
+    test('fan group H3 reads "Fan and switching control" with matching chevron aria-label', () => {
+        const fanSection = document.querySelector('[data-module-group="fan"]');
+        expect(fanSection).not.toBeNull();
+
+        const heading = fanSection.querySelector('h3.module-group__title');
+        expect(heading).not.toBeNull();
+        expect(heading.textContent.trim()).toBe('Fan and switching control');
+
+        const chevron = fanSection.querySelector('[data-module-group-toggle]');
+        expect(chevron).not.toBeNull();
+        expect(chevron.getAttribute('aria-label')).toBe('Change fan and switching control');
+    });
+
+    test('fan "None" variant card keeps its plain heading (no SKU meta line)', () => {
+        const noneCard = document.querySelector('[data-module-card="fan"][data-variant="none"]');
+        expect(noneCard).not.toBeNull();
+
+        const title = noneCard.querySelector('.module-card__title');
+        expect(title).not.toBeNull();
+        expect(title.textContent.trim()).toBe('None');
+
+        // The "None" card is not a SKU; no meta line should be rendered.
+        const meta = noneCard.querySelector('.module-card__meta');
+        expect(meta).toBeNull();
+    });
+
+    test('Step 4 module-card titles are not the only place the technical Friendly name surfaces', () => {
+        // Step 4 primary titles are outcome-first; the Friendly name must
+        // appear in a separate secondary tier (meta line or specs) so
+        // support and customers can still find the technical name.
+        const technicalNames = [
+            'Sense360 RoomIQ',
+            'Sense360 AirIQ',
+            'Sense360 VentIQ',
+            'Sense360 LED',
+            'Sense360 Relay',
+            'Sense360 PWM',
+            'Sense360 DAC',
+            'Sense360 TRIAC',
+        ];
+
+        // Confirm no primary title element holds a Friendly name verbatim.
+        const titles = Array.from(
+            document.querySelectorAll(
+                '[data-module-group="roomiq"] .module-group__title, [data-module-group="airiq"] .module-group__title, [data-module-group="ventiq"] .module-group__title, [data-module-group="led"] .module-group__title, [data-module-card="fan"] .module-card__title'
+            )
+        );
+        for (const title of titles) {
+            const text = title.textContent.trim();
+            for (const technical of technicalNames) {
+                expect(text).not.toBe(technical);
+            }
+        }
+
+        // Confirm every Friendly name still appears somewhere in Step 4
+        // markup (secondary tier).
+        const step4 = document.getElementById('step-4');
+        expect(step4).not.toBeNull();
+        const step4Text = step4.textContent;
+        for (const technical of technicalNames) {
+            expect(step4Text).toContain(technical);
+        }
+    });
+});

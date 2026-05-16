@@ -1084,6 +1084,20 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     letter-spacing: 0.02em;
 }
 
+.module-group__meta {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    line-height: 1.3;
+    margin-top: 1px;
+    letter-spacing: 0.01em;
+}
+
+.module-group__meta .module-group__sku {
+    margin-left: 0;
+}
+
 .module-group__specs {
     display: block;
     font-size: 12px;
@@ -1323,6 +1337,15 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     font-weight: 600;
     color: var(--color-text-primary);
     margin-bottom: 0;
+}
+
+.module-card__meta {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    line-height: 1.3;
+    margin: 1px 0 0;
+    letter-spacing: 0.01em;
 }
 
 .module-card .option-description {
