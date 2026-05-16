@@ -274,3 +274,264 @@ describe('kit-mode controller', () => {
         expect(nextBtn.disabled).toBe(true);
     });
 });
+
+// WF-UX-006: Step 1 path-selector. The kit-mode controller layers a path
+// model (kit / custom / recovery) on top of the legacy mode model
+// (kit / manual). The fixture below mirrors the new index.html surface:
+// three [data-start-path] buttons + the kit panel (hidden) + the custom
+// panel (hidden, aliased as data-manual-mode-panel for back-compat) +
+// the legacy radio picker as a hidden back-compat surface.
+function renderStepOneWithPathCards() {
+    document.body.innerHTML = `
+        <div id="webflash-a11y-live-region" role="status"></div>
+        <div id="step-1">
+            <div class="start-paths" data-start-paths>
+                <button type="button" data-start-path="kit">
+                    <span class="start-path-card__title">I bought a kit</span>
+                </button>
+                <button type="button" data-start-path="custom">
+                    <span class="start-path-card__title">Custom configuration</span>
+                </button>
+                <button type="button" data-start-path="recovery" data-rescue-open aria-haspopup="dialog">
+                    <span class="start-path-card__title">Recovery</span>
+                </button>
+            </div>
+            <fieldset class="config-mode-picker config-mode-picker--legacy" data-config-mode-picker aria-hidden="true" hidden>
+                <label><input type="radio" name="configMode" value="kit" data-config-mode-input checked></label>
+                <label><input type="radio" name="configMode" value="manual" data-config-mode-input></label>
+            </fieldset>
+            <section data-kit-mode-panel data-start-path-panel="kit" hidden>
+                <button type="button" data-start-path-back>&larr; Choose a different path</button>
+                <input type="search" id="kit-select-search" data-kit-select-search>
+                <datalist id="kit-select-options" data-kit-select-datalist></datalist>
+                <select id="kit-select" data-kit-select>
+                    <option value="">Select…</option>
+                </select>
+                <p data-kit-select-error hidden></p>
+                <div data-kit-summary hidden></div>
+                <button type="button" data-kit-mode-next disabled>Continue</button>
+                <button type="button" data-kit-mode-switch-manual>Switch to custom configuration</button>
+            </section>
+            <section data-manual-mode-panel data-custom-path-panel data-start-path-panel="custom" hidden>
+                <button type="button" data-start-path-back>&larr; Choose a different path</button>
+                <button type="button" data-next>Continue to Core</button>
+            </section>
+        </div>
+    `;
+}
+
+async function loadKitModeWithPathCards({ url = 'http://localhost/' } = {}) {
+    jest.resetModules();
+    const { history } = window;
+    history.replaceState(null, '', url);
+
+    jest.unstable_mockModule('../scripts/state.js', () => ({
+        getState: getStateMock,
+        setState: setStateMock,
+        setStep: setStepMock,
+        getMaxReachableStep: getMaxReachableStepMock
+    }));
+    jest.unstable_mockModule('../scripts/services/diagnostics.js', () => ({
+        setConfigurationMode: setConfigurationModeMock,
+        setSelectedKitSku: setSelectedKitSkuMock,
+        setActiveKitMetadata: setActiveKitMetadataMock
+    }));
+    jest.unstable_mockModule('../scripts/utils/a11y.js', () => ({
+        announce: announceMock
+    }));
+
+    global.fetch = jest.fn(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(sampleCatalog)
+    }));
+
+    const module = await import('../scripts/kit-mode.js');
+    await module.__testHooks.initKitMode();
+    return module;
+}
+
+describe('WF-UX-006 — Step 1 path selector', () => {
+    beforeEach(() => {
+        setStateMock.mockReset();
+        setStepMock.mockReset();
+        getStateMock.mockReset();
+        getStateMock.mockReturnValue({ mounting: null, power: null });
+        getMaxReachableStepMock.mockReset();
+        getMaxReachableStepMock.mockReturnValue(5);
+        announceMock.mockReset();
+        setConfigurationModeMock.mockReset();
+        setSelectedKitSkuMock.mockReset();
+        setActiveKitMetadataMock.mockReset();
+        renderStepOneWithPathCards();
+        return import('../scripts/utils/kit-config.js').then(({ resetCatalogCacheForTests }) => {
+            resetCatalogCacheForTests();
+        });
+    });
+
+    test('fresh load with the new path cards leaves both panels hidden and no path active', async () => {
+        const module = await loadKitModeWithPathCards();
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(kitPanel.hidden).toBe(true);
+        expect(customPanel.hidden).toBe(true);
+        expect(module.__testHooks.getCurrentPath()).toBeNull();
+    });
+
+    test('clicking the kit path button reveals the kit panel and records currentPath="kit"', async () => {
+        const module = await loadKitModeWithPathCards();
+        const kitButton = document.querySelector('[data-start-path="kit"]');
+        kitButton.click();
+
+        expect(module.__testHooks.getCurrentPath()).toBe('kit');
+        expect(module.__testHooks.getCurrentMode()).toBe('kit');
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(kitPanel.hidden).toBe(false);
+        expect(customPanel.hidden).toBe(true);
+        expect(setConfigurationModeMock).toHaveBeenCalledWith('kit');
+    });
+
+    test('clicking the custom path button reveals the custom panel and records currentPath="custom"', async () => {
+        const module = await loadKitModeWithPathCards();
+        const customButton = document.querySelector('[data-start-path="custom"]');
+        customButton.click();
+
+        expect(module.__testHooks.getCurrentPath()).toBe('custom');
+        // setPath('custom') delegates to setMode('manual') internally.
+        expect(module.__testHooks.getCurrentMode()).toBe('manual');
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(kitPanel.hidden).toBe(true);
+        expect(customPanel.hidden).toBe(false);
+        expect(setConfigurationModeMock).toHaveBeenCalledWith('manual');
+    });
+
+    test('clicking the recovery card records currentPath="recovery" without altering wizard mode', async () => {
+        const module = await loadKitModeWithPathCards();
+        // Recovery card carries data-rescue-open so the rescue-modal's
+        // delegated handler opens the dialog. setPath('recovery') itself
+        // does not call openRescueModal directly — it just records the
+        // path and announces. The kit panel and custom panel must stay
+        // hidden so the user can return to the path picker.
+        const recoveryButton = document.querySelector('[data-start-path="recovery"]');
+        recoveryButton.click();
+
+        expect(module.__testHooks.getCurrentPath()).toBe('recovery');
+        // setMode is NOT called for recovery — wizard configuration mode
+        // stays at its previous value (the kit-mode init default).
+        expect(setConfigurationModeMock).not.toHaveBeenCalledWith('recovery');
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(kitPanel.hidden).toBe(true);
+        expect(customPanel.hidden).toBe(true);
+    });
+
+    test('clicking the recovery card preserves the [data-rescue-open] attribute so the rescue modal handler fires', async () => {
+        await loadKitModeWithPathCards();
+        const recoveryButton = document.querySelector('[data-start-path="recovery"]');
+        // The rescue-modal click delegation lives in
+        // scripts/layout/rescue-modal.js (data-rescue-open). The card's
+        // attribute is the single source of truth that the delegation
+        // engages — verify it is present and not stripped by setPath.
+        expect(recoveryButton.hasAttribute('data-rescue-open')).toBe(true);
+        recoveryButton.click();
+        expect(recoveryButton.hasAttribute('data-rescue-open')).toBe(true);
+    });
+
+    test('switching from kit to custom via setPath clears kit diagnostics', async () => {
+        const module = await loadKitModeWithPathCards();
+        const kitButton = document.querySelector('[data-start-path="kit"]');
+        kitButton.click();
+        const select = document.querySelector('[data-kit-select]');
+        select.value = 'S360-KIT-A';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        expect(module.__testHooks.getActiveKitSku()).toBe('S360-KIT-A');
+
+        const customButton = document.querySelector('[data-start-path="custom"]');
+        customButton.click();
+        expect(module.__testHooks.getCurrentPath()).toBe('custom');
+        expect(module.__testHooks.getActiveKitSku()).toBeNull();
+        expect(setSelectedKitSkuMock).toHaveBeenLastCalledWith(null);
+    });
+
+    test('clicking the in-panel back button returns the user to path selection', async () => {
+        const module = await loadKitModeWithPathCards();
+        const kitButton = document.querySelector('[data-start-path="kit"]');
+        kitButton.click();
+        expect(module.__testHooks.getCurrentPath()).toBe('kit');
+
+        // Use the back link inside the kit panel.
+        const backBtn = document.querySelector('[data-kit-mode-panel] [data-start-path-back]');
+        backBtn.click();
+        expect(module.__testHooks.getCurrentPath()).toBeNull();
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(kitPanel.hidden).toBe(true);
+        expect(customPanel.hidden).toBe(true);
+    });
+
+    test('configmode=kit URL hydrates to kit path with kit panel visible', async () => {
+        const module = await loadKitModeWithPathCards({ url: 'http://localhost/?configmode=kit' });
+        expect(module.__testHooks.getCurrentPath()).toBe('kit');
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        expect(kitPanel.hidden).toBe(false);
+    });
+
+    test('configmode=kit&sku=… URL hydrates to kit path with kit pre-selected', async () => {
+        const module = await loadKitModeWithPathCards({ url: 'http://localhost/?configmode=kit&sku=S360-KIT-B' });
+        expect(module.__testHooks.getCurrentPath()).toBe('kit');
+        const select = document.querySelector('[data-kit-select]');
+        expect(select.value).toBe('S360-KIT-B');
+        expect(setStateMock).toHaveBeenCalled();
+    });
+
+    test('configmode=custom URL hydrates to custom path', async () => {
+        const module = await loadKitModeWithPathCards({ url: 'http://localhost/?configmode=custom' });
+        expect(module.__testHooks.getCurrentPath()).toBe('custom');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(customPanel.hidden).toBe(false);
+    });
+
+    test('configmode=manual URL is accepted as a back-compat alias for custom', async () => {
+        const module = await loadKitModeWithPathCards({ url: 'http://localhost/?configmode=manual' });
+        // Old share-links with configmode=manual hydrate to the new
+        // custom path so saved links keep resolving.
+        expect(module.__testHooks.getCurrentPath()).toBe('custom');
+        expect(module.__testHooks.getCurrentMode()).toBe('manual');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(customPanel.hidden).toBe(false);
+    });
+
+    test('manual share link with mount/power params hydrates to custom path', async () => {
+        const module = await loadKitModeWithPathCards({ url: 'http://localhost/?mount=ceiling&power=usb' });
+        expect(module.__testHooks.getCurrentPath()).toBe('custom');
+        expect(module.__testHooks.getCurrentMode()).toBe('manual');
+    });
+
+    test('fresh visit with no URL params leaves both panels hidden (user picks a card)', async () => {
+        const module = await loadKitModeWithPathCards({ url: 'http://localhost/' });
+        expect(module.__testHooks.getCurrentPath()).toBeNull();
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(kitPanel.hidden).toBe(true);
+        expect(customPanel.hidden).toBe(true);
+    });
+
+    test('setPath is exposed via __testHooks and only accepts known path values', async () => {
+        const module = await loadKitModeWithPathCards();
+        expect(typeof module.__testHooks.setPath).toBe('function');
+
+        module.__testHooks.setPath('kit');
+        expect(module.__testHooks.getCurrentPath()).toBe('kit');
+
+        module.__testHooks.setPath('custom');
+        expect(module.__testHooks.getCurrentPath()).toBe('custom');
+
+        module.__testHooks.setPath('recovery');
+        expect(module.__testHooks.getCurrentPath()).toBe('recovery');
+
+        // Unknown path values are ignored — the current path stays as it was.
+        module.__testHooks.setPath('garbage');
+        expect(module.__testHooks.getCurrentPath()).toBe('recovery');
+    });
+});

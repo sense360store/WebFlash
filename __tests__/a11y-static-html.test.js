@@ -676,3 +676,160 @@ describe('WF-UX-005 — step model cleanup', () => {
         }
     });
 });
+
+describe('WF-UX-006 — Step 1 kit / custom / recovery path split', () => {
+    // WF-UX-006 makes Step 1 the path split between (a) the supported kit,
+    // (b) custom planning, and (c) recovery. The split is presentation-only:
+    // no firmware / manifest / sources / kit / release-channel / workflow
+    // surface changes. These pins lock the static markup contract so a
+    // future restructure can't silently regress the three-button surface.
+
+    test('Step 1 exposes exactly three [data-start-path] buttons', () => {
+        const step1 = document.getElementById('step-1');
+        expect(step1).not.toBeNull();
+        const buttons = step1.querySelectorAll('[data-start-path]');
+        expect(buttons.length).toBe(3);
+        const paths = Array.from(buttons).map(btn => btn.getAttribute('data-start-path'));
+        expect(paths).toEqual(['kit', 'custom', 'recovery']);
+    });
+
+    test('each path button is a real <button type="button">', () => {
+        const buttons = document.querySelectorAll('[data-start-path]');
+        buttons.forEach(button => {
+            expect(button.tagName).toBe('BUTTON');
+            expect(button.getAttribute('type')).toBe('button');
+        });
+    });
+
+    test('kit path button uses the canonical "I bought a kit" copy', () => {
+        const kitButton = document.querySelector('[data-start-path="kit"]');
+        expect(kitButton).not.toBeNull();
+        expect(kitButton.textContent).toMatch(/I bought a kit/);
+        // Description copy: avoid implying unsupported modules are
+        // installable; reference Release-One hardware as the prefill.
+        expect(kitButton.textContent).toMatch(/Release-One/);
+    });
+
+    test('custom path button uses the canonical "Custom configuration" copy + WF-WIZARD-AVAIL-001-aligned warning', () => {
+        const customButton = document.querySelector('[data-start-path="custom"]');
+        expect(customButton).not.toBeNull();
+        expect(customButton.textContent).toMatch(/Custom configuration/);
+        // The custom-path description must name the unavailable-module
+        // caveat in plain language — no "advanced users only" hedging.
+        expect(customButton.textContent).toMatch(/Some modules are not yet available in WebFlash/);
+    });
+
+    test('recovery path button uses the canonical "Recovery" copy and an explicit recovery warning', () => {
+        const recoveryButton = document.querySelector('[data-start-path="recovery"]');
+        expect(recoveryButton).not.toBeNull();
+        expect(recoveryButton.textContent).toMatch(/Recovery/);
+        // Risk-specific copy: never say "advanced" without naming the
+        // bootloader/recovery-repair use case.
+        expect(recoveryButton.textContent).toMatch(/Use this only for recovery or bootloader repair/);
+    });
+
+    test('recovery path button delegates to the existing rescue modal via data-rescue-open', () => {
+        // WF-UX-006 must NOT change rescue firmware logic. The recovery
+        // card piggybacks on the existing delegated handler in
+        // scripts/layout/rescue-modal.js (data-rescue-open).
+        const recoveryButton = document.querySelector('[data-start-path="recovery"]');
+        expect(recoveryButton.hasAttribute('data-rescue-open')).toBe(true);
+        expect(recoveryButton.getAttribute('aria-haspopup')).toBe('dialog');
+    });
+
+    test('each path button has an accessible description', () => {
+        const buttons = document.querySelectorAll('[data-start-path]');
+        buttons.forEach(button => {
+            const describedBy = button.getAttribute('aria-describedby');
+            expect(describedBy).toBeTruthy();
+            const descriptionEl = document.getElementById(describedBy);
+            expect(descriptionEl).not.toBeNull();
+            expect(descriptionEl.textContent.trim().length).toBeGreaterThan(0);
+        });
+    });
+
+    test('Step 1 H2 still reads "Start with your hardware" (WF-UX-005 invariant)', () => {
+        const heading = document.getElementById('step-1-heading');
+        expect(heading).not.toBeNull();
+        expect(heading.textContent.trim()).toBe('Start with your hardware');
+    });
+
+    test('Step 1 keeps the hidden data-mounting-default ceiling input', () => {
+        // Preserved across WF-UX-006 because state.js + share-link parsing
+        // still rely on ceiling being the implicit default mounting value.
+        const step1 = document.getElementById('step-1');
+        const mountingDefault = step1.querySelector('input[data-mounting-default]');
+        expect(mountingDefault).not.toBeNull();
+        expect(mountingDefault.getAttribute('value')).toBe('ceiling');
+    });
+
+    test('kit panel is hidden by default and revealed on kit-path selection', () => {
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        expect(kitPanel).not.toBeNull();
+        // Static markup: hidden until the kit card is clicked. The
+        // kit-mode controller toggles this via setPath('kit').
+        expect(kitPanel.hasAttribute('hidden')).toBe(true);
+        expect(kitPanel.getAttribute('data-start-path-panel')).toBe('kit');
+    });
+
+    test('custom panel is hidden by default and revealed on custom-path selection', () => {
+        // The custom panel preserves the [data-manual-mode-panel] hook so
+        // existing kit-mode tests and saved share-links keep parsing.
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(customPanel).not.toBeNull();
+        expect(customPanel.hasAttribute('hidden')).toBe(true);
+        expect(customPanel.getAttribute('data-start-path-panel')).toBe('custom');
+        // Back-compat alias.
+        expect(customPanel.hasAttribute('data-manual-mode-panel')).toBe(true);
+    });
+
+    test('the recommended preset survives inside the kit panel as the no-SKU fallback', () => {
+        const kitPanel = document.querySelector('[data-kit-mode-panel]');
+        const recommendedPreset = kitPanel.querySelector('[data-preset="recommended"]');
+        expect(recommendedPreset).not.toBeNull();
+        // WF-UX-002 invariant: the "Most popular" badge stays on the
+        // recommended preset button. WF-UX-006 just relocates it from the
+        // legacy manual panel into the kit-panel no-SKU fallback section.
+        const badge = recommendedPreset.querySelector('.quick-start-card__badge');
+        expect(badge).not.toBeNull();
+        expect(badge.textContent.trim()).toBe('Most popular');
+        // The preset still resolves to Release-One — never LED, never an
+        // unsupported config.
+        const config = JSON.parse(recommendedPreset.getAttribute('data-preset-config'));
+        expect(config.led || 'none').toBe('none');
+        expect(config.fan || 'none').toBe('none');
+        expect(config.airiq || 'none').toBe('none');
+        expect(config.ventiq).toBe('ventiq');
+        expect(config.roomiq).toBe('roomiq');
+    });
+
+    test('custom panel does not introduce a customer-facing Voice card', () => {
+        // Voice stays hidden / legacy-only per WF-WIZARD-AVAIL-001.
+        const customPanel = document.querySelector('[data-custom-path-panel]');
+        expect(customPanel).not.toBeNull();
+        const voiceMentions = customPanel.querySelectorAll('input[name="voice"]:not([type="hidden"])');
+        expect(voiceMentions.length).toBe(0);
+    });
+
+    test('TRIAC card is still rendered in Step 4 markup (WF-WIZARD-AVAIL-001 invariant unchanged)', () => {
+        // WF-UX-006 does not alter Step 4 module availability gating.
+        const triacCard = document.querySelector(
+            '.module-card[data-module-card="fan"][data-variant="triac"]'
+        );
+        expect(triacCard).not.toBeNull();
+        expect(triacCard.textContent).toMatch(/S360-320/);
+    });
+
+    test('legacy [data-config-mode-picker] radios are retained only as a hidden back-compat surface', () => {
+        // WF-UX-006: the new path cards own the customer-facing surface.
+        // The legacy [data-config-mode-input] radios are kept (hidden) so
+        // the kit-mode change-listener and older share-links keep working.
+        const legacyPicker = document.querySelector('[data-config-mode-picker]');
+        expect(legacyPicker).not.toBeNull();
+        // The picker is removed from the accessibility tree and is not
+        // visible to users.
+        expect(legacyPicker.classList.contains('config-mode-picker--legacy')).toBe(true);
+        expect(legacyPicker.hasAttribute('hidden')).toBe(true);
+        expect(legacyPicker.getAttribute('aria-hidden')).toBe('true');
+    });
+});

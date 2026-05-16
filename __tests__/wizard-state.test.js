@@ -996,3 +996,299 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(result.selectable).toBe(true);
     });
 });
+
+describe('WF-UX-006 — kit path resolves only to Release-One', () => {
+    // Kit-path invariant: applying the Sense360 Ceiling VentIQ + RoomIQ PoE
+    // kit must produce config_string === "Ceiling-POE-VentIQ-RoomIQ", LED
+    // must stay 'none', AirIQ must stay 'none', fan must stay 'none'.
+    // WF-UX-006 changes the Step-1 surface, NOT the kit catalogue or the
+    // config-string grammar.
+    //
+    // The fixture below mirrors enough of the production Step 4 markup
+    // (bathroom checkbox, VentIQ + RoomIQ radios) for the wizard's
+    // syncConfigurationFromInputs() pass to preserve the kit-applied
+    // ventiq + bathroom values. Without the bathroom checkbox in the
+    // DOM, sync zeroes both back to 'none'/false; the production wizard
+    // does have the checkbox, so this rig faithfully simulates kit flow.
+
+    function renderKitPathDom() {
+        document.body.innerHTML = `
+            <div id="step-1" class="wizard-step">
+                <input type="radio" name="voice" value="none" checked>
+            </div>
+            <div id="step-2" class="wizard-step" hidden>
+                <input type="radio" name="mounting" value="ceiling">
+            </div>
+            <div id="step-3" class="wizard-step" hidden>
+                <input type="radio" name="power" value="poe">
+            </div>
+            <div id="step-4" class="wizard-step" hidden>
+                <div id="module-availability-hint"></div>
+                <input type="checkbox" name="bathroom">
+                <section class="module-group" data-module-group="roomiq" id="roomiq-module-section">
+                    <input type="radio" name="roomiq" value="none" checked>
+                    <input type="radio" name="roomiq" value="roomiq">
+                </section>
+                <section class="module-group" data-module-group="airiq" id="airiq-module-section">
+                    <input type="radio" name="airiq" value="none" checked>
+                    <input type="radio" name="airiq" value="airiq">
+                </section>
+                <section class="module-group" data-module-group="ventiq" id="ventiq-module-section">
+                    <input type="radio" name="ventiq" value="none" checked>
+                    <input type="radio" name="ventiq" value="ventiq">
+                </section>
+                <section class="module-group" data-module-group="led" id="led-module-section">
+                    <input type="radio" name="led" value="none" checked>
+                    <input type="radio" name="led" value="led">
+                </section>
+                <section class="module-group" data-module-group="fan" id="fan-module-section">
+                    <input type="radio" name="fan" value="none" checked>
+                    <input type="radio" name="fan" value="relay">
+                    <input type="radio" name="fan" value="pwm">
+                    <input type="radio" name="fan" value="analog">
+                    <input type="radio" name="fan" value="triac">
+                </section>
+            </div>
+            <div id="step-5" class="wizard-step" hidden></div>
+        `;
+    }
+
+    beforeEach(() => {
+        jest.resetModules();
+        window.history.replaceState(null, '', '/');
+        renderKitPathDom();
+        global.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(minimalManifest)
+        }));
+    });
+
+    test('Release-One kit prefill produces config_string Ceiling-POE-VentIQ-RoomIQ', async () => {
+        const stateModule = await import('../scripts/state.js');
+        // Mirror what scripts/kit-mode.js applyKitToWizard() does after a
+        // kit is selected: clear stale module picks, then setState with
+        // the kit's wizard_state. Sourced verbatim from
+        // scripts/data/kits.json (S360-KIT-CEILING-VENTIQ-ROOMIQ-POE).
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            bathroom: true,
+            airiq: 'none',
+            ventiq: 'ventiq',
+            roomiq: 'roomiq',
+            fan: 'none',
+            led: 'none',
+            voice: 'none'
+        });
+
+        const state = stateModule.getState();
+        expect(state.mounting).toBe('ceiling');
+        expect(state.power).toBe('poe');
+        expect(state.bathroom).toBe(true);
+        expect(state.ventiq).toBe('ventiq');
+        expect(state.roomiq).toBe('roomiq');
+        // Kit path never opts into LED — the LED preview stays gated by
+        // the Step 4 toggle + preview-channel acknowledgement.
+        expect(state.led).toBe('none');
+        // Kit path never opts into AirIQ — VentIQ is the bathroom-mode pair.
+        expect(state.airiq).toBe('none');
+        // Kit path never opts into any fan driver.
+        expect(state.fan).toBe('none');
+        // Voice stays hidden / legacy-only per WF-WIZARD-AVAIL-001.
+        expect(state.voice).toBe('none');
+
+        const configString = stateModule.__testHooks.buildFirmwareTargetPreviewString(state);
+        expect(configString).toBe('Ceiling-POE-VentIQ-RoomIQ');
+    });
+
+    test('Release-One kit prefill makes Step 5 reachable end-to-end', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            bathroom: true,
+            ventiq: 'ventiq',
+            roomiq: 'roomiq',
+            airiq: 'none',
+            fan: 'none',
+            led: 'none'
+        });
+        expect(stateModule.getMaxReachableStep()).toBe(5);
+    });
+
+    test('Release-One kit config string does not contain FanTRIAC, LED, or AirIQ tokens', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            bathroom: true,
+            ventiq: 'ventiq',
+            roomiq: 'roomiq',
+            airiq: 'none',
+            fan: 'none',
+            led: 'none'
+        });
+        const configString = stateModule.__testHooks.buildFirmwareTargetPreviewString(stateModule.getState());
+        // FanTRIAC remains blocked under HW-005 + COMPLIANCE-001.
+        expect(configString.toLowerCase()).not.toContain('fantriac');
+        // LED stays excluded from Release-One.
+        expect(configString).not.toMatch(/(^|-)LED(-|$)/);
+        // AirIQ is mutually exclusive with VentIQ.
+        expect(configString).not.toMatch(/(^|-)AirIQ(-|$)/);
+    });
+});
+
+describe('WF-UX-006 — custom path preserves unavailable-module honesty', () => {
+    // Custom-path invariant: the Step-4 module-availability classifier
+    // (WF-WIZARD-AVAIL-001) keeps marking documented-but-not-installable
+    // modules with their availability pills. WF-UX-006 must not regress
+    // any of those classifications when the user picks the custom card.
+
+    function renderAvailabilityDom() {
+        document.body.innerHTML = `
+            <div id="step-1" class="wizard-step">
+                <input type="radio" name="voice" value="none" checked>
+            </div>
+            <div id="step-3" class="wizard-step" hidden>
+                <input type="radio" name="power" value="poe">
+            </div>
+            <div id="step-4" class="wizard-step" hidden>
+                <div id="module-availability-hint"></div>
+                <section class="module-group module-group--toggle" data-module-group="roomiq" id="roomiq-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="roomiq" data-variant-on="roomiq">
+                        <span class="module-group__summary-text">
+                            <span class="module-group__title">Sense360 RoomIQ</span>
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <span class="availability-detail" data-module-availability-detail hidden></span>
+                        </span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="roomiq" value="none" checked>
+                        <input type="radio" name="roomiq" value="roomiq">
+                    </div>
+                </section>
+                <section class="module-group module-group--toggle" data-module-group="airiq" id="airiq-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="airiq" data-variant-on="airiq">
+                        <span class="module-group__summary-text">
+                            <span class="module-group__title">Sense360 AirIQ</span>
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <span class="availability-detail" data-module-availability-detail hidden></span>
+                        </span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="airiq" value="none" checked>
+                        <input type="radio" name="airiq" value="airiq">
+                    </div>
+                </section>
+                <section class="module-group module-group--toggle" data-module-group="led" id="led-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="led" data-variant-on="led">
+                        <span class="module-group__summary-text">
+                            <span class="module-group__title">Sense360 LED</span>
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <span class="availability-detail" data-module-availability-detail hidden></span>
+                        </span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="led" value="none" checked>
+                        <input type="radio" name="led" value="led">
+                    </div>
+                </section>
+                <section class="module-group" data-module-group="fan" id="fan-module-section">
+                    <label class="module-card option-card" data-module-card="fan" data-variant="none">
+                        <input type="radio" name="fan" value="none" checked>
+                        <div class="module-card__inner"></div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="relay">
+                        <input type="radio" name="fan" value="relay">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="pwm">
+                        <input type="radio" name="fan" value="pwm">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="analog">
+                        <input type="radio" name="fan" value="analog">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="triac">
+                        <input type="radio" name="fan" value="triac">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                </section>
+            </div>
+            <div id="step-5" class="wizard-step" hidden></div>
+        `;
+    }
+
+    const currentManifest = {
+        builds: [
+            { config_string: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable', chipFamily: 'ESP32-S3', parts: [{ path: 'a.bin', offset: 0 }] },
+            { config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'b.bin', offset: 0 }] },
+            { config_string: 'Rescue', channel: 'rescue', chipFamily: 'ESP32-S3', parts: [{ path: 'c.bin', offset: 0 }] }
+        ]
+    };
+
+    beforeEach(() => {
+        jest.resetModules();
+        window.history.replaceState(null, '', '/');
+        renderAvailabilityDom();
+        global.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(currentManifest)
+        }));
+    });
+
+    test('TRIAC stays blocked under the custom path', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+        const result = stateModule.__testHooks.classifyVariantForRender('fan', 'triac');
+        expect(result.state).toBe('blocked');
+        expect(result.installable).toBe(false);
+    });
+
+    test('LED stays available-preview (preview-channel acknowledgement gate intact)', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+        const result = stateModule.__testHooks.classifyVariantForRender('led', 'led');
+        expect(result.state).toBe('available-preview');
+    });
+
+    test('AirIQ stays no-firmware (no install path even in custom mode)', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+        const result = stateModule.__testHooks.classifyVariantForRender('airiq', 'airiq');
+        expect(result.state).toBe('no-firmware');
+        expect(result.installable).toBe(false);
+    });
+
+    test('Relay stays design-pending and PWM / DAC stay no-firmware', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'relay').state).toBe('design-pending');
+        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'pwm').state).toBe('no-firmware');
+        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'analog').state).toBe('no-firmware');
+    });
+});
