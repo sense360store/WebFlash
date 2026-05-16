@@ -680,14 +680,18 @@ moment of deploy will see the new manifest within one page load.
 * [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — WF-UX-001
   live-wizard UX audit. Its "Live vs in-repo snapshot" section
   consumes the live-vs-repo delta captured here as the basis for the
-  PR roadmap (`WF-UX-QUICK-001` through `WF-UX-007` plus
-  `WF-HW-TEST-001`). Refresh that section in lockstep with this audit
-  whenever a new deploy lands on GitHub Pages.
+  PR roadmap (`WF-UX-QUICK-001` through `WF-UX-007` plus the
+  operator-only `WF-HW-TEST-001` / `WF-HW-TEST-002` chain). Refresh
+  that section in lockstep with this audit whenever a new deploy
+  lands on GitHub Pages.
 * [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) —
-  WF-HW-TEST-001 operator-validation container for the LED preview
-  flash path. Records the post-WF-DEPLOY-001 live-deployment snapshot
-  used as pre-flight evidence; hardware flash status is
-  **pending — operator hardware test required**.
+  operator-validation container for the LED preview flash path.
+  WF-HW-TEST-001 recorded the post-WF-DEPLOY-001 live-deployment
+  snapshot as pre-flight evidence and the operator procedure;
+  WF-HW-TEST-002 was the planned operator-evidence-collection
+  follow-up but **no operator evidence was supplied**, so hardware
+  flash status remains **pending — operator hardware test required**
+  and no row was flipped to a recorded outcome by WF-HW-TEST-002.
 * [`docs/product-import-readiness.md`](product-import-readiness.md) —
   WF-PRODUCT-004 advisory validator that classifies upstream
   product-catalog entries against the four WebFlash eligibility
