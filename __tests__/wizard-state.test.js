@@ -240,7 +240,9 @@ describe('wizard state module', () => {
         const step4 = document.querySelector('.progress-step[data-step="4"]');
         const step5 = document.querySelector('.progress-step[data-step="5"]');
 
-        // Without mounting/power: can reach Core (1) and Mounting (2)
+        // Without mounting/power: max reachable is Step 2 (Core). Step 1
+        // (Start) is always reachable; Step 2 unlocks once mounting is set
+        // — see getMaxReachableStep() in scripts/state.js.
         expect(step1.dataset.reachable).toBe('true');
         expect(step2.dataset.reachable).toBe('true');
         expect(step3.dataset.reachable).toBe('false');
@@ -373,7 +375,8 @@ describe('wizard state module', () => {
         stateModule.replaceState(stateModule.getDefaultState(), { skipUrlUpdate: true });
         stateModule.setStep(1, { animate: false, skipUrlUpdate: true });
 
-        // Without mounting/power, max reachable is 2 (Core + Mounting)
+        // Without mounting/power, max reachable is Step 2 (Core). Step 1
+        // (Start) is always reachable; Step 2 unlocks once mounting is set.
         expect(stateModule.getMaxReachableStep()).toBe(2);
         const step4 = document.querySelector('.progress-step[data-step="4"]');
         const step5 = document.querySelector('.progress-step[data-step="5"]');
@@ -491,7 +494,7 @@ describe('wizard state module', () => {
         expect(stateModule.getState().voice).toBe('none');
     });
 
-    test('fresh visit with no URL params lands on Step 1: Get started', async () => {
+    test('fresh visit with no URL params lands on Step 1: Start', async () => {
         window.history.replaceState(null, '', '/');
 
         const stateModule = await import('../scripts/state.js');

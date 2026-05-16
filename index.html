@@ -123,7 +123,7 @@
                                     <span class="step-number">1</span>
                                 </span>
                                 <span class="wizard-stepper__text">
-                                    <span class="step-label">Get started</span>
+                                    <span class="step-label">Start</span>
                                 </span>
                             </a>
                         </li>
@@ -174,7 +174,7 @@
                     <div class="progress-bar progress-bar--mobile" aria-hidden="true">
                         <div class="progress-step active" data-step="1" data-reachable="true">
                             <div class="step-number">1</div>
-                            <div class="step-label">Mounting</div>
+                            <div class="step-label">Start</div>
                         </div>
                         <div class="progress-step" data-step="2" data-reachable="false">
                             <div class="step-number">2</div>
@@ -194,58 +194,9 @@
                         </div>
                     </div>
 
-                    <!-- Step 2: Core Configuration -->
-                    <div class="wizard-step step" id="step-2" role="region" aria-labelledby="step-2-heading" hidden aria-hidden="true">
-                <h2 id="step-2-heading">Configure your Core</h2>
-                <p class="step-intro">Choose the base Sense360 hub family before selecting power and expansion modules.</p>
-
-                <aside class="safety-notice" aria-label="Important safety information">
-                    <div class="safety-notice__icon" aria-hidden="true">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                        </svg>
-                    </div>
-                    <div class="safety-notice__content">
-                        <strong>Before you begin:</strong> Use desktop Chrome, Edge, or Opera. During flashing, <strong>do not disconnect power</strong> and keep this browser tab open.
-                    </div>
-                </aside>
-
-                <section class="core-config-section" aria-label="Core type configuration">
-                    <h3 class="core-config-section__title">Core Type</h3>
-                    <p class="core-config-section__description">Select your Sense360 core hardware variant.</p>
-                    <div class="option-grid">
-                        <label class="option-card">
-                            <input type="radio" name="voice" value="none" checked>
-                            <div class="option-content">
-                                <div class="option-header">
-                                    <div class="option-title">Core</div>
-                                    <button
-                                        type="button"
-                                        class="option-info-button"
-                                        data-option-info
-                                        data-option-group="core"
-                                        data-option-value="standard"
-                                        aria-label="Details about Core"
-                                        aria-controls="option-info-popover"
-                                        aria-describedby="option-info-popover-summary"
-                                    >
-                                        <span aria-hidden="true">i</span>
-                                    </button>
-                                </div>
-                                <div class="option-description">Standard Sense360 core module without voice hardware.</div>
-                            </div>
-                        </label>
-                    </div>
-                </section>
-
-                <div class="wizard-actions">
-                    <button class="btn btn-primary btn-next" type="button" data-next>Next</button>
-                </div>
-                    </div>
-
-                    <!-- Step 1: Get started -->
+                    <!-- Step 1: Start -->
                     <div class="wizard-step step" id="step-1" role="region" aria-labelledby="step-1-heading">
-                <h2 id="step-1-heading">Pick a starting point</h2>
+                <h2 id="step-1-heading">Start with your hardware</h2>
                 <p class="step-intro">Choose how you want to configure WebFlash. Pick your kit or SKU if you bought a Sense360 bundle, or jump into the manual flow if you know your exact modules.</p>
 
                 <fieldset class="config-mode-picker" data-config-mode-picker aria-describedby="config-mode-picker-help">
@@ -319,9 +270,58 @@
                 </p>
                     </div>
 
-                    <!-- Step 3: Power Option -->
+                    <!-- Step 2: Core -->
+                    <div class="wizard-step step" id="step-2" role="region" aria-labelledby="step-2-heading" hidden aria-hidden="true">
+                <h2 id="step-2-heading">Confirm your Core</h2>
+                <p class="step-intro">Choose the base Sense360 hub family before selecting power and expansion modules.</p>
+
+                <aside class="safety-notice" aria-label="Important safety information">
+                    <div class="safety-notice__icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="safety-notice__content">
+                        <strong>Before you begin:</strong> Use desktop Chrome, Edge, or Opera. During flashing, <strong>do not disconnect power</strong> and keep this browser tab open.
+                    </div>
+                </aside>
+
+                <section class="core-config-section" aria-label="Core type configuration">
+                    <h3 class="core-config-section__title">Core Type</h3>
+                    <p class="core-config-section__description">Select your Sense360 core hardware variant.</p>
+                    <div class="option-grid">
+                        <label class="option-card">
+                            <input type="radio" name="voice" value="none" checked>
+                            <div class="option-content">
+                                <div class="option-header">
+                                    <div class="option-title">Core</div>
+                                    <button
+                                        type="button"
+                                        class="option-info-button"
+                                        data-option-info
+                                        data-option-group="core"
+                                        data-option-value="standard"
+                                        aria-label="Details about Core"
+                                        aria-controls="option-info-popover"
+                                        aria-describedby="option-info-popover-summary"
+                                    >
+                                        <span aria-hidden="true">i</span>
+                                    </button>
+                                </div>
+                                <div class="option-description">Standard Sense360 core module without voice hardware.</div>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <div class="wizard-actions">
+                    <button class="btn btn-primary btn-next" type="button" data-next>Next</button>
+                </div>
+                    </div>
+
+                    <!-- Step 3: Power -->
                     <div class="wizard-step step" id="step-3" role="region" aria-labelledby="step-3-heading" hidden aria-hidden="true">
-                <h2 id="step-3-heading">How is the hub powered?</h2>
+                <h2 id="step-3-heading">Choose power</h2>
                 <p class="step-intro">Pick how this unit will get power in the field. This affects cable planning and available accessories.</p>
                 <div class="option-grid">
                     <label class="option-card">
@@ -394,9 +394,9 @@
                 </div>
                     </div>
 
-                <!-- Step 4: Expansion Modules -->
+                <!-- Step 4: Modules -->
                 <div class="wizard-step step" id="step-4" role="region" aria-labelledby="step-4-heading" hidden aria-hidden="true">
-                <h2 id="step-4-heading">Add expansion modules</h2>
+                <h2 id="step-4-heading">Pick modules</h2>
                 <div class="module-status-bar" id="module-availability-hint" role="status" aria-live="polite">
                     Select a mounting and power option to see supported expansion modules.
                 </div>
@@ -737,9 +737,9 @@
                 </div>
                     </div>
 
-                    <!-- Step 5: Review & Install -->
+                    <!-- Step 5: Review -->
                     <div class="wizard-step step" id="step-5" role="region" aria-labelledby="step-5-heading" hidden aria-hidden="true">
-                <h2 id="step-5-heading">Review &amp; install</h2>
+                <h2 id="step-5-heading">Review and install</h2>
 
                 <p class="step-intro">
                     Use desktop Chrome, Edge, or Opera to connect your Sense360 hub. Then click &lsquo;Install firmware&rsquo;. If you&rsquo;re not on a supported browser, download the .bin instead.

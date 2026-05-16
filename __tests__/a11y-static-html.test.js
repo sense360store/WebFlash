@@ -521,3 +521,158 @@ describe('WF-WIZARD-AVAIL-001 — module availability pill slots in static index
         expect(triacCard.textContent).toMatch(/S360-320/);
     });
 });
+
+describe('WF-UX-005 — step model cleanup', () => {
+    // Canonical mapping pinned for this PR:
+    //   Step | Stepper label | H2 heading
+    //   1    | Start         | Start with your hardware
+    //   2    | Core          | Confirm your Core
+    //   3    | Power         | Choose power
+    //   4    | Modules       | Pick modules
+    //   5    | Review        | Review and install
+    const STEPPER_LABELS = ['Start', 'Core', 'Power', 'Modules', 'Review'];
+    const H2_HEADINGS = [
+        'Start with your hardware',
+        'Confirm your Core',
+        'Choose power',
+        'Pick modules',
+        'Review and install'
+    ];
+
+    test('wizard step panels appear in DOM source order 1 → 5', () => {
+        const main = document.getElementById('main-content');
+        expect(main).not.toBeNull();
+        const panels = Array.from(main.querySelectorAll(':scope > .wizard-step'));
+        expect(panels.length).toBe(5);
+        panels.forEach((panel, index) => {
+            expect(panel.id).toBe(`step-${index + 1}`);
+        });
+    });
+
+    test('Step 2 does not precede Step 1 in DOM source order', () => {
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        expect(step1).not.toBeNull();
+        expect(step2).not.toBeNull();
+        // step-1 must come before step-2 in document order.
+        expect(step1.compareDocumentPosition(step2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    test('desktop sidebar stepper carries the canonical short labels in order', () => {
+        const items = Array.from(document.querySelectorAll('.wizard-stepper__list > .wizard-stepper__item'));
+        expect(items.length).toBe(5);
+        items.forEach((item, index) => {
+            const anchor = item.querySelector('.wizard-stepper__node[data-step]');
+            expect(anchor).not.toBeNull();
+            expect(anchor.getAttribute('data-step')).toBe(String(index + 1));
+            const label = anchor.querySelector('.step-label');
+            expect(label).not.toBeNull();
+            expect(label.textContent.trim()).toBe(STEPPER_LABELS[index]);
+        });
+    });
+
+    test('mobile progress bar carries the canonical short labels in order', () => {
+        const items = Array.from(document.querySelectorAll('.progress-bar--mobile .progress-step[data-step]'));
+        expect(items.length).toBe(5);
+        items.forEach((item, index) => {
+            expect(item.getAttribute('data-step')).toBe(String(index + 1));
+            const label = item.querySelector('.step-label');
+            expect(label).not.toBeNull();
+            expect(label.textContent.trim()).toBe(STEPPER_LABELS[index]);
+        });
+    });
+
+    test('desktop and mobile stepper labels match step-for-step', () => {
+        const desktop = Array.from(document.querySelectorAll('.wizard-stepper__list .wizard-stepper__node .step-label'))
+            .map(el => el.textContent.trim());
+        const mobile = Array.from(document.querySelectorAll('.progress-bar--mobile .progress-step .step-label'))
+            .map(el => el.textContent.trim());
+        expect(desktop).toEqual(STEPPER_LABELS);
+        expect(mobile).toEqual(STEPPER_LABELS);
+        expect(desktop).toEqual(mobile);
+    });
+
+    test('every step h2 carries the canonical descriptive heading', () => {
+        for (let i = 1; i <= 5; i++) {
+            const heading = document.getElementById(`step-${i}-heading`);
+            expect(heading).not.toBeNull();
+            expect(heading.tagName).toBe('H2');
+            expect(heading.textContent.trim()).toBe(H2_HEADINGS[i - 1]);
+        }
+    });
+
+    test('legacy step-1 labels and headings are gone from static index.html', () => {
+        // Desktop stepper used to say "Get started", mobile said "Mounting",
+        // and the h2 said "Pick a starting point". None survive WF-UX-005.
+        const desktopLabels = Array.from(document.querySelectorAll('.wizard-stepper__list .step-label'))
+            .map(el => el.textContent.trim());
+        const mobileLabels = Array.from(document.querySelectorAll('.progress-bar--mobile .step-label'))
+            .map(el => el.textContent.trim());
+        expect(desktopLabels).not.toContain('Get started');
+        expect(mobileLabels).not.toContain('Mounting');
+
+        const step1Heading = document.getElementById('step-1-heading');
+        expect(step1Heading.textContent.trim()).not.toBe('Pick a starting point');
+        expect(step1Heading.textContent.trim()).not.toBe('Get started');
+    });
+
+    test('legacy step-2/step-3/step-4/step-5 headings are gone from static index.html', () => {
+        const legacyByStep = {
+            2: 'Configure your Core',
+            3: 'How is the hub powered?',
+            4: 'Add expansion modules'
+        };
+        for (const [step, legacy] of Object.entries(legacyByStep)) {
+            const heading = document.getElementById(`step-${step}-heading`);
+            expect(heading.textContent.trim()).not.toBe(legacy);
+        }
+        // Step 5 used to render the ampersand entity "Review &amp; install";
+        // the canonical heading drops the ampersand for "Review and install".
+        const step5Heading = document.getElementById('step-5-heading');
+        expect(step5Heading.textContent.trim()).toBe('Review and install');
+    });
+
+    test('Step 1 keeps the hidden mounting=ceiling default input', () => {
+        // Mounting is the only supported value (Ceiling per CLAUDE.md) and
+        // is auto-applied as the default. The hidden input is what lets
+        // getMaxReachableStep() unlock Step 3 without a visible mounting
+        // picker on Step 1.
+        const step1 = document.getElementById('step-1');
+        expect(step1).not.toBeNull();
+        const mountingDefault = step1.querySelector('input[type="hidden"][name="mounting"][value="ceiling"][data-mounting-default]');
+        expect(mountingDefault).not.toBeNull();
+    });
+
+    test('Step 2 keeps the voice=none Core radio for share-link back-compat', () => {
+        // WF-WIZARD-AVAIL-001 + CLAUDE.md: voice='none' is the Core
+        // placeholder retained so legacy ?voice= share links still parse.
+        // WF-UX-005 must not collapse Step 2 or remove this radio.
+        const step2 = document.getElementById('step-2');
+        expect(step2).not.toBeNull();
+        const voiceRadio = step2.querySelector('input[type="radio"][name="voice"][value="none"]');
+        expect(voiceRadio).not.toBeNull();
+        expect(voiceRadio.hasAttribute('checked')).toBe(true);
+    });
+
+    test('data-step + aria-labelledby wiring is unchanged for every step', () => {
+        // Pin the IDs and ARIA wiring so a future restructure can't silently
+        // detach the stepper from the panels. The numeric IDs are what
+        // setStep() / getMaxReachableStep() rely on (state.js + navigation.js).
+        for (let i = 1; i <= 5; i++) {
+            const panel = document.getElementById(`step-${i}`);
+            expect(panel).not.toBeNull();
+            expect(panel.getAttribute('aria-labelledby')).toBe(`step-${i}-heading`);
+
+            const stepperAnchor = document.querySelector(
+                `.wizard-stepper__list .wizard-stepper__node[data-step="${i}"]`
+            );
+            expect(stepperAnchor).not.toBeNull();
+            expect(stepperAnchor.getAttribute('href')).toBe(`#step-${i}`);
+
+            const mobileNode = document.querySelector(
+                `.progress-bar--mobile .progress-step[data-step="${i}"]`
+            );
+            expect(mobileNode).not.toBeNull();
+        }
+    });
+});
