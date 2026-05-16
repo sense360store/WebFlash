@@ -1878,12 +1878,22 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     outline-offset: 2px;
 }
 
-.primary-action-group,
+.secondary-action-group,
 .firmware-actions {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
+}
+
+.secondary-actions-label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    align-self: flex-end;
 }
 
 .firmware-actions {
@@ -1918,7 +1928,7 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     align-self: stretch;
 }
 
-.primary-action-group .ready-helper,
+.secondary-action-group .ready-helper,
 .firmware-actions .ready-helper {
     align-self: stretch;
     width: min(100%, 22rem);
@@ -2650,6 +2660,18 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 /* Firmware Section */
 .firmware-section {
     margin-bottom: 14px;
+}
+
+.firmware-section__lead {
+    margin: 0 0 10px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--color-text-primary);
+}
+
+.firmware-section__lead strong {
+    color: var(--color-text-primary);
+    font-weight: 600;
 }
 
 .firmware-section h3 {
@@ -3834,7 +3856,7 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
         width: 100%;
     }
 
-    .primary-action-group,
+    .secondary-action-group,
     .firmware-actions {
         width: 100%;
         align-items: stretch;
@@ -3842,7 +3864,7 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
         flex: 1 1 100%;
     }
 
-.primary-action-group .ready-helper,
+.secondary-action-group .ready-helper,
 .firmware-actions .ready-helper {
     text-align: center;
 }
@@ -4454,11 +4476,6 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: var(--color-text-secondary);
     margin: 0;
     line-height: 1.35;
-}
-
-.action-row-label strong {
-    color: var(--color-text);
-    font-weight: 600;
 }
 
 /* Improv / Wi-Fi follow-up callout inside the pre-flash checklist. */

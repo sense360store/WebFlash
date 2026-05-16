@@ -3328,7 +3328,7 @@ function updateFirmwareControls() {
         detailHelper.classList.toggle('is-warning', helperContext.isWarning);
     }
 
-    const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
+    const primaryHelper = document.querySelector('.secondary-action-group [data-ready-helper]');
     if (primaryHelper) {
         if (helperContext.text) {
             primaryHelper.textContent = helperContext.text;
@@ -5817,7 +5817,7 @@ function attachInstallButtonListeners() {
                     event.preventDefault();
                     event.stopImmediatePropagation();
                     const detailHelper = document.querySelector('#compatible-firmware [data-ready-helper]');
-                    const primaryHelper = document.querySelector('.primary-action-group [data-ready-helper]');
+                    const primaryHelper = document.querySelector('.secondary-action-group [data-ready-helper]');
                     let message;
                     if (outstandingAcks.length > 0) {
                         message = 'Acknowledge the firmware-channel warning before installing.';

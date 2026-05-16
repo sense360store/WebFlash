@@ -28,7 +28,7 @@ function renderDom() {
     </div>
     <div id="step-4" class="wizard-step"></div>
     <div id="step-5" class="wizard-step">
-      <div class="primary-action-group"><p data-ready-helper></p></div>
+      <div class="secondary-action-group"><p data-ready-helper></p></div>
       <div class="firmware-selector" id="firmware-selector"><select id="firmware-version-select"></select></div>
       <div id="compatible-firmware"><p data-ready-helper></p></div>
       <section data-channel-acknowledgement-panel hidden aria-hidden="true"></section>

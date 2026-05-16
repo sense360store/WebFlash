@@ -96,7 +96,7 @@ function renderWizardDom() {
                 </ul>
                 <p class="diagnostic-error" data-diagnostic-error hidden></p>
             </section>
-            <div class="primary-action-group"><p data-ready-helper></p></div>
+            <div class="secondary-action-group"><p data-ready-helper></p></div>
             <div id="firmware-selector"><select id="firmware-version-select"></select></div>
             <div id="compatible-firmware"></div>
             <button id="download-btn" disabled></button>

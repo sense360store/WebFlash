@@ -239,6 +239,105 @@ describe('WF-UX-002 — quick-start presets only point to manifest-backed config
     });
 });
 
+describe('WF-UX-003 — primary CTA hierarchy on Step 5', () => {
+    test('self-referential "Other options — the main Install button" copy is gone', () => {
+        expect(html).not.toMatch(/Other options/i);
+        expect(html).not.toMatch(/main Install button/i);
+    });
+
+    test('legacy action-row-label class is no longer used in static index.html', () => {
+        expect(html).not.toMatch(/action-row-label/);
+    });
+
+    test('firmware section carries a short lead pointing at the Install Firmware action on the card', () => {
+        const firmwareSection = document.querySelector('.firmware-section');
+        expect(firmwareSection).not.toBeNull();
+        const lead = firmwareSection.querySelector('.firmware-section__lead');
+        expect(lead).not.toBeNull();
+        const leadText = lead.textContent.trim();
+        expect(leadText).toMatch(/Install Firmware/);
+        expect(leadText).toMatch(/firmware card below/i);
+        // The lead must precede the Compatible Firmware heading so the install
+        // context reads before the per-card readiness label.
+        const heading = firmwareSection.querySelector('.compatible-firmware-heading');
+        expect(heading).not.toBeNull();
+        expect(lead.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    test('Step 5 footer wraps secondary actions in a renamed secondary-action-group', () => {
+        const step5 = document.getElementById('step-5');
+        expect(step5).not.toBeNull();
+        const group = step5.querySelector('.secondary-action-group');
+        expect(group).not.toBeNull();
+        // The ready-helper status target must live inside the renamed
+        // container so the state.js selector still finds it.
+        const helper = group.querySelector('[data-ready-helper]');
+        expect(helper).not.toBeNull();
+        // The misleading legacy class must not survive on this container.
+        expect(step5.querySelector('.primary-action-group')).toBeNull();
+    });
+
+    test('Step 5 footer has a "More actions" heading above the demoted controls', () => {
+        const step5 = document.getElementById('step-5');
+        const group = step5.querySelector('.secondary-action-group');
+        const label = group.querySelector('.secondary-actions-label');
+        expect(label).not.toBeNull();
+        expect(['H2', 'H3', 'H4']).toContain(label.tagName);
+        expect(label.textContent.trim()).toBe('More actions');
+        // The Download / Copy / Open HA controls must follow the heading so
+        // the label introduces them rather than trailing them.
+        const controls = group.querySelector('.primary-action-controls');
+        expect(controls).not.toBeNull();
+        expect(label.compareDocumentPosition(controls) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    test('Step 5 "Open Home Assistant" is demoted to btn-secondary', () => {
+        const openHa = document.getElementById('open-ha-integrations-btn');
+        expect(openHa).not.toBeNull();
+        expect(openHa.classList.contains('btn-secondary')).toBe(true);
+        expect(openHa.classList.contains('btn-primary')).toBe(false);
+    });
+
+    test('the three demoted controls remain reachable with their existing accessible names', () => {
+        const step5 = document.getElementById('step-5');
+        const group = step5.querySelector('.secondary-action-group');
+        const download = group.querySelector('#download-btn');
+        const copyLink = group.querySelector('#copy-firmware-url-btn');
+        const openHa = group.querySelector('#open-ha-integrations-btn');
+        expect(download).not.toBeNull();
+        expect(copyLink).not.toBeNull();
+        expect(openHa).not.toBeNull();
+        expect(download.getAttribute('aria-label')).toMatch(/download/i);
+        expect(copyLink.getAttribute('aria-label')).toMatch(/copy/i);
+        // Open HA keeps its visible-text label.
+        expect(openHa.textContent.trim()).toMatch(/Open Home Assistant/);
+    });
+
+    test('post-flash Home Assistant CTA stays primary — only the pre-install footer was demoted', () => {
+        // The pre-install footer button at index.html:844 was changed from
+        // btn-primary to btn-secondary. The post-flash next-step button at
+        // index.html:872 (data-post-flash-ha-open) remains primary because it
+        // is the dominant action *after* a successful flash. Pin both so a
+        // future regression on either side breaks this test.
+        const postFlashHa = document.querySelector('[data-post-flash-ha-open]');
+        expect(postFlashHa).not.toBeNull();
+        expect(postFlashHa.classList.contains('btn-primary')).toBe(true);
+    });
+
+    test('real install affordance is still the ESP Web Tools button container, not a duplicate', () => {
+        // The firmware section retains a placeholder for the upstream
+        // <esp-web-install-button> rendered by state.js — Step 5 must not
+        // ship a hand-rolled install button that bypasses ESP Web Tools.
+        const compatible = document.getElementById('compatible-firmware');
+        expect(compatible).not.toBeNull();
+        const step5 = document.getElementById('step-5');
+        // No <esp-web-install-button> in the static markup (state.js injects
+        // it); no rogue button[data-install] inside Step 5 either.
+        expect(step5.querySelector('esp-web-install-button')).toBeNull();
+        expect(step5.querySelector('button[data-install]')).toBeNull();
+    });
+});
+
 describe('WF-UX-002 — canonical firmware readiness copy in static index.html', () => {
     test('Step 4 firmware-target-preview warning carries the canonical no-build body', () => {
         const warning = document.querySelector('[data-firmware-target-preview-warning]');

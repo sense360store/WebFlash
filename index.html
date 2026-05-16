@@ -810,6 +810,9 @@
                 <div id="device-info-container" class="device-info-container" data-device-info-mount></div>
 
                 <div class="firmware-section">
+                    <p class="firmware-section__lead">
+                        Click <strong>Install Firmware</strong> on the firmware card below to flash your hub over USB.
+                    </p>
                     <h3 class="compatible-firmware-heading">
                         <span data-compatible-firmware-label>Compatible Firmware</span>
                         <span data-compatible-firmware-selection></span>
@@ -836,12 +839,12 @@
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <p class="install-assumptions" data-install-assumptions hidden aria-hidden="true"></p>
-                    <div class="primary-action-group">
-                        <p class="action-row-label">Other options &mdash; the main <strong>Install</strong> button is on the firmware card above.</p>
+                    <div class="secondary-action-group" data-secondary-action-group>
+                        <h3 class="secondary-actions-label">More actions</h3>
                         <div class="primary-action-controls">
                             <button class="btn btn-secondary" id="download-btn" type="button" onclick="downloadFirmware()" disabled aria-label="Download firmware binary for manual flashing">Download .bin</button>
                             <button class="btn btn-secondary" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy direct link to firmware binary" disabled>Copy install link</button>
-                            <button class="btn btn-primary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
+                            <button class="btn btn-secondary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
                                 Open Home Assistant
                             </button>
                         </div>
