@@ -478,9 +478,13 @@ Recorded as a roadmap; none of these are part of WF-LED-001.
 * `__tests__/python/test_import_firmware_sources.py` — Release-One
   source rejects LED via `block_tokens` (unchanged here).
 * [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) —
-  WF-HW-TEST-001 operator-validation container for the LED preview
-  flash path. Captures live-deployment pre-flight evidence; hardware
-  flash status is **pending — operator hardware test required**.
+  operator-validation container for the LED preview flash path.
+  WF-HW-TEST-001 captured live-deployment pre-flight evidence and the
+  operator procedure; WF-HW-TEST-002 was the planned
+  operator-evidence-collection follow-up but **no operator evidence
+  was supplied**, so hardware flash status remains
+  **pending — operator hardware test required** and no row was flipped
+  to a recorded outcome by WF-HW-TEST-002.
 * [`docs/product-import-readiness.md`](product-import-readiness.md) —
   WF-PRODUCT-004 advisory validator that classifies upstream catalog
   entries (including the LED preview) against the four eligibility

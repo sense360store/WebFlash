@@ -1058,14 +1058,19 @@ list above stays in force until it does.
 
 * [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — WF-UX-001
   live-wizard UX audit and PR roadmap (`WF-UX-QUICK-001` through
-  `WF-UX-007` plus `WF-HW-TEST-001`). Builds on the Release-One +
-  Rescue + LED-preview surface area established by the WF-CLEANUP and
-  WF-LED PRs catalogued here; preserves every do-not-change invariant
+  `WF-UX-007` plus the operator-only `WF-HW-TEST-001` /
+  `WF-HW-TEST-002` chain). Builds on the Release-One + Rescue +
+  LED-preview surface area established by the WF-CLEANUP and WF-LED
+  PRs catalogued here; preserves every do-not-change invariant
   recorded in this audit.
 * [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) —
-  WF-HW-TEST-001 operator-validation container for the LED preview
-  flash path. Records live-deployment pre-flight evidence; hardware
-  flash status is **pending — operator hardware test required**.
+  operator-validation container for the LED preview flash path.
+  WF-HW-TEST-001 recorded live-deployment pre-flight evidence and
+  the operator procedure; WF-HW-TEST-002 was the planned
+  operator-evidence-collection follow-up but **no operator evidence
+  was supplied**, so hardware flash status remains
+  **pending — operator hardware test required** and no row was
+  flipped to a recorded outcome by WF-HW-TEST-002.
 * [`docs/product-import-readiness.md`](product-import-readiness.md) —
   WF-PRODUCT-004 advisory readiness validator. Codifies the
   Release-One / LED preview / FanTRIAC / legacy-compatible

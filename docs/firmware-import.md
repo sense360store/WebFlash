@@ -489,9 +489,13 @@ kit or a dedicated preview-channel control). Neither precondition has
 landed; WF-LED-003 does not act on either.
 
 See [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md)
-for the WF-HW-TEST-001 operator-validation container for the LED
-preview flash path — pre-flight evidence is recorded there; the
-hardware flash itself is **pending — operator hardware test required**.
+for the operator-validation container for the LED preview flash
+path. WF-HW-TEST-001 recorded the pre-flight evidence and the
+operator procedure; WF-HW-TEST-002 was the planned
+operator-evidence-collection follow-up but **no operator evidence
+was supplied**, so the hardware flash itself is
+**pending — operator hardware test required** and no row was
+flipped to a recorded outcome by WF-HW-TEST-002.
 
 ### WF-PRODUCT-004 — import readiness validator
 

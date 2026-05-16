@@ -1,15 +1,113 @@
-# LED Preview WebFlash Flash Proof — WF-HW-TEST-001
+# LED Preview WebFlash Flash Proof — WF-HW-TEST-001 / WF-HW-TEST-002
 
 > **Status: pending — operator hardware test required.**
 >
-> This PR creates the proof container and records pre-flight evidence
-> that the live WebFlash deployment is in the expected shape for an LED
-> preview hardware flash. **It does not claim that a hardware flash has
+> WF-HW-TEST-001 created the proof container and recorded pre-flight
+> evidence that the live WebFlash deployment is in the expected shape
+> for an LED preview hardware flash. WF-HW-TEST-002 is the planned
+> follow-up that would record real operator evidence from an actual
+> flash run; **no operator evidence was supplied to WF-HW-TEST-002**,
+> so every operator/device/flash field below remains
+> `pending — operator hardware test required` and the overall status is
+> unchanged. **No PR in this chain claims that a hardware flash has
 > been performed.** No real Sense360 Core has been flashed against the
-> live site from this PR's environment. Every operator/device/flash
-> field below is `pending — operator hardware test required` until a
-> human operator with a Sense360 Core, USB cable, and a supported
-> desktop Chromium browser runs the procedure recorded here.
+> live site from either PR's environment. The proof rows below stay
+> pending until a human operator with a Sense360 Core, USB cable, and
+> a supported desktop Chromium browser runs the procedure recorded
+> here and a future PR records the captured values verbatim.
+
+## WF-HW-TEST-002 follow-up record
+
+WF-HW-TEST-002 was scoped as the operator-evidence-collection follow-up
+to WF-HW-TEST-001. The intent was to replace the `pending — operator
+hardware test required` placeholders in the [Hardware under test](#hardware-under-test),
+[Operator environment](#operator-environment), [Proof record](#proof-record),
+and [Support bundle summary](#support-bundle-summary) sections with real
+values captured by an operator running the procedure at
+[Test procedure](#test-procedure).
+
+**Outcome of WF-HW-TEST-002: no operator evidence supplied.**
+
+The following are explicitly **not recorded** by WF-HW-TEST-002 because
+no operator ran the flash for this PR:
+
+| Required evidence (per WF-HW-TEST-002 brief) | Recorded by WF-HW-TEST-002 |
+| --- | --- |
+| Operator name / initials | Not recorded — operator hardware test required |
+| Test date and time | Not recorded — operator hardware test required |
+| Browser + OS | Not recorded — operator hardware test required |
+| Hardware under test (Core, RoomIQ, VentIQ, LED, Power, harness, cable) | Not recorded — operator hardware test required |
+| Web Serial connect result | Not recorded — operator hardware test required |
+| Flash start / finish / result | Not recorded — operator hardware test required |
+| Flash duration | Not recorded — operator hardware test required |
+| Support bundle excerpt | Not recorded — operator hardware test required |
+| Improv Wi-Fi handoff result | Not recorded — operator hardware test required |
+| Home Assistant handoff result | Not recorded — operator hardware test required |
+| LED ring observed behaviour | Not recorded — operator hardware test required |
+| Screenshots / serial logs / errors | Not recorded — operator hardware test required |
+| Device reconnect result | Not recorded — operator hardware test required |
+
+In line with the WF-HW-TEST-002 brief's status rules ("*Do not use
+`complete` unless the evidence supports it*" and "*If real hardware
+evidence is not available, stop and say so. Do not convert pending
+fields to passed.*"), the overall status stays
+**`pending — operator hardware test required`** and **no row in the
+[Proof record](#proof-record), [Support bundle summary](#support-bundle-summary),
+or [Results](#results) sections is flipped from `pending` to a
+recorded outcome by this PR**.
+
+WF-HW-TEST-002 is **not** a flash attempt and therefore **not** a
+`partial`, `complete`, or `failed` proof — those statuses require an
+operator flash that did not occur. WF-HW-TEST-002 is solely a docs
+checkpoint that:
+
+* records the WF-HW-TEST-002 follow-up exists,
+* records that no operator evidence was supplied to it,
+* re-affirms the do-not-change guardrails below,
+* and leaves WF-HW-TEST-001's pre-flight evidence and operator
+  procedure intact for a future WF-HW-TEST-N follow-up that does carry
+  real evidence.
+
+### What WF-HW-TEST-002 does not do
+
+WF-HW-TEST-002 explicitly does **not**:
+
+* perform a flash,
+* claim a flash was performed,
+* promote the LED preview to `stable`,
+* add `Ceiling-POE-VentIQ-RoomIQ-LED` to `REQUIRED_CONFIGS`,
+* add an LED kit to [`scripts/data/kits.json`](../scripts/data/kits.json),
+* change the kit / recommended path,
+* change `firmware/sources.json`, `manifest.json`, any `firmware-*.json`,
+  any `firmware/configurations/*` binary, or any `firmware/rescue/*` file,
+* change `scripts/utils/release-channels.js` or the
+  `channel:preview` acknowledgement gate,
+* change [`scripts/utils/module-availability.js`](../scripts/utils/module-availability.js)
+  or [`scripts/utils/firmware-readiness.js`](../scripts/utils/firmware-readiness.js),
+* change `index.html`, `sw.js`, `_headers`, or any `.github/workflows/*` file,
+* claim that S360-300 bench verification (`S360-300-BENCH-001`) has been
+  performed,
+* claim that the RELEASE-006 preview-to-stable gates for LED have been
+  satisfied,
+* unblock the WebFlash operator flash proof gate for RELEASE-007.
+
+### Stable-promotion language (WF-HW-TEST-002)
+
+Even if a future WF-HW-TEST-N follow-up records a `complete` operator
+flash proof here, that proof — by itself — would satisfy **only** the
+WebFlash operator flash proof gate. It would still not:
+
+* promote LED to `stable`,
+* add LED to `REQUIRED_CONFIGS`,
+* create an LED kit, or
+* unblock RELEASE-007.
+
+`S360-300-BENCH-001` remains separate unless explicitly completed
+elsewhere. RELEASE-007 remains blocked until **all** preview-to-stable
+gates (operator flash proof + S360-300 bench verification + upstream
+catalog promotion to `production` + any other RELEASE-006 gate) are
+satisfied. WF-HW-TEST-002, by virtue of not supplying operator
+evidence, does not satisfy any of those gates today.
 
 ## Purpose and scope
 
@@ -379,10 +477,12 @@ alongside it if the live manifest has rolled since this PR landed.
 
 ## Do-not-change guardrails
 
-This PR (and any future operator-driven update to this proof doc) must
-preserve every invariant below. The same guardrails apply whether the
-recorded flash status ends up **proven**, **attempted, failed**, or
-stays **pending**.
+This proof container (WF-HW-TEST-001 and its WF-HW-TEST-002 follow-up,
+and any future operator-driven update) must preserve every invariant
+below. The same guardrails apply whether the recorded flash status
+ends up **proven**, **attempted, failed**, or stays **pending** — and
+WF-HW-TEST-002 keeps it at **pending** because no operator evidence
+was supplied.
 
 | Item | Why |
 | --- | --- |
@@ -433,8 +533,10 @@ This proof PR does **not**:
   live-vs-repo deployed-surface audit; the pre-flight evidence in this
   doc is the next-deploy update of that audit's live snapshot.
 * [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — defines
-  WF-HW-TEST-001 in its roadmap table and lists the operator gates this
-  proof container is designed to absorb.
+  WF-HW-TEST-001 (and its WF-HW-TEST-002 follow-up) in its roadmap
+  table and lists the operator gates this proof container is designed
+  to absorb. WF-HW-TEST-002 did not change the row's status — the
+  operator flash row stays `pending — operator hardware test required`.
 * [`DEVELOPER.md`](../DEVELOPER.md) — maintainer-facing entry point;
   links to this proof doc from the wizard UX roadmap pointer.
 * [`CLAUDE.md`](../CLAUDE.md) — repo-level instructions; references
