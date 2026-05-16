@@ -114,6 +114,73 @@ describe('static accessibility hooks in index.html', () => {
     });
 });
 
+describe('WF-UX-004 — preflight verdict + details disclosure', () => {
+    test('preflight panel keeps its labelled-by heading', () => {
+        const panel = document.querySelector('[data-preflight-panel]');
+        expect(panel).not.toBeNull();
+        const labelledBy = panel.getAttribute('aria-labelledby');
+        expect(labelledBy).toBe('preflight-checks-heading');
+        const heading = document.getElementById('preflight-checks-heading');
+        expect(heading).not.toBeNull();
+        // The heading is intentionally visually hidden — the visible headline
+        // is the verdict card. Assistive tech still resolves the section name.
+        expect(heading.classList.contains('sr-only')).toBe(true);
+    });
+
+    test('verdict card has the right ARIA hooks and default copy', () => {
+        const card = document.querySelector('[data-preflight-verdict]');
+        expect(card).not.toBeNull();
+        expect(card.getAttribute('role')).toBe('status');
+        expect(card.getAttribute('aria-live')).toBe('polite');
+        // Default state is ready until refreshPreflightDiagnostics() runs.
+        expect(card.getAttribute('data-verdict')).toBe('ready');
+
+        const title = card.querySelector('[data-preflight-verdict-title]');
+        const detail = card.querySelector('[data-preflight-verdict-detail]');
+        expect(title).not.toBeNull();
+        expect(detail).not.toBeNull();
+        expect(title.textContent.trim()).toBe('Ready to install');
+        expect(detail.textContent.trim()).toBe('Your browser, firmware, and required checks are ready.');
+    });
+
+    test('Preflight details disclosure exists and wraps the diagnostic list', () => {
+        const details = document.querySelector('[data-preflight-details]');
+        expect(details).not.toBeNull();
+        expect(details.tagName.toLowerCase()).toBe('details');
+        const summary = details.querySelector('summary');
+        expect(summary).not.toBeNull();
+        expect(summary.textContent.trim()).toMatch(/preflight details/i);
+        // The diagnostic list lives inside the disclosure (demoted from the
+        // headline) so the verdict dominates the visual hierarchy.
+        expect(details.querySelector('[data-preflight-list]')).not.toBeNull();
+    });
+
+    test('Diagnostics subsection wraps support-bundle actions inside the disclosure', () => {
+        const details = document.querySelector('[data-preflight-details]');
+        const supportActions = details.querySelector('[data-preflight-support-actions]');
+        expect(supportActions).not.toBeNull();
+        // Hidden by default — surfaces only when checks are non-pass.
+        expect(supportActions.hidden).toBe(true);
+        expect(supportActions.querySelector('[data-copy-support-bundle]')).not.toBeNull();
+        expect(supportActions.querySelector('[data-download-support-bundle]')).not.toBeNull();
+        const heading = supportActions.querySelector('h4');
+        expect(heading).not.toBeNull();
+        expect(heading.textContent.trim()).toBe('Diagnostics');
+    });
+
+    test('warning override is hidden by default and keeps its aria-describedby', () => {
+        const override = document.querySelector('[data-preflight-warn-acknowledge]');
+        expect(override).not.toBeNull();
+        // Hidden until refreshPreflightDiagnostics() surfaces a warn-only state.
+        expect(override.hasAttribute('hidden')).toBe(true);
+        const input = override.querySelector('input[type="checkbox"]');
+        expect(input).not.toBeNull();
+        const describedBy = input.getAttribute('aria-describedby');
+        expect(describedBy).toBeTruthy();
+        expect(document.getElementById(describedBy)).not.toBeNull();
+    });
+});
+
 describe('WF-UX-QUICK-001 — admin note removed and browser-support copy normalized', () => {
     test('no internal "Admin note" text appears in static index.html', () => {
         expect(html).not.toMatch(/Admin note/i);

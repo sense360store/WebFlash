@@ -569,6 +569,43 @@ function evaluatePreflightPolicy(checks = []) {
     };
 }
 
+// WF-UX-004: presentation-only verdict over the same checks array that feeds
+// evaluatePreflightPolicy(). Returns one of three user-facing states — ready,
+// attention, blocked — so the Step 5 preflight panel can render a single
+// headline above the existing diagnostic rows. This helper introduces no new
+// gating: it is a pure function over `checks` and `evaluatePreflightPolicy()`
+// remains the install gate.
+const PREFLIGHT_VERDICTS = Object.freeze({
+    ready: Object.freeze({
+        level: 'ready',
+        title: 'Ready to install',
+        detail: 'Your browser, firmware, and required checks are ready.'
+    }),
+    attention: Object.freeze({
+        level: 'attention',
+        title: 'Needs attention',
+        detail: 'Review the warnings below before installing.'
+    }),
+    blocked: Object.freeze({
+        level: 'blocked',
+        title: 'Blocked',
+        detail: 'Fix the required items below before installing firmware.'
+    })
+});
+
+function derivePreflightVerdict(checks = []) {
+    const list = Array.isArray(checks) ? checks : [];
+    const hasFail = list.some(check => check?.state === 'fail');
+    if (hasFail) {
+        return PREFLIGHT_VERDICTS.blocked;
+    }
+    const hasWarn = list.some(check => check?.state === 'warn');
+    if (hasWarn) {
+        return PREFLIGHT_VERDICTS.attention;
+    }
+    return PREFLIGHT_VERDICTS.ready;
+}
+
 // Compute the install-gate verdict for cache-freshness state. Used at
 // render time by `updateFirmwareControls()` and also at click time by the
 // install/summary handlers as defense-in-depth — the rendered button is
@@ -3634,28 +3671,35 @@ async function refreshPreflightDiagnostics() {
         }),
         getManifestFreshnessCheck()
     ];
+    const hasFails = checks.some(check => check.state === 'fail');
     const hasWarnings = checks.some(check => check.state === 'warn');
+    // WF-UX-004: the warning override is meaningful only when warnings are the
+    // sole obstacle. If a hard fail is present too, no amount of ticking the
+    // override will unlock install (evaluatePreflightPolicy requires zero
+    // fails) — so hide the control rather than tease an action that won't
+    // help.
+    const showWarnOverride = hasWarnings && !hasFails;
     const warningsAcknowledgeControl = document.querySelector('[data-preflight-warn-acknowledge]');
     const warningsAcknowledgeInput = warningsAcknowledgeControl?.matches?.('input[type="checkbox"]')
         ? warningsAcknowledgeControl
         : warningsAcknowledgeControl?.querySelector('input[type="checkbox"]')
             || document.querySelector('[data-preflight-warn-acknowledge-input]');
     if (warningsAcknowledgeControl) {
-        warningsAcknowledgeControl.hidden = !hasWarnings;
-        warningsAcknowledgeControl.setAttribute('aria-hidden', hasWarnings ? 'false' : 'true');
+        warningsAcknowledgeControl.hidden = !showWarnOverride;
+        warningsAcknowledgeControl.setAttribute('aria-hidden', showWarnOverride ? 'false' : 'true');
         if (warningsAcknowledgeControl.dataset.preflightWarnBound !== 'true') {
             warningsAcknowledgeControl.addEventListener('change', event => {
                 setPreflightWarningsAcknowledgement(Boolean(event?.target?.checked));
             });
             warningsAcknowledgeControl.dataset.preflightWarnBound = 'true';
         }
-        if (!hasWarnings) {
+        if (!showWarnOverride) {
             if (warningsAcknowledgeInput && 'checked' in warningsAcknowledgeInput) {
                 warningsAcknowledgeInput.checked = false;
             }
             setPreflightWarningsAcknowledgement(false);
         }
-    } else if (!hasWarnings) {
+    } else if (!showWarnOverride) {
         setPreflightWarningsAcknowledgement(false);
     }
 
@@ -3706,8 +3750,59 @@ async function refreshPreflightDiagnostics() {
         supportActions.setAttribute('aria-hidden', hasIssues ? 'false' : 'true');
     }
 
+    // WF-UX-004: render the single headline verdict above the diagnostic rows
+    // and toggle the details disclosure open for non-ready states so users
+    // see the specifics immediately. The user's manual toggle wins — once
+    // they have explicitly opened or closed the disclosure, we stop fighting
+    // them on subsequent refreshes.
+    renderPreflightVerdict(checks);
+
     window.latestPreflightChecks = checks;
     return checks;
+}
+
+const PREFLIGHT_VERDICT_ICONS = Object.freeze({
+    ready: '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 1.7a8.3 8.3 0 1 0 0 16.6 8.3 8.3 0 0 0 0-16.6zm-1.1 11.5L5.4 9.7l1.2-1.2 2.3 2.3 4.5-4.5 1.2 1.2-5.7 5.7z"/></svg>',
+    attention: '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 1.7 19 17.5H1L10 1.7zm0 5.6a1 1 0 0 0-1 1v3.4a1 1 0 1 0 2 0V8.3a1 1 0 0 0-1-1zm0 7.5a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z"/></svg>',
+    blocked: '<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 1.7a8.3 8.3 0 1 0 0 16.6 8.3 8.3 0 0 0 0-16.6zM6.1 5l8.9 8.9-1.1 1.1L5 6.1 6.1 5zm7.8 0L15 6.1 6.1 15 5 13.9 13.9 5z"/></svg>'
+});
+
+function renderPreflightVerdict(checks) {
+    const card = document.querySelector('[data-preflight-verdict]');
+    if (!card) {
+        return;
+    }
+    const verdict = derivePreflightVerdict(checks);
+    card.dataset.verdict = verdict.level;
+
+    const iconNode = card.querySelector('[data-preflight-verdict-icon]');
+    if (iconNode) {
+        iconNode.innerHTML = PREFLIGHT_VERDICT_ICONS[verdict.level] || '';
+    }
+    const titleNode = card.querySelector('[data-preflight-verdict-title]');
+    if (titleNode) {
+        titleNode.textContent = verdict.title;
+    }
+    const detailNode = card.querySelector('[data-preflight-verdict-detail]');
+    if (detailNode) {
+        detailNode.textContent = verdict.detail;
+    }
+
+    const details = document.querySelector('[data-preflight-details]');
+    if (details && details.dataset.preflightDetailsUserToggled !== 'true') {
+        if (details.dataset.preflightDetailsBound !== 'true') {
+            details.addEventListener('toggle', () => {
+                details.dataset.preflightDetailsUserToggled = 'true';
+            });
+            details.dataset.preflightDetailsBound = 'true';
+        }
+        const shouldOpen = verdict.level !== 'ready';
+        if (shouldOpen) {
+            details.setAttribute('open', '');
+        } else {
+            details.removeAttribute('open');
+        }
+    }
 }
 
 function syncManifestFreshnessInlineControls(statusList) {
@@ -6734,6 +6829,7 @@ export const __testHooks = Object.freeze({
     setPreFlashAcknowledgement,
     setPreflightWarningsAcknowledgement,
     evaluatePreflightPolicy,
+    derivePreflightVerdict,
     evaluateFreshnessGate,
     updateConnectionQualityMetrics,
     markPreflightConnectionAttempted,

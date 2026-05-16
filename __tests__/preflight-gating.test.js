@@ -335,3 +335,246 @@ describe('preflight install gating', () => {
     expect(document.execCommand).toHaveBeenCalledWith('copy');
   });
 });
+
+describe('WF-UX-004 — preflight verdict', () => {
+  beforeEach(() => {
+    jest.resetModules();
+    document.body.innerHTML = `
+      <section class="preflight-panel" data-preflight-panel>
+        <h3 id="preflight-checks-heading" class="sr-only">Preflight checks</h3>
+        <div class="preflight-panel__verdict" data-preflight-verdict data-verdict="ready" role="status">
+          <span class="preflight-panel__verdict-icon" data-preflight-verdict-icon aria-hidden="true"></span>
+          <div class="preflight-panel__verdict-body">
+            <p class="preflight-panel__verdict-title" data-preflight-verdict-title>Ready to install</p>
+            <p class="preflight-panel__verdict-detail" data-preflight-verdict-detail>Your browser, firmware, and required checks are ready.</p>
+          </div>
+        </div>
+        <label class="preflight-panel__warn-acknowledge" data-preflight-warn-acknowledge hidden aria-hidden="true">
+          <input type="checkbox" data-preflight-warn-acknowledge-input>
+        </label>
+        <details class="preflight-panel__details" data-preflight-details>
+          <summary class="preflight-panel__details-summary">Preflight details</summary>
+          <ul data-preflight-list>
+            <li data-preflight-item="browser-support" data-status="pending"><span data-preflight-status="browser-support"></span><span data-preflight-detail="browser-support"></span></li>
+            <li data-preflight-item="device-visibility" data-status="pending"><span data-preflight-status="device-visibility"></span><span data-preflight-detail="device-visibility"></span></li>
+            <li data-preflight-item="connection-quality" data-status="pending"><span data-preflight-status="connection-quality"></span><span data-preflight-detail="connection-quality"></span></li>
+            <li data-preflight-item="firmware-verification" data-status="pending"><span data-preflight-status="firmware-verification"></span><span data-preflight-detail="firmware-verification"></span></li>
+            <li data-preflight-item="user-acknowledgement" data-status="pending"><span data-preflight-status="user-acknowledgement"></span><span data-preflight-detail="user-acknowledgement"></span></li>
+            <li data-preflight-item="manifest-freshness" data-status="pending"><span data-preflight-status="manifest-freshness"></span><span data-preflight-detail="manifest-freshness"></span></li>
+          </ul>
+          <div data-preflight-support-actions hidden aria-hidden="true">
+            <button data-copy-support-bundle>Copy support bundle</button>
+            <button data-download-support-bundle>Download JSON</button>
+          </div>
+        </details>
+      </section>`;
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ builds: [] }) }));
+    Object.defineProperty(global.navigator, 'serial', { value: { getPorts: jest.fn(() => Promise.resolve([])) }, configurable: true });
+  });
+
+  test('derivePreflightVerdict returns the ready verdict for all-pass and empty checks', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    const empty = __testHooks.derivePreflightVerdict([]);
+    expect(empty.level).toBe('ready');
+    expect(empty.title).toBe('Ready to install');
+    expect(empty.detail).toBe('Your browser, firmware, and required checks are ready.');
+
+    const allPass = __testHooks.derivePreflightVerdict([
+      { key: 'browser-support', state: 'pass' },
+      { key: 'firmware-verification', state: 'pass' }
+    ]);
+    expect(allPass.level).toBe('ready');
+  });
+
+  test('derivePreflightVerdict returns the attention verdict when any check is warn but none fail', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    const verdict = __testHooks.derivePreflightVerdict([
+      { key: 'browser-support', state: 'pass' },
+      { key: 'device-visibility', state: 'warn' }
+    ]);
+    expect(verdict.level).toBe('attention');
+    expect(verdict.title).toBe('Needs attention');
+    expect(verdict.detail).toBe('Review the warnings below before installing.');
+  });
+
+  test('derivePreflightVerdict returns the blocked verdict when any check fails', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    const failOnly = __testHooks.derivePreflightVerdict([
+      { key: 'browser-support', state: 'fail' }
+    ]);
+    expect(failOnly.level).toBe('blocked');
+    expect(failOnly.title).toBe('Blocked');
+    expect(failOnly.detail).toBe('Fix the required items below before installing firmware.');
+
+    const failAndWarn = __testHooks.derivePreflightVerdict([
+      { key: 'browser-support', state: 'fail' },
+      { key: 'device-visibility', state: 'warn' }
+    ]);
+    expect(failAndWarn.level).toBe('blocked');
+  });
+
+  test('pending-only checks resolve to the ready verdict (pending is not a warn or fail)', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    const verdict = __testHooks.derivePreflightVerdict([
+      { key: 'device-visibility', state: 'pending' },
+      { key: 'connection-quality', state: 'pending' }
+    ]);
+    expect(verdict.level).toBe('ready');
+  });
+
+  test('verdict and evaluatePreflightPolicy agree on the same checks array', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setPreflightWarningsAcknowledgement(false);
+
+    const ready = [{ key: 'browser-support', state: 'pass' }];
+    expect(__testHooks.derivePreflightVerdict(ready).level).toBe('ready');
+    expect(__testHooks.evaluatePreflightPolicy(ready).canInstall).toBe(true);
+
+    const attention = [{ key: 'device-visibility', state: 'warn', detail: 'flaky' }];
+    expect(__testHooks.derivePreflightVerdict(attention).level).toBe('attention');
+    expect(__testHooks.evaluatePreflightPolicy(attention).canInstall).toBe(false);
+
+    const blocked = [{ key: 'browser-support', state: 'fail', detail: 'no Web Serial' }];
+    expect(__testHooks.derivePreflightVerdict(blocked).level).toBe('blocked');
+    expect(__testHooks.evaluatePreflightPolicy(blocked).canInstall).toBe(false);
+  });
+
+  test('override does not bypass hard blockers (fail keeps canInstall false even when acknowledged)', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setPreflightWarningsAcknowledgement(true);
+    const checks = [
+      { key: 'browser-support', state: 'fail', detail: 'Web Serial unavailable.' },
+      { key: 'device-visibility', state: 'warn', detail: 'Device info unavailable.' }
+    ];
+    const policy = __testHooks.evaluatePreflightPolicy(checks);
+    expect(policy.canInstall).toBe(false);
+    expect(policy.blockingReasons).toContain('Web Serial unavailable.');
+    expect(__testHooks.derivePreflightVerdict(checks).level).toBe('blocked');
+  });
+
+  test('refreshPreflightDiagnostics renders the verdict card with the right data-verdict and copy', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+    __testHooks.setPreFlashAcknowledgement(true);
+    __testHooks.resetPreflightConnectionAttemptedForTests();
+    await __testHooks.refreshPreflightDiagnostics();
+    const card = document.querySelector('[data-preflight-verdict]');
+    expect(card).not.toBeNull();
+    const titleEl = card.querySelector('[data-preflight-verdict-title]');
+    const detailEl = card.querySelector('[data-preflight-verdict-detail]');
+    expect(card.dataset.verdict).toBe(card.dataset.verdict);
+    expect(['ready', 'attention', 'blocked']).toContain(card.dataset.verdict);
+    expect(titleEl.textContent.trim().length).toBeGreaterThan(0);
+    expect(detailEl.textContent.trim().length).toBeGreaterThan(0);
+  });
+
+  test('blocked verdict renders Blocked title and body', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setFirmwareVerificationState({ status: 'failed', message: 'integrity check failed' });
+    await __testHooks.refreshPreflightDiagnostics();
+    const card = document.querySelector('[data-preflight-verdict]');
+    expect(card.dataset.verdict).toBe('blocked');
+    expect(card.querySelector('[data-preflight-verdict-title]').textContent).toBe('Blocked');
+    expect(card.querySelector('[data-preflight-verdict-detail]').textContent).toBe('Fix the required items below before installing firmware.');
+  });
+
+  test('warning override is hidden when a hard fail is present alongside warnings', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    // Firmware verification failure produces a fail; pre-flash unack produces a warn.
+    __testHooks.setFirmwareVerificationState({ status: 'failed', message: 'bad sha' });
+    __testHooks.setPreFlashAcknowledgement(false);
+    await __testHooks.refreshPreflightDiagnostics();
+    const override = document.querySelector('[data-preflight-warn-acknowledge]');
+    expect(override.hidden).toBe(true);
+    expect(override.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  test('warning override is shown when warnings exist with no hard fail', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+    // Unacked pre-flash checklist is the only warn → no fails.
+    __testHooks.setPreFlashAcknowledgement(false);
+    await __testHooks.refreshPreflightDiagnostics();
+    const override = document.querySelector('[data-preflight-warn-acknowledge]');
+    expect(override.hidden).toBe(false);
+    expect(override.getAttribute('aria-hidden')).toBe('false');
+  });
+
+  test('warning override is hidden in the ready state', async () => {
+    // Spoof a desktop Chrome user agent + secure context so browser-support
+    // resolves to pass; otherwise jsdom's UA produces a 'warn' on the
+    // untested-browser path and the override would surface.
+    const originalNavigator = global.navigator;
+    Object.defineProperty(global, 'navigator', {
+      value: { ...originalNavigator, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0 Safari/537.36', serial: { getPorts: jest.fn(() => Promise.resolve([])) } },
+      configurable: true
+    });
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    try {
+      const { __testHooks } = await import('../scripts/state.js');
+      __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+      __testHooks.setPreFlashAcknowledgement(true);
+      __testHooks.acknowledgeManifestFreshnessForTests?.();
+      await __testHooks.refreshPreflightDiagnostics();
+      const override = document.querySelector('[data-preflight-warn-acknowledge]');
+      expect(override.hidden).toBe(true);
+    } finally {
+      Object.defineProperty(global, 'navigator', { value: originalNavigator, configurable: true });
+    }
+  });
+
+  test('Preflight details disclosure auto-opens for non-ready verdicts', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setFirmwareVerificationState({ status: 'failed', message: 'integrity check failed' });
+    const details = document.querySelector('[data-preflight-details]');
+    details.removeAttribute('open');
+    delete details.dataset.preflightDetailsUserToggled;
+    delete details.dataset.preflightDetailsBound;
+    await __testHooks.refreshPreflightDiagnostics();
+    expect(details.hasAttribute('open')).toBe(true);
+  });
+
+  test('Preflight details disclosure stays closed for ready verdict', async () => {
+    const originalNavigator = global.navigator;
+    Object.defineProperty(global, 'navigator', {
+      value: { ...originalNavigator, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120.0.0.0 Safari/537.36', serial: { getPorts: jest.fn(() => Promise.resolve([])) } },
+      configurable: true
+    });
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    try {
+      const { __testHooks } = await import('../scripts/state.js');
+      __testHooks.setFirmwareVerificationState({ status: 'verified', message: 'ok' });
+      __testHooks.setPreFlashAcknowledgement(true);
+      const details = document.querySelector('[data-preflight-details]');
+      details.setAttribute('open', '');
+      delete details.dataset.preflightDetailsUserToggled;
+      delete details.dataset.preflightDetailsBound;
+      await __testHooks.refreshPreflightDiagnostics();
+      expect(details.hasAttribute('open')).toBe(false);
+    } finally {
+      Object.defineProperty(global, 'navigator', { value: originalNavigator, configurable: true });
+    }
+  });
+
+  test('user-toggled details disclosure is not overridden on subsequent refreshes', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    __testHooks.setFirmwareVerificationState({ status: 'failed', message: 'bad sha' });
+    const details = document.querySelector('[data-preflight-details]');
+    details.dataset.preflightDetailsUserToggled = 'true';
+    details.removeAttribute('open');
+    await __testHooks.refreshPreflightDiagnostics();
+    // Auto-open should be suppressed because the user has manually closed it.
+    expect(details.hasAttribute('open')).toBe(false);
+  });
+
+  test('diagnostics action buttons remain available inside the disclosure', async () => {
+    const { __testHooks } = await import('../scripts/state.js');
+    // Force a real fail so support actions surface.
+    __testHooks.setFirmwareVerificationState({ status: 'failed', message: 'integrity check failed' });
+    await __testHooks.refreshPreflightDiagnostics();
+    const supportActions = document.querySelector('[data-preflight-support-actions]');
+    expect(supportActions.hidden).toBe(false);
+    expect(supportActions.querySelector('[data-copy-support-bundle]')).not.toBeNull();
+    expect(supportActions.querySelector('[data-download-support-bundle]')).not.toBeNull();
+  });
+});
