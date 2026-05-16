@@ -89,7 +89,7 @@ function renderWizardDom() {
                 </ul>
                 <p class="diagnostic-error" data-diagnostic-error hidden></p>
             </section>
-            <div class="primary-action-group"><p data-ready-helper></p></div>
+            <div class="secondary-action-group"><p data-ready-helper></p></div>
             <div id="firmware-selector"><select id="firmware-version-select"></select></div>
             <div class="firmware-section">
                 <h3 class="compatible-firmware-heading">
@@ -552,7 +552,7 @@ function renderManifestFreshnessDom() {
         <div id="step-3" class="wizard-step"><button class="btn-next" data-next>Next</button><input type="radio" name="power" value="usb" checked></div>
         <div id="step-4" class="wizard-step"></div>
         <div id="step-5" class="wizard-step">
-            <div class="primary-action-group"><p data-ready-helper></p></div>
+            <div class="secondary-action-group"><p data-ready-helper></p></div>
             <div id="compatible-firmware">
                 <p data-ready-helper></p>
                 <esp-web-install-button data-webflash-install>
