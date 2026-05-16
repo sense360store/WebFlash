@@ -197,30 +197,39 @@
                     <!-- Step 1: Start -->
                     <div class="wizard-step step" id="step-1" role="region" aria-labelledby="step-1-heading">
                 <h2 id="step-1-heading">Start with your hardware</h2>
-                <p class="step-intro">Choose how you want to configure WebFlash. Pick your kit or SKU if you bought a Sense360 bundle, or jump into the manual flow if you know your exact modules.</p>
+                <p class="step-intro">Pick the path that matches what you have. You can switch paths at any time before installing.</p>
 
-                <fieldset class="config-mode-picker" data-config-mode-picker aria-describedby="config-mode-picker-help">
-                    <legend class="sr-only">Configuration mode</legend>
-                    <p id="config-mode-picker-help" class="config-mode-picker__help">Use this if you bought a Sense360 kit and have the product name, SKU, or kit label. Switch to manual if you are building a custom setup or know your exact modules.</p>
-                    <div class="config-mode-picker__options">
-                        <label class="config-mode-option">
-                            <input type="radio" name="configMode" value="kit" data-config-mode-input checked>
-                            <div class="config-mode-option__content">
-                                <div class="config-mode-option__title">I know my kit or SKU</div>
-                                <div class="config-mode-option__description">Use this if you bought a Sense360 kit and have the product name, SKU, or kit label.</div>
-                            </div>
-                        </label>
-                        <label class="config-mode-option">
-                            <input type="radio" name="configMode" value="manual" data-config-mode-input>
-                            <div class="config-mode-option__content">
-                                <div class="config-mode-option__title">Choose hardware manually</div>
-                                <div class="config-mode-option__description">Use this if you are building a custom setup or know your exact modules.</div>
-                            </div>
-                        </label>
-                    </div>
+                <div class="start-paths" data-start-paths role="group" aria-labelledby="step-1-heading">
+                    <button class="start-path-card start-path-card--kit" type="button" data-start-path="kit" aria-describedby="start-path-kit-desc">
+                        <span class="start-path-card__title">I bought a kit</span>
+                        <span class="start-path-card__description" id="start-path-kit-desc">Use this if you have the current Sense360 ceiling PoE VentIQ + RoomIQ kit. We&rsquo;ll prefill the supported Release-One hardware.</span>
+                    </button>
+                    <button class="start-path-card start-path-card--custom" type="button" data-start-path="custom" aria-describedby="start-path-custom-desc">
+                        <span class="start-path-card__title">Custom configuration</span>
+                        <span class="start-path-card__description" id="start-path-custom-desc">Plan a custom Sense360 setup. Some modules are not yet available in WebFlash and will be clearly marked.</span>
+                    </button>
+                    <button class="start-path-card start-path-card--recovery" type="button" data-start-path="recovery" data-rescue-open aria-haspopup="dialog" aria-describedby="start-path-recovery-desc">
+                        <span class="start-path-card__title">Recovery</span>
+                        <span class="start-path-card__description" id="start-path-recovery-desc">Flash the rescue firmware to reset an unbootable hub. Use this only for recovery or bootloader repair.</span>
+                    </button>
+                </div>
+
+                <!-- WF-UX-006: the legacy [data-config-mode-picker] radios are kept
+                     as a hidden back-compat surface so the kit-mode controller's
+                     existing change-listener and any cached share-links keep
+                     working. The customer-facing path choice is the
+                     [data-start-paths] button group above. -->
+                <fieldset class="config-mode-picker config-mode-picker--legacy" data-config-mode-picker aria-hidden="true" hidden>
+                    <legend class="sr-only">Configuration mode (legacy)</legend>
+                    <label><input type="radio" name="configMode" value="kit" data-config-mode-input checked tabindex="-1"></label>
+                    <label><input type="radio" name="configMode" value="manual" data-config-mode-input tabindex="-1"></label>
                 </fieldset>
 
-                <section class="kit-mode-panel" data-kit-mode-panel aria-label="Kit selection">
+                <section class="kit-mode-panel" data-kit-mode-panel data-start-path-panel="kit" aria-label="Kit selection" hidden>
+                    <header class="path-panel__header">
+                        <h3 class="path-panel__title">I bought a kit</h3>
+                        <button class="btn btn-link path-panel__back" type="button" data-start-path-back>&larr; Choose a different path</button>
+                    </header>
                     <label class="kit-select__label" for="kit-select">Enter your kit SKU or choose from the list.</label>
                     <div class="kit-select">
                         <input
@@ -241,14 +250,9 @@
                     <p id="kit-select-help" class="kit-select__help">Tip: kit SKUs start with <code>S360-KIT-</code>. Check the box label or your order confirmation.</p>
                     <p class="kit-select__error" data-kit-select-error role="alert" hidden></p>
                     <div class="kit-summary" data-kit-summary hidden aria-live="polite"></div>
-                    <div class="kit-mode-actions">
-                        <button class="btn btn-primary btn-next" type="button" data-kit-mode-next disabled>Continue with this kit &rarr;</button>
-                        <button class="btn btn-link" type="button" data-kit-mode-switch-manual>Choose hardware manually instead</button>
-                    </div>
-                </section>
 
-                <section class="manual-mode-panel" data-manual-mode-panel hidden>
-                    <section class="quick-start-hero" data-quick-start-presets aria-label="Quick start presets">
+                    <section class="quick-start-hero quick-start-hero--kit-fallback" data-quick-start-presets aria-label="No-SKU fallback for the supported kit">
+                        <p class="quick-start-hero__lead">Don&rsquo;t know your SKU? Start with the supported kit:</p>
                         <button class="quick-start-card quick-start-card--featured btn-preset" type="button" data-preset="recommended" data-preset-config='{"mount":"ceiling","power":"poe","bathroom":true,"ventiq":"ventiq","roomiq":"roomiq","airiq":"none","fan":"none","led":"none"}'>
                             <span class="quick-start-card__badge">Most popular</span>
                             <span class="quick-start-card__title">Ceiling VentIQ + RoomIQ over PoE</span>
@@ -257,9 +261,25 @@
                         </button>
                     </section>
 
+                    <div class="kit-mode-actions">
+                        <button class="btn btn-primary btn-next" type="button" data-kit-mode-next disabled>Continue with this kit &rarr;</button>
+                        <button class="btn btn-link" type="button" data-kit-mode-switch-manual>Switch to custom configuration</button>
+                    </div>
+                </section>
+
+                <section class="manual-mode-panel custom-path-panel" data-manual-mode-panel data-custom-path-panel data-start-path-panel="custom" aria-label="Custom configuration" hidden>
+                    <header class="path-panel__header">
+                        <h3 class="path-panel__title">Custom configuration</h3>
+                        <button class="btn btn-link path-panel__back" type="button" data-start-path-back>&larr; Choose a different path</button>
+                    </header>
+                    <p class="custom-path-panel__intro">Plan a custom Sense360 setup module by module. Some modules are not yet available in WebFlash and will be clearly marked when you reach the module step.</p>
+                    <ul class="custom-path-panel__notes">
+                        <li>Available modules install today.</li>
+                        <li>Preview modules require acknowledging the preview channel before install.</li>
+                        <li>Modules marked &ldquo;No WebFlash firmware yet&rdquo;, &ldquo;Design pending&rdquo;, or &ldquo;Blocked&rdquo; cannot be flashed from WebFlash.</li>
+                    </ul>
                     <div class="manual-path">
-                        <p class="manual-path__label">Building something different?</p>
-                        <button class="btn btn-secondary btn-next" type="button" data-next>Configure manually &rarr;</button>
+                        <button class="btn btn-primary btn-next" type="button" data-next>Continue to Core &rarr;</button>
                     </div>
                 </section>
 

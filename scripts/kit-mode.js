@@ -1,5 +1,6 @@
 /**
- * @fileoverview Kit / SKU configuration mode controller.
+ * @fileoverview Kit / SKU configuration mode controller and Step 1 path
+ *   selector (WF-UX-006).
  *
  * Wires the Step 1 kit picker to the existing wizard state. The kit catalog
  * is loaded from scripts/data/kits.json via scripts/utils/kit-config.js; on
@@ -7,6 +8,15 @@
  * manual selection uses, and the user is forwarded to Step 5 to review the
  * recommended firmware. Kit selection never bypasses provenance, the
  * release-channel UI, or the install gating logic in state.js.
+ *
+ * WF-UX-006 layers a path controller on top of the legacy mode controller:
+ * Step 1 exposes three customer-facing buttons (kit / custom / recovery).
+ * `setPath('kit')` and `setPath('custom')` delegate to the existing
+ * `setMode('kit'|'manual')` machinery (custom is the canonical alias for
+ * manual). `setPath('recovery')` opens the existing rescue/recovery modal
+ * without altering wizard state, configuration mode, or firmware policy.
+ * The path value is presentation-only — it never enters config strings,
+ * manifests, kits, release-channel policy, or the install gate.
  *
  * @module kit-mode
  */
@@ -37,7 +47,10 @@ const MOUNT_LABELS = Object.freeze({
     ceiling: 'Ceiling mount'
 });
 
+const PATH_VALUES = Object.freeze(['kit', 'custom', 'recovery']);
+
 let currentMode = 'manual';
+let currentPath = null;
 let cachedCatalog = null;
 let activeKitSku = null;
 
@@ -218,6 +231,73 @@ function setMode(mode, { silent = false } = {}) {
     }
 }
 
+// WF-UX-006 — Step 1 path selector. `kit` and `custom` are the two
+// wizard paths; `recovery` is a side-door that opens the existing rescue
+// modal without changing wizard state. `custom` is the canonical alias
+// for the legacy `manual` configuration mode.
+function setPath(path, { silent = false } = {}) {
+    if (!PATH_VALUES.includes(path)) {
+        return;
+    }
+
+    if (path === 'recovery') {
+        currentPath = 'recovery';
+        const startGroup = getStartPathsGroup();
+        if (startGroup) {
+            startGroup.setAttribute('data-start-path-active', 'recovery');
+        }
+        // The recovery card delegates to the existing rescue/recovery
+        // modal. We don't import openRescueModal at module load time
+        // because rescue-modal.js is loaded lazily by app.js, and a
+        // direct import here would race the first paint of Step 1.
+        // The static markup tags the button with `data-rescue-open`, so
+        // the delegated click handler in scripts/layout/rescue-modal.js
+        // takes care of opening the modal. We just record the path and
+        // announce.
+        if (!silent) {
+            announce('Recovery path selected. Opening rescue and recovery mode.');
+        }
+        return;
+    }
+
+    currentPath = path;
+    setMode(path === 'kit' ? 'kit' : 'manual', { silent });
+
+    const startGroup = getStartPathsGroup();
+    if (startGroup) {
+        startGroup.setAttribute('data-start-path-active', path);
+    }
+
+    if (!silent) {
+        announce(path === 'kit'
+            ? 'Kit path selected.'
+            : 'Custom configuration path selected.');
+    }
+}
+
+function clearPath({ silent = true } = {}) {
+    currentPath = null;
+    const startGroup = getStartPathsGroup();
+    if (startGroup) {
+        startGroup.removeAttribute('data-start-path-active');
+    }
+    const kitPanel = getKitPanel();
+    const manualPanel = getManualPanel();
+    if (kitPanel) {
+        kitPanel.hidden = true;
+    }
+    if (manualPanel) {
+        manualPanel.hidden = true;
+    }
+    if (!silent) {
+        announce('Returned to path selection.');
+    }
+}
+
+function getStartPathsGroup() {
+    return document.querySelector('[data-start-paths]');
+}
+
 function clearWizardModuleSelections() {
     // When switching to a kit we reset every module selection so a stale
     // pick from the manual flow doesn't combine with the kit definition.
@@ -342,6 +422,35 @@ function attachListeners() {
         });
     }
 
+    // WF-UX-006 — Step 1 path buttons. The recovery button also carries
+    // `data-rescue-open` so the rescue-modal's delegated click handler
+    // opens the dialog; `setPath('recovery')` only records state +
+    // announces, it does not duplicate the modal-open call.
+    const startGroup = getStartPathsGroup();
+    if (startGroup) {
+        startGroup.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-start-path]');
+            if (!button || !startGroup.contains(button)) {
+                return;
+            }
+            const path = button.dataset.startPath;
+            if (!PATH_VALUES.includes(path)) {
+                return;
+            }
+            if (path !== 'recovery') {
+                event.preventDefault();
+            }
+            setPath(path);
+        });
+    }
+
+    document.querySelectorAll('[data-start-path-back]').forEach(backBtn => {
+        backBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            clearPath({ silent: false });
+        });
+    });
+
     const select = getKitSelect();
     if (select) {
         select.addEventListener('change', () => {
@@ -365,7 +474,7 @@ function attachListeners() {
     if (switchManualBtn) {
         switchManualBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            setMode('manual');
+            setPath('custom');
         });
     }
 
@@ -391,12 +500,17 @@ function getRequestedModeFromUrl() {
     // / normal). A dedicated `configmode=` namespace keeps the kit picker
     // independent of release-mode handling and avoids surprises if someone
     // shares a link with both knobs set.
+    //
+    // WF-UX-006: `configmode=custom` is the canonical alias for the legacy
+    // `configmode=manual` keyword. Older saved share-links with `manual` keep
+    // resolving to the custom path. We do not introduce a separate `path=`
+    // URL key — the `configmode=` namespace already covers it.
     try {
         const params = new URLSearchParams(window.location.search || '');
         const configMode = (params.get('configmode') || '').toLowerCase();
         const sku = params.get('sku');
 
-        if (configMode === 'manual') {
+        if (configMode === 'manual' || configMode === 'custom') {
             return { mode: 'manual', sku: '' };
         }
         if (configMode === 'kit' || sku) {
@@ -422,7 +536,17 @@ async function initKitMode() {
     }
 
     attachListeners();
-    setMode('kit', { silent: true });
+
+    // WF-UX-006 — when the static Step-1 path cards are present, the
+    // three cards own which panel is initially visible: a fresh visit
+    // shows the three buttons with both panels collapsed. When the
+    // cards are absent (legacy fixtures + older test rigs), preserve
+    // the historic behaviour of pre-revealing the kit panel so the
+    // existing kit-mode tests + saved share-links keep working.
+    const hasStartPaths = Boolean(getStartPathsGroup());
+    if (!hasStartPaths) {
+        setMode('kit', { silent: true });
+    }
 
     let catalog;
     try {
@@ -436,7 +560,11 @@ async function initKitMode() {
 
     const requested = getRequestedModeFromUrl();
     if (requested.mode === 'manual') {
-        setMode('manual', { silent: true });
+        if (hasStartPaths) {
+            setPath('custom', { silent: true });
+        } else {
+            setMode('manual', { silent: true });
+        }
         return;
     }
 
@@ -452,8 +580,27 @@ async function initKitMode() {
                 search.value = kit.sku;
             }
             applyKitToWizard(kit);
+            if (hasStartPaths) {
+                setPath('kit', { silent: true });
+            }
         } else {
             setError(`No kit found for SKU "${requested.sku}". Choose hardware manually or pick a kit from the list.`);
+            if (hasStartPaths) {
+                setPath('kit', { silent: true });
+            }
+        }
+    } else if (hasStartPaths) {
+        // configmode=kit with no SKU → reveal the kit panel so the user
+        // can pick from the list. With no configmode markers at all,
+        // leave the three cards visible.
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            const configMode = (params.get('configmode') || '').toLowerCase();
+            if (configMode === 'kit') {
+                setPath('kit', { silent: true });
+            }
+        } catch {
+            // ignore
         }
     }
 }
@@ -467,8 +614,11 @@ if (document.readyState === 'loading') {
 export const __testHooks = Object.freeze({
     initKitMode,
     setMode,
+    setPath,
+    clearPath,
     handleKitSelection,
     applyKitToWizard,
     getCurrentMode: () => currentMode,
+    getCurrentPath: () => currentPath,
     getActiveKitSku: () => activeKitSku
 });

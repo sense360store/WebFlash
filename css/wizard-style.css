@@ -5291,7 +5291,130 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     line-height: 1.4;
 }
 
-/* Step 1 — Configuration mode picker (Kit / Manual). */
+/* WF-UX-006 — Step 1 path selector (kit / custom / recovery). */
+.start-paths {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 0 0 18px;
+}
+
+.start-path-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 18px 18px 20px;
+    border: 1.5px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, transform 0.06s ease;
+}
+
+.start-path-card:hover,
+.start-path-card:focus-visible {
+    border-color: var(--brand-green-contrast, #1f9e6b);
+    box-shadow: 0 0 0 3px var(--brand-green-selection-surface-subtle, rgba(31, 158, 107, 0.12));
+    outline: none;
+}
+
+.start-path-card:active {
+    transform: translateY(1px);
+}
+
+.start-path-card__title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--color-text-primary);
+}
+
+.start-path-card__description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+}
+
+.start-path-card--recovery {
+    border-color: rgba(220, 38, 38, 0.35);
+}
+
+.start-path-card--recovery .start-path-card__title {
+    color: #b91c1c;
+}
+
+[data-start-paths][data-start-path-active] {
+    /* Soften the cards once the user has chosen a path so the active
+       panel below gets the visual focus. */
+    opacity: 0.85;
+}
+
+.path-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 12px;
+}
+
+.path-panel__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.path-panel__back {
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.custom-path-panel {
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin: 0 0 18px;
+    background: var(--color-surface);
+}
+
+.custom-path-panel__intro {
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+}
+
+.custom-path-panel__notes {
+    margin: 0 0 14px;
+    padding-left: 18px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+}
+
+.quick-start-hero--kit-fallback {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--color-border);
+}
+
+.quick-start-hero__lead {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* The legacy [data-config-mode-picker] radio group is kept only as a
+   hidden back-compat surface for older share-link parsing. The new
+   path cards above replace its UI role. */
+.config-mode-picker--legacy {
+    display: none !important;
+}
+
+/* Step 1 — Configuration mode picker (Kit / Manual) — legacy. */
 .config-mode-picker {
     border: 1px solid var(--color-border);
     border-radius: 12px;
