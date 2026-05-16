@@ -1,5 +1,54 @@
 # Firmware Distribution & Upload Process Review
 
+> **Historical document — not current implementation guidance.** This
+> review was authored against the pre-WF-CLEANUP-001 state of WebFlash,
+> when `manifest.json` carried 16 builds (across ten distinct
+> `config_string` values) and firmware was hand-copied into
+> `firmware/configurations/`. That state no longer exists: WF-CLEANUP-001
+> through WF-CLEANUP-008 retired the missing-`.bin` legacy entries,
+> WF-LED-001 / -002 / -003 added a manifest-only LED preview gated by the
+> `channel:preview` acknowledgement, and the cross-repo importer is now
+> the sanctioned path for new shipping firmware.
+>
+> **Current state (post-WF-LED-003 / WF-PRODUCT-004):** `manifest.json`
+> ships three builds — `Ceiling-POE-VentIQ-RoomIQ` (stable Release-One,
+> imported from `sense360store/esphome-public@v1.0.0`),
+> `Ceiling-POE-VentIQ-RoomIQ-LED` (preview, imported from
+> `v1.0.0-led-preview`), and `Rescue` (built in-tree). `REQUIRED_CONFIGS`
+> is production-only and holds exactly `Ceiling-POE-VentIQ-RoomIQ` +
+> `Rescue`. `scripts/data/kits.json` is Release-One-only. FanTRIAC stays
+> blocked under HW-005; LED stays on `channel: preview`.
+>
+> The filename examples below (`Sense360-CoreVoice-Ceiling-POE-AirIQPro-...`,
+> `Sense360-CoreVoice-Ceiling-PWR-AirIQPro-FanPWM-...`,
+> `Sense360-Core-Wall-USB-...`, etc.) use tokens that the current
+> naming-policy validator (`scripts/validate-naming-policy.js`) **rejects**
+> (`CoreVoice` / `Core` prefixes, `AirIQPro`, `Wall`) or that are currently
+> blocked from Release-One by `firmware/sources.json` `block_tokens`
+> (`FanTRIAC`, `LED` on Release-One source). They are preserved verbatim
+> as period-accurate illustrations of the pre-importer pain points this
+> review was written to surface; they are **not current guidance** and
+> must not be used in new filenames, manifests, or workflow snippets.
+>
+> For current implementation guidance, see:
+> - [`docs/firmware-import.md`](docs/firmware-import.md) — the cross-repo
+>   importer contract that replaced manual `cp` into
+>   `firmware/configurations/` for upstream `sense360store/esphome-public`
+>   releases.
+> - [`docs/product-import-readiness.md`](docs/product-import-readiness.md) —
+>   the four-dimension eligibility validator (import / manifest /
+>   `REQUIRED_CONFIGS` / kit) that classifies upstream catalog entries.
+> - [`docs/webflash-required-configs-cleanup.md`](docs/webflash-required-configs-cleanup.md) —
+>   rationale for the production-only `REQUIRED_CONFIGS` policy.
+> - [`docs/led-preview-import-plan.md`](docs/led-preview-import-plan.md) —
+>   the WF-LED-001 / -002 / -003 planning + decision history for the
+>   manifest-only LED preview.
+> - [`docs/webflash-cleanup-audit.md`](docs/webflash-cleanup-audit.md) and
+>   [`docs/github-pages-surface-audit.md`](docs/github-pages-surface-audit.md) —
+>   baseline audits that scoped and verified the WF-CLEANUP work.
+> - [`CLAUDE.md`](CLAUDE.md) — the canonical SKU table, contract
+>   summary, and do-not-change guardrails.
+
 ## Executive Summary
 
 This document reviews the current firmware distribution and uploading process to GitHub for the WebFlash project, identifies pain points from an admin perspective, and proposes improvements including CI/CD automation opportunities.

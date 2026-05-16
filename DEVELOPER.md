@@ -109,7 +109,7 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 
 **MountType**: `Ceiling` is the only supported mount. (`Wall` lingers as a legacy alias but no firmware should target it.)
 
-**Voice** (optional): Insert the `Voice` segment immediately after the mount when the build includes voice-assistant integration (e.g. `Sense360-Ceiling-Voice-USB-...`). Voice builds use the LED ring's integrated I2S microphone.
+**Voice** (legacy / not WebFlash-installable today): `Voice` is preserved as a recognised filename token by the naming-policy validator and as a URL alias by `scripts/utils/url-config.js` so old shareable links still resolve, but the customer-facing wizard exposes only the standard `voice=none` ("Core") radio and no Voice-bearing firmware is currently published. Do not author new Voice-bearing filenames; the segment is documented here only so the validator and URL parser contracts remain readable.
 
 **PowerType**: `USB`, `POE`, or `PWR`. These map to USB Power, Sense360 PoE PSU (`S360-410`), and Sense360 240v PSU (`S360-400`) respectively.
 
@@ -118,20 +118,19 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 - `AirIQ` — Sense360 AirIQ (`S360-210`). Air-quality stack: SCD41 (CO₂), SGP41 (VOC), MICS-4514 (gas), with optional SPS30 (PM) / SFA30 (HCHO) connectors.
 - `VentIQ` — Sense360 VentIQ (`S360-211`). Bathroom-focused air-quality stack with onboard SGP41; IR-temp and SPS30 connectors. Ceiling + Bathroom mode only.
 - `Fan` — Sense360 driver (`S360-310` Relay, `S360-311` PWM, or `S360-312` DAC). The specific driver is selected at runtime via the wizard.
-- `LED` — Sense360 LED (`S360-300`), addressable WS2812B ring; required for voice builds.
+- `LED` — Sense360 LED (`S360-300`), addressable WS2812B ring. Selectable via the LED module toggle in the wizard; when paired with Ceiling + PoE + VentIQ + RoomIQ it resolves to the current LED preview build (`Ceiling-POE-VentIQ-RoomIQ-LED`, `channel: preview`, gated by the existing `channel:preview` acknowledgement).
 
 **Module Constraints:**
 - `Bathroom` is only available for Ceiling installations.
 - `VentIQ` requires `Bathroom` to be enabled.
 - `AirIQ` and `VentIQ` are mutually exclusive: the Bathroom toggle drives which one is visible on Ceiling mounts.
-- Voice builds require the `LED` ring (integrated I2S microphone lives on the LED board).
 - `DAC` (`S360-312`) conflicts with `AirIQ` because both contend for the shared DAC bus.
 
 **Module Sensors:**
 - Sense360 RoomIQ (`S360-200`): PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure).
 - Sense360 AirIQ (`S360-210`): SCD41 (CO₂), SGP41 (VOC), MICS-4514 + STM8 (gas), optional SPS30 (PM), optional SFA30 (HCHO).
 - Sense360 VentIQ (`S360-211`): SGP41 (VOC) onboard, optional MLX90614 (IR surface temp), optional SPS30 (PM).
-- Sense360 LED (`S360-300`): WS2812B addressable LEDs, integrated I2S microphone for voice builds.
+- Sense360 LED (`S360-300`): WS2812B addressable LED ring.
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
 
@@ -148,25 +147,50 @@ The naming-policy validator (`scripts/validate-naming-policy.js`) actively rejec
 
 ### Examples
 
-These illustrate the canonical filename shape. All use current canonical
-tokens (`AirIQ`, `VentIQ`, `FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`,
-`LED`, `Voice`) and Ceiling-mount only. `Wall`, `AirIQBase` / `AirIQPro`,
-and `VentIQBase` / `VentIQPro` are validator-rejected legacy tokens and
-must not be used in new filenames. `FanTRIAC` and `LED` are accepted by
-the naming policy validator but are currently blocked from Release-One by
-`firmware/sources.json` `block_tokens` — including them only makes sense
-once that block lifts.
+These are the application firmware artifacts WebFlash currently ships. Both
+are produced by the cross-repo importer (see
+[`docs/firmware-import.md`](docs/firmware-import.md)) from
+`sense360store/esphome-public` and live under `firmware/configurations/`
+with matching `.meta.json` sidecars.
 
 ```
-Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin    # current Release-One
+Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin       # Release-One (stable)
+Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin  # LED preview (channel: preview, ack-gated)
+```
+
+The standalone Rescue artifact (`firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin`)
+is built in-tree, not via the importer, and is the only sanctioned exception
+to the `firmware/sources.json` source-of-truth contract.
+
+#### Filename shape — historical / do-not-copy examples
+
+Older filenames are preserved here only as period-accurate illustrations of
+the `Sense360-[Mount]-[Power]-[Modules]-vX.Y.Z-[channel].bin` shape. **None
+of these names ship today** — they reference configurations that are no
+longer published, that use validator-rejected tokens (`Wall`, `Voice` in
+filename position, `AirIQBase` / `AirIQPro`, `VentIQBase` / `VentIQPro`,
+`FanAnalog`, `Core` / `CoreVoice` prefix), or that are currently blocked
+from Release-One by `firmware/sources.json` `block_tokens` (`FanTRIAC`).
+Do **not** copy these into new filenames; the naming-policy validator
+will reject them, and the importer + manifest-health guards will refuse
+to ship them.
+
+```
+# Historical / not currently shipping — illustrative only:
 Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin
 Sense360-Ceiling-PWR-AirIQ-v1.0.0-stable.bin
 Sense360-Ceiling-USB-AirIQ-v1.0.0-stable.bin
 Sense360-Ceiling-USB-FanPWM-v1.0.0-stable.bin
 Sense360-Ceiling-USB-FanDAC-v1.0.0-stable.bin
-Sense360-Ceiling-Voice-POE-AirIQ-v1.0.0-stable.bin
-Sense360-Ceiling-Voice-USB-v1.0.0-stable.bin
+Sense360-Ceiling-Voice-POE-AirIQ-v1.0.0-stable.bin   # Voice not customer-facing today
+Sense360-Ceiling-Voice-USB-v1.0.0-stable.bin         # Voice not customer-facing today
 ```
+
+`FanTRIAC` and `Wall` are accepted by the naming-policy validator as
+*filename tokens* (so legacy artefacts can still be parsed by tooling) but
+remain excluded from production WebFlash: `FanTRIAC` is blocked at import +
+manifest-health time pending S360-320 hardware verification (HW-005), and
+`Wall` is hidden from the wizard surface.
 
 
 ## Naming Policy Validator
@@ -202,13 +226,13 @@ Release notes files must match their firmware file:
 
 ```
 # Firmware file
-Sense360-Core-Wall-USB-v1.0.0-stable.bin
+Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin
 
 # Release notes file (stable)
-firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.md
+firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.md
 
 # Release notes file (preview/beta/dev)
-firmware/previews/Sense360-Core-Wall-USB-v1.1.0-preview.md
+firmware/previews/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.1.0-preview.md
 ```
 
 ### Format
@@ -217,7 +241,7 @@ firmware/previews/Sense360-Core-Wall-USB-v1.1.0-preview.md
 # Sense360 [Config] v[Version] ([Channel])
 
 ## Configuration Details
-- **Mounting Type**: [Wall/Ceiling]
+- **Mounting Type**: Ceiling
 - **Power Option**: [USB/POE/PWR]
 - **Expansion Modules**: [Modules list]
 - **Chip Family**: ESP32-S3
@@ -324,25 +348,46 @@ open http://localhost:5000
 > [Import Firmware from `esphome-public` GitHub Releases](#import-firmware-from-esphome-public-github-releases)
 > above.
 
+**For new shipping firmware, prefer the importer.** Declare the upstream
+source in [`firmware/sources.json`](firmware/sources.json) and run
+[`scripts/import-firmware-sources.py`](scripts/import-firmware-sources.py)
+(or dispatch `.github/workflows/firmware-import.yml`); see
+[`docs/firmware-import.md`](docs/firmware-import.md) for the full contract.
+The importer fetches the upstream `.bin`, verifies its SHA256 against the
+upstream `checksums-sha256.txt`, enforces the per-source `block_tokens`
+allowlist, and writes the `<asset>.meta.json` sidecar that
+`manifest-health.test.js` and `gen-manifests.py --mode production` require.
+
+The legacy hand-copy walkthrough below is retained for hand-curated builds
+that already satisfy the sidecar + naming-policy + manifest-health
+contract. The Rescue firmware under `firmware/rescue/` is the only
+sanctioned in-tree exception today.
+
 ```bash
 # 1. Add firmware to repository (legacy flow; prefer the importer for new builds).
-cp your-firmware.bin firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin
+#    Use a canonical filename — Ceiling mount only, current modules only.
+cp your-firmware.bin firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin
 
-# 2. Create release notes (optional)
-cat > firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.md << 'EOF'
-# Sense360 Core Wall USB v1.0.0 (stable)
+# 2. Author the matching .meta.json sidecar (changelog, known_issues, features,
+#    hardware_requirements, signed_by, deprecated, artifact_type, improv).
+#    See an existing sidecar under firmware/configurations/ for the schema.
+
+# 3. (Optional) Stable release notes also live alongside the .bin:
+cat > firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.md << 'EOF'
+# Sense360 Ceiling POE VentIQ RoomIQ v1.0.0 (stable)
 [Release notes content]
 EOF
 
-# 3. Generate manifests
+# 4. Generate manifests
 python3 scripts/gen-manifests.py --summary
 
-# 4. Verify
+# 5. Verify
 python3 -m http.server 5000  # Test locally
 
-# 5. Commit and push
+# 6. Commit and push (firmware binary + sidecar + regenerated manifests in
+#    the same commit).
 git add .
-git commit -m "Add Core Wall USB v1.0.0 stable firmware"
+git commit -m "Add Ceiling-POE-VentIQ-RoomIQ v1.0.0 stable firmware"
 git push origin main
 ```
 
@@ -703,22 +748,26 @@ WebFlash/
 
 ### manifest.json
 
-Main catalog containing all firmware builds:
+Main catalog containing all firmware builds. The example below uses the
+current Release-One artifact; consult the in-tree `manifest.json` for the
+full schema including hashes, signatures, sidecar-derived fields
+(`features`, `hardware_requirements`, `known_issues`, `changelog`), and
+provenance fields (`source_commit`, `source_url`, `signed_by`).
 
 ```json
 {
-  "name": "Sense360 Firmware Collection",
+  "name": "Sense360 Modular Platform Firmware",
   "builds": [
     {
-      "name": "Sense360-Core-Wall-USB-v1.0.0-stable",
+      "name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable",
       "version": "1.0.0",
       "channel": "stable",
       "chipFamily": "ESP32-S3",
       "improv": true,
-      "description": "Firmware description",
+      "description": "Stable firmware for Sense360 Ceiling-POE-VentIQ-RoomIQ configuration. Recommended for production deployments.",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin",
           "offset": 0
         }
       ]
@@ -733,7 +782,7 @@ Individual manifests for ESP Web Tools:
 
 ```json
 {
-  "name": "Sense360-Core-Wall-USB-v1.0.0-stable",
+  "name": "Sense360 ESP32 Firmware - Core Module",
   "version": "1.0.0",
   "builds": [
     {
@@ -741,7 +790,7 @@ Individual manifests for ESP Web Tools:
       "improv": true,
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Core-Wall-USB-v1.0.0-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin",
           "offset": 0
         }
       ]
