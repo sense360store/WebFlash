@@ -85,7 +85,7 @@ export async function getChangelog() {
 
 /**
  * Gets changelog entries for a specific configuration.
- * @param {string} configString - Configuration string (e.g., "Wall-USB-AirIQBase")
+ * @param {string} configString - Configuration string (e.g., "Ceiling-POE-VentIQ-RoomIQ")
  * @returns {Promise<ChangelogEntry[]>}
  */
 export async function getChangelogForConfig(configString) {

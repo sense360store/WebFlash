@@ -204,9 +204,13 @@ function ensureSearchParams(input) {
  * @param {URLSearchParams|string|Object} inputParams - Input parameters to parse
  * @returns {ParsedConfig} Parsed and validated configuration
  * @example
- * const result = parseConfigParams('core=core&mount=ceiling&power=usb&airiq=airiq');
+ * // Parses a Release-One-shaped share link. The parser emits segments in
+ * // CONFIG_MODULE_KEYS order (led, roomiq, airiq/bathroomairiq, fan), so the
+ * // emitted configKey is normalised downstream when matched against
+ * // manifest.json's Release-One config_string (Ceiling-POE-VentIQ-RoomIQ).
+ * const result = parseConfigParams('core=core&mount=ceiling&power=poe&bathroomairiq=ventiq&roomiq=roomiq');
  * if (result.isValid) {
- *   console.log(result.configKey); // 'Ceiling-USB-AirIQ'
+ *   console.log(result.configKey); // 'Ceiling-POE-RoomIQ-VentIQ'
  * }
  */
 function parseConfigParams(inputParams) {
