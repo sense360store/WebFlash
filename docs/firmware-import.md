@@ -522,3 +522,31 @@ node scripts/validate-product-import-readiness.js --format json
 The validator's rules are the human-readable form of the assertions in
 `__tests__/product-catalog-alignment.test.js`; see
 `__tests__/product-import-readiness.test.js` for the Jest pin.
+
+### WF-IMPORT-GAP-001 — WebFlash import readiness matrix
+
+[`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
+records the WebFlash-side import readiness matrix: when an upstream
+release artifact is allowed to enter the WebFlash repo, what *class*
+of import (`stable`, `preview`, `advanced / manual-warning`, `rescue`,
+`docs-only`, `legacy-only`, `none`) it would be, and what runtime
+exposure (`REQUIRED_CONFIGS`, kits, recommended path, preview /
+advanced acknowledgement) that import does and does not unlock. The
+matrix sits *in front of* the import mechanism documented here:
+WF-PRODUCT-004 answers *catalog → eligibility*, WF-IMPORT-GAP-001
+answers *eligibility → import sequencing*, and this doc describes
+how the importer actually runs once the matrix says an import is
+allowed.
+
+WF-IMPORT-GAP-001 is documentation-only — it does not import
+firmware, regenerate manifests, change `firmware/sources.json`,
+change `REQUIRED_CONFIGS`, modify `scripts/data/kits.json`, or alter
+any runtime / wizard / service-worker / workflow / test surface. It
+reserves follow-up PR identifiers (`WF-IMPORT-RELAY-001`,
+`WF-IMPORT-PWM-001`, `WF-IMPORT-DAC-001`, `WF-IMPORT-TRIAC-001`,
+`WF-IMPORT-POWER-400-001`, `WF-IMPORT-POE-410-001`,
+`WF-LED-STABLE-001`, `WF-REQUIRED-001`, `WF-KIT-LED-001`) for the
+deliberate per-family imports and exposure decisions that will run
+through the importer documented above. Release-One, the LED preview,
+Rescue, the `REQUIRED_CONFIGS` allowlist, the kit list, and the
+FanTRIAC HW-005 block are unchanged by WF-IMPORT-GAP-001.

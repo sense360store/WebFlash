@@ -492,3 +492,14 @@ Recorded as a roadmap; none of these are part of WF-LED-001.
   preview's current state under WF-LED-003 is the live embodiment of
   that contract — `import` and `manifest` eligible, **not**
   `REQUIRED_CONFIGS` eligible, kit-eligible but not currently exposed.
+* [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) —
+  WF-IMPORT-GAP-001 WebFlash-side import readiness matrix. Treats
+  the WF-LED-001 → WF-LED-002 → WF-LED-003 sequence as the live
+  worked example of the *preview-import-candidate* → *preview-
+  imported* pathway, and reserves `WF-LED-STABLE-001` (after
+  `RELEASE-007` and `S360-300-BENCH-001`) for any future LED
+  stable promotion. The matrix does not promote LED to stable,
+  does not add LED to `REQUIRED_CONFIGS`, does not add an LED kit,
+  and does not modify the LED preview source entry, manifest
+  build, or `channel:preview` acknowledgement gate — every
+  WF-LED-003 invariant is preserved.
