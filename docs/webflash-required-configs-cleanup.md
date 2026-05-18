@@ -649,6 +649,55 @@ stays Release-One-only. WF-LED-003 changes no firmware, no manifest,
 no `firmware/sources.json`, no `__tests__/manifest-required-configs.test.js`,
 no workflow file, and no signing material.
 
+## WF-IMPORT-GAP-001 update
+
+WF-IMPORT-GAP-001 adds the WebFlash-side **import readiness matrix**
+at [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md).
+`REQUIRED_CONFIGS` is **unchanged** under WF-IMPORT-GAP-001 and
+remains exactly `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]` — the
+production-only allowlist policy this document established is
+preserved.
+
+The matrix formalises and extends the production-only rule:
+
+* `REQUIRED_CONFIGS` is **baseline site-health**, not a record of
+  every valid imported firmware.
+* New **preview imports** are never `REQUIRED_CONFIGS` (the LED
+  preview under WF-LED-003 is the live embodiment).
+* New **advanced / manual-warning imports** are never
+  `REQUIRED_CONFIGS` by default. FanTRIAC is never
+  `REQUIRED_CONFIGS` by default — and is never `REQUIRED_CONFIGS`
+  without a separate, deliberate `WF-REQUIRED-001`-class PR with
+  compliance evidence.
+* An **LED stable import** does not automatically become
+  `REQUIRED_CONFIGS`. The promotion to stable (`WF-LED-STABLE-001`,
+  gated on `RELEASE-007` + `S360-300-BENCH-001`) and the promotion
+  into `REQUIRED_CONFIGS` (`WF-REQUIRED-001`-class) are *two
+  separate* deliberate decisions even when upstream catalog state
+  would technically allow the latter.
+* Any future `REQUIRED_CONFIGS` addition is a **separate explicit
+  PR**. WF-IMPORT-GAP-001 reserves the `WF-REQUIRED-001` slot but
+  does not open it.
+
+What WF-IMPORT-GAP-001 does **not** do:
+
+* It does not edit the `REQUIRED_CONFIGS=( … )` array in
+  `.github/workflows/firmware-publish.yml`.
+* It does not edit `manifest.json` or any `firmware-*.json`.
+* It does not edit `firmware/sources.json`,
+  `scripts/data/kits.json`, `scripts/utils/release-channels.js`,
+  `scripts/utils/firmware-readiness.js`,
+  `scripts/utils/module-availability.js`, any importer / generator
+  / validator script, any runtime JS, any test, `sw.js`, `_headers`,
+  `index.html`, or any CSS.
+
+FanTRIAC remains blocked under HW-005. `scripts/data/kits.json`
+stays Release-One-only. The WF-LED-003 manifest-only LED preview
+exposure stays in force. WF-IMPORT-GAP-001 changes no firmware, no
+manifest, no `firmware/sources.json`, no
+`__tests__/manifest-required-configs.test.js`, no workflow file, and
+no signing material.
+
 ## See also
 
 * [`docs/product-import-readiness.md`](product-import-readiness.md) —
@@ -658,3 +707,12 @@ no workflow file, and no signing material.
   (including today's LED preview) are explicitly never
   `REQUIRED_CONFIGS`-eligible, even when they are import / manifest
   eligible.
+* [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) —
+  WF-IMPORT-GAP-001 WebFlash-side import readiness matrix.
+  Classifies future per-family imports against seven import classes
+  and pins the separation between *import* and *`REQUIRED_CONFIGS`
+  membership*: import does not automatically mean `REQUIRED_CONFIGS`,
+  preview imports never become `REQUIRED_CONFIGS`, advanced /
+  manual-warning imports never become `REQUIRED_CONFIGS` by default,
+  and any future `REQUIRED_CONFIGS` change is a separate
+  `WF-REQUIRED-001`-class PR.

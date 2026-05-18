@@ -1077,3 +1077,114 @@ list above stays in force until it does.
   eligibility model captured by this audit as a runnable Node CLI
   plus Jest pin
   (`__tests__/product-import-readiness.test.js`).
+* [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) —
+  WF-IMPORT-GAP-001 WebFlash-side import readiness matrix. Extends
+  the audit history catalogued here forward into future per-family
+  imports: classifies every candidate import family (Relay / PWM /
+  DAC / TRIAC / 240V PSU / PoE PSU / LED stable / AirIQ) against
+  the seven import classes (`none`, `docs-only`, `preview import
+  candidate`, `advanced / manual-warning import only`, `stable
+  import candidate after promotion`, `stable import`, `rescue
+  import`, `legacy-only`), reserves the deliberate follow-up PR
+  identifiers (`WF-IMPORT-RELAY-001`, `WF-IMPORT-PWM-001`,
+  `WF-IMPORT-DAC-001`, `WF-IMPORT-TRIAC-001`,
+  `WF-IMPORT-POWER-400-001`, `WF-IMPORT-POE-410-001`,
+  `WF-LED-STABLE-001`, `WF-REQUIRED-001`, `WF-KIT-LED-001`), and
+  preserves every do-not-change invariant recorded in this audit
+  — including the production-only `REQUIRED_CONFIGS`, the
+  Release-One-only kit, the FanTRIAC HW-005 block, and the
+  WF-LED-003 manifest-only LED preview exposure. WF-IMPORT-GAP-001
+  is documentation-only.
+
+## WF-IMPORT-GAP-001 update
+
+WF-IMPORT-GAP-001 adds the WebFlash-side **import readiness matrix**
+at [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md).
+The matrix is the downstream companion to PACKAGE-GAP-001 /
+PRODUCT-GAP-001 / WEBFLASH-GAP-001 / RELEASE-GAP-001 upstream and to
+WF-PRODUCT-004 ([`docs/product-import-readiness.md`](product-import-readiness.md))
+in-repo: it records *which future upstream artifacts can eventually
+be imported into WebFlash*, *what class* of import they would be,
+and *what runtime exposure that import does and does not unlock*.
+
+WF-IMPORT-GAP-001 imports nothing. It does not:
+
+* import firmware (no new `.bin` and no new `.meta.json`),
+* regenerate `manifest.json` or any `firmware-*.json`,
+* edit `firmware/sources.json`,
+* edit the `REQUIRED_CONFIGS` array in
+  `.github/workflows/firmware-publish.yml` (still
+  `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`),
+* edit `scripts/data/kits.json` (still Release-One only),
+* edit `scripts/utils/release-channels.js`,
+  `scripts/utils/firmware-readiness.js`,
+  `scripts/utils/module-availability.js`,
+  `scripts/import-firmware-sources.py`,
+  `scripts/gen-manifests.py`,
+  `scripts/validate-product-import-readiness.js`, or
+  `scripts/smoke-test-deployment.py`,
+* edit `sw.js`, `_headers`, `index.html`, any CSS, any runtime JS,
+  or any `__tests__/*` file,
+* add a new test, or
+* edit any workflow file under `.github/workflows/`.
+
+Per-family classifications recorded by the matrix:
+
+* **Release-One (`Ceiling-POE-VentIQ-RoomIQ`)** — `stable import`,
+  already imported, in `REQUIRED_CONFIGS`, in `kits.json`, byte-
+  identical to pre-WF-IMPORT-GAP-001.
+* **LED preview (`Ceiling-POE-VentIQ-RoomIQ-LED`)** — `preview
+  import`, already imported, **not** in `REQUIRED_CONFIGS`, **not**
+  in `kits.json`, `channel:preview` acknowledgement required
+  (WF-LED-003 invariant). LED stable is a separate
+  `stable import candidate after promotion` class — gated on
+  `RELEASE-007` + `S360-300-BENCH-001` and tracked as
+  `WF-LED-STABLE-001`.
+* **Rescue (`firmware/rescue/…`)** — `rescue import`, already
+  imported, named exemption in `REQUIRED_CONFIGS`, byte-identical.
+* **FanTRIAC / S360-320** — `blocked-from-standard-import` today;
+  future class `advanced / manual-warning import only`; never
+  `REQUIRED_CONFIGS` by default; never kit; never recommended;
+  advanced-warning runtime UX (`WF-TRIAC-001`) required before
+  `WF-IMPORT-TRIAC-001` may proceed.
+* **Relay / S360-310, PWM / S360-311, DAC / S360-312, 240V PSU /
+  S360-400, AirIQ / S360-210** — `not-import-ready` today;
+  classified as future `preview import candidate` families. Per-
+  family follow-up PRs (`WF-IMPORT-RELAY-001`, `WF-IMPORT-PWM-001`,
+  `WF-IMPORT-DAC-001`, `WF-IMPORT-POWER-400-001`) are reserved
+  pending the matching `RELEASE-…-001` upstream artifacts; AirIQ is
+  listed as a candidate without a numbered PR slot.
+* **PoE PSU / S360-410** — already covered transitively by the
+  existing Release-One + LED preview `power=poe` artifacts. No
+  separate import action exists or is planned;
+  `WF-IMPORT-POE-410-001` is reserved as a no-op slot unless
+  upstream ever ships a PoE-PSU-specific image.
+
+Scope of WF-IMPORT-GAP-001 — what changed and what did not:
+
+* **Changed:** new doc at
+  [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md);
+  short cross-link checkpoints in
+  [`docs/firmware-import.md`](firmware-import.md),
+  [`docs/product-import-readiness.md`](product-import-readiness.md),
+  [`docs/led-preview-import-plan.md`](led-preview-import-plan.md),
+  [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md),
+  [`docs/webflash-required-configs-cleanup.md`](webflash-required-configs-cleanup.md),
+  this document, and a single convention bullet in `CLAUDE.md`.
+* **Unchanged:** every `firmware/configurations/*.bin` and
+  `*.meta.json`, `firmware/rescue/*`, `firmware/sources.json`,
+  `manifest.json`, every `firmware-*.json`, `.github/workflows/*`
+  (including `REQUIRED_CONFIGS`), all of `scripts/` (importer,
+  generator, validator, runtime, `state.js`, `release-channels.js`,
+  `firmware-readiness.js`, `module-availability.js`,
+  `recommended-bundle.js`, `kit-mode.js`, `gen-manifests.py`,
+  `import-firmware-sources.py`, `validate-product-import-readiness.js`,
+  `validate-naming-policy.js`, `smoke-test-deployment.py`),
+  `scripts/data/kits.json`, all of `__tests__/`, `sw.js`,
+  `_headers`, `index.html`, every CSS file, the wizard frontend,
+  the rescue modal, the rescue manifest, all firmware-signing
+  artifacts. Release-One stable install path, LED preview
+  acknowledgement contract, FanTRIAC HW-005 block, Voice
+  quarantine, the WF-WIZARD-AVAIL-001 module-availability
+  classifications, and the WF-UX-002 readiness-string surface are
+  all byte-identical to pre-WF-IMPORT-GAP-001.

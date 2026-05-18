@@ -940,3 +940,18 @@ matching upstream / hardware preconditions land:
   the wizard's UX is normalised to.
 * [`DEVELOPER.md`](../DEVELOPER.md) — developer-facing
   architectural notes that complement this UX-facing roadmap.
+* [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) —
+  WF-IMPORT-GAP-001 WebFlash-side import readiness matrix.
+  Documents when future upstream firmware artifacts may be imported
+  into the WebFlash repo, what *class* of import they would be
+  (`stable` / `preview` / `advanced / manual-warning` / `rescue` /
+  `docs-only` / `legacy-only` / `none`), and what runtime exposure
+  (`REQUIRED_CONFIGS`, kits, recommended path, preview / advanced
+  acknowledgement) that import does and does not unlock. Out of
+  WF-UX scope but referenced by any UX follow-up that would touch
+  module availability, kits, the preview-channel exposure model,
+  or the FanTRIAC block: the matrix preserves every WF-UX
+  do-not-change guardrail and reserves the per-family follow-up
+  PR identifiers (`WF-IMPORT-RELAY-001`, `WF-IMPORT-PWM-001`,
+  `WF-IMPORT-DAC-001`, `WF-IMPORT-TRIAC-001`, `WF-LED-STABLE-001`,
+  etc.) that any UX restructure must respect.

@@ -386,3 +386,11 @@ Invariants that travel through this PR unchanged:
   catalog.
 - [`__tests__/product-import-readiness.test.js`](../__tests__/product-import-readiness.test.js) —
   the Jest suite pinning the rules described in this document.
+- [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) —
+  WF-IMPORT-GAP-001 WebFlash-side import readiness matrix. This
+  validator answers *catalog → eligibility*; the matrix answers
+  *eligibility → import sequencing* (which families may be imported,
+  what import class they would land in, what exposure that does and
+  does not unlock, and which deliberate follow-up PRs split the
+  per-family imports). Documentation-only, with no firmware /
+  manifest / source / kit / runtime / workflow / test change.
