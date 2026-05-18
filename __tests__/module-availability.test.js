@@ -1,15 +1,20 @@
 /**
  * WF-WIZARD-AVAIL-001 — module availability classifier contract.
+ * WF-TRIAC-001 — TRIAC moved from `blocked` to `advanced-manual-warning`.
  *
  * Pins the per-(module, variant) classification rules and the per-config_string
  * classification rules against the current manifest shape (Release-One stable
  * + LED preview + Rescue) and against the static overrides for Voice (legacy),
  * AirIQ (no-firmware), Relay (design-pending), PWM/DAC (no-firmware) and TRIAC
- * (blocked under HW-005 + COMPLIANCE-001).
+ * (advanced-manual-warning under HW-005 + COMPLIANCE-001 — visible + selectable
+ * but install-gated by the orthogonal advanced/manual-warning acknowledgement
+ * AND a future imported artifact).
  *
  * This is a policy-level pin: the classifier is presentation-only and does NOT
- * gate install. release-channel-ui.test.js stays the install-gate interlock;
- * this file just makes sure the customer sees an honest pill in Step 4.
+ * gate install. release-channel-ui.test.js stays the install-gate interlock for
+ * the preview-channel acknowledgement; wizard-state.test.js pins the install
+ * gate's advanced/manual-warning acknowledgement. This file just makes sure
+ * the customer sees an honest pill + detail in Step 4.
  */
 import { describe, expect, test } from '@jest/globals';
 import {
@@ -57,15 +62,16 @@ function classifyAgainstManifest(moduleKey, variantKey) {
 }
 
 describe('WF-WIZARD-AVAIL-001 — classification states + labels are canonical', () => {
-    test('seven distinct availability states are exported', () => {
+    test('eight distinct availability states are exported (WF-TRIAC-001 added advanced-manual-warning)', () => {
         const values = Object.values(AVAILABILITY_STATES);
-        expect(new Set(values).size).toBe(7);
+        expect(new Set(values).size).toBe(8);
         expect(values).toEqual(expect.arrayContaining([
             'available-stable',
             'available-preview',
             'no-firmware',
             'design-pending',
             'blocked',
+            'advanced-manual-warning',
             'legacy-only',
             'hidden'
         ]));
@@ -80,6 +86,7 @@ describe('WF-WIZARD-AVAIL-001 — classification states + labels are canonical',
         expect(AVAILABILITY_LABELS['no-firmware']).toBe('No WebFlash firmware yet');
         expect(AVAILABILITY_LABELS['design-pending']).toBe('Design pending');
         expect(AVAILABILITY_LABELS['blocked']).toBe('Blocked');
+        expect(AVAILABILITY_LABELS['advanced-manual-warning']).toBe('Advanced / manual only');
         expect(AVAILABILITY_LABELS['legacy-only']).toBe('Legacy / manual only');
         expect(AVAILABILITY_LABELS.hidden).toBe('');
     });
@@ -170,13 +177,29 @@ describe('WF-WIZARD-AVAIL-001 — per-module classification against current mani
         expect(result.detail).toMatch(/schematic/i);
     });
 
-    test('Fan: TRIAC → blocked under HW-005 (despite S360-320-R4 schematic upload)', () => {
+    test('WF-TRIAC-001 — Fan: TRIAC → advanced-manual-warning (visible + selectable + not installable)', () => {
         const result = classifyAgainstManifest('fan', 'triac');
-        expect(result.state).toBe(AVAILABILITY_STATES.BLOCKED);
-        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.HW_005);
+        expect(result.state).toBe(AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.HW_005_ADVANCED_MANUAL);
+        // Classifier is conservative: it never reports an advanced-manual-
+        // warning selection as installable, regardless of manifest contents.
+        // The install gate in scripts/state.js owns the live ack +
+        // manifest-match interlock.
         expect(result.installable).toBe(false);
-        // Blocked variants are NOT selectable — the radio is disabled.
-        expect(result.selectable).toBe(false);
+        // WF-TRIAC-001: advanced-manual-warning IS selectable — the user
+        // opts in deliberately and the install gate enforces the ack.
+        expect(result.selectable).toBe(true);
+        expect(result.tone).toBe('danger');
+        expect(result.label).toBe('Advanced / manual only');
+        // Copy must spell out the load-bearing facts so the customer cannot
+        // mistake this for compliance certification or a Release-One option.
+        expect(result.detail).toMatch(/mains-connected/i);
+        expect(result.detail).toMatch(/not compliance-certified/i);
+        expect(result.detail).toMatch(/not Release-One/i);
+        expect(result.detail).toMatch(/not a kit/i);
+        expect(result.detail).toMatch(/not recommended/i);
+        expect(result.detail).toMatch(/no installable firmware/i);
+        expect(result.detail).toMatch(/imported/i);
         expect(result.detail).toMatch(/HW-005/);
         expect(result.detail).toMatch(/COMPLIANCE-001/);
     });
@@ -223,18 +246,37 @@ describe('WF-WIZARD-AVAIL-001 — config_string classification', () => {
         expect(result.tone).toBe('warning');
     });
 
-    test('Any FanTRIAC-bearing config is BLOCKED, regardless of manifest content', () => {
+    test('WF-TRIAC-001 — Any FanTRIAC-bearing config is classified advanced-manual-warning (regardless of manifest content)', () => {
         // Even if a future synthetic manifest somehow shipped a FanTRIAC
-        // build, the blocked-token short-circuit must keep it non-installable
-        // until HW-005 + COMPLIANCE-001 clear.
+        // build, the token short-circuit must keep the classifier reporting
+        // non-installable. The install gate in scripts/state.js owns the
+        // live ack + manifest-match check.
         const result = classifyConfigString('Ceiling-POE-VentIQ-FanTRIAC-RoomIQ', {
             manifestStableConfigs: new Set(['Ceiling-POE-VentIQ-FanTRIAC-RoomIQ']),
             manifestPreviewConfigs: new Set()
         });
-        expect(result.state).toBe(AVAILABILITY_STATES.BLOCKED);
-        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.HW_005);
+        expect(result.state).toBe(AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.HW_005_ADVANCED_MANUAL);
         expect(result.installable).toBe(false);
         expect(result.detail).toMatch(/FanTRIAC/);
+        expect(result.detail).toMatch(/advanced\/manual-warning/i);
+        expect(result.detail).toMatch(/HW-005/);
+        expect(result.detail).toMatch(/COMPLIANCE-001/);
+        expect(result.detail).toMatch(/not Release-One/i);
+        expect(result.detail).toMatch(/not compliance-certified/i);
+    });
+
+    test('WF-TRIAC-001 — legacy `blockedTokens` option alias still triggers the advanced-manual-warning classifier', () => {
+        // Older callers may still pass the deprecated `blockedTokens`
+        // option name. The classifier treats it as a synonym for
+        // advancedWarningTokens so we don't break back-compat.
+        const result = classifyConfigString('Ceiling-POE-VentIQ-FanTRIAC-RoomIQ', {
+            manifestStableConfigs: new Set(),
+            manifestPreviewConfigs: new Set(),
+            blockedTokens: new Set(['FanTRIAC'])
+        });
+        expect(result.state).toBe(AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING);
+        expect(result.installable).toBe(false);
     });
 
     test('Core + AirIQ config (no manifest match) → no-firmware', () => {
@@ -286,17 +328,21 @@ describe('WF-WIZARD-AVAIL-001 — static overrides are explicit and minimal', ()
         expect(MODULE_VARIANT_AVAILABILITY_OVERRIDES.led).toBeUndefined();
     });
 
-    test('TRIAC override never resolves to anything installable, regardless of manifest', () => {
+    test('WF-TRIAC-001 — TRIAC override never resolves to anything installable at classifier level, regardless of manifest', () => {
         // Defensive: if a future manifest somehow added FanTRIAC to its
         // token set, the static override must still win and the variant
-        // must classify as blocked.
+        // must classify as advanced-manual-warning with installable=false.
+        // The install gate in scripts/state.js is the authority on whether
+        // a flash can actually fire (it requires the ack + manifest match).
         const result = classifyModuleVariant('fan', 'triac', {
             canonicalTokenFor,
             manifestStableTokens: new Set(['FanTRIAC']),
             manifestPreviewTokens: new Set()
         });
-        expect(result.state).toBe(AVAILABILITY_STATES.BLOCKED);
+        expect(result.state).toBe(AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING);
         expect(result.installable).toBe(false);
+        // Selectable so the user can pick it in the custom path.
+        expect(result.selectable).toBe(true);
     });
 });
 

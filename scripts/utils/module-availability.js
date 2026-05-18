@@ -4,8 +4,8 @@
  * Pure presentation-only helper that classifies each (module, variant)
  * combination and each assembled config_string into one of a fixed set of
  * availability states, so the Step 4 wizard can mark docs-only / design-
- * pending / blocked / legacy modules as non-installable BEFORE the user
- * reaches Step 5.
+ * pending / blocked / advanced-manual-warning / legacy modules as non-
+ * installable BEFORE the user reaches Step 5.
  *
  * Sources of truth (no new catalog fields, no committed PDFs):
  *
@@ -16,9 +16,12 @@
  *     `MODULE_VARIANT_AVAILABILITY_OVERRIDES` below, which encode the
  *     cases the manifest cannot disambiguate on its own:
  *       * Voice (legacy / manual only — never customer-facing).
- *       * Sense360 TRIAC / S360-320 (blocked under HW-005 +
- *         COMPLIANCE-001, even though S360-320-R4 schematic evidence
- *         exists upstream in sense360store/esphome-public).
+ *       * Sense360 TRIAC / S360-320 (advanced-manual-warning under
+ *         HW-005 + COMPLIANCE-001 — visible and selectable in the
+ *         custom path, but install-gated behind an explicit
+ *         advanced/manual-warning acknowledgement AND a future imported
+ *         artifact; never Release-One, never a kit / default, never
+ *         recommended, never compliance-certified).
  *       * Sense360 Relay / S360-310 (design pending — no S360-310
  *         schematic has been uploaded upstream yet).
  *       * Sense360 PWM / S360-311 and Sense360 DAC / S360-312
@@ -40,8 +43,18 @@
  * only in copy. PWM/DAC are 'no-firmware', not 'design-pending', because
  * their upstream schematic uploads cover that gap. Relay stays
  * 'design-pending' until an S360-310 schematic is uploaded upstream.
- * TRIAC stays 'blocked' regardless of the S360-320 schematic upload
- * because HW-005 and COMPLIANCE-001 remain active.
+ *
+ * WF-TRIAC-001 amendment: TRIAC moved from 'blocked' to
+ * 'advanced-manual-warning'. The `blocked` taxonomy value stays in the
+ * exported state set for any future genuinely-blocked module — no current
+ * variant uses it after this change. The advanced-manual-warning state
+ * is a *visible + selectable* state with `installable: false`; the
+ * install gate in scripts/state.js still enforces an additional
+ * advanced/manual-warning acknowledgement that is orthogonal to the
+ * release-channel preview acknowledgement (which is unchanged).
+ * Advanced/manual-warning is **not** a compliance certification claim;
+ * see docs/webflash-import-readiness-matrix.md for the import-side
+ * counterpart.
  */
 
 export const AVAILABILITY_STATES = Object.freeze({
@@ -50,6 +63,7 @@ export const AVAILABILITY_STATES = Object.freeze({
     NO_FIRMWARE: 'no-firmware',
     DESIGN_PENDING: 'design-pending',
     BLOCKED: 'blocked',
+    ADVANCED_MANUAL_WARNING: 'advanced-manual-warning',
     LEGACY_ONLY: 'legacy-only',
     HIDDEN: 'hidden'
 });
@@ -60,6 +74,7 @@ export const AVAILABILITY_LABELS = Object.freeze({
     'no-firmware': 'No WebFlash firmware yet',
     'design-pending': 'Design pending',
     'blocked': 'Blocked',
+    'advanced-manual-warning': 'Advanced / manual only',
     'legacy-only': 'Legacy / manual only',
     'hidden': ''
 });
@@ -70,6 +85,7 @@ export const AVAILABILITY_TONES = Object.freeze({
     'no-firmware': 'info',
     'design-pending': 'info',
     'blocked': 'danger',
+    'advanced-manual-warning': 'danger',
     'legacy-only': 'neutral',
     'hidden': 'neutral'
 });
@@ -80,9 +96,12 @@ export const AVAILABILITY_REASON_CODES = Object.freeze({
     NO_MANIFEST_BUILD: 'no-manifest-build',
     DESIGN_PENDING: 'design-pending',
     HW_005: 'hw-005',
+    HW_005_ADVANCED_MANUAL: 'hw-005-advanced-manual',
     LEGACY_COMPATIBLE: 'legacy-compatible',
     INTERNAL_PLACEHOLDER: 'internal-placeholder'
 });
+
+const ADVANCED_MANUAL_WARNING_DETAIL = 'Sense360 TRIAC (S360-320) controls mains-connected loads and is not compliance-certified by WebFlash. It is not Release-One, not a kit / default option, and not recommended. No installable firmware has been imported yet, and WebFlash will not install TRIAC firmware until an advanced/manual-warning artifact is imported. Selecting TRIAC requires explicit acknowledgement of the advanced/manual warning. HW-005 and COMPLIANCE-001 remain open upstream.';
 
 const DEFAULT_DETAIL_BY_STATE = Object.freeze({
     'available-stable': 'This module is covered by a published WebFlash build.',
@@ -90,6 +109,7 @@ const DEFAULT_DETAIL_BY_STATE = Object.freeze({
     'no-firmware': 'Documented hardware, but no WebFlash firmware build exists for this configuration yet.',
     'design-pending': 'No upstream schematic has been published yet, so no WebFlash firmware can be planned for this module.',
     'blocked': 'Hardware verification or compliance work is still open. WebFlash will not install firmware for this module.',
+    'advanced-manual-warning': ADVANCED_MANUAL_WARNING_DETAIL,
     'legacy-only': 'Legacy or manual-only path. Not surfaced as a WebFlash-selectable module.',
     'hidden': ''
 });
@@ -138,9 +158,9 @@ export const MODULE_VARIANT_AVAILABILITY_OVERRIDES = Object.freeze({
             detail: 'Sense360 DAC (S360-312) has S360-312-R4 schematic evidence upstream, but no WebFlash firmware build ships for this driver yet.'
         }),
         triac: Object.freeze({
-            state: AVAILABILITY_STATES.BLOCKED,
-            reasonCode: AVAILABILITY_REASON_CODES.HW_005,
-            detail: 'Sense360 TRIAC (S360-320) is blocked under HW-005 and COMPLIANCE-001. The S360-320-R4 schematic exists upstream, but mains-side hardware verification and compliance work must clear before WebFlash will install TRIAC firmware.'
+            state: AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING,
+            reasonCode: AVAILABILITY_REASON_CODES.HW_005_ADVANCED_MANUAL,
+            detail: ADVANCED_MANUAL_WARNING_DETAIL
         })
     })
 });
@@ -155,7 +175,15 @@ function makeClassification(state, reasonCode, detail) {
         tone: AVAILABILITY_TONES[state] || 'neutral',
         detail: resolvedDetail,
         reasonCode: reasonCode || '',
+        // Blocked variants are not selectable (radio disabled). The
+        // advanced-manual-warning state IS selectable — the user opts in
+        // deliberately and the install gate then enforces the
+        // acknowledgement + manifest-match interlock.
         selectable: state !== AVAILABILITY_STATES.BLOCKED,
+        // Installability is conservative — the classifier never reports
+        // an advanced-manual-warning selection as installable, regardless
+        // of manifest content. The install gate in scripts/state.js owns
+        // the live ack + manifest-match check.
         installable: state === AVAILABILITY_STATES.AVAILABLE_STABLE
             || state === AVAILABILITY_STATES.AVAILABLE_PREVIEW
     });
@@ -253,28 +281,39 @@ export function classifyModuleVariant(moduleKey, variantKey, options = {}) {
 /**
  * Classify an assembled wizard config_string (e.g. `Ceiling-POE-VentIQ-RoomIQ`).
  *
- * The classifier treats blocked tokens as terminal — if any blocked token
- * (`'FanTRIAC'` by default, matching firmware/sources.json `block_tokens`
- * under HW-005) appears in the config_string the result is `blocked`,
- * regardless of whether the full string is otherwise in the manifest.
+ * Token recognition short-circuits the manifest lookup:
+ *   - If any token in `advancedWarningTokens` (default `['FanTRIAC']`,
+ *     matching the WF-TRIAC-001 wizard policy) appears in the
+ *     config_string the result is `advanced-manual-warning`. This is a
+ *     conservative classifier-level signal — the install gate in
+ *     scripts/state.js still enforces both an acknowledgement and a
+ *     manifest match before TRIAC firmware can flash.
  *
  * Otherwise the manifest is the source of truth:
  *   - In `manifestStableConfigs` → `available-stable`.
  *   - In `manifestPreviewConfigs` → `available-preview`.
  *   - Otherwise → `no-firmware`.
  *
+ * The legacy `blockedTokens` option name is accepted for back-compat;
+ * when supplied it is treated identically to `advancedWarningTokens`.
+ *
  * @param {string} configString
  * @param {Object} [options]
  * @param {Set<string>} [options.manifestStableConfigs]
  * @param {Set<string>} [options.manifestPreviewConfigs]
- * @param {Set<string>} [options.blockedTokens]
+ * @param {Set<string>} [options.advancedWarningTokens]
+ * @param {Set<string>} [options.blockedTokens] - Deprecated alias for
+ *   advancedWarningTokens. Retained so older callers keep working.
  */
 export function classifyConfigString(configString, options = {}) {
     const {
         manifestStableConfigs = new Set(),
         manifestPreviewConfigs = new Set(),
-        blockedTokens = new Set(['FanTRIAC'])
+        advancedWarningTokens,
+        blockedTokens
     } = options;
+
+    const tokens = advancedWarningTokens || blockedTokens || new Set(['FanTRIAC']);
 
     if (typeof configString !== 'string' || configString.length === 0) {
         return makeClassification(
@@ -285,12 +324,12 @@ export function classifyConfigString(configString, options = {}) {
     }
 
     const segments = configString.split('-');
-    const blockedHit = segments.find(seg => blockedTokens.has(seg));
-    if (blockedHit) {
+    const tokenHit = segments.find(seg => tokens.has(seg));
+    if (tokenHit) {
         return makeClassification(
-            AVAILABILITY_STATES.BLOCKED,
-            AVAILABILITY_REASON_CODES.HW_005,
-            `${blockedHit} is blocked under HW-005 and COMPLIANCE-001. WebFlash will not install firmware for any configuration containing ${blockedHit}.`
+            AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING,
+            AVAILABILITY_REASON_CODES.HW_005_ADVANCED_MANUAL,
+            `${tokenHit} is an advanced/manual-warning module under HW-005 and COMPLIANCE-001. WebFlash will not install firmware for any configuration containing ${tokenHit} until an advanced/manual-warning artifact is imported AND the user acknowledges the advanced/manual warning. ${tokenHit} is not Release-One, not a kit / default, not recommended, and not compliance-certified.`
         );
     }
 

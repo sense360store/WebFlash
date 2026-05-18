@@ -108,13 +108,17 @@ describe('Step 4 static copy: customer-facing module-selection guidance', () => 
         expect(text).toMatch(/different firmware/i);
     });
 
-    test('TRIAC card carries TRIAC-specific firmware-target copy', () => {
+    test('WF-TRIAC-001 — TRIAC card carries TRIAC-specific advanced/manual-warning firmware-target copy', () => {
         const triacHint = document.querySelector('[data-firmware-impact="fan-triac"]');
         expect(triacHint).not.toBeNull();
-        // The hint must single out TRIAC so users understand it is not
-        // interchangeable with the other fan drivers.
-        expect(triacHint.textContent).toMatch(/TRIAC-specific/i);
-        expect(triacHint.textContent).toMatch(/fan firmware target/i);
+        // WF-TRIAC-001 — the hint singles out TRIAC AND surfaces the
+        // advanced/manual-warning posture so users understand it is not
+        // installable without acknowledging the warning AND a future
+        // imported artifact.
+        expect(triacHint.textContent).toMatch(/Sense360 TRIAC/i);
+        expect(triacHint.textContent).toMatch(/advanced\/manual-warning/i);
+        expect(triacHint.textContent).toMatch(/acknowledg/i);
+        expect(triacHint.textContent).toMatch(/imported/i);
 
         const triacCard = triacHint.closest('[data-module-card="fan"][data-variant="triac"]');
         expect(triacCard).not.toBeNull();

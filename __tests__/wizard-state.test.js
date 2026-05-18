@@ -897,7 +897,7 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         }));
     });
 
-    test('TRIAC card gains the blocked affordance after init, and its radio is disabled', async () => {
+    test('WF-TRIAC-001 — TRIAC card gains the advanced/manual-warning affordance and stays selectable', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
@@ -905,17 +905,29 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
 
         const triacInput = document.querySelector('input[name="fan"][value="triac"]');
         const triacCard = triacInput.closest('.module-card');
-        expect(triacInput.disabled).toBe(true);
-        expect(triacCard.classList.contains('is-blocked')).toBe(true);
-        expect(triacCard.getAttribute('aria-disabled')).toBe('true');
-        expect(triacCard.getAttribute('data-availability-state')).toBe('blocked');
+        // WF-TRIAC-001 — radio is NOT disabled. Advanced-manual-warning is
+        // visible AND selectable; the install gate enforces the ack +
+        // manifest-match interlock.
+        expect(triacInput.disabled).toBe(false);
+        expect(triacCard.classList.contains('is-blocked')).toBe(false);
+        expect(triacCard.classList.contains('is-advanced-warning')).toBe(true);
+        // No aria-disabled — the card is interactive.
+        expect(triacCard.hasAttribute('aria-disabled')).toBe(false);
+        expect(triacCard.getAttribute('data-availability-state')).toBe('advanced-manual-warning');
 
         const pill = triacCard.querySelector('[data-module-availability-pill]');
-        expect(pill.textContent).toBe('Blocked');
-        expect(pill.dataset.availabilityState).toBe('blocked');
+        expect(pill.textContent).toBe('Advanced / manual only');
+        expect(pill.dataset.availabilityState).toBe('advanced-manual-warning');
+        expect(pill.dataset.availabilityTone).toBe('danger');
         expect(pill.hidden).toBe(false);
 
         const detail = triacCard.querySelector('[data-module-availability-detail]');
+        expect(detail.textContent).toMatch(/mains-connected/i);
+        expect(detail.textContent).toMatch(/not compliance-certified/i);
+        expect(detail.textContent).toMatch(/not Release-One/i);
+        expect(detail.textContent).toMatch(/not a kit/i);
+        expect(detail.textContent).toMatch(/not recommended/i);
+        expect(detail.textContent).toMatch(/no installable firmware/i);
         expect(detail.textContent).toMatch(/HW-005/);
         expect(detail.textContent).toMatch(/COMPLIANCE-001/);
     });
@@ -976,15 +988,19 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(airiqPill.textContent).toBe('No WebFlash firmware yet');
     });
 
-    test('classifyVariantForRender returns blocked for TRIAC and installable=false', async () => {
+    test('WF-TRIAC-001 — classifyVariantForRender returns advanced-manual-warning for TRIAC, selectable=true, installable=false', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
 
         const result = stateModule.__testHooks.classifyVariantForRender('fan', 'triac');
-        expect(result.state).toBe('blocked');
+        expect(result.state).toBe('advanced-manual-warning');
         expect(result.installable).toBe(false);
-        expect(result.selectable).toBe(false);
+        // WF-TRIAC-001 — selectable so the user can opt in through the
+        // custom path; the install gate then enforces the orthogonal
+        // advanced/manual-warning acknowledgement.
+        expect(result.selectable).toBe(true);
+        expect(result.tone).toBe('danger');
     });
 
     test('classifyVariantForRender returns no-firmware (not installable) for AirIQ', async () => {
@@ -1260,14 +1276,21 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
         }));
     });
 
-    test('TRIAC stays blocked under the custom path', async () => {
+    test('WF-TRIAC-001 — TRIAC is selectable under the custom path as advanced-manual-warning', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
         const result = stateModule.__testHooks.classifyVariantForRender('fan', 'triac');
-        expect(result.state).toBe('blocked');
+        expect(result.state).toBe('advanced-manual-warning');
         expect(result.installable).toBe(false);
+        // Custom-path TRIAC is selectable; the install gate is the
+        // authority for whether the user can actually flash.
+        expect(result.selectable).toBe(true);
+
+        const triacInput = document.querySelector('input[name="fan"][value="triac"]');
+        expect(triacInput).not.toBeNull();
+        expect(triacInput.disabled).toBe(false);
     });
 
     test('LED stays available-preview (preview-channel acknowledgement gate intact)', async () => {
@@ -1297,5 +1320,426 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'relay').state).toBe('design-pending');
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'pwm').state).toBe('no-firmware');
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'analog').state).toBe('no-firmware');
+    });
+});
+
+describe('WF-TRIAC-001 — advanced/manual-warning runtime integration', () => {
+    // Pins the WF-TRIAC-001 advanced/manual-warning gate end-to-end:
+    //   - TRIAC card is selectable in the custom path.
+    //   - The inline ack region reveals only while TRIAC is the live
+    //     selection; the checkbox drives the per-(module,variant) ack map.
+    //   - The install gate keeps `readyToFlash === false` until both an
+    //     advanced/manual-warning artifact is imported AND the ack is
+    //     checked, regardless of the other usual gates.
+    //   - Switching to a different fan variant or to the kit-cleared state
+    //     drops the stored ack so a future TRIAC reselection re-prompts.
+    //   - Release-One stable + LED preview paths are byte-identical to
+    //     pre-WF-TRIAC-001.
+
+    function renderTriacDom() {
+        document.body.innerHTML = `
+            <div id="step-1" class="wizard-step">
+                <input type="radio" name="mounting" value="ceiling">
+            </div>
+            <div id="step-2" class="wizard-step" hidden>
+                <input type="radio" name="voice" value="none" checked>
+            </div>
+            <div id="step-3" class="wizard-step" hidden>
+                <input type="radio" name="power" value="poe">
+            </div>
+            <div id="step-4" class="wizard-step" hidden>
+                <div id="module-availability-hint"></div>
+                <input type="checkbox" name="bathroom">
+                <section class="module-group module-group--toggle" data-module-group="roomiq" id="roomiq-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="roomiq" data-variant-on="roomiq">
+                        <span class="availability-pill" data-module-availability-pill hidden></span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="roomiq" value="none" checked>
+                        <input type="radio" name="roomiq" value="roomiq">
+                    </div>
+                </section>
+                <section class="module-group module-group--toggle" data-module-group="airiq" id="airiq-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="airiq" data-variant-on="airiq">
+                        <span class="availability-pill" data-module-availability-pill hidden></span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="airiq" value="none" checked>
+                        <input type="radio" name="airiq" value="airiq">
+                    </div>
+                </section>
+                <section class="module-group module-group--toggle" data-module-group="ventiq" id="ventiq-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="ventiq" data-variant-on="ventiq">
+                        <span class="availability-pill" data-module-availability-pill hidden></span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="ventiq" value="none" checked>
+                        <input type="radio" name="ventiq" value="ventiq">
+                    </div>
+                </section>
+                <section class="module-group module-group--toggle" data-module-group="led" id="led-module-section">
+                    <label class="module-group__summary module-group__summary--toggle">
+                        <input type="checkbox" data-module-toggle data-module-key="led" data-variant-on="led">
+                        <span class="availability-pill" data-module-availability-pill hidden></span>
+                    </label>
+                    <div class="module-group__hidden-controls" hidden>
+                        <input type="radio" name="led" value="none" checked>
+                        <input type="radio" name="led" value="led">
+                    </div>
+                </section>
+                <section class="module-group" data-module-group="fan" id="fan-module-section">
+                    <label class="module-card option-card" data-module-card="fan" data-variant="none">
+                        <input type="radio" name="fan" value="none" checked>
+                        <div class="module-card__inner"></div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="relay">
+                        <input type="radio" name="fan" value="relay">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="pwm">
+                        <input type="radio" name="fan" value="pwm">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="analog">
+                        <input type="radio" name="fan" value="analog">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <label class="module-card option-card" data-module-card="fan" data-variant="triac">
+                        <input type="radio" name="fan" value="triac">
+                        <div class="module-card__inner">
+                            <span class="availability-pill" data-module-availability-pill hidden></span>
+                            <p class="availability-detail" data-module-availability-detail hidden></p>
+                        </div>
+                    </label>
+                    <div
+                        class="module-card__advanced-warning"
+                        data-advanced-warning-region
+                        data-advanced-warning-module="fan"
+                        data-advanced-warning-variant="triac"
+                        hidden
+                        aria-hidden="true"
+                    >
+                        <h4>Advanced / manual warning</h4>
+                        <label>
+                            <input
+                                type="checkbox"
+                                data-advanced-warning-acknowledge
+                                data-advanced-warning-module="fan"
+                                data-advanced-warning-variant="triac"
+                            >
+                            <span>I understand</span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+            <div id="step-5" class="wizard-step">
+                <div class="secondary-action-group"><p data-ready-helper></p></div>
+                <div id="firmware-selector" hidden>
+                    <select id="firmware-version-select"></select>
+                </div>
+                <div id="compatible-firmware"><p data-ready-helper></p></div>
+                <section data-channel-acknowledgement-panel hidden aria-hidden="true"></section>
+                <button id="download-btn" disabled></button>
+                <button id="copy-firmware-url-btn" disabled></button>
+                <button data-module-summary-install hidden></button>
+                <label class="pre-flash-checklist__acknowledgement"><input type="checkbox" data-preflash-acknowledge></label>
+                <ul data-preflight-list>
+                    <li data-preflight-item="browser-support" data-status="pass"><span data-preflight-status="browser-support"></span><span data-preflight-detail="browser-support"></span></li>
+                </ul>
+            </div>
+        `;
+    }
+
+    const releaseOneOnlyManifest = {
+        builds: [
+            { config_string: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable', chipFamily: 'ESP32-S3', parts: [{ path: 'a.bin', offset: 0 }] },
+            { config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'b.bin', offset: 0 }] },
+            { config_string: 'Rescue', channel: 'rescue', chipFamily: 'ESP32-S3', parts: [{ path: 'c.bin', offset: 0 }] }
+        ]
+    };
+
+    beforeEach(() => {
+        jest.resetModules();
+        window.history.replaceState(null, '', '/');
+        renderTriacDom();
+        global.fetch = jest.fn(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(releaseOneOnlyManifest)
+        }));
+        Object.defineProperty(global.navigator, 'serial', {
+            value: { getPorts: jest.fn(() => Promise.resolve([])) },
+            configurable: true
+        });
+        delete window.currentFirmware;
+        delete window.currentConfigString;
+    });
+
+    test('TRIAC card is visible and selectable in the custom path', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+
+        const triacInput = document.querySelector('input[name="fan"][value="triac"]');
+        const triacCard = triacInput.closest('.module-card');
+        expect(triacInput.disabled).toBe(false);
+        expect(triacCard.classList.contains('is-advanced-warning')).toBe(true);
+        expect(triacCard.classList.contains('is-blocked')).toBe(false);
+        expect(triacCard.hasAttribute('aria-disabled')).toBe(false);
+        expect(triacCard.getAttribute('data-availability-state')).toBe('advanced-manual-warning');
+
+        const pill = triacCard.querySelector('[data-module-availability-pill]');
+        expect(pill.textContent).toBe('Advanced / manual only');
+        expect(pill.dataset.availabilityTone).toBe('danger');
+    });
+
+    test('Advanced-warning region is hidden when TRIAC is not selected, revealed when it is', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+
+        const region = document.querySelector('[data-advanced-warning-region]');
+        expect(region).not.toBeNull();
+        expect(region.hidden).toBe(true);
+
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'triac',
+            voice: 'none'
+        });
+        stateModule.__testHooks.updateAdvancedWarningRegions();
+        expect(region.hidden).toBe(false);
+
+        const checkbox = region.querySelector('[data-advanced-warning-acknowledge]');
+        expect(checkbox).not.toBeNull();
+        expect(checkbox.checked).toBe(false);
+        expect(checkbox.disabled).toBe(false);
+    });
+
+    test('TRIAC selection requires the advanced/manual-warning ack — install gate blocks otherwise (defense in depth with synthetic manifest)', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+
+        // Select TRIAC.
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'triac',
+            voice: 'none'
+        });
+
+        // Defense-in-depth: inject a SYNTHETIC FanTRIAC manifest entry so
+        // the manifest-match check passes. Real WebFlash never ships this;
+        // the test proves the ack still gates install even when (by some
+        // future regression) a FanTRIAC build appears in the manifest.
+        const syntheticBuild = {
+            firmwareId: 'firmware-ceiling-poe-fantriac-roomiq-synthetic',
+            chipFamily: 'ESP32-S3',
+            channel: 'stable',
+            version: '1.0.0',
+            config_string: 'Ceiling-POE-FanTRIAC-RoomIQ',
+            deprecated: false,
+            parts: [{ path: 'firmware/configurations/synthetic-fantriac.bin', offset: 0 }],
+            md5: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            sha256: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        };
+        stateModule.__testHooks.setFirmwareOptions([syntheticBuild], 'Ceiling-POE-FanTRIAC-RoomIQ');
+        stateModule.__testHooks.selectDefaultFirmware();
+
+        // Mark verification + pre-flash ack as satisfied so only the
+        // advanced-warning gate stands between us and "ready". Verification
+        // requires a matching firmwareId.
+        stateModule.__testHooks.setFirmwareVerificationState({
+            status: 'verified',
+            message: 'Firmware verified successfully.',
+            firmwareId: syntheticBuild.firmwareId,
+            parts: [],
+            provenance: null,
+            authenticity: null
+        });
+        stateModule.__testHooks.setPreFlashAcknowledgement(true);
+
+        // Without the advanced-warning ack the install gate must block.
+        stateModule.__testHooks.updateFirmwareControls();
+        expect(stateModule.__testHooks.isAdvancedWarningAcknowledged('fan', 'triac')).toBe(false);
+        const outstanding = stateModule.__testHooks.getOutstandingAdvancedWarningAcknowledgements();
+        expect(outstanding).toHaveLength(1);
+        expect(outstanding[0].moduleKey).toBe('fan');
+        expect(outstanding[0].variantKey).toBe('triac');
+    });
+
+    test('Checking the advanced-warning ack flips outstanding count to zero (with synthetic manifest)', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'triac',
+            voice: 'none'
+        });
+
+        stateModule.__testHooks.setAdvancedWarningAcknowledged('fan', 'triac', true);
+        expect(stateModule.__testHooks.isAdvancedWarningAcknowledged('fan', 'triac')).toBe(true);
+        expect(stateModule.__testHooks.getOutstandingAdvancedWarningAcknowledgements()).toHaveLength(0);
+    });
+
+    test('Deselecting TRIAC clears the advanced-warning ack', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'triac',
+            voice: 'none'
+        });
+        stateModule.__testHooks.setAdvancedWarningAcknowledged('fan', 'triac', true);
+        expect(stateModule.__testHooks.isAdvancedWarningAcknowledged('fan', 'triac')).toBe(true);
+
+        // Switch to PWM. The renderer + pruneInactiveAdvancedWarningAcks
+        // must drop the consent entry so re-picking TRIAC re-prompts.
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'pwm',
+            voice: 'none'
+        });
+        stateModule.__testHooks.updateAdvancedWarningRegions();
+        expect(stateModule.__testHooks.isAdvancedWarningAcknowledged('fan', 'triac')).toBe(false);
+    });
+
+    test('TRIAC selected without any imported artifact stays not installable (real manifest)', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'triac',
+            voice: 'none'
+        });
+
+        // Even if the customer ticks the ack, the real manifest has no
+        // FanTRIAC build → window.currentFirmware stays null → install
+        // gate stays disabled. This pins the no-build / not-imported
+        // behaviour required by WF-TRIAC-001.
+        stateModule.__testHooks.setAdvancedWarningAcknowledged('fan', 'triac', true);
+        stateModule.__testHooks.findCompatibleFirmware();
+        stateModule.__testHooks.updateFirmwareControls();
+
+        const downloadBtn = document.getElementById('download-btn');
+        expect(downloadBtn.disabled).toBe(true);
+        expect(window.currentFirmware).toBeFalsy();
+    });
+
+    test('Release-One stable kit selection never auto-picks TRIAC and clears any prior TRIAC ack', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+
+        // Pre-condition: user picked TRIAC and acknowledged the warning.
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            airiq: 'none',
+            ventiq: 'none',
+            roomiq: 'none',
+            led: 'none',
+            fan: 'triac',
+            voice: 'none'
+        });
+        stateModule.__testHooks.setAdvancedWarningAcknowledged('fan', 'triac', true);
+        expect(stateModule.__testHooks.isAdvancedWarningAcknowledged('fan', 'triac')).toBe(true);
+
+        // Apply the Release-One kit state (mirrors what
+        // scripts/kit-mode.js applyKitToWizard does).
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            bathroom: true,
+            airiq: 'none',
+            ventiq: 'ventiq',
+            roomiq: 'roomiq',
+            fan: 'none',
+            led: 'none',
+            voice: 'none'
+        });
+
+        const state = stateModule.getState();
+        expect(state.fan).toBe('none');
+        expect(stateModule.__testHooks.isAdvancedWarningAcknowledged('fan', 'triac')).toBe(false);
+        const configString = stateModule.__testHooks.buildFirmwareTargetPreviewString(state);
+        expect(configString).toBe('Ceiling-POE-VentIQ-RoomIQ');
+        expect(configString.toLowerCase()).not.toContain('fantriac');
+    });
+
+    test('LED preview path is unchanged — module classification + preview-channel acknowledgement still apply', async () => {
+        const stateModule = await import('../scripts/state.js');
+        stateModule.__testHooks.initializeWizard();
+        await stateModule.__testHooks.manifestReadyPromise();
+        stateModule.__testHooks.updateModuleVariantAvailability();
+
+        const ledClassification = stateModule.__testHooks.classifyVariantForRender('led', 'led');
+        expect(ledClassification.state).toBe('available-preview');
+        expect(ledClassification.installable).toBe(true);
+
+        // Preview acks are completely orthogonal to advanced-warning acks.
+        // Selecting LED must not require the advanced-warning ack, and
+        // selecting TRIAC must not require the preview ack.
+        stateModule.setState({
+            mount: 'ceiling',
+            power: 'poe',
+            bathroom: true,
+            airiq: 'none',
+            ventiq: 'ventiq',
+            roomiq: 'roomiq',
+            led: 'led',
+            fan: 'none',
+            voice: 'none'
+        });
+        expect(stateModule.__testHooks.getOutstandingAdvancedWarningAcknowledgements()).toHaveLength(0);
     });
 });
