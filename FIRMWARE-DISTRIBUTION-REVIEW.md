@@ -525,6 +525,12 @@ jobs:
 
 ## Appendix: Configuration Matrix
 
+> **Historical — pre-WF-CLEANUP-004 snapshot.** This 35-entry list is
+> preserved verbatim as a period-accurate audit snapshot. It is **not**
+> the current `REQUIRED_CONFIGS` allowlist. The live allowlist holds
+> exactly `Ceiling-POE-VentIQ-RoomIQ` + `Rescue`; see
+> `.github/workflows/firmware-publish.yml` and `CLAUDE.md`.
+
 Current required configurations (from CI validation):
 
 | Mount | Power | Modules | Voice | Status |
