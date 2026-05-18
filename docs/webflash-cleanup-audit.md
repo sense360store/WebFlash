@@ -184,10 +184,28 @@ Findings:
    the wizard markup expose a "fan-triac" hint, and `module-requirements.js`
    carries the `S360-320` TRIAC SKU, but no live build is available.
 
-Status: **blocked-reference**. FanTRIAC must remain blocked until hardware
-verification (S360-320 schematic, GPIO/timing) lands. This PR does **not**
-change the block. The orphan binary's fate (delete vs. wait) is a
-follow-up decision.
+Status: **blocked-reference**. FanTRIAC must remain blocked at the
+importer / manifest / `REQUIRED_CONFIGS` / kit layers until hardware
+verification (S360-320 schematic, GPIO/timing) and compliance work
+land. This PR does **not** change the block. The orphan binary's fate
+(delete vs. wait) is a follow-up decision.
+
+**Update (WF-TRIAC-001):** the wizard-side runtime UX gate for TRIAC
+has since landed. `scripts/utils/module-availability.js` exposes an
+eighth availability state `advanced-manual-warning`, and the TRIAC
+card in `index.html` now ships with the `is-advanced-warning`
+affordance + an inline `[data-advanced-warning-region]` warning +
+acknowledgement checkbox. TRIAC is therefore **visible and
+selectable in the custom path** behind an explicit acknowledgement.
+This is a customer-facing *visibility* change only — the
+`firmware/sources.json` `block_tokens: ["FanTRIAC", "LED"]` import-
+time block is unchanged, the orphan binary on disk is unchanged,
+the manifest is unchanged, `REQUIRED_CONFIGS` is unchanged, and
+`scripts/data/kits.json` is unchanged. FanTRIAC remains not
+Release-One, not `REQUIRED_CONFIGS`, not kit / default, not
+recommended, not auto-selected, not compliance-certified. The
+`WF-IMPORT-TRIAC-001` follow-up still requires upstream
+`RELEASE-TRIAC-001`.
 
 ## LED / LED Ring references
 

@@ -196,13 +196,21 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: ['TRIAC_Board'],
                 description: 'Phase dimmer for mains fan or lamp.',
                 conflicts: [],
-                // WF-WIZARD-AVAIL-001: blocked under HW-005 and COMPLIANCE-001.
-                // S360-320-R4 schematic uploaded upstream, but mains-side
-                // hardware verification + compliance work must clear before
-                // WebFlash will install TRIAC firmware.
+                // WF-TRIAC-001: moved from 'blocked' to
+                // 'advanced-manual-warning'. TRIAC controls mains-connected
+                // loads and is not compliance-certified by WebFlash. The
+                // wizard exposes TRIAC as visible + selectable in the custom
+                // path; the install gate in scripts/state.js enforces an
+                // explicit advanced/manual-warning acknowledgement AND a
+                // future imported artifact before any flash can fire. TRIAC
+                // remains not Release-One, not a kit / default, not
+                // recommended, and not compliance-certified. HW-005 and
+                // COMPLIANCE-001 stay open upstream. See
+                // docs/webflash-import-readiness-matrix.md (WF-IMPORT-GAP-001)
+                // and the WF-TRIAC-001 entry in docs/wizard-ux-roadmap.md.
                 availability: {
-                    state: 'blocked',
-                    reasonCode: 'hw-005'
+                    state: 'advanced-manual-warning',
+                    reasonCode: 'hw-005-advanced-manual'
                 }
             }
         }

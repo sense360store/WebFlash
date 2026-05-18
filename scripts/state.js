@@ -266,6 +266,59 @@ let preflightWarningsAcknowledged = false;
 //
 //   Map<key, { signature: string, value: true }>
 const channelAcknowledgements = new Map();
+
+// WF-TRIAC-001 — advanced/manual-warning acknowledgements.
+//
+// Orthogonal to channelAcknowledgements (which gates beta / preview /
+// development / deprecated release-channel risk). The advanced-manual-
+// warning gate is bound to a *module-variant selection* (e.g. `fan:triac`),
+// not to a firmware-identity signature, because the wizard exposes the
+// advanced/manual-warning module BEFORE any imported artifact exists.
+//
+// Keys are `${moduleKey}:${variantKey}` (e.g. `fan:triac`). The map only
+// holds positive consent; deselecting the variant or switching to the kit
+// path clears the entry via clearAdvancedWarningAcks() so a future
+// reselection always requires fresh consent.
+//
+// Like the channel acks, this is session-only — never persisted.
+//
+//   Map<string, true>
+const advancedWarningAcknowledgements = new Map();
+
+function makeAdvancedWarningKey(moduleKey, variantKey) {
+    return `${moduleKey}:${variantKey}`;
+}
+
+function isAdvancedWarningAcknowledged(moduleKey, variantKey) {
+    if (!moduleKey || !variantKey) {
+        return false;
+    }
+    return advancedWarningAcknowledgements.get(makeAdvancedWarningKey(moduleKey, variantKey)) === true;
+}
+
+function setAdvancedWarningAcknowledged(moduleKey, variantKey, value) {
+    if (!moduleKey || !variantKey) {
+        return;
+    }
+    const key = makeAdvancedWarningKey(moduleKey, variantKey);
+    if (value === true) {
+        advancedWarningAcknowledgements.set(key, true);
+    } else {
+        advancedWarningAcknowledgements.delete(key);
+    }
+}
+
+function clearAdvancedWarningAck(moduleKey, variantKey) {
+    if (!moduleKey || !variantKey) {
+        return;
+    }
+    advancedWarningAcknowledgements.delete(makeAdvancedWarningKey(moduleKey, variantKey));
+}
+
+function clearAdvancedWarningAcks() {
+    advancedWarningAcknowledgements.clear();
+}
+
 let currentFlashEntryId = null;
 let flashStartTime = null;
 
@@ -560,6 +613,69 @@ function pruneStaleChannelAcknowledgements(firmware) {
 function getOutstandingChannelAcknowledgements(firmware) {
     pruneStaleChannelAcknowledgements(firmware);
     return getChannelAcknowledgements(firmware).filter(item => !isChannelAcknowledged(item.key, firmware));
+}
+
+// WF-TRIAC-001 — advanced/manual-warning ack helpers.
+//
+// Walk the active wizard configuration, identify every module variant whose
+// classification is `advanced-manual-warning`, and return the ones whose
+// per-variant acknowledgement has not been satisfied. The install gate in
+// updateFirmwareControls() consumes this to keep TRIAC (and any future
+// advanced/manual-warning module) from flashing without explicit consent —
+// regardless of whether the manifest happens to carry a matching artifact.
+//
+// This is orthogonal to channel acknowledgements: the channel ack gates
+// preview/beta/dev release-channel risk; the advanced-warning ack gates
+// hardware-class risk that the wizard surfaces even when no firmware is
+// imported yet.
+function getActiveAdvancedWarningSelections(state = configuration) {
+    if (!state || typeof state !== 'object') {
+        return [];
+    }
+    const results = [];
+    const moduleKeys = Array.isArray(MODULE_KEYS) ? MODULE_KEYS : [];
+    moduleKeys.forEach(moduleKey => {
+        // The state shape uses `mounting` for mount; module keys map 1:1.
+        const variantKey = state[moduleKey];
+        if (!variantKey || variantKey === 'none') {
+            return;
+        }
+        let classification = null;
+        try {
+            classification = classifyVariantForRender(moduleKey, variantKey);
+        } catch {
+            classification = null;
+        }
+        if (classification && classification.state === AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING) {
+            results.push({ moduleKey, variantKey, classification });
+        }
+    });
+    return results;
+}
+
+function getOutstandingAdvancedWarningAcknowledgements(state = configuration) {
+    return getActiveAdvancedWarningSelections(state).filter(
+        ({ moduleKey, variantKey }) => !isAdvancedWarningAcknowledged(moduleKey, variantKey)
+    );
+}
+
+function pruneInactiveAdvancedWarningAcks(state = configuration) {
+    if (advancedWarningAcknowledgements.size === 0) {
+        return false;
+    }
+    const activeKeys = new Set(
+        getActiveAdvancedWarningSelections(state).map(
+            ({ moduleKey, variantKey }) => makeAdvancedWarningKey(moduleKey, variantKey)
+        )
+    );
+    let pruned = false;
+    for (const key of Array.from(advancedWarningAcknowledgements.keys())) {
+        if (!activeKeys.has(key)) {
+            advancedWarningAcknowledgements.delete(key);
+            pruned = true;
+        }
+    }
+    return pruned;
 }
 
 function evaluatePreflightPolicy(checks = []) {
@@ -1918,6 +2034,15 @@ function initializeWizard() {
     }
 
     try {
+        // WF-TRIAC-001 — wire the delegated change listener for the inline
+        // advanced/manual-warning acknowledgement checkbox(es). Bound once
+        // (the listener guards itself against duplicate binding).
+        bindAdvancedWarningAcknowledgementListener();
+    } catch (error) {
+        console.error('Failed to bind advanced/manual-warning acknowledgement listener:', error);
+    }
+
+    try {
         initializeFromUrl();
     } catch (error) {
         console.error('Failed to initialize wizard from URL:', error);
@@ -1926,10 +2051,10 @@ function initializeWizard() {
     try {
         ensureSingleActiveWizardStep();
         updateFirmwareControls();
-        // Render the static availability pills (blocked TRIAC, design-pending
-        // Relay, no-firmware AirIQ/PWM/DAC) before the manifest finishes
-        // loading so the customer never sees a flash of "everything looks
-        // installable" copy at first paint.
+        // Render the static availability pills (advanced/manual-warning
+        // TRIAC, design-pending Relay, no-firmware AirIQ/PWM/DAC) before the
+        // manifest finishes loading so the customer never sees a flash of
+        // "everything looks installable" copy at first paint.
         updateModuleVariantAvailability();
     } catch (error) {
         console.error('Failed to finalize wizard initialization:', error);
@@ -2948,37 +3073,72 @@ function applyAvailabilityPill(target, classification) {
     }
 }
 
-function applyBlockedAffordance(input, card, classification) {
+function applyAvailabilityAffordance(input, card, classification) {
     if (!input || !card) {
         return;
     }
     const isBlocked = classification.state === AVAILABILITY_STATES.BLOCKED;
+    const isAdvancedWarning = classification.state === AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING;
+    const wasBlocked = card.classList.contains('is-blocked');
+    const wasAdvancedWarning = card.classList.contains('is-advanced-warning');
+
     if (isBlocked) {
         input.disabled = true;
         card.classList.add('is-blocked');
+        card.classList.remove('is-advanced-warning');
         card.setAttribute('aria-disabled', 'true');
         card.setAttribute('data-availability-state', classification.state);
         const titleSource = classification.detail || classification.label;
         if (titleSource) {
             card.setAttribute('title', titleSource);
         }
-    } else {
-        // Only clear the blocked-specific affordance. Other code paths own
-        // input.disabled for unrelated reasons (e.g. unsupported combos in
-        // updateModuleOptionAvailability), so we don't touch input.disabled
-        // here unless it was the blocked-affordance that set it.
-        if (card.classList.contains('is-blocked')) {
+        return;
+    }
+
+    if (isAdvancedWarning) {
+        // WF-TRIAC-001 — visible + selectable. The radio stays enabled so
+        // the customer can opt in deliberately; the install gate in
+        // updateFirmwareControls() enforces the acknowledgement + manifest
+        // match before any flash can fire. Do NOT set aria-disabled here —
+        // the card is interactive.
+        if (wasBlocked) {
             input.disabled = false;
         }
         card.classList.remove('is-blocked');
+        card.classList.add('is-advanced-warning');
         if (card.getAttribute('aria-disabled') === 'true' && !card.classList.contains('is-unavailable')) {
             card.removeAttribute('aria-disabled');
         }
-        card.removeAttribute('data-availability-state');
-        if (card.getAttribute('title')) {
-            card.removeAttribute('title');
+        card.setAttribute('data-availability-state', classification.state);
+        const titleSource = classification.detail || classification.label;
+        if (titleSource) {
+            card.setAttribute('title', titleSource);
         }
+        return;
     }
+
+    // Neither blocked nor advanced-warning — clear any affordance this
+    // function owns. Other code paths own input.disabled for unrelated
+    // reasons (e.g. unsupported combos in updateModuleOptionAvailability),
+    // so only flip input.disabled back when WE were the ones that set it.
+    if (wasBlocked || wasAdvancedWarning) {
+        input.disabled = false;
+    }
+    card.classList.remove('is-blocked');
+    card.classList.remove('is-advanced-warning');
+    if (card.getAttribute('aria-disabled') === 'true' && !card.classList.contains('is-unavailable')) {
+        card.removeAttribute('aria-disabled');
+    }
+    card.removeAttribute('data-availability-state');
+    if (card.getAttribute('title')) {
+        card.removeAttribute('title');
+    }
+}
+
+// Legacy alias — older callers may still reference applyBlockedAffordance.
+// Kept until every call site is verified migrated; safe forwarder.
+function applyBlockedAffordance(input, card, classification) {
+    applyAvailabilityAffordance(input, card, classification);
 }
 
 function updateModuleVariantAvailability() {
@@ -2995,7 +3155,7 @@ function updateModuleVariantAvailability() {
         const classification = classifyVariantForRender('fan', variantKey);
         applyAvailabilityPill(card, classification);
         const radio = card.querySelector(`input[name="fan"][value="${variantKey}"]`);
-        applyBlockedAffordance(radio, card, classification);
+        applyAvailabilityAffordance(radio, card, classification);
     });
 
     // Toggle-style module groups (RoomIQ / AirIQ / VentIQ / LED). Each
@@ -3013,6 +3173,119 @@ function updateModuleVariantAvailability() {
         const classification = classifyVariantForRender(moduleKey, variantKey);
         applyAvailabilityPill(group, classification);
     });
+
+    // WF-TRIAC-001 — refresh the inline advanced/manual-warning region(s)
+    // so the ack checkbox reflects the live state. Pruning happens here too
+    // because deselecting the variant should drop the previously-granted
+    // consent.
+    updateAdvancedWarningRegions();
+}
+
+// WF-TRIAC-001 — drive the per-card advanced/manual-warning region.
+//
+// The region lives in static markup (index.html) as a sibling to its
+// module-card. It is revealed when the variant is currently selected, and
+// the inline checkbox is bound to advancedWarningAcknowledgements via
+// setAdvancedWarningAcknowledged(). When the variant is NOT selected the
+// region collapses (hidden) and the stored ack is dropped so a future
+// reselection always re-prompts the customer.
+function getAdvancedWarningRegions() {
+    if (typeof document === 'undefined') {
+        return [];
+    }
+    return Array.from(document.querySelectorAll('[data-advanced-warning-region]'));
+}
+
+function isVariantCurrentlySelected(moduleKey, variantKey) {
+    if (!moduleKey || !variantKey) {
+        return false;
+    }
+    // The wizard state object uses module keys directly (`fan`, `roomiq`, …).
+    return configuration[moduleKey] === variantKey;
+}
+
+function updateAdvancedWarningRegions() {
+    const regions = getAdvancedWarningRegions();
+    if (regions.length === 0) {
+        return;
+    }
+
+    regions.forEach(region => {
+        const moduleKey = region.getAttribute('data-advanced-warning-module');
+        const variantKey = region.getAttribute('data-advanced-warning-variant');
+        if (!moduleKey || !variantKey) {
+            return;
+        }
+
+        const classification = (() => {
+            try {
+                return classifyVariantForRender(moduleKey, variantKey);
+            } catch {
+                return null;
+            }
+        })();
+        const isAdvancedWarning = classification?.state === AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING;
+        const isSelected = isVariantCurrentlySelected(moduleKey, variantKey);
+
+        // Region is interactive only when the variant is the live
+        // selection. With the variant deselected the stored ack is
+        // dropped so the customer must re-consent on the next selection.
+        if (!isSelected) {
+            clearAdvancedWarningAck(moduleKey, variantKey);
+        }
+
+        const shouldShow = Boolean(isAdvancedWarning && isSelected);
+        region.hidden = !shouldShow;
+        if (shouldShow) {
+            region.removeAttribute('aria-hidden');
+        } else {
+            region.setAttribute('aria-hidden', 'true');
+        }
+
+        const checkbox = region.querySelector('[data-advanced-warning-acknowledge]');
+        if (checkbox) {
+            const ackState = isAdvancedWarningAcknowledged(moduleKey, variantKey);
+            if (checkbox.checked !== ackState) {
+                checkbox.checked = ackState;
+            }
+            // The radio for the parent card is enabled — keep the checkbox
+            // operable while the variant is selected.
+            checkbox.disabled = !shouldShow;
+        }
+    });
+}
+
+function handleAdvancedWarningAckChange(event) {
+    const target = event?.target;
+    if (!target || !target.matches?.('[data-advanced-warning-acknowledge]')) {
+        return;
+    }
+    const moduleKey = target.getAttribute('data-advanced-warning-module');
+    const variantKey = target.getAttribute('data-advanced-warning-variant');
+    if (!moduleKey || !variantKey) {
+        return;
+    }
+    setAdvancedWarningAcknowledged(moduleKey, variantKey, target.checked === true);
+    updateFirmwareControls();
+    try {
+        refreshPreflightDiagnostics();
+    } catch {
+        /* defensive — Step 4 may run before Step 5 is wired up */
+    }
+}
+
+function bindAdvancedWarningAcknowledgementListener() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    // Single delegated listener for any advanced-warning checkbox added by
+    // the static markup. Re-binding is safe because we attach to document
+    // only once per module load.
+    if (document._wfAdvancedWarningAckListenerBound) {
+        return;
+    }
+    document.addEventListener('change', handleAdvancedWarningAckChange, true);
+    document._wfAdvancedWarningAckListenerBound = true;
 }
 
 function nextStep() {
@@ -3363,6 +3636,17 @@ function updateFirmwareControls() {
         ? ''
         : 'Acknowledge the firmware-channel warning before installing.';
 
+    // WF-TRIAC-001 — advanced/manual-warning acknowledgement gate.
+    // Orthogonal to channelAcksSatisfied. Today only fan=triac trips this
+    // gate. Drops any stale acks (e.g. the user deselected the variant in
+    // the same tick) before checking.
+    pruneInactiveAdvancedWarningAcks(configuration);
+    const outstandingAdvancedWarningAcks = getOutstandingAdvancedWarningAcknowledgements(configuration);
+    const advancedWarningAcksSatisfied = outstandingAdvancedWarningAcks.length === 0;
+    const advancedWarningBlockingReason = advancedWarningAcksSatisfied
+        ? ''
+        : 'Acknowledge the advanced/manual warning for the selected module before installing.';
+
     // CACHE FRESHNESS POLICY (see comment block near top of this file).
     // The freshness gate only kicks in once the freshness check has
     // actually been performed (or an explicit verdict has been set).
@@ -3371,7 +3655,7 @@ function updateFirmwareControls() {
     const freshness = evaluateFreshnessGate();
     const { ok: freshnessOk, blockingReason: freshnessBlockingReason, swUpdateBlocking, manifestStaleBlocking } = freshness;
 
-    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall && channelAcksSatisfied && freshnessOk;
+    const readyToFlash = hasFirmware && isVerified && isAcknowledged && preflightPolicy.canInstall && channelAcksSatisfied && advancedWarningAcksSatisfied && freshnessOk;
 
     if (downloadBtn) {
         downloadBtn.hidden = !onReviewStep;
@@ -3387,6 +3671,8 @@ function updateFirmwareControls() {
                 downloadBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
             } else if (!isAcknowledged) {
                 downloadBtn.title = 'Acknowledge the pre-flash checklist to continue.';
+            } else if (!advancedWarningAcksSatisfied) {
+                downloadBtn.title = advancedWarningBlockingReason;
             } else if (!channelAcksSatisfied) {
                 downloadBtn.title = channelBlockingReason;
             } else if (!preflightPolicy.canInstall && blockingReason) {
@@ -3418,6 +3704,8 @@ function updateFirmwareControls() {
             copyUrlBtn.title = isFailed ? (firmwareVerificationState.message || 'Verification failed') : 'Firmware verification in progress.';
         } else if (!isAcknowledged) {
             copyUrlBtn.title = 'Acknowledge the pre-flash checklist to continue.';
+        } else if (!advancedWarningAcksSatisfied) {
+            copyUrlBtn.title = advancedWarningBlockingReason;
         } else if (!channelAcksSatisfied) {
             copyUrlBtn.title = channelBlockingReason;
         } else if (!preflightPolicy.canInstall && blockingReason) {
@@ -3451,6 +3739,8 @@ function updateFirmwareControls() {
                     installButton.title = message;
                 } else if (!isAcknowledged) {
                     installButton.title = 'Acknowledge the pre-flash checklist to continue.';
+                } else if (!advancedWarningAcksSatisfied) {
+                    installButton.title = advancedWarningBlockingReason;
                 } else if (!channelAcksSatisfied) {
                     installButton.title = channelBlockingReason;
                 } else if (!preflightPolicy.canInstall && blockingReason) {
@@ -3483,6 +3773,9 @@ function updateFirmwareControls() {
         }
         if (isVerified && !isAcknowledged) {
             return { text: 'Review the pre-flash checklist and acknowledge before continuing.', isError: false, isWarning: true };
+        }
+        if (!advancedWarningAcksSatisfied) {
+            return { text: advancedWarningBlockingReason, isError: false, isWarning: true };
         }
         if (!channelAcksSatisfied) {
             return { text: channelBlockingReason, isError: false, isWarning: true };
@@ -3517,6 +3810,8 @@ function updateFirmwareControls() {
                 summaryInstallButton.title = message;
             } else if (!isAcknowledged) {
                 summaryInstallButton.title = 'Acknowledge the pre-flash checklist to continue.';
+            } else if (!advancedWarningAcksSatisfied) {
+                summaryInstallButton.title = advancedWarningBlockingReason;
             } else if (!channelAcksSatisfied) {
                 summaryInstallButton.title = channelBlockingReason;
             } else if (!preflightPolicy.canInstall && blockingReason) {
@@ -7040,6 +7335,14 @@ export const __testHooks = Object.freeze({
     isChannelAcknowledged,
     pruneStaleChannelAcknowledgements,
     getCurrentFirmwareSignature,
+    isAdvancedWarningAcknowledged,
+    setAdvancedWarningAcknowledged,
+    clearAdvancedWarningAck,
+    clearAdvancedWarningAcks,
+    getActiveAdvancedWarningSelections,
+    getOutstandingAdvancedWarningAcknowledgements,
+    pruneInactiveAdvancedWarningAcks,
+    updateAdvancedWarningRegions,
     selectDefaultFirmware,
     setFirmwareOptions,
     isFirmwareRecommendedDefault,

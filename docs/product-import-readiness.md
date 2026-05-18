@@ -356,8 +356,20 @@ Invariants that travel through this PR unchanged:
 - LED preview (`Ceiling-POE-VentIQ-RoomIQ-LED`) stays on
   `channel: preview`, manifest-only exposure, no kit, no
   `REQUIRED_CONFIGS` entry (WF-LED-003).
-- FanTRIAC stays blocked (HW-005). It must not appear in any active
-  WebFlash surface.
+- FanTRIAC stays blocked at the **importer / catalog** layer
+  under HW-005 + COMPLIANCE-001. The catalog eligibility classifier
+  in [`scripts/validate-product-import-readiness.js`](../scripts/validate-product-import-readiness.js)
+  treats any FanTRIAC-token-bearing entry as ineligible for import,
+  manifest, kit, and `REQUIRED_CONFIGS`. **Note:** [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed)
+  added a wizard-side `advanced-manual-warning` availability state
+  for `fan=triac` that makes TRIAC **selectable** in the custom
+  path (behind an inline acknowledgement). That is a customer-facing
+  *visibility* change; the classifier rules in this document are
+  unchanged, and no FanTRIAC artifact may be imported via the
+  upstream `sense360store/esphome-public` catalog until upstream
+  promotes it AND `WF-IMPORT-TRIAC-001` opens the import PR. TRIAC
+  visibility in the wizard is **not** the same as TRIAC
+  importability under this validator.
 - `REQUIRED_CONFIGS` is production-only and holds exactly
   `Ceiling-POE-VentIQ-RoomIQ` + `Rescue`.
 - `Rescue` is exempt by name from every catalog-membership check.

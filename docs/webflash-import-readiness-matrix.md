@@ -167,8 +167,13 @@ or manifest is touched by this PR):
   existing `channel:preview` acknowledgement model
   (`scripts/utils/release-channels.js`).
 - `advanced-warning-required` — install gates on an advanced /
-  manual-warning acknowledgement (future runtime UX work; not yet
-  implemented).
+  manual-warning acknowledgement. **Live** as of
+  [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed)
+  (`scripts/utils/module-availability.js` exposes the
+  `advanced-manual-warning` state; `scripts/state.js` enforces a
+  per-`(module,variant)` acknowledgement orthogonal to the
+  release-channel acknowledgement model). Currently scopes to
+  `fan=triac` only.
 - `release-proof-required` — the upstream release notes + asset +
   checksum proof model must be satisfied before import.
 - `import-readiness-required` — WF-PRODUCT-004
@@ -244,7 +249,7 @@ AirIQ / 240V-PSU kit.
 
 Module-availability surface today
 ([`scripts/utils/module-availability.js`](../scripts/utils/module-availability.js),
-WF-WIZARD-AVAIL-001):
+WF-WIZARD-AVAIL-001, amended by [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed)):
 
 - `Sense360 RoomIQ` (S360-200) → `available-stable`
 - `Sense360 VentIQ` (S360-211) → `available-stable`
@@ -253,7 +258,7 @@ WF-WIZARD-AVAIL-001):
 - `Sense360 Relay` (S360-310) → `design-pending`
 - `Sense360 PWM` (S360-311) → `no-firmware`
 - `Sense360 DAC` (S360-312) → `no-firmware`
-- `Sense360 TRIAC` (S360-320) → `blocked`
+- `Sense360 TRIAC` (S360-320) → `advanced-manual-warning` (per WF-TRIAC-001 — visible + selectable in the custom path, gated by an inline acknowledgement; install still blocked because no FanTRIAC artifact has been imported)
 - Voice → `legacy-only`
 
 This matrix does not modify any of those classifications. It records
@@ -272,7 +277,7 @@ describe the contract a future per-family import PR must satisfy.
 | Relay / S360-310 | `RELEASE-RELAY-001` | `missing-upstream-release-artifact`, `missing-upstream-product-yaml`, `missing-upstream-webflash-wrapper`, `missing-hardware-evidence` (no S360-310 schematic uploaded) | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-RELAY-001` after `RELEASE-RELAY-001` |
 | PWM / S360-311 | `RELEASE-PWM-001` | `missing-upstream-release-artifact`; S360-311-R4 schematic upstream but no WebFlash build | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-PWM-001` after `RELEASE-PWM-001` |
 | DAC / S360-312 | `RELEASE-DAC-001` | `missing-upstream-release-artifact`; S360-312-R4 schematic upstream but no WebFlash build; FanDAC ↔ AirIQ mutex remains upstream policy | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-DAC-001` after `RELEASE-DAC-001` |
-| TRIAC / S360-320 | `RELEASE-TRIAC-001` | `blocked-from-standard-import` under HW-005 + COMPLIANCE-001; S360-320-R4 schematic exists but mains-side compliance and timing evidence incomplete; `firmware/sources.json` `block_tokens` keeps `FanTRIAC` excluded from every active source | none (FanTRIAC blocked) | none | **none** | `advanced / manual-warning import only` (after gates + runtime UX) | `not-required-configs` (never by default) | `not-kit-default`, `not-recommended` (never by default) | `advanced-warning-required` | `WF-IMPORT-TRIAC-001` after `RELEASE-TRIAC-001` **and** `WF-TRIAC-001` runtime UX |
+| TRIAC / S360-320 | `RELEASE-TRIAC-001` | `blocked-from-standard-import` at the importer layer under HW-005 + COMPLIANCE-001; S360-320-R4 schematic exists but mains-side compliance and timing evidence incomplete; `firmware/sources.json` `block_tokens` keeps `FanTRIAC` excluded from every active source. Wizard-side runtime UX precondition satisfied by [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed) (`advanced-manual-warning` availability state + inline ack region). | none (FanTRIAC import-blocked) | none | **none** | `advanced / manual-warning import only` (runtime UX live, upstream gate pending) | `not-required-configs` (never by default) | `not-kit-default`, `not-recommended` (never by default) | `advanced-warning-required` (live — WF-TRIAC-001) | `WF-IMPORT-TRIAC-001` after `RELEASE-TRIAC-001`; `WF-TRIAC-001` runtime UX precondition satisfied |
 | Power / S360-400 (240V PSU) | `RELEASE-POWER-400-001` | `missing-upstream-release-artifact`, `missing-upstream-product-yaml`, `missing-hardware-evidence` | none (no `pwr` config_string in `manifest.json`) | none | **none** | `none` until evidence + product / release gates land; thereafter likely `preview import candidate` | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` (provisional) | `WF-IMPORT-POWER-400-001` after `RELEASE-POWER-400-001` |
 | PoE / S360-410 | n/a — already covered | already shipped *as part of* Release-One (`Ceiling-POE-VentIQ-RoomIQ`) and the LED preview (`Ceiling-POE-VentIQ-RoomIQ-LED`) via the `power=poe` config segment | covered transitively by the Release-One + LED preview source entries | covered transitively (no separate `S360-410`-named build) | **none** (no separate import action in this PR; no separate import action planned unless upstream ships a PoE-PSU-specific image) | not a distinct import class today | n/a (Release-One already in `REQUIRED_CONFIGS`) | n/a (Release-One already a kit) | n/a | `WF-IMPORT-POE-410-001` reserved (expected no-op unless upstream ships a PoE-PSU-specific image) |
 | LED stable | `RELEASE-007` | `missing-upstream-release-artifact` for `status: production` LED catalog entry; upstream currently `status: preview` only; bench evidence (`S360-300-BENCH-001`) pending | LED preview source entry exists (`v1.0.0-led-preview`); no separate stable source entry | LED preview build present; no LED stable build | **none** | `stable import candidate after promotion` | `not-required-configs` (until upstream `status: production` **and** a deliberate `WF-REQUIRED-001`-class PR) | `not-kit-default`, `not-recommended` (until upstream promotes and a deliberate `WF-KIT-LED-001` PR lands) | `preview-acknowledgement-required` (today) → potentially removed only after stable promotion + kit / recommended decision | `WF-LED-STABLE-001` after `RELEASE-007` and `S360-300-BENCH-001` |
@@ -358,22 +363,30 @@ only. Per-family postures below expand each row.
 
 ## TRIAC / S360-320 import posture
 
-- **Today:** `module-availability.js` classifies TRIAC as
-  `blocked` under HW-005 + COMPLIANCE-001, regardless of the
-  S360-320-R4 schematic existing upstream. The wizard renders
-  TRIAC with `is-blocked` styling and a `disabled` radio. Every
-  active `firmware/sources.json` source carries `FanTRIAC` in
-  `block_tokens`; the Release-One source additionally carries
-  `LED` in `block_tokens`; the LED preview source carries only
-  `FanTRIAC`. `__tests__/manifest-health.test.js` fails CI if a
-  `FanTRIAC` token ever appears in a generated `config_string`.
+- **Today (post-WF-TRIAC-001):** `module-availability.js` classifies
+  TRIAC as `advanced-manual-warning` under HW-005 + COMPLIANCE-001
+  (the eighth availability state, added by
+  [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed)). The
+  wizard renders TRIAC with the `is-advanced-warning` affordance —
+  visible AND selectable in the custom path, paired with an inline
+  `[data-advanced-warning-region]` warning + acknowledgement
+  checkbox. The runtime UX precondition for `WF-IMPORT-TRIAC-001`
+  is therefore satisfied; the import precondition is **not**. Every
+  active `firmware/sources.json` source still carries `FanTRIAC` in
+  `block_tokens`; the Release-One source additionally carries `LED`
+  in `block_tokens`; the LED preview source carries only `FanTRIAC`.
+  `__tests__/manifest-health.test.js` fails CI if a `FanTRIAC`
+  token ever appears in a generated `config_string`.
 - **Allowed import action now:** none. TRIAC remains
-  `blocked-from-standard-import`.
+  `blocked-from-standard-import`. WF-TRIAC-001 imported nothing,
+  added no manifest entry, added no source, added no kit, did not
+  modify `REQUIRED_CONFIGS`, and did not unblock the importer's
+  `block_tokens` enforcement.
 - **Future import class:** `advanced / manual-warning import
   only`. TRIAC will never enter the standard preview / stable
   channels at import time; the only sanctioned future surface is
-  behind an explicit advanced-warning acknowledgement (future
-  runtime UX work tracked as `WF-TRIAC-001`).
+  behind the wizard's advanced-warning acknowledgement gate
+  (WF-TRIAC-001's runtime UX, now live).
 - **`REQUIRED_CONFIGS` eligibility:** `not-required-configs`
   (**never by default**). Even an advanced / manual-warning
   TRIAC build is `not-required-configs` until a separate,
@@ -385,16 +398,30 @@ only. Per-family postures below expand each row.
 - **Compliance disclaimer:** the advanced / manual-warning class
   is an *in-installer warning gate*, not a compliance
   certification claim. The matrix records this explicitly so a
-  future TRIAC import PR cannot conflate the two.
-- **Runtime UX gate:** `advanced-warning-required` (future runtime
-  UX work; not yet implemented). The existing preview-channel
-  acknowledgement is **insufficient** for a TRIAC import —
-  `WF-IMPORT-TRIAC-001` may not reuse it without an explicit
-  upgrade path.
+  future TRIAC import PR cannot conflate the two. WF-TRIAC-001's
+  wizard copy makes the same disclaimer customer-facing:
+  *"not compliance-certified by WebFlash."*
+- **Runtime UX gate:** `advanced-warning-required` — **landed**
+  by WF-TRIAC-001. The wizard now exposes an inline
+  per-`(module,variant)` acknowledgement that the install gate
+  in `scripts/state.js` (`getOutstandingAdvancedWarningAcknowledgements`)
+  enforces. The gate is **orthogonal** to the channel
+  acknowledgements (preview / beta / development / deprecated) —
+  the WF-LED-003 preview model is unchanged. The existing
+  preview-channel acknowledgement remains **insufficient** for a
+  TRIAC import; `WF-IMPORT-TRIAC-001` will reuse the
+  advanced-warning ack model, not the preview one.
 - **Follow-up owner:** `WF-IMPORT-TRIAC-001` after
-  `RELEASE-TRIAC-001` **and** the `WF-TRIAC-001` runtime UX
-  acknowledgement work. Both preconditions must land before any
-  TRIAC import PR may be opened.
+  `RELEASE-TRIAC-001` upstream. The `WF-TRIAC-001` runtime UX
+  precondition is satisfied; the missing precondition is the
+  upstream release artifact. When that lands, the per-family
+  import PR (a) declares a TRIAC source entry in
+  `firmware/sources.json` with appropriate `block_tokens`,
+  (b) runs the importer, (c) regenerates `manifest.json` + the
+  relevant `firmware-N.json`, (d) keeps the artifact off
+  `REQUIRED_CONFIGS`, (e) keeps the artifact out of
+  `scripts/data/kits.json`, (f) reuses the WF-TRIAC-001 ack
+  surface (no new acknowledgement plumbing required).
 
 ## Power / S360-400 (240V PSU) import posture
 

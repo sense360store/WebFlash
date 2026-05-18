@@ -1215,9 +1215,9 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     display: none;
 }
 
-/* Blocked module-card affordance (currently only fan=triac under HW-005).
-   Keeps the card visible so the customer learns WHY TRIAC is unavailable,
-   but the radio is disabled and the card is dimmed + non-interactive. */
+/* Blocked module-card affordance. Retained for any future genuinely
+   non-selectable module — no current variant uses it after WF-TRIAC-001
+   moved TRIAC to the advanced-manual-warning state. */
 .module-card.is-blocked {
     cursor: not-allowed;
 }
@@ -1236,11 +1236,88 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 }
 
 .module-card.is-blocked input[type="radio"]:checked + .module-card__inner {
-    /* If a stale share-link selected TRIAC, keep the visual non-selected
-       so the customer understands it can't actually install. */
+    /* If a stale share-link selected a blocked module, keep the visual
+       non-selected so the customer understands it can't actually install. */
     border-color: color-mix(in srgb, var(--danger, #dc2626) 35%, var(--color-border));
     box-shadow: none;
     transform: none;
+}
+
+/* WF-TRIAC-001 — advanced/manual-warning module-card affordance (currently
+   only fan=triac under HW-005 + COMPLIANCE-001). Visible AND selectable —
+   the customer can opt in deliberately. The card carries a danger-tone
+   border and an inline warning region with an acknowledgement checkbox.
+   The install gate enforces the ack + manifest match before any flash. */
+.module-card.is-advanced-warning {
+    cursor: pointer;
+}
+
+.module-card.is-advanced-warning .module-card__inner {
+    background: color-mix(in srgb, var(--danger, #dc2626) 4%, var(--color-surface));
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 35%, var(--color-border));
+}
+
+.module-card.is-advanced-warning:hover .module-card__inner,
+.module-card.is-advanced-warning:focus-within .module-card__inner {
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 50%, var(--color-border));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--danger, #dc2626) 18%, transparent);
+}
+
+.module-card.is-advanced-warning input[type="radio"]:checked + .module-card__inner {
+    border-color: color-mix(in srgb, var(--danger, #dc2626) 60%, var(--color-border));
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--danger, #dc2626) 22%, transparent);
+}
+
+/* Inline advanced/manual-warning region rendered as a sibling to the
+   module-card. Hidden by default; the runtime renderer reveals it only
+   while the parent variant is the live selection. */
+.module-card__advanced-warning {
+    margin-top: 8px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--danger, #dc2626) 40%, var(--color-border));
+    background: color-mix(in srgb, var(--danger, #dc2626) 7%, var(--color-surface));
+    color: var(--color-text-primary, #111827);
+    grid-column: 1 / -1;
+}
+
+.module-card__advanced-warning[hidden] {
+    display: none;
+}
+
+.module-card__advanced-warning-heading {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--danger, #dc2626) 60%, var(--color-text-primary, #111827));
+}
+
+.module-card__advanced-warning-body {
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--color-text-secondary, #4b5563);
+}
+
+.module-card__advanced-warning-ack {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    cursor: pointer;
+    color: var(--color-text-primary, #111827);
+}
+
+.module-card__advanced-warning-ack input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    accent-color: var(--danger, #dc2626);
+}
+
+.module-card__advanced-warning-ack input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
 }
 
 .module-group--toggle .module-group__hidden-controls {

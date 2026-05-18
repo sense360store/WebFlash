@@ -508,17 +508,84 @@ describe('WF-WIZARD-AVAIL-001 — module availability pill slots in static index
         expect(step4.textContent).not.toMatch(/Voice Module/i);
     });
 
-    test('TRIAC card is present in static markup so customers learn WHY it is blocked', () => {
-        // Visibility-with-context is the WF-WIZARD-AVAIL-001 contract for
-        // blocked modules. The runtime renderer adds the .is-blocked class
-        // and disables the radio.
+    test('WF-TRIAC-001 — TRIAC card is present in static markup so customers learn WHY it is advanced/manual-only', () => {
+        // Visibility-with-context is the WF-WIZARD-AVAIL-001 contract; the
+        // WF-TRIAC-001 update moves TRIAC from `.is-blocked` (radio
+        // disabled) to `.is-advanced-warning` (radio enabled + inline ack
+        // region revealed when selected).
         const triacCard = document.querySelector(
             '.module-card[data-module-card="fan"][data-variant="triac"]'
         );
         expect(triacCard).not.toBeNull();
-        // SKU surfaced inline so the customer can map "blocked TRIAC" back
-        // to the S360-320 hardware they may have ordered.
+        // SKU surfaced inline so the customer can map "advanced / manual
+        // only TRIAC" back to the S360-320 hardware they may have ordered.
         expect(triacCard.textContent).toMatch(/S360-320/);
+    });
+});
+
+describe('WF-TRIAC-001 — advanced/manual-warning region static markup', () => {
+    // The advanced/manual-warning region is the new in-context surface
+    // that lets customers (a) understand the load-bearing risk language
+    // and (b) acknowledge the warning before any TRIAC flash can fire.
+    // The runtime renderer in scripts/state.js reveals the region only
+    // while TRIAC is the active selection.
+    test('a single advanced-warning region is shipped in the static markup, scoped to fan=triac, hidden by default', () => {
+        const regions = document.querySelectorAll('[data-advanced-warning-region]');
+        expect(regions.length).toBe(1);
+        const region = regions[0];
+        expect(region.getAttribute('data-advanced-warning-module')).toBe('fan');
+        expect(region.getAttribute('data-advanced-warning-variant')).toBe('triac');
+        // Hidden until the runtime renderer reveals it — prevents a flash
+        // of warning copy before the wizard has resolved the selection.
+        expect(region.hasAttribute('hidden')).toBe(true);
+        expect(region.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    test('advanced-warning region carries the load-bearing risk language verbatim', () => {
+        const region = document.querySelector('[data-advanced-warning-region][data-advanced-warning-variant="triac"]');
+        expect(region).not.toBeNull();
+        const text = region.textContent;
+        // Each phrase is a non-negotiable contract per the WF-TRIAC-001
+        // brief — load-bearing user-facing copy that survives future
+        // tweaks.
+        expect(text).toMatch(/mains-connected loads/i);
+        expect(text).toMatch(/not compliance-certified/i);
+        expect(text).toMatch(/not Release-One/i);
+        expect(text).toMatch(/not a kit \/ default option/i);
+        expect(text).toMatch(/not recommended/i);
+        expect(text).toMatch(/no installable firmware has been imported yet/i);
+        expect(text).toMatch(/advanced\/manual-warning artifact is imported/i);
+    });
+
+    test('advanced-warning region carries an acknowledgement checkbox bound to fan=triac', () => {
+        const region = document.querySelector('[data-advanced-warning-region][data-advanced-warning-variant="triac"]');
+        const ack = region?.querySelector('[data-advanced-warning-acknowledge]');
+        expect(ack).not.toBeNull();
+        expect(ack.tagName).toBe('INPUT');
+        expect(ack.type).toBe('checkbox');
+        expect(ack.getAttribute('data-advanced-warning-module')).toBe('fan');
+        expect(ack.getAttribute('data-advanced-warning-variant')).toBe('triac');
+        // Unchecked in the static markup so a fresh visit always re-prompts.
+        expect(ack.checked).toBe(false);
+    });
+
+    test('advanced-warning region heading wires aria-labelledby for screen-reader announcement', () => {
+        const region = document.querySelector('[data-advanced-warning-region][data-advanced-warning-variant="triac"]');
+        expect(region.getAttribute('role')).toBe('region');
+        const labelledBy = region.getAttribute('aria-labelledby');
+        expect(labelledBy).toBeTruthy();
+        const heading = document.getElementById(labelledBy);
+        expect(heading).not.toBeNull();
+        expect(heading.textContent.trim()).toBe('Advanced / manual warning');
+    });
+
+    test('TRIAC firmware-impact hint copy reflects the WF-TRIAC-001 advanced/manual-warning posture', () => {
+        const hint = document.querySelector('[data-firmware-impact="fan-triac"]');
+        expect(hint).not.toBeNull();
+        const text = hint.textContent;
+        expect(text).toMatch(/advanced\/manual-warning/i);
+        expect(text).toMatch(/acknowledg/i);
+        expect(text).toMatch(/imported/i);
     });
 });
 

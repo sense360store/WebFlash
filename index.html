@@ -689,10 +689,44 @@
                                                 </div>
                                             </dl>
                                             <p class="availability-detail" data-module-availability-detail hidden aria-hidden="true"></p>
-                                            <p class="module-card__firmware-hint" data-firmware-impact="fan-triac">Uses a TRIAC-specific fan firmware target.</p>
+                                            <p class="module-card__firmware-hint" data-firmware-impact="fan-triac">Sense360 TRIAC is advanced/manual-warning hardware. Selecting it requires acknowledging the warning below, and WebFlash will not install TRIAC firmware until an advanced/manual-warning artifact is imported.</p>
                                             <div class="module-card__badges" aria-hidden="true"></div>
                                         </div>
                                     </label>
+                                    <!-- WF-TRIAC-001 — inline advanced/manual-warning region for the
+                                         TRIAC card. Hidden by default; the runtime renderer reveals it
+                                         when the TRIAC radio is the active selection. The checkbox
+                                         records the per-(module,variant) acknowledgement that the
+                                         install gate in scripts/state.js requires before any TRIAC
+                                         flash can fire. The acknowledgement is orthogonal to the
+                                         release-channel preview acknowledgement (the LED preview
+                                         gate is unchanged). Not Release-One. Not a kit / default. Not
+                                         recommended. Not compliance-certified. -->
+                                    <div
+                                        class="module-card__advanced-warning"
+                                        data-advanced-warning-region
+                                        data-advanced-warning-module="fan"
+                                        data-advanced-warning-variant="triac"
+                                        role="region"
+                                        aria-labelledby="fan-triac-advanced-warning-heading"
+                                        hidden
+                                        aria-hidden="true"
+                                    >
+                                        <h4 class="module-card__advanced-warning-heading" id="fan-triac-advanced-warning-heading">Advanced / manual warning</h4>
+                                        <p class="module-card__advanced-warning-body">
+                                            Sense360 TRIAC controls mains-connected loads and is <strong>not compliance-certified</strong> by WebFlash. It is <strong>not Release-One</strong>, <strong>not a kit / default option</strong>, and <strong>not recommended</strong>. <strong>No installable firmware has been imported yet.</strong> WebFlash will not install TRIAC firmware until an advanced/manual-warning artifact is imported. Use only if you understand the wiring, load, and local safety requirements.
+                                        </p>
+                                        <label class="module-card__advanced-warning-ack">
+                                            <input
+                                                type="checkbox"
+                                                data-advanced-warning-acknowledge
+                                                data-advanced-warning-module="fan"
+                                                data-advanced-warning-variant="triac"
+                                                aria-describedby="fan-triac-advanced-warning-heading"
+                                            >
+                                            <span>I understand Sense360 TRIAC is advanced/manual-warning hardware, accept that WebFlash does not claim compliance certification, and acknowledge that no installable TRIAC firmware has been imported yet.</span>
+                                        </label>
+                                    </div>
                                     </div>
                                 </div>
                             </section>
