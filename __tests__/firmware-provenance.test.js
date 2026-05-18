@@ -22,7 +22,7 @@ const VALID_STABLE_BUILD = Object.freeze({
     channel: 'stable',
     version: '2.0.0',
     chipFamily: 'ESP32-S3',
-    config_string: 'Ceiling-POE-AirIQ',
+    config_string: 'Ceiling-POE-VentIQ-RoomIQ',
     sha256: 'c9674b9df0ab00e3357c5dc526566ac440b32537aaf808a1e12b2f9db9b90397',
     md5: '1eb1fea3994bbbeea11080159dbbe611',
     signature: 'KQvII0GBl7I+lDSWVrq4q+q80Hsy+uZ8vBPL+hhNlyQ=',
@@ -42,8 +42,8 @@ const VALID_STABLE_BUILD = Object.freeze({
     file_size: 524288,
     // Hand-authored changelog; the synth-detection pattern must NOT match it,
     // otherwise the fixture would block install on its own.
-    changelog: ['Stable v2.0.0 rollout for Sense360 Ceiling-POE-AirIQ; supersedes v1.0.0 as the recommended build.'],
-    parts: [{ path: 'firmware/configurations/Sense360-Ceiling-POE-AirIQ-v2.0.0-stable.bin', offset: 0 }],
+    changelog: ['Stable v2.0.0 rollout for Sense360 Ceiling-POE-VentIQ-RoomIQ; supersedes v1.0.0 as the recommended build.'],
+    parts: [{ path: 'firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v2.0.0-stable.bin', offset: 0 }],
     deprecated: false,
     deprecation_reason: null
 });
