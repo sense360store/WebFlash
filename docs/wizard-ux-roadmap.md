@@ -638,6 +638,107 @@ from Release-One via `firmware/sources.json` `block_tokens`).
 WF-UX-006 makes no firmware / manifest / sources / kit /
 release-channel / workflow / deployment change.
 
+### WF-KIT-PRESETS-001 — Stage 1 productized bundle presets
+
+> **Extends WF-UX-006.** Stage 1 now leads with productized
+> Sense360 kit bundle presets above the existing three path cards.
+> Customers see *Sense360 Bathroom Kit — PoE* (stable / recommended)
+> and *Sense360 Bathroom Kit — PoE + Status Ring Preview* (preview)
+> as primary CTAs; planned fan-control kits (Relay / TRIAC / PWM /
+> DAC variants) live in a collapsible "Planned kits" subsection
+> and remain non-installable. The legacy `[data-start-path]` path
+> cards (kit SKU lookup / custom / recovery) stay in place as
+> secondary surfaces for users who need them.
+
+* **Data module.** [`scripts/data/kit-presets.js`](../scripts/data/kit-presets.js)
+  is the static, local WebFlash-side mirror of upstream
+  `sense360store/esphome-public` `KIT-MATRIX-001` (PR #542). It
+  exports a frozen `KIT_PRESETS` array of six entries — two
+  installable today (`stable` + `preview`) and four planned. Each
+  entry carries `id`, `displayName`, `description`, `status` (one
+  of `stable | preview | planned`), `channel`,
+  `requiresPreviewAcknowledgement`, `firmwareConfigString`,
+  `wizardState`, `components`, `upstreamRef`, `notAvailableReason`,
+  `blockers`, plus presentation badges. The module also exposes
+  `findKitPresetById`, `isPresetMatch`, `isPresetAvailable`, and
+  `validateKitPreset` for tests and consumers.
+* **Controller.** [`scripts/kit-presets.js`](../scripts/kit-presets.js)
+  wires the static markup at [`index.html`](../index.html)
+  (`[data-bundle-presets]` section just above the `[data-start-paths]`
+  group) to the existing wizard. Clicking an available card calls
+  `setState({...cleared, ...preset.wizardState})`, records
+  `setConfigurationMode('kit')` + `setSelectedKitSku(preset.id)` +
+  `setActiveKitMetadata({...})` in
+  [`scripts/services/diagnostics.js`](../scripts/services/diagnostics.js),
+  rewrites the URL to `?configmode=kit&preset=<id>`, and advances
+  to `min(5, getMaxReachableStep())`. Clicking a planned card
+  never mutates wizard state — it just announces the
+  `notAvailableReason` to the live region and surfaces it inline.
+  The controller listens to `window.wizardStateSummary.onStateChange`
+  so the card visual state stays in sync: an exact state match
+  reads as `aria-pressed="true"` + `is-active`, a diverging state
+  on the last-applied preset reads as `is-customized` with a
+  "Customized from this bundle" inline label.
+* **Installability is still manifest-driven.** Preset *existence*
+  never implies installability. The preview preset
+  (`S360-KIT-BATH-POE-LED` → `Ceiling-POE-VentIQ-RoomIQ-LED`) still
+  resolves through the live manifest, the
+  [`release-channels.js`](../scripts/utils/release-channels.js)
+  policy (`channel:preview` requires acknowledgement before
+  install — `defaultSelectable: false`), the firmware-readiness
+  classifier in
+  [`firmware-readiness.js`](../scripts/utils/firmware-readiness.js),
+  provenance, freshness, and preflight gates. Selecting the
+  preview preset prefills the LED toggle in Step 4 but the user
+  still has to check the preview-channel acknowledgement on Step 5
+  for the install button to enable. No new acknowledgement
+  surface was introduced.
+* **What did not change.** Every firmware binary, `manifest.json`,
+  every `firmware-*.json`, `firmware/sources.json`,
+  `REQUIRED_CONFIGS` (still
+  `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`),
+  `scripts/data/kits.json` (still Release-One-only),
+  `scripts/data/module-requirements.js`,
+  `scripts/utils/release-channels.js`,
+  `scripts/utils/firmware-readiness.js`,
+  `scripts/utils/module-availability.js`, every
+  `.github/workflows/*` file, `sw.js` cache strategy / cache
+  version, `_headers`, every existing Step 2-5 surface, the
+  rescue modal, the WF-UX-006 path cards, the WF-LED-003
+  preview-channel acknowledgement model, the WF-TRIAC-001
+  advanced/manual-warning gate, and the FanTRIAC HW-005 block
+  are byte-identical to pre-WF-KIT-PRESETS-001. **FanTRIAC stays
+  blocked. LED stable stays out of Release-One. No upstream
+  `RELEASE-007` / `S360-300-BENCH-001` / `WF-HW-TEST-003` claim
+  is made by this PR.** The four planned fan-control bundle
+  cards explicitly track their upstream/import blockers in their
+  meta line and `data-bundle-preset-status="planned"`; they are
+  not installable from WebFlash.
+* **Relationship to `WF-KIT-LED-001`.** WF-KIT-LED-001 (Active
+  queue item 4 — *Decide LED kit / recommended bundle exposure*)
+  is intentionally **separate**. WF-KIT-PRESETS-001 introduces the
+  presentation-only Stage 1 bundle preset surface that mirrors
+  upstream KIT-MATRIX-001; it does NOT add an LED-bearing kit to
+  `scripts/data/kits.json`, does NOT promote LED stable, does NOT
+  unblock `REQUIRED_CONFIGS`, and does NOT claim operator hardware
+  proof. The deferred decision about a real LED-bearing kit-config
+  catalog entry remains on the queue.
+
+Test pins for WF-KIT-PRESETS-001 live in
+[`__tests__/kit-presets.test.js`](../__tests__/kit-presets.test.js):
+data-module integrity + manifest cross-check (`KIT_PRESETS` order,
+`validateKitPreset`, stable/preview `firmwareConfigString`
+resolves to a manifest build with the matching channel),
+preset-to-wizard-state mapping (Bathroom PoE →
+`Ceiling-POE-VentIQ-RoomIQ`, Bathroom PoE + LED →
+`Ceiling-POE-VentIQ-RoomIQ-LED`), URL hydration round-trip,
+planned-card no-mutation guarantee, live-notice surfacing for
+planned cards, release-channel acknowledgement preservation
+(controller does not import `release-channels`; LED preview build
+still requires `channel:preview` ack), visual state reflection
+(active / customized / planned pill rules), and the manifest /
+sources / kits / `REQUIRED_CONFIGS` invariants.
+
 ## Browser support copy policy
 
 Canonical phrase: **"desktop Chrome, Edge, or Opera"** (matches

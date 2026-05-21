@@ -199,6 +199,135 @@
                 <h2 id="step-1-heading">Start with your hardware</h2>
                 <p class="step-intro">Pick the path that matches what you have. You can switch paths at any time before installing.</p>
 
+                <!-- WF-KIT-PRESETS-001 — Stage 1 leads with productized
+                     kit bundle presets sourced from the local mirror of
+                     upstream KIT-MATRIX-001 (scripts/data/kit-presets.js).
+                     Selecting an available preset prefills the existing
+                     wizard module state and jumps to Step 5; installability
+                     is still gated by the live manifest, firmware-readiness,
+                     and release-channel acknowledgement layers — preset
+                     existence does not imply installability. Planned kits
+                     stay non-installable until their upstream firmware ships
+                     and a WebFlash import follow-up lands. -->
+                <section class="bundle-presets" data-bundle-presets aria-labelledby="bundle-presets-heading">
+                    <h3 id="bundle-presets-heading" class="bundle-presets__heading">Pick your Sense360 kit bundle</h3>
+                    <p class="bundle-presets__intro">Sense360 ships productized kits. Pick the bundle that matches what you ordered and we&rsquo;ll prefill the wizard. Prefer per-module control? Use the <em>Build your own setup</em> card below.</p>
+                    <p class="bundle-presets__availability-notice" data-bundle-preset-availability-notice role="status" aria-live="polite" hidden></p>
+                    <div class="bundle-presets__group">
+                        <h4 class="bundle-presets__group-heading">Available bundles</h4>
+                        <div class="bundle-presets__grid" data-bundle-presets-grid="available">
+                            <button
+                                class="bundle-preset-card bundle-preset-card--available bundle-preset-card--stable"
+                                type="button"
+                                data-bundle-preset-id="S360-KIT-BATH-POE"
+                                data-bundle-preset-status="stable"
+                                data-bundle-preset-channel="stable"
+                                aria-describedby="bundle-preset-bath-poe-desc"
+                                aria-pressed="false"
+                            >
+                                <span class="bundle-preset-card__badge bundle-preset-card__badge--positive" data-bundle-preset-badge>Recommended</span>
+                                <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; PoE</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-bath-poe-desc">Sense360 Core with the VentIQ bathroom air-quality module and the RoomIQ room sensor, powered over Ethernet. Recommended for production deployments.</span>
+                                <ul class="bundle-preset-card__components" aria-label="Included components">
+                                    <li>Sense360 Core <span class="bundle-preset-card__component-sku">S360-100</span></li>
+                                    <li>Sense360 RoomIQ <span class="bundle-preset-card__component-sku">S360-200</span></li>
+                                    <li>Sense360 VentIQ <span class="bundle-preset-card__component-sku">S360-211</span></li>
+                                    <li>Sense360 PoE PSU <span class="bundle-preset-card__component-sku">S360-410</span></li>
+                                </ul>
+                                <span class="bundle-preset-card__meta">Stable channel &middot; <code>S360-KIT-BATH-POE</code></span>
+                                <span class="bundle-preset-card__customized" data-bundle-preset-customized hidden>Customized from this bundle</span>
+                            </button>
+
+                            <button
+                                class="bundle-preset-card bundle-preset-card--available bundle-preset-card--preview"
+                                type="button"
+                                data-bundle-preset-id="S360-KIT-BATH-POE-LED"
+                                data-bundle-preset-status="preview"
+                                data-bundle-preset-channel="preview"
+                                aria-describedby="bundle-preset-bath-poe-led-desc"
+                                aria-pressed="false"
+                            >
+                                <span class="bundle-preset-card__badge bundle-preset-card__badge--warning" data-bundle-preset-badge>Preview</span>
+                                <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; PoE + Status Ring Preview</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-bath-poe-led-desc">Extends the Bathroom PoE kit with the Sense360 LED status ring. Preview firmware &mdash; you&rsquo;ll need to acknowledge the preview channel on Step 5 before install.</span>
+                                <ul class="bundle-preset-card__components" aria-label="Included components">
+                                    <li>Sense360 Core <span class="bundle-preset-card__component-sku">S360-100</span></li>
+                                    <li>Sense360 RoomIQ <span class="bundle-preset-card__component-sku">S360-200</span></li>
+                                    <li>Sense360 VentIQ <span class="bundle-preset-card__component-sku">S360-211</span></li>
+                                    <li>Sense360 LED ring <span class="bundle-preset-card__component-sku">S360-300</span></li>
+                                    <li>Sense360 PoE PSU <span class="bundle-preset-card__component-sku">S360-410</span></li>
+                                </ul>
+                                <span class="bundle-preset-card__meta">Preview channel &middot; <code>S360-KIT-BATH-POE-LED</code> &middot; <strong>Requires preview acknowledgement before install.</strong></span>
+                                <span class="bundle-preset-card__customized" data-bundle-preset-customized hidden>Customized from this bundle</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <details class="bundle-presets__planned-group" data-bundle-presets-planned>
+                        <summary class="bundle-presets__group-heading bundle-presets__group-heading--collapsible">Planned kits (not yet available in WebFlash)</summary>
+                        <p class="bundle-presets__planned-intro">These kit bundles are declared upstream under KIT-MATRIX-001 but no installable WebFlash firmware has been imported yet. Selecting one shows the planned configuration and the blockers tracked in <code>UPCOMING_PR.md</code>; nothing in the wizard is modified.</p>
+                        <div class="bundle-presets__grid bundle-presets__grid--planned" data-bundle-presets-grid="planned">
+                            <button
+                                class="bundle-preset-card bundle-preset-card--planned"
+                                type="button"
+                                data-bundle-preset-id="S360-KIT-BATH-RELAY"
+                                data-bundle-preset-status="planned"
+                                aria-describedby="bundle-preset-bath-relay-desc"
+                                aria-pressed="false"
+                            >
+                                <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
+                                <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; Relay Fan Control</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-bath-relay-desc">Bathroom kit with the Sense360 Relay (S360-310) driving a single-speed bathroom fan. Not yet installable in WebFlash.</span>
+                                <span class="bundle-preset-card__meta">Tracked: RELEASE-RELAY-001 &middot; WF-IMPORT-RELAY-001</span>
+                            </button>
+
+                            <button
+                                class="bundle-preset-card bundle-preset-card--planned"
+                                type="button"
+                                data-bundle-preset-id="S360-KIT-BATH-TRIAC"
+                                data-bundle-preset-status="planned"
+                                aria-describedby="bundle-preset-bath-triac-desc"
+                                aria-pressed="false"
+                            >
+                                <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
+                                <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; TRIAC Fan Control</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-bath-triac-desc">Bathroom kit with the Sense360 TRIAC (S360-320) phase-dimmed fan. Mains-load compliance work is open; FanTRIAC firmware remains blocked from Release-One under HW-005.</span>
+                                <span class="bundle-preset-card__meta">Tracked: HW-005 &middot; RELEASE-TRIAC-001 &middot; WF-IMPORT-TRIAC-001</span>
+                            </button>
+
+                            <button
+                                class="bundle-preset-card bundle-preset-card--planned"
+                                type="button"
+                                data-bundle-preset-id="S360-KIT-DUCT-PWM"
+                                data-bundle-preset-status="planned"
+                                aria-describedby="bundle-preset-duct-pwm-desc"
+                                aria-pressed="false"
+                            >
+                                <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
+                                <span class="bundle-preset-card__title">Sense360 Duct Fan Kit &mdash; PWM Fan Control</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-duct-pwm-desc">Duct-fan kit driving up to four 12V PWM fans (Sense360 PWM, S360-311). Not yet installable in WebFlash.</span>
+                                <span class="bundle-preset-card__meta">Tracked: RELEASE-PWM-001 &middot; WF-IMPORT-PWM-001</span>
+                            </button>
+
+                            <button
+                                class="bundle-preset-card bundle-preset-card--planned"
+                                type="button"
+                                data-bundle-preset-id="S360-KIT-DUCT-DAC"
+                                data-bundle-preset-status="planned"
+                                aria-describedby="bundle-preset-duct-dac-desc"
+                                aria-pressed="false"
+                            >
+                                <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
+                                <span class="bundle-preset-card__title">Sense360 Duct Fan Kit &mdash; 0&ndash;10V Fan Control</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-duct-dac-desc">Duct-fan kit driving a 0&ndash;10V analog fan (Sense360 DAC, S360-312). Not yet installable in WebFlash.</span>
+                                <span class="bundle-preset-card__meta">Tracked: RELEASE-DAC-001 &middot; WF-IMPORT-DAC-001</span>
+                            </button>
+                        </div>
+                    </details>
+
+                    <p class="bundle-presets__source">Bundle list mirrors upstream <code>KIT-MATRIX-001</code> in <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer">sense360store/esphome-public</a>. Installability is still controlled by the live manifest and the existing readiness, release-channel, and preflight gates &mdash; preset existence never bypasses them.</p>
+                </section>
+
                 <div class="start-paths" data-start-paths role="group" aria-labelledby="step-1-heading">
                     <button class="start-path-card start-path-card--kit" type="button" data-start-path="kit" aria-describedby="start-path-kit-desc">
                         <span class="start-path-card__title">I bought a kit</span>
