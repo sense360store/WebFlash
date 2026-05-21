@@ -749,7 +749,7 @@ function evaluateFreshnessGate() {
     } else if (manifestStaleBlocking) {
         blockingReason = 'A newer firmware manifest is available. Reload before flashing.';
     } else if (manifestUnknownBlocking) {
-        blockingReason = 'WebFlash could not confirm that the firmware manifest is current. Use “Recheck manifest freshness” to retry, or check the acknowledgement to install with the manifest you have.';
+        blockingReason = 'WebFlash could not confirm whether the firmware list is up to date. Use “Recheck manifest freshness” to retry, or check the acknowledgement to continue with the firmware list already loaded in this browser.';
     }
     return {
         ok: !swUpdateBlocking && !manifestStaleBlocking && !manifestUnknownBlocking,
@@ -4111,7 +4111,7 @@ async function refreshPreflightDiagnostics() {
                 key: 'manifest-freshness',
                 label: 'Manifest freshness',
                 state: 'pass',
-                detail: 'WebFlash could not confirm the firmware manifest is current. You acknowledged this and may install with the manifest you have. Use “Recheck manifest freshness” to retry the check.',
+                detail: 'WebFlash could not confirm whether the firmware list is up to date. You acknowledged this and chose to continue with the firmware list already loaded in this browser. Use “Recheck manifest freshness” to retry the check.',
                 blocking: false
             });
         }
@@ -4119,7 +4119,7 @@ async function refreshPreflightDiagnostics() {
             key: 'manifest-freshness',
             label: 'Manifest freshness',
             state: 'warn',
-            detail: 'WebFlash could not confirm the firmware manifest is current. Use “Recheck manifest freshness” to retry, or check the acknowledgement to install with the manifest you have.',
+            detail: 'WebFlash could not confirm whether the firmware list is up to date. Use “Recheck manifest freshness” to retry before installing — or, if you continue, check the acknowledgement to use the firmware list already loaded in this browser.',
             blocking: true
         });
     };

@@ -94,6 +94,52 @@ State of the repo at TRACKING-001:
 Priority-ordered. Update the **Status** column in-place as each PR is opened
 or lands, then move the row to **Completed / merged** on merge.
 
+0. **WF-FRESHNESS-UX-001 — Clarify manifest freshness warning copy.**
+   Status: **In review / PR number to fill at merge.**
+   Purpose: Copy + test clarification only. Replaces the ambiguous
+   "install with the manifest you have" wording on the unknown-verdict
+   freshness gate with the clearer "use the firmware list already
+   loaded in this browser" phrasing across the three surfaces that
+   carry it — the preflight detail (`scripts/state.js`
+   `getManifestFreshnessCheck`, both the warn and acknowledged paths),
+   the install-gate blocking reason (`evaluateFreshnessGate` →
+   install-button / download / copy-URL / summary-install tooltips),
+   the freshness banner summary (`scripts/layout/freshness-banner.js`
+   `pickActiveState` for the `manifest-unknown` case), and the inline
+   acknowledgement description (`index.html` →
+   `#manifest-freshness-ack-description`). Adds targeted Jest pins:
+   `__tests__/wizard-state.test.js` gains a `WF-FRESHNESS-UX-001 —
+   clarified freshness warning copy` describe block (preflight detail
+   wording, blocking reason wording, acknowledged-state detail, recheck
+   button still discoverable, install stays blocked until ack,
+   freshness ack does NOT satisfy preview-channel acknowledgements,
+   freshness ack does NOT bypass the stale hard-fail verdict);
+   `__tests__/cache-freshness.test.js` gains a single pin on the
+   unknown-freshness banner summary; `__tests__/a11y-static-html.test.js`
+   gains a `WF-FRESHNESS-UX-001 — clarified manifest freshness ack copy
+   in static index.html` describe block.
+   Dependencies: None — copy and test only.
+   Note: **No safety semantics change.** The freshness probe still
+   runs, the recheck control is still rendered, install remains gated
+   when freshness cannot be confirmed until the user explicitly checks
+   the override acknowledgement, the override is scoped to the
+   `unknown` verdict (the `stale` hard fail still cannot be
+   acknowledged), and the freshness ack stays orthogonal to the
+   preview-channel acknowledgement gate (WF-LED-003) and the
+   advanced/manual-warning gate (WF-TRIAC-001). No firmware imported,
+   no manifest regenerated, no `REQUIRED_CONFIGS` change, no kit
+   change, no release-channel-policy change, no install-button
+   hard-gate change, no `sw.js` change, no workflow change. Every
+   firmware binary, `manifest.json`, every `firmware-*.json`,
+   `firmware/sources.json`, `scripts/data/kits.json`,
+   `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`,
+   `scripts/utils/release-channels.js`,
+   `scripts/utils/firmware-readiness.js`,
+   `scripts/utils/module-availability.js`, every
+   `.github/workflows/*` file, the FanTRIAC HW-005 block, the LED
+   preview exposure model, the Rescue install path, and every other
+   wizard surface byte-identical.
+
 1. **WF-HW-TEST-002 follow-up — Complete LED preview operator flash proof.**
    Status: **Planned / hardware required — operator evidence still
    pending** (the docs PR already merged as #430 *without* operator

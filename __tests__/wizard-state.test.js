@@ -755,6 +755,127 @@ describe('manifest freshness recovery in step 5', () => {
         const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
         expect(freshnessCheck.state).toBe('warn');
     });
+
+    // WF-FRESHNESS-UX-001 — copy/test clarification. These tests pin the
+    // user-facing wording so the override is unambiguous: continuing means
+    // *using the firmware list already loaded in this browser*, not silently
+    // trusting that the manifest is current.
+    describe('WF-FRESHNESS-UX-001 — clarified freshness warning copy', () => {
+        test("the unknown-verdict preflight detail names the recheck control and explains the override scope", async () => {
+            const { __testHooks } = await import('../scripts/state.js');
+            __testHooks.setManifestFreshnessState('unknown');
+            const checks = await __testHooks.refreshPreflightDiagnostics();
+            const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+            expect(freshnessCheck.state).toBe('warn');
+            // Clearer wording: "firmware list" instead of "manifest", and the
+            // override scope reads "firmware list already loaded in this
+            // browser" so the user sees this is an explicit override of the
+            // freshness check, not a silent pass.
+            expect(freshnessCheck.detail).toMatch(/firmware list/i);
+            expect(freshnessCheck.detail).toMatch(/already loaded in this browser/i);
+            // Keep the recheck control discoverable by name.
+            expect(freshnessCheck.detail).toMatch(/Recheck manifest freshness/i);
+            // Old wording must not regress.
+            expect(freshnessCheck.detail).not.toMatch(/install with the manifest you have/i);
+        });
+
+        test("the install-gate blocking reason on 'unknown' uses the clearer firmware-list wording", async () => {
+            const { __testHooks } = await import('../scripts/state.js');
+            __testHooks.setManifestFreshnessState('unknown');
+            const verdict = __testHooks.evaluateFreshnessGate();
+            expect(verdict.ok).toBe(false);
+            expect(verdict.blockingReason).toMatch(/firmware list/i);
+            expect(verdict.blockingReason).toMatch(/already loaded in this browser/i);
+            expect(verdict.blockingReason).toMatch(/Recheck manifest freshness/i);
+            expect(verdict.blockingReason).not.toMatch(/install with the manifest you have/i);
+        });
+
+        test("the acknowledged-verdict preflight detail describes the override the user actually accepted", async () => {
+            const { __testHooks } = await import('../scripts/state.js');
+            __testHooks.setManifestFreshnessState('unknown');
+            __testHooks.setManifestFreshnessAcknowledgement(true);
+            const checks = await __testHooks.refreshPreflightDiagnostics();
+            const freshnessCheck = checks.find(check => check.key === 'manifest-freshness');
+            expect(freshnessCheck.state).toBe('pass');
+            expect(freshnessCheck.detail).toMatch(/acknowledged/i);
+            expect(freshnessCheck.detail).toMatch(/firmware list already loaded in this browser/i);
+            expect(freshnessCheck.detail).toMatch(/Recheck manifest freshness/i);
+            expect(freshnessCheck.detail).not.toMatch(/install with the manifest you have/i);
+        });
+
+        test("the recheck button is still rendered when the verdict is 'unknown'", async () => {
+            const { __testHooks } = await import('../scripts/state.js');
+            __testHooks.setManifestFreshnessState('unknown');
+            await __testHooks.refreshPreflightDiagnostics();
+
+            const recheckBtn = document.querySelector('[data-manifest-freshness-recheck]');
+            expect(recheckBtn).not.toBeNull();
+            expect(recheckBtn.disabled).toBe(false);
+            expect(recheckBtn.textContent).toMatch(/Recheck manifest freshness/i);
+        });
+
+        test('install stays blocked until the freshness acknowledgement is checked', async () => {
+            const { __testHooks } = await import('../scripts/state.js');
+            __testHooks.setManifestFreshnessState('unknown');
+            // No acknowledgement yet → freshness gate is closed.
+            expect(__testHooks.evaluateFreshnessGate().ok).toBe(false);
+            // Toggling the inline ack checkbox flips the gate open.
+            const ackInput = document.querySelector('[data-manifest-freshness-acknowledge]');
+            expect(ackInput).not.toBeNull();
+            ackInput.checked = true;
+            ackInput.dispatchEvent(new Event('change', { bubbles: true }));
+            expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
+        });
+
+        test('freshness acknowledgement does not satisfy outstanding preview-channel acknowledgements', async () => {
+            // Preview-channel ack and freshness ack are orthogonal gates.
+            // Ticking the freshness ack must not collapse the preview ack
+            // queue — the WF-LED-003 preview-channel exposure model stays
+            // authoritative.
+            const { __testHooks } = await import('../scripts/state.js');
+
+            const previewBuild = {
+                firmwareId: 'preview-test-build',
+                channel: 'preview',
+                version: '1.0.0',
+                config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED',
+                parts: [{ path: 'led.bin', offset: 0 }]
+            };
+
+            __testHooks.setManifestFreshnessState('unknown');
+            __testHooks.setManifestFreshnessAcknowledgement(true);
+            expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
+
+            // Preview-channel acknowledgement queue is still populated
+            // because the freshness ack does not satisfy it.
+            const outstanding = __testHooks.getOutstandingChannelAcknowledgements(previewBuild);
+            expect(outstanding.length).toBeGreaterThan(0);
+            const outstandingKeys = outstanding.map(item => item.key);
+            expect(outstandingKeys.some(key => /preview/i.test(key))).toBe(true);
+            outstanding.forEach(item => {
+                expect(__testHooks.isChannelAcknowledged(item.key, previewBuild)).toBe(false);
+            });
+        });
+
+        test('freshness acknowledgement does not bypass the stale (hard fail) freshness verdict', async () => {
+            // The override is for the 'unknown' verdict only. A 'stale'
+            // verdict is a hard fail — even if the ack is set, the install
+            // gate must remain closed and the blocking reason must point to
+            // the stale manifest, not the unknown-override copy.
+            const { __testHooks } = await import('../scripts/state.js');
+            __testHooks.setManifestFreshnessState('stale');
+            __testHooks.setManifestFreshnessAcknowledgement(true);
+
+            const verdict = __testHooks.evaluateFreshnessGate();
+            expect(verdict.ok).toBe(false);
+            expect(verdict.manifestStaleBlocking).toBe(true);
+            expect(verdict.blockingReason).toMatch(/newer firmware manifest/i);
+            // The unknown-verdict override copy must not leak into the
+            // hard-fail path.
+            expect(verdict.blockingReason).not.toMatch(/already loaded in this browser/i);
+            expect(verdict.blockingReason).not.toMatch(/check the acknowledgement/i);
+        });
+    });
 });
 
 describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () => {

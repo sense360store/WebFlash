@@ -134,7 +134,7 @@ function pickActiveState(swState, freshness, freshnessAck) {
             level: 'warn',
             eyebrow: 'Freshness unknown',
             title: 'Could not confirm firmware manifest freshness',
-            summary: 'WebFlash could not confirm that the firmware manifest is current. Check your connection or reload before flashing.',
+            summary: 'WebFlash could not confirm whether the firmware list is up to date. Recheck or reload before flashing — if you continue, you are choosing to use the firmware list already loaded in this browser.',
             primary: freshnessAck
                 ? { label: 'Reload now', action: () => window.location.reload() }
                 : { label: 'Acknowledge and continue', action: () => {
