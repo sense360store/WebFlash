@@ -192,6 +192,33 @@ or lands, then move the row to **Completed / merged** on merge.
     `PRODUCT-DEP-002`, **or** the first actual upstream
     `deprecated` / `removed` catalog entry (whichever arrives first).
 
+12. **WF-UPSTREAM-COMPILE-AWARE-001 — Reflect upstream compile-only lanes
+    in WebFlash import roadmap.**
+    Status: **In flight / docs-only planning.**
+    Purpose: Document the upstream `sense360store/esphome-public`
+    compile-only validation pipeline (upstream `FW-COMPILE-MATRIX-001`
+    / #544, `FW-COMPILE-FIX-001` / #546, `FW-COMPILE-RESULT-001` / #547,
+    `FW-COMPILE-POE-NONFAN-001` / #548, `FW-COMPILE-EXPAND-001` / #549)
+    inside `docs/webflash-import-readiness-matrix.md` so the WebFlash
+    repo understands compile-only success as an upstream readiness
+    *signal* — not as WebFlash import readiness, preview/stable
+    readiness, hardware proof, or `REQUIRED_CONFIGS` eligibility.
+    Captures the current compile-only target groups (Release-One + LED
+    preview YAMLs already imported; the five PoE non-fan compile-only
+    skeletons from upstream #548 that are **not** imported; the PoE
+    non-fan LED candidate ledger from upstream #549).
+    Dependencies: None on the WebFlash side — purely a docs/queue
+    refresh against upstream-published PRs.
+    Note: **Compile-only is awareness, not exposure.** This PR adds no
+    firmware, no manifest entry, no `firmware/sources.json` line, no
+    `REQUIRED_CONFIGS` change, no kit, no runtime UI surface, no
+    workflow change. The WF-PRODUCT-004 classifier continues to treat
+    `compile-only` upstream catalog status as ineligible across all
+    four eligibility dimensions; this PR does not weaken that rule.
+    Hardware proof for LED (`docs/led-preview-webflash-proof.md`)
+    remains `pending`; upstream `RELEASE-007` remains unblocked by
+    this PR.
+
 ## Upstream dependencies
 
 These are tracked in `sense360store/esphome-public`'s own `UPCOMING_PR.md` —

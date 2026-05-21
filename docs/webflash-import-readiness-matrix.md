@@ -542,6 +542,161 @@ only. Per-family postures below expand each row.
   resolve. Listing AirIQ here records the candidate; it does not
   pre-commit a PR slot.
 
+## Upstream compile-only validation signal
+
+Upstream `sense360store/esphome-public` runs a **compile-only validation
+lane** that proves a YAML / package / product / WebFlash-wrapper
+configuration compiles cleanly under ESPHome with the current package
+set, secrets provisioning, and ESP-IDF / Arduino toolchain. This signal
+is an *input* to WebFlash planning, not a WebFlash-side gate. The
+matrix records it here so future per-family import PRs (every
+`WF-IMPORT-…-001` row in the [Follow-up PR sequence](#follow-up-pr-sequence))
+can reason about upstream readiness without confusing the two layers.
+
+The relevant upstream PRs (sourced from
+`sense360store/esphome-public`, not this repo — numbers refer to
+upstream, not WebFlash):
+
+- **`FW-COMPILE-MATRIX-001` (upstream #544)** — added the compile-only
+  validation lane itself; gives upstream a way to ensure every active
+  YAML still compiles against the current package set without
+  producing a release artifact.
+- **`FW-COMPILE-FIX-001` (upstream #546)** — fixed full-compile
+  secrets provisioning so the lane can run end-to-end on the two
+  currently-WebFlash-shipped YAMLs.
+- **`FW-COMPILE-RESULT-001` (upstream #547)** — recorded successful
+  full-compile evidence for the two YAMLs WebFlash currently imports
+  (Release-One stable + LED preview). This is the upstream
+  *compile-only* confidence signal for the two builds already
+  imported by WebFlash; it is **not** a re-flash, a re-release, or a
+  re-import event on the WebFlash side.
+- **`FW-COMPILE-POE-NONFAN-001` (upstream #548)** — added five
+  PoE non-fan compile-only *skeletons*. These are YAML / package /
+  product configurations that compile clean upstream but have **no
+  upstream release artifact**, no upstream `webflash_build_matrix`
+  bridge, and no WebFlash source entry. Compile-only success here
+  means *YAML is well-formed against the current package set*, not
+  that any of these become installable.
+- **`FW-COMPILE-EXPAND-001` (upstream #549)** — added the candidate
+  ledger ranking the next compile-only targets (currently dominated
+  by PoE non-fan LED variants). The ledger is upstream planning
+  signal; WebFlash imports nothing from it.
+
+### What compile-only proves
+
+- **YAML / package / ESPHome compile confidence.** The configuration
+  is syntactically valid against the active package set, all
+  referenced symbols resolve, and the toolchain produces a binary
+  without error. This is necessary, but not sufficient, for any
+  exposure class.
+- **Continuous integration against package drift.** When upstream
+  packages change, the compile-only lane catches breakage in
+  configurations that would otherwise silently rot.
+
+### What compile-only does **not** prove
+
+- **Compile-only does not produce a WebFlash-importable artifact.**
+  No `.bin` is attached to a GitHub Release; no
+  `checksums-sha256.txt` entry exists; no `expected_sha256` can be
+  pinned in `firmware/sources.json`. The
+  [Core rule](#core-rule) gates that an import requires — *upstream
+  release artifact exists, release notes carry the four canonical H2
+  sections, checksum matches `checksums-sha256.txt`* — are all
+  unsatisfied by compile-only success alone.
+- **Compile-only does not imply `preview` readiness.** Preview
+  imports still require the upstream catalog entry at `status:
+  preview` **and** a real upstream release artifact (the
+  `release-proof-required` gate). The LED preview is the worked
+  example: `FW-COMPILE-RESULT-001` proved the YAML compiles, but the
+  LED preview only became WebFlash-importable when upstream
+  `v1.0.0-led-preview` shipped a signed `.bin` with the canonical
+  release-body sections (see
+  [`docs/led-preview-import-plan.md`](led-preview-import-plan.md)).
+- **Compile-only does not imply `stable` readiness.** Stable imports
+  additionally require upstream `status: production`, bench evidence
+  (`S360-300-BENCH-001`-class), and a deliberate WebFlash
+  `WF-IMPORT-…-001` PR that runs the importer.
+- **Compile-only does not imply hardware proof.** A binary that
+  builds does not exercise any hardware path. Hardware proof remains
+  a separate gate (operator validation, e.g.
+  [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md);
+  upstream bench gates such as `S360-300-BENCH-001`).
+- **Compile-only does not imply `REQUIRED_CONFIGS` eligibility.**
+  `REQUIRED_CONFIGS` is the production-only deploy allowlist and is
+  unrelated to whether a YAML compiles. WF-PRODUCT-004
+  ([`scripts/validate-product-import-readiness.js`](../scripts/validate-product-import-readiness.js))
+  continues to enforce `production` + `stable` as the only state
+  that may enter `REQUIRED_CONFIGS`. Compile-only catalog entries
+  fail the alignment check today
+  ([`docs/firmware-import.md`](firmware-import.md): `compile-only`
+  is listed alongside `blocked` / `legacy-compatible` / `deprecated`
+  / `removed` / `hardware-pending` as a status that WebFlash
+  surfaces must not reference).
+- **Compile-only does not imply kit / recommended / default
+  exposure.** Kit + recommended decisions follow import, not the
+  compile-only signal.
+
+### Current upstream compile-only targets
+
+| Target group | Upstream PR | Compile-only status | WebFlash import status today |
+|---|---|---|---|
+| Release-One stable YAML (`Ceiling-POE-VentIQ-RoomIQ`) | `FW-COMPILE-RESULT-001` (#547) | compiles clean | **already imported** as `channel: stable` v1.0.0; in `REQUIRED_CONFIGS`; backs `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE`. No change driven by the compile-only signal. |
+| LED preview YAML (`Ceiling-POE-VentIQ-RoomIQ-LED`) | `FW-COMPILE-RESULT-001` (#547) | compiles clean | **already imported** as `channel: preview` v1.0.0 under WF-LED-002; manifest-only exposure under WF-LED-003. No change driven by the compile-only signal. `RELEASE-007` still gates LED-stable; bench evidence (`S360-300-BENCH-001`) still gates the operator-proof path. |
+| PoE non-fan compile-only skeletons (5 entries) | `FW-COMPILE-POE-NONFAN-001` (#548) | compiles clean | **no import.** No upstream release artifact, no `webflash_build_matrix` bridge, no WebFlash source entry, no `firmware/sources.json` declaration, no manifest entry, no kit, no `REQUIRED_CONFIGS` line. Allowed import action: **none** (compile-only-only). |
+| PoE non-fan LED candidates (next upstream lane) | `FW-COMPILE-EXPAND-001` (#549) — candidate ledger | candidate ranking only — **not yet compiled** | **no import.** Listed here as upstream planning visibility; not yet eligible for any class even at the upstream `preview` gate. |
+
+### How WebFlash treats the compile-only signal
+
+- **Awareness, not exposure.** WF-IMPORT-GAP-001's
+  [Candidate import table](#candidate-import-table) and per-family
+  postures already classify every non-imported family with
+  `not-import-ready` + the specific missing gates. Compile-only
+  success **does not** flip any row from `not-import-ready` to
+  `preview import candidate`; the missing gates remain missing
+  (`missing-upstream-release-artifact`,
+  `missing-upstream-webflash-wrapper`, etc.).
+- **No new follow-up PR identifiers are reserved by this signal.**
+  The compile-only lane does not unlock a new `WF-IMPORT-…-001`
+  slot — every existing slot still gates on its named upstream
+  `RELEASE-…` precondition.
+- **The candidate ledger (`FW-COMPILE-EXPAND-001`) is upstream
+  scheduling input, not WebFlash scheduling input.** WebFlash
+  reads it for visibility; the WebFlash queue
+  ([`UPCOMING_PR.md`](../UPCOMING_PR.md)) does not duplicate or
+  re-order it.
+- **Compile-only entries that ever become release artifacts will
+  flow through the existing `WF-IMPORT-…-001` machinery.** When
+  (and only when) an upstream compile-only configuration is
+  promoted to a real GitHub Release with the canonical proof
+  shape, the matching `WF-IMPORT-…-001` PR opens — not before.
+- **Compile-only must not be confused with the WebFlash readiness
+  classifier.** `scripts/validate-product-import-readiness.js`
+  continues to treat `compile-only` catalog status as ineligible
+  across all four eligibility dimensions; this section does not
+  weaken that rule.
+
+### What WF-UPSTREAM-COMPILE-AWARE-001 does **not** do
+
+- **No firmware import.** No `.bin` enters
+  `firmware/configurations/` or `firmware/rescue/`.
+- **No manifest regeneration.** `manifest.json` and every
+  `firmware-*.json` stay byte-identical.
+- **No `firmware/sources.json` change.** No new source entry, no
+  edited `block_tokens`, no edited `expected_sha256`.
+- **No `REQUIRED_CONFIGS` change.** The production-only allowlist
+  stays `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
+- **No LED stable promotion.** LED preview stays preview;
+  `RELEASE-007` / `S360-300-BENCH-001` still gate the stable path.
+- **No PoE non-fan UI exposure.** The five compile-only skeletons
+  from upstream #548 do **not** appear in
+  `scripts/data/kits.json`, `scripts/data/kit-presets.js`,
+  `scripts/data/module-requirements.js`, or any wizard surface.
+- **No hardware-proof claim.** Operator validation
+  (`docs/led-preview-webflash-proof.md`) remains `pending`; this
+  section adds nothing to that evidence.
+- **No `RELEASE-007` unblock claim.** The LED stable release gate
+  remains entirely upstream-owned.
+
 ## Release-One and LED preview safety
 
 The following statements are *load-bearing* and must remain true
