@@ -272,6 +272,22 @@ describe('cache freshness — freshness banner', () => {
         expect(active.primary.label).toMatch(/Acknowledge/i);
     });
 
+    test("WF-FRESHNESS-UX-001 — unknown-freshness banner copy names the firmware-list override scope", async () => {
+        // Banner summary copy must read as a clear user-facing override of
+        // the freshness check, not as a silent pass.
+        const { __testHooks } = await import('../scripts/layout/freshness-banner.js');
+        const active = __testHooks.pickActiveState(
+            { updateAvailable: false, updateDismissed: false },
+            'unknown',
+            false
+        );
+        expect(active).not.toBeNull();
+        expect(active.summary).toMatch(/firmware list/i);
+        expect(active.summary).toMatch(/already loaded in this browser/i);
+        // Stale-style wording must not leak into the override path.
+        expect(active.summary).not.toMatch(/install with the manifest you have/i);
+    });
+
     test('renders nothing when SW is fine and manifest is current', async () => {
         const { __testHooks } = await import('../scripts/layout/freshness-banner.js');
         const active = __testHooks.pickActiveState(

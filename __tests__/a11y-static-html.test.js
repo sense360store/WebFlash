@@ -1068,3 +1068,33 @@ describe('WF-UX-007 — outcome-first Step 4 module labels with technical second
         }
     });
 });
+
+describe('WF-FRESHNESS-UX-001 — clarified manifest freshness ack copy in static index.html', () => {
+    test('the freshness ack description names the override scope ("firmware list already loaded in this browser")', () => {
+        const ack = document.getElementById('manifest-freshness-ack-description');
+        expect(ack).not.toBeNull();
+        const text = ack.textContent.trim();
+        // The label must read as an explicit user-driven override, not a
+        // silent pass: it names *what* the user is choosing to continue
+        // with (the firmware list already loaded in this browser).
+        expect(text).toMatch(/firmware list already loaded in this browser/i);
+        expect(text).toMatch(/could not confirm/i);
+        // Old "install with the manifest I have" wording must not regress.
+        expect(text).not.toMatch(/install with the manifest I have/i);
+        expect(text).not.toMatch(/the manifest you have/i);
+    });
+
+    test('the recheck control is rendered alongside the ack, keeping retry discoverable', () => {
+        const ack = document.querySelector('[data-manifest-freshness-acknowledge]');
+        const ackLabel = document.querySelector('[data-manifest-freshness-ack-control]');
+        const recheckBtn = document.querySelector('[data-manifest-freshness-recheck]');
+        expect(ack).not.toBeNull();
+        expect(ackLabel).not.toBeNull();
+        expect(recheckBtn).not.toBeNull();
+        // The retry control's visible label stays "Recheck manifest freshness"
+        // so other tests and screen-reader users continue to find it by name.
+        expect(recheckBtn.textContent.trim()).toMatch(/Recheck manifest freshness/i);
+        // The ack input is wired to the description via aria-describedby.
+        expect(ack.getAttribute('aria-describedby')).toBe('manifest-freshness-ack-description');
+    });
+});
