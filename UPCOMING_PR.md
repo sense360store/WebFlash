@@ -89,59 +89,14 @@ State of the repo at TRACKING-001:
 | WF-STALE-001 | #433 | Merged | Minimal stale fixture/doc cleanup — re-anchored `VALID_STABLE_BUILD` fixture in `__tests__/firmware-provenance.test.js` from `Ceiling-POE-AirIQ` to `Ceiling-POE-VentIQ-RoomIQ`; added historical-snapshot note to `FIRMWARE-DISTRIBUTION-REVIEW.md`. | No runtime, manifest, firmware, source, kit, or `REQUIRED_CONFIGS` changes. Authoritative allowlist remains live in `.github/workflows/firmware-publish.yml` + `CLAUDE.md`. | Stale `Ceiling-POE-AirIQ` reference removed from the fixture surface. |
 | WF-KIT-PRESETS-001 | #435 | Merged | Added Stage 1 productized kit bundle presets above the existing path cards. Two installable presets (Bathroom PoE → `Ceiling-POE-VentIQ-RoomIQ` stable, Bathroom PoE + LED → `Ceiling-POE-VentIQ-RoomIQ-LED` preview) plus four planned fan-control kits (Relay / TRIAC / PWM / DAC) in a collapsible non-installable subsection. Introduced `scripts/data/kit-presets.js` (local mirror of upstream KIT-MATRIX-001) + `scripts/kit-presets.js` controller + `__tests__/kit-presets.test.js` (23 assertions). Diagnostics records preset SKU + display name + resolved `config_string` via the existing `setSelectedKitSku` / `setActiveKitMetadata` surface. | Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js` cache strategy / cache version, every Step 2-5 surface, the rescue modal, the WF-UX-006 path cards, the WF-LED-003 preview-channel acknowledgement model, the WF-TRIAC-001 advanced/manual-warning gate, the FanTRIAC HW-005 block, and the LED-stable exclusion are byte-identical. FanTRIAC stays blocked; LED stable claim NOT made; `S360-300-BENCH-001` / `WF-HW-TEST-003` / `RELEASE-007` NOT claimed complete. | Stage 1 leads with productized bundles instead of SKU lookup; installability remains manifest-driven and the preview preset still gates on the existing preview-channel acknowledgement. `WF-KIT-LED-001` (queue item 4) is **untouched** — bundle presets are presentation-only and do not add an LED-bearing kit to `scripts/data/kits.json`. |
 | WF-UPSTREAM-COMPILE-AWARE-001 | #437 | Merged | Documented the upstream `sense360store/esphome-public` compile-only validation pipeline (upstream `FW-COMPILE-MATRIX-001` / #544, `FW-COMPILE-FIX-001` / #546, `FW-COMPILE-RESULT-001` / #547, `FW-COMPILE-POE-NONFAN-001` / #548, `FW-COMPILE-EXPAND-001` / #549) inside `docs/webflash-import-readiness-matrix.md` as a WebFlash planning signal only. The matrix now records that compile-only **does not equal** WebFlash import readiness, **does not create** importable artifacts, **does not imply** preview/stable readiness, **does not imply** hardware proof, **does not imply** `REQUIRED_CONFIGS` eligibility, and **does not imply** kit / recommended / default exposure. Captures the current compile-only target groups (Release-One + LED preview YAMLs already imported; the five PoE non-fan compile-only skeletons from upstream #548 that are **not** imported; the PoE non-fan LED candidate ledger from upstream #549). | No firmware imported, no manifest change, no `firmware/sources.json` change, no `REQUIRED_CONFIGS` change, no kit change, no runtime UI surface, no workflow change, no hardware proof claim. The WF-PRODUCT-004 classifier continues to treat `compile-only` upstream catalog status as ineligible across all four eligibility dimensions. The LED preview proof container (`docs/led-preview-webflash-proof.md`) remains `pending`; upstream `RELEASE-007` remains unblocked by this PR. | **No new WebFlash follow-up identifiers were reserved by this signal.** The matrix recognises upstream compile-only success as a *planning signal* on top of the existing import-class taxonomy; each downstream WebFlash import (RELAY / PWM / DAC / TRIAC / POWER-400 / POE-410 / LED stable) still depends on its own upstream `RELEASE-…` artifact and the WF-IMPORT-GAP-001 follow-up slot reserved for it. |
+| WF-FRESHNESS-UX-001 | #439 | Merged | Copy + test clarification only. Replaced the ambiguous "install with the manifest you have" wording on the unknown-verdict freshness gate with the clearer "use the firmware list already loaded in this browser" phrasing across the preflight detail (`scripts/state.js` `getManifestFreshnessCheck`, both warn and acknowledged paths), the install-gate blocking reason (`evaluateFreshnessGate` → install-button / download / copy-URL / summary-install tooltips), the freshness banner summary (`scripts/layout/freshness-banner.js` `pickActiveState` for the `manifest-unknown` case), and the inline acknowledgement description (`index.html` → `#manifest-freshness-ack-description`). Added targeted Jest pins: `__tests__/wizard-state.test.js` gained a `WF-FRESHNESS-UX-001 — clarified freshness warning copy` describe block; `__tests__/cache-freshness.test.js` gained a pin on the unknown-freshness banner summary; `__tests__/a11y-static-html.test.js` gained a `WF-FRESHNESS-UX-001 — clarified manifest freshness ack copy in static index.html` describe block. | **No safety semantics change.** The freshness probe still runs, the recheck control is still rendered, install remains gated when freshness cannot be confirmed until the user explicitly checks the override acknowledgement, the override is scoped to the `unknown` verdict (the `stale` hard fail still cannot be acknowledged), and the freshness ack stays orthogonal to the preview-channel acknowledgement gate (WF-LED-003) and the advanced/manual-warning gate (WF-TRIAC-001). No firmware imported, no manifest regenerated, no `firmware/sources.json` change, no `REQUIRED_CONFIGS` change, no kit change, no release-channel-policy change, no preview-acknowledgement change, no install-button hard-gate change, no `sw.js` change, no workflow change, no FanTRIAC block change, no Rescue install-path change, no hardware-proof claim. Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `scripts/data/kits.json`, `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, the FanTRIAC HW-005 block, the LED preview exposure model, the Rescue install path, and every other wizard surface byte-identical. | Freshness `unknown`-verdict copy now reads consistently as "the firmware list already loaded in this browser" across preflight / install-gate / banner / inline ack surfaces; safety gating unchanged. |
 
 ## Active / upcoming WebFlash queue
 
 Priority-ordered. Update the **Status** column in-place as each PR is opened
 or lands, then move the row to **Completed / merged** on merge.
 
-0. **WF-FRESHNESS-UX-001 — Clarify manifest freshness warning copy.**
-   Status: **In review / PR number to fill at merge.**
-   Purpose: Copy + test clarification only. Replaces the ambiguous
-   "install with the manifest you have" wording on the unknown-verdict
-   freshness gate with the clearer "use the firmware list already
-   loaded in this browser" phrasing across the three surfaces that
-   carry it — the preflight detail (`scripts/state.js`
-   `getManifestFreshnessCheck`, both the warn and acknowledged paths),
-   the install-gate blocking reason (`evaluateFreshnessGate` →
-   install-button / download / copy-URL / summary-install tooltips),
-   the freshness banner summary (`scripts/layout/freshness-banner.js`
-   `pickActiveState` for the `manifest-unknown` case), and the inline
-   acknowledgement description (`index.html` →
-   `#manifest-freshness-ack-description`). Adds targeted Jest pins:
-   `__tests__/wizard-state.test.js` gains a `WF-FRESHNESS-UX-001 —
-   clarified freshness warning copy` describe block (preflight detail
-   wording, blocking reason wording, acknowledged-state detail, recheck
-   button still discoverable, install stays blocked until ack,
-   freshness ack does NOT satisfy preview-channel acknowledgements,
-   freshness ack does NOT bypass the stale hard-fail verdict);
-   `__tests__/cache-freshness.test.js` gains a single pin on the
-   unknown-freshness banner summary; `__tests__/a11y-static-html.test.js`
-   gains a `WF-FRESHNESS-UX-001 — clarified manifest freshness ack copy
-   in static index.html` describe block.
-   Dependencies: None — copy and test only.
-   Note: **No safety semantics change.** The freshness probe still
-   runs, the recheck control is still rendered, install remains gated
-   when freshness cannot be confirmed until the user explicitly checks
-   the override acknowledgement, the override is scoped to the
-   `unknown` verdict (the `stale` hard fail still cannot be
-   acknowledged), and the freshness ack stays orthogonal to the
-   preview-channel acknowledgement gate (WF-LED-003) and the
-   advanced/manual-warning gate (WF-TRIAC-001). No firmware imported,
-   no manifest regenerated, no `REQUIRED_CONFIGS` change, no kit
-   change, no release-channel-policy change, no install-button
-   hard-gate change, no `sw.js` change, no workflow change. Every
-   firmware binary, `manifest.json`, every `firmware-*.json`,
-   `firmware/sources.json`, `scripts/data/kits.json`,
-   `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`,
-   `scripts/utils/release-channels.js`,
-   `scripts/utils/firmware-readiness.js`,
-   `scripts/utils/module-availability.js`, every
-   `.github/workflows/*` file, the FanTRIAC HW-005 block, the LED
-   preview exposure model, the Rescue install path, and every other
-   wizard surface byte-identical.
-
-1. **WF-HW-TEST-002 follow-up — Complete LED preview operator flash proof.**
+0. **WF-HW-TEST-002 follow-up — Complete LED preview operator flash proof.**
    Status: **Planned / hardware required — operator evidence still
    pending** (the docs PR already merged as #430 *without* operator
    evidence, so the proof container's rows remain `pending`).
@@ -153,7 +108,7 @@ or lands, then move the row to **Completed / merged** on merge.
    not by itself promote LED to stable, change `REQUIRED_CONFIGS`,
    alter kits, or unblock `RELEASE-007`.
 
-2. **WF-LED-STABLE-001 — Stable LED WebFlash import.**
+1. **WF-LED-STABLE-001 — Stable LED WebFlash import.**
    Status: **Blocked by stable artifact.**
    Purpose: Import a stable-channel LED `.bin` (+ `.meta.json` sidecar)
    when upstream ships one; add a second source entry / regenerate
@@ -161,7 +116,7 @@ or lands, then move the row to **Completed / merged** on merge.
    Dependencies: Upstream `sense360store/esphome-public` `RELEASE-007`
    (LED stable build + catalog promotion to `status: production`).
 
-3. **WF-REQUIRED-001 — Decide whether LED stable becomes `REQUIRED_CONFIGS`.**
+2. **WF-REQUIRED-001 — Decide whether LED stable becomes `REQUIRED_CONFIGS`.**
    Status: **Separate decision.**
    Purpose: After WF-LED-STABLE-001 lands, decide whether the stable
    LED config joins the production-only `REQUIRED_CONFIGS` allowlist.
@@ -170,7 +125,7 @@ or lands, then move the row to **Completed / merged** on merge.
    `REQUIRED_CONFIGS` is the deploy-allowlist and carries WF-PRODUCT-004
    eligibility rules independent of catalog status.
 
-4. **WF-KIT-LED-001 — Decide LED kit / recommended bundle exposure.**
+3. **WF-KIT-LED-001 — Decide LED kit / recommended bundle exposure.**
    Status: **Separate UX / product decision.**
    Purpose: Decide whether to add an LED-bearing kit to
    `scripts/data/kits.json` and/or surface LED in the recommended
@@ -180,7 +135,7 @@ or lands, then move the row to **Completed / merged** on merge.
    precondition is sufficient for the decision; both should be
    considered before exposure changes.
 
-5. **WF-IMPORT-RELAY-001 — Import FanRelay preview artifact.**
+4. **WF-IMPORT-RELAY-001 — Import FanRelay preview artifact.**
    Status: **Blocked.**
    Purpose: Import S360-310 FanRelay preview `.bin` + sidecar; add
    source entry with appropriate `block_tokens`; regenerate manifests.
@@ -191,44 +146,44 @@ or lands, then move the row to **Completed / merged** on merge.
    classifies preview entries as import / manifest / kit eligible but
    never `REQUIRED_CONFIGS`-eligible.
 
-6. **WF-IMPORT-PWM-001 — Import FanPWM preview artifact.**
+5. **WF-IMPORT-PWM-001 — Import FanPWM preview artifact.**
    Status: **Blocked.**
    Purpose: Import S360-311 FanPWM preview `.bin` + sidecar.
    Dependencies: Upstream `RELEASE-PWM-001`.
 
-7. **WF-IMPORT-DAC-001 — Import FanDAC preview artifact.**
+6. **WF-IMPORT-DAC-001 — Import FanDAC preview artifact.**
    Status: **Blocked.**
    Purpose: Import S360-312 FanDAC preview `.bin` + sidecar.
    Dependencies: Upstream `RELEASE-DAC-001`.
 
-8. **WF-IMPORT-POWER-400-001 — Import S360-400 artifact.**
+7. **WF-IMPORT-POWER-400-001 — Import S360-400 artifact.**
    Status: **Blocked.**
    Purpose: Import Sense360 240v PSU (S360-400) artifact if upstream
    ships a separate build (the current Release-One already covers
    `power=ac` transitively via the Ceiling-POE-VentIQ-RoomIQ source).
    Dependencies: Upstream `RELEASE-POWER-400-001`.
 
-9. **WF-IMPORT-POE-410-001 — Import S360-410 artifact.**
+8. **WF-IMPORT-POE-410-001 — Import S360-410 artifact.**
    Status: **Blocked / likely no-op unless a separate PoE release
    exists.**
-   Purpose: Same shape as item 8, for Sense360 PoE PSU (S360-410). PoE
+   Purpose: Same shape as item 7, for Sense360 PoE PSU (S360-410). PoE
    is currently covered transitively by both Release-One and LED
    preview (`power=poe`); a dedicated import is only opened if
    upstream ships a distinct PoE artifact.
    Dependencies: Upstream `RELEASE-POE-410-001`.
 
-10. **WF-IMPORT-TRIAC-001 — Import FanTRIAC advanced/manual artifact.**
-    Status: **Blocked.**
-    Purpose: Import S360-320 FanTRIAC `.bin` + sidecar; lift the
-    importer-level `FanTRIAC` block on the specific imported source
-    entry (the other source entries' `block_tokens` stay).
-    Dependencies: Upstream `RELEASE-TRIAC-001` **and** the
-    advanced/manual-warning policy already shipped by WF-TRIAC-001.
-    Note: **Not `REQUIRED_CONFIGS`, not kit, not recommended.** WF-TRIAC-001
-    is an in-installer warning gate, not a compliance certification claim;
-    `WF-IMPORT-TRIAC-001` does not by itself unlock production exposure.
+9. **WF-IMPORT-TRIAC-001 — Import FanTRIAC advanced/manual artifact.**
+   Status: **Blocked.**
+   Purpose: Import S360-320 FanTRIAC `.bin` + sidecar; lift the
+   importer-level `FanTRIAC` block on the specific imported source
+   entry (the other source entries' `block_tokens` stay).
+   Dependencies: Upstream `RELEASE-TRIAC-001` **and** the
+   advanced/manual-warning policy already shipped by WF-TRIAC-001.
+   Note: **Not `REQUIRED_CONFIGS`, not kit, not recommended.** WF-TRIAC-001
+   is an in-installer warning gate, not a compliance certification claim;
+   `WF-IMPORT-TRIAC-001` does not by itself unlock production exposure.
 
-11. **WF-PRODUCT-005 — Enforce deprecated/removed import-readiness policy.**
+10. **WF-PRODUCT-005 — Enforce deprecated/removed import-readiness policy.**
     Status: **Planned / policy follow-up.**
     Purpose: Extend `scripts/validate-product-import-readiness.js`
     and the Jest pin to actively enforce the `deprecated` / `removed`
@@ -251,19 +206,19 @@ are pointers, not status:
   rely on.
 - **`HW-ASSETS-400` / `HW-PINMAP-400-FOLLOWUP`** — S360-400 (240v PSU)
   hardware assets and pinmap; precedes `RELEASE-POWER-400-001` and
-  therefore WF-IMPORT-POWER-400-001 (queue item 8).
+  therefore WF-IMPORT-POWER-400-001 (queue item 7).
 - **`HW-ASSETS-410` / `HW-PINMAP-410-FOLLOWUP`** — S360-410 (PoE PSU)
   hardware assets and pinmap; precedes `RELEASE-POE-410-001` and
-  therefore WF-IMPORT-POE-410-001 (queue item 9).
+  therefore WF-IMPORT-POE-410-001 (queue item 8).
 - **`package/` / `product/` / `WebFlash-upstream/` / `release/` slices** —
   the upstream packaging, product-catalog, WebFlash-bridge, and
   release-orchestration slices that feed every WebFlash import. Any
   WebFlash queue item that says "Dependencies: upstream `RELEASE-…`"
   ultimately resolves through these slices.
 - **`RELEASE-007`** — LED stable release; gates WF-LED-STABLE-001
-  (queue item 2) and, downstream, the `REQUIRED_CONFIGS` decision
-  (WF-REQUIRED-001, queue item 3) and any LED-bearing kit
-  (WF-KIT-LED-001, queue item 4).
+  (queue item 1) and, downstream, the `REQUIRED_CONFIGS` decision
+  (WF-REQUIRED-001, queue item 2) and any LED-bearing kit
+  (WF-KIT-LED-001, queue item 3).
 
 ## Do-not-change guardrails
 
