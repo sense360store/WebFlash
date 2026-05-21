@@ -88,6 +88,7 @@ State of the repo at TRACKING-001:
 | WF-TRIAC-001 | #432 | Merged | Moved Sense360 TRIAC (S360-320) from `blocked` to `advanced-manual-warning` (eighth availability state); added inline `[data-advanced-warning-region]` with load-bearing risk copy + session-only acknowledgement Map; orthogonal install-gate clause AND-ed into `readyToFlash`. | FanTRIAC remains blocked at the import / manifest / kit / `REQUIRED_CONFIGS` / compliance layers (`block_tokens: ["FanTRIAC", "LED"]` on Release-One and `["FanTRIAC"]` on the LED preview source both stand). Channel acknowledgements (preview / beta / development / deprecated) unchanged. Release-One stable, LED preview, Rescue install paths byte-identical. | TRIAC is now selectable in the custom path behind an in-installer warning gate; future `WF-IMPORT-TRIAC-001` still requires upstream `RELEASE-TRIAC-001`. |
 | WF-STALE-001 | #433 | Merged | Minimal stale fixture/doc cleanup — re-anchored `VALID_STABLE_BUILD` fixture in `__tests__/firmware-provenance.test.js` from `Ceiling-POE-AirIQ` to `Ceiling-POE-VentIQ-RoomIQ`; added historical-snapshot note to `FIRMWARE-DISTRIBUTION-REVIEW.md`. | No runtime, manifest, firmware, source, kit, or `REQUIRED_CONFIGS` changes. Authoritative allowlist remains live in `.github/workflows/firmware-publish.yml` + `CLAUDE.md`. | Stale `Ceiling-POE-AirIQ` reference removed from the fixture surface. |
 | WF-KIT-PRESETS-001 | #435 | Merged | Added Stage 1 productized kit bundle presets above the existing path cards. Two installable presets (Bathroom PoE → `Ceiling-POE-VentIQ-RoomIQ` stable, Bathroom PoE + LED → `Ceiling-POE-VentIQ-RoomIQ-LED` preview) plus four planned fan-control kits (Relay / TRIAC / PWM / DAC) in a collapsible non-installable subsection. Introduced `scripts/data/kit-presets.js` (local mirror of upstream KIT-MATRIX-001) + `scripts/kit-presets.js` controller + `__tests__/kit-presets.test.js` (23 assertions). Diagnostics records preset SKU + display name + resolved `config_string` via the existing `setSelectedKitSku` / `setActiveKitMetadata` surface. | Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js` cache strategy / cache version, every Step 2-5 surface, the rescue modal, the WF-UX-006 path cards, the WF-LED-003 preview-channel acknowledgement model, the WF-TRIAC-001 advanced/manual-warning gate, the FanTRIAC HW-005 block, and the LED-stable exclusion are byte-identical. FanTRIAC stays blocked; LED stable claim NOT made; `S360-300-BENCH-001` / `WF-HW-TEST-003` / `RELEASE-007` NOT claimed complete. | Stage 1 leads with productized bundles instead of SKU lookup; installability remains manifest-driven and the preview preset still gates on the existing preview-channel acknowledgement. `WF-KIT-LED-001` (queue item 4) is **untouched** — bundle presets are presentation-only and do not add an LED-bearing kit to `scripts/data/kits.json`. |
+| WF-UPSTREAM-COMPILE-AWARE-001 | #437 | Merged | Documented the upstream `sense360store/esphome-public` compile-only validation pipeline (upstream `FW-COMPILE-MATRIX-001` / #544, `FW-COMPILE-FIX-001` / #546, `FW-COMPILE-RESULT-001` / #547, `FW-COMPILE-POE-NONFAN-001` / #548, `FW-COMPILE-EXPAND-001` / #549) inside `docs/webflash-import-readiness-matrix.md` as a WebFlash planning signal only. The matrix now records that compile-only **does not equal** WebFlash import readiness, **does not create** importable artifacts, **does not imply** preview/stable readiness, **does not imply** hardware proof, **does not imply** `REQUIRED_CONFIGS` eligibility, and **does not imply** kit / recommended / default exposure. Captures the current compile-only target groups (Release-One + LED preview YAMLs already imported; the five PoE non-fan compile-only skeletons from upstream #548 that are **not** imported; the PoE non-fan LED candidate ledger from upstream #549). | No firmware imported, no manifest change, no `firmware/sources.json` change, no `REQUIRED_CONFIGS` change, no kit change, no runtime UI surface, no workflow change, no hardware proof claim. The WF-PRODUCT-004 classifier continues to treat `compile-only` upstream catalog status as ineligible across all four eligibility dimensions. The LED preview proof container (`docs/led-preview-webflash-proof.md`) remains `pending`; upstream `RELEASE-007` remains unblocked by this PR. | **No new WebFlash follow-up identifiers were reserved by this signal.** The matrix recognises upstream compile-only success as a *planning signal* on top of the existing import-class taxonomy; each downstream WebFlash import (RELAY / PWM / DAC / TRIAC / POWER-400 / POE-410 / LED stable) still depends on its own upstream `RELEASE-…` artifact and the WF-IMPORT-GAP-001 follow-up slot reserved for it. |
 
 ## Active / upcoming WebFlash queue
 
@@ -191,33 +192,6 @@ or lands, then move the row to **Completed / merged** on merge.
     Dependencies: Upstream `sense360store/esphome-public`
     `PRODUCT-DEP-002`, **or** the first actual upstream
     `deprecated` / `removed` catalog entry (whichever arrives first).
-
-12. **WF-UPSTREAM-COMPILE-AWARE-001 — Reflect upstream compile-only lanes
-    in WebFlash import roadmap.**
-    Status: **In flight / docs-only planning.**
-    Purpose: Document the upstream `sense360store/esphome-public`
-    compile-only validation pipeline (upstream `FW-COMPILE-MATRIX-001`
-    / #544, `FW-COMPILE-FIX-001` / #546, `FW-COMPILE-RESULT-001` / #547,
-    `FW-COMPILE-POE-NONFAN-001` / #548, `FW-COMPILE-EXPAND-001` / #549)
-    inside `docs/webflash-import-readiness-matrix.md` so the WebFlash
-    repo understands compile-only success as an upstream readiness
-    *signal* — not as WebFlash import readiness, preview/stable
-    readiness, hardware proof, or `REQUIRED_CONFIGS` eligibility.
-    Captures the current compile-only target groups (Release-One + LED
-    preview YAMLs already imported; the five PoE non-fan compile-only
-    skeletons from upstream #548 that are **not** imported; the PoE
-    non-fan LED candidate ledger from upstream #549).
-    Dependencies: None on the WebFlash side — purely a docs/queue
-    refresh against upstream-published PRs.
-    Note: **Compile-only is awareness, not exposure.** This PR adds no
-    firmware, no manifest entry, no `firmware/sources.json` line, no
-    `REQUIRED_CONFIGS` change, no kit, no runtime UI surface, no
-    workflow change. The WF-PRODUCT-004 classifier continues to treat
-    `compile-only` upstream catalog status as ineligible across all
-    four eligibility dimensions; this PR does not weaken that rule.
-    Hardware proof for LED (`docs/led-preview-webflash-proof.md`)
-    remains `pending`; upstream `RELEASE-007` remains unblocked by
-    this PR.
 
 ## Upstream dependencies
 
