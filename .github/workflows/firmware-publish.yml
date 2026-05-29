@@ -1,5 +1,16 @@
 name: Firmware publish
 
+# Publishes the static WebFlash site (and the generated firmware catalog) to
+# GitHub Pages. The publish TRIGGER is push (see `on:` below); the publish GATE
+# is the unit-test suite plus the "Assert required configs present" step.
+#
+# The deploy safety model — what stops a bad manifest from shipping — is the
+# `manifest-health` guard suite (__tests__/manifest-health.test.js), the
+# per-source `block_tokens` in firmware/sources.json, and the REQUIRED_CONFIGS
+# allowlist in this file. A failure in any of them fails CI before the deploy
+# job runs. See docs/architecture.md for the full two-halves + deploy-gate
+# explanation. (This is documentation only — it changes no trigger or step.)
+
 on:
   push:
     paths:

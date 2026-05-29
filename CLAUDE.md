@@ -6,10 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 WebFlash is a static, browser-based firmware installer for Sense360 ESP32 hubs. The site is a single page that drives ESP Web Tools via Web Serial; there is no application server and no bundler. It is published to GitHub Pages from the repository root.
 
-The codebase has two halves that meet at `manifest.json`:
-
-1. A **publishing pipeline** (Python + GitHub Actions) that converts firmware binaries dropped under `firmware/` into `manifest.json` and per-build `firmware-N.json` files.
-2. A **wizard frontend** (vanilla ES modules, no framework) that loads `manifest.json` at runtime, walks the user through a 5-step configuration, and hands a matching `firmware-N.json` to `<esp-web-install-button>`.
+The codebase has two halves that meet at `manifest.json` — a **publishing pipeline** (Python + GitHub Actions) and a **wizard frontend** (vanilla ES modules). The human-facing explanation of the two-halves model, the `manifest.json` boundary, the desktop-only constraint, the ESP Web Tools standard, the cross-repo contract with `sense360store/esphome-public`, and the deploy gate lives in **[`docs/architecture.md`](docs/architecture.md)** — keep it as the canonical narrative and update it (not this file) when the architecture changes. This section keeps only the AI-actionable constraints.
 
 ### Platform and standards
 
