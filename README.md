@@ -8,6 +8,8 @@ Browser-based firmware installation for Sense360 ESP32 devices using ESP Web Too
 
 WebFlash provides a step-by-step wizard for configuring and flashing Sense360 firmware to ESP32 devices directly from your browser. No drivers or local toolchains required.
 
+For how WebFlash is built — the publishing pipeline and wizard frontend, the `manifest.json` boundary, the desktop-only constraint, and the deploy gate — see [`docs/architecture.md`](docs/architecture.md).
+
 ## Requirements
 
 - Chromium-based browser (Chrome, Edge, Opera)
