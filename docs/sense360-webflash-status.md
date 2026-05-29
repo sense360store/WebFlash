@@ -105,6 +105,124 @@ true and visible:
    stand. The manifest-health guard fails CI if a `FanTRIAC` token reappears in a
    generated `config_string`.
 
+## Current release version(s)
+
+WebFlash ships from `manifest.json`, which today carries exactly three builds.
+All three are at version **1.0.0**:
+
+| Config string | Channel | Version | Upstream release tag | Release-selectable? |
+|---|---|---|---|---|
+| `Ceiling-POE-VentIQ-RoomIQ` | `stable` | 1.0.0 | [`v1.0.0`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0) | **Yes** (default stable path) |
+| `Ceiling-POE-VentIQ-RoomIQ-LED` | `preview` | 1.0.0 | [`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview) | **Preview-only** (gated on `channel:preview` acknowledgement) |
+| `Rescue` | `rescue` | 1.0.0 | _(built in-tree under `firmware/rescue/`)_ | Recovery path only |
+
+- **Release-selectable target:** `Ceiling-POE-VentIQ-RoomIQ` (stable).
+- **Preview target:** `Ceiling-POE-VentIQ-RoomIQ-LED` (S360-300 LED ring, preview channel).
+- **Blocked / not WebFlash-exposed targets:** FanPWM (S360-311), FanRelay
+  (S360-310), FanDAC (S360-312), FanTRIAC (S360-320), and any broader PoE
+  bundle expansion that depends on S360-410 evidence. None of these has a
+  `manifest.json` build, a `firmware/sources.json` source entry, an install
+  card, or a release artifact in this repo.
+
+## Bundle SKU mapping
+
+Customer-facing Sense360 PoE **room bundle** SKUs (upstream
+`BUNDLE-SKU-MATRIX-001`) are mirrored for naming consistency in
+[`docs/webflash-bundle-sku-matrix.md`](webflash-bundle-sku-matrix.md). A bundle
+SKU is **not** a firmware identifier — only `S360-KIT-BATH-P` resolves to an
+installable WebFlash build today.
+
+| Bundle SKU | Room | Firmware target today | WebFlash exposure |
+|---|---|---|---|
+| `S360-KIT-BATH-P` | bathroom | `Ceiling-POE-VentIQ-RoomIQ` | **Installable** (Release-One stable; same build as the `S360-KIT-BATH-POE` kit-intent card). |
+| `S360-KIT-KITCHEN-P` | kitchen | _none_ | Naming reference only — no imported build. |
+| `S360-KIT-LIVING-P` | living-room | _none_ | Naming reference only — LED preview-gated upstream. |
+| `S360-KIT-BEDROOM-P` | bedroom | _none_ | Naming reference only — no imported build. |
+| `S360-KIT-CORRIDOR-P` | corridor | _none_ | Naming reference only — LED preview-gated upstream. |
+
+Per-bundle detail and the three parallel identifier spaces (Module SKU / Kit
+SKU / Bundle SKU / firmware `config_string`) live in the bundle SKU matrix doc.
+Broader PoE bundle expansion (Kitchen / Living / Bedroom / Corridor) stays
+**blocked** until upstream ships the corresponding `RELEASE-…` artifacts and the
+S360-410 PoE evidence gate closes (see guardrail 3).
+
+## WebFlash roadmap
+
+WebFlash is **downstream** of the upstream firmware roadmap. The authoritative
+near-term lane order lives upstream in
+[`docs/sense360-roadmap-status.md` §8](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md);
+the WebFlash-side import sequencing and per-family follow-up PR slots live in
+[`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
+and the live queue in [`UPCOMING_PR.md`](../UPCOMING_PR.md). Each WebFlash import
+follow-up is **blocked behind** its upstream release artifact — none is started,
+unblocked, or reprioritised by this doc:
+
+| WebFlash follow-up | Target | Blocked behind |
+|---|---|---|
+| `WF-IMPORT-RELAY-001` | FanRelay (S360-310) import | upstream `RELEASE-RELAY-001` |
+| `WF-IMPORT-PWM-001` | FanPWM (S360-311) import | upstream `RELEASE-PWM-001` |
+| `WF-IMPORT-DAC-001` | FanDAC (S360-312) import | upstream `RELEASE-DAC-001` |
+| `WF-IMPORT-TRIAC-001` | FanTRIAC (S360-320) import | upstream `RELEASE-TRIAC-001` + `WF-TRIAC-001` runtime UX |
+| `WF-IMPORT-POWER-400-001` | S360-400 240v PSU import | upstream `RELEASE-POWER-400-001` |
+| `WF-IMPORT-POE-410-001` | S360-410 PoE PSU import | S360-410 evidence gate (reserved no-op — PoE covered transitively today) |
+| `WF-LED-STABLE-001` | LED preview→stable promotion | upstream `RELEASE-007` + bench proof `S360-300-BENCH-001` |
+| `WF-REQUIRED-001` | any `REQUIRED_CONFIGS` change | a newly imported, backed `.bin` |
+| `WF-KIT-LED-001` | any LED kit / recommended decision | LED stable promotion |
+
+Four separation invariants travel with every roadmap row: *release artifact
+existence does not mean WebFlash import*; *WebFlash import does not mean
+`REQUIRED_CONFIGS`*; *WebFlash import does not mean kit / recommended / default
+exposure*; *advanced / manual-warning import is not compliance certification.*
+
+## Upstream canonical roadmap docs (source of record)
+
+Lifecycle / roadmap / blocker status is owned upstream. Where this doc and an
+upstream source-of-truth file disagree, **upstream wins for lifecycle status**
+and the WebFlash manifest wins for *what flashes today*.
+
+- [`docs/sense360-roadmap-status.md`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md)
+  — single canonical upstream roadmap / status / blocker / upcoming-PR doc
+  (`DOCS-CONSOLIDATION-ROADMAP-001`, verified by `DOCS-CONSOLIDATION-VERIFY-001`).
+- [`docs/sense360-room-bundles.md`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-room-bundles.md)
+  — canonical room bundle SKU definitions (`BUNDLE-SKU-MATRIX-001`).
+- _There is no `docs/sense360-webflash-status.md` upstream_ — **this file** is
+  the canonical WebFlash-side status doc, downstream of the upstream roadmap.
+
+## Verification record (WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001)
+
+Cross-checked against the live repository state on consolidation. Every status
+statement above is sourced from a committed file:
+
+- **Release targets match `manifest.json`.** `manifest.json` carries exactly
+  three builds — `Ceiling-POE-VentIQ-RoomIQ` (stable), `Ceiling-POE-VentIQ-RoomIQ-LED`
+  (preview), `Rescue` (rescue) — matching the targets enumerated above.
+- **Source entries match `firmware/sources.json`.** Two upstream sources are
+  declared: the v1.0.0 Release-One stable build (`block_tokens:
+  ["FanTRIAC", "LED"]`) and the v1.0.0-led-preview build (`block_tokens:
+  ["FanTRIAC"]`). No FanPWM / FanRelay / FanDAC / FanTRIAC source entry exists.
+- **`REQUIRED_CONFIGS` is production-only.** The allowlist in
+  [`.github/workflows/firmware-publish.yml`](../.github/workflows/firmware-publish.yml)
+  holds exactly `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`. The LED preview is
+  deliberately absent.
+- **FanPWM (S360-311) remains blocked / not release-ready.** No manifest build,
+  no source entry, no install card, classified `no-firmware` by
+  [`scripts/utils/module-availability.js`](../scripts/utils/module-availability.js).
+  Matches upstream §6.2 (compile-proven native path, bench-pending, not
+  release-ready).
+- **LED (S360-300) remains preview-only.** No LED-stable claim; LED ships on the
+  `preview` channel behind the `channel:preview` acknowledgement. Matches
+  upstream §7.
+- **S360-410 remains `cataloged_unverified`.** No verified claim is made; PoE is
+  covered transitively via the `power=poe` segment of Release-One + LED preview.
+  Matches upstream §6.1.
+- **Stale SX1509 FanPWM active-path claims are absent.** The WebFlash side never
+  exposed an SX1509 FanPWM path; nothing here asserts one. Matches upstream §6.2.
+
+This verification is **prior-recorded, not a live cross-repo re-fetch** of
+upstream binaries — WebFlash mirrors the upstream lifecycle slice it can build a
+signed `.bin` for; upstream re-verification is owned by
+`DOCS-CONSOLIDATION-VERIFY-001` in `sense360store/esphome-public`.
+
 ## What this document supersedes
 
 - **`FEATURES.md`** (repo root) is **deprecated** as a status/roadmap source and
