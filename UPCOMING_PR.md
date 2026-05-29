@@ -221,6 +221,18 @@ are pointers, not status:
   (queue item 1) and, downstream, the `REQUIRED_CONFIGS` decision
   (WF-REQUIRED-001, queue item 2) and any LED-bearing kit
   (WF-KIT-LED-001, queue item 3).
+- **`WEBFLASH-RELEASE-MATRIX-ALIGNMENT-001`** — upstream docs-only
+  reconciliation at
+  [`docs/release-matrix-webflash-alignment.md`](https://github.com/sense360store/esphome-public/blob/main/docs/release-matrix-webflash-alignment.md)
+  that produces the canonical cross-layer release matrix (bundle SKU ·
+  config · YAML · channel · compile · artifact · release-note · WebFlash ·
+  blocker · notes), classifies every target, and records WebFlash exposure.
+  It confirms the WebFlash-side state this repo already implements: exactly
+  `Ceiling-POE-VentIQ-RoomIQ` (stable) + `Ceiling-POE-VentIQ-RoomIQ-LED`
+  (preview, manifest-only under WF-LED-003) + `Rescue` are exposed; no fan
+  driver is exposed. **No WebFlash change is required by this upstream PR** —
+  no import, no `manifest.json` / `firmware/sources.json` edit, no
+  `REQUIRED_CONFIGS` change, no kit, no UI change. Reference only.
 
 ## Do-not-change guardrails
 
