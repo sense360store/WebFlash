@@ -964,5 +964,6 @@ For development questions:
 
 - [README.md](README.md): User guide
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): Common issues
-- [FEATURES.md](FEATURES.md): Feature tracking and roadmap
+- [docs/sense360-webflash-status.md](docs/sense360-webflash-status.md): Canonical WebFlash Sense360 product & release status (consolidates the legacy `FEATURES.md` roadmap; references the upstream `sense360store/esphome-public` `docs/sense360-roadmap-status.md`)
+- [FEATURES.md](FEATURES.md): Deprecated — redirects to the canonical status doc above
 - [ESP Web Tools Documentation](https://esphome.github.io/esp-web-tools/)
