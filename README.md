@@ -944,7 +944,8 @@ WebFlash provides pre-compiled firmware binaries for plug-and-play browser-based
 - **README.md** (this file): User guide for flashing devices
 - **DEVELOPER.md**: Maintainer guide for publishing firmware
 - **TROUBLESHOOTING.md**: Detailed troubleshooting steps
-- **FEATURES.md**: Feature tracking and roadmap
+- **docs/sense360-webflash-status.md**: Canonical WebFlash Sense360 product & release status (what installs today, what is preview-only, what is blocked)
+- **FEATURES.md**: Deprecated — redirects to the canonical status doc above
 
 ## Project Structure
 
