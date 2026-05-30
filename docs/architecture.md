@@ -112,17 +112,41 @@ in [`scripts/utils/esp-web-tools-overrides.js`](../scripts/utils/esp-web-tools-o
 ## Cross-repo contract: downstream of `sense360store/esphome-public`
 
 WebFlash is **downstream** of [`sense360store/esphome-public`](https://github.com/sense360store/esphome-public).
-That repository owns the product ESPHome YAML, the build pipeline, and the
-release `.bin` artifacts. WebFlash consumes its releases through
-[`firmware/sources.json`](../firmware/sources.json): each source entry names an
-upstream release tag and asset, the importer fetches and SHA-256-verifies it,
-and only then does it enter the WebFlash tree.
+That repository owns the product ESPHome YAML, the build/publish pipeline, and
+the release `.bin` artifacts. Internally its product YAML is now a **four-tier
+composition** (the finalized board/bundle refactor): an authoritative
+`packages/boards/s360-*.yaml` layer with one canonical package per board SKU
+(`S360-100` Core, `S360-200` RoomIQ, `S360-210` AirIQ, `S360-211` VentIQ,
+`S360-300` LED, `S360-410` PoE PSU); thin **legacy aliases** that `!include`
+their board package so historical functional paths resolve byte-identically;
+`products/bundles/*.yaml` named **1:1 to each WebFlash config string**; and
+thin **product shims** (`products/sense360-*.yaml`) that preserve the
+customer-pinned include path. **None of that layering is visible to WebFlash** —
+WebFlash couples to the upstream repo through exactly three stable surfaces:
+GitHub release **tags**, **config-string** values, and **artifact names**, and
+no WebFlash file references any `packages/` or `products/` path.
 
-The signing boundary matters: `esphome-public` publishes the raw build artifacts
-and checksums, and **WebFlash is the production signing / deployment authority** —
-it generates its own production `manifest.json`. The whole-pipeline view that
-spans both repositories is documented upstream in
-[`sense360store/esphome-public` → `docs/system-architecture.md`](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md).
+WebFlash consumes those releases through
+[`firmware/sources.json`](../firmware/sources.json): each source entry pins an
+upstream release tag and asset name, the importer fetches and SHA-256-verifies
+it, and only then does it enter the WebFlash tree.
+
+The signing boundary matters: `esphome-public` publishes **unsigned** raw `.bin`
+assets plus SHA-256/MD5 checksums and a build-info `manifest.json` (metadata,
+**not** a production manifest), and **WebFlash is the production signing /
+deployment authority** — it consumes the unsigned assets and generates its own
+production `manifest.json` and per-build `firmware-N.json`. The whole-pipeline
+view that spans both repositories is documented upstream in
+[`sense360store/esphome-public` → `docs/system-architecture.md`](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md);
+the board/bundle/alias/shim layering and the explicit "this is invisible to
+WebFlash" note live in its
+[Inside esphome-public](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md#inside-esphome-public-board--bundle--alias--shim-layers)
+section, and the per-token naming rules in
+[`docs/webflash-contract.md`](https://github.com/sense360store/esphome-public/blob/main/docs/webflash-contract.md).
+Because config strings and artifact names were held byte-identical throughout
+that refactor, the WebFlash import surface was unaffected — re-audited and
+recorded under `WEBFLASH-ARCH-SYNC-001` in
+[`docs/product-import-readiness.md`](product-import-readiness.md).
 
 For which upstream products WebFlash actually mirrors today (and which are
 preview-only, blocked, or unimported), see the canonical
