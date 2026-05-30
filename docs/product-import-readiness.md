@@ -374,6 +374,62 @@ Invariants that travel through this PR unchanged:
   `Ceiling-POE-VentIQ-RoomIQ` + `Rescue`.
 - `Rescue` is exempt by name from every catalog-membership check.
 
+## WEBFLASH-ARCH-SYNC-001 — board/bundle refactor no-drift re-audit (2026-05-30)
+
+`sense360store/esphome-public` completed its architecture epic — a
+four-tier YAML composition (authoritative `packages/boards/s360-*.yaml`
+SKU layer, legacy `!include` aliases preserving historical paths,
+`products/bundles/*.yaml` named 1:1 to each WebFlash config string, and
+thin product shims preserving the customer-pinned include path) landed
+across upstream `ARCH-BOARD-BUNDLE-PLAN-001`, `BOARD-PACKAGE-LAYER-001/002`,
+`BUNDLE-LAYER-001/002`, `PACKAGE-RENAME-001..005`, and
+`DOCS-ARCH-REFRESH-001`. Upstream's own
+[`docs/system-architecture.md`](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md#inside-esphome-public-board--bundle--alias--shim-layers)
+asserts that layering is **invisible to WebFlash** because the cross-repo
+boundary is only three stable surfaces — release **tags**, **config-string**
+values, and **artifact names** — and explicitly defers the matching
+WebFlash-side note to `WEBFLASH-ARCH-SYNC-001`. This is that note.
+
+**Method.** Every config string and artifact name WebFlash consumes was
+compared byte-for-byte against the upstream authoritative
+[`config/webflash-builds.json`](https://github.com/sense360store/esphome-public/blob/main/config/webflash-builds.json)
+build matrix and the `webflash_build_matrix: true` rows of
+[`config/product-catalog.json`](https://github.com/sense360store/esphome-public/blob/main/config/product-catalog.json),
+read from the post-refactor upstream tree. Re-run with the comparison
+script logic over `firmware/sources.json`, `manifest.json`,
+`scripts/data/kits.json`, and `scripts/data/kit-presets.js`.
+
+| # | WebFlash surface | Value checked | Upstream authoritative | Result |
+|---|---|---|---|:---:|
+| 1 | `firmware/sources.json` (stable) | `config_string: Ceiling-POE-VentIQ-RoomIQ` | present in `webflash-builds.json` | ✅ PASS |
+| 2 | `firmware/sources.json` (stable) | `asset_name: Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin` | byte-identical `artifact_name` | ✅ PASS |
+| 3 | `firmware/sources.json` (stable) | `channel: stable` / `release_tag: v1.0.0` | `channel: stable`, catalog `status: production` | ✅ PASS |
+| 4 | `firmware/sources.json` (LED preview) | `config_string: Ceiling-POE-VentIQ-RoomIQ-LED` | present in `webflash-builds.json` | ✅ PASS |
+| 5 | `firmware/sources.json` (LED preview) | `asset_name: Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin` | byte-identical `artifact_name` | ✅ PASS |
+| 6 | `firmware/sources.json` (LED preview) | `channel: preview` / `release_tag: v1.0.0-led-preview` | `channel: preview`, catalog `status: preview` | ✅ PASS |
+| 7 | `manifest.json` | build `config_string`s = `Ceiling-POE-VentIQ-RoomIQ`, `Ceiling-POE-VentIQ-RoomIQ-LED`, `Rescue` | both upstream configs match; `Rescue` is WebFlash-owned (exempt) | ✅ PASS |
+| 8 | `scripts/data/kits.json` | `firmware_config_string: Ceiling-POE-VentIQ-RoomIQ` | present in `webflash-builds.json` | ✅ PASS |
+| 9 | `scripts/data/kit-presets.js` (installable) | `Ceiling-POE-VentIQ-RoomIQ`, `Ceiling-POE-VentIQ-RoomIQ-LED` | both present in `webflash-builds.json` | ✅ PASS |
+| 10 | `block_tokens` | Release-One `["FanTRIAC", "LED"]`, LED preview `["FanTRIAC"]` | FanTRIAC stays blocked upstream; no LED token in Release-One config string | ✅ PASS |
+
+**Result: no drift.** The upstream board/bundle/alias/rename refactor
+changed **nothing** on the WebFlash import surface. Every config string
+and every artifact name WebFlash consumes is byte-identical to the
+upstream authoritative build matrix after the refactor. The rename work
+was internal to `esphome-public` (board package names, alias paths,
+bundle/shim file paths) and never touched a release tag, a config string,
+or an artifact name — the only three surfaces WebFlash couples to. No
+WebFlash file references any upstream `packages/` or `products/` path, so
+the refactor's renamed/aliased paths are unobservable here. No drift was
+found; nothing was papered over.
+
+**Out of scope / unchanged by this audit.** This re-audit is read-only:
+`manifest.json`, `firmware-0/1/2.json`, `firmware/sources.json`,
+`REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`),
+`scripts/data/*`, every runtime/workflow file, and every firmware binary
+stay byte-identical. The architecture epic is closed across both repos
+(upstream `DOCS-ARCH-REFRESH-001`; WebFlash `WEBFLASH-ARCH-SYNC-001`).
+
 ## See also
 
 - [`docs/firmware-import.md`](firmware-import.md) — the cross-repo
