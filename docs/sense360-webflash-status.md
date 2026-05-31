@@ -173,6 +173,44 @@ The gate sync is **docs-only**: it adds no manifest build, source, install card,
 kit, or kit-preset, and exposes no fan-control variant. See the sync doc's
 no-new-exposure statement and no-drift table for the full surface confirmation.
 
+## First-release dry-run handoff (WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001)
+
+Upstream `sense360store/esphome-public` merged the first-release **dry-run
+checklist** `FIRST-RELEASE-DRYRUN-CHECKLIST-001` (PR #680) at
+[`docs/first-release-dryrun-checklist.md`](https://github.com/sense360store/esphome-public/blob/main/docs/first-release-dryrun-checklist.md)
+— an operator checklist that rehearses the publish side of the first-release
+path (release notes → build → artifact naming → checksums) with non-publishing
+lanes and only *describes* the WebFlash import / sign / manifest / deploy steps
+as a future hand-off. The WebFlash-side companion that states those
+WebFlash-owned steps against this repo's live install surface is
+[`docs/release-gates/WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001.md`](release-gates/WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001.md).
+It is a **no-publish operator handoff for the current stable release path** and
+re-states, in WebFlash import terms, what the tables above already encode:
+
+- **Current stable config string:** `Ceiling-POE-VentIQ-RoomIQ` (Bathroom,
+  upstream `S360-KIT-BATH-P`), `stable` / `v1.0.0` — already imported and live.
+- **Expected artifact name pattern:**
+  `Sense360-Ceiling-POE-VentIQ-RoomIQ-v<x.y.z>-stable.bin`; at v1.0.0,
+  `Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin`.
+- **Expected upstream release-note source:** the upstream GitHub release body at
+  the pinned tag, with the four required `##` sections (Changelog / Known
+  Issues / Features / Hardware Requirements).
+- **Expected checksum / source-update handoff:** the importer SHA-256-verifies
+  the fetched `.bin` against the upstream `checksums-sha256.txt` (and the
+  source entry's `expected_sha256` when declared); a future stable re-import
+  bumps only the stable `firmware/sources.json` entry.
+- **WebFlash import expectations:** importer → `gen-manifests.py` → production
+  signing → `firmware-publish.yml` deploy → smoke test, with a non-publishing
+  rehearsal that uses only `--dry-run` / read-only lanes.
+- **No-publish / no-exposure + post-import verification checklists.**
+
+The handoff is **docs/status only**: it imports no firmware, changes no
+`firmware/sources.json` or `manifest.json`, adds no install card / kit /
+kit-preset, exposes no fan-control variant, makes no LED-stable claim, keeps
+Kitchen / Bedroom / Living / Corridor not installable, and publishes no
+artifact. See the handoff doc's no-new-exposure statement (§9) and no-drift
+table (§10) for the full surface confirmation.
+
 ## WebFlash roadmap
 
 WebFlash is **downstream** of the upstream firmware roadmap. The authoritative
