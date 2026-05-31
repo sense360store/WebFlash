@@ -947,6 +947,7 @@ WebFlash provides pre-compiled firmware binaries for plug-and-play browser-based
 - **DEVELOPER.md**: Maintainer guide for publishing firmware
 - **TROUBLESHOOTING.md**: Detailed troubleshooting steps
 - **docs/sense360-webflash-status.md**: Canonical WebFlash Sense360 product & release status (what installs today, what is preview-only, what is blocked)
+- **docs/release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md**: WebFlash mirror of the upstream `sense360store/esphome-public` first-release gate checklist (`docs/first-release-gates.md`) — installable stable path, preview product, blocked room bundles, blocked fan-control variants, and the no-new-exposure statement
 - **FEATURES.md**: Deprecated — redirects to the canonical status doc above
 
 ## Project Structure
