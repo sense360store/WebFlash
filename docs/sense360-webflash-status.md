@@ -146,6 +146,33 @@ Broader PoE bundle expansion (Kitchen / Living / Bedroom / Corridor) stays
 **blocked** until upstream ships the corresponding `RELEASE-…` artifacts and the
 S360-410 PoE evidence gate closes (see guardrail 3).
 
+## First-release gate sync (WEBFLASH-FIRST-RELEASE-GATES-SYNC-001)
+
+Upstream `sense360store/esphome-public` merged the canonical first-release gate
+checklist `PRE-HW-PREP-FIRST-RELEASE-GATES-001` (PR #679) and now carries it at
+[`docs/first-release-gates.md`](https://github.com/sense360store/esphome-public/blob/main/docs/first-release-gates.md).
+The WebFlash-side mirror, stated against this repo's live install surface, is
+[`docs/release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md`](release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md).
+It re-states, in WebFlash terms, what the tables above already encode:
+
+- **Stable installable today:** `Ceiling-POE-VentIQ-RoomIQ` (Bathroom,
+  `S360-KIT-BATH-P`) — the only first-release path.
+- **Preview, exposed but gated:** `Ceiling-POE-VentIQ-RoomIQ-LED` — the LED
+  preview target, **preview-only**, never auto-selected, gated on the
+  `channel:preview` acknowledgement. **No LED-stable claim is made.**
+- **Not exposed / not installable:** Kitchen, Bedroom, Living, Corridor room
+  bundles — naming reference only, no imported build.
+- **Not exposed:** `FanRelay`, `FanPWM`, `FanDAC`, and `FanTRIAC` — no manifest
+  build, no source entry, no install card. The upstream fan-control **bundle**
+  variants are **planning-only** (`webflash_exposed: false`).
+- **Shared S360-410 PoE blocker** stays visible (guardrail 3); PoE is covered
+  transitively via the `power=poe` segment and no standalone PoE-PSU build
+  exists.
+
+The gate sync is **docs-only**: it adds no manifest build, source, install card,
+kit, or kit-preset, and exposes no fan-control variant. See the sync doc's
+no-new-exposure statement and no-drift table for the full surface confirmation.
+
 ## WebFlash roadmap
 
 WebFlash is **downstream** of the upstream firmware roadmap. The authoritative
