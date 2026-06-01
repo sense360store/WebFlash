@@ -1738,6 +1738,17 @@ async function loadManifestData(options = {}) {
             manifestLoadError = null;
             manifestFreshness = 'current';
             buildManifestContext(data);
+            // WF-FRESHNESS-ROOT-MANIFEST-001 — capture the root manifest's
+            // top-level metadata (generated_at, manifest_version, source_commit)
+            // on EVERY successful load. Initial load, force reload, and retry
+            // success after a failure all funnel through this branch, so the
+            // freshness checker always has a loaded `generated_at` to compare
+            // BEFORE any recheck can run. HAR capture confirmed the live
+            // /WebFlash/manifest.json returns valid JSON with a top-level
+            // `generated_at`; the false missing-`generated_at` warning came from
+            // this capture never running in production (it was previously
+            // reachable only via __testHooks), not from bad published content.
+            captureManifestMetadata(data);
             try {
                 postFlashService.captureManifest(data);
             } catch { /* defensive — do not block manifest load on post-flash wiring */ }
@@ -1752,6 +1763,13 @@ async function loadManifestData(options = {}) {
             manifestLoadError = error;
             manifestLoadPromise = null;
             manifestFreshness = 'error';
+            // WF-FRESHNESS-ROOT-MANIFEST-001 — a load that exhausts its retries
+            // must NOT leave stale loaded metadata behind. Otherwise a later
+            // freshness recheck could compare a now-untrustworthy loaded
+            // `generated_at` against the live manifest and falsely report
+            // `current`. Clearing it makes the freshness fallback resolve to
+            // `unknown` (non-blocking) instead — never a false `current`.
+            captureManifestMetadata(null);
             console.error('Failed to load manifest after all retries:', error);
             throw error;
         }
@@ -4474,7 +4492,8 @@ function syncManifestFreshnessInlineControls(statusList) {
     // WF-UX-017 — expose the structured freshness diagnosis reason code on the
     // row (data-freshness-reason) so opening "Setup checks" reveals WHY the live
     // recheck did not confirm freshness (fetch-failed / http-error / parse-failed
-    // / missing-generated-at / invalid-generated-at / compare-failed /
+    // / missing-loaded-generated-at / missing-fetched-generated-at /
+    // missing-both-generated-at / invalid-generated-at / compare-failed /
     // same-or-newer / stale) instead of an opaque "unknown". Also mirrored into a
     // small, support-only [data-freshness-reason-code] line when present in the
     // markup. The code is machine-readable diagnostics, not customer copy.
