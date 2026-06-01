@@ -212,6 +212,36 @@ State of the repo at TRACKING-001:
   fetch-strategy, or workflow change. Adds
   `__tests__/wf-ux-015-simple-install-collapse.test.js`; updates the
   `safety-checklist` assertion in `__tests__/wf-ux-011-simple-install.test.js`.
+- **WF-UX-016 route freshness-unknown through the Simple install copy only is in
+  review.** Fixes the *routing* bug WF-UX-013/014 did not: the
+  manifest-freshness check is represented twice in `state.js` (a preflight
+  diagnostic row **and** the dedicated `evaluateFreshnessGate`), and an unknown
+  verdict makes the preflight row a blocking *warn*, flipping the aggregate
+  preflight verdict to "can't install". The Simple hero reads the broadcast
+  reason, and the `preflight-fail` branch was tested **before** the freshness
+  branch — so the live Simple path still rendered **"Cannot install yet"** + the
+  raw manifest message ("WebFlash could not confirm whether the firmware list is
+  up to date. Use 'Recheck manifest freshness'…"), never WF-UX-013's calm
+  mapping. `state.js` now attributes the freshness axis to its own reason
+  (`deriveInstallReadinessReason` reads stale/unknown from the gate and the
+  preflight verdict from the **non-freshness** checks), so unknown broadcasts
+  `freshness-unknown` (**"Could not recheck for updates"**, Reload page +
+  Continue with loaded firmware list) and stale broadcasts `firmware-stale`
+  (hard block, Reload only, no continue) — never `preflight-fail`. In Simple
+  mode the preflight freshness row (revealed under "Setup checks") now reads
+  customer-safe copy ("Firmware list check" / "Check for updates again" / plain
+  detail + ack); Advanced install keeps the full diagnostic wording ("Manifest
+  freshness" / "Recheck manifest freshness" / "could not confirm…"). The real
+  gate is untouched: Continue still ticks `[data-manifest-freshness-acknowledge]`,
+  unknown still requires acknowledgement, stale stays a hard block. The fix is in
+  `scripts/state.js` (no per-import `?v=` token), so it rides the `sw.js`
+  `CACHE_NAME` bump `webflash-v7` → `webflash-v8` to re-prime; the five-way `?v=`
+  token equality is unchanged. Presentation/deploy-layer only — **no**
+  `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, firmware binary,
+  release-channel policy, provenance verification, installability logic,
+  stale-manifest hard block, preview / TRIAC acknowledgement, workflow, or
+  service-worker fetch-strategy change. Adds
+  `__tests__/wf-ux-016-freshness-simple-copy.test.js`.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:

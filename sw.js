@@ -53,14 +53,18 @@
  *   UX-only JS deploy (the mixed old/new UI WF-UX-013 hit on live). `webflash-v7`
  *   (WF-UX-015) bumps again for the same reason: simple-install.js's
  *   customer-facing copy + wizard-style.css's simple-mode collapse rules changed,
- *   so existing installs must purge v6 and re-prime. This is an asset-version
- *   reference only — the per-asset-class fetch strategy above is unchanged. See
- *   docs/deploy-notes.md.
+ *   so existing installs must purge v6 and re-prime. `webflash-v8` (WF-UX-016)
+ *   bumps again: scripts/state.js now routes the freshness-unknown verdict
+ *   through the calm Simple-install copy (and gives the preflight freshness row
+ *   customer-safe labels in Simple mode). state.js has no per-import `?v=` token,
+ *   so it rides this cache-name bump to re-prime — existing installs must purge
+ *   v7 to pick up the fix. This is an asset-version reference only — the
+ *   per-asset-class fetch strategy above is unchanged. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v7';
+const CACHE_NAME = 'webflash-v8';
 const CACHE_VERSION = 5;
 
 /**
