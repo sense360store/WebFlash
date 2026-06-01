@@ -218,6 +218,30 @@ describe('WF-KIT-PRESETS-001 — kit preset data module', () => {
         });
     });
 
+    test('WF-UX-008 — customer-facing preset fields expose no internal task/release/tracking IDs', async () => {
+        const { KIT_PRESETS } = await import('../scripts/data/kit-presets.js');
+        // Internal identifiers may live ONLY in the developer/support-only
+        // fields (`upstreamRef`, `blockers`), never in the customer-facing
+        // copy the wizard renders.
+        const INTERNAL_ID_PATTERN = /RELEASE-[A-Z]+-001|RELEASE-007|WF-IMPORT-[A-Z]+-001|WF-TRIAC-001|WF-HW-TEST|KIT-MATRIX-001|HW-005|COMPLIANCE-001|S360-300-BENCH-001|import-firmware-sources\.py/;
+        const customerFacingFields = ['displayName', 'shortName', 'description', 'warning', 'notAvailableReason'];
+        KIT_PRESETS.forEach(preset => {
+            customerFacingFields.forEach(field => {
+                const value = preset[field] || '';
+                expect(value).not.toMatch(INTERNAL_ID_PATTERN);
+            });
+        });
+    });
+
+    test('WF-UX-008 — each planned preset reason points the customer at a next step', async () => {
+        const { KIT_PRESETS } = await import('../scripts/data/kit-presets.js');
+        KIT_PRESETS.filter(p => p.status === 'planned').forEach(preset => {
+            // Plain-language reason with an actionable next step (use the
+            // supported kit / check back later).
+            expect(preset.notAvailableReason).toMatch(/Bathroom Kit|check back later/i);
+        });
+    });
+
     test('isPresetAvailable returns true only for stable + preview presets with wizardState', async () => {
         const { KIT_PRESETS, isPresetAvailable } = await import('../scripts/data/kit-presets.js');
         const available = KIT_PRESETS.filter(isPresetAvailable);

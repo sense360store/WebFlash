@@ -33,11 +33,23 @@
  * imply installability — installability is still decided by the live
  * manifest, firmware-readiness logic, release-channel logic, and preflight.
  *
+ * WF-UX-008 — customer-facing vs developer/support-only fields.
+ *   Customer-facing (rendered in the wizard, e.g. the availability notice
+ *   surfaced by scripts/kit-presets.js): `displayName`, `shortName`,
+ *   `description`, `badge`, `warning`, `notAvailableReason`, `components`.
+ *   These MUST stay free of internal task / release / tracking IDs and
+ *   should read as plain language with a clear next step.
+ *   Developer/support-only (NEVER rendered to customers — kept for
+ *   diagnostics, support, and cross-repo traceability): `upstreamRef`,
+ *   `blockers`. Internal identifiers (RELEASE-…, WF-IMPORT-…, HW-005,
+ *   KIT-MATRIX-001, etc.) belong only in those two fields and in code
+ *   comments, never in the customer-facing copy above.
+ *
  * @module data/kit-presets
  */
 
-const PLANNED_RESON_COPY = Object.freeze({
-    fanReleaseTracking: 'Fan-driver kits depend on per-driver firmware builds upstream. WebFlash will surface this kit once the corresponding firmware lands and is imported via scripts/import-firmware-sources.py.'
+const PLANNED_REASON_COPY = Object.freeze({
+    fanReleaseTracking: 'Firmware for this fan controller is still in development and has not been released for WebFlash yet. Use the supported Sense360 Bathroom Kit — PoE for now, or check back later.'
 });
 
 const KIT_PRESETS_DATA = [
@@ -131,7 +143,7 @@ const KIT_PRESETS_DATA = [
             { sku: 'S360-410', label: 'Sense360 PoE PSU' }
         ],
         upstreamRef: 'KIT-MATRIX-001 (S360-KIT-BATH-RELAY)',
-        notAvailableReason: 'Awaiting upstream RELEASE-RELAY-001 firmware import (WF-IMPORT-RELAY-001).',
+        notAvailableReason: 'Firmware for the Sense360 Relay fan controller is still in development and has not been released for WebFlash yet. Use the supported Sense360 Bathroom Kit — PoE for now, or check back later.',
         blockers: [
             'RELEASE-RELAY-001 — S360-310 firmware promotion',
             'WF-IMPORT-RELAY-001 — WebFlash import follow-up'
@@ -146,7 +158,7 @@ const KIT_PRESETS_DATA = [
         channel: null,
         badge: 'Planned',
         badgeTone: 'neutral',
-        warning: 'TRIAC controls mains-connected loads. The S360-320 hardware path is not compliance-certified by WebFlash and FanTRIAC firmware remains blocked from Release-One under HW-005.',
+        warning: 'The Sense360 TRIAC controls mains-connected loads and is not compliance-certified by WebFlash. Only install TRIAC firmware if you understand the wiring, load, and local safety requirements.',
         requiresPreviewAcknowledgement: false,
         firmwareConfigString: null,
         wizardState: null,
@@ -158,7 +170,7 @@ const KIT_PRESETS_DATA = [
             { sku: 'S360-410', label: 'Sense360 PoE PSU' }
         ],
         upstreamRef: 'KIT-MATRIX-001 (S360-KIT-BATH-TRIAC)',
-        notAvailableReason: 'FanTRIAC is blocked from Release-One under HW-005 and no compliance-certified firmware has been imported. Tracked separately under WF-TRIAC-001 (in-installer warning UX) and WF-IMPORT-TRIAC-001 (future import).',
+        notAvailableReason: 'The Sense360 TRIAC controls mains-connected loads and is not compliance-certified by WebFlash, so no installable firmware has been released for it yet. Use the supported Sense360 Bathroom Kit — PoE for now, or check back later.',
         blockers: [
             'HW-005 — S360-320 mains-load compliance',
             'RELEASE-TRIAC-001 — upstream firmware promotion',
@@ -185,7 +197,7 @@ const KIT_PRESETS_DATA = [
             { sku: 'S360-410', label: 'Sense360 PoE PSU' }
         ],
         upstreamRef: 'KIT-MATRIX-001 (S360-KIT-DUCT-PWM)',
-        notAvailableReason: PLANNED_RESON_COPY.fanReleaseTracking,
+        notAvailableReason: PLANNED_REASON_COPY.fanReleaseTracking,
         blockers: [
             'RELEASE-PWM-001 — S360-311 firmware promotion',
             'WF-IMPORT-PWM-001 — WebFlash import follow-up'
@@ -211,7 +223,7 @@ const KIT_PRESETS_DATA = [
             { sku: 'S360-410', label: 'Sense360 PoE PSU' }
         ],
         upstreamRef: 'KIT-MATRIX-001 (S360-KIT-DUCT-DAC)',
-        notAvailableReason: PLANNED_RESON_COPY.fanReleaseTracking,
+        notAvailableReason: PLANNED_REASON_COPY.fanReleaseTracking,
         blockers: [
             'RELEASE-DAC-001 — S360-312 firmware promotion',
             'WF-IMPORT-DAC-001 — WebFlash import follow-up'

@@ -271,7 +271,7 @@ function setPath(path, { silent = false } = {}) {
     if (!silent) {
         announce(path === 'kit'
             ? 'Kit path selected.'
-            : 'Custom configuration path selected.');
+            : 'Advanced setup path selected.');
     }
 }
 

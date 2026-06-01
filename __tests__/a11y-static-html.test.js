@@ -777,10 +777,17 @@ describe('WF-UX-006 — Step 1 kit / custom / recovery path split', () => {
         expect(kitButton.textContent).toMatch(/Release-One/);
     });
 
-    test('custom path button uses the canonical "Custom configuration" copy + WF-WIZARD-AVAIL-001-aligned warning', () => {
+    test('custom path button uses the canonical "Advanced setup" copy + WF-WIZARD-AVAIL-001-aligned warning', () => {
+        // WF-UX-008 reframed the customer-facing label from "Custom
+        // configuration" to "Advanced setup" (high-level goal #2). The
+        // data hook stays `data-start-path="custom"` so the URL contract
+        // (`configmode=custom`) and back-compat are unchanged.
         const customButton = document.querySelector('[data-start-path="custom"]');
         expect(customButton).not.toBeNull();
-        expect(customButton.textContent).toMatch(/Custom configuration/);
+        expect(customButton.textContent).toMatch(/Advanced setup/);
+        // Customer-safe guidance: tell the user when to use this path.
+        // (Apostrophe matched loosely to tolerate the &rsquo; entity.)
+        expect(customButton.textContent).toMatch(/Use this only if your hardware doesn.t match a kit/);
         // The custom-path description must name the unavailable-module
         // caveat in plain language — no "advanced users only" hedging.
         expect(customButton.textContent).toMatch(/Some modules are not yet available in WebFlash/);
@@ -1096,5 +1103,43 @@ describe('WF-FRESHNESS-UX-001 — clarified manifest freshness ack copy in stati
         expect(recheckBtn.textContent.trim()).toMatch(/Recheck manifest freshness/i);
         // The ack input is wired to the description via aria-describedby.
         expect(ack.getAttribute('aria-describedby')).toBe('manifest-freshness-ack-description');
+    });
+});
+
+describe('WF-UX-008 — no internal task/release/tracking IDs in customer-facing copy', () => {
+    // The task roadmap requires that internal engineering identifiers
+    // (RELEASE-…-001, WF-IMPORT-…, HW-005, COMPLIANCE-001, KIT-MATRIX-001,
+    // internal doc filenames) never appear in customer-visible text. They
+    // are allowed only in developer/support-only data, code comments, or
+    // diagnostics. `textContent` excludes HTML comment nodes, so this guard
+    // intentionally checks rendered customer copy, not dev comments.
+    const INTERNAL_ID_PATTERN = /RELEASE-[A-Z]+-001|RELEASE-007|WF-IMPORT-[A-Z]+-001|WF-TRIAC-001|WF-HW-TEST|WF-KIT-LED-001|KIT-MATRIX-001|HW-005|COMPLIANCE-001|S360-300-BENCH-001|UPCOMING_PR|import-firmware-sources\.py|\bTracked:\s/;
+
+    test('the Stage 1 bundle-presets section exposes no internal IDs', () => {
+        const section = document.querySelector('[data-bundle-presets]');
+        expect(section).not.toBeNull();
+        expect(section.textContent).not.toMatch(INTERNAL_ID_PATTERN);
+    });
+
+    test('every planned bundle card states a plain-language unavailability reason', () => {
+        const plannedCards = document.querySelectorAll(
+            '[data-bundle-presets-grid="planned"] [data-bundle-preset-id]'
+        );
+        expect(plannedCards.length).toBeGreaterThan(0);
+        plannedCards.forEach(card => {
+            const meta = card.querySelector('.bundle-preset-card__meta');
+            expect(meta).not.toBeNull();
+            // Plain-language availability text, no internal IDs.
+            expect(meta.textContent).toMatch(/Not available yet/i);
+            expect(meta.textContent).not.toMatch(INTERNAL_ID_PATTERN);
+        });
+    });
+
+    test('the Step 1 path selector + panels expose no internal IDs', () => {
+        ['[data-start-paths]', '[data-custom-path-panel]', '[data-kit-mode-panel]'].forEach(sel => {
+            const node = document.querySelector(sel);
+            expect(node).not.toBeNull();
+            expect(node.textContent).not.toMatch(INTERNAL_ID_PATTERN);
+        });
     });
 });
