@@ -101,7 +101,11 @@ export const AVAILABILITY_REASON_CODES = Object.freeze({
     INTERNAL_PLACEHOLDER: 'internal-placeholder'
 });
 
-const ADVANCED_MANUAL_WARNING_DETAIL = 'Sense360 TRIAC (S360-320) controls mains-connected loads and is not compliance-certified by WebFlash. It is not Release-One, not a kit / default option, and not recommended. No installable firmware has been imported yet, and WebFlash will not install TRIAC firmware until an advanced/manual-warning artifact is imported. Selecting TRIAC requires explicit acknowledgement of the advanced/manual warning. HW-005 and COMPLIANCE-001 remain open upstream.';
+// WF-UX-008 — customer-visible detail copy. Internal tracking IDs (HW-005,
+// COMPLIANCE-001, etc.) must NOT appear here; they live in the machine-only
+// `reasonCode` (e.g. `hw-005-advanced-manual`) and in code comments, which
+// support/diagnostics can map back to the open hardware/compliance gates.
+const ADVANCED_MANUAL_WARNING_DETAIL = 'Sense360 TRIAC (S360-320) controls mains-connected loads and is not compliance-certified by WebFlash. It is not Release-One, not a kit / default option, and not recommended. No installable firmware has been imported yet, and WebFlash will not install TRIAC firmware until a verified build is available. Selecting TRIAC requires explicit acknowledgement of the advanced/manual warning. Use only if you understand the wiring, load, and local safety requirements.';
 
 const DEFAULT_DETAIL_BY_STATE = Object.freeze({
     'available-stable': 'This module is covered by a published WebFlash build.',
@@ -329,7 +333,7 @@ export function classifyConfigString(configString, options = {}) {
         return makeClassification(
             AVAILABILITY_STATES.ADVANCED_MANUAL_WARNING,
             AVAILABILITY_REASON_CODES.HW_005_ADVANCED_MANUAL,
-            `${tokenHit} is an advanced/manual-warning module under HW-005 and COMPLIANCE-001. WebFlash will not install firmware for any configuration containing ${tokenHit} until an advanced/manual-warning artifact is imported AND the user acknowledges the advanced/manual warning. ${tokenHit} is not Release-One, not a kit / default, not recommended, and not compliance-certified.`
+            `${tokenHit} is an advanced/manual-warning module. WebFlash will not install firmware for any configuration containing ${tokenHit} until a verified build is available AND the user acknowledges the advanced/manual warning. ${tokenHit} is not Release-One, not a kit / default, not recommended, and not compliance-certified.`
         );
     }
 

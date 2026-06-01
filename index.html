@@ -200,18 +200,22 @@
                 <p class="step-intro">Pick the path that matches what you have. You can switch paths at any time before installing.</p>
 
                 <!-- WF-KIT-PRESETS-001 — Stage 1 leads with productized
-                     kit bundle presets sourced from the local mirror of
-                     upstream KIT-MATRIX-001 (scripts/data/kit-presets.js).
+                     kit bundle presets (scripts/data/kit-presets.js).
                      Selecting an available preset prefills the existing
                      wizard module state and jumps to Step 5; installability
                      is still gated by the live manifest, firmware-readiness,
                      and release-channel acknowledgement layers — preset
                      existence does not imply installability. Planned kits
-                     stay non-installable until their upstream firmware ships
-                     and a WebFlash import follow-up lands. -->
+                     stay non-installable until their firmware ships and a
+                     WebFlash import follow-up lands.
+                     WF-UX-008 — customer-facing copy here must stay free of
+                     internal task / release / tracking IDs. The internal
+                     tracking references (upstreamRef / blockers) live in the
+                     data module's developer/support-only fields, not in this
+                     markup. -->
                 <section class="bundle-presets" data-bundle-presets aria-labelledby="bundle-presets-heading">
                     <h3 id="bundle-presets-heading" class="bundle-presets__heading">Pick your Sense360 kit bundle</h3>
-                    <p class="bundle-presets__intro">Sense360 ships productized kits. Pick the bundle that matches what you ordered and we&rsquo;ll prefill the wizard. Prefer per-module control? Use the <em>Build your own setup</em> card below.</p>
+                    <p class="bundle-presets__intro">Sense360 ships productized kits. Pick the bundle that matches what you ordered and we&rsquo;ll prefill the wizard. Prefer per-module control? Use the <em>Advanced setup</em> card below.</p>
                     <p class="bundle-presets__availability-notice" data-bundle-preset-availability-notice role="status" aria-live="polite" hidden></p>
                     <div class="bundle-presets__group">
                         <h4 class="bundle-presets__group-heading">Available bundles</h4>
@@ -265,7 +269,7 @@
 
                     <details class="bundle-presets__planned-group" data-bundle-presets-planned>
                         <summary class="bundle-presets__group-heading bundle-presets__group-heading--collapsible">Planned kits (not yet available in WebFlash)</summary>
-                        <p class="bundle-presets__planned-intro">These kit bundles are declared upstream under KIT-MATRIX-001 but no installable WebFlash firmware has been imported yet. Selecting one shows the planned configuration and the blockers tracked in <code>UPCOMING_PR.md</code>; nothing in the wizard is modified.</p>
+                        <p class="bundle-presets__planned-intro">These kit bundles are planned, but they cannot be installed from WebFlash yet because their firmware has not been released. Selecting one explains what is still needed &mdash; it does not change your current configuration.</p>
                         <div class="bundle-presets__grid bundle-presets__grid--planned" data-bundle-presets-grid="planned">
                             <button
                                 class="bundle-preset-card bundle-preset-card--planned"
@@ -278,7 +282,7 @@
                                 <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
                                 <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; Relay Fan Control</span>
                                 <span class="bundle-preset-card__description" id="bundle-preset-bath-relay-desc">Bathroom kit with the Sense360 Relay (S360-310) driving a single-speed bathroom fan. Not yet installable in WebFlash.</span>
-                                <span class="bundle-preset-card__meta">Tracked: RELEASE-RELAY-001 &middot; WF-IMPORT-RELAY-001</span>
+                                <span class="bundle-preset-card__meta">Not available yet &middot; firmware still in development</span>
                             </button>
 
                             <button
@@ -291,8 +295,8 @@
                             >
                                 <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
                                 <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; TRIAC Fan Control</span>
-                                <span class="bundle-preset-card__description" id="bundle-preset-bath-triac-desc">Bathroom kit with the Sense360 TRIAC (S360-320) phase-dimmed fan. Mains-load compliance work is open; FanTRIAC firmware remains blocked from Release-One under HW-005.</span>
-                                <span class="bundle-preset-card__meta">Tracked: HW-005 &middot; RELEASE-TRIAC-001 &middot; WF-IMPORT-TRIAC-001</span>
+                                <span class="bundle-preset-card__description" id="bundle-preset-bath-triac-desc">Bathroom kit with the Sense360 TRIAC (S360-320) phase-dimmed fan. TRIAC controls mains-connected loads and is not compliance-certified by WebFlash, so no installable firmware has been released for it yet.</span>
+                                <span class="bundle-preset-card__meta">Not available yet &middot; mains-load safety review in progress</span>
                             </button>
 
                             <button
@@ -306,7 +310,7 @@
                                 <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
                                 <span class="bundle-preset-card__title">Sense360 Duct Fan Kit &mdash; PWM Fan Control</span>
                                 <span class="bundle-preset-card__description" id="bundle-preset-duct-pwm-desc">Duct-fan kit driving up to four 12V PWM fans (Sense360 PWM, S360-311). Not yet installable in WebFlash.</span>
-                                <span class="bundle-preset-card__meta">Tracked: RELEASE-PWM-001 &middot; WF-IMPORT-PWM-001</span>
+                                <span class="bundle-preset-card__meta">Not available yet &middot; firmware still in development</span>
                             </button>
 
                             <button
@@ -320,12 +324,12 @@
                                 <span class="bundle-preset-card__badge bundle-preset-card__badge--neutral" data-bundle-preset-badge>Planned</span>
                                 <span class="bundle-preset-card__title">Sense360 Duct Fan Kit &mdash; 0&ndash;10V Fan Control</span>
                                 <span class="bundle-preset-card__description" id="bundle-preset-duct-dac-desc">Duct-fan kit driving a 0&ndash;10V analog fan (Sense360 DAC, S360-312). Not yet installable in WebFlash.</span>
-                                <span class="bundle-preset-card__meta">Tracked: RELEASE-DAC-001 &middot; WF-IMPORT-DAC-001</span>
+                                <span class="bundle-preset-card__meta">Not available yet &middot; firmware still in development</span>
                             </button>
                         </div>
                     </details>
 
-                    <p class="bundle-presets__source">Bundle list mirrors upstream <code>KIT-MATRIX-001</code> in <a href="https://github.com/sense360store/esphome-public" target="_blank" rel="noopener noreferrer">sense360store/esphome-public</a>. Installability is still controlled by the live manifest and the existing readiness, release-channel, and preflight gates &mdash; preset existence never bypasses them.</p>
+                    <p class="bundle-presets__source">Installability is always controlled by the live firmware list and the existing readiness, release-channel, and safety checks &mdash; a kit appearing here never bypasses them.</p>
                 </section>
 
                 <div class="start-paths" data-start-paths role="group" aria-labelledby="step-1-heading">
@@ -334,8 +338,8 @@
                         <span class="start-path-card__description" id="start-path-kit-desc">Use this if you have the current Sense360 ceiling PoE VentIQ + RoomIQ kit. We&rsquo;ll prefill the supported Release-One hardware.</span>
                     </button>
                     <button class="start-path-card start-path-card--custom" type="button" data-start-path="custom" aria-describedby="start-path-custom-desc">
-                        <span class="start-path-card__title">Custom configuration</span>
-                        <span class="start-path-card__description" id="start-path-custom-desc">Plan a custom Sense360 setup. Some modules are not yet available in WebFlash and will be clearly marked.</span>
+                        <span class="start-path-card__title">Advanced setup</span>
+                        <span class="start-path-card__description" id="start-path-custom-desc">Use this only if your hardware doesn&rsquo;t match a kit. Build a Sense360 setup module by module. Some modules are not yet available in WebFlash and will be clearly marked.</span>
                     </button>
                     <button class="start-path-card start-path-card--recovery" type="button" data-start-path="recovery" data-rescue-open aria-haspopup="dialog" aria-describedby="start-path-recovery-desc">
                         <span class="start-path-card__title">Recovery</span>
@@ -392,16 +396,16 @@
 
                     <div class="kit-mode-actions">
                         <button class="btn btn-primary btn-next" type="button" data-kit-mode-next disabled>Continue with this kit &rarr;</button>
-                        <button class="btn btn-link" type="button" data-kit-mode-switch-manual>Switch to custom configuration</button>
+                        <button class="btn btn-link" type="button" data-kit-mode-switch-manual>Switch to advanced setup</button>
                     </div>
                 </section>
 
-                <section class="manual-mode-panel custom-path-panel" data-manual-mode-panel data-custom-path-panel data-start-path-panel="custom" aria-label="Custom configuration" hidden>
+                <section class="manual-mode-panel custom-path-panel" data-manual-mode-panel data-custom-path-panel data-start-path-panel="custom" aria-label="Advanced setup" hidden>
                     <header class="path-panel__header">
-                        <h3 class="path-panel__title">Custom configuration</h3>
+                        <h3 class="path-panel__title">Advanced setup</h3>
                         <button class="btn btn-link path-panel__back" type="button" data-start-path-back>&larr; Choose a different path</button>
                     </header>
-                    <p class="custom-path-panel__intro">Plan a custom Sense360 setup module by module. Some modules are not yet available in WebFlash and will be clearly marked when you reach the module step.</p>
+                    <p class="custom-path-panel__intro">Use this only if your hardware doesn&rsquo;t match a kit. Build a Sense360 setup module by module. Some modules are not yet available in WebFlash and will be clearly marked when you reach the module step.</p>
                     <ul class="custom-path-panel__notes">
                         <li>Available modules install today.</li>
                         <li>Preview modules require acknowledging the preview channel before install.</li>

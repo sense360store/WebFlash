@@ -200,8 +200,13 @@ describe('WF-WIZARD-AVAIL-001 — per-module classification against current mani
         expect(result.detail).toMatch(/not recommended/i);
         expect(result.detail).toMatch(/no installable firmware/i);
         expect(result.detail).toMatch(/imported/i);
-        expect(result.detail).toMatch(/HW-005/);
-        expect(result.detail).toMatch(/COMPLIANCE-001/);
+        // WF-UX-008: customer-visible detail copy must NOT leak internal
+        // task / release / tracking IDs. The internal mapping survives only
+        // in the machine-readable reasonCode (support/diagnostics can map it
+        // back to the open hardware/compliance gates).
+        expect(result.detail).not.toMatch(/HW-005/);
+        expect(result.detail).not.toMatch(/COMPLIANCE-001/);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.HW_005_ADVANCED_MANUAL);
     });
 
     test('Voice → legacy-only (internal Core placeholder, not customer-facing)', () => {
@@ -260,8 +265,11 @@ describe('WF-WIZARD-AVAIL-001 — config_string classification', () => {
         expect(result.installable).toBe(false);
         expect(result.detail).toMatch(/FanTRIAC/);
         expect(result.detail).toMatch(/advanced\/manual-warning/i);
-        expect(result.detail).toMatch(/HW-005/);
-        expect(result.detail).toMatch(/COMPLIANCE-001/);
+        // WF-UX-008: no internal task / release / tracking IDs in the
+        // customer-visible detail — the reasonCode (asserted above) carries
+        // the internal mapping for support/diagnostics.
+        expect(result.detail).not.toMatch(/HW-005/);
+        expect(result.detail).not.toMatch(/COMPLIANCE-001/);
         expect(result.detail).toMatch(/not Release-One/i);
         expect(result.detail).toMatch(/not compliance-certified/i);
     });

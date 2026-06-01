@@ -1049,8 +1049,11 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(detail.textContent).toMatch(/not a kit/i);
         expect(detail.textContent).toMatch(/not recommended/i);
         expect(detail.textContent).toMatch(/no installable firmware/i);
-        expect(detail.textContent).toMatch(/HW-005/);
-        expect(detail.textContent).toMatch(/COMPLIANCE-001/);
+        // WF-UX-008: the customer-visible TRIAC detail must not expose internal
+        // task / release / tracking IDs. They survive only in the machine
+        // reasonCode + the data-availability-state hook for support tooling.
+        expect(detail.textContent).not.toMatch(/HW-005/);
+        expect(detail.textContent).not.toMatch(/COMPLIANCE-001/);
     });
 
     test('Relay shows design-pending, PWM and DAC show no-firmware', async () => {
