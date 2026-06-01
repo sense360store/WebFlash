@@ -145,9 +145,29 @@ function pickActiveState(swState, freshness, freshnessAck) {
     return null;
 }
 
+// WF-UX-016 — true only when the Simple-install hero is the active view. In
+// Simple mode the calm hero is the single freshness surface AND this banner is
+// CSS-hidden, so it must not render its raw diagnostic copy ("WebFlash could
+// not confirm whether the firmware list is up to date…") into the DOM at all —
+// not even hidden — or Simple-mode page text would still leak the banned
+// phrases. Advanced install keeps the full banner. Read straight off the
+// <html data-install-mode> flag the simple-install controller owns (no import,
+// to avoid a cycle with state.js).
+function isSimpleInstallMode() {
+    return typeof document !== 'undefined'
+        && !!document.documentElement
+        && document.documentElement.getAttribute('data-install-mode') === 'simple';
+}
+
 function render() {
     const mount = ensureMount();
     if (!mount) {
+        return;
+    }
+    if (isSimpleInstallMode()) {
+        // The Simple hero owns the freshness surface; never leave raw banner
+        // copy in the DOM here (textContent counts even while display:none).
+        mount.innerHTML = '';
         return;
     }
     const active = pickActiveState(lastSwState, lastFreshnessState, lastFreshnessAck);
@@ -253,6 +273,16 @@ export function initFreshnessBanner() {
             lastSwState = snapshot;
             render();
         });
+        // WF-UX-016 — re-render when the install mode flips so switching back to
+        // Advanced restores the banner that Simple mode suppresses (and switching
+        // to Simple clears any banner copy from the DOM immediately).
+        if (typeof MutationObserver === 'function' && document.documentElement) {
+            const modeObserver = new MutationObserver(() => render());
+            modeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-install-mode']
+            });
+        }
         render();
     };
     if (document.readyState === 'loading') {
