@@ -1738,6 +1738,14 @@ async function loadManifestData(options = {}) {
             manifestLoadError = null;
             manifestFreshness = 'current';
             buildManifestContext(data);
+            // WF-FRESHNESS-ROOT-MANIFEST-001 — capture the root manifest's
+            // top-level metadata (generated_at, manifest_version, source_commit)
+            // on every successful load. Without this the live freshness recheck
+            // had no LOADED `generated_at` to compare against, so it reported the
+            // false `missing-generated-at` warning even though manifest.json
+            // carries a valid top-level `generated_at`. captureManifestMetadata
+            // was previously reachable only via __testHooks, which masked the gap.
+            captureManifestMetadata(data);
             try {
                 postFlashService.captureManifest(data);
             } catch { /* defensive — do not block manifest load on post-flash wiring */ }
