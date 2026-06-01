@@ -6567,3 +6567,48 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 [data-install-mode="simple"] .wizard-shell {
     display: block;
 }
+
+/* ============================================================================
+   WF-UX-013 — reduce Simple install warning noise.
+
+   The calm hero status ([data-simple-install-status]) is the single
+   manifest-freshness surface in the Simple path. These rules suppress the
+   *duplicate* freshness/warning surfaces and the support/debug chrome so the
+   path reads calm and the Install action surfaces sooner. Every rule is scoped
+   to data-install-mode="simple"; Advanced install (and the no-attribute pre-JS
+   default) is untouched. Presentation-only — no install gate is changed; the
+   preflight panel, the freshness acknowledgement, the warn acknowledgement, and
+   the pre-flash acknowledgement all stay in the DOM and authoritative.
+   ========================================================================== */
+
+/* Dedup freshness: the install-readiness helper text is rendered into BOTH the
+   firmware section and the More-actions group, echoing the same blocking
+   sentence the hero already shows. Hide both so freshness / blocking copy
+   appears exactly once in the Simple path (the hero status). */
+[data-install-mode="simple"] #step-5 [data-ready-helper] {
+    display: none;
+}
+
+/* Remove the scary "accept the risk" preflight acknowledgement from the Simple
+   path by default. Unknown freshness is handled calmly in the hero (Reload page
+   / Continue with loaded firmware list), and the hero already carries the single
+   safety confirmation, so this control is pure noise on the happy path. The
+   original control returns — unchanged copy, unchanged gate — only when a
+   genuine non-freshness preflight warning is the remaining blocker
+   (reason === "preflight-warn", set by scripts/simple-install.js). */
+[data-install-mode="simple"] #step-5 .preflight-panel__warn-acknowledge {
+    display: none !important;
+}
+[data-install-mode="simple"][data-install-warn-context="real-warn"] #step-5 .preflight-panel__warn-acknowledge:not([hidden]) {
+    display: flex !important;
+}
+
+/* Keep the Step 5 preflight diagnostics collapsed in the Simple path even when
+   state.js auto-expands the disclosure for a non-ready verdict. Only the hero's
+   "Setup checks" link (which marks the disclosure data-setup-checks-revealed)
+   reveals the browser / device / connection rows and the diagnostics bundle.
+   The disclosure summary is already hidden in simple mode. */
+[data-install-mode="simple"] #step-5 [data-preflight-details]:not([data-setup-checks-revealed]) > .preflight-panel__list,
+[data-install-mode="simple"] #step-5 [data-preflight-details]:not([data-setup-checks-revealed]) > .preflight-panel__diagnostics {
+    display: none !important;
+}

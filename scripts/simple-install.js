@@ -46,6 +46,14 @@ const STATUS_SELECTOR = '[data-simple-install-status]';
 const PATH_CHOICE_SELECTOR = '[data-install-path]';
 const CONFIRM_SELECTOR = '[data-simple-install-confirm]';
 const PREFLASH_ACK_SELECTOR = '[data-preflash-acknowledge]';
+// WF-UX-013 — the authoritative manifest-freshness acknowledgement that backs
+// the calm "Continue with loaded firmware list" action. state.js keeps the
+// freshness gate authoritative; this control only ticks its checkbox.
+const FRESHNESS_ACK_SELECTOR = '[data-manifest-freshness-acknowledge]';
+// WF-UX-013 — reflects whether a genuine preflight warning (not the calm
+// freshness-unknown state) is the remaining blocker, so the Simple path can keep
+// the "accept the risk" preflight acknowledgement hidden by default.
+const WARN_CONTEXT_ATTR = 'data-install-warn-context';
 
 // A clean module slate so switching from the advanced wizard back into the
 // stable kit never carries a stray module selection forward. Mirrors the
@@ -70,9 +78,10 @@ let lastReadiness = null;
  * state.js. Pure function over the verdict — introduces no gate.
  *
  * Deliberately avoids the word "manifest" in the default user path and keeps
- * freshness calm unless the build is truly stale (a hard block). Unknown
- * freshness reads as the required "Couldn't recheck for updates. Reload this
- * page before installing." with Reload + Show details.
+ * freshness calm unless the build is truly stale (a hard block). WF-UX-013 —
+ * unknown freshness reads as a calm "Could not recheck for updates" with two
+ * plain actions (Reload page / Continue with loaded firmware list) and never
+ * sounds like a dangerous manual override; only a truly stale build blocks hard.
  *
  * @param {{reason?: string, message?: string}|null} readiness
  * @returns {{level: string, title: string, detail: string, actions: Array<{action: string, label: string}>}}
@@ -155,11 +164,19 @@ export function describeReadiness(readiness) {
                 actions: [RELOAD]
             };
         case 'freshness-unknown':
+            // WF-UX-013 — unknown freshness is NOT stale. Present it as a single
+            // calm, plain-language action set: Reload page (recommended) and
+            // Continue with the firmware list already loaded in this browser
+            // (which ticks the authoritative freshness acknowledgement). No
+            // "manifest" wording, no "Cannot install yet", no "accept the risk".
             return {
                 level: 'attention',
-                title: 'Needs attention',
-                detail: 'Couldn’t recheck for updates. Reload this page before installing.',
-                actions: [RELOAD, DETAILS]
+                title: 'Could not recheck for updates',
+                detail: 'WebFlash could not recheck the latest firmware list. Reload this page and try again. If this keeps happening, you can continue with the firmware list already loaded in this browser.',
+                actions: [
+                    { action: 'reload', label: 'Reload page' },
+                    { action: 'continue', label: 'Continue with loaded firmware list' }
+                ]
             };
         case 'no-firmware':
         case 'pending':
@@ -212,6 +229,11 @@ function openPreflightDetails() {
     if (!details) {
         return false;
     }
+    // WF-UX-013 — mark the disclosure as explicitly revealed so the Simple-mode
+    // CSS stops hiding the diagnostic rows. By default the Simple path keeps the
+    // preflight diagnostics collapsed (even when state.js auto-expands the
+    // disclosure for a non-ready verdict); "Setup checks" is the way in.
+    details.setAttribute('data-setup-checks-revealed', 'true');
     details.open = true;
     const summary = details.querySelector('summary');
     if (summary && typeof summary.focus === 'function') {
@@ -285,11 +307,24 @@ function syncSafetyConfirmFromGate() {
  * @param {object|null} readiness
  */
 export function renderStatus(readiness) {
+    lastReadiness = readiness || null;
+
+    // WF-UX-013 — keep the scary "accept the risk" preflight acknowledgement
+    // suppressed in the Simple path unless a genuine non-freshness preflight
+    // warning is the remaining blocker (reason === 'preflight-warn'). The
+    // calm freshness-unknown state is handled entirely by the hero below.
+    if (typeof document !== 'undefined' && document.documentElement) {
+        const reason = (readiness && readiness.reason) ? readiness.reason : '';
+        document.documentElement.setAttribute(
+            WARN_CONTEXT_ATTR,
+            reason === 'preflight-warn' ? 'real-warn' : 'calm'
+        );
+    }
+
     const node = document.querySelector(STATUS_SELECTOR);
     if (!node) {
         return;
     }
-    lastReadiness = readiness || null;
     const view = describeReadiness(readiness);
     node.dataset.level = view.level;
 
@@ -452,12 +487,45 @@ export function resolveInitialMode() {
     return 'simple';
 }
 
+/**
+ * Acknowledge the "freshness unknown" gate so the customer can continue with
+ * the firmware list already loaded in this browser. WF-UX-013 — this ticks the
+ * authoritative manifest-freshness acknowledgement ([data-manifest-freshness-acknowledge])
+ * and re-dispatches `change` so state.js recomputes the gate. The acknowledgement
+ * stays authoritative in state.js; this never bypasses it. No-ops gracefully when
+ * the control is absent (older embeds / unit fixtures).
+ *
+ * @returns {boolean} whether the acknowledgement control was found.
+ */
+function acknowledgeLoadedFirmwareList() {
+    if (typeof document === 'undefined') {
+        return false;
+    }
+    const ack = document.querySelector(FRESHNESS_ACK_SELECTOR);
+    if (!ack) {
+        return false;
+    }
+    if (!ack.checked) {
+        ack.checked = true;
+        try {
+            ack.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch {
+            // restricted environments — the value is still set.
+        }
+    }
+    return true;
+}
+
 function handleStatusAction(target) {
     const button = target.closest('[data-simple-install-action]');
     if (!button) {
         return false;
     }
     const action = button.dataset.simpleInstallAction;
+    if (action === 'continue') {
+        acknowledgeLoadedFirmwareList();
+        return true;
+    }
     if (action === 'reload') {
         const reason = lastReadiness && lastReadiness.reason;
         if (reason === 'update-available' && typeof triggerSkipWaitingAndReload === 'function') {
@@ -564,6 +632,7 @@ export const __testHooks = Object.freeze({
     describeReadiness,
     syncPathChoice,
     openPreflightDetails,
+    acknowledgeLoadedFirmwareList,
     bindSafetyConfirmMirror,
     syncSafetyConfirmFromGate,
     getLastReadiness: () => lastReadiness,

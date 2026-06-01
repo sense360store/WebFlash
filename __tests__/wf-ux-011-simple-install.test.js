@@ -368,16 +368,21 @@ describe('WF-UX-011 — plain-language readiness status', () => {
         expect(view.actions.map(a => a.action)).toContain('reload');
     });
 
-    test('unknown freshness reads in plain language, avoids "manifest", and offers Reload + Show details', async () => {
+    // WF-UX-013 superseded the unknown-freshness copy + actions: a calm
+    // "Could not recheck for updates" with Reload page / Continue (no "manifest",
+    // no "Cannot install yet", no scary override). The plain-language + not-stale
+    // contract this test guards is preserved; the exact copy is pinned by
+    // __tests__/wf-ux-013-simple-install-noise.test.js.
+    test('unknown freshness reads in plain language, avoids "manifest", and stays "needs attention"', async () => {
         const { mod } = await loadController({ dom: '' });
         const view = mod.describeReadiness({ reason: 'freshness-unknown' });
-        // Required plain-language copy.
-        expect(view.detail).toMatch(/Couldn.t recheck for updates\. Reload this page before installing\./);
-        // The default user path must avoid "manifest" wording.
+        // The default user path must avoid "manifest" wording and never read as
+        // a hard "Cannot install yet" block.
         expect(`${view.title} ${view.detail}`.toLowerCase()).not.toContain('manifest');
+        expect(view.title.toLowerCase()).not.toContain('cannot install');
         // Not a scary hard block — it is "needs attention".
         expect(view.level).toBe('attention');
-        expect(view.actions.map(a => a.action).sort()).toEqual(['details', 'reload']);
+        expect(view.actions.map(a => a.action).sort()).toEqual(['continue', 'reload']);
     });
 
     test('renderStatus writes the verdict into the hero and never surfaces "manifest" for unknown freshness', async () => {
@@ -391,12 +396,15 @@ describe('WF-UX-011 — plain-language readiness status', () => {
 
         const actions = Array.from(status.querySelectorAll('[data-simple-install-action]'))
             .map(b => b.dataset.simpleInstallAction).sort();
-        expect(actions).toEqual(['details', 'reload']);
+        expect(actions).toEqual(['continue', 'reload']);
     });
 
     test('the Show details action opens the technical preflight diagnostics', async () => {
         const { mod } = await loadController({ dom: HERO_DOM });
-        mod.renderStatus({ reason: 'freshness-unknown' });
+        // A preflight failure still offers a Show details action into the
+        // diagnostics (WF-UX-013 dropped the details action from the calm
+        // freshness-unknown state, which now uses Reload / Continue instead).
+        mod.renderStatus({ reason: 'preflight-fail' });
 
         const details = document.querySelector('#step-5 [data-preflight-details]');
         expect(details.open).toBe(false);
