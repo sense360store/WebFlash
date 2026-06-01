@@ -46,12 +46,19 @@
  *   freshness banner are not in the v1 manifest). The activate handler
  *   below removes any cache that starts with `webflash-` but is not the
  *   current name — keep that pattern stable so future bumps just work.
+ *   `webflash-v6` (WF-UX-014) bumps the name so existing installs purge the
+ *   v5 cache once and re-prime, which — together with the `?v=` asset-query
+ *   bump on index.html / bootstrap.js / app.js's changed ESM imports — stops
+ *   the service worker from serving a stale scripts/simple-install.js after a
+ *   UX-only JS deploy (the mixed old/new UI WF-UX-013 hit on live). This is an
+ *   asset-version reference only — the per-asset-class fetch strategy above is
+ *   unchanged. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v5';
-const CACHE_VERSION = 4;
+const CACHE_NAME = 'webflash-v6';
+const CACHE_VERSION = 5;
 
 /**
  * Static assets to cache on install.

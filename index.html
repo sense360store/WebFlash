@@ -13,20 +13,36 @@
       headers". Run `npm run check:headers -- <URL>` to audit a deployment.
     -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob:; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+    <!-- WF-UX-014 — support-only app-shell build marker. These meta tags are read
+         verbatim by scripts/services/diagnostics.js (buildAppSection) so the
+         "About this installer" panel and the Copy/Download support bundle report
+         which app shell the live GitHub Pages page is actually running. Because
+         index.html is always revalidated by Pages/CDN while the ESM module graph
+         can be served stale, this marker rides on the always-fresh HTML — so even
+         a stale-JS page reports the correct shell. Bump `webflash-app-shell`
+         together with the `?v=` asset query below and the sw.js CACHE_NAME on every
+         UX-only JS deploy. No secrets/PII here — it is copied into diagnostics. -->
+    <meta name="webflash-app-version" content="1.0.1">
+    <meta name="webflash-app-shell" content="2026-06-01">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- WF-DEPLOY-001 — bumped only to trigger firmware-publish.yml on
-         merge (index.html is in the workflow's on.push.paths; __tests__
-         and docs are not) and to refresh browser CDN caches once the
-         May-7-stale deploy is replaced. No markup or runtime wizard
-         behavior changes accompany this bump. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=20260515">
+    <!-- WF-DEPLOY-001 / WF-UX-014 — the `?v=` asset query is the cache-bust
+         token. Bumping it (here, on the bootstrap loader below, and on the
+         changed ESM imports in app.js) gives Pages/CDN/service-worker a brand
+         new URL so they cannot serve a stale module after a UX-only JS change.
+         This is exactly what left WF-UX-013's calm Simple-install freshness copy
+         half-deployed: index.html + CSS (both versioned/revalidated) updated, but
+         scripts/simple-install.js (a bare ESM import) kept serving the old
+         "Cannot install yet" copy from cache. Keep this token in lockstep with
+         the sw.js CACHE_NAME and the `webflash-app-shell` marker above; see
+         docs/deploy-notes.md. -->
+    <link rel="stylesheet" href="./css/wizard-style.css?v=20260601">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=20260515">
+    <link rel="stylesheet" href="./css/layout.css?v=20260601">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -1439,7 +1455,10 @@
 </div>
 
     <!-- Externalized loader: keeps the meta CSP `script-src 'self'` without
-         needing 'unsafe-inline' or per-deploy hashes. -->
-    <script type="module" src="./scripts/bootstrap.js"></script>
+         needing 'unsafe-inline' or per-deploy hashes. WF-UX-014 — the `?v=`
+         cache-bust token rides on this always-revalidated HTML so the bootstrap
+         loader (and the app.js + changed ESM modules it pulls in) is fetched
+         fresh on the first load after a deploy, never a stale CDN/SW copy. -->
+    <script type="module" src="./scripts/bootstrap.js?v=20260601"></script>
 </body>
 </html>

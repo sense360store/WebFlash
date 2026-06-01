@@ -12,7 +12,15 @@ import { getManifestMetadataForAbout } from "./scripts/state.js";
 import "./scripts/recommended-bundle.js";
 import "./scripts/kit-mode.js";
 import "./scripts/kit-presets.js";
-import "./scripts/simple-install.js";
+// WF-UX-014 — cache-bust the changed runtime module. simple-install.js owns the
+// customer-facing Simple-install freshness copy (WF-UX-013's calm "Could not
+// recheck for updates"). Without a `?v=` query a bare ESM import is served stale
+// by Pages/CDN/the service worker, which is exactly why the live Simple path kept
+// showing the old "Cannot install yet" copy after WF-UX-013 deployed. The token
+// matches the bootstrap loader, index.html assets, and the sw.js CACHE_NAME bump.
+// Only modules whose customer-facing copy changed are versioned here; unchanged
+// modules (state.js, etc.) ride the cache-name bump. See docs/deploy-notes.md.
+import "./scripts/simple-install.js?v=20260601";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";
