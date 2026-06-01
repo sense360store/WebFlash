@@ -176,6 +176,42 @@ State of the repo at TRACKING-001:
   change (the changed runtime files are already in `firmware-publish.yml`'s
   `on.push.paths`). Adds `__tests__/wf-ux-014-cache-bust-freshness.test.js` and
   `docs/deploy-notes.md`.
+- **WF-UX-015 collapse firmware technical detail in Simple install is in
+  review.** Makes the default Simple path genuinely simple: by default a normal
+  customer sees one product card (Sense360 Bathroom PoE Kit, stable firmware
+  v1.0.0, the Core / RoomIQ / VentIQ / PoE summary), the single safety
+  confirmation, the plain-language readiness status, and the **one** ESP Web
+  Tools Install action — nothing else. Every firmware / provenance / release
+  metadata surface the Step 5 install surface renders for the Advanced path —
+  the Compatible Firmware heading + selection, the firmware release selector,
+  the per-build identity inside `.firmware-info` (firmware/artifact filename,
+  version, file size/date) + "View Release Notes" + description, the Firmware
+  details panel (identity / source commit / SHA-256 / signature / changelog /
+  known issues), the provenance block + "Show verification details", the "Show
+  firmware file details" parts list, the Key Features / Hardware Requirements
+  metadata + release-notes section, and the whole "More actions" group (download
+  / copy link / Home Assistant / recovery / support diagnostics) — is collapsed
+  by default in simple mode and revealed in place only when the customer opens
+  the single hero **"Technical details"** disclosure (which sets
+  `data-technical-details-revealed` on `<html>`, mirroring WF-UX-013's
+  "Setup checks" → `data-setup-checks-revealed` pattern). A "Technical details"
+  secondary link sits alongside Setup checks / Advanced install / Recovery.
+  Status wording: an unticked safety confirmation now reads **"Confirm before
+  installing"** (a calm, expected step), not "Needs attention"; genuine blocking
+  states still show warning / error copy ("Cannot install yet") and a real
+  preflight warning still reads "Needs attention". Advanced install renders the
+  full firmware card exactly as before (every CSS rule is scoped to
+  `data-install-mode="simple"`; `createFirmwareCardHtml` is unchanged). Because
+  the change touches both `css/wizard-style.css` and `scripts/simple-install.js`
+  — both served under the live `?v=20260601` — the cache-bust token is bumped in
+  lockstep (`?v=202606012`, app-shell `2026-06-01-2`) and `sw.js` `CACHE_NAME`
+  `webflash-v6` → `webflash-v7`, so neither ships stale (the exact WF-UX-013→014
+  trap). Presentation + deploy-layer only — **no** `manifest.json`,
+  `firmware/sources.json`, `REQUIRED_CONFIGS`, firmware binary, installability /
+  release-channel / provenance / manifest-freshness logic, service-worker
+  fetch-strategy, or workflow change. Adds
+  `__tests__/wf-ux-015-simple-install-collapse.test.js`; updates the
+  `safety-checklist` assertion in `__tests__/wf-ux-011-simple-install.test.js`.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:

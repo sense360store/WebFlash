@@ -349,7 +349,9 @@ describe('WF-UX-011 — plain-language readiness status', () => {
     test('the three customer-facing statuses map from the gate verdict', async () => {
         const { mod } = await loadController({ dom: '' });
         expect(mod.describeReadiness({ reason: 'ready' }).title).toBe('Ready to install');
-        expect(mod.describeReadiness({ reason: 'safety-checklist' }).title).toBe('Needs attention');
+        // WF-UX-015 — an unticked safety confirmation reads "Confirm before
+        // installing" (a calm, expected step), not "Needs attention".
+        expect(mod.describeReadiness({ reason: 'safety-checklist' }).title).toBe('Confirm before installing');
         expect(mod.describeReadiness({ reason: 'preflight-fail' }).title).toBe('Cannot install yet');
     });
 

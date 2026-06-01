@@ -23,7 +23,7 @@
          together with the `?v=` asset query below and the sw.js CACHE_NAME on every
          UX-only JS deploy. No secrets/PII here — it is copied into diagnostics. -->
     <meta name="webflash-app-version" content="1.0.1">
-    <meta name="webflash-app-shell" content="2026-06-01">
+    <meta name="webflash-app-shell" content="2026-06-01-2">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +39,10 @@
          "Cannot install yet" copy from cache. Keep this token in lockstep with
          the sw.js CACHE_NAME and the `webflash-app-shell` marker above; see
          docs/deploy-notes.md. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=20260601">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=202606012">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=20260601">
+    <link rel="stylesheet" href="./css/layout.css?v=202606012">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -264,22 +264,45 @@
                                 <span id="simple-install-confirm-desc"><strong>Confirm before installing.</strong> I understand and will keep the hub powered and connected during installation.</span>
                             </label>
 
-                            <details class="simple-install__tech" data-simple-install-tech>
+                            <!-- WF-UX-015 — the single "Technical details" disclosure for the
+                                 Simple path. Collapsed by default so the customer sees only the
+                                 product, the safety confirmation, and the Install action. It
+                                 carries the static identity summary (kit / configuration /
+                                 channel / firmware file) and, when opened, sets
+                                 data-technical-details-revealed on <html>
+                                 (scripts/simple-install.js) to reveal the otherwise-collapsed
+                                 firmware card below — the full firmware details (SHA-256,
+                                 signature, source commit, provenance), release notes / changelog,
+                                 key features, hardware requirements, and the More-actions group
+                                 (download / copy link / Home Assistant / recovery / support
+                                 diagnostics). Mirrors the WF-UX-013 "Setup checks" →
+                                 data-setup-checks-revealed pattern; no install gate or firmware
+                                 metadata is duplicated or recomputed here. -->
+                            <details class="simple-install__tech" data-simple-install-tech id="simple-install-tech">
                                 <summary class="simple-install__tech-summary">Technical details</summary>
-                                <dl class="simple-install__tech-list">
-                                    <div class="simple-install__tech-row">
-                                        <dt>Kit</dt>
-                                        <dd data-simple-install-tech-sku>S360-KIT-BATH-POE</dd>
-                                    </div>
-                                    <div class="simple-install__tech-row">
-                                        <dt>Configuration</dt>
-                                        <dd data-simple-install-tech-config>Ceiling-POE-VentIQ-RoomIQ</dd>
-                                    </div>
-                                    <div class="simple-install__tech-row">
-                                        <dt>Release channel</dt>
-                                        <dd>Stable</dd>
-                                    </div>
-                                </dl>
+                                <div class="simple-install__tech-body">
+                                    <dl class="simple-install__tech-list">
+                                        <div class="simple-install__tech-row">
+                                            <dt>Kit</dt>
+                                            <dd data-simple-install-tech-sku>S360-KIT-BATH-POE</dd>
+                                        </div>
+                                        <div class="simple-install__tech-row">
+                                            <dt>Configuration</dt>
+                                            <dd data-simple-install-tech-config>Ceiling-POE-VentIQ-RoomIQ</dd>
+                                        </div>
+                                        <div class="simple-install__tech-row">
+                                            <dt>Release channel</dt>
+                                            <dd>Stable</dd>
+                                        </div>
+                                        <div class="simple-install__tech-row">
+                                            <dt>Firmware file</dt>
+                                            <dd data-simple-install-tech-artifact>Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin</dd>
+                                        </div>
+                                    </dl>
+                                    <p class="simple-install__tech-note" data-simple-install-tech-note>
+                                        Showing the full firmware card below: verification (SHA-256, signature, source commit, provenance), release notes and changelog, key features, hardware requirements, the download and copy-link actions, and support diagnostics.
+                                    </p>
+                                </div>
                             </details>
 
                             <!-- WF-UX-012 — small, quiet secondary links kept available in
@@ -288,6 +311,8 @@
                                  modal). These stay subordinate to the primary Install action. -->
                             <p class="simple-install__links" data-simple-install-links>
                                 <button type="button" class="btn btn-link simple-install__link" data-open-setup-checks>Setup checks</button>
+                                <span class="simple-install__link-sep" aria-hidden="true">&middot;</span>
+                                <button type="button" class="btn btn-link simple-install__link" data-open-technical-details aria-controls="simple-install-tech">Technical details</button>
                                 <span class="simple-install__link-sep" aria-hidden="true">&middot;</span>
                                 <button type="button" class="btn btn-link simple-install__link" data-enter-advanced>Advanced install</button>
                                 <span class="simple-install__link-sep" aria-hidden="true">&middot;</span>
@@ -1459,6 +1484,6 @@
          cache-bust token rides on this always-revalidated HTML so the bootstrap
          loader (and the app.js + changed ESM modules it pulls in) is fetched
          fresh on the first load after a deploy, never a stale CDN/SW copy. -->
-    <script type="module" src="./scripts/bootstrap.js?v=20260601"></script>
+    <script type="module" src="./scripts/bootstrap.js?v=202606012"></script>
 </body>
 </html>

@@ -20,7 +20,12 @@ import "./scripts/kit-presets.js";
 // matches the bootstrap loader, index.html assets, and the sw.js CACHE_NAME bump.
 // Only modules whose customer-facing copy changed are versioned here; unchanged
 // modules (state.js, etc.) ride the cache-name bump. See docs/deploy-notes.md.
-import "./scripts/simple-install.js?v=20260601";
+// WF-UX-015 — simple-install.js's customer-facing copy changed again (collapsed
+// firmware technical detail + the calm "Confirm before installing" status), and
+// wizard-style.css gained the simple-mode collapse rules. Bump the token past
+// 20260601 → 202606012 in lockstep (index.html assets, bootstrap loader, sw.js
+// CACHE_NAME) so neither the module nor the CSS is served stale.
+import "./scripts/simple-install.js?v=202606012";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";
