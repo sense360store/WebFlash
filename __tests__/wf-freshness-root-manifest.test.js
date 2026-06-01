@@ -94,21 +94,22 @@ describe('WF-FRESHNESS-ROOT-MANIFEST-001 — checkManifestFreshness (unit)', () 
         expect(r.diagnostics.timestampSource).toBe('manifest.generated_at');
     });
 
-    test('the wrong JSON (firmware/sources.json) reports missing-generated-at with fetched URL + top-level keys', async () => {
+    test('the wrong JSON (firmware/sources.json) reports missing-fetched-generated-at with fetched URL + top-level keys', async () => {
         const { checkManifestFreshness } = await import(FRESHNESS_SVC);
         const r = await checkManifestFreshness(
             { generated_at: ROOT_MANIFEST.generated_at },
             { fetchImpl: okJson(SOURCES_JSON), manifestUrl: '/WebFlash/manifest.json' }
         );
         expect(r.verdict).toBe('unknown');
-        expect(r.reason).toBe('missing-generated-at');
+        // Loaded side has generated_at, the wrong target does not → fetched side.
+        expect(r.reason).toBe('missing-fetched-generated-at');
         expect(r.diagnostics.fetchedUrl).toBe('/WebFlash/manifest.json');
         expect(r.diagnostics.topLevelKeys).toEqual(expect.arrayContaining(['schema_version', 'sources']));
         expect(r.diagnostics.hasGeneratedAt).toBe(false);
         expect(r.diagnostics.hasNestedGeneratedAt).toBe(false);
     });
 
-    test('the rescue manifest (no generated_at) also reports missing-generated-at', async () => {
+    test('the rescue manifest (no generated_at) also reports missing-fetched-generated-at', async () => {
         const { checkManifestFreshness } = await import(FRESHNESS_SVC);
         // Guard the premise: the rescue manifest must NOT carry generated_at.
         expect(RESCUE_MANIFEST.generated_at).toBeUndefined();
@@ -117,7 +118,25 @@ describe('WF-FRESHNESS-ROOT-MANIFEST-001 — checkManifestFreshness (unit)', () 
             { fetchImpl: okJson(RESCUE_MANIFEST) }
         );
         expect(r.verdict).toBe('unknown');
-        expect(r.reason).toBe('missing-generated-at');
+        expect(r.reason).toBe('missing-fetched-generated-at');
+    });
+
+    test('the missing-generated-at diagnostic is split per side (loaded / fetched / both)', async () => {
+        const { checkManifestFreshness } = await import(FRESHNESS_SVC);
+        const T = '2026-05-04T00:00:00.000Z';
+
+        const loadedMissing = await checkManifestFreshness(null, { fetchImpl: okJson({ generated_at: T }) });
+        expect(loadedMissing.reason).toBe('missing-loaded-generated-at');
+
+        const fetchedMissing = await checkManifestFreshness({ generated_at: T }, { fetchImpl: okJson({}) });
+        expect(fetchedMissing.reason).toBe('missing-fetched-generated-at');
+
+        const bothMissing = await checkManifestFreshness(null, { fetchImpl: okJson({}) });
+        expect(bothMissing.reason).toBe('missing-both-generated-at');
+
+        // The flat `missing-generated-at` code is retired.
+        const { FRESHNESS_REASON } = await import(FRESHNESS_SVC);
+        expect(Object.values(FRESHNESS_REASON)).not.toContain('missing-generated-at');
     });
 
     test('stale: a newer live generated_at is diagnosed as stale', async () => {
@@ -263,14 +282,64 @@ describe('WF-FRESHNESS-ROOT-MANIFEST-001 — state.js end-to-end', () => {
         expect(md.generated_at).toBe(ROOT_MANIFEST.generated_at);
     });
 
-    test('a root manifest with generated_at yields verdict current — never the false missing-generated-at', async () => {
+    test('a root manifest with generated_at yields verdict current — never a missing-generated-at warning', async () => {
         const mod = await import('../scripts/state.js');
         const { __testHooks } = mod;
         await __testHooks.loadManifestData({ forceReload: true });
         const result = await __testHooks.checkManifestFreshnessNow({ force: true });
         expect(result.verdict).toBe('current');
         expect(result.reason).toBe('same-or-newer');
-        expect(result.reason).not.toBe('missing-generated-at');
+        expect(result.reason).not.toMatch(/missing-.*generated-at/);
+    });
+
+    test('a live-shaped root manifest (HAR fields: top-level generated_at + source_commit) is captured during loadManifestData', async () => {
+        // Mirrors the live HAR response shape the DevTools capture proved.
+        const LIVE_SHAPED = {
+            name: 'Sense360 Modular Platform Firmware',
+            version: '1.0.0',
+            manifest_version: 1,
+            generated_at: '2026-06-01T20:14:37.955988+00:00',
+            source_commit: 'bacc3d97245e17cb531aa85d7994f99f2f9889b2',
+            builds: ROOT_MANIFEST.builds
+        };
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(LIVE_SHAPED) }));
+        const mod = await import('../scripts/state.js');
+        const { __testHooks } = mod;
+        await __testHooks.loadManifestData({ forceReload: true });
+
+        // The loaded metadata the freshness checker receives carries generated_at.
+        const md = mod.getManifestMetadataForAbout();
+        expect(md.generated_at).toBe(LIVE_SHAPED.generated_at);
+        expect(md.source_commit).toBe(LIVE_SHAPED.source_commit);
+
+        const result = await __testHooks.checkManifestFreshnessNow({ force: true });
+        expect(result.loadedGeneratedAt).toBe(LIVE_SHAPED.generated_at);
+        expect(result.verdict).toBe('current');
+        expect(result.reason).not.toMatch(/missing-.*generated-at/);
+    });
+
+    test('a failed reload clears loaded metadata — no false-current after the failure', async () => {
+        const mod = await import('../scripts/state.js');
+        const { __testHooks } = mod;
+        // Prime a good load so loaded metadata is populated.
+        await __testHooks.loadManifestData({ forceReload: true });
+        expect(mod.getManifestMetadataForAbout().generated_at).toBe(ROOT_MANIFEST.generated_at);
+
+        // Force-reload fails on every retry.
+        global.fetch = jest.fn(() => Promise.reject(new Error('offline')));
+        await expect(__testHooks.loadManifestData({ forceReload: true, maxRetries: 1 })).rejects.toThrow();
+
+        // Stale loaded metadata must NOT survive — otherwise a recheck could read
+        // current against a now-untrustworthy timestamp.
+        const md = mod.getManifestMetadataForAbout();
+        expect(md === null || md.generated_at === null).toBe(true);
+
+        // Even if the live recheck succeeds, the verdict is unknown (loaded gone),
+        // never a false current.
+        global.fetch = jest.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(ROOT_MANIFEST) }));
+        const result = await __testHooks.checkManifestFreshnessNow({ force: true });
+        expect(result.verdict).toBe('unknown');
+        expect(result.reason).toBe('missing-loaded-generated-at');
     });
 
     test('the install-readiness freshness axis reads current (Simple install shows no firmware-list warning)', async () => {

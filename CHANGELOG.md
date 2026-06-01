@@ -57,18 +57,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Root manifest freshness check no longer reports a false
-  `missing-generated-at` warning on the live Simple install. The successful
-  manifest-load path now captures the root manifest's top-level
-  `generated_at` (previously only reachable via test hooks), so the live
-  recheck has a loaded timestamp to compare against. The freshness probe now
-  targets the absolute `/WebFlash/manifest.json` on GitHub Pages (instead of a
-  relative path that can misresolve to the domain root), tolerates a nested
-  `manifest.generated_at` envelope in addition to the canonical top-level
-  field, and attaches explicit diagnostics (fetched URL, HTTP status,
-  content-type, top-level keys, top-level/nested `generated_at` presence, and
-  the selected timestamp source) to every verdict. A root manifest with a
-  valid `generated_at` now resolves to `current`/`same-or-newer`; stale still
-  hard-blocks and fetch/HTTP/parse failures remain individually diagnosed.
+  `missing-generated-at` warning on the live Simple install. Browser DevTools
+  HAR capture confirmed the deployed `/WebFlash/manifest.json` is valid JSON
+  with a top-level `generated_at` and `source_commit`, so the warning was a
+  loaded-metadata bug, not bad published content. Fixes:
+  - `loadManifestData()` now captures the root manifest's top-level metadata
+    (`generated_at`, `manifest_version`, `source_commit`) on **every**
+    successful load (initial, force reload, retry-success) — previously this
+    capture was reachable only via test hooks, so production never recorded a
+    loaded timestamp for the recheck to compare against.
+  - A load that exhausts its retries now **clears** the captured metadata so a
+    failed reload can never leave stale data that falsely reads as `current`;
+    the freshness fallback resolves to `unknown` (non-blocking) instead.
+  - The freshness probe targets the absolute `/WebFlash/manifest.json` on
+    GitHub Pages (instead of a relative path that can misresolve to the domain
+    root), tolerates a nested `manifest.generated_at` envelope in addition to
+    the canonical top-level field, and attaches explicit diagnostics (fetched
+    URL, HTTP status, content-type, top-level keys, top-level/nested
+    `generated_at` presence, selected timestamp source) to every verdict.
+  - The opaque `missing-generated-at` reason code is split into
+    `missing-loaded-generated-at` / `missing-fetched-generated-at` /
+    `missing-both-generated-at` so the failing side is named.
+
+  A root manifest with a valid `generated_at` now resolves to
+  `current`/`same-or-newer` (no firmware-list warning); unknown freshness
+  remains non-blocking, stale still hard-blocks, and fetch/HTTP/parse failures
+  remain individually diagnosed.
 
 ## [2.0.0] - 2025
 

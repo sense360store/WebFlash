@@ -22,7 +22,17 @@
  * WF-FRESHNESS-ROOT-MANIFEST-001 — root-manifest targeting + robust timestamp.
  * The live recheck must hit the ROOT firmware manifest — the same
  * `manifest.json` the wizard loaded — and read its top-level `generated_at`.
- * Two failure modes produced a false `missing-generated-at` against a root
+ *
+ * HAR proof: browser DevTools confirmed the live `/WebFlash/manifest.json`
+ * request succeeds, the response is JSON, and it carries top-level
+ * `generated_at` (`2026-06-01T20:14:37.955988+00:00`) and `source_commit`
+ * (`bacc3d97…`). So the live `missing-generated-at` warning was NOT a bad
+ * published manifest — it was the LOADED metadata never being captured /
+ * preserved (the capture below ran only in tests). The single opaque code is
+ * now split into `missing-loaded-generated-at` / `missing-fetched-generated-at`
+ * / `missing-both-generated-at` so the failing side is named.
+ *
+ * Two failure modes produced a false missing-`generated_at` against a root
  * manifest that DOES carry `generated_at`:
  *
  *   1. Fetch-target drift. A *relative* `manifest.json` resolves against
@@ -61,9 +71,15 @@
  *                            a common real cause of a live "unknown" and was
  *                            previously indistinguishable from a transport
  *                            failure (both collapsed into the catch block).
- *   - 'missing-generated-at' the loaded copy or the live copy has no
- *                            `generated_at` string to compare (under either the
- *                            top-level or nested `manifest.generated_at` shape).
+ *   - 'missing-loaded-generated-at'  the LOADED copy has no `generated_at` while
+ *                            the live copy does — the common live cause (loaded
+ *                            metadata was never captured/preserved).
+ *   - 'missing-fetched-generated-at' the LIVE copy has no `generated_at` while
+ *                            the loaded copy does — e.g. a wrong fetch target
+ *                            (firmware/sources.json, the rescue manifest).
+ *   - 'missing-both-generated-at'    neither copy has a `generated_at` string
+ *                            (under either the top-level or nested
+ *                            `manifest.generated_at` shape).
  *   - 'invalid-generated-at' a `generated_at` is present but not a parseable
  *                            timestamp.
  *   - 'compare-failed'       defensive — the timestamp comparison itself threw.
@@ -88,7 +104,14 @@ export const FRESHNESS_REASON = Object.freeze({
     FETCH_FAILED: 'fetch-failed',
     HTTP_ERROR: 'http-error',
     PARSE_FAILED: 'parse-failed',
-    MISSING_GENERATED_AT: 'missing-generated-at',
+    // WF-FRESHNESS-ROOT-MANIFEST-001 — the single opaque `missing-generated-at`
+    // code is split so the FAILING SIDE is named. Live HAR capture proved the
+    // deployed /WebFlash/manifest.json returns valid JSON with a top-level
+    // `generated_at` (and `source_commit`), so a missing timestamp is almost
+    // always the LOADED side (metadata never captured), which the old code hid.
+    MISSING_LOADED_GENERATED_AT: 'missing-loaded-generated-at',
+    MISSING_FETCHED_GENERATED_AT: 'missing-fetched-generated-at',
+    MISSING_BOTH_GENERATED_AT: 'missing-both-generated-at',
     INVALID_GENERATED_AT: 'invalid-generated-at',
     COMPARE_FAILED: 'compare-failed',
     SAME_OR_NEWER: 'same-or-newer',
@@ -102,7 +125,7 @@ export const FRESHNESS_REASON = Object.freeze({
  * at the domain root (`/manifest.json`) whenever the page URL has no trailing
  * slash or a <base> tag is present. That misdirected fetch returns a *different*
  * JSON document (or an HTML 404), which is exactly how a root manifest WITH
- * `generated_at` still produced a `missing-generated-at` verdict. Mirror
+ * `generated_at` still produced a missing-`generated_at` verdict. Mirror
  * scripts/bootstrap.js: when we detect the `/WebFlash/` subpath, fetch the
  * absolute `/WebFlash/manifest.json` so the probe always targets the root
  * firmware manifest. Off Pages (localhost, a custom domain served at root) the
@@ -285,12 +308,28 @@ export async function checkManifestFreshness(loadedMetadata, options = {}) {
     diagnostics.timestampSource = liveExtract.source;
 
     if (!loadedGeneratedAt || !liveGeneratedAt) {
+        // WF-FRESHNESS-ROOT-MANIFEST-001 — name the side that is missing so a
+        // live warning is actionable. The HAR shows the fetched manifest carries
+        // `generated_at`, so `missing-loaded-generated-at` points the diagnosis
+        // straight at the loaded-metadata capture rather than the published file.
+        let missingReason;
+        let missingError;
+        if (!loadedGeneratedAt && !liveGeneratedAt) {
+            missingReason = FRESHNESS_REASON.MISSING_BOTH_GENERATED_AT;
+            missingError = 'missing generated_at on both loaded and fetched manifest';
+        } else if (!loadedGeneratedAt) {
+            missingReason = FRESHNESS_REASON.MISSING_LOADED_GENERATED_AT;
+            missingError = 'missing generated_at on loaded manifest';
+        } else {
+            missingReason = FRESHNESS_REASON.MISSING_FETCHED_GENERATED_AT;
+            missingError = 'missing generated_at on fetched manifest';
+        }
         return makeResult(
             'unknown',
-            FRESHNESS_REASON.MISSING_GENERATED_AT,
+            missingReason,
             loadedGeneratedAt,
             liveGeneratedAt,
-            'missing generated_at',
+            missingError,
             diagnostics
         );
     }

@@ -140,7 +140,9 @@ preserved for backward compatibility.
 | `fetch-failed` | unknown | No fetch impl, or the request threw (offline, DNS, CSP `connect-src`, abort). |
 | `http-error` | unknown | Resolved but `response.ok` was false (404/403/5xx). |
 | `parse-failed` | unknown | 2xx body that is not JSON — **HTML 404 / SPA fallback served for manifest.json**. |
-| `missing-generated-at` | unknown | Loaded or live copy lacks a `generated_at` string. |
+| `missing-loaded-generated-at` | unknown | **Loaded** copy lacks `generated_at` while the live copy has it — loaded metadata not captured/preserved (WF-FRESHNESS-ROOT-MANIFEST-001). |
+| `missing-fetched-generated-at` | unknown | **Live** copy lacks `generated_at` while the loaded copy has it — wrong fetch target (e.g. `firmware/sources.json`, rescue manifest). |
+| `missing-both-generated-at` | unknown | Neither copy has a `generated_at` string. |
 | `invalid-generated-at` | unknown | `generated_at` present but not a parseable timestamp. |
 | `compare-failed` | unknown | Defensive — the timestamp comparison itself threw. |
 | `same-or-newer` | current | Loaded build is the latest published. |
@@ -162,8 +164,17 @@ freshness state is unknown, and read the diagnostic code:
 - `http-error` ⇒ the manifest URL is returning non-2xx (check the deployed path).
 - `fetch-failed` ⇒ network / CSP `connect-src` (manifest is same-origin, so this
   should be rare on Pages).
-- `missing-generated-at` / `invalid-generated-at` ⇒ a manifest-pipeline metadata
-  regression (should be caught by the manifest-health guard before deploy).
+- `missing-loaded-generated-at` ⇒ the loaded metadata was not captured/preserved
+  (WF-FRESHNESS-ROOT-MANIFEST-001 fix: `loadManifestData()` now calls
+  `captureManifestMetadata()` on every successful load and clears it on a failed
+  load). HAR capture confirmed the live `/WebFlash/manifest.json` is valid JSON
+  with a top-level `generated_at`, so this is a loaded-side bug, **not** a bad
+  published manifest.
+- `missing-fetched-generated-at` ⇒ the recheck reached JSON that is not the root
+  manifest (wrong target). Verify `…/WebFlash/manifest.json` is what's fetched.
+- `missing-both-generated-at` / `invalid-generated-at` ⇒ a manifest-pipeline
+  metadata regression (should be caught by the manifest-health guard before
+  deploy).
 
 ---
 

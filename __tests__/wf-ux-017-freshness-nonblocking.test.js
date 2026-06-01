@@ -14,7 +14,8 @@
  * WF-UX-017:
  *   1. manifest-freshness.js attaches a structured `reason` code to every
  *      verdict so a failing live GitHub Pages recheck is observable
- *      (fetch-failed / http-error / parse-failed / missing-generated-at /
+ *      (fetch-failed / http-error / parse-failed / missing-loaded-generated-at /
+ *      missing-fetched-generated-at / missing-both-generated-at /
  *      invalid-generated-at / compare-failed / same-or-newer / stale).
  *   2. evaluateFreshnessGate() is the SOLE freshness authority: 'unknown' is
  *      non-blocking in Simple install (advanced keeps the acknowledgement gate),
@@ -59,10 +60,11 @@ describe('WF-UX-017 — manifest-freshness reason codes', () => {
         return import('../scripts/services/manifest-freshness.js');
     }
 
-    test('exports the eight canonical reason codes', async () => {
+    test('exports the ten canonical reason codes (missing-generated-at split per side)', async () => {
         const { FRESHNESS_REASON } = await svc();
         expect(new Set(Object.values(FRESHNESS_REASON))).toEqual(new Set([
-            'fetch-failed', 'http-error', 'parse-failed', 'missing-generated-at',
+            'fetch-failed', 'http-error', 'parse-failed',
+            'missing-loaded-generated-at', 'missing-fetched-generated-at', 'missing-both-generated-at',
             'invalid-generated-at', 'compare-failed', 'same-or-newer', 'stale'
         ]));
     });
@@ -123,12 +125,28 @@ describe('WF-UX-017 — manifest-freshness reason codes', () => {
         expect(r.reason).toBe('parse-failed');
     });
 
-    test("a missing generated_at is reason 'missing-generated-at'", async () => {
+    test("a fetched manifest with no generated_at is reason 'missing-fetched-generated-at'", async () => {
         const { checkManifestFreshness } = await svc();
         const fetchImpl = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
         const r = await checkManifestFreshness(LOADED, { fetchImpl });
         expect(r.verdict).toBe('unknown');
-        expect(r.reason).toBe('missing-generated-at');
+        expect(r.reason).toBe('missing-fetched-generated-at');
+    });
+
+    test("a missing LOADED generated_at (live has it) is reason 'missing-loaded-generated-at'", async () => {
+        const { checkManifestFreshness } = await svc();
+        const fetchImpl = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ generated_at: '2026-05-04T00:00:00.000Z' }) }));
+        const r = await checkManifestFreshness(null, { fetchImpl });
+        expect(r.verdict).toBe('unknown');
+        expect(r.reason).toBe('missing-loaded-generated-at');
+    });
+
+    test("neither side carrying generated_at is reason 'missing-both-generated-at'", async () => {
+        const { checkManifestFreshness } = await svc();
+        const fetchImpl = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
+        const r = await checkManifestFreshness(null, { fetchImpl });
+        expect(r.verdict).toBe('unknown');
+        expect(r.reason).toBe('missing-both-generated-at');
     });
 
     test("an unparseable generated_at is reason 'invalid-generated-at'", async () => {
