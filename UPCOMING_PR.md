@@ -242,6 +242,41 @@ State of the repo at TRACKING-001:
   stale-manifest hard block, preview / TRIAC acknowledgement, workflow, or
   service-worker fetch-strategy change. Adds
   `__tests__/wf-ux-016-freshness-simple-copy.test.js`.
+- **WF-UX-017 make freshness unknown non-blocking in Simple install + diagnose
+  live freshness is in review.** Fixes the *gate* WF-UX-014/016 left in place:
+  the manifest-freshness signal was counted twice — as the dedicated
+  `evaluateFreshnessGate` **and** as a blocking preflight *warn* in
+  `window.latestPreflightChecks` — so on the live site `readyToFlash` stayed
+  `false` for an `unknown` verdict and the Install button stayed disabled even
+  with the calm copy. WF-UX-017 makes `evaluateFreshnessGate` the **single
+  freshness authority**: `unknown` is **non-blocking in Simple install** (the
+  selected stable build is present, signed, provenance-verified, installable),
+  Advanced install keeps the acknowledgement gate, and **stale stays a hard block
+  in both modes**. A new `evaluateGatingPreflightPolicy` excludes the
+  `manifest-freshness` row from the install-gating policy (render + both
+  click-time defense handlers) so the same signal can never double-block; the
+  full checks array still drives the diagnostics panel, preflight verdict, and
+  readiness reason. Simple-install status now reads **"Confirm before installing"**
+  (safety unchecked) → **"Ready to install"** (safety checked) with unknown
+  freshness; a **small secondary note** ("Couldn't recheck for updates. You can
+  reload, or continue with the firmware list already loaded.") carries the
+  signal, never the main status, with details behind Setup checks / Technical
+  details. Diagnosis: `scripts/services/manifest-freshness.js` now attaches a
+  structured `reason` code to every verdict (`fetch-failed` / `http-error` /
+  `parse-failed` / `missing-generated-at` / `invalid-generated-at` /
+  `compare-failed` / `same-or-newer` / `stale`) — `parse-failed` (a 2xx HTML / SPA
+  fallback served for `manifest.json`) is the likely live-Pages cause — surfaced
+  on the freshness row (`data-freshness-reason` + a visible diagnostic-code line)
+  and in the readiness broadcast. The `sw.js` `cache: 'no-store'` "bypasses the
+  SW" comment is corrected (the fetch *strategy* is unchanged); `CACHE_NAME`
+  bumps `webflash-v9` → `webflash-v10` and the five-way `?v=` token advances
+  `202606013` → `202606014` to re-prime the changed shell. Presentation/gate-only
+  — **no** firmware binary, `manifest.json`, `firmware/sources.json`,
+  `REQUIRED_CONFIGS`, `scripts/data/kits.json`, release-channel policy, provenance
+  verification, stable/preview rules, TRIAC policy, or service-worker
+  fetch-strategy change. Adds `__tests__/wf-ux-017-freshness-nonblocking.test.js`
+  and `docs/wf-ux-017-freshness-diagnosis.md`; updates the three superseded
+  WF-UX-016 simple-mode gate assertions.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:

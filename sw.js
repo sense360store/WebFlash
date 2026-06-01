@@ -64,7 +64,7 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v9';
+const CACHE_NAME = 'webflash-v10';
 const CACHE_VERSION = 5;
 
 /**
@@ -236,7 +236,15 @@ self.addEventListener('fetch', (event) => {
 
     // Manifests: network-first. The page additionally re-fetches with
     // `cache: 'no-store'` before flashing to compute a freshness verdict
-    // — that bypasses the SW entirely and goes straight to the network.
+    // (scripts/services/manifest-freshness.js). WF-UX-017 — `cache: 'no-store'`
+    // only bypasses the HTTP cache, NOT the service worker: that request still
+    // reaches this handler, where network-first re-fetches it fresh (and falls
+    // back to the cached copy only on a network error). Either way the response
+    // is a real manifest with `generated_at`, so the freshness check resolves to
+    // current/stale — never the opaque "unknown". A live "unknown" therefore
+    // points at the response NOT being a usable manifest (an HTML 404/SPA
+    // fallback served for manifest.json → reason `parse-failed`, or a non-2xx →
+    // `http-error`), which the freshness reason codes now make observable.
     if (url.pathname.endsWith('manifest.json')) {
         event.respondWith(
             fetch(event.request)

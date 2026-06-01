@@ -691,6 +691,23 @@ function evaluatePreflightPolicy(checks = []) {
     };
 }
 
+// WF-UX-017 — the install-gating preflight policy, computed over every check
+// EXCEPT manifest-freshness. The manifest-freshness axis is owned by the
+// dedicated freshness gate (evaluateFreshnessGate), which honours the stale hard
+// block and the Simple-mode "unknown is non-blocking" rule. Leaving the
+// manifest-freshness row in the gating policy double-counted the same signal:
+// an 'unknown' verdict makes the row a blocking *warn*, which flipped
+// preflightPolicy.canInstall to false and re-blocked the Simple stable install
+// even though the loaded build is signed, provenance-verified and installable —
+// the exact bug WF-UX-017 fixes. The full checks array still feeds the
+// diagnostics panel + verdict and the readiness REASON; only the install gate
+// (render time AND the click-time defense handlers) reads this filtered policy,
+// so the two can never disagree.
+function evaluateGatingPreflightPolicy(checks = []) {
+    const list = Array.isArray(checks) ? checks : [];
+    return evaluatePreflightPolicy(list.filter(check => check && check.key !== 'manifest-freshness'));
+}
+
 // WF-UX-004: presentation-only verdict over the same checks array that feeds
 // evaluatePreflightPolicy(). Returns one of three user-facing states — ready,
 // attention, blocked — so the Step 5 preflight panel can render a single
@@ -740,9 +757,17 @@ function evaluateFreshnessGate() {
         : { updateAvailable: false, updateDismissed: false };
     const swUpdateBlocking = Boolean(swState.updateAvailable) && !swState.updateDismissed;
     const manifestStaleBlocking = manifestFreshnessHasRun && manifestFreshnessState === 'stale';
+    // WF-UX-017 — "unknown" means WebFlash could not RECHECK the latest firmware
+    // list; it is NOT evidence that the loaded build is stale. In Simple install
+    // the loaded stable build is present, signed, provenance-verified and
+    // installable, so an unknown verdict must not block the normal customer path
+    // (a small calm secondary note + the Setup-checks diagnostics carry the
+    // signal). Advanced install keeps the acknowledgement gate so the full
+    // diagnostic flow is unchanged. Stale stays a hard block in BOTH modes.
     const manifestUnknownBlocking = manifestFreshnessHasRun
         && manifestFreshnessState === 'unknown'
-        && !manifestFreshnessAck;
+        && !manifestFreshnessAck
+        && !isSimpleInstallMode();
     let blockingReason = '';
     if (swUpdateBlocking) {
         blockingReason = 'A WebFlash update is available. Reload before flashing to use the latest installer and firmware metadata.';
@@ -3656,7 +3681,12 @@ function updateFirmwareControls() {
     const isFailed = verificationStatus === 'failed';
     const isAcknowledged = Boolean(preFlashAcknowledged);
     const preflightChecks = Array.isArray(window.latestPreflightChecks) ? window.latestPreflightChecks : [];
-    const preflightPolicy = evaluatePreflightPolicy(preflightChecks);
+    // WF-UX-017 — gate on every check EXCEPT manifest-freshness; the freshness
+    // axis is owned by evaluateFreshnessGate() below (see
+    // evaluateGatingPreflightPolicy). This keeps the dedicated freshness gate
+    // the single freshness authority and stops an 'unknown' verdict from
+    // double-blocking the install as both a preflight warn and a freshness block.
+    const preflightPolicy = evaluateGatingPreflightPolicy(preflightChecks);
     const blockingReason = preflightPolicy.blockingReasons[0] || '';
     const outstandingChannelAcks = getOutstandingChannelAcknowledgements(window.currentFirmware);
     const channelAcksSatisfied = outstandingChannelAcks.length === 0;
@@ -3903,10 +3933,10 @@ function updateFirmwareControls() {
     try {
         // WF-UX-016 — attribute the freshness axis to its own reason instead of
         // letting the manifest-freshness preflight row double-count as a generic
-        // 'preflight-fail'/'preflight-warn'. See deriveInstallReadinessReason().
-        const nonFreshnessPolicy = evaluatePreflightPolicy(
-            preflightChecks.filter(check => check && check.key !== 'manifest-freshness')
-        );
+        // 'preflight-fail'/'preflight-warn'. WF-UX-017 — `preflightPolicy` is now
+        // already computed over the NON-freshness checks (the freshness axis is
+        // the dedicated gate), so it is exactly the non-freshness verdict the
+        // reason derivation needs; no second filtered policy is required.
         const readinessReason = deriveInstallReadinessReason({
             hasFirmware,
             isPending,
@@ -3914,8 +3944,8 @@ function updateFirmwareControls() {
             isAcknowledged,
             advancedWarningAcksSatisfied,
             channelAcksSatisfied,
-            nonFreshnessCanInstall: nonFreshnessPolicy.canInstall,
-            nonFreshnessRequiresWarnAck: nonFreshnessPolicy.requiresWarnAcknowledgement,
+            nonFreshnessCanInstall: preflightPolicy.canInstall,
+            nonFreshnessRequiresWarnAck: preflightPolicy.requiresWarnAcknowledgement,
             swUpdateBlocking,
             manifestStaleBlocking,
             manifestUnknownBlocking: freshness.manifestUnknownBlocking,
@@ -3933,7 +3963,19 @@ function updateFirmwareControls() {
             ready: readyToFlash,
             level: readinessLevel,
             reason: readinessReason,
-            message: helperContext.text || ''
+            message: helperContext.text || '',
+            // WF-UX-017 — publish the freshness axis separately so the Simple
+            // hero can render a small, calm secondary note ("Couldn't recheck
+            // for updates…") WITHOUT it ever being the main install status, and
+            // so Setup checks can surface the diagnosis reason code. This mirrors
+            // already-decided state; it introduces no gate.
+            freshness: {
+                state: manifestFreshnessState,
+                hasRun: manifestFreshnessHasRun,
+                acknowledged: manifestFreshnessAck,
+                reason: (manifestFreshnessDetail && manifestFreshnessDetail.reason) || null,
+                hardBlock: Boolean(manifestStaleBlocking || swUpdateBlocking)
+            }
         };
         window.webflashInstallReadiness = installReadiness;
         if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
@@ -4427,6 +4469,25 @@ function syncManifestFreshnessInlineControls(statusList) {
     const item = statusList.querySelector('[data-preflight-item="manifest-freshness"]');
     if (!item) {
         return;
+    }
+
+    // WF-UX-017 — expose the structured freshness diagnosis reason code on the
+    // row (data-freshness-reason) so opening "Setup checks" reveals WHY the live
+    // recheck did not confirm freshness (fetch-failed / http-error / parse-failed
+    // / missing-generated-at / invalid-generated-at / compare-failed /
+    // same-or-newer / stale) instead of an opaque "unknown". Also mirrored into a
+    // small, support-only [data-freshness-reason-code] line when present in the
+    // markup. The code is machine-readable diagnostics, not customer copy.
+    const freshnessReason = (manifestFreshnessDetail && manifestFreshnessDetail.reason) || '';
+    if (freshnessReason) {
+        item.setAttribute('data-freshness-reason', freshnessReason);
+    } else {
+        item.removeAttribute('data-freshness-reason');
+    }
+    const reasonCodeEl = item.querySelector('[data-freshness-reason-code]');
+    if (reasonCodeEl) {
+        reasonCodeEl.textContent = freshnessReason ? `Diagnostic code: ${freshnessReason}` : '';
+        reasonCodeEl.hidden = !freshnessReason;
     }
 
     // WF-UX-016 — route the row's label / detail / acknowledgement copy through
@@ -6574,7 +6635,10 @@ function attachInstallButtonListeners() {
 
         if (activateButton && activateButton.dataset.installBound !== 'true') {
             activateButton.addEventListener('click', event => {
-                const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
+                // WF-UX-017 — gate on the non-freshness policy + the dedicated
+                // freshness gate, matching updateFirmwareControls() exactly so the
+                // rendered button state and this click-time defense never disagree.
+                const policy = evaluateGatingPreflightPolicy(window.latestPreflightChecks || []);
                 const outstandingAcks = getOutstandingChannelAcknowledgements(window.currentFirmware);
                 const freshness = evaluateFreshnessGate();
                 if (!policy.canInstall || outstandingAcks.length > 0 || !freshness.ok) {
@@ -6660,7 +6724,9 @@ function bindSummaryInstallButton() {
     summaryButton.dataset.installRelay = 'true';
     summaryButton.addEventListener('click', event => {
         event.preventDefault();
-        const policy = evaluatePreflightPolicy(window.latestPreflightChecks || []);
+        // WF-UX-017 — same freshness-excluded gating policy as the primary
+        // install button + updateFirmwareControls (see evaluateGatingPreflightPolicy).
+        const policy = evaluateGatingPreflightPolicy(window.latestPreflightChecks || []);
         const freshness = evaluateFreshnessGate();
         if (!policy.canInstall
             || getOutstandingChannelAcknowledgements(window.currentFirmware).length > 0
@@ -7460,6 +7526,9 @@ export const __testHooks = Object.freeze({
     setManifestFreshnessState,
     setManifestFreshnessAcknowledgement,
     checkManifestFreshnessNow,
+    evaluateGatingPreflightPolicy,
+    getManifestFreshnessDetail: () => (manifestFreshnessDetail ? { ...manifestFreshnessDetail } : null),
+    getInstallReadiness: () => (typeof window !== 'undefined' ? window.webflashInstallReadiness || null : null),
     getManifestMetadata,
     postFlashService
 });
