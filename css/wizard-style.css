@@ -5724,6 +5724,117 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     line-height: 1.5;
 }
 
+/* WF-UX-010 — Step 1 hierarchy: dominant stable kit, clearly-secondary
+   preview, and quiet "other ways to start" paths. Presentation-only. */
+
+/* Stack the available bundles vertically so the stable kit reads as the
+   single primary action and the preview kit sits clearly beneath it. */
+.bundle-presets__grid--stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Dominant primary install card — the safe path for a normal customer. */
+.bundle-preset-card--primary {
+    border-width: 2px;
+    border-color: var(--brand-green-contrast, #1f9e6b);
+    background: var(--brand-green-selection-surface-subtle, var(--brand-green-tint));
+    padding: 22px 22px 20px;
+    gap: 8px;
+}
+
+.bundle-preset-card--primary .bundle-preset-card__title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.bundle-preset-card--primary:hover,
+.bundle-preset-card--primary:focus-visible {
+    box-shadow: 0 0 0 3px var(--brand-green-selection-surface-subtle, rgba(31, 158, 107, 0.18));
+}
+
+/* Channel sub-line: leads with Stable / Preview, above the SKU/config meta. */
+.bundle-preset-card__channel {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.bundle-preset-card__channel--stable {
+    color: var(--brand-green-contrast-hover, #0F766E);
+}
+
+.bundle-preset-card__channel--preview {
+    color: #7c4a03;
+}
+
+/* Primary call-to-action affordance on the dominant card. */
+.bundle-preset-card__cta {
+    margin-top: 8px;
+    align-self: flex-start;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: var(--brand-green-contrast, #1f9e6b);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.bundle-preset-card--primary:hover .bundle-preset-card__cta,
+.bundle-preset-card--primary:focus-visible .bundle-preset-card__cta {
+    background: var(--brand-green-contrast-hover, #0F766E);
+}
+
+/* Secondary preview card — visible but visually subordinate to the primary. */
+.bundle-preset-card--secondary {
+    padding: 14px 16px;
+    background: var(--color-surface);
+}
+
+.bundle-preset-card--secondary .bundle-preset-card__title {
+    font-size: 14.5px;
+    font-weight: 600;
+}
+
+/* "Other ways to start" — the secondary path cards, set off below the kit. */
+.start-paths-section--secondary {
+    margin: 0 0 18px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border);
+}
+
+.start-paths__heading {
+    margin: 14px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+}
+
+.start-paths__intro {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+}
+
+.start-paths--secondary {
+    margin-bottom: 0;
+}
+
+/* Quiet modifier: Advanced setup + Recovery must not carry equal visual
+   weight to the dominant kit card. */
+.start-path-card--quiet {
+    padding: 14px 16px;
+    background: var(--color-surface-elevated, var(--color-surface));
+}
+
+.start-path-card--quiet .start-path-card__title {
+    font-size: 14.5px;
+}
+
 /* WF-UX-006 — Step 1 path selector (kit / custom / recovery). */
 .start-paths {
     display: grid;
