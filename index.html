@@ -171,63 +171,113 @@
                 </aside>
 
                 <main class="wizard-main" id="main-content" tabindex="-1">
-                    <!-- WF-UX-011 — Simple install mode (default). A product-focused
-                         landing for the stable Sense360 Bathroom PoE kit that minimises
-                         choices and hides planning / technical detail, while reusing the
-                         Step 5 install surface and every existing install gate
-                         (preflight policy, manifest freshness, release-channel + advanced
-                         acknowledgements, provenance / installability). The full wizard is
-                         preserved behind "Advanced setup". The active view is controlled
-                         by data-install-mode on <html> (scripts/simple-install.js); with
-                         JS disabled the wizard markup below remains the usable surface.
-                         Presentation-only — no change to firmware, manifest.json,
-                         firmware/sources.json, REQUIRED_CONFIGS, release-channel policy,
-                         installability logic, workflows, or the service-worker cache
-                         strategy. -->
+                    <!-- WF-UX-012 — Split the first choice into two clear paths:
+                         "Simple install" (recommended, default) and "Advanced install".
+                         Builds on WF-UX-011's Simple install mode: Step 1 now leads with an
+                         explicit two-option path picker. Simple install shows one clean
+                         product card for the stable Sense360 Bathroom PoE kit (preselected,
+                         one safety confirmation, the Install action) and hides the planning
+                         / technical / preflight-diagnostic chrome; Advanced install reveals
+                         the full multi-step builder. The active view is controlled by
+                         data-install-mode on <html> (scripts/simple-install.js); with JS
+                         disabled the wizard markup below remains the usable surface.
+                         Presentation-only — every install gate (preflight policy, manifest
+                         freshness, release-channel + advanced acknowledgements, provenance /
+                         installability) stays authoritative in state.js, and no change is
+                         made to firmware, manifest.json, firmware/sources.json,
+                         REQUIRED_CONFIGS, release-channel policy, installability logic,
+                         workflows, or the service-worker cache strategy. -->
                     <div class="install-mode-bar" data-advanced-bar hidden aria-hidden="true">
                         <button type="button" class="btn btn-link install-mode-bar__back" data-enter-simple>&larr; Back to simple install</button>
-                        <span class="install-mode-bar__label">Advanced setup</span>
+                        <span class="install-mode-bar__label">Advanced install</span>
                     </div>
 
                     <section class="simple-install" data-simple-install aria-labelledby="simple-install-heading" hidden aria-hidden="true">
-                        <p class="simple-install__eyebrow"><span class="simple-install__badge">Recommended</span> Stable firmware</p>
-                        <h2 id="simple-install-heading" class="simple-install__title">Sense360 Bathroom PoE Kit</h2>
-                        <p class="simple-install__lead">Install the production firmware for the kit you bought. Connect your hub over USB and install it right here in your browser &mdash; nothing to configure.</p>
-
-                        <ul class="simple-install__summary" aria-label="What is included in this kit">
-                            <li class="simple-install__summary-item">Sense360 Core</li>
-                            <li class="simple-install__summary-item">RoomIQ room sensing</li>
-                            <li class="simple-install__summary-item">VentIQ bathroom air sensing</li>
-                            <li class="simple-install__summary-item">Power over Ethernet (PoE)</li>
-                        </ul>
-
-                        <div class="simple-install__status" data-simple-install-status data-level="pending" role="status" aria-live="polite">
-                            <p class="simple-install__status-title" data-simple-install-status-title>Getting things ready&hellip;</p>
-                            <p class="simple-install__status-detail" data-simple-install-status-detail>Preparing your firmware.</p>
-                            <div class="simple-install__status-actions" data-simple-install-status-actions hidden aria-hidden="true"></div>
+                        <!-- WF-UX-012 — the first choice: Simple install (recommended,
+                             default) vs Advanced install. Selecting Advanced install
+                             switches data-install-mode to "advanced" and reveals the full
+                             wizard; Simple install keeps the clean product card below. -->
+                        <div class="install-path-choice" data-install-path-choice role="group" aria-label="Choose how to install">
+                            <button
+                                type="button"
+                                class="install-path-choice__option install-path-choice__option--simple is-active"
+                                data-install-path="simple"
+                                aria-pressed="true"
+                            >
+                                <span class="install-path-choice__badge" data-install-path-recommended>Recommended</span>
+                                <span class="install-path-choice__title">Simple install</span>
+                                <span class="install-path-choice__desc">Install the supported firmware for the Sense360 Bathroom PoE Kit. Nothing to configure &mdash; this is the right choice for most customers.</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="install-path-choice__option install-path-choice__option--advanced"
+                                data-install-path="advanced"
+                                aria-pressed="false"
+                            >
+                                <span class="install-path-choice__title">Advanced install</span>
+                                <span class="install-path-choice__desc">Build a configuration module by module, choose a different kit, or open the recovery tools.</span>
+                            </button>
                         </div>
 
-                        <details class="simple-install__tech" data-simple-install-tech>
-                            <summary class="simple-install__tech-summary">Technical details</summary>
-                            <dl class="simple-install__tech-list">
-                                <div class="simple-install__tech-row">
-                                    <dt>Kit</dt>
-                                    <dd data-simple-install-tech-sku>S360-KIT-BATH-POE</dd>
-                                </div>
-                                <div class="simple-install__tech-row">
-                                    <dt>Configuration</dt>
-                                    <dd data-simple-install-tech-config>Ceiling-POE-VentIQ-RoomIQ</dd>
-                                </div>
-                                <div class="simple-install__tech-row">
-                                    <dt>Release channel</dt>
-                                    <dd>Stable</dd>
-                                </div>
-                            </dl>
-                        </details>
+                        <div class="simple-install__card" data-simple-install-card>
+                            <p class="simple-install__eyebrow">Stable firmware &middot; v1.0.0</p>
+                            <h2 id="simple-install-heading" class="simple-install__title">Sense360 Bathroom PoE Kit</h2>
+                            <p class="simple-install__lead">Install the production firmware for the kit you bought. Connect your hub over USB and install it right here in your browser &mdash; nothing to configure.</p>
 
-                        <p class="simple-install__advanced">
-                            <button type="button" class="btn btn-link simple-install__advanced-link" data-enter-advanced>Advanced setup &mdash; choose a different kit or build a custom configuration</button>
-                        </p>
+                            <ul class="simple-install__summary" aria-label="What is included in this kit">
+                                <li class="simple-install__summary-item">Sense360 Core</li>
+                                <li class="simple-install__summary-item">RoomIQ room sensing</li>
+                                <li class="simple-install__summary-item">VentIQ bathroom air sensing</li>
+                                <li class="simple-install__summary-item">Power over Ethernet (PoE)</li>
+                            </ul>
+
+                            <div class="simple-install__status" data-simple-install-status data-level="pending" role="status" aria-live="polite">
+                                <p class="simple-install__status-title" data-simple-install-status-title>Getting things ready&hellip;</p>
+                                <p class="simple-install__status-detail" data-simple-install-status-detail>Preparing your firmware.</p>
+                                <div class="simple-install__status-actions" data-simple-install-status-actions hidden aria-hidden="true"></div>
+                            </div>
+
+                            <!-- WF-UX-012 — the single safety confirmation for the Simple
+                                 install path. It mirrors the authoritative "Before you flash"
+                                 acknowledgement ([data-preflash-acknowledge]) in Step 5 so the
+                                 install gate is unchanged; checking it here checks the real
+                                 control via scripts/simple-install.js. Calm, non-scary copy:
+                                 no "accept the risk" wording in the default path. -->
+                            <label class="simple-install__confirm" data-simple-install-confirm-control>
+                                <input type="checkbox" data-simple-install-confirm aria-describedby="simple-install-confirm-desc">
+                                <span id="simple-install-confirm-desc"><strong>Confirm before installing.</strong> I&rsquo;ll keep my Sense360 hub powered and connected over USB until the install finishes.</span>
+                            </label>
+
+                            <details class="simple-install__tech" data-simple-install-tech>
+                                <summary class="simple-install__tech-summary">Technical details</summary>
+                                <dl class="simple-install__tech-list">
+                                    <div class="simple-install__tech-row">
+                                        <dt>Kit</dt>
+                                        <dd data-simple-install-tech-sku>S360-KIT-BATH-POE</dd>
+                                    </div>
+                                    <div class="simple-install__tech-row">
+                                        <dt>Configuration</dt>
+                                        <dd data-simple-install-tech-config>Ceiling-POE-VentIQ-RoomIQ</dd>
+                                    </div>
+                                    <div class="simple-install__tech-row">
+                                        <dt>Release channel</dt>
+                                        <dd>Stable</dd>
+                                    </div>
+                                </dl>
+                            </details>
+
+                            <!-- WF-UX-012 — small, quiet secondary links kept available in
+                                 the Simple install path: Setup checks (opens the preflight
+                                 diagnostics), Advanced install (full wizard), Recovery (rescue
+                                 modal). These stay subordinate to the primary Install action. -->
+                            <p class="simple-install__links" data-simple-install-links>
+                                <button type="button" class="btn btn-link simple-install__link" data-open-setup-checks>Setup checks</button>
+                                <span class="simple-install__link-sep" aria-hidden="true">&middot;</span>
+                                <button type="button" class="btn btn-link simple-install__link" data-enter-advanced>Advanced install</button>
+                                <span class="simple-install__link-sep" aria-hidden="true">&middot;</span>
+                                <button type="button" class="btn btn-link simple-install__link" data-rescue-open aria-haspopup="dialog">Recovery</button>
+                            </p>
+                        </div>
                     </section>
 
                     <div class="progress-bar progress-bar--mobile" aria-hidden="true">
