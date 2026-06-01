@@ -123,10 +123,13 @@ describe('WF-UX-011 — static markup', () => {
     });
 
     describe('Advanced setup remains available', () => {
-        test('the hero exposes an Advanced setup affordance', () => {
+        test('the hero exposes an Advanced install affordance', () => {
+            // WF-UX-012 renamed the hero affordance to "Advanced install" and
+            // promoted it into the first-choice path picker; a quiet
+            // [data-enter-advanced] secondary link is also kept available.
             const advanced = document.querySelector('[data-simple-install] [data-enter-advanced]');
             expect(advanced).not.toBeNull();
-            expect(advanced.textContent).toMatch(/Advanced setup/i);
+            expect(advanced.textContent).toMatch(/Advanced install/i);
         });
 
         test('an advanced-mode bar offers a way back to simple install', () => {

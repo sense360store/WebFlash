@@ -42,6 +42,10 @@ const REVIEW_STEP = 5;
 const SIMPLE_INSTALL_SELECTOR = '[data-simple-install]';
 const ADVANCED_BAR_SELECTOR = '[data-advanced-bar]';
 const STATUS_SELECTOR = '[data-simple-install-status]';
+// WF-UX-012 — the first-choice path picker and the single safety confirmation.
+const PATH_CHOICE_SELECTOR = '[data-install-path]';
+const CONFIRM_SELECTOR = '[data-simple-install-confirm]';
+const PREFLASH_ACK_SELECTOR = '[data-preflash-acknowledge]';
 
 // A clean module slate so switching from the advanced wizard back into the
 // stable kit never carries a stray module selection forward. Mirrors the
@@ -178,6 +182,103 @@ function getAdvancedBar() {
 }
 
 /**
+ * Reflect the active path on the first-choice picker (Simple vs Advanced):
+ * the matching option reads `aria-pressed="true"` + `.is-active`. Safe to call
+ * when the picker is absent (older embeds / unit fixtures without it).
+ *
+ * @param {'simple'|'advanced'} next
+ */
+function syncPathChoice(next) {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    document.querySelectorAll(PATH_CHOICE_SELECTOR).forEach((button) => {
+        const isActive = button.getAttribute('data-install-path') === next;
+        button.setAttribute('aria-pressed', String(isActive));
+        button.classList.toggle('is-active', isActive);
+    });
+}
+
+/**
+ * Open the Step 5 preflight diagnostics ("Setup checks"). Reused by the status
+ * "Show details" action and the Simple-card "Setup checks" link so there is a
+ * single way to reveal the (otherwise hidden) diagnostic rows. The preflight
+ * panel and its details disclosure stay in the DOM in simple mode — only the
+ * always-on verdict box is visually suppressed — so opening it here works.
+ */
+function openPreflightDetails() {
+    const details = document.querySelector('#step-5 [data-preflight-details]')
+        || document.querySelector('[data-preflight-details]');
+    if (!details) {
+        return false;
+    }
+    details.open = true;
+    const summary = details.querySelector('summary');
+    if (summary && typeof summary.focus === 'function') {
+        try { summary.focus(); } catch { /* ignore */ }
+    }
+    if (typeof details.scrollIntoView === 'function') {
+        try { details.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ }
+    }
+    return true;
+}
+
+/**
+ * Mirror the Simple-card safety confirmation onto the authoritative Step 5
+ * "Before you flash" acknowledgement so the install gate is never duplicated or
+ * bypassed: state.js keeps reading `[data-preflash-acknowledge]`. The two stay
+ * in sync in both directions without an event loop — each handler only copies
+ * the boolean, and only the simple→real direction re-dispatches a `change` so
+ * state.js recomputes the gate.
+ */
+function bindSafetyConfirmMirror() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const heroAck = document.querySelector(CONFIRM_SELECTOR);
+    if (heroAck && heroAck.dataset.confirmMirrorBound !== 'true') {
+        heroAck.addEventListener('change', () => {
+            const realAck = document.querySelector(PREFLASH_ACK_SELECTOR);
+            if (realAck && realAck.checked !== heroAck.checked) {
+                realAck.checked = heroAck.checked;
+                try {
+                    realAck.dispatchEvent(new Event('change', { bubbles: true }));
+                } catch {
+                    // restricted environments — the value is still set.
+                }
+            }
+        });
+        heroAck.dataset.confirmMirrorBound = 'true';
+    }
+
+    const realAck = document.querySelector(PREFLASH_ACK_SELECTOR);
+    if (realAck && realAck.dataset.simpleConfirmMirrorBound !== 'true') {
+        realAck.addEventListener('change', () => {
+            const hero = document.querySelector(CONFIRM_SELECTOR);
+            if (hero && hero.checked !== realAck.checked) {
+                hero.checked = realAck.checked;
+            }
+        });
+        realAck.dataset.simpleConfirmMirrorBound = 'true';
+    }
+}
+
+/**
+ * Pull the current authoritative acknowledgement state into the Simple-card
+ * confirmation so switching back into the simple view shows the real value.
+ */
+function syncSafetyConfirmFromGate() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const heroAck = document.querySelector(CONFIRM_SELECTOR);
+    const realAck = document.querySelector(PREFLASH_ACK_SELECTOR);
+    if (heroAck && realAck && heroAck.checked !== realAck.checked) {
+        heroAck.checked = realAck.checked;
+    }
+}
+
+/**
  * Render the plain-language status into the simple hero. Safe to call when the
  * hero is hidden (advanced mode) — it just keeps the status warm.
  *
@@ -242,6 +343,7 @@ function enterSimpleView() {
     } catch (error) {
         console.warn('[simple-install] advancing to review step failed:', error);
     }
+    syncSafetyConfirmFromGate();
     renderStatus(window.webflashInstallReadiness || lastReadiness);
 }
 
@@ -282,6 +384,8 @@ export function applyMode(mode, { persist = true } = {}) {
         advancedBar.hidden = next !== 'advanced';
         advancedBar.setAttribute('aria-hidden', String(next !== 'advanced'));
     }
+
+    syncPathChoice(next);
 
     if (persist) {
         try {
@@ -372,18 +476,7 @@ function handleStatusAction(target) {
         return true;
     }
     if (action === 'details') {
-        const details = document.querySelector('#step-5 [data-preflight-details]')
-            || document.querySelector('[data-preflight-details]');
-        if (details) {
-            details.open = true;
-            const summary = details.querySelector('summary');
-            if (summary && typeof summary.focus === 'function') {
-                try { summary.focus(); } catch { /* ignore */ }
-            }
-            if (typeof details.scrollIntoView === 'function') {
-                try { details.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ }
-            }
-        }
+        openPreflightDetails();
         return true;
     }
     return false;
@@ -395,10 +488,31 @@ function handleDocumentClick(event) {
         return;
     }
 
+    // WF-UX-012 — the first-choice path picker. An explicit Simple/Advanced
+    // button takes priority and routes through the same applyMode() the legacy
+    // [data-enter-*] links use, so the picker, the secondary links, and the
+    // advanced-bar "back" control stay consistent.
+    const pathButton = target.closest('[data-install-path]');
+    if (pathButton) {
+        event.preventDefault();
+        const path = pathButton.getAttribute('data-install-path') === 'advanced' ? 'advanced' : 'simple';
+        applyMode(path);
+        announce(path === 'advanced'
+            ? 'Advanced install. The full firmware wizard is now shown.'
+            : 'Simple install. Showing the stable Sense360 Bathroom PoE kit.');
+        return;
+    }
+
+    if (target.closest('[data-open-setup-checks]')) {
+        event.preventDefault();
+        openPreflightDetails();
+        return;
+    }
+
     if (target.closest('[data-enter-advanced]')) {
         event.preventDefault();
         applyMode('advanced');
-        announce('Advanced setup. The full firmware wizard is now shown.');
+        announce('Advanced install. The full firmware wizard is now shown.');
         return;
     }
     if (target.closest('[data-enter-simple]')) {
@@ -429,6 +543,7 @@ export function initSimpleInstall() {
     }
     document.addEventListener('click', handleDocumentClick);
     subscribeReadiness();
+    bindSafetyConfirmMirror();
     const mode = resolveInitialMode();
     applyMode(mode, { persist: false });
 }
@@ -447,6 +562,10 @@ export const __testHooks = Object.freeze({
     resolveInitialMode,
     renderStatus,
     describeReadiness,
+    syncPathChoice,
+    openPreflightDetails,
+    bindSafetyConfirmMirror,
+    syncSafetyConfirmFromGate,
     getLastReadiness: () => lastReadiness,
     resetForTests: () => { lastReadiness = null; },
     STORAGE_KEY,

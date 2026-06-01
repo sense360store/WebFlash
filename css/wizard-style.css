@@ -6395,6 +6395,114 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     font-weight: 600;
 }
 
+/* --- WF-UX-012 — Simple vs Advanced path picker (the first choice) -------- */
+.install-path-choice {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 0 0 20px;
+}
+
+.install-path-choice__option {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.install-path-choice__option:hover {
+    border-color: var(--brand-green, #14B8A6);
+}
+
+.install-path-choice__option:focus-visible {
+    outline: 2px solid var(--brand-green, #14B8A6);
+    outline-offset: 2px;
+}
+
+.install-path-choice__option.is-active,
+.install-path-choice__option[aria-pressed="true"] {
+    border-color: var(--brand-green-selection-border, var(--brand-green, #14B8A6));
+    background: var(--brand-green-selection-surface-subtle, var(--bg-elev-1));
+    box-shadow: 0 0 0 1px var(--brand-green-selection-border, var(--brand-green, #14B8A6)) inset;
+}
+
+.install-path-choice__badge {
+    align-self: flex-start;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--brand-green, #14B8A6);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.install-path-choice__title {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.install-path-choice__desc {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+/* --- WF-UX-012 — Simple install product card ----------------------------- */
+.simple-install__card {
+    margin: 0;
+}
+
+/* --- WF-UX-012 — single safety confirmation in the Simple install card ---- */
+.simple-install__confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.simple-install__confirm input[type="checkbox"] {
+    margin-top: 2px;
+    flex: 0 0 auto;
+}
+
+/* --- WF-UX-012 — quiet secondary links ----------------------------------- */
+.simple-install__links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.simple-install__link {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 2px 4px;
+}
+
+.simple-install__link-sep {
+    color: var(--text-muted);
+}
+
 /* --- Simple-mode install CTA next to the ESP Web Tools button ------------ */
 .firmware-section__simple-cta {
     display: none;
@@ -6434,7 +6542,24 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 [data-install-mode="simple"] #step-5 .review-task--kit,
 [data-install-mode="simple"] #step-5 .review-task__index,
 [data-install-mode="simple"] #step-5 .wizard-actions [data-back],
-[data-install-mode="simple"] .firmware-section__lead:not(.firmware-section__simple-cta) {
+[data-install-mode="simple"] .firmware-section__lead:not(.firmware-section__simple-cta),
+/* WF-UX-012 — the Simple install card carries the plain-language readiness
+   status and a single safety confirmation, so the Step 5 preflight verdict box,
+   the verbose "Before you flash" checklist, and the safety task heading/hint are
+   suppressed. This is presentation-only: the preflight panel (warnings + the
+   "Preflight details" disclosure reachable from "Setup checks"), the real
+   [data-preflash-acknowledge] gate control, and every other install gate stay in
+   the DOM and authoritative. Hiding the verdict box also prevents the simple path
+   from showing "Ready" and "Needs attention" at the same time. */
+[data-install-mode="simple"] #step-5 .preflight-panel__verdict,
+[data-install-mode="simple"] #step-5 .pre-flash-checklist,
+[data-install-mode="simple"] #step-5 .review-task--safety > .review-task__heading,
+[data-install-mode="simple"] #step-5 .review-task--safety > .review-task__hint,
+/* The "Preflight details" disclosure summary is suppressed in the simple path
+   because the card's "Setup checks" link is the way in; the disclosure body is
+   still revealed programmatically (open=true), and any preflight warning still
+   surfaces its acknowledgement control above it. */
+[data-install-mode="simple"] #step-5 .preflight-panel__details-summary {
     display: none !important;
 }
 

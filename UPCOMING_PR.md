@@ -94,6 +94,33 @@ State of the repo at TRACKING-001:
   `REQUIRED_CONFIGS`, release-channel policy, installability logic, workflow, or
   service-worker cache-strategy change. Adds
   `__tests__/wf-ux-011-simple-install.test.js`.
+- **WF-UX-012 Simple / Advanced install path split is in review.** Step 1 now
+  leads with an explicit two-option path picker — **Simple install**
+  (recommended, default) vs **Advanced install** — built on the WF-UX-011
+  `data-install-mode` mechanism (`[data-install-path-choice]` in the
+  `[data-simple-install]` hero, wired through `scripts/simple-install.js`).
+  Simple install shows one clean product card for the stable Sense360 Bathroom
+  PoE kit: product name, **Stable firmware · v1.0.0**, the included-hardware
+  summary, a single **"Confirm before installing"** safety checkbox, and the ESP
+  Web Tools install action — with the planning / technical / preflight-diagnostic
+  chrome hidden (the Step 5 preflight verdict box, the verbose "Before you flash"
+  checklist, and the preflight-details summary are suppressed in simple mode, so
+  the path never shows "Ready" and "Needs attention" at once). The single safety
+  checkbox mirrors the authoritative `[data-preflash-acknowledge]` control, so
+  the install gate is unchanged and never bypassed. Small secondary links (Setup
+  checks / Advanced install / Recovery) stay available; Advanced install reveals
+  the existing multi-step builder (Core / Power / Modules / Review, preview LED
+  flow, planned kits, fan variants, the TRIAC advanced/manual warning, SKU/config
+  search, diagnostics) unchanged. Markup + CSS + `scripts/simple-install.js`
+  (picker sync + safety-confirm mirror + Setup-checks open) + test only — no
+  firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`,
+  release-channel policy, installability logic, workflow, or service-worker
+  cache-strategy change; every install gate (preflight policy, manifest
+  freshness incl. the stale hard block, release-channel + advanced/manual
+  acknowledgements, provenance/installability) stays authoritative in
+  `state.js`. LED stays preview-only (acknowledgement required); every fan
+  variant stays non-installable; TRIAC stays advanced/manual-warning. Adds
+  `__tests__/wf-ux-012-install-paths.test.js`.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:
