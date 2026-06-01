@@ -6168,3 +6168,277 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 .kit-mode-panel[hidden] {
     display: none;
 }
+
+/* ============================================================================
+   WF-UX-011 — Simple install mode (default).
+
+   A product-focused landing for the stable Sense360 Bathroom PoE kit that
+   reuses the Step 5 install surface and every existing install gate. The
+   active view is selected by `data-install-mode` on <html>
+   (scripts/simple-install.js). Presentation-only: no install logic, firmware
+   selection, or gate is defined here.
+
+   - data-install-mode="simple": show the hero, hide the wizard chrome
+     (stepper, mobile progress, the Step 5 heading / kit-summary / Back button,
+     the freshness banner) so only the product hero + the install + safety
+     surface remain.
+   - data-install-mode="advanced" (and the no-attribute pre-JS default): the
+     full wizard is shown exactly as before; the hero is hidden.
+   ========================================================================== */
+
+/* --- Advanced-mode return bar -------------------------------------------- */
+.install-mode-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-elev-1);
+}
+
+.install-mode-bar__back {
+    font-weight: 600;
+}
+
+.install-mode-bar__label {
+    color: var(--text-muted);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+/* --- Simple install hero -------------------------------------------------- */
+.simple-install {
+    margin: 0 0 24px;
+    padding: 24px 24px 22px;
+    border: 2px solid var(--brand-green-selection-border, var(--brand-green));
+    border-radius: 14px;
+    background: var(--brand-green-selection-surface-subtle, var(--bg-elev-1));
+}
+
+.simple-install__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 4px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.simple-install__badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--brand-green, #14B8A6);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: none;
+}
+
+.simple-install__title {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--text);
+}
+
+.simple-install__lead {
+    margin: 0 0 16px;
+    max-width: 60ch;
+    color: var(--text-body, var(--text-muted));
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.simple-install__summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+}
+
+.simple-install__summary-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.simple-install__summary-item::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--brand-green, #14B8A6);
+}
+
+/* --- Plain-language readiness status ------------------------------------- */
+.simple-install__status {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.simple-install__status-title {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.simple-install__status-detail {
+    margin: 0;
+    color: var(--text-body, var(--text-muted));
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.simple-install__status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.simple-install__status-actions[hidden] {
+    display: none;
+}
+
+.simple-install__status[data-level="ready"] {
+    border-left-color: var(--success, #2ecc71);
+}
+
+.simple-install__status[data-level="attention"] {
+    border-left-color: var(--warning, #f4b400);
+    background: var(--warning-surface, var(--surface));
+}
+
+.simple-install__status[data-level="attention"] .simple-install__status-title {
+    color: var(--warning-strong, var(--text));
+}
+
+.simple-install__status[data-level="blocked"] {
+    border-left-color: var(--danger, #ff5c5c);
+    background: var(--danger-surface, var(--surface));
+}
+
+.simple-install__status[data-level="blocked"] .simple-install__status-title {
+    color: var(--danger-strong, var(--text));
+}
+
+.simple-install__status[data-level="pending"] {
+    border-left-color: var(--border);
+}
+
+/* --- Technical details disclosure + advanced link ------------------------ */
+.simple-install__tech {
+    margin: 0 0 12px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+}
+
+.simple-install__tech-summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.simple-install__tech-list {
+    margin: 10px 0 0;
+}
+
+.simple-install__tech-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13px;
+}
+
+.simple-install__tech-row dt {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.simple-install__tech-row dd {
+    margin: 0;
+    color: var(--text);
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+.simple-install__advanced {
+    margin: 0;
+}
+
+.simple-install__advanced-link {
+    font-weight: 600;
+}
+
+/* --- Simple-mode install CTA next to the ESP Web Tools button ------------ */
+.firmware-section__simple-cta {
+    display: none;
+    margin: 0 0 12px;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+/* ============================================================================
+   Mode visibility. Only the simple branch adds rules so the advanced wizard
+   (and the no-attribute pre-JS default) renders exactly as before.
+   ========================================================================== */
+[data-install-mode="advanced"] [data-advanced-bar] {
+    display: flex;
+}
+
+[data-install-mode="simple"] [data-simple-install] {
+    display: block;
+}
+
+[data-install-mode="simple"] .firmware-section__simple-cta {
+    display: block;
+}
+
+/* In simple mode the hero replaces the wizard chrome and the Step 5 review
+   heading / kit-summary / Back button; the freshness banner is suppressed
+   because the hero surfaces freshness in plain language. The capability
+   (browser-support) banner is intentionally NOT hidden. */
+[data-install-mode="simple"] .wizard-stepper,
+[data-install-mode="simple"] .progress-bar--mobile,
+[data-install-mode="simple"] .wizard-sidebar,
+[data-install-mode="simple"] [data-mobile-summary],
+[data-install-mode="simple"] [data-freshness-banner-mount],
+[data-install-mode="simple"] #step-5 > #step-5-heading,
+[data-install-mode="simple"] #step-5 > .step-intro,
+[data-install-mode="simple"] #step-5 .review-task--kit,
+[data-install-mode="simple"] #step-5 .review-task__index,
+[data-install-mode="simple"] #step-5 .wizard-actions [data-back],
+[data-install-mode="simple"] .firmware-section__lead:not(.firmware-section__simple-cta) {
+    display: none !important;
+}
+
+/* Let the Step 5 install surface fill the width once the stepper is gone. */
+[data-install-mode="simple"] .wizard-shell {
+    display: block;
+}

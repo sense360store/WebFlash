@@ -171,6 +171,65 @@
                 </aside>
 
                 <main class="wizard-main" id="main-content" tabindex="-1">
+                    <!-- WF-UX-011 — Simple install mode (default). A product-focused
+                         landing for the stable Sense360 Bathroom PoE kit that minimises
+                         choices and hides planning / technical detail, while reusing the
+                         Step 5 install surface and every existing install gate
+                         (preflight policy, manifest freshness, release-channel + advanced
+                         acknowledgements, provenance / installability). The full wizard is
+                         preserved behind "Advanced setup". The active view is controlled
+                         by data-install-mode on <html> (scripts/simple-install.js); with
+                         JS disabled the wizard markup below remains the usable surface.
+                         Presentation-only — no change to firmware, manifest.json,
+                         firmware/sources.json, REQUIRED_CONFIGS, release-channel policy,
+                         installability logic, workflows, or the service-worker cache
+                         strategy. -->
+                    <div class="install-mode-bar" data-advanced-bar hidden aria-hidden="true">
+                        <button type="button" class="btn btn-link install-mode-bar__back" data-enter-simple>&larr; Back to simple install</button>
+                        <span class="install-mode-bar__label">Advanced setup</span>
+                    </div>
+
+                    <section class="simple-install" data-simple-install aria-labelledby="simple-install-heading" hidden aria-hidden="true">
+                        <p class="simple-install__eyebrow"><span class="simple-install__badge">Recommended</span> Stable firmware</p>
+                        <h2 id="simple-install-heading" class="simple-install__title">Sense360 Bathroom PoE Kit</h2>
+                        <p class="simple-install__lead">Install the production firmware for the kit you bought. Connect your hub over USB and install it right here in your browser &mdash; nothing to configure.</p>
+
+                        <ul class="simple-install__summary" aria-label="What is included in this kit">
+                            <li class="simple-install__summary-item">Sense360 Core</li>
+                            <li class="simple-install__summary-item">RoomIQ room sensing</li>
+                            <li class="simple-install__summary-item">VentIQ bathroom air sensing</li>
+                            <li class="simple-install__summary-item">Power over Ethernet (PoE)</li>
+                        </ul>
+
+                        <div class="simple-install__status" data-simple-install-status data-level="pending" role="status" aria-live="polite">
+                            <p class="simple-install__status-title" data-simple-install-status-title>Getting things ready&hellip;</p>
+                            <p class="simple-install__status-detail" data-simple-install-status-detail>Preparing your firmware.</p>
+                            <div class="simple-install__status-actions" data-simple-install-status-actions hidden aria-hidden="true"></div>
+                        </div>
+
+                        <details class="simple-install__tech" data-simple-install-tech>
+                            <summary class="simple-install__tech-summary">Technical details</summary>
+                            <dl class="simple-install__tech-list">
+                                <div class="simple-install__tech-row">
+                                    <dt>Kit</dt>
+                                    <dd data-simple-install-tech-sku>S360-KIT-BATH-POE</dd>
+                                </div>
+                                <div class="simple-install__tech-row">
+                                    <dt>Configuration</dt>
+                                    <dd data-simple-install-tech-config>Ceiling-POE-VentIQ-RoomIQ</dd>
+                                </div>
+                                <div class="simple-install__tech-row">
+                                    <dt>Release channel</dt>
+                                    <dd>Stable</dd>
+                                </div>
+                            </dl>
+                        </details>
+
+                        <p class="simple-install__advanced">
+                            <button type="button" class="btn btn-link simple-install__advanced-link" data-enter-advanced>Advanced setup &mdash; choose a different kit or build a custom configuration</button>
+                        </p>
+                    </section>
+
                     <div class="progress-bar progress-bar--mobile" aria-hidden="true">
                         <div class="progress-step active" data-step="1" data-reachable="true">
                             <div class="step-number">1</div>
@@ -1080,6 +1139,12 @@
                 <div class="firmware-section">
                     <p class="firmware-section__lead">
                         Click <strong>Install Firmware</strong> on the firmware card below to flash your hub over USB.
+                    </p>
+                    <!-- WF-UX-011 — Simple-mode install CTA. Shown only while
+                         data-install-mode="simple"; the dominant action is the ESP Web
+                         Tools install button rendered into #compatible-firmware below. -->
+                    <p class="firmware-section__simple-cta" data-simple-install-cta>
+                        <strong>Install stable firmware.</strong> Connect your Sense360 hub over USB, then use the <strong>Install</strong> button below.
                     </p>
                     <h4 class="compatible-firmware-heading">
                         <span data-compatible-firmware-label>Compatible Firmware</span>

@@ -75,6 +75,25 @@ State of the repo at TRACKING-001:
   provenance/installability), the preview acknowledgement, the SKU-search
   fallback, and the rescue path are unchanged; LED stays preview-only and every
   fan variant stays non-installable.
+- **WF-UX-011 simple install mode is in review.** A default product-focused
+  "Simple install" landing for the stable Sense360 Bathroom PoE kit now leads
+  the page (`[data-simple-install]` hero, controlled by `data-install-mode` on
+  `<html>` via `scripts/simple-install.js`): product name + outcome summary
+  (Sense360 Core / RoomIQ / VentIQ / PoE), a plain-language readiness status
+  (Ready to install / Needs attention / Cannot install yet), no config string
+  or SKU unless "Technical details" is expanded, and the ESP Web Tools button as
+  the dominant install action with Download / Copy / Home Assistant / Recovery
+  collapsed. Simple mode reuses the existing Step 5 install surface and **every**
+  install gate by applying the stable Release-One kit preset and advancing to the
+  review/install step; the full multi-step wizard is preserved behind "Advanced
+  setup". Freshness is surfaced in plain language in the hero (unknown reads
+  "Couldn't recheck for updates. Reload this page before installing." with Reload
+  + Show details; "manifest" wording is avoided in the default path; the stale
+  hard block stands). Markup + CSS + one additive `state.js` readiness broadcast +
+  test only — no firmware, `manifest.json`, `firmware/sources.json`,
+  `REQUIRED_CONFIGS`, release-channel policy, installability logic, workflow, or
+  service-worker cache-strategy change. Adds
+  `__tests__/wf-ux-011-simple-install.test.js`.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:
