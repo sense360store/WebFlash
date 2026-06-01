@@ -6964,10 +6964,20 @@ async function toggleReleaseNotes(event) {
     }
 
     const firmwareId = link.dataset.firmwareId;
-    if (firmwareId) {
-        selectFirmwareById(firmwareId, { updateConfigString: false, renderDetails: false });
-    }
 
+    // WF-UX-018 — the disclosure is purely presentational and must NOT re-select
+    // the firmware. The previous code called selectFirmwareById() here (even with
+    // renderDetails:false), but selectFirmwareById always runs
+    // verifyCurrentFirmwareIntegrity(), which calls renderSelectedFirmware() and
+    // rebuilds the #compatible-firmware container — synchronously detaching the
+    // very trigger and notes section we are about to toggle. The handler then
+    // flipped display:block on the now-orphaned node while the freshly rendered
+    // card stayed collapsed, so "View Release Notes" appeared to do nothing on the
+    // live site. (The earlier unit test missed this because it never registered
+    // the firmware, so the select no-op'd; on the live site the build is always
+    // registered, so the select — and its re-render — runs.) loadReleaseNotes()
+    // reads the changelog straight from firmwareOptionsMap via firmwareId, so no
+    // selection is needed to show the notes.
     const isHidden = notesSection.style.display === 'none' || notesSection.style.display === '';
     if (isHidden) {
         notesSection.style.display = 'block';

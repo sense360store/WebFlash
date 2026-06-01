@@ -60,11 +60,19 @@
  *   so it rides this cache-name bump to re-prime — existing installs must purge
  *   v7 to pick up the fix. This is an asset-version reference only — the
  *   per-asset-class fetch strategy above is unchanged. See docs/deploy-notes.md.
+ *   `webflash-v11` (WF-UX-018) bumps again for the same reason: scripts/state.js
+ *   was fixed so the "View Release Notes" disclosure no longer re-selects the
+ *   firmware (the re-select rebuilt the firmware card and detached the trigger
+ *   mid-click, so the disclosure never opened on the live site). state.js still
+ *   carries no per-import `?v=` token — it is imported by many modules, so a
+ *   per-import query would split it into duplicate module instances — so it
+ *   relies on this cache-name bump to re-prime; existing installs must purge v10
+ *   to pick up the fix.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v10';
+const CACHE_NAME = 'webflash-v11';
 const CACHE_VERSION = 5;
 
 /**
