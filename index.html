@@ -940,13 +940,28 @@
                     Use desktop Chrome, Edge, or Opera to connect your Sense360 hub. Then click &lsquo;Install firmware&rsquo;. If you&rsquo;re not on a supported browser, download the .bin instead.
                 </p>
 
-                <section class="configuration-summary" aria-labelledby="configuration-summary-heading">
-                    <h3 id="configuration-summary-heading">Your selections</h3>
-                    <div id="config-summary" aria-live="polite"></div>
+                <!-- Task 1: Check your kit -->
+                <section class="review-task review-task--kit" aria-labelledby="review-task-kit-heading">
+                    <h3 id="review-task-kit-heading" class="review-task__heading">
+                        <span class="review-task__index" aria-hidden="true">1</span>
+                        <span class="review-task__title">Check your kit</span>
+                    </h3>
+                    <p class="review-task__hint">Make sure this matches the hardware in front of you.</p>
+                    <section class="configuration-summary" aria-labelledby="configuration-summary-heading">
+                        <h4 id="configuration-summary-heading">Your selections</h4>
+                        <div id="config-summary" aria-live="polite"></div>
+                    </section>
                 </section>
 
-                <section class="preflight-panel" data-preflight-panel aria-labelledby="preflight-checks-heading">
-                    <h3 id="preflight-checks-heading" class="sr-only">Preflight checks</h3>
+                <!-- Task 2: Confirm safe flashing -->
+                <section class="review-task review-task--safety" aria-labelledby="review-task-safety-heading">
+                    <h3 id="review-task-safety-heading" class="review-task__heading">
+                        <span class="review-task__index" aria-hidden="true">2</span>
+                        <span class="review-task__title">Confirm safe flashing</span>
+                    </h3>
+                    <p class="review-task__hint">Clear the safety checks below &mdash; the install button stays disabled until they pass.</p>
+                    <section class="preflight-panel" data-preflight-panel aria-labelledby="preflight-checks-heading">
+                    <h4 id="preflight-checks-heading" class="sr-only">Preflight checks</h4>
                     <div class="preflight-panel__verdict" data-preflight-verdict data-verdict="ready" role="status" aria-live="polite">
                         <span class="preflight-panel__verdict-icon" data-preflight-verdict-icon aria-hidden="true"></span>
                         <div class="preflight-panel__verdict-body">
@@ -1028,6 +1043,15 @@
                         <span class="preflash-warning-text" id="preflash-acknowledge-description">I understand and will keep the hub powered and connected throughout flashing.</span>
                     </label>
                 </section>
+                </section>
+                <!-- /Task 2: Confirm safe flashing -->
+
+                <!-- Task 3: Install firmware -->
+                <section class="review-task review-task--install" aria-labelledby="review-task-install-heading">
+                    <h3 id="review-task-install-heading" class="review-task__heading">
+                        <span class="review-task__index" aria-hidden="true">3</span>
+                        <span class="review-task__title">Install firmware</span>
+                    </h3>
 
                 <div id="device-info-container" class="device-info-container" data-device-info-mount></div>
 
@@ -1035,10 +1059,10 @@
                     <p class="firmware-section__lead">
                         Click <strong>Install Firmware</strong> on the firmware card below to flash your hub over USB.
                     </p>
-                    <h3 class="compatible-firmware-heading">
+                    <h4 class="compatible-firmware-heading">
                         <span data-compatible-firmware-label>Compatible Firmware</span>
                         <span data-compatible-firmware-selection></span>
-                    </h3>
+                    </h4>
                     <div class="firmware-selector" id="firmware-selector" hidden>
                         <label class="firmware-selector-label" for="firmware-version-select">Select firmware release</label>
                         <select id="firmware-version-select" class="firmware-selector-control"
@@ -1057,20 +1081,50 @@
                         aria-hidden="true"
                     ></section>
                 </div>
+                </section>
+                <!-- /Task 3: Install firmware -->
 
                 <div class="wizard-actions">
                     <button class="btn btn-secondary" type="button" data-back>Back</button>
                     <p class="install-assumptions" data-install-assumptions hidden aria-hidden="true"></p>
+                    <!-- Secondary actions. Demoted below the dominant Install firmware
+                         action and collapsed into labelled disclosures so they do not
+                         compete with the main install path. The container keeps the
+                         secondary-action-group hook so the ready-helper status target
+                         resolves for state.js. -->
                     <div class="secondary-action-group" data-secondary-action-group>
                         <h3 class="secondary-actions-label">More actions</h3>
-                        <div class="primary-action-controls">
-                            <button class="btn btn-secondary" id="download-btn" type="button" onclick="downloadFirmware()" disabled aria-label="Download firmware binary for manual flashing">Download .bin</button>
-                            <button class="btn btn-secondary" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy direct link to firmware binary" disabled>Copy install link</button>
-                            <button class="btn btn-secondary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
-                                Open Home Assistant
-                            </button>
-                        </div>
                         <p class="ready-helper" data-ready-helper role="status" aria-live="polite"></p>
+                        <p class="secondary-action-group__hint">Optional &mdash; the <strong>Install firmware</strong> button above is all most kit buyers need.</p>
+
+                        <details class="review-secondary" data-secondary-section="install-options">
+                            <summary class="review-secondary__summary">More install options</summary>
+                            <div class="review-secondary__body">
+                                <p class="review-secondary__hint">For unsupported browsers or manual flashing.</p>
+                                <div class="primary-action-controls">
+                                    <button class="btn btn-secondary" id="download-btn" type="button" onclick="downloadFirmware()" disabled aria-label="Download firmware binary for manual flashing">Download .bin</button>
+                                    <button class="btn btn-secondary" id="copy-firmware-url-btn" type="button" onclick="copyFirmwareUrl()" aria-label="Copy direct link to firmware binary" disabled>Copy install link</button>
+                                </div>
+                            </div>
+                        </details>
+
+                        <details class="review-secondary" data-secondary-section="home-assistant">
+                            <summary class="review-secondary__summary">Home Assistant and post-install</summary>
+                            <div class="review-secondary__body">
+                                <p class="review-secondary__hint">Add your hub to Home Assistant once flashing finishes.</p>
+                                <button class="btn btn-secondary" id="open-ha-integrations-btn" type="button" onclick="openHomeAssistantIntegrations(event)" disabled>
+                                    Open Home Assistant
+                                </button>
+                            </div>
+                        </details>
+
+                        <details class="review-secondary" data-secondary-section="recovery">
+                            <summary class="review-secondary__summary">Recovery help</summary>
+                            <div class="review-secondary__body">
+                                <p class="review-secondary__hint">If the hub stops booting or the wrong firmware was installed, open Rescue &amp; Recovery to reflash a safe image.</p>
+                                <button class="btn btn-secondary" type="button" data-rescue-open data-review-recovery-open>Open Rescue &amp; Recovery</button>
+                            </div>
+                        </details>
                     </div>
                 </div>
                 <section

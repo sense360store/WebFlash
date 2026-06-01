@@ -1143,3 +1143,152 @@ describe('WF-UX-008 — no internal task/release/tracking IDs in customer-facing
         });
     });
 });
+
+describe('WF-UX-009 — Review reads as a three-task customer flow', () => {
+    const TASK_HEADINGS = ['Check your kit', 'Confirm safe flashing', 'Install firmware'];
+
+    function getTaskHeadings() {
+        const step5 = document.getElementById('step-5');
+        return Array.from(step5.querySelectorAll('.review-task > .review-task__heading'));
+    }
+
+    test('Step 5 exposes exactly the three task headings in customer order', () => {
+        const headings = getTaskHeadings();
+        expect(headings.length).toBe(3);
+        const texts = headings.map(h => h.querySelector('.review-task__title').textContent.trim());
+        expect(texts).toEqual(TASK_HEADINGS);
+        // Each task heading is an H3 sitting under the step's single H2.
+        headings.forEach(h => expect(h.tagName).toBe('H3'));
+        const h2 = document.getElementById('step-5-heading');
+        expect(h2.tagName).toBe('H2');
+        headings.forEach(h => {
+            expect(h2.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        });
+    });
+
+    test('the three task sections appear in DOM source order kit → safety → install', () => {
+        const step5 = document.getElementById('step-5');
+        const tasks = Array.from(step5.querySelectorAll('.review-task'));
+        expect(tasks.length).toBe(3);
+        expect(tasks[0].classList.contains('review-task--kit')).toBe(true);
+        expect(tasks[1].classList.contains('review-task--safety')).toBe(true);
+        expect(tasks[2].classList.contains('review-task--install')).toBe(true);
+    });
+
+    test('each task heading wires aria-labelledby on its section for assistive tech', () => {
+        ['review-task--kit', 'review-task--safety', 'review-task--install'].forEach(cls => {
+            const section = document.querySelector(`.${cls}`);
+            expect(section).not.toBeNull();
+            const labelledBy = section.getAttribute('aria-labelledby');
+            expect(labelledBy).toBeTruthy();
+            expect(document.getElementById(labelledBy)).not.toBeNull();
+        });
+    });
+
+    test('"Check your kit" owns the configuration summary', () => {
+        const kitTask = document.querySelector('.review-task--kit');
+        expect(kitTask.querySelector('#config-summary')).not.toBeNull();
+        expect(kitTask.querySelector('#configuration-summary-heading')).not.toBeNull();
+    });
+
+    test('"Confirm safe flashing" owns the preflight panel and the before-you-flash gate', () => {
+        const safetyTask = document.querySelector('.review-task--safety');
+        // All existing safety gates remain inside the safety task.
+        expect(safetyTask.querySelector('[data-preflight-panel]')).not.toBeNull();
+        expect(safetyTask.querySelector('[data-preflight-warn-acknowledge]')).not.toBeNull();
+        expect(safetyTask.querySelector('[data-manifest-freshness-acknowledge]')).not.toBeNull();
+        expect(safetyTask.querySelector('[data-preflash-acknowledge]')).not.toBeNull();
+    });
+
+    test('"Install firmware" owns the dominant ESP Web Tools install placeholder', () => {
+        const installTask = document.querySelector('.review-task--install');
+        expect(installTask.querySelector('.firmware-section')).not.toBeNull();
+        // state.js injects <esp-web-install-button> into #compatible-firmware —
+        // the dominant install action lives inside the install task.
+        expect(installTask.querySelector('#compatible-firmware')).not.toBeNull();
+        expect(installTask.querySelector('[data-channel-acknowledgement-panel]')).not.toBeNull();
+    });
+
+    test('the install task is the only place a primary install affordance renders', () => {
+        // No hand-rolled install button bypasses ESP Web Tools, and the static
+        // markup ships no <esp-web-install-button> outside the injected slot.
+        const step5 = document.getElementById('step-5');
+        expect(step5.querySelector('esp-web-install-button')).toBeNull();
+        // The pre-install secondary controls must not be primary buttons.
+        ['download-btn', 'copy-firmware-url-btn', 'open-ha-integrations-btn'].forEach(id => {
+            const btn = document.getElementById(id);
+            expect(btn).not.toBeNull();
+            expect(btn.classList.contains('btn-primary')).toBe(false);
+        });
+    });
+
+    test('secondary actions are collapsed into labelled disclosures, not the primary action area', () => {
+        const group = document.querySelector('.secondary-action-group');
+        const sections = Array.from(group.querySelectorAll('details[data-secondary-section]'));
+        const names = sections.map(d => d.getAttribute('data-secondary-section'));
+        expect(names).toEqual(['install-options', 'home-assistant', 'recovery']);
+        // Each disclosure is collapsed by default (no open attribute) and has a
+        // visible summary label.
+        sections.forEach(d => {
+            expect(d.tagName.toLowerCase()).toBe('details');
+            expect(d.hasAttribute('open')).toBe(false);
+            const summary = d.querySelector('summary');
+            expect(summary).not.toBeNull();
+            expect(summary.textContent.trim().length).toBeGreaterThan(0);
+        });
+        // The demoted controls live *inside* the disclosures.
+        expect(group.querySelector('[data-secondary-section="install-options"] #download-btn')).not.toBeNull();
+        expect(group.querySelector('[data-secondary-section="install-options"] #copy-firmware-url-btn')).not.toBeNull();
+        expect(group.querySelector('[data-secondary-section="home-assistant"] #open-ha-integrations-btn')).not.toBeNull();
+    });
+
+    test('recovery stays reachable but secondary via a rescue-modal trigger', () => {
+        const recovery = document.querySelector('[data-secondary-section="recovery"]');
+        expect(recovery).not.toBeNull();
+        // Reuses the existing delegated rescue-open handler — no new modal logic.
+        const trigger = recovery.querySelector('[data-rescue-open]');
+        expect(trigger).not.toBeNull();
+        expect(trigger.tagName).toBe('BUTTON');
+    });
+
+    test('diagnostics stay collapsed and support-oriented by default', () => {
+        // Support-bundle diagnostics live inside the preflight details
+        // disclosure and stay hidden until a check is non-pass.
+        const details = document.querySelector('[data-preflight-details]');
+        expect(details.tagName.toLowerCase()).toBe('details');
+        expect(details.hasAttribute('open')).toBe(false);
+        const supportActions = details.querySelector('[data-preflight-support-actions]');
+        expect(supportActions).not.toBeNull();
+        expect(supportActions.hidden).toBe(true);
+        // Diagnostics are not part of the primary install action area.
+        const installTask = document.querySelector('.review-task--install');
+        expect(installTask.querySelector('[data-preflight-support-actions]')).toBeNull();
+    });
+
+    test('the ready-helper status target stays inside the secondary-action-group hook', () => {
+        // state.js resolves the primary disabled-state helper via
+        // ".secondary-action-group [data-ready-helper]" — keep it reachable.
+        const group = document.querySelector('.secondary-action-group');
+        expect(group.querySelector('[data-ready-helper]')).not.toBeNull();
+        expect(document.querySelector('[data-install-assumptions]')).not.toBeNull();
+    });
+
+    test('WF-UX-009 is a UX-only change — firmware surfaces are untouched', () => {
+        // This PR reorders Review markup only. Pin the firmware authority
+        // surfaces so a stray manifest/source/REQUIRED_CONFIGS edit fails here.
+        const manifest = JSON.parse(
+            fs.readFileSync(path.resolve(process.cwd(), 'manifest.json'), 'utf-8')
+        );
+        expect(Array.isArray(manifest.builds)).toBe(true);
+        expect(manifest.builds.length).toBe(3);
+
+        const workflow = fs.readFileSync(
+            path.resolve(process.cwd(), '.github/workflows/firmware-publish.yml'),
+            'utf-8'
+        );
+        const block = workflow.match(/REQUIRED_CONFIGS=\(([\s\S]*?)\)/);
+        expect(block).not.toBeNull();
+        const entries = (block[1].match(/"([^"]+)"/g) || []).map(s => s.replace(/"/g, ''));
+        expect(entries).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue']);
+    });
+});

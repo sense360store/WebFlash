@@ -2221,6 +2221,106 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: var(--color-text-primary);
 }
 
+/* WF-UX-009 — Review three-task customer flow.
+   The three review tasks (Check your kit / Confirm safe flashing /
+   Install firmware) are visible, numbered section headings that group the
+   existing review content without changing any install gate. */
+.review-task {
+    margin: 0 0 20px;
+}
+
+.review-task__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.review-task__index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--brand-green-contrast);
+    color: var(--surface);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.review-task__title {
+    flex: 1 1 auto;
+}
+
+.review-task__hint {
+    margin: 0 0 12px 36px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+/* Collapsed, clearly-labelled secondary actions. These sit below the dominant
+   Install firmware action and must not visually compete with it. */
+.review-secondary {
+    width: min(100%, 22rem);
+    align-self: stretch;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+}
+
+.review-secondary + .review-secondary {
+    margin-top: 6px;
+}
+
+.review-secondary__summary {
+    cursor: pointer;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    list-style: revert;
+}
+
+.review-secondary__summary:hover {
+    color: var(--color-text-primary);
+}
+
+.review-secondary[open] > .review-secondary__summary {
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.review-secondary__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.review-secondary__hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    line-height: 1.4;
+}
+
+.secondary-action-group__hint {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    text-align: right;
+    align-self: stretch;
+    width: min(100%, 22rem);
+    line-height: 1.4;
+}
+
 /* Configuration Summary */
 .configuration-summary {
     background: var(--color-surface-muted);
@@ -2229,7 +2329,8 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     margin-bottom: 14px;
 }
 
-.configuration-summary h3 {
+.configuration-summary h3,
+.configuration-summary h4 {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 8px;
@@ -2700,7 +2801,8 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
-.pre-flash-checklist__header h3 {
+.pre-flash-checklist__header h3,
+.pre-flash-checklist__header h4 {
     font-size: 14px;
     font-weight: 600;
     color: var(--brand-green-contrast);
