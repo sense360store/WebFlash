@@ -121,6 +121,32 @@ State of the repo at TRACKING-001:
   `state.js`. LED stays preview-only (acknowledgement required); every fan
   variant stays non-installable; TRIAC stays advanced/manual-warning. Adds
   `__tests__/wf-ux-012-install-paths.test.js`.
+- **WF-UX-013 Simple install warning-noise reduction is in review.** The Simple
+  install path now reads calm. Manifest **freshness "unknown"** surfaces in
+  exactly one place — the hero status — as a plain-language **"Could not recheck
+  for updates"** ("WebFlash could not recheck the latest firmware list. Reload
+  this page and try again. If this keeps happening, you can continue with the
+  firmware list already loaded in this browser.") with two calm actions, **Reload
+  page** and **Continue with loaded firmware list**; Continue ticks the
+  authoritative `[data-manifest-freshness-acknowledge]` (the gate stays
+  authoritative, never bypassed). The duplicate freshness / blocking surfaces
+  (the freshness banner, the preflight verdict box, and the install-readiness
+  helper rendered into both the firmware section and the More-actions group) are
+  suppressed in simple mode, and the preflight diagnostics stay collapsed until
+  "Setup checks" reveals them (`data-setup-checks-revealed`). The scary "accept
+  the risk" preflight acknowledgement is hidden in simple mode by default — the
+  calm hero confirmation ("I understand and will keep the hub powered and
+  connected during installation") carries the safety ack — and the original
+  control returns, unchanged copy + gate, only when a genuine non-freshness
+  preflight warning remains (`data-install-warn-context="real-warn"`). A truly
+  **stale** manifest stays a hard block ("Cannot install yet", Reload, no
+  continue). `index.html` + `css/wizard-style.css` + `scripts/simple-install.js`
+  + test only — **no `state.js`** change, no firmware, `manifest.json`,
+  `firmware/sources.json`, `REQUIRED_CONFIGS`, release-channel policy,
+  installability logic, provenance verification, stale-manifest hard block,
+  preview / TRIAC acknowledgement, workflow, or service-worker cache-strategy
+  change; Advanced install keeps the full diagnostics. Adds
+  `__tests__/wf-ux-013-simple-install-noise.test.js`.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:
