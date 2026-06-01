@@ -27,6 +27,18 @@
  * intent (`configmode=custom|manual`, a non-stable `preset`, or
  * `installmode=advanced`) opens the wizard directly.
  *
+ * WF-UX-014 — deploy/cache coupling. This module owns the customer-facing
+ * Simple-install freshness copy (the calm `freshness-unknown` mapping in
+ * `describeReadiness`). It is a bare ES module imported by app.js, so a stale
+ * Pages/CDN/service-worker copy silently keeps showing old copy even after
+ * index.html and the CSS (both versioned/revalidated) update — which is exactly
+ * how WF-UX-013's calm "Could not recheck for updates" copy stayed
+ * half-deployed while the live Simple path kept reading "Cannot install yet".
+ * The fix is purely at the deploy layer: app.js imports this module with a `?v=`
+ * cache-bust token, in lockstep with index.html's asset query and the sw.js
+ * CACHE_NAME bump. Whenever this module's customer-facing copy changes, bump that
+ * token too. See docs/deploy-notes.md. No gate or copy logic is changed here.
+ *
  * @module simple-install
  */
 

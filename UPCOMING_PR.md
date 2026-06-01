@@ -147,6 +147,35 @@ State of the repo at TRACKING-001:
   preview / TRIAC acknowledgement, workflow, or service-worker cache-strategy
   change; Advanced install keeps the full diagnostics. Adds
   `__tests__/wf-ux-013-simple-install-noise.test.js`.
+- **WF-UX-014 Simple install freshness copy + runtime cache-bust is in review.**
+  Fixes the *deployed* WF-UX-013 behaviour: on live GitHub Pages the calm
+  **"Could not recheck for updates"** copy never appeared because
+  `scripts/simple-install.js` is a bare ES-module import with no cache-bust, so
+  Pages/CDN/the service worker kept serving the pre-WF-UX-013 module (old
+  "Cannot install yet" / "could not confirm whether the firmware list is up to
+  date" copy) even though `index.html` + `css/wizard-style.css` (versioned /
+  revalidated) had updated — a mixed old/new UI. The source copy was already
+  correct; WF-UX-014 makes it actually deploy. The cache-bust token rides from
+  the always-fresh HTML down the whole graph: `index.html` versions the
+  `scripts/bootstrap.js` loader + the CSS links (`?v=20260601`), `bootstrap.js`
+  threads `APP_SHELL_BUILD` onto the `app.js` import, and `app.js` imports the
+  changed `scripts/simple-install.js?v=20260601`; `sw.js` bumps `CACHE_NAME`
+  `webflash-v5` → `webflash-v6` so existing installs purge + re-prime (an
+  asset-version reference only — the per-asset-class fetch **strategy** is
+  unchanged). A support-only app-shell build marker (`webflash-app-version` /
+  `webflash-app-shell` meta tags read by `scripts/services/diagnostics.js`, an
+  `appShell` field in `scripts/build-info.js`, and an **"App shell"** row in the
+  About panel) makes it easy to tell whether the live page is the
+  post-WF-UX-014 shell or a stale copy. The Simple-mode `freshness-unknown`
+  contract is re-pinned (calm title, Reload + Continue, never "Cannot install
+  yet" / "manifest"); **stale** stays a hard block with no continue; Advanced
+  keeps the full diagnostics. Deploy-layer + presentation only — **no**
+  `state.js` gate, firmware, `manifest.json`, `firmware/sources.json`,
+  `REQUIRED_CONFIGS`, release-channel policy, installability / provenance /
+  freshness-gate logic, or service-worker fetch-strategy change; no workflow
+  change (the changed runtime files are already in `firmware-publish.yml`'s
+  `on.push.paths`). Adds `__tests__/wf-ux-014-cache-bust-freshness.test.js` and
+  `docs/deploy-notes.md`.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:

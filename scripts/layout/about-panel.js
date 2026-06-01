@@ -44,6 +44,10 @@ function renderInto(mount, manifestMetadata) {
 
     const rows = [
         ['WebFlash app', fmt(BUILD_INFO.appVersion), 'about-app-version'],
+        // WF-UX-014 — app-shell build marker. Reads the post-WF-UX-014 value on a
+        // freshly deployed page and the older/missing value on a stale one, so
+        // support can confirm which app shell the live page is running.
+        ['App shell', fmt(BUILD_INFO.appShell), 'about-app-shell'],
         ['Build', fmt(BUILD_INFO.buildCommit), 'about-build-commit'],
         ['Build timestamp', fmt(BUILD_INFO.buildTimestamp), 'about-build-timestamp'],
         ['Firmware manifest', manifestMetadata && manifestMetadata.generated_at

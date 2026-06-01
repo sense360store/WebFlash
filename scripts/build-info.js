@@ -9,6 +9,11 @@
  *
  * Fields:
  *   appVersion     — semver string of the published WebFlash bundle.
+ *   appShell       — WF-UX-014 app-shell build marker (date-based, matches the
+ *                    `?v=` cache-bust token in index.html / app.js and the
+ *                    `webflash-app-shell` meta tag). Lets support tell at a
+ *                    glance whether the live page is running the post-WF-UX-014
+ *                    app shell or a stale CDN/service-worker copy.
  *   buildCommit    — git short SHA of the source the bundle was built from.
  *   buildTimestamp — ISO 8601 timestamp of the build, or "unknown".
  *
@@ -23,7 +28,8 @@
  */
 
 export const BUILD_INFO = Object.freeze({
-    appVersion: '1.0.0',
+    appVersion: '1.0.1',
+    appShell: '2026-06-01',
     buildCommit: 'unknown',
     buildTimestamp: 'unknown'
 });

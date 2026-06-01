@@ -39,6 +39,11 @@ export const REDACTION_PLACEHOLDERS = Object.freeze({
 
 const RESCUE_MANIFEST_URL = './firmware/rescue/manifest.json';
 const APP_VERSION_FALLBACK = '1.0.0';
+// WF-UX-014 — app-shell build marker fallback. The live value comes from the
+// `webflash-app-shell` meta tag in index.html (always-revalidated HTML), so the
+// support bundle reports which app shell is actually running even when the ESM
+// module graph is served stale by Pages/CDN/the service worker.
+const APP_SHELL_FALLBACK = 'unknown';
 
 const KEY_PASSWORD = /password|passphrase/i;
 const KEY_TOKEN = /token|api_?key|authorization|cookie|jwt|bearer/i;
@@ -252,6 +257,9 @@ function readMeta(name) {
 function buildAppSection() {
     return {
         app_version: readMeta('webflash-app-version') || APP_VERSION_FALLBACK,
+        // WF-UX-014 — app-shell build marker so support can tell whether the live
+        // page is the post-WF-UX-014 shell or a stale CDN/SW copy.
+        app_shell: readMeta('webflash-app-shell') || APP_SHELL_FALLBACK,
         build_commit: readMeta('webflash-build-commit') || 'unknown',
         build_timestamp: readMeta('webflash-build-timestamp') || 'unknown'
     };
