@@ -23,7 +23,7 @@
          together with the `?v=` asset query below and the sw.js CACHE_NAME on every
          UX-only JS deploy. No secrets/PII here — it is copied into diagnostics. -->
     <meta name="webflash-app-version" content="1.0.1">
-    <meta name="webflash-app-shell" content="2026-06-01-3">
+    <meta name="webflash-app-shell" content="2026-06-01-4">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +39,10 @@
          "Cannot install yet" copy from cache. Keep this token in lockstep with
          the sw.js CACHE_NAME and the `webflash-app-shell` marker above; see
          docs/deploy-notes.md. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=202606013">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=202606014">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=202606013">
+    <link rel="stylesheet" href="./css/layout.css?v=202606014">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -252,6 +252,25 @@
                                 <p class="simple-install__status-detail" data-simple-install-status-detail>Preparing your firmware.</p>
                                 <div class="simple-install__status-actions" data-simple-install-status-actions hidden aria-hidden="true"></div>
                             </div>
+
+                            <!-- WF-UX-017 — a small, calm SECONDARY note for the
+                                 "freshness unknown" state only. Unknown means WebFlash
+                                 could not recheck the latest firmware list — NOT that the
+                                 selected stable build is bad. The selected firmware is
+                                 already present, signed and provenance-verified, so this is
+                                 never the main install status (that stays "Ready to
+                                 install" / "Confirm before installing") and never blocks the
+                                 normal path. Rendered + toggled by scripts/simple-install.js
+                                 from the install-readiness freshness axis; empty + hidden by
+                                 default. The full freshness diagnostics + reason code live
+                                 behind "Setup checks". A truly stale build is handled by the
+                                 main status as a hard block, not here. -->
+                            <p class="simple-install__freshness-note" data-simple-install-freshness-note hidden aria-hidden="true">
+                                <span data-simple-install-freshness-text></span>
+                                <button type="button" class="btn btn-link simple-install__freshness-link" data-simple-install-freshness-reload>Reload</button>
+                                <span class="simple-install__link-sep" aria-hidden="true">&middot;</span>
+                                <button type="button" class="btn btn-link simple-install__freshness-link" data-open-setup-checks>Setup checks</button>
+                            </p>
 
                             <!-- WF-UX-012 — the single safety confirmation for the Simple
                                  install path. It mirrors the authoritative "Before you flash"
@@ -1177,6 +1196,13 @@
                                 <span class="preflight-panel__label">Manifest freshness</span>
                                 <span class="preflight-panel__status" data-preflight-status="manifest-freshness" aria-live="polite" role="status"></span>
                                 <p class="preflight-panel__detail" data-preflight-detail="manifest-freshness"></p>
+                                <!-- WF-UX-017 — machine-readable freshness diagnosis code revealed
+                                     under "Setup checks" (fetch-failed / http-error / parse-failed /
+                                     missing-generated-at / invalid-generated-at / compare-failed /
+                                     same-or-newer / stale). Populated by state.js; empty + hidden when
+                                     the check has not run or produced no code. Support diagnostics,
+                                     not customer copy. -->
+                                <p class="preflight-panel__reason-code" data-freshness-reason-code hidden></p>
                                 <div class="preflight-panel__inline-actions" data-manifest-freshness-actions hidden aria-hidden="true">
                                     <button type="button" class="btn btn-secondary preflight-panel__inline-button" data-manifest-freshness-recheck>Recheck manifest freshness</button>
                                     <label class="preflight-panel__inline-acknowledge" data-manifest-freshness-ack-control hidden aria-hidden="true">
@@ -1484,6 +1510,6 @@
          cache-bust token rides on this always-revalidated HTML so the bootstrap
          loader (and the app.js + changed ESM modules it pulls in) is fetched
          fresh on the first load after a deploy, never a stale CDN/SW copy. -->
-    <script type="module" src="./scripts/bootstrap.js?v=202606013"></script>
+    <script type="module" src="./scripts/bootstrap.js?v=202606014"></script>
 </body>
 </html>

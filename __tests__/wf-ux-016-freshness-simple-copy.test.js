@@ -302,12 +302,19 @@ describe('WF-UX-016 — the freshness gate stays authoritative', () => {
         document.documentElement.removeAttribute('data-install-mode');
     });
 
-    test('unknown freshness still blocks install until acknowledged (even in Simple mode)', async () => {
+    // WF-UX-017 supersedes WF-UX-016 here: in Simple install an unknown verdict
+    // ("could not recheck", NOT stale) is non-blocking — the loaded stable build
+    // is signed + provenance-verified + installable. The dedicated acknowledgement
+    // gate is still honoured OUTSIDE Simple install (advanced / pre-JS default).
+    test('unknown freshness is non-blocking in Simple mode but still blocks in Advanced until acknowledged (WF-UX-017)', async () => {
         const { __testHooks } = await import('../scripts/state.js');
         document.documentElement.setAttribute('data-install-mode', 'simple');
         __testHooks.setManifestFreshnessState('unknown');
-        expect(__testHooks.evaluateFreshnessGate().ok).toBe(false);
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
 
+        // Advanced / pre-JS default: the acknowledgement gate is unchanged.
+        document.documentElement.removeAttribute('data-install-mode');
+        expect(__testHooks.evaluateFreshnessGate().ok).toBe(false);
         const ack = document.querySelector('[data-manifest-freshness-acknowledge]');
         ack.checked = true;
         ack.dispatchEvent(new Event('change', { bubbles: true }));

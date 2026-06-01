@@ -276,12 +276,14 @@ describe('WF-UX-016 — Simple stale stays a hard block (banned phrases allowed 
         expect(verdict.manifestStaleBlocking).toBe(true);
     });
 
-    test('an unknown verdict still blocks until the freshness acknowledgement is set', async () => {
+    // WF-UX-017 supersedes WF-UX-016 here: an unknown verdict is non-blocking in
+    // Simple install (could-not-recheck ≠ stale). Stale (the test above) is still
+    // the hard block. Advanced-mode acknowledgement gating is covered by
+    // __tests__/cache-freshness.test.js and wf-ux-016-freshness-simple-copy.test.js.
+    test('an unknown verdict is non-blocking in Simple install (WF-UX-017)', async () => {
         const { __testHooks, setStep } = await import('../scripts/state.js');
         seedFreshness({ __testHooks, setStep, mode: 'simple', verdict: 'unknown' });
 
-        expect(__testHooks.evaluateFreshnessGate().ok).toBe(false);
-        __testHooks.setManifestFreshnessAcknowledgement(true);
         expect(__testHooks.evaluateFreshnessGate().ok).toBe(true);
     });
 });
@@ -307,14 +309,19 @@ describe('WF-UX-016 — the readiness helper uses calm freshness copy only in Si
         return helper ? helper.textContent : '';
     }
 
-    test('Simple mode: the helper is calm and names no raw freshness diagnostics', async () => {
+    test('Simple mode: the helper carries NO freshness wording — unknown is non-blocking (WF-UX-017)', async () => {
         const { __testHooks, setStep } = await import('../scripts/state.js');
         seedFreshness({ __testHooks, setStep, mode: 'simple', verdict: 'unknown' });
 
-        const text = helperText();
-        expect(text).not.toContain('Recheck manifest freshness');
+        // WF-UX-017 — unknown no longer blocks the Simple stable path, so the
+        // firmware-card helper drops the freshness signal entirely (neither the
+        // raw diagnostics NOR the calm "could not recheck" copy). The freshness
+        // signal moved to the hero's small secondary note + the (collapsed)
+        // Setup-checks row — see wf-ux-017-freshness-nonblocking.test.js.
+        const text = helperText().toLowerCase();
+        expect(text).not.toContain('recheck manifest freshness');
         expect(text).not.toContain('could not confirm whether the firmware list is up to date');
-        expect(text.toLowerCase()).toContain('could not recheck the latest firmware list');
+        expect(text).not.toContain('could not recheck');
     });
 
     test('Advanced mode: the helper keeps the diagnostic reason (regression guard)', async () => {

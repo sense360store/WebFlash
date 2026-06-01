@@ -73,6 +73,13 @@ const WARN_CONTEXT_ATTR = 'data-install-warn-context';
 const TECH_DETAILS_SELECTOR = '[data-simple-install-tech]';
 const TECH_DETAILS_LINK_SELECTOR = '[data-open-technical-details]';
 const TECH_REVEAL_ATTR = 'data-technical-details-revealed';
+// WF-UX-017 — the small, calm SECONDARY freshness note. It surfaces only the
+// "freshness unknown" state (never stale, which the main status hard-blocks) and
+// is never the main install status. Driven by the install-readiness freshness
+// axis broadcast by state.js; the full diagnostics live behind "Setup checks".
+const FRESHNESS_NOTE_SELECTOR = '[data-simple-install-freshness-note]';
+const FRESHNESS_NOTE_TEXT_SELECTOR = '[data-simple-install-freshness-text]';
+const FRESHNESS_NOTE_COPY = 'Couldn’t recheck for updates. You can reload, or continue with the firmware list already loaded.';
 
 // A clean module slate so switching from the advanced wizard back into the
 // stable kit never carries a stray module selection forward. Mirrors the
@@ -403,6 +410,48 @@ function syncSafetyConfirmFromGate() {
 }
 
 /**
+ * WF-UX-017 — render the small, calm SECONDARY freshness note. It appears only
+ * when the freshness axis is "unknown" (WebFlash could not recheck the latest
+ * firmware list) AND that is non-blocking — i.e. not a hard block (stale /
+ * pending SW update) and not already the main install status. It is never the
+ * primary status above the Install button: the main status stays "Ready to
+ * install" / "Confirm before installing", and the full freshness diagnostics +
+ * reason code live behind "Setup checks". Safe to call when the note element is
+ * absent (older embeds / unit fixtures).
+ *
+ * @param {object|null} readiness
+ */
+function renderFreshnessNote(readiness) {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const note = document.querySelector(FRESHNESS_NOTE_SELECTOR);
+    if (!note) {
+        return;
+    }
+    const freshness = (readiness && typeof readiness.freshness === 'object') ? readiness.freshness : null;
+    const reason = (readiness && readiness.reason) ? readiness.reason : '';
+    const show = Boolean(
+        freshness
+        && freshness.state === 'unknown'
+        && freshness.hasRun
+        && !freshness.hardBlock
+        // When the MAIN status already speaks to freshness (the Advanced-style
+        // 'freshness-unknown' reason, or a stale hard block), the secondary note
+        // would just duplicate it — suppress it.
+        && reason !== 'freshness-unknown'
+        && reason !== 'firmware-stale'
+    );
+
+    const textEl = note.querySelector(FRESHNESS_NOTE_TEXT_SELECTOR);
+    if (textEl) {
+        textEl.textContent = show ? FRESHNESS_NOTE_COPY : '';
+    }
+    note.hidden = !show;
+    note.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
+/**
  * Render the plain-language status into the simple hero. Safe to call when the
  * hero is hidden (advanced mode) — it just keeps the status warm.
  *
@@ -422,6 +471,10 @@ export function renderStatus(readiness) {
             reason === 'preflight-warn' ? 'real-warn' : 'calm'
         );
     }
+
+    // WF-UX-017 — the calm secondary freshness note is independent of the main
+    // status, so render it first (and even when the status node is absent).
+    renderFreshnessNote(readiness);
 
     const node = document.querySelector(STATUS_SELECTOR);
     if (!node) {
@@ -674,6 +727,20 @@ function handleDocumentClick(event) {
         return;
     }
 
+    // WF-UX-017 — the secondary freshness note's "Reload" affordance. Unknown
+    // freshness is never a pending-SW-update, so a plain reload is correct here
+    // (the SW skip-waiting path stays reserved for the 'update-available' status
+    // action). Setup checks is handled by the shared [data-open-setup-checks] case.
+    if (target.closest('[data-simple-install-freshness-reload]')) {
+        event.preventDefault();
+        try {
+            window.location.reload();
+        } catch {
+            // jsdom / restricted environments — nothing else to do.
+        }
+        return;
+    }
+
     if (target.closest('[data-open-setup-checks]')) {
         event.preventDefault();
         openPreflightDetails();
@@ -741,6 +808,7 @@ export const __testHooks = Object.freeze({
     applyMode,
     resolveInitialMode,
     renderStatus,
+    renderFreshnessNote,
     describeReadiness,
     syncPathChoice,
     openPreflightDetails,

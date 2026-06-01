@@ -6358,6 +6358,27 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     border-left-color: var(--border);
 }
 
+/* WF-UX-017 — the small, calm SECONDARY freshness note. Deliberately quiet:
+   muted body text, no warning/error fill, never competes with the main status
+   above the Install button. Shown only for non-blocking "freshness unknown". */
+.simple-install__freshness-note {
+    margin: -4px 0 16px;
+    padding: 0;
+    color: var(--text-muted, var(--text-body));
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.simple-install__freshness-note[hidden] {
+    display: none;
+}
+
+.simple-install__freshness-link {
+    padding: 0 2px;
+    font-size: 13px;
+    vertical-align: baseline;
+}
+
 /* --- Technical details disclosure + advanced link ------------------------ */
 .simple-install__tech {
     margin: 0 0 12px;
