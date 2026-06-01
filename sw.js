@@ -99,6 +99,7 @@ const SCRIPT_MODULES = [
     './scripts/recommended-bundle.js',
     './scripts/kit-mode.js',
     './scripts/kit-presets.js',
+    './scripts/simple-install.js',
     './scripts/state.js',
     './scripts/ui-capability-bar.js',
     './scripts/wizard-state-observer.js',

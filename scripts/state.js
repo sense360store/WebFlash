@@ -3853,6 +3853,52 @@ function updateFirmwareControls() {
         primaryHelper.classList.toggle('is-warning', helperContext.isWarning);
     }
 
+    // WF-UX-011 — Re-publish the already-computed install-readiness verdict so
+    // the Simple install view can mirror the gate state in plain language
+    // WITHOUT recomputing or duplicating any gate. This is purely additive:
+    // every gate decision above (preflight policy, channel + advanced
+    // acknowledgements, manifest freshness, verification, the pre-flash
+    // checklist) remains authoritative and unchanged. The Step 5 wizard
+    // controls stay the source of truth; this only mirrors `readyToFlash` and
+    // the single highest-priority blocking reason for presentation.
+    try {
+        const readinessReason = (() => {
+            if (!hasFirmware) return 'no-firmware';
+            if (isPending) return 'verifying';
+            if (isFailed) return 'verification-failed';
+            if (!isAcknowledged) return 'safety-checklist';
+            if (!advancedWarningAcksSatisfied) return 'advanced-ack';
+            if (!channelAcksSatisfied) return 'channel-ack';
+            if (!preflightPolicy.canInstall) return 'preflight-fail';
+            if (swUpdateBlocking) return 'update-available';
+            if (manifestStaleBlocking) return 'firmware-stale';
+            if (freshness.manifestUnknownBlocking) return 'freshness-unknown';
+            if (preflightPolicy.requiresWarnAcknowledgement) return 'preflight-warn';
+            if (readyToFlash) return 'ready';
+            return 'pending';
+        })();
+        const readinessLevel = readyToFlash
+            ? 'ready'
+            : (readinessReason === 'verification-failed'
+                || readinessReason === 'preflight-fail'
+                || readinessReason === 'update-available'
+                || readinessReason === 'firmware-stale')
+                ? 'blocked'
+                : 'attention';
+        const installReadiness = {
+            ready: readyToFlash,
+            level: readinessLevel,
+            reason: readinessReason,
+            message: helperContext.text || ''
+        };
+        window.webflashInstallReadiness = installReadiness;
+        if (typeof document !== 'undefined' && typeof CustomEvent === 'function') {
+            document.dispatchEvent(new CustomEvent('webflash:install-readiness-changed', { detail: installReadiness }));
+        }
+    } catch (error) {
+        console.warn('[state] install-readiness broadcast failed:', error);
+    }
+
     const installAssumptions = document.querySelector('[data-install-assumptions]');
     if (installAssumptions) {
         const mountValue = (configuration.mounting || '').toString().trim().toLowerCase();
