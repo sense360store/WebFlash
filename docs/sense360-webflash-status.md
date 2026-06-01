@@ -211,6 +211,35 @@ Kitchen / Bedroom / Living / Corridor not installable, and publishes no
 artifact. See the handoff doc's no-new-exposure statement (§9) and no-drift
 table (§10) for the full surface confirmation.
 
+## Live manifest freshness smoke test (WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001)
+
+A live smoke test of the deployed page's manifest freshness check is recorded
+at
+[`docs/release-gates/WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001.md`](release-gates/WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001.md).
+It checks whether `https://sense360store.github.io/WebFlash/` loads the current
+firmware manifest cleanly in a fresh session, after an earlier session reported
+the *"Freshness unknown — Could not confirm firmware manifest freshness"*
+warning.
+
+- **Result: PASS.** The live `manifest.json` returns HTTP 200 with a present,
+  parseable `generated_at` (`2026-05-29T18:46:09…`), open CORS, and a stable
+  `generated_at` across `no-store` re-fetches — so the freshness check resolves
+  to `current`, with neither the *"Freshness unknown"* nor the *"Newer firmware
+  manifest available"* warning appearing.
+- **Live install surface confirmed:** `Ceiling-POE-VentIQ-RoomIQ` (stable
+  v1.0.0), `Ceiling-POE-VentIQ-RoomIQ-LED` (preview-only), and `Rescue` — no
+  fan-control variant, no LED-stable build, no Kitchen / Bedroom / Living /
+  Corridor bundle.
+- **Likely cause of the earlier warning:** stale local browser / service-worker
+  cache or a transient `no-store` re-fetch failure — not a manifest metadata
+  issue, not a CORS issue, and not a WebFlash bug. No
+  `WEBFLASH-FRESHNESS-UNKNOWN-DIAGNOSTICS-001` follow-up is opened.
+
+The smoke test is **docs / status only**: it changes no runtime behaviour, no
+`manifest.json`, no `firmware/sources.json`, no `REQUIRED_CONFIGS`, and adds no
+install card / kit / kit-preset. See the record's verdict section and
+do-not-change confirmation for the full surface statement.
+
 ## WebFlash roadmap
 
 WebFlash is **downstream** of the upstream firmware roadmap. The authoritative
