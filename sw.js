@@ -50,14 +50,17 @@
  *   v5 cache once and re-prime, which — together with the `?v=` asset-query
  *   bump on index.html / bootstrap.js / app.js's changed ESM imports — stops
  *   the service worker from serving a stale scripts/simple-install.js after a
- *   UX-only JS deploy (the mixed old/new UI WF-UX-013 hit on live). This is an
- *   asset-version reference only — the per-asset-class fetch strategy above is
- *   unchanged. See docs/deploy-notes.md.
+ *   UX-only JS deploy (the mixed old/new UI WF-UX-013 hit on live). `webflash-v7`
+ *   (WF-UX-015) bumps again for the same reason: simple-install.js's
+ *   customer-facing copy + wizard-style.css's simple-mode collapse rules changed,
+ *   so existing installs must purge v6 and re-prime. This is an asset-version
+ *   reference only — the per-asset-class fetch strategy above is unchanged. See
+ *   docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v6';
+const CACHE_NAME = 'webflash-v7';
 const CACHE_VERSION = 5;
 
 /**

@@ -6612,3 +6612,64 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
 [data-install-mode="simple"] #step-5 [data-preflight-details]:not([data-setup-checks-revealed]) > .preflight-panel__diagnostics {
     display: none !important;
 }
+
+/* ============================================================================
+   WF-UX-015 — collapse firmware technical detail in Simple install.
+
+   The Simple path already carries the product hero (name, stable-firmware
+   summary, included-hardware list), the single safety confirmation, the
+   plain-language readiness status, and — from the Step 5 install surface — the
+   ESP Web Tools Install button. Everything else Step 5 renders for the Advanced
+   path is firmware / provenance / release metadata that a normal customer does
+   not need up front:
+
+     - the "Compatible Firmware" heading + selection,
+     - the firmware release selector,
+     - the per-build identity inside .firmware-info (firmware/artifact filename,
+       version, file size / date), the "View Release Notes" link, the
+       description + channel warnings,
+     - the "Firmware details" panel (Identity / source commit / SHA-256 /
+       signature / changelog / known issues),
+     - the provenance block + "Show verification details",
+     - the "Show firmware file details" parts list (SHA-256 / signature),
+     - the Key Features / Hardware Requirements metadata + the release-notes
+       section,
+     - the whole "More actions" group (download / copy link / Home Assistant /
+       recovery help / support diagnostics).
+
+   These are collapsed by default in simple mode and revealed in place only when
+   the customer opens the single hero "Technical details" disclosure, which sets
+   data-technical-details-revealed="true" on <html> via
+   scripts/simple-install.js. Mirrors the WF-UX-013 "Setup checks" →
+   data-setup-checks-revealed pattern.
+
+   Every rule is scoped to data-install-mode="simple" AND the not-revealed state,
+   so Advanced install (and the no-attribute pre-JS default) renders the full
+   firmware card exactly as before — and so does the Simple path once Technical
+   details is opened. Presentation-only: no install gate, firmware selection,
+   provenance verification, or freshness logic is defined or changed here, and
+   the ESP Web Tools Install button (.firmware-actions) is never hidden.
+   ========================================================================== */
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .compatible-firmware-heading,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 #firmware-selector,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .firmware-item .firmware-info,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .firmware-details-panel,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .firmware-provenance,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .firmware-parts,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .firmware-metadata,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .release-notes-section,
+[data-install-mode="simple"]:not([data-technical-details-revealed="true"]) #step-5 .secondary-action-group {
+    display: none !important;
+}
+
+/* --- The hero "Technical details" disclosure body ------------------------- */
+.simple-install__tech-body {
+    margin-top: 10px;
+}
+
+.simple-install__tech-note {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}

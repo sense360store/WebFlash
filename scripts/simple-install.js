@@ -66,6 +66,13 @@ const FRESHNESS_ACK_SELECTOR = '[data-manifest-freshness-acknowledge]';
 // freshness-unknown state) is the remaining blocker, so the Simple path can keep
 // the "accept the risk" preflight acknowledgement hidden by default.
 const WARN_CONTEXT_ATTR = 'data-install-warn-context';
+// WF-UX-015 — the single "Technical details" disclosure and the <html> flag that
+// reveals the otherwise-collapsed firmware / provenance / release metadata + the
+// More-actions group in the Simple path. Mirrors the Setup-checks reveal pattern;
+// state.js stays the sole authority for what the firmware card renders.
+const TECH_DETAILS_SELECTOR = '[data-simple-install-tech]';
+const TECH_DETAILS_LINK_SELECTOR = '[data-open-technical-details]';
+const TECH_REVEAL_ATTR = 'data-technical-details-revealed';
 
 // A clean module slate so switching from the advanced wizard back into the
 // stable kit never carries a stray module selection forward. Mirrors the
@@ -127,10 +134,15 @@ export function describeReadiness(readiness) {
                 actions: [RELOAD]
             };
         case 'safety-checklist':
+            // WF-UX-015 — an unticked safety confirmation is an expected step on
+            // the happy path, not a problem. Use the calm, instructional
+            // "Confirm before installing" wording and reserve "Needs attention"
+            // for genuine issues (unsupported browser, stale firmware list,
+            // missing firmware, preflight warnings).
             return {
                 level: 'attention',
-                title: 'Needs attention',
-                detail: 'Confirm the safety check below before installing.',
+                title: 'Confirm before installing',
+                detail: 'Tick the safety confirmation below, then use the Install button to begin.',
                 actions: []
             };
         case 'advanced-ack':
@@ -255,6 +267,84 @@ function openPreflightDetails() {
         try { details.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ }
     }
     return true;
+}
+
+/**
+ * WF-UX-015 — toggle the `<html data-technical-details-revealed>` flag that the
+ * simple-mode CSS reads to reveal (or re-collapse) the firmware / provenance /
+ * release metadata + the More-actions group in place. Pure presentation: it
+ * never re-renders the firmware card or touches an install gate.
+ *
+ * @param {boolean} revealed
+ */
+function setTechnicalDetailsRevealed(revealed) {
+    if (typeof document === 'undefined' || !document.documentElement) {
+        return;
+    }
+    if (revealed) {
+        document.documentElement.setAttribute(TECH_REVEAL_ATTR, 'true');
+    } else {
+        document.documentElement.removeAttribute(TECH_REVEAL_ATTR);
+    }
+}
+
+/**
+ * Keep the reveal flag in lockstep with the disclosure's open state. Safe to
+ * call when the disclosure is absent (older embeds / unit fixtures) — it then
+ * resolves to "not revealed".
+ */
+function syncTechnicalDetailsRevealed() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const tech = document.querySelector(TECH_DETAILS_SELECTOR);
+    setTechnicalDetailsRevealed(Boolean(tech && tech.open));
+}
+
+/**
+ * Open the single "Technical details" disclosure and reveal the collapsed
+ * firmware-detail surfaces. Reused by the "Technical details" secondary link so
+ * there is one way in, mirroring how "Setup checks" opens the preflight details.
+ *
+ * @returns {boolean} whether the disclosure was found.
+ */
+function openTechnicalDetails() {
+    if (typeof document === 'undefined') {
+        return false;
+    }
+    const tech = document.querySelector(TECH_DETAILS_SELECTOR);
+    if (!tech) {
+        return false;
+    }
+    tech.open = true;
+    setTechnicalDetailsRevealed(true);
+    const summary = tech.querySelector('summary');
+    if (summary && typeof summary.focus === 'function') {
+        try { summary.focus(); } catch { /* ignore */ }
+    }
+    if (typeof tech.scrollIntoView === 'function') {
+        try { tech.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch { /* ignore */ }
+    }
+    return true;
+}
+
+/**
+ * Bind the disclosure's native `toggle` so opening it from the summary triangle
+ * (not only the "Technical details" link) reveals the collapsed surfaces, and
+ * closing it re-collapses them. Idempotent; syncs the initial state once bound.
+ */
+function bindTechnicalDetailsDisclosure() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const tech = document.querySelector(TECH_DETAILS_SELECTOR);
+    if (tech && tech.dataset.techRevealBound !== 'true') {
+        tech.addEventListener('toggle', () => {
+            setTechnicalDetailsRevealed(tech.open);
+        });
+        tech.dataset.techRevealBound = 'true';
+    }
+    syncTechnicalDetailsRevealed();
 }
 
 /**
@@ -391,6 +481,7 @@ function enterSimpleView() {
         console.warn('[simple-install] advancing to review step failed:', error);
     }
     syncSafetyConfirmFromGate();
+    syncTechnicalDetailsRevealed();
     renderStatus(window.webflashInstallReadiness || lastReadiness);
 }
 
@@ -589,6 +680,14 @@ function handleDocumentClick(event) {
         return;
     }
 
+    // WF-UX-015 — the "Technical details" secondary link opens the single hero
+    // disclosure and reveals the collapsed firmware-detail surfaces.
+    if (target.closest(TECH_DETAILS_LINK_SELECTOR)) {
+        event.preventDefault();
+        openTechnicalDetails();
+        return;
+    }
+
     if (target.closest('[data-enter-advanced]')) {
         event.preventDefault();
         applyMode('advanced');
@@ -624,6 +723,7 @@ export function initSimpleInstall() {
     document.addEventListener('click', handleDocumentClick);
     subscribeReadiness();
     bindSafetyConfirmMirror();
+    bindTechnicalDetailsDisclosure();
     const mode = resolveInitialMode();
     applyMode(mode, { persist: false });
 }
@@ -644,11 +744,16 @@ export const __testHooks = Object.freeze({
     describeReadiness,
     syncPathChoice,
     openPreflightDetails,
+    openTechnicalDetails,
+    setTechnicalDetailsRevealed,
+    syncTechnicalDetailsRevealed,
+    bindTechnicalDetailsDisclosure,
     acknowledgeLoadedFirmwareList,
     bindSafetyConfirmMirror,
     syncSafetyConfirmFromGate,
     getLastReadiness: () => lastReadiness,
     resetForTests: () => { lastReadiness = null; },
     STORAGE_KEY,
-    STABLE_PRESET_ID
+    STABLE_PRESET_ID,
+    TECH_REVEAL_ATTR
 });

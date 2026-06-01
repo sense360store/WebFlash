@@ -63,8 +63,10 @@ stale to serve and goes to the network. The app shell therefore refreshes on
 the **first** load after deploy, with no second reload required, and the
 cache-name bump cleans up the old entries on the next service-worker activation.
 
-The token is date-based (`20260601` / `2026-06-01`) to match the existing CSS
-convention and to read meaningfully in support tooling.
+The token is date-based, with a build counter for same-day re-deploys
+(`202606012` / `2026-06-01-2`, the second 2026-06-01 build — WF-UX-015's
+collapsed Simple-install firmware detail), to match the existing CSS convention
+and to read meaningfully in support tooling.
 
 ### Build marker (how to verify a deploy is live)
 
@@ -72,7 +74,7 @@ convention and to read meaningfully in support tooling.
 
 ```html
 <meta name="webflash-app-version" content="1.0.1">
-<meta name="webflash-app-shell" content="2026-06-01">
+<meta name="webflash-app-shell" content="2026-06-01-2">
 ```
 
 These are read by `scripts/services/diagnostics.js` (`buildAppSection`) and
