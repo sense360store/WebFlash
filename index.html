@@ -214,61 +214,70 @@
                      data module's developer/support-only fields, not in this
                      markup. -->
                 <section class="bundle-presets" data-bundle-presets aria-labelledby="bundle-presets-heading">
-                    <h3 id="bundle-presets-heading" class="bundle-presets__heading">Pick your Sense360 kit bundle</h3>
-                    <p class="bundle-presets__intro">Sense360 ships productized kits. Pick the bundle that matches what you ordered and we&rsquo;ll prefill the wizard. Prefer per-module control? Use the <em>Advanced setup</em> card below.</p>
+                    <h3 id="bundle-presets-heading" class="bundle-presets__heading">Install your Sense360 kit</h3>
+                    <p class="bundle-presets__intro">Most customers have the current Sense360 Bathroom PoE kit. Select it below to prefill the wizard and install the supported stable firmware. Have different hardware, or want to build a setup by hand? Choose one of the paths further down.</p>
                     <p class="bundle-presets__availability-notice" data-bundle-preset-availability-notice role="status" aria-live="polite" hidden></p>
-                    <div class="bundle-presets__group">
-                        <h4 class="bundle-presets__group-heading">Available bundles</h4>
-                        <div class="bundle-presets__grid" data-bundle-presets-grid="available">
-                            <button
-                                class="bundle-preset-card bundle-preset-card--available bundle-preset-card--stable"
-                                type="button"
-                                data-bundle-preset-id="S360-KIT-BATH-POE"
-                                data-bundle-preset-status="stable"
-                                data-bundle-preset-channel="stable"
-                                aria-describedby="bundle-preset-bath-poe-desc"
-                                aria-pressed="false"
-                            >
-                                <span class="bundle-preset-card__badge bundle-preset-card__badge--positive" data-bundle-preset-badge>Recommended</span>
-                                <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; PoE</span>
-                                <span class="bundle-preset-card__description" id="bundle-preset-bath-poe-desc">Sense360 Core with the VentIQ bathroom air-quality module and the RoomIQ room sensor, powered over Ethernet. Recommended for production deployments.</span>
-                                <ul class="bundle-preset-card__components" aria-label="Included components">
-                                    <li>Sense360 Core <span class="bundle-preset-card__component-sku">S360-100</span></li>
-                                    <li>Sense360 RoomIQ <span class="bundle-preset-card__component-sku">S360-200</span></li>
-                                    <li>Sense360 VentIQ <span class="bundle-preset-card__component-sku">S360-211</span></li>
-                                    <li>Sense360 PoE PSU <span class="bundle-preset-card__component-sku">S360-410</span></li>
-                                </ul>
-                                <span class="bundle-preset-card__meta">Stable channel &middot; <code>S360-KIT-BATH-POE</code></span>
-                                <span class="bundle-preset-card__customized" data-bundle-preset-customized hidden>Customized from this bundle</span>
-                            </button>
 
-                            <button
-                                class="bundle-preset-card bundle-preset-card--available bundle-preset-card--preview"
-                                type="button"
-                                data-bundle-preset-id="S360-KIT-BATH-POE-LED"
-                                data-bundle-preset-status="preview"
-                                data-bundle-preset-channel="preview"
-                                aria-describedby="bundle-preset-bath-poe-led-desc"
-                                aria-pressed="false"
-                            >
-                                <span class="bundle-preset-card__badge bundle-preset-card__badge--warning" data-bundle-preset-badge>Preview</span>
-                                <span class="bundle-preset-card__title">Sense360 Bathroom Kit &mdash; PoE + Status Ring Preview</span>
-                                <span class="bundle-preset-card__description" id="bundle-preset-bath-poe-led-desc">Extends the Bathroom PoE kit with the Sense360 LED status ring. Preview firmware &mdash; you&rsquo;ll need to acknowledge the preview channel on Step 5 before install.</span>
-                                <ul class="bundle-preset-card__components" aria-label="Included components">
-                                    <li>Sense360 Core <span class="bundle-preset-card__component-sku">S360-100</span></li>
-                                    <li>Sense360 RoomIQ <span class="bundle-preset-card__component-sku">S360-200</span></li>
-                                    <li>Sense360 VentIQ <span class="bundle-preset-card__component-sku">S360-211</span></li>
-                                    <li>Sense360 LED ring <span class="bundle-preset-card__component-sku">S360-300</span></li>
-                                    <li>Sense360 PoE PSU <span class="bundle-preset-card__component-sku">S360-410</span></li>
-                                </ul>
-                                <span class="bundle-preset-card__meta">Preview channel &middot; <code>S360-KIT-BATH-POE-LED</code> &middot; <strong>Requires preview acknowledgement before install.</strong></span>
-                                <span class="bundle-preset-card__customized" data-bundle-preset-customized hidden>Customized from this bundle</span>
-                            </button>
-                        </div>
+                    <!-- WF-UX-010 — the stable Bathroom PoE kit is the dominant
+                         primary card (the safe default path for a normal
+                         customer); the LED kit stays visible but visually
+                         secondary and clearly marked as a preview. This is a
+                         presentation-only change: the preset ids, data hooks,
+                         and the manifest / release-channel gating are unchanged,
+                         so the preview kit still gates on the preview
+                         acknowledgement at install time. -->
+                    <div class="bundle-presets__grid bundle-presets__grid--stacked" data-bundle-presets-grid="available">
+                        <button
+                            class="bundle-preset-card bundle-preset-card--available bundle-preset-card--stable bundle-preset-card--primary"
+                            type="button"
+                            data-bundle-preset-id="S360-KIT-BATH-POE"
+                            data-bundle-preset-status="stable"
+                            data-bundle-preset-channel="stable"
+                            aria-describedby="bundle-preset-bath-poe-desc"
+                            aria-pressed="false"
+                        >
+                            <span class="bundle-preset-card__badge bundle-preset-card__badge--positive" data-bundle-preset-badge>Recommended</span>
+                            <span class="bundle-preset-card__title">Sense360 Bathroom PoE Kit</span>
+                            <span class="bundle-preset-card__channel bundle-preset-card__channel--stable">Stable firmware &middot; ready to install</span>
+                            <span class="bundle-preset-card__description" id="bundle-preset-bath-poe-desc">The current Sense360 ceiling kit: bathroom air-quality sensing plus room sensing, powered over Ethernet. This is the supported install for most customers.</span>
+                            <ul class="bundle-preset-card__components" aria-label="Included components">
+                                <li>Sense360 Core <span class="bundle-preset-card__component-sku">S360-100</span></li>
+                                <li>Sense360 RoomIQ <span class="bundle-preset-card__component-sku">S360-200</span></li>
+                                <li>Sense360 VentIQ <span class="bundle-preset-card__component-sku">S360-211</span></li>
+                                <li>Sense360 PoE PSU <span class="bundle-preset-card__component-sku">S360-410</span></li>
+                            </ul>
+                            <span class="bundle-preset-card__cta" aria-hidden="true">Install stable firmware &rarr;</span>
+                            <span class="bundle-preset-card__meta">Stable channel &middot; <code>S360-KIT-BATH-POE</code></span>
+                            <span class="bundle-preset-card__customized" data-bundle-preset-customized hidden>Customized from this bundle</span>
+                        </button>
+
+                        <button
+                            class="bundle-preset-card bundle-preset-card--available bundle-preset-card--preview bundle-preset-card--secondary"
+                            type="button"
+                            data-bundle-preset-id="S360-KIT-BATH-POE-LED"
+                            data-bundle-preset-status="preview"
+                            data-bundle-preset-channel="preview"
+                            aria-describedby="bundle-preset-bath-poe-led-desc"
+                            aria-pressed="false"
+                        >
+                            <span class="bundle-preset-card__badge bundle-preset-card__badge--warning" data-bundle-preset-badge>Preview</span>
+                            <span class="bundle-preset-card__title">Sense360 Bathroom PoE Kit + LED Status Ring</span>
+                            <span class="bundle-preset-card__channel bundle-preset-card__channel--preview">Preview firmware &middot; acknowledge the preview channel before install</span>
+                            <span class="bundle-preset-card__description" id="bundle-preset-bath-poe-led-desc">Adds the Sense360 LED status ring to the Bathroom PoE kit. Preview firmware is experimental &mdash; you&rsquo;ll need to acknowledge the preview channel on Step 5 before install.</span>
+                            <ul class="bundle-preset-card__components" aria-label="Included components">
+                                <li>Sense360 Core <span class="bundle-preset-card__component-sku">S360-100</span></li>
+                                <li>Sense360 RoomIQ <span class="bundle-preset-card__component-sku">S360-200</span></li>
+                                <li>Sense360 VentIQ <span class="bundle-preset-card__component-sku">S360-211</span></li>
+                                <li>Sense360 LED ring <span class="bundle-preset-card__component-sku">S360-300</span></li>
+                                <li>Sense360 PoE PSU <span class="bundle-preset-card__component-sku">S360-410</span></li>
+                            </ul>
+                            <span class="bundle-preset-card__meta">Preview channel &middot; <code>S360-KIT-BATH-POE-LED</code> &middot; <strong>Requires preview acknowledgement before install.</strong></span>
+                            <span class="bundle-preset-card__customized" data-bundle-preset-customized hidden>Customized from this bundle</span>
+                        </button>
                     </div>
 
                     <details class="bundle-presets__planned-group" data-bundle-presets-planned>
-                        <summary class="bundle-presets__group-heading bundle-presets__group-heading--collapsible">Planned kits (not yet available in WebFlash)</summary>
+                        <summary class="bundle-presets__group-heading bundle-presets__group-heading--collapsible">Coming soon / not installable yet</summary>
                         <p class="bundle-presets__planned-intro">These kit bundles are planned, but they cannot be installed from WebFlash yet because their firmware has not been released. Selecting one explains what is still needed &mdash; it does not change your current configuration.</p>
                         <div class="bundle-presets__grid bundle-presets__grid--planned" data-bundle-presets-grid="planned">
                             <button
@@ -332,19 +341,32 @@
                     <p class="bundle-presets__source">Installability is always controlled by the live firmware list and the existing readiness, release-channel, and safety checks &mdash; a kit appearing here never bypasses them.</p>
                 </section>
 
-                <div class="start-paths" data-start-paths role="group" aria-labelledby="step-1-heading">
-                    <button class="start-path-card start-path-card--kit" type="button" data-start-path="kit" aria-describedby="start-path-kit-desc">
-                        <span class="start-path-card__title">I bought a kit</span>
-                        <span class="start-path-card__description" id="start-path-kit-desc">Use this if you have the current Sense360 ceiling PoE VentIQ + RoomIQ kit. We&rsquo;ll prefill the supported Release-One hardware.</span>
-                    </button>
-                    <button class="start-path-card start-path-card--custom" type="button" data-start-path="custom" aria-describedby="start-path-custom-desc">
-                        <span class="start-path-card__title">Advanced setup</span>
-                        <span class="start-path-card__description" id="start-path-custom-desc">Use this only if your hardware doesn&rsquo;t match a kit. Build a Sense360 setup module by module. Some modules are not yet available in WebFlash and will be clearly marked.</span>
-                    </button>
-                    <button class="start-path-card start-path-card--recovery" type="button" data-start-path="recovery" data-rescue-open aria-haspopup="dialog" aria-describedby="start-path-recovery-desc">
-                        <span class="start-path-card__title">Recovery</span>
-                        <span class="start-path-card__description" id="start-path-recovery-desc">Flash the rescue firmware to reset an unbootable hub. Use this only for recovery or bootloader repair.</span>
-                    </button>
+                <!-- WF-UX-010 — the productized kit cards above are the dominant
+                     path for a normal customer. These remain the explicit
+                     "I bought a kit" (SKU search fallback), "Advanced setup"
+                     (per-module build), and "Recovery" paths, but framed as
+                     secondary so they don't compete with the primary kit card.
+                     Advanced setup and Recovery carry the quiet modifier so they
+                     no longer have equal visual weight to the customer kit path.
+                     Data hooks (data-start-path / data-rescue-open) and the
+                     WF-UX-006 configmode URL contract are unchanged. -->
+                <div class="start-paths-section start-paths-section--secondary">
+                    <h3 id="start-paths-heading" class="start-paths__heading">Other ways to start</h3>
+                    <p class="start-paths__intro">Not installing the Bathroom PoE kit above? Pick another path.</p>
+                    <div class="start-paths start-paths--secondary" data-start-paths role="group" aria-labelledby="start-paths-heading">
+                        <button class="start-path-card start-path-card--kit" type="button" data-start-path="kit" aria-describedby="start-path-kit-desc">
+                            <span class="start-path-card__title">I bought a kit</span>
+                            <span class="start-path-card__description" id="start-path-kit-desc">Use this if you have the current Sense360 ceiling PoE VentIQ + RoomIQ kit. We&rsquo;ll prefill the supported Release-One hardware.</span>
+                        </button>
+                        <button class="start-path-card start-path-card--custom start-path-card--quiet" type="button" data-start-path="custom" aria-describedby="start-path-custom-desc">
+                            <span class="start-path-card__title">Advanced setup</span>
+                            <span class="start-path-card__description" id="start-path-custom-desc">Use this only if your hardware doesn&rsquo;t match a kit. Build a Sense360 setup module by module. Some modules are not yet available in WebFlash and will be clearly marked.</span>
+                        </button>
+                        <button class="start-path-card start-path-card--recovery start-path-card--quiet" type="button" data-start-path="recovery" data-rescue-open aria-haspopup="dialog" aria-describedby="start-path-recovery-desc">
+                            <span class="start-path-card__title">Recovery</span>
+                            <span class="start-path-card__description" id="start-path-recovery-desc">Flash the rescue firmware to reset an unbootable hub. Use this only for recovery or bootloader repair.</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- WF-UX-006: the legacy [data-config-mode-picker] radios are kept
