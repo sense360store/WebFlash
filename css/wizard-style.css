@@ -4112,9 +4112,18 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     text-decoration: none;
     font-size: 14px;
     margin-left: 16px;
+    /* WF-UX-016 — the embedded-changelog trigger is a <button> (CSP-safe and
+       never a dead "#" anchor), so reset native button chrome to keep it reading
+       as the inline link it replaces. Harmless on the external-URL <a> variant. */
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
 }
 
-.release-notes-link:hover {
+.release-notes-link:hover,
+.release-notes-link:focus-visible {
     color: var(--brand-green-contrast-hover);
     text-decoration: underline;
 }

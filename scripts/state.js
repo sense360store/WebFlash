@@ -1226,16 +1226,6 @@ function createEmptyVerificationState(status = 'idle', message = '') {
 let firmwareVerificationState = createEmptyVerificationState();
 let firmwareVerificationToken = 0;
 
-const RELEASE_NOTES_CHANNEL_SUFFIX_MAP = {
-    stable: 'stable',
-    general: 'stable',
-    preview: 'preview',
-    prerelease: 'preview',
-    beta: 'beta',
-    rc: 'beta',
-    candidate: 'beta'
-};
-
 const CHANNEL_DISPLAY_MAP = {
     stable: {
         label: 'Stable Release',
@@ -1293,15 +1283,6 @@ function getChannelDisplayInfo(channel) {
     const key = normaliseChannelKey(channel);
     const display = CHANNEL_DISPLAY_MAP[key] || DEFAULT_CHANNEL_DISPLAY;
     return { key, ...display };
-}
-
-function resolveReleaseNotesChannel(channel) {
-    if (!channel) {
-        return '';
-    }
-
-    const key = channel.toString().trim().toLowerCase();
-    return RELEASE_NOTES_CHANNEL_SUFFIX_MAP[key] || key;
 }
 
 function getChannelPriority(channel) {
@@ -3832,6 +3813,17 @@ function updateFirmwareControls() {
         }
         if (!freshnessOk && freshnessBlockingReason) {
             const isHardBlock = swUpdateBlocking || manifestStaleBlocking;
+            // WF-UX-016 — in Simple mode the calm hero is the single freshness
+            // surface, so the firmware-card helper must never echo the raw
+            // diagnostic blockingReason (which names "Recheck manifest freshness"
+            // and "could not confirm whether the firmware list is up to date").
+            // Unknown freshness uses the calm plain-language equivalent; a hard
+            // block (stale / pending SW update) keeps its reload instruction
+            // (no banned phrases) and stays an error. The freshness gate itself
+            // is unchanged — presentation only.
+            if (isSimpleInstallMode() && !isHardBlock) {
+                return { text: simpleModeFreshnessDetail(), isError: false, isWarning: true };
+            }
             return { text: freshnessBlockingReason, isError: isHardBlock, isWarning: !isHardBlock };
         }
         if (preflightPolicy.requiresWarnAcknowledgement) {
@@ -5816,11 +5808,40 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
         metaParts.push(`<span class="firmware-date">${escapeHtml(buildDateLabel)}</span>`);
     }
 
-    metaParts.push(`
-        <a href="#" class="release-notes-link" data-release-notes-trigger data-release-notes-id="${escapeHtml(releaseNotesId)}" data-notes-id="${escapeHtml(releaseNotesId)}" data-firmware-id="${escapeHtml(firmware.firmwareId)}" onclick="toggleReleaseNotes(event)">
-            View Release Notes
-        </a>
-    `);
+    // WF-UX-016 — "View Release Notes" must open a real release/changelog or not
+    // render at all (never a dead "#" anchor). A release URL on the build wins (a
+    // real external link); otherwise the shipped changelog embedded in the
+    // manifest drives an in-card disclosure via a real <button> wired through the
+    // delegated [data-release-notes-trigger] listener. (The effective GitHub
+    // Pages CSP — script-src 'self' https://unpkg.com, no 'unsafe-inline' — blocks
+    // inline onclick handlers, which is why the old href="#" + onclick link did
+    // nothing on the live site.) With neither a URL nor embedded notes, no trigger
+    // and no empty section are rendered.
+    const releaseNotesUrl = (firmware.release_url || '').toString().trim();
+    const releaseNotesEntries = Array.isArray(firmware.changelog)
+        ? firmware.changelog.filter(entry => typeof entry === 'string' && entry.trim() !== '')
+        : [];
+    let releaseNotesSectionHtml = '';
+    if (releaseNotesUrl) {
+        metaParts.push(`
+            <a href="${escapeHtml(releaseNotesUrl)}" class="release-notes-link" target="_blank" rel="noopener noreferrer" data-release-notes-external data-firmware-id="${escapeHtml(firmware.firmwareId)}">
+                View Release Notes
+            </a>
+        `);
+    } else if (releaseNotesEntries.length > 0) {
+        metaParts.push(`
+            <button type="button" class="release-notes-link" data-release-notes-trigger data-release-notes-id="${escapeHtml(releaseNotesId)}" data-notes-id="${escapeHtml(releaseNotesId)}" data-firmware-id="${escapeHtml(firmware.firmwareId)}" aria-expanded="false" aria-controls="${escapeHtml(releaseNotesId)}">
+                View Release Notes
+            </button>
+        `);
+        releaseNotesSectionHtml = `
+            <div class="release-notes-section" id="${escapeHtml(releaseNotesId)}" data-release-notes-container data-loaded="false" style="display: none;">
+                <div class="release-notes-content">
+                    <div class="loading">Loading release notes...</div>
+                </div>
+            </div>
+        `;
+    }
 
     const metadataBlock = metadataHtml
         ? `
@@ -5889,11 +5910,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
             ${provenanceSectionHtml}
             ${partsSectionHtml}
             ${metadataBlock}
-            <div class="release-notes-section" id="${escapeHtml(releaseNotesId)}" data-release-notes-container data-loaded="false" style="display: none;">
-                <div class="release-notes-content">
-                    <div class="loading">Loading release notes...</div>
-                </div>
-            </div>
+            ${releaseNotesSectionHtml}
         </div>
     `;
 }
@@ -6840,7 +6857,13 @@ if (firmwareVersionSelect) {
 
 async function toggleReleaseNotes(event) {
     event.preventDefault();
-    const link = event.currentTarget;
+    // WF-UX-016 — resolve the trigger from the event target so this works under
+    // the delegated [data-release-notes-trigger] listener. The card no longer
+    // carries an inline onclick (the effective GitHub Pages CSP blocks inline
+    // handlers, which is why the old link did nothing on the live site).
+    const link = (event.target && typeof event.target.closest === 'function')
+        ? event.target.closest('[data-release-notes-trigger]')
+        : null;
     if (!link) {
         return;
     }
@@ -6864,6 +6887,7 @@ async function toggleReleaseNotes(event) {
     if (isHidden) {
         notesSection.style.display = 'block';
         link.textContent = 'Hide Release Notes';
+        link.setAttribute('aria-expanded', 'true');
 
         if (notesSection.dataset.loaded !== 'true') {
             await loadReleaseNotes({
@@ -6874,38 +6898,8 @@ async function toggleReleaseNotes(event) {
     } else {
         notesSection.style.display = 'none';
         link.textContent = 'View Release Notes';
+        link.setAttribute('aria-expanded', 'false');
     }
-}
-
-function buildReleaseNotesPathFromPart(partPath, channel) {
-    if (!partPath) {
-        return '';
-    }
-
-    const releaseNotesChannel = resolveReleaseNotesChannel(channel);
-    const lastSlashIndex = partPath.lastIndexOf('/');
-    const directory = lastSlashIndex >= 0 ? partPath.substring(0, lastSlashIndex + 1) : '';
-    const fileName = lastSlashIndex >= 0 ? partPath.substring(lastSlashIndex + 1) : partPath;
-
-    if (!fileName.endsWith('.bin')) {
-        return '';
-    }
-
-    const baseName = fileName.substring(0, fileName.length - 4);
-    const lastHyphenIndex = baseName.lastIndexOf('-');
-    if (lastHyphenIndex === -1) {
-        return '';
-    }
-
-    const prefix = baseName.substring(0, lastHyphenIndex);
-    const channelSuffix = releaseNotesChannel ? `-${releaseNotesChannel}` : '';
-    const fileNameWithChannel = `${prefix}${channelSuffix}.md`;
-
-    if (releaseNotesChannel === 'stable') {
-        return `${directory}${fileNameWithChannel}`;
-    }
-
-    return `firmware/previews/${fileNameWithChannel}`;
 }
 
 async function loadReleaseNotes({ notesSection, firmwareId }) {
@@ -6928,118 +6922,38 @@ async function loadReleaseNotes({ notesSection, firmwareId }) {
         contentContainer.replaceChildren(fallback);
     };
 
-    if (!firmware || !firmware.version) {
+    // WF-UX-016 — the shipped changelog embedded in the manifest is the
+    // authoritative release-notes source and is always present for stable /
+    // preview builds (the card only renders the "View Release Notes" trigger
+    // when these entries exist), so render it directly. The previous
+    // implementation fetched a per-build .md that has never shipped on disk, so
+    // the disclosure always fell back to "release notes are not available".
+    const entries = (firmware && Array.isArray(firmware.changelog))
+        ? firmware.changelog.filter(entry => typeof entry === 'string' && entry.trim() !== '')
+        : [];
+
+    if (entries.length === 0) {
         showFallbackMessage(channelInfo.notesFallback);
         notesSection.dataset.loaded = 'true';
         return;
     }
 
-    const primaryPartPath = Array.isArray(firmware.parts) && firmware.parts.length > 0
-        ? firmware.parts[0].path
-        : '';
+    const fragment = document.createDocumentFragment();
+    const heading = document.createElement('h4');
+    heading.className = 'release-notes-heading';
+    heading.textContent = firmware.version ? `Release notes — v${firmware.version}` : 'Release notes';
+    fragment.appendChild(heading);
 
-    const notesPath = buildReleaseNotesPathFromPart(primaryPartPath, firmware.channel);
+    const list = document.createElement('ul');
+    entries.forEach(entry => {
+        const item = document.createElement('li');
+        item.textContent = entry;
+        list.appendChild(item);
+    });
+    fragment.appendChild(list);
 
-    if (!notesPath) {
-        showFallbackMessage(channelInfo.notesFallback);
-        notesSection.dataset.loaded = 'true';
-        return;
-    }
-
-    try {
-        const response = await fetch(notesPath);
-
-        if (response.ok) {
-            const markdown = await response.text();
-            const lines = markdown.split('\n');
-            const fragment = document.createDocumentFragment();
-
-            let currentList = null;
-            let currentParagraph = null;
-
-            const closeParagraph = () => {
-                currentParagraph = null;
-            };
-
-            const closeList = () => {
-                currentList = null;
-            };
-
-            lines.forEach(rawLine => {
-                const line = rawLine.trim();
-
-                if (line === '') {
-                    closeParagraph();
-                    closeList();
-                    return;
-                }
-
-                const isHeader = line.startsWith('# ')
-                    || line.startsWith('## ')
-                    || line.startsWith('### ');
-                const isListItem = line.startsWith('- ');
-
-                if (isHeader) {
-                    closeParagraph();
-                    closeList();
-
-                    let headerElement = null;
-                    if (line.startsWith('### ')) {
-                        headerElement = document.createElement('h4');
-                        headerElement.textContent = line.substring(4);
-                    } else if (line.startsWith('## ')) {
-                        headerElement = document.createElement('h3');
-                        headerElement.textContent = line.substring(3);
-                    } else if (line.startsWith('# ')) {
-                        headerElement = document.createElement('h2');
-                        headerElement.textContent = line.substring(2);
-                    }
-
-                    if (headerElement) {
-                        fragment.appendChild(headerElement);
-                    }
-
-                    return;
-                }
-
-                if (isListItem) {
-                    closeParagraph();
-
-                    if (!currentList) {
-                        currentList = document.createElement('ul');
-                        fragment.appendChild(currentList);
-                    }
-
-                    const listItem = document.createElement('li');
-                    listItem.textContent = line.substring(2);
-                    currentList.appendChild(listItem);
-                    return;
-                }
-
-                closeList();
-
-                if (!currentParagraph) {
-                    currentParagraph = document.createElement('p');
-                    fragment.appendChild(currentParagraph);
-                    currentParagraph.textContent = line;
-                } else {
-                    currentParagraph.textContent = `${currentParagraph.textContent} ${line}`.trim();
-                }
-            });
-
-            contentContainer.replaceChildren(fragment);
-        } else {
-            showFallbackMessage(channelInfo.notesFallback);
-        }
-    } catch (error) {
-        console.error('Error loading release notes:', error);
-        const errorMessage = document.createElement('p');
-        errorMessage.className = 'error';
-        errorMessage.textContent = 'Unable to load release notes.';
-        contentContainer.replaceChildren(errorMessage);
-    } finally {
-        notesSection.dataset.loaded = 'true';
-    }
+    contentContainer.replaceChildren(fragment);
+    notesSection.dataset.loaded = 'true';
 }
 
 async function copyFirmwarePartsToClipboard(parts) {
@@ -7207,6 +7121,20 @@ document.addEventListener('click', async event => {
         console.error('Failed to copy value:', error);
         showToast('Copy failed');
     }
+});
+
+// WF-UX-016 — "View Release Notes" toggle via event delegation. The effective
+// GitHub Pages CSP (script-src 'self' https://unpkg.com — no 'unsafe-inline')
+// blocks inline onclick handlers, so the old inline-onclick link did nothing on
+// the live site. Delegation is CSP-safe and survives the firmware card being
+// re-rendered. The external-URL variant ([data-release-notes-external]) is a
+// real <a target="_blank"> and needs no handler.
+document.addEventListener('click', event => {
+    const trigger = event.target.closest?.('[data-release-notes-trigger]');
+    if (!trigger) {
+        return;
+    }
+    toggleReleaseNotes(event);
 });
 
 function downloadFirmware() {
@@ -7508,6 +7436,7 @@ export const __testHooks = Object.freeze({
     verifyCurrentFirmwareIntegrity,
     renderFirmwareProvenanceSection,
     renderFirmwareDetailsPanel,
+    createFirmwareCardHtml,
     renderChannelAcknowledgementPanel,
     setReleaseModeForTests,
     getReleaseMode,

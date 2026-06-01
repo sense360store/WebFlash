@@ -64,7 +64,7 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v8';
+const CACHE_NAME = 'webflash-v9';
 const CACHE_VERSION = 5;
 
 /**
