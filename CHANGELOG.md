@@ -56,6 +56,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Retired legacy module variants were removed from manifests and distribution artifacts.
 
 ### Fixed
+- Manifest freshness no longer reports a false `missing-generated-at` warning on
+  a full page refresh directly into the review step (`step=5`). New browser
+  DevTools HAR evidence (refresh straight into `step=5`) confirmed
+  `/WebFlash/manifest.json` is fetched successfully, returns HTTP 200 JSON with a
+  top-level `generated_at`, that a second request to the same URL also returns
+  valid JSON with `generated_at`, and that a manual "Check for update again"
+  succeeds — so this was neither a bad manifest file nor a missing `generated_at`
+  in the deployed root manifest. The remaining cause was a **startup
+  ordering/race**: the review-step freshness trigger could run before the loaded
+  manifest metadata had been captured, so the comparison ran against null loaded
+  metadata. A manual recheck worked only because the manifest had already loaded
+  by then. Fixes:
+  - `checkManifestFreshnessNow()` now **awaits the in-flight manifest load**
+    (`manifestLoadPromise`, or starts a load) and re-captures the loaded metadata
+    before running the comparison whenever the metadata is missing and the load
+    has not definitively failed. A load that has already failed is left alone so
+    the recheck still surfaces the real `missing-loaded-generated-at` error
+    instead of silently re-fetching.
+  - `triggerManifestFreshnessCheckIfNeeded()` no longer pre-marks the check as
+    run; `manifestFreshnessHasRun` flips only once `checkManifestFreshnessNow()`
+    has a real fetch/check result, so a premature, still-loading invocation can
+    no longer latch the gate and block the real check from ever running.
+  - A new `manifest-load-pending` reason code distinguishes a transient
+    still-loading state from the definitive `missing-loaded-generated-at`,
+    `missing-fetched-generated-at`, and `missing-both-generated-at` diagnoses; it
+    does not latch a verdict.
+  - The initial refresh and a manual "Check for update again" now produce the
+    same freshness result; stale still hard-blocks and a failed manifest load
+    still reports a real error.
 - Root manifest freshness check no longer reports a false
   `missing-generated-at` warning on the live Simple install. Browser DevTools
   HAR capture confirmed the deployed `/WebFlash/manifest.json` is valid JSON

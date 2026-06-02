@@ -42,7 +42,7 @@ import {
 } from './services/diagnostics.js';
 import { postFlashService } from './services/post-flash.js';
 import { getServiceWorkerState, subscribeServiceWorkerState } from './services/sw-update.js';
-import { checkManifestFreshness } from './services/manifest-freshness.js';
+import { checkManifestFreshness, FRESHNESS_REASON } from './services/manifest-freshness.js';
 import { notifyManifestFreshness as notifyFreshnessBanner } from './layout/freshness-banner.js';
 import { findNearbyConfigStrings, getMismatchHighlights } from './utils/firmware-nearest.js';
 import { FIRMWARE_READINESS_COPY, classifyFirmwareReadiness } from './utils/firmware-readiness.js';
@@ -1663,9 +1663,44 @@ async function checkManifestFreshnessNow(options = {}) {
         return manifestFreshnessCheckPromise;
     }
     manifestFreshnessCheckPromise = (async () => {
-        const result = await checkManifestFreshness(manifestMetadata);
-        manifestFreshnessHasRun = true;
-        setManifestFreshnessState(result.verdict, result);
+        // WF-MANIFEST-FRESHNESS-RACE-001 — startup ordering fix. On a direct
+        // deep-link into the review step the freshness trigger can fire BEFORE
+        // the initial manifest load has resolved, leaving manifestMetadata null.
+        // Comparing now would falsely report missing-loaded-generated-at against
+        // a live /WebFlash/manifest.json that DOES carry a top-level
+        // `generated_at` (HAR-proven). When the metadata is missing AND the load
+        // has not definitively failed, wait for the in-flight load (or start one)
+        // and re-capture metadata BEFORE comparing. A load that has already
+        // FAILED (manifestLoadError set) is left alone so the recheck honestly
+        // reports the real missing-loaded-generated-at error rather than silently
+        // re-fetching a manifest the wizard never actually loaded.
+        if (!manifestMetadata && manifestLoadError === null) {
+            try {
+                if (manifestLoadPromise) {
+                    await manifestLoadPromise;
+                } else if (!manifestData) {
+                    await loadManifestData();
+                }
+            } catch {
+                /* a failed load is surfaced below as a real check result */
+            }
+            // loadManifestData() captures metadata on success; capture
+            // defensively in case manifestData was populated by another path.
+            if (!manifestMetadata && manifestData) {
+                captureManifestMetadata(manifestData);
+            }
+        }
+
+        // If, after the best-effort wait, the load is STILL genuinely pending
+        // (no metadata, no data, no error), refuse to compare and report the
+        // transient manifest-load-pending reason WITHOUT latching the check as
+        // run — the caller can re-run once the load resolves.
+        const manifestLoadPending = !manifestMetadata && !manifestData && manifestLoadError === null;
+        const result = await checkManifestFreshness(manifestMetadata, { manifestLoadPending });
+        if (result.reason !== FRESHNESS_REASON.MANIFEST_LOAD_PENDING) {
+            manifestFreshnessHasRun = true;
+            setManifestFreshnessState(result.verdict, result);
+        }
         return result;
     })();
     try {
@@ -1679,12 +1714,21 @@ async function checkManifestFreshnessNow(options = {}) {
  * Trigger the freshness check on first reach of the review step. Repeat
  * triggers on the same step are ignored unless `force` is set, so the
  * network is not hammered on every re-render.
+ *
+ * WF-MANIFEST-FRESHNESS-RACE-001 — this MUST NOT pre-mark the check as run.
+ * Marking `manifestFreshnessHasRun = true` before checkManifestFreshnessNow()
+ * actually completes would let a premature (manifest-load-pending) invocation
+ * latch the gate and block the real check from ever running, which is exactly
+ * how a direct deep-link into Step 5 produced a missing-generated-at warning
+ * that a manual "Check for update again" then resolved. checkManifestFreshnessNow()
+ * dedups concurrent callers via manifestFreshnessCheckPromise and flips
+ * manifestFreshnessHasRun only once it has a real fetch/check result, so
+ * re-entrant step changes during the in-flight load are safe and idempotent.
  */
 function triggerManifestFreshnessCheckIfNeeded() {
     if (manifestFreshnessHasRun) {
         return Promise.resolve(null);
     }
-    manifestFreshnessHasRun = true;
     return checkManifestFreshnessNow().catch(() => null);
 }
 
@@ -7555,6 +7599,8 @@ export const __testHooks = Object.freeze({
     setManifestFreshnessState,
     setManifestFreshnessAcknowledgement,
     checkManifestFreshnessNow,
+    triggerManifestFreshnessCheckIfNeeded,
+    getManifestFreshnessHasRun: () => manifestFreshnessHasRun,
     evaluateGatingPreflightPolicy,
     getManifestFreshnessDetail: () => (manifestFreshnessDetail ? { ...manifestFreshnessDetail } : null),
     getInstallReadiness: () => (typeof window !== 'undefined' ? window.webflashInstallReadiness || null : null),

@@ -32,6 +32,21 @@
  * now split into `missing-loaded-generated-at` / `missing-fetched-generated-at`
  * / `missing-both-generated-at` so the failing side is named.
  *
+ * WF-MANIFEST-FRESHNESS-RACE-001 — startup ordering / race. Newer HAR evidence
+ * (full page refresh directly into `step=5`) reconfirmed the deployed
+ * `/WebFlash/manifest.json` returns HTTP 200 JSON with a top-level `generated_at`
+ * on both the first and a second request, and that a manual "Check for update
+ * again" succeeds. The remaining false `missing-generated-at` came from the
+ * freshness check running on the initial review-step load BEFORE the wizard had
+ * captured the loaded manifest metadata (the async manifest load was still in
+ * flight). The fix lives caller-side in scripts/state.js
+ * (`checkManifestFreshnessNow()` awaits the in-flight load and re-captures
+ * metadata before comparing; `triggerManifestFreshnessCheckIfNeeded()` no longer
+ * pre-marks the check as run). This module adds the `manifest-load-pending`
+ * reason and an `options.manifestLoadPending` guard so a still-loading state is
+ * reported distinctly and never misattributed to `missing-loaded-generated-at`.
+ * See docs/wf-manifest-freshness-race-diagnosis.md.
+ *
  * Two failure modes produced a false missing-`generated_at` against a root
  * manifest that DOES carry `generated_at`:
  *
@@ -80,6 +95,17 @@
  *   - 'missing-both-generated-at'    neither copy has a `generated_at` string
  *                            (under either the top-level or nested
  *                            `manifest.generated_at` shape).
+ *   - 'manifest-load-pending'  WF-MANIFEST-FRESHNESS-RACE-001 — the loaded
+ *                            metadata is not available yet because the initial
+ *                            manifest load is still in flight (a direct deep-link
+ *                            into the review step reached the freshness check
+ *                            before `loadManifestData()` resolved). This is a
+ *                            TRANSIENT state, NOT a real missing-`generated_at`
+ *                            failure: the caller is expected to await the load
+ *                            and re-run rather than latch a verdict. It is kept
+ *                            distinct from `missing-loaded-generated-at` so a
+ *                            startup race is never misattributed to a bad or
+ *                            uncaptured published manifest.
  *   - 'invalid-generated-at' a `generated_at` is present but not a parseable
  *                            timestamp.
  *   - 'compare-failed'       defensive — the timestamp comparison itself threw.
@@ -112,6 +138,11 @@ export const FRESHNESS_REASON = Object.freeze({
     MISSING_LOADED_GENERATED_AT: 'missing-loaded-generated-at',
     MISSING_FETCHED_GENERATED_AT: 'missing-fetched-generated-at',
     MISSING_BOTH_GENERATED_AT: 'missing-both-generated-at',
+    // WF-MANIFEST-FRESHNESS-RACE-001 — transient: the initial manifest load has
+    // not resolved yet, so the loaded `generated_at` could not be captured. The
+    // caller must await the load and re-run; this is never a published-manifest
+    // fault and must not be confused with `missing-loaded-generated-at`.
+    MANIFEST_LOAD_PENDING: 'manifest-load-pending',
     INVALID_GENERATED_AT: 'invalid-generated-at',
     COMPARE_FAILED: 'compare-failed',
     SAME_OR_NEWER: 'same-or-newer',
@@ -228,7 +259,13 @@ function makeResult(verdict, reason, loadedGeneratedAt, liveGeneratedAt, error, 
  *   The manifest metadata captured when the wizard loaded `manifest.json`
  *   on startup. Both a top-level `generated_at` and a nested
  *   `manifest.generated_at` are supported.
- * @param {{fetchImpl?: typeof fetch, manifestUrl?: string}} [options]
+ * @param {{fetchImpl?: typeof fetch, manifestUrl?: string, manifestLoadPending?: boolean}} [options]
+ *   `manifestLoadPending` (WF-MANIFEST-FRESHNESS-RACE-001): the caller knows the
+ *   initial manifest load has not resolved yet, so missing loaded metadata is a
+ *   startup race rather than a published-manifest fault. When set and the loaded
+ *   `generated_at` is absent, the comparison is deferred with the distinct
+ *   `manifest-load-pending` reason instead of fetching and reporting a bogus
+ *   `missing-loaded-generated-at`.
  * @returns {Promise<{verdict: 'current'|'stale'|'unknown', reason: string, loadedGeneratedAt: string|null, liveGeneratedAt: string|null, error: string|null, diagnostics: object}>}
  */
 export async function checkManifestFreshness(loadedMetadata, options = {}) {
@@ -236,6 +273,24 @@ export async function checkManifestFreshness(loadedMetadata, options = {}) {
     const url = options.manifestUrl || resolveManifestUrl();
     const loadedGeneratedAt = extractGeneratedAt(loadedMetadata).value;
     const diagnostics = makeDiagnostics({ fetchedUrl: url });
+
+    // WF-MANIFEST-FRESHNESS-RACE-001 — startup ordering guard. If the loaded
+    // metadata has not been captured yet because the initial manifest load is
+    // still in flight, refuse to compare and report the transient
+    // `manifest-load-pending` reason. The caller (checkManifestFreshnessNow) is
+    // expected to await the load and re-run. This prevents a direct deep-link
+    // into the review step from latching a false `missing-loaded-generated-at`
+    // verdict against a live manifest that DOES carry `generated_at`.
+    if (!loadedGeneratedAt && options.manifestLoadPending) {
+        return makeResult(
+            'unknown',
+            FRESHNESS_REASON.MANIFEST_LOAD_PENDING,
+            loadedGeneratedAt,
+            null,
+            'manifest load still pending — freshness comparison deferred',
+            diagnostics
+        );
+    }
 
     if (!fetchImpl) {
         return makeResult('unknown', FRESHNESS_REASON.FETCH_FAILED, loadedGeneratedAt, null, 'fetch unavailable', diagnostics);
