@@ -60,11 +60,13 @@ describe('WF-UX-017 — manifest-freshness reason codes', () => {
         return import('../scripts/services/manifest-freshness.js');
     }
 
-    test('exports the ten canonical reason codes (missing-generated-at split per side)', async () => {
+    test('exports the eleven canonical reason codes (missing-generated-at split per side + manifest-load-pending)', async () => {
         const { FRESHNESS_REASON } = await svc();
         expect(new Set(Object.values(FRESHNESS_REASON))).toEqual(new Set([
             'fetch-failed', 'http-error', 'parse-failed',
             'missing-loaded-generated-at', 'missing-fetched-generated-at', 'missing-both-generated-at',
+            // WF-MANIFEST-FRESHNESS-RACE-001 — transient startup-race diagnosis.
+            'manifest-load-pending',
             'invalid-generated-at', 'compare-failed', 'same-or-newer', 'stale'
         ]));
     });

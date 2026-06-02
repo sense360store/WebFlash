@@ -62,6 +62,43 @@ State of the repo at TRACKING-001:
   preflight disclosure. Markup + CSS + test only — every install gate (preflight
   policy, manifest freshness, release-channel acknowledgements, advanced/manual
   warnings, provenance/installability) and firmware-selection logic is unchanged.
+- **WF-MANIFEST-FRESHNESS-RACE-001 manifest freshness startup race is in
+  review.** New HAR evidence (full page refresh directly into `step=5`) reconfirmed
+  `/WebFlash/manifest.json` is fetched successfully, returns HTTP 200 JSON with a
+  top-level `generated_at` on both the first and a second request, and that a
+  manual "Check for update again" succeeds — so the remaining false
+  `missing-generated-at` warning was **neither a bad manifest file nor a missing
+  `generated_at` in the deployed root manifest**. The actual cause is a **startup
+  ordering/race**: the review-step freshness trigger could run on the initial
+  Step 5 load *before* the loaded manifest metadata had been captured (the async
+  `loadManifestData()` was still in flight), so the comparison ran against null
+  loaded metadata; the manual recheck worked only because the manifest had already
+  loaded by then. Fix (caller-side in `scripts/state.js`):
+  `checkManifestFreshnessNow()` now awaits the in-flight `manifestLoadPromise` (or
+  starts a load) and re-captures metadata before comparing whenever the metadata
+  is missing and the load has not definitively failed (a load that has already
+  failed is left alone so the recheck still surfaces the real
+  `missing-loaded-generated-at` error);
+  `triggerManifestFreshnessCheckIfNeeded()` no longer pre-marks the check as run, so
+  `manifestFreshnessHasRun` flips only on a real fetch/check result and a premature
+  still-loading invocation can no longer latch the gate. `manifest-freshness.js`
+  adds an eleventh reason code, `manifest-load-pending` (transient, never latched),
+  via an `options.manifestLoadPending` guard so a still-loading state is reported
+  distinctly from `missing-loaded-generated-at` /
+  `missing-fetched-generated-at` / `missing-both-generated-at`. Acceptance: a full
+  refresh directly into `step=5` no longer shows `Diagnostic code:
+  missing-generated-at` when the root manifest carries `generated_at`, and the
+  initial refresh and a manual recheck produce the same result. Adds
+  `__tests__/wf-manifest-freshness-race.test.js` (deep-link trigger before load
+  resolves waits → `current`; checker waits for captured metadata; first refresh
+  == manual recheck; stale still hard-blocks; failed load still reports a real
+  error) and `docs/wf-manifest-freshness-race-diagnosis.md`; updates the
+  WF-UX-017 reason-code-count assertion (ten → eleven). **No** firmware binary,
+  `manifest.json`, `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`,
+  `scripts/data/kits.json`, release-channel policy, provenance verification, the
+  stale hard-block, or service-worker fetch-strategy change; freshness verdict
+  semantics (current / stale / unknown) are unchanged — only the startup ordering
+  around when the comparison runs is fixed. No hardware behaviour verified.
 - **WF-UX-010 Step 1 simplification is in review.** Step 1 now leads with the
   stable Sense360 Bathroom PoE kit as a single dominant primary card ("install
   stable firmware"), keeps the LED kit visible but visually secondary and
