@@ -62,258 +62,27 @@ State of the repo at TRACKING-001:
   preflight disclosure. Markup + CSS + test only — every install gate (preflight
   policy, manifest freshness, release-channel acknowledgements, advanced/manual
   warnings, provenance/installability) and firmware-selection logic is unchanged.
-- **WF-MANIFEST-FRESHNESS-RACE-001 manifest freshness startup race is in
-  review.** New HAR evidence (full page refresh directly into `step=5`) reconfirmed
-  `/WebFlash/manifest.json` is fetched successfully, returns HTTP 200 JSON with a
-  top-level `generated_at` on both the first and a second request, and that a
-  manual "Check for update again" succeeds — so the remaining false
-  `missing-generated-at` warning was **neither a bad manifest file nor a missing
-  `generated_at` in the deployed root manifest**. The actual cause is a **startup
-  ordering/race**: the review-step freshness trigger could run on the initial
-  Step 5 load *before* the loaded manifest metadata had been captured (the async
-  `loadManifestData()` was still in flight), so the comparison ran against null
-  loaded metadata; the manual recheck worked only because the manifest had already
-  loaded by then. Fix (caller-side in `scripts/state.js`):
-  `checkManifestFreshnessNow()` now awaits the in-flight `manifestLoadPromise` (or
-  starts a load) and re-captures metadata before comparing whenever the metadata
-  is missing and the load has not definitively failed (a load that has already
-  failed is left alone so the recheck still surfaces the real
-  `missing-loaded-generated-at` error);
-  `triggerManifestFreshnessCheckIfNeeded()` no longer pre-marks the check as run, so
-  `manifestFreshnessHasRun` flips only on a real fetch/check result and a premature
-  still-loading invocation can no longer latch the gate. `manifest-freshness.js`
-  adds an eleventh reason code, `manifest-load-pending` (transient, never latched),
-  via an `options.manifestLoadPending` guard so a still-loading state is reported
-  distinctly from `missing-loaded-generated-at` /
-  `missing-fetched-generated-at` / `missing-both-generated-at`. Acceptance: a full
-  refresh directly into `step=5` no longer shows `Diagnostic code:
-  missing-generated-at` when the root manifest carries `generated_at`, and the
-  initial refresh and a manual recheck produce the same result. Adds
-  `__tests__/wf-manifest-freshness-race.test.js` (deep-link trigger before load
-  resolves waits → `current`; checker waits for captured metadata; first refresh
-  == manual recheck; stale still hard-blocks; failed load still reports a real
-  error) and `docs/wf-manifest-freshness-race-diagnosis.md`; updates the
-  WF-UX-017 reason-code-count assertion (ten → eleven). **No** firmware binary,
-  `manifest.json`, `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`,
-  `scripts/data/kits.json`, release-channel policy, provenance verification, the
-  stale hard-block, or service-worker fetch-strategy change; freshness verdict
-  semantics (current / stale / unknown) are unchanged — only the startup ordering
-  around when the comparison runs is fixed. No hardware behaviour verified.
-- **WF-UX-010 Step 1 simplification is in review.** Step 1 now leads with the
-  stable Sense360 Bathroom PoE kit as a single dominant primary card ("install
-  stable firmware"), keeps the LED kit visible but visually secondary and
-  clearly marked preview, collapses the planned fan-control kits behind a
-  "Coming soon / not installable yet" disclosure, and reframes "I bought a kit"
-  / Advanced setup / Recovery as secondary "other ways to start" paths so they
-  no longer compete with the primary kit. Customer-facing wording leads with the
-  product name, then the Stable / Preview channel, then the SKU / config detail.
-  Markup + CSS + test only — every install gate (manifest freshness,
-  release-channel acknowledgements, the advanced/manual TRIAC warning,
-  provenance/installability), the preview acknowledgement, the SKU-search
-  fallback, and the rescue path are unchanged; LED stays preview-only and every
-  fan variant stays non-installable.
-- **WF-UX-011 simple install mode is in review.** A default product-focused
-  "Simple install" landing for the stable Sense360 Bathroom PoE kit now leads
-  the page (`[data-simple-install]` hero, controlled by `data-install-mode` on
-  `<html>` via `scripts/simple-install.js`): product name + outcome summary
-  (Sense360 Core / RoomIQ / VentIQ / PoE), a plain-language readiness status
-  (Ready to install / Needs attention / Cannot install yet), no config string
-  or SKU unless "Technical details" is expanded, and the ESP Web Tools button as
-  the dominant install action with Download / Copy / Home Assistant / Recovery
-  collapsed. Simple mode reuses the existing Step 5 install surface and **every**
-  install gate by applying the stable Release-One kit preset and advancing to the
-  review/install step; the full multi-step wizard is preserved behind "Advanced
-  setup". Freshness is surfaced in plain language in the hero (unknown reads
-  "Couldn't recheck for updates. Reload this page before installing." with Reload
-  + Show details; "manifest" wording is avoided in the default path; the stale
-  hard block stands). Markup + CSS + one additive `state.js` readiness broadcast +
-  test only — no firmware, `manifest.json`, `firmware/sources.json`,
-  `REQUIRED_CONFIGS`, release-channel policy, installability logic, workflow, or
-  service-worker cache-strategy change. Adds
-  `__tests__/wf-ux-011-simple-install.test.js`.
-- **WF-UX-012 Simple / Advanced install path split is in review.** Step 1 now
-  leads with an explicit two-option path picker — **Simple install**
-  (recommended, default) vs **Advanced install** — built on the WF-UX-011
-  `data-install-mode` mechanism (`[data-install-path-choice]` in the
-  `[data-simple-install]` hero, wired through `scripts/simple-install.js`).
-  Simple install shows one clean product card for the stable Sense360 Bathroom
-  PoE kit: product name, **Stable firmware · v1.0.0**, the included-hardware
-  summary, a single **"Confirm before installing"** safety checkbox, and the ESP
-  Web Tools install action — with the planning / technical / preflight-diagnostic
-  chrome hidden (the Step 5 preflight verdict box, the verbose "Before you flash"
-  checklist, and the preflight-details summary are suppressed in simple mode, so
-  the path never shows "Ready" and "Needs attention" at once). The single safety
-  checkbox mirrors the authoritative `[data-preflash-acknowledge]` control, so
-  the install gate is unchanged and never bypassed. Small secondary links (Setup
-  checks / Advanced install / Recovery) stay available; Advanced install reveals
-  the existing multi-step builder (Core / Power / Modules / Review, preview LED
-  flow, planned kits, fan variants, the TRIAC advanced/manual warning, SKU/config
-  search, diagnostics) unchanged. Markup + CSS + `scripts/simple-install.js`
-  (picker sync + safety-confirm mirror + Setup-checks open) + test only — no
-  firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`,
-  release-channel policy, installability logic, workflow, or service-worker
-  cache-strategy change; every install gate (preflight policy, manifest
-  freshness incl. the stale hard block, release-channel + advanced/manual
-  acknowledgements, provenance/installability) stays authoritative in
-  `state.js`. LED stays preview-only (acknowledgement required); every fan
-  variant stays non-installable; TRIAC stays advanced/manual-warning. Adds
-  `__tests__/wf-ux-012-install-paths.test.js`.
-- **WF-UX-013 Simple install warning-noise reduction is in review.** The Simple
-  install path now reads calm. Manifest **freshness "unknown"** surfaces in
-  exactly one place — the hero status — as a plain-language **"Could not recheck
-  for updates"** ("WebFlash could not recheck the latest firmware list. Reload
-  this page and try again. If this keeps happening, you can continue with the
-  firmware list already loaded in this browser.") with two calm actions, **Reload
-  page** and **Continue with loaded firmware list**; Continue ticks the
-  authoritative `[data-manifest-freshness-acknowledge]` (the gate stays
-  authoritative, never bypassed). The duplicate freshness / blocking surfaces
-  (the freshness banner, the preflight verdict box, and the install-readiness
-  helper rendered into both the firmware section and the More-actions group) are
-  suppressed in simple mode, and the preflight diagnostics stay collapsed until
-  "Setup checks" reveals them (`data-setup-checks-revealed`). The scary "accept
-  the risk" preflight acknowledgement is hidden in simple mode by default — the
-  calm hero confirmation ("I understand and will keep the hub powered and
-  connected during installation") carries the safety ack — and the original
-  control returns, unchanged copy + gate, only when a genuine non-freshness
-  preflight warning remains (`data-install-warn-context="real-warn"`). A truly
-  **stale** manifest stays a hard block ("Cannot install yet", Reload, no
-  continue). `index.html` + `css/wizard-style.css` + `scripts/simple-install.js`
-  + test only — **no `state.js`** change, no firmware, `manifest.json`,
-  `firmware/sources.json`, `REQUIRED_CONFIGS`, release-channel policy,
-  installability logic, provenance verification, stale-manifest hard block,
-  preview / TRIAC acknowledgement, workflow, or service-worker cache-strategy
-  change; Advanced install keeps the full diagnostics. Adds
-  `__tests__/wf-ux-013-simple-install-noise.test.js`.
-- **WF-UX-014 Simple install freshness copy + runtime cache-bust is in review.**
-  Fixes the *deployed* WF-UX-013 behaviour: on live GitHub Pages the calm
-  **"Could not recheck for updates"** copy never appeared because
-  `scripts/simple-install.js` is a bare ES-module import with no cache-bust, so
-  Pages/CDN/the service worker kept serving the pre-WF-UX-013 module (old
-  "Cannot install yet" / "could not confirm whether the firmware list is up to
-  date" copy) even though `index.html` + `css/wizard-style.css` (versioned /
-  revalidated) had updated — a mixed old/new UI. The source copy was already
-  correct; WF-UX-014 makes it actually deploy. The cache-bust token rides from
-  the always-fresh HTML down the whole graph: `index.html` versions the
-  `scripts/bootstrap.js` loader + the CSS links (`?v=20260601`), `bootstrap.js`
-  threads `APP_SHELL_BUILD` onto the `app.js` import, and `app.js` imports the
-  changed `scripts/simple-install.js?v=20260601`; `sw.js` bumps `CACHE_NAME`
-  `webflash-v5` → `webflash-v6` so existing installs purge + re-prime (an
-  asset-version reference only — the per-asset-class fetch **strategy** is
-  unchanged). A support-only app-shell build marker (`webflash-app-version` /
-  `webflash-app-shell` meta tags read by `scripts/services/diagnostics.js`, an
-  `appShell` field in `scripts/build-info.js`, and an **"App shell"** row in the
-  About panel) makes it easy to tell whether the live page is the
-  post-WF-UX-014 shell or a stale copy. The Simple-mode `freshness-unknown`
-  contract is re-pinned (calm title, Reload + Continue, never "Cannot install
-  yet" / "manifest"); **stale** stays a hard block with no continue; Advanced
-  keeps the full diagnostics. Deploy-layer + presentation only — **no**
-  `state.js` gate, firmware, `manifest.json`, `firmware/sources.json`,
-  `REQUIRED_CONFIGS`, release-channel policy, installability / provenance /
-  freshness-gate logic, or service-worker fetch-strategy change; no workflow
-  change (the changed runtime files are already in `firmware-publish.yml`'s
-  `on.push.paths`). Adds `__tests__/wf-ux-014-cache-bust-freshness.test.js` and
-  `docs/deploy-notes.md`.
-- **WF-UX-015 collapse firmware technical detail in Simple install is in
-  review.** Makes the default Simple path genuinely simple: by default a normal
-  customer sees one product card (Sense360 Bathroom PoE Kit, stable firmware
-  v1.0.0, the Core / RoomIQ / VentIQ / PoE summary), the single safety
-  confirmation, the plain-language readiness status, and the **one** ESP Web
-  Tools Install action — nothing else. Every firmware / provenance / release
-  metadata surface the Step 5 install surface renders for the Advanced path —
-  the Compatible Firmware heading + selection, the firmware release selector,
-  the per-build identity inside `.firmware-info` (firmware/artifact filename,
-  version, file size/date) + "View Release Notes" + description, the Firmware
-  details panel (identity / source commit / SHA-256 / signature / changelog /
-  known issues), the provenance block + "Show verification details", the "Show
-  firmware file details" parts list, the Key Features / Hardware Requirements
-  metadata + release-notes section, and the whole "More actions" group (download
-  / copy link / Home Assistant / recovery / support diagnostics) — is collapsed
-  by default in simple mode and revealed in place only when the customer opens
-  the single hero **"Technical details"** disclosure (which sets
-  `data-technical-details-revealed` on `<html>`, mirroring WF-UX-013's
-  "Setup checks" → `data-setup-checks-revealed` pattern). A "Technical details"
-  secondary link sits alongside Setup checks / Advanced install / Recovery.
-  Status wording: an unticked safety confirmation now reads **"Confirm before
-  installing"** (a calm, expected step), not "Needs attention"; genuine blocking
-  states still show warning / error copy ("Cannot install yet") and a real
-  preflight warning still reads "Needs attention". Advanced install renders the
-  full firmware card exactly as before (every CSS rule is scoped to
-  `data-install-mode="simple"`; `createFirmwareCardHtml` is unchanged). Because
-  the change touches both `css/wizard-style.css` and `scripts/simple-install.js`
-  — both served under the live `?v=20260601` — the cache-bust token is bumped in
-  lockstep (`?v=202606012`, app-shell `2026-06-01-2`) and `sw.js` `CACHE_NAME`
-  `webflash-v6` → `webflash-v7`, so neither ships stale (the exact WF-UX-013→014
-  trap). Presentation + deploy-layer only — **no** `manifest.json`,
-  `firmware/sources.json`, `REQUIRED_CONFIGS`, firmware binary, installability /
-  release-channel / provenance / manifest-freshness logic, service-worker
-  fetch-strategy, or workflow change. Adds
-  `__tests__/wf-ux-015-simple-install-collapse.test.js`; updates the
-  `safety-checklist` assertion in `__tests__/wf-ux-011-simple-install.test.js`.
-- **WF-UX-016 route freshness-unknown through the Simple install copy only is in
-  review.** Fixes the *routing* bug WF-UX-013/014 did not: the
-  manifest-freshness check is represented twice in `state.js` (a preflight
-  diagnostic row **and** the dedicated `evaluateFreshnessGate`), and an unknown
-  verdict makes the preflight row a blocking *warn*, flipping the aggregate
-  preflight verdict to "can't install". The Simple hero reads the broadcast
-  reason, and the `preflight-fail` branch was tested **before** the freshness
-  branch — so the live Simple path still rendered **"Cannot install yet"** + the
-  raw manifest message ("WebFlash could not confirm whether the firmware list is
-  up to date. Use 'Recheck manifest freshness'…"), never WF-UX-013's calm
-  mapping. `state.js` now attributes the freshness axis to its own reason
-  (`deriveInstallReadinessReason` reads stale/unknown from the gate and the
-  preflight verdict from the **non-freshness** checks), so unknown broadcasts
-  `freshness-unknown` (**"Could not recheck for updates"**, Reload page +
-  Continue with loaded firmware list) and stale broadcasts `firmware-stale`
-  (hard block, Reload only, no continue) — never `preflight-fail`. In Simple
-  mode the preflight freshness row (revealed under "Setup checks") now reads
-  customer-safe copy ("Firmware list check" / "Check for updates again" / plain
-  detail + ack); Advanced install keeps the full diagnostic wording ("Manifest
-  freshness" / "Recheck manifest freshness" / "could not confirm…"). The real
-  gate is untouched: Continue still ticks `[data-manifest-freshness-acknowledge]`,
-  unknown still requires acknowledgement, stale stays a hard block. The fix is in
-  `scripts/state.js` (no per-import `?v=` token), so it rides the `sw.js`
-  `CACHE_NAME` bump `webflash-v7` → `webflash-v8` to re-prime; the five-way `?v=`
-  token equality is unchanged. Presentation/deploy-layer only — **no**
-  `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, firmware binary,
-  release-channel policy, provenance verification, installability logic,
-  stale-manifest hard block, preview / TRIAC acknowledgement, workflow, or
-  service-worker fetch-strategy change. Adds
-  `__tests__/wf-ux-016-freshness-simple-copy.test.js`.
-- **WF-UX-017 make freshness unknown non-blocking in Simple install + diagnose
-  live freshness is in review.** Fixes the *gate* WF-UX-014/016 left in place:
-  the manifest-freshness signal was counted twice — as the dedicated
-  `evaluateFreshnessGate` **and** as a blocking preflight *warn* in
-  `window.latestPreflightChecks` — so on the live site `readyToFlash` stayed
-  `false` for an `unknown` verdict and the Install button stayed disabled even
-  with the calm copy. WF-UX-017 makes `evaluateFreshnessGate` the **single
-  freshness authority**: `unknown` is **non-blocking in Simple install** (the
-  selected stable build is present, signed, provenance-verified, installable),
-  Advanced install keeps the acknowledgement gate, and **stale stays a hard block
-  in both modes**. A new `evaluateGatingPreflightPolicy` excludes the
-  `manifest-freshness` row from the install-gating policy (render + both
-  click-time defense handlers) so the same signal can never double-block; the
-  full checks array still drives the diagnostics panel, preflight verdict, and
-  readiness reason. Simple-install status now reads **"Confirm before installing"**
-  (safety unchecked) → **"Ready to install"** (safety checked) with unknown
-  freshness; a **small secondary note** ("Couldn't recheck for updates. You can
-  reload, or continue with the firmware list already loaded.") carries the
-  signal, never the main status, with details behind Setup checks / Technical
-  details. Diagnosis: `scripts/services/manifest-freshness.js` now attaches a
-  structured `reason` code to every verdict (`fetch-failed` / `http-error` /
-  `parse-failed` / `missing-generated-at` / `invalid-generated-at` /
-  `compare-failed` / `same-or-newer` / `stale`) — `parse-failed` (a 2xx HTML / SPA
-  fallback served for `manifest.json`) is the likely live-Pages cause — surfaced
-  on the freshness row (`data-freshness-reason` + a visible diagnostic-code line)
-  and in the readiness broadcast. The `sw.js` `cache: 'no-store'` "bypasses the
-  SW" comment is corrected (the fetch *strategy* is unchanged); `CACHE_NAME`
-  bumps `webflash-v9` → `webflash-v10` and the five-way `?v=` token advances
-  `202606013` → `202606014` to re-prime the changed shell. Presentation/gate-only
-  — **no** firmware binary, `manifest.json`, `firmware/sources.json`,
-  `REQUIRED_CONFIGS`, `scripts/data/kits.json`, release-channel policy, provenance
-  verification, stable/preview rules, TRIAC policy, or service-worker
-  fetch-strategy change. Adds `__tests__/wf-ux-017-freshness-nonblocking.test.js`
-  and `docs/wf-ux-017-freshness-diagnosis.md`; updates the three superseded
-  WF-UX-016 simple-mode gate assertions.
+- **The Simple install UX + manifest-freshness epic has fully landed**
+  (#454–#466). Step 1 now leads with a default, product-focused **Simple
+  install** for the stable Sense360 Bathroom PoE kit behind an explicit
+  **Simple / Advanced** path split; firmware technical detail, secondary
+  actions, and diagnostics are collapsed behind disclosures; **freshness
+  'unknown' is non-blocking** and routed through calm Simple-install copy
+  (Advanced install keeps the acknowledgement gate) while **'stale' stays a
+  hard block in both modes**; the manifest-freshness **startup race** and
+  **root-manifest check** are fixed (`scripts/state.js` waits for the in-flight
+  load before comparing; `scripts/services/manifest-freshness.js` carries
+  structured reason codes incl. `manifest-load-pending`); and **View Release
+  Notes** opens in-card on the live site. Per-PR detail + do-not-change
+  records live in the Completed / merged table: #454 (WF-UX-009), #455
+  (WF-UX-010), #456 (WF-UX-011), #457 (WF-UX-012), #458 (WF-UX-013), #459
+  (WF-UX-014), #460 (WF-UX-015), #461 + #462 (WF-UX-016), #463 (WF-UX-017),
+  #464 (WF-FRESHNESS-ROOT-MANIFEST-001), #465 (WF-UX-018), #466
+  (WF-MANIFEST-FRESHNESS-RACE-001). **No** firmware, `manifest.json`,
+  `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`,
+  `scripts/data/kits.json`, release-channel policy, FanTRIAC block, or
+  service-worker fetch-strategy change landed — Simple install remains stable
+  Bathroom PoE only, the stale hard block stands, and LED stays preview-only.
 - No `FanRelay`, `FanPWM`, `FanDAC`, or `FanTRIAC` firmware artifact has
   been imported. Each remains queued behind a discrete upstream release.
 - **LED stable import remains blocked** by:
@@ -354,11 +123,11 @@ State of the repo at TRACKING-001:
 | WF-UX-005 | #427 | Merged | Step-model cleanup — canonical step labels pinned across desktop/mobile, Step 1 / Step 2 DOM source order swapped to match logical order. | Hidden `mounting=ceiling` default + `voice='none'` Core radio preserved; no script changes needed because routing keys off numeric panel IDs. | Stepper labels and DOM order now consistent. |
 | WF-UX-006 | #428 | Merged | Step 1 path selector (kit / custom / recovery) replacing legacy binary mode picker; new `[data-start-paths]` button group; presentation-only path state on top of existing kit/manual mode model. | Path value never enters `config_string`, manifest, `firmware-*.json`, `firmware/sources.json`, kits, release-channels, install gate, or any workflow. | Step 1 customer-path split landed; rescue modal delegation reused. |
 | WF-UX-007 | #429 | Merged | Outcome-first Step 4 module labels (e.g. "Room sensing" / "Air quality sensing" / "Bathroom air sensing") with technical Friendly Name + SKU moved to `.module-card__meta` secondary tier; orphan `airiq.base` / `airiq.pro` tooltips removed. | Config-string grammar, manifest matching, kit matching, URL aliases, release channels, preview acknowledgement, module availability, TRIAC HW-005 block, Voice quarantine — all unchanged. `MODULE_LABELS` Fan group still resolves to `"Fan / Switching"` so diagnostics/summary keep the technical label. | Step 4 reads customer-first; technical labels preserved for support. |
-| WF-HW-TEST-002 | #430 | Merged | Documented WF-HW-TEST-002 as the planned operator-evidence-collection follow-up to WF-HW-TEST-001, **with no operator evidence supplied**; expanded the proof container header and added the "WF-HW-TEST-002 follow-up record" section. | No firmware flash performed; no firmware, manifest, `REQUIRED_CONFIGS`, kit, runtime, workflow, source, or signing changes. Every proof row stays `pending`. | Operator hardware proof still required — see queue item 1. |
+| WF-HW-TEST-002 | #430 | Merged | Documented WF-HW-TEST-002 as the planned operator-evidence-collection follow-up to WF-HW-TEST-001, **with no operator evidence supplied**; expanded the proof container header and added the "WF-HW-TEST-002 follow-up record" section. | No firmware flash performed; no firmware, manifest, `REQUIRED_CONFIGS`, kit, runtime, workflow, source, or signing changes. Every proof row stays `pending`. | Operator hardware proof still required — see the WF-HW-TEST-002 follow-up queue item. |
 | WF-IMPORT-GAP-001 | #431 | Merged | Documentation-only WebFlash import readiness matrix (`docs/webflash-import-readiness-matrix.md`) classifying every candidate import family across seven import classes; reserved deliberate follow-up PR identifiers; formalized four separation invariants. | No firmware, manifests, sources, `REQUIRED_CONFIGS`, kits, UX, workflows, tests, service-worker, or runtime changes. | Future import PRs (`WF-IMPORT-RELAY-001`, `WF-IMPORT-PWM-001`, `WF-IMPORT-DAC-001`, `WF-IMPORT-TRIAC-001`, `WF-IMPORT-POWER-400-001`, `WF-IMPORT-POE-410-001`, `WF-LED-STABLE-001`, `WF-REQUIRED-001`, `WF-KIT-LED-001`) now have reserved slots and gating rules. |
 | WF-TRIAC-001 | #432 | Merged | Moved Sense360 TRIAC (S360-320) from `blocked` to `advanced-manual-warning` (eighth availability state); added inline `[data-advanced-warning-region]` with load-bearing risk copy + session-only acknowledgement Map; orthogonal install-gate clause AND-ed into `readyToFlash`. | FanTRIAC remains blocked at the import / manifest / kit / `REQUIRED_CONFIGS` / compliance layers (`block_tokens: ["FanTRIAC", "LED"]` on Release-One and `["FanTRIAC"]` on the LED preview source both stand). Channel acknowledgements (preview / beta / development / deprecated) unchanged. Release-One stable, LED preview, Rescue install paths byte-identical. | TRIAC is now selectable in the custom path behind an in-installer warning gate; future `WF-IMPORT-TRIAC-001` still requires upstream `RELEASE-TRIAC-001`. |
 | WF-STALE-001 | #433 | Merged | Minimal stale fixture/doc cleanup — re-anchored `VALID_STABLE_BUILD` fixture in `__tests__/firmware-provenance.test.js` from `Ceiling-POE-AirIQ` to `Ceiling-POE-VentIQ-RoomIQ`; added historical-snapshot note to `FIRMWARE-DISTRIBUTION-REVIEW.md`. | No runtime, manifest, firmware, source, kit, or `REQUIRED_CONFIGS` changes. Authoritative allowlist remains live in `.github/workflows/firmware-publish.yml` + `CLAUDE.md`. | Stale `Ceiling-POE-AirIQ` reference removed from the fixture surface. |
-| WF-KIT-PRESETS-001 | #435 | Merged | Added Stage 1 productized kit bundle presets above the existing path cards. Two installable presets (Bathroom PoE → `Ceiling-POE-VentIQ-RoomIQ` stable, Bathroom PoE + LED → `Ceiling-POE-VentIQ-RoomIQ-LED` preview) plus four planned fan-control kits (Relay / TRIAC / PWM / DAC) in a collapsible non-installable subsection. Introduced `scripts/data/kit-presets.js` (local mirror of upstream KIT-MATRIX-001) + `scripts/kit-presets.js` controller + `__tests__/kit-presets.test.js` (23 assertions). Diagnostics records preset SKU + display name + resolved `config_string` via the existing `setSelectedKitSku` / `setActiveKitMetadata` surface. | Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js` cache strategy / cache version, every Step 2-5 surface, the rescue modal, the WF-UX-006 path cards, the WF-LED-003 preview-channel acknowledgement model, the WF-TRIAC-001 advanced/manual-warning gate, the FanTRIAC HW-005 block, and the LED-stable exclusion are byte-identical. FanTRIAC stays blocked; LED stable claim NOT made; `S360-300-BENCH-001` / `WF-HW-TEST-003` / `RELEASE-007` NOT claimed complete. | Stage 1 leads with productized bundles instead of SKU lookup; installability remains manifest-driven and the preview preset still gates on the existing preview-channel acknowledgement. `WF-KIT-LED-001` (queue item 4) is **untouched** — bundle presets are presentation-only and do not add an LED-bearing kit to `scripts/data/kits.json`. |
+| WF-KIT-PRESETS-001 | #435 | Merged | Added Stage 1 productized kit bundle presets above the existing path cards. Two installable presets (Bathroom PoE → `Ceiling-POE-VentIQ-RoomIQ` stable, Bathroom PoE + LED → `Ceiling-POE-VentIQ-RoomIQ-LED` preview) plus four planned fan-control kits (Relay / TRIAC / PWM / DAC) in a collapsible non-installable subsection. Introduced `scripts/data/kit-presets.js` (local mirror of upstream KIT-MATRIX-001) + `scripts/kit-presets.js` controller + `__tests__/kit-presets.test.js` (23 assertions). Diagnostics records preset SKU + display name + resolved `config_string` via the existing `setSelectedKitSku` / `setActiveKitMetadata` surface. | Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js` cache strategy / cache version, every Step 2-5 surface, the rescue modal, the WF-UX-006 path cards, the WF-LED-003 preview-channel acknowledgement model, the WF-TRIAC-001 advanced/manual-warning gate, the FanTRIAC HW-005 block, and the LED-stable exclusion are byte-identical. FanTRIAC stays blocked; LED stable claim NOT made; `S360-300-BENCH-001` / `WF-HW-TEST-003` / `RELEASE-007` NOT claimed complete. | Stage 1 leads with productized bundles instead of SKU lookup; installability remains manifest-driven and the preview preset still gates on the existing preview-channel acknowledgement. `WF-KIT-LED-001` (the LED-kit queue item) is **untouched** — bundle presets are presentation-only and do not add an LED-bearing kit to `scripts/data/kits.json`. |
 | WF-UPSTREAM-COMPILE-AWARE-001 | #437 | Merged | Documented the upstream `sense360store/esphome-public` compile-only validation pipeline (upstream `FW-COMPILE-MATRIX-001` / #544, `FW-COMPILE-FIX-001` / #546, `FW-COMPILE-RESULT-001` / #547, `FW-COMPILE-POE-NONFAN-001` / #548, `FW-COMPILE-EXPAND-001` / #549) inside `docs/webflash-import-readiness-matrix.md` as a WebFlash planning signal only. The matrix now records that compile-only **does not equal** WebFlash import readiness, **does not create** importable artifacts, **does not imply** preview/stable readiness, **does not imply** hardware proof, **does not imply** `REQUIRED_CONFIGS` eligibility, and **does not imply** kit / recommended / default exposure. Captures the current compile-only target groups (Release-One + LED preview YAMLs already imported; the five PoE non-fan compile-only skeletons from upstream #548 that are **not** imported; the PoE non-fan LED candidate ledger from upstream #549). | No firmware imported, no manifest change, no `firmware/sources.json` change, no `REQUIRED_CONFIGS` change, no kit change, no runtime UI surface, no workflow change, no hardware proof claim. The WF-PRODUCT-004 classifier continues to treat `compile-only` upstream catalog status as ineligible across all four eligibility dimensions. The LED preview proof container (`docs/led-preview-webflash-proof.md`) remains `pending`; upstream `RELEASE-007` remains unblocked by this PR. | **No new WebFlash follow-up identifiers were reserved by this signal.** The matrix recognises upstream compile-only success as a *planning signal* on top of the existing import-class taxonomy; each downstream WebFlash import (RELAY / PWM / DAC / TRIAC / POWER-400 / POE-410 / LED stable) still depends on its own upstream `RELEASE-…` artifact and the WF-IMPORT-GAP-001 follow-up slot reserved for it. |
 | WEBFLASH-ARCH-DOCS-001 | _PR number to fill when verified_ | Merged | Promoted the architecture explanation out of the AI-facing `CLAUDE.md` into a new human-facing [`docs/architecture.md`](docs/architecture.md) (two-halves model, `manifest.json` boundary, desktop Chromium-only Web Serial constraint, ESP Web Tools standard, cross-repo contract downstream of `sense360store/esphome-public`, and the explicit deploy gate — `manifest-health` guard suite + per-source `block_tokens` + `REQUIRED_CONFIGS`). De-duplicated the `CLAUDE.md` overview prose to a link (canonical SKU table stays authoritative in `CLAUDE.md`); added a one-line `README.md` Overview link; added a short header comment to `firmware-publish.yml` pointing to the doc and naming the guard suite (comment only); added the additive `__tests__/architecture-doc.test.js` docs guard pinning the doc + the `CLAUDE.md` / `README.md` links. | Markdown, one workflow header comment, and one additive docs-guard test only. No runtime, manifest, firmware, source, kit, `REQUIRED_CONFIGS`, release-channel, `sw.js`, CSS, `index.html`, or workflow trigger/step change. Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, and every runtime file is byte-identical. The FanTRIAC HW-005 block, the WF-LED-003 preview-channel acknowledgement model, and the WF-TRIAC-001 advanced/manual-warning gate all stand unchanged. | Human contributors now have a single architecture entry point; the deploy safety model is documented instead of implicit; `CLAUDE.md` and `docs/architecture.md` cannot drift because the prose lives in one place and the other links to it. |
 | WF-FRESHNESS-UX-001 | #439 | Merged | Copy + test clarification only. Replaced the ambiguous "install with the manifest you have" wording on the unknown-verdict freshness gate with the clearer "use the firmware list already loaded in this browser" phrasing across the preflight detail (`scripts/state.js` `getManifestFreshnessCheck`, both warn and acknowledged paths), the install-gate blocking reason (`evaluateFreshnessGate` → install-button / download / copy-URL / summary-install tooltips), the freshness banner summary (`scripts/layout/freshness-banner.js` `pickActiveState` for the `manifest-unknown` case), and the inline acknowledgement description (`index.html` → `#manifest-freshness-ack-description`). Added targeted Jest pins: `__tests__/wizard-state.test.js` gained a `WF-FRESHNESS-UX-001 — clarified freshness warning copy` describe block; `__tests__/cache-freshness.test.js` gained a pin on the unknown-freshness banner summary; `__tests__/a11y-static-html.test.js` gained a `WF-FRESHNESS-UX-001 — clarified manifest freshness ack copy in static index.html` describe block. | **No safety semantics change.** The freshness probe still runs, the recheck control is still rendered, install remains gated when freshness cannot be confirmed until the user explicitly checks the override acknowledgement, the override is scoped to the `unknown` verdict (the `stale` hard fail still cannot be acknowledged), and the freshness ack stays orthogonal to the preview-channel acknowledgement gate (WF-LED-003) and the advanced/manual-warning gate (WF-TRIAC-001). No firmware imported, no manifest regenerated, no `firmware/sources.json` change, no `REQUIRED_CONFIGS` change, no kit change, no release-channel-policy change, no preview-acknowledgement change, no install-button hard-gate change, no `sw.js` change, no workflow change, no FanTRIAC block change, no Rescue install-path change, no hardware-proof claim. Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `scripts/data/kits.json`, `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, the FanTRIAC HW-005 block, the LED preview exposure model, the Rescue install path, and every other wizard surface byte-identical. | Freshness `unknown`-verdict copy now reads consistently as "the firmware list already loaded in this browser" across preflight / install-gate / banner / inline ack surfaces; safety gating unchanged. |
@@ -369,16 +138,111 @@ State of the repo at TRACKING-001:
 | WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001 | _(open — PR # to fill at merge)_ | In review | Documentation-only mirror of the upstream `sense360store/esphome-public` first-release **dry-run checklist** (`FIRST-RELEASE-DRYRUN-CHECKLIST-001`, upstream PR #680, [`docs/first-release-dryrun-checklist.md`](https://github.com/sense360store/esphome-public/blob/main/docs/first-release-dryrun-checklist.md)) onto the WebFlash side. Adds [`docs/release-gates/WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001.md`](docs/release-gates/WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001.md) — the WebFlash **no-publish operator handoff for the current stable release path**: current stable config string `Ceiling-POE-VentIQ-RoomIQ` (Bathroom `S360-KIT-BATH-P`, `stable`, `v1.0.0`, already imported and live); expected artifact name pattern `Sense360-Ceiling-POE-VentIQ-RoomIQ-v<x.y.z>-stable.bin` (at v1.0.0 `…-v1.0.0-stable.bin`); expected upstream release-note source (the upstream GitHub release body's four `##` sections — Changelog / Known Issues / Features / Hardware Requirements); expected checksum/source-update handoff (importer SHA-256 verification vs upstream `checksums-sha256.txt` + the source entry's `expected_sha256` when declared); WebFlash import expectations (importer → `gen-manifests.py` → production signing → `firmware-publish.yml` deploy → smoke test) with non-publishing `--dry-run` / read-only rehearsal lanes; a no-publish/no-exposure safety checklist; a post-import verification checklist; a no-new-exposure statement; a no-drift table; and a WebFlash↔upstream stage map. Adds a "First-release dry-run handoff" pointer section to [`docs/sense360-webflash-status.md`](docs/sense360-webflash-status.md) and a README Documentation-index link. | Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, every file under `scripts/`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js`, `_headers`, `index.html`, every CSS / runtime JS file, every test, and every fixture are byte-identical. No firmware imported. No install card added. No fan-control variant exposed. No LED-stable claim. Kitchen / Bedroom / Living / Corridor stay not installable. No artifact published or referenced as new. The FanTRIAC HW-005 block (`block_tokens: ["FanTRIAC", "LED"]` on Release-One, `["FanTRIAC"]` on the LED preview source), the WF-LED-003 preview-channel acknowledgement model, and the WF-TRIAC-001 advanced/manual-warning gate all stand. | WebFlash now carries a concrete no-publish operator handoff for the current stable release path that mirrors the upstream dry-run checklist and documents the WebFlash-owned import / sign / manifest / deploy side (stage 6). Any future stable re-import still goes through the importer SHA-256 contract + `gen-manifests.py` + the `REQUIRED_CONFIGS` gate; any new exposure still goes through the upstream `RELEASE-…` + `WF-IMPORT-…-001` chain. |
 | WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001 | _(open — PR # to fill at merge)_ | In review | Documentation-only record of a **live manifest freshness smoke test** of the deployed page (`https://sense360store.github.io/WebFlash/`), opened after an earlier browser session reported the *"Freshness unknown — Could not confirm firmware manifest freshness"* warning. Adds [`docs/release-gates/WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001.md`](docs/release-gates/WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001.md) recording **PASS**: the live `manifest.json` returns HTTP 200 with a present, parseable `generated_at` (`2026-05-29T18:46:09…`), open CORS (`access-control-allow-origin: *`), and an identical `generated_at` across two `cache: 'no-store'` re-fetches, so the freshness check resolves to `current` — neither the *"Freshness unknown"* (warn) nor the *"Newer firmware manifest available"* (stale) banner appears in a fresh session. Confirms the live install surface (`Ceiling-POE-VentIQ-RoomIQ` stable v1.0.0 + `Ceiling-POE-VentIQ-RoomIQ-LED` preview-only + `Rescue`; no fan-control variant; no LED-stable build; no Kitchen / Bedroom / Living / Corridor bundle). Documents the freshness verdict logic, the `unknown`/`stale`/`current` conditions, an honest methodology note (automated live-origin HTTP verification + deterministic verdict analysis; no GUI browser, so a human incognito visual pass is a recommended non-blocking follow-up), and the do-not-change confirmation. Adds a "Live manifest freshness smoke test" pointer section to [`docs/sense360-webflash-status.md`](docs/sense360-webflash-status.md). Likely cause of the earlier warning recorded as stale local browser/service-worker cache or a transient `no-store` re-fetch failure — **not** a manifest metadata issue, CORS issue, or WebFlash bug — so no `WEBFLASH-FRESHNESS-UNKNOWN-DIAGNOSTICS-001` follow-up is opened. | Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, every file under `scripts/` (including `scripts/services/manifest-freshness.js` and `scripts/layout/freshness-banner.js`), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js`, `_headers`, `index.html`, every CSS / runtime JS file, every test, and every fixture are byte-identical. No runtime behaviour changed (no confirmed bug found, so nothing scoped to change). No firmware imported. No install card added. No fan-control variant exposed. No LED-stable claim. Kitchen / Bedroom / Living / Corridor stay not installable. No artifact published. The FanTRIAC HW-005 block, the WF-LED-003 preview-channel acknowledgement model, and the WF-TRIAC-001 advanced/manual-warning gate all stand. | WebFlash now has a recorded live-origin smoke test confirming the manifest freshness check passes in a fresh session; the earlier *"Freshness unknown"* warning is attributed to stale local cache / a transient re-fetch failure rather than a manifest or WebFlash defect, and a human incognito visual re-confirm is the only (non-blocking) open follow-up. |
 | WF-UX-008 | #452 | Merged | Customer-facing copy cleanup. Removed internal engineering / task / release / tracking IDs (`RELEASE-RELAY-001`, `WF-IMPORT-RELAY-001`, `RELEASE-TRIAC-001`, `WF-IMPORT-TRIAC-001`, `RELEASE-PWM-001`, `RELEASE-DAC-001`, `HW-005`, `COMPLIANCE-001`, `KIT-MATRIX-001`, `UPCOMING_PR.md`, `scripts/import-firmware-sources.py`) from the customer-visible wizard surface and replaced them with plain-language availability text plus a next step: the Stage 1 planned-bundle card meta lines + planned intro + source line + TRIAC description in `index.html`, the `notAvailableReason` / `warning` copy in `scripts/data/kit-presets.js`, and the TRIAC advanced/manual-warning `detail` prose (both the per-variant override and the config-string classifier) in `scripts/utils/module-availability.js`. Internal references now live only in developer/support-only data (`kit-presets.js` `upstreamRef` / `blockers` — never rendered to customers, no consumers outside the data module) and the machine-readable `module-availability.js` `reasonCode` (`hw-005-advanced-manual`, never rendered as prose) used for diagnostics. Reframed the customer-facing "Custom configuration" path to **"Advanced setup"** (high-level goal #2) with customer-safe guidance ("Use this only if your hardware doesn't match a kit") across the Step 1 path card, the panel header, the kit-panel switch link, and the `kit-mode.js` announce — the data hooks (`data-start-path="custom"`, `configmode=custom`, `data-custom-path-panel`) and URL contract are unchanged. Added guard tests: `__tests__/a11y-static-html.test.js` `WF-UX-008 — no internal task/release/tracking IDs in customer-facing copy` describe block (bundle section / planned cards / path panels) + the Advanced-setup copy pin; `__tests__/kit-presets.test.js` customer-facing-field ID guard + planned-reason next-step pin; refreshed `__tests__/module-availability.test.js` + `__tests__/wizard-state.test.js` TRIAC `detail` assertions (now assert the IDs are absent from the rendered prose and present only in `reasonCode`). | **No install / firmware / safety-semantics change — copy + test only.** Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/data/module-requirements.js` field values, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, the install gate, the preflight / freshness engines, `sw.js`, `_headers`, every `.github/workflows/*` file are byte-identical. The WF-WIZARD-AVAIL-001 availability *states* + `reasonCode` values, the WF-TRIAC-001 advanced/manual-warning install gate, the WF-LED-003 preview-channel acknowledgement model, the FanTRIAC HW-005 import block (`block_tokens` unchanged), and the WF-UX-006 path data-hooks / URL contract all stand. No firmware imported. **No hardware behaviour verified** — the WF-HW-TEST-002 operator-evidence gate remains pending. | Customer-facing UI no longer exposes internal tracking IDs; every unavailable kit states a plain-language reason + a next step; the advanced path is reframed as "Advanced setup" with when-to-use guidance. Support traceability is preserved via the dev-only `upstreamRef` / `blockers` data and the `reasonCode` diagnostic hook. |
-| WF-UX-010 | _(open — PR # to fill at merge)_ | In review | Reworked Step 1 presentation so a normal customer sees the safe primary path first. The stable `S360-KIT-BATH-POE` bundle becomes the single dominant primary card (new `bundle-preset-card--primary` styling + an "Install stable firmware" affordance, with product-name-first / Stable-second / SKU-and-config-tertiary copy); the LED preview kit becomes the clearly-marked, visually secondary card (`bundle-preset-card--secondary`); the four planned fan-control kits stay collapsed behind a renamed **"Coming soon / not installable yet"** `<details>`; the kit / Advanced setup / Recovery cards are reframed under a secondary **"Other ways to start"** heading with Advanced setup + Recovery carrying a `start-path-card--quiet` modifier so they no longer have equal visual weight to the kit; SKU search stays behind the kit panel as a fallback, not the first task. Added `__tests__/wf-ux-010-step1.test.js` (24 assertions: dominant-primary identity + wording order, primary-before-preview/planned/advanced DOM order, LED-secondary-preview marking, planned disclosure collapsed-by-default + renamed, Advanced setup + Recovery survival + quiet weight + rescue-modal delegation, SKU-search-as-fallback, and the firmware/manifest/source/`REQUIRED_CONFIGS`/kits no-change + LED-preview-only + fan-non-installable guards). | **Markup + CSS + test only.** Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (still Release-One-only), `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, every file under `scripts/`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js`, and `_headers` are byte-identical. The preset ids / `data-bundle-preset-*` + `data-start-path` data hooks, the WF-UX-006 `configmode` URL contract, the WF-LED-003 preview-channel acknowledgement model, the WF-TRIAC-001 advanced/manual-warning gate, the FanTRIAC HW-005 block, and the Rescue install path all stand. No firmware imported. **No hardware behaviour verified.** | A normal kit buyer now reads Step 1 as "install the Sense360 Bathroom PoE kit (stable)" first, with the preview / planned / advanced / recovery / SKU-search surfaces all present but secondary. Builds on WF-KIT-PRESETS-001 (productized bundles), WF-UX-006 (path split), WF-UX-008 (ID cleanup + Advanced-setup reframe), and WF-UX-009 (three-task Review) without redoing any of them. |
-| WF-UX-009 | _(open — PR # to fill at merge)_ | In review | Restructured the Review / Step 5 surface into a guided three-task customer flow. Added three visible numbered task sections under the existing `Review and install` H2 — **1. Check your kit** (`.review-task--kit`, owns the `#config-summary` selection summary), **2. Confirm safe flashing** (`.review-task--safety`, owns the preflight verdict panel + warning/freshness acknowledgements + the "Before you flash" gate), **3. Install firmware** (`.review-task--install`, owns the `#compatible-firmware` ESP Web Tools install placeholder + channel-acknowledgement panel) — each an `aria-labelledby` section with an `H3` heading; demoted the inner subsection headings to `H4` so headings read in logical order. Demoted the Step 5 secondary actions into three collapsed labelled `<details data-secondary-section>` disclosures inside the existing `.secondary-action-group` — **More install options** (Download `.bin` + Copy install link), **Home Assistant and post-install** (Open Home Assistant), **Recovery help** (a `data-rescue-open` trigger reusing the existing delegated rescue-modal handler) — so they no longer visually compete with the dominant install action. Diagnostics (preflight support bundle) stay collapsed and support-oriented inside the preflight `<details>`. Added CSS for `.review-task*` / `.review-secondary*` and widened the `.configuration-summary` / `.pre-flash-checklist__header` heading selectors to cover the new `H4`. Added the `__tests__/a11y-static-html.test.js` `WF-UX-009 — Review reads as a three-task customer flow` describe block (12 assertions: three task headings in order, DOM task ordering, `aria-labelledby` wiring, per-task content ownership, install-task is the only primary install affordance, secondary actions collapsed-by-default into labelled disclosures, recovery reachable-but-secondary, diagnostics collapsed/support-oriented, ready-helper hook preserved, and a firmware-surface no-change guard pinning the 3-build manifest + `REQUIRED_CONFIGS`). | **Markup + CSS + test only — no install gate, firmware-selection, or safety-semantics change.** All Step 5 gates are preserved and merely re-parented: preflight policy (`evaluatePreflightPolicy`), manifest freshness gate, release-channel acknowledgements (WF-LED-003 preview model), advanced/manual-warning acknowledgements (WF-TRIAC-001), and provenance/installability checks all stand. Every dynamic hook (`#config-summary`, `[data-preflight-*]`, `[data-preflash-acknowledge]`, `[data-manifest-freshness-acknowledge]`, `#compatible-firmware`, `[data-channel-acknowledgement-panel]`, `#download-btn`, `#copy-firmware-url-btn`, `#open-ha-integrations-btn`, `.secondary-action-group [data-ready-helper]`, `[data-install-assumptions]`) resolves unchanged. Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json`, `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, every file under `scripts/`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, every `.github/workflows/*` file, `sw.js`, and `_headers` are byte-identical. The FanTRIAC HW-005 block, the WF-LED-003 preview-channel acknowledgement model, and the WF-TRIAC-001 advanced/manual-warning gate all stand. No firmware imported. **No hardware behaviour was verified.** | A normal kit buyer now reads Review at a glance as Check your kit → Confirm safe flashing → Install firmware, with the install action visually and structurally dominant and Download/Copy/HA/Recovery/diagnostics available but secondary. Builds on the WF-UX-003 CTA hierarchy, WF-UX-004 preflight verdict, WF-KIT-PRESETS-001 productized kits, WF-UX-008 ID cleanup, and the WF-UX-008 "Advanced setup" reframe without redoing any of them. |
-| WF-UX-018 | _(open — PR # to fill at merge)_ | In review | Fixed the "View Release Notes" disclosure that did nothing on the live site. `toggleReleaseNotes()` in `scripts/state.js` called `selectFirmwareById(firmwareId, { renderDetails: false })` before opening the disclosure, but `selectFirmwareById()` always runs `verifyCurrentFirmwareIntegrity()` → `renderSelectedFirmware()`, which rebuilds `#compatible-firmware` and synchronously **detaches** the trigger + notes section the handler had just captured — so `display:block` landed on the orphaned node while the freshly rendered card stayed collapsed and the user saw nothing happen. Removed the `selectFirmwareById()` call: the disclosure is purely presentational and `loadReleaseNotes()` reads the changelog straight from `firmwareOptionsMap` via `firmwareId`, so no re-select (and no card rebuild) is needed. Bumped `sw.js` `CACHE_NAME` v10 → v11 so existing service-worker installs purge and re-prime the fixed `state.js` (which still carries no per-import `?v=` token because it is imported by ~7 modules and a per-import query would split it into duplicate instances). Added `__tests__/wf-ux-018-release-notes-toggle.test.js` (3 assertions on the LIVE path — firmware registered via `setFirmwareOptions` + `selectDefaultFirmware` + rendered through the real pipeline — proving a delegated bubbling click expands the disclosure and loads the shipped changelog without detaching the trigger, a second click collapses it, and opening notes does not mutate the selected firmware). This is exactly the path the WF-UX-016 acceptance test missed because it deliberately never registered the firmware (so the select no-op'd). | **Bugfix + cache-name bump + test only.** Every firmware binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json`, `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, `index.html`, every CSS file, every `.github/workflows/*` file, and the `sw.js` per-asset-class fetch strategy are byte-identical (only `CACHE_NAME` changed). The install gate, preflight / freshness engines, the WF-LED-003 preview-channel acknowledgement model, the WF-TRIAC-001 advanced/manual-warning gate, and the FanTRIAC HW-005 block all stand. No firmware imported. No hardware behaviour verified. | "View Release Notes" now actually opens the shipped manifest changelog in-card on the live site for the stable + LED-preview builds; the regression is pinned by a live-path test so it cannot silently return. Supersedes the WF-UX-016 trigger work, which fixed CSP/inline-handler + the dead per-build `.md` fetch but left the re-render detach in place. |
+| WF-UX-009 | #454 | Merged | Restructured Step 5 Review into a guided three-task flow — **Check your kit** → **Confirm safe flashing** → **Install firmware** — with the `<esp-web-install-button>` dominant and Download / Copy / HA / Recovery demoted into collapsed `<details>`. | Markup + CSS + test only; every Step 5 install gate (preflight, freshness, channel + advanced/manual acks, provenance) re-parented unchanged. No firmware / `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / `scripts/data/kits.json` / `sw.js` change. | Review reads as a three-task customer flow; install action is structurally dominant. |
+| WF-UX-010 | #455 | Merged | Reworked Step 1 so the stable `S360-KIT-BATH-POE` bundle is the single dominant primary card, LED preview is clearly secondary, planned fan kits stay collapsed, and kit / Advanced setup / Recovery / SKU search become secondary "other ways to start". | Markup + CSS + test only; no firmware / `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / `scripts/data/kits.json` / release-channel / `sw.js` change. LED preview-only, fans non-installable, FanTRIAC block all stand. | A normal kit buyer reads Step 1 as "install the Sense360 Bathroom PoE kit (stable)" first. |
+| WF-UX-011 | #456 | Merged | Added the default product-focused **Simple install** landing for the stable Bathroom PoE kit (`[data-simple-install]` hero via `scripts/simple-install.js`) reusing the existing Step 5 install surface + every gate; full wizard preserved behind **Advanced setup**. | Markup + CSS + one additive `state.js` readiness broadcast + test; no firmware / `manifest.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / release-channel / installability / `sw.js`-strategy change. Stale hard block stands. | Established the Simple install hero + readiness broadcast. |
+| WF-UX-012 | #457 | Merged | Split Step 1 into an explicit **Simple install** (recommended, default) vs **Advanced install** path picker; Simple shows one clean product card + a single safety checkbox mirroring the authoritative `[data-preflash-acknowledge]`. | Markup + CSS + `scripts/simple-install.js` + test; install gate authoritative in `state.js`, never bypassed. No firmware / manifest / sources / `REQUIRED_CONFIGS` / release-channel / `sw.js`-strategy change. LED preview-only, fans non-installable, TRIAC advanced/manual. | Simple / Advanced path split landed. |
+| WF-UX-013 | #458 | Merged | Reduced Simple-install warning noise — freshness `unknown` surfaces once in the hero as calm "Could not recheck for updates" with Reload / Continue (Continue ticks the authoritative freshness ack); duplicate freshness / preflight surfaces suppressed in Simple mode; stale stays a hard block. | `index.html` + CSS + `scripts/simple-install.js` + test; **no `state.js`** change, no firmware / manifest / sources / `REQUIRED_CONFIGS` / release-channel / stale-block / `sw.js`-strategy change. | Simple install reads calm; gate stays authoritative. |
+| WF-UX-014 | #459 | Merged | Made the WF-UX-013 calm freshness copy actually deploy — threaded an `APP_SHELL_BUILD` cache-bust token from HTML through `bootstrap.js` → `app.js` → `scripts/simple-install.js?v=…`; bumped `sw.js` `CACHE_NAME` v5→v6 to re-prime; added a support-only app-shell build marker. | Deploy-layer + presentation only; **no** `state.js` gate, firmware, manifest, sources, `REQUIRED_CONFIGS`, release-channel, or `sw.js` fetch-*strategy* change. | Fixed the deployed mixed old/new Simple-install UI; calm freshness copy ships. |
+| WF-UX-015 | #460 | Merged | Collapsed all firmware / provenance / release-metadata detail in Simple mode behind a single hero **"Technical details"** disclosure; default Simple path shows one product card + one safety confirmation + one Install action. Bumped cache-bust + `sw.js` `CACHE_NAME` v6→v7 in lockstep. | Presentation + deploy-layer only; `createFirmwareCardHtml` unchanged, Advanced renders the full card. No `manifest.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / firmware / installability / `sw.js`-strategy change. | Default Simple path is genuinely simple. |
+| WF-UX-016 | #461, #462 | Merged | Routed freshness `unknown` through the calm Simple-install copy instead of `preflight-fail` — `scripts/state.js` `deriveInstallReadinessReason` attributes the freshness axis to its own reason (`freshness-unknown` / `firmware-stale`); #462 fixed remaining Simple-install freshness leakage and the release-notes link. Rode the `sw.js` `CACHE_NAME` v7→v8 re-prime. | Presentation / deploy-layer only; gate untouched (Continue still ticks the freshness ack, stale stays a hard block). No firmware / manifest / sources / `REQUIRED_CONFIGS` / release-channel / `sw.js`-strategy change. | Simple path no longer renders "Cannot install yet" for an unknown verdict. |
+| WF-UX-017 | #463 | Merged | Made freshness `unknown` **non-blocking in Simple install** by making `evaluateFreshnessGate` the single freshness authority (`evaluateGatingPreflightPolicy` excludes the `manifest-freshness` row so it can never double-block); Advanced keeps the ack gate, **stale stays a hard block in both modes**. Added structured `reason` codes in `scripts/services/manifest-freshness.js`; `CACHE_NAME` v9→v10. Adds `docs/wf-ux-017-freshness-diagnosis.md`. | Presentation / gate-only; no firmware / `manifest.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / `scripts/data/kits.json` / release-channel / TRIAC / `sw.js`-strategy change. | Install button enables for an unknown verdict in Simple install; live cause now diagnosable. |
+| WF-FRESHNESS-ROOT-MANIFEST-001 | #464 | Merged | Fixed the root-manifest freshness check so the loaded root-manifest metadata (`generated_at`, `manifest_version`, `source_commit`) is captured via `captureManifestMetadata()` on every successful `loadManifestData()` and cleared on a failed load, collapsing the opaque `missing-generated-at` into specific `missing-loaded` / `missing-fetched` / `missing-both` reasons. | `scripts/state.js` + `scripts/services/manifest-freshness.js` + test; freshness verdict semantics (current / stale / unknown) unchanged. No firmware / manifest / sources / `REQUIRED_CONFIGS` / `sw.js`-strategy change. | Loaded-side metadata reliably captured; reason codes sharpened. |
+| WF-UX-018 | #465 | Merged | Fixed **View Release Notes** doing nothing on the live site — removed the `selectFirmwareById()` call in `toggleReleaseNotes()` that rebuilt `#compatible-firmware` and detached the just-captured trigger; the disclosure is presentational and reads the changelog from `firmwareOptionsMap`. Bumped `sw.js` `CACHE_NAME` v10→v11. Adds a live-path test. | Bugfix + cache-name bump + test only; `sw.js` fetch-*strategy*, install gate, freshness engines, FanTRIAC block all unchanged. No firmware / manifest / sources / `REQUIRED_CONFIGS` / `index.html` / CSS change. | Release notes open in-card for stable + LED-preview builds; pinned by a live-path test. |
+| WF-MANIFEST-FRESHNESS-RACE-001 | #466 | Merged | Fixed the manifest-freshness **startup race** — `checkManifestFreshnessNow()` now awaits the in-flight `manifestLoadPromise` and re-captures metadata before comparing; `triggerManifestFreshnessCheckIfNeeded()` no longer pre-marks the check run; added the transient `manifest-load-pending` reason (eleventh code). Adds `__tests__/wf-manifest-freshness-race.test.js` + `docs/wf-manifest-freshness-race-diagnosis.md`. | `scripts/state.js` + `scripts/services/manifest-freshness.js` + test/docs; verdict semantics unchanged, stale still hard-blocks. No firmware / `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / `sw.js`-strategy change. | A full refresh into `step=5` no longer shows a false `missing-generated-at`; initial refresh == manual recheck. |
 
 ## Active / upcoming WebFlash queue
 
 Priority-ordered. Update the **Status** column in-place as each PR is opened
 or lands, then move the row to **Completed / merged** on merge.
 
-0. **WF-HW-TEST-002 follow-up — Complete LED preview operator flash proof.**
+### Standing blockers / invariants
+
+These gate every item below and must not be regressed by any queue PR:
+
+- **WebFlash cannot import new preview builds until upstream artifacts
+  exist.** Every `WF-IMPORT-…` / `WF-PREVIEW-IMPORT-…` item below is blocked
+  until `sense360store/esphome-public` publishes the corresponding
+  `RELEASE-…` artifact (signed-able `.bin` + checksum + catalog promotion).
+  No speculative import.
+- **Simple install remains stable Bathroom PoE only.** The default Simple
+  install path resolves only to Release-One `Ceiling-POE-VentIQ-RoomIQ`
+  (stable, v1.0.0). No preview, fan, or advanced build is selectable from
+  Simple install.
+- **Preview / advanced-preview appears only in Advanced install.** The LED
+  preview (and any future preview/advanced-preview artifact) is reachable
+  only through Advanced install behind the existing `channel:preview`
+  acknowledgement; it is never auto-selected and never enters the Simple
+  path.
+- **TRIAC remains advanced / manual only.** Sense360 TRIAC (S360-320) stays
+  `advanced-manual-warning` — not recommended, not default, not a kit, not
+  auto-selected, not in `REQUIRED_CONFIGS`, not import-allowed (the
+  `block_tokens` import block stands), and not compliance-certified.
+
+### Queue
+
+1. **WF-LIVE-SMOKE-SIMPLE-INSTALL-001 — Verify the live Simple install
+   end-state.**
+   Status: **Ready — next real work (no upstream dependency).**
+   Purpose: Verify the deployed GitHub Pages
+   (`https://sense360store.github.io/WebFlash/`) Simple install now reflects
+   the merged #454–#466 end-state — **no false freshness warning** (freshness
+   `unknown` is non-blocking; only a genuine `stale` hard-blocks), **View
+   Release Notes opens** in-card, the **Install button becomes available**
+   after the single safety confirmation, and **technical details are
+   collapsed** by default behind the hero disclosure. Record the result as a
+   live-smoke doc under `docs/release-gates/` (extends the existing
+   `WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001` pattern). Docs-only; opens a
+   targeted follow-up only if the live page diverges from the merged source.
+   Dependencies: None — the fixes are merged and deployed. A human incognito
+   visual pass is the recommended (non-blocking) confirmation.
+
+2. **WF-PREVIEW-IMPORT-POLICY-001 — Prepare WebFlash import rules for upstream
+   preview artifacts.**
+   Status: **Planned / policy (docs-only; no artifact yet).**
+   Purpose: Define — *before* any preview artifact exists — the WebFlash
+   import rules for upstream preview builds: the required upstream proof
+   fields, the `firmware/sources.json` source-entry shape (`channel: preview`,
+   `block_tokens`, pinned `expected_sha256`), the importer →
+   `gen-manifests.py` → sign → deploy sequence, the Advanced-install-only
+   exposure contract (preview never enters Simple install or
+   `REQUIRED_CONFIGS`), and the do-not-change list. Reuses the
+   `docs/webflash-import-readiness-matrix.md` + `docs/product-import-readiness.md`
+   contracts.
+   Dependencies: None to author (docs/policy). Gates
+   WF-PREVIEW-IMPORT-FIRST-BATCH-001.
+   Note: **Policy only — imports nothing.** No firmware, manifest, sources,
+   `REQUIRED_CONFIGS`, or kit change.
+
+3. **WF-PREVIEW-IMPORT-FIRST-BATCH-001 — Import the first upstream preview
+   artifacts.**
+   Status: **Blocked — upstream preview artifacts do not exist yet.**
+   Purpose: Import the first batch of upstream preview `.bin` + `.meta.json`
+   artifacts once they are published, following WF-PREVIEW-IMPORT-POLICY-001:
+   add the `firmware/sources.json` source entries, regenerate `manifest.json`
+   + per-build manifests, expose in Advanced install behind the preview
+   acknowledgement. **Not before the artifacts exist.**
+   Dependencies: Upstream `sense360store/esphome-public` preview
+   `RELEASE-…` artifacts **and** WF-PREVIEW-IMPORT-POLICY-001 merged.
+   Note: **Not `REQUIRED_CONFIGS`, not Simple install, not a kit.** Preview
+   is import / manifest / kit-eligible but never `REQUIRED_CONFIGS`-eligible.
+
+4. **WF-ADVANCED-PREVIEW-TRIAC-GATE-001 — Define the advanced/manual TRIAC
+   preview warning UX before import.**
+   Status: **Planned / UX policy (docs-only; pre-import).**
+   Purpose: Define the advanced/manual warning UX for a future TRIAC
+   *preview* artifact **before** any import — how the existing WF-TRIAC-001
+   `advanced-manual-warning` acknowledgement region, copy, and install-gate
+   clause extend to a preview-channel TRIAC build in Advanced install, so the
+   warning + acknowledgement + non-default + non-recommended + non-kit
+   guarantees are pinned ahead of `WF-IMPORT-TRIAC-001`.
+   Dependencies: None to author (extends the shipped WF-TRIAC-001 UX). Sits in
+   front of `WF-IMPORT-TRIAC-001`, which still requires upstream
+   `RELEASE-TRIAC-001`.
+   Note: Advanced/manual-warning is an in-installer warning gate, **not** a
+   compliance certification claim.
+
+5. **WF-HW-TEST-002 follow-up — Complete LED preview operator flash proof.**
    Status: **Planned / hardware required — operator evidence still
    pending** (the docs PR already merged as #430 *without* operator
    evidence, so the proof container's rows remain `pending`).
@@ -390,7 +254,7 @@ or lands, then move the row to **Completed / merged** on merge.
    not by itself promote LED to stable, change `REQUIRED_CONFIGS`,
    alter kits, or unblock `RELEASE-007`.
 
-1. **WF-LED-STABLE-001 — Stable LED WebFlash import.**
+6. **WF-LED-STABLE-001 — Stable LED WebFlash import.**
    Status: **Blocked by stable artifact.**
    Purpose: Import a stable-channel LED `.bin` (+ `.meta.json` sidecar)
    when upstream ships one; add a second source entry / regenerate
@@ -398,7 +262,7 @@ or lands, then move the row to **Completed / merged** on merge.
    Dependencies: Upstream `sense360store/esphome-public` `RELEASE-007`
    (LED stable build + catalog promotion to `status: production`).
 
-2. **WF-REQUIRED-001 — Decide whether LED stable becomes `REQUIRED_CONFIGS`.**
+7. **WF-REQUIRED-001 — Decide whether LED stable becomes `REQUIRED_CONFIGS`.**
    Status: **Separate decision.**
    Purpose: After WF-LED-STABLE-001 lands, decide whether the stable
    LED config joins the production-only `REQUIRED_CONFIGS` allowlist.
@@ -407,7 +271,7 @@ or lands, then move the row to **Completed / merged** on merge.
    `REQUIRED_CONFIGS` is the deploy-allowlist and carries WF-PRODUCT-004
    eligibility rules independent of catalog status.
 
-3. **WF-KIT-LED-001 — Decide LED kit / recommended bundle exposure.**
+8. **WF-KIT-LED-001 — Decide LED kit / recommended bundle exposure.**
    Status: **Separate UX / product decision.**
    Purpose: Decide whether to add an LED-bearing kit to
    `scripts/data/kits.json` and/or surface LED in the recommended
@@ -417,7 +281,7 @@ or lands, then move the row to **Completed / merged** on merge.
    precondition is sufficient for the decision; both should be
    considered before exposure changes.
 
-4. **WF-IMPORT-RELAY-001 — Import FanRelay preview artifact.**
+9. **WF-IMPORT-RELAY-001 — Import FanRelay preview artifact.**
    Status: **Blocked.**
    Purpose: Import S360-310 FanRelay preview `.bin` + sidecar; add
    source entry with appropriate `block_tokens`; regenerate manifests.
@@ -428,44 +292,45 @@ or lands, then move the row to **Completed / merged** on merge.
    classifies preview entries as import / manifest / kit eligible but
    never `REQUIRED_CONFIGS`-eligible.
 
-5. **WF-IMPORT-PWM-001 — Import FanPWM preview artifact.**
-   Status: **Blocked.**
-   Purpose: Import S360-311 FanPWM preview `.bin` + sidecar.
-   Dependencies: Upstream `RELEASE-PWM-001`.
+10. **WF-IMPORT-PWM-001 — Import FanPWM preview artifact.**
+    Status: **Blocked.**
+    Purpose: Import S360-311 FanPWM preview `.bin` + sidecar.
+    Dependencies: Upstream `RELEASE-PWM-001`.
 
-6. **WF-IMPORT-DAC-001 — Import FanDAC preview artifact.**
-   Status: **Blocked.**
-   Purpose: Import S360-312 FanDAC preview `.bin` + sidecar.
-   Dependencies: Upstream `RELEASE-DAC-001`.
+11. **WF-IMPORT-DAC-001 — Import FanDAC preview artifact.**
+    Status: **Blocked.**
+    Purpose: Import S360-312 FanDAC preview `.bin` + sidecar.
+    Dependencies: Upstream `RELEASE-DAC-001`.
 
-7. **WF-IMPORT-POWER-400-001 — Import S360-400 artifact.**
-   Status: **Blocked.**
-   Purpose: Import Sense360 240v PSU (S360-400) artifact if upstream
-   ships a separate build (the current Release-One already covers
-   `power=ac` transitively via the Ceiling-POE-VentIQ-RoomIQ source).
-   Dependencies: Upstream `RELEASE-POWER-400-001`.
+12. **WF-IMPORT-POWER-400-001 — Import S360-400 artifact.**
+    Status: **Blocked.**
+    Purpose: Import Sense360 240v PSU (S360-400) artifact if upstream
+    ships a separate build (the current Release-One already covers
+    `power=ac` transitively via the Ceiling-POE-VentIQ-RoomIQ source).
+    Dependencies: Upstream `RELEASE-POWER-400-001`.
 
-8. **WF-IMPORT-POE-410-001 — Import S360-410 artifact.**
-   Status: **Blocked / likely no-op unless a separate PoE release
-   exists.**
-   Purpose: Same shape as item 7, for Sense360 PoE PSU (S360-410). PoE
-   is currently covered transitively by both Release-One and LED
-   preview (`power=poe`); a dedicated import is only opened if
-   upstream ships a distinct PoE artifact.
-   Dependencies: Upstream `RELEASE-POE-410-001`.
+13. **WF-IMPORT-POE-410-001 — Import S360-410 artifact.**
+    Status: **Blocked / likely no-op unless a separate PoE release
+    exists.**
+    Purpose: Same shape as item 12, for Sense360 PoE PSU (S360-410). PoE
+    is currently covered transitively by both Release-One and LED
+    preview (`power=poe`); a dedicated import is only opened if
+    upstream ships a distinct PoE artifact.
+    Dependencies: Upstream `RELEASE-POE-410-001`.
 
-9. **WF-IMPORT-TRIAC-001 — Import FanTRIAC advanced/manual artifact.**
-   Status: **Blocked.**
-   Purpose: Import S360-320 FanTRIAC `.bin` + sidecar; lift the
-   importer-level `FanTRIAC` block on the specific imported source
-   entry (the other source entries' `block_tokens` stay).
-   Dependencies: Upstream `RELEASE-TRIAC-001` **and** the
-   advanced/manual-warning policy already shipped by WF-TRIAC-001.
-   Note: **Not `REQUIRED_CONFIGS`, not kit, not recommended.** WF-TRIAC-001
-   is an in-installer warning gate, not a compliance certification claim;
-   `WF-IMPORT-TRIAC-001` does not by itself unlock production exposure.
+14. **WF-IMPORT-TRIAC-001 — Import FanTRIAC advanced/manual artifact.**
+    Status: **Blocked.**
+    Purpose: Import S360-320 FanTRIAC `.bin` + sidecar; lift the
+    importer-level `FanTRIAC` block on the specific imported source
+    entry (the other source entries' `block_tokens` stay).
+    Dependencies: Upstream `RELEASE-TRIAC-001`, the advanced/manual-warning
+    policy already shipped by WF-TRIAC-001, **and**
+    WF-ADVANCED-PREVIEW-TRIAC-GATE-001 (item 4).
+    Note: **Not `REQUIRED_CONFIGS`, not kit, not recommended.** WF-TRIAC-001
+    is an in-installer warning gate, not a compliance certification claim;
+    `WF-IMPORT-TRIAC-001` does not by itself unlock production exposure.
 
-10. **WF-PRODUCT-005 — Enforce deprecated/removed import-readiness policy.**
+15. **WF-PRODUCT-005 — Enforce deprecated/removed import-readiness policy.**
     Status: **Planned / policy follow-up.**
     Purpose: Extend `scripts/validate-product-import-readiness.js`
     and the Jest pin to actively enforce the `deprecated` / `removed`
@@ -488,19 +353,19 @@ are pointers, not status:
   rely on.
 - **`HW-ASSETS-400` / `HW-PINMAP-400-FOLLOWUP`** — S360-400 (240v PSU)
   hardware assets and pinmap; precedes `RELEASE-POWER-400-001` and
-  therefore WF-IMPORT-POWER-400-001 (queue item 7).
+  therefore WF-IMPORT-POWER-400-001 (queue item 12).
 - **`HW-ASSETS-410` / `HW-PINMAP-410-FOLLOWUP`** — S360-410 (PoE PSU)
   hardware assets and pinmap; precedes `RELEASE-POE-410-001` and
-  therefore WF-IMPORT-POE-410-001 (queue item 8).
+  therefore WF-IMPORT-POE-410-001 (queue item 13).
 - **`package/` / `product/` / `WebFlash-upstream/` / `release/` slices** —
   the upstream packaging, product-catalog, WebFlash-bridge, and
   release-orchestration slices that feed every WebFlash import. Any
   WebFlash queue item that says "Dependencies: upstream `RELEASE-…`"
   ultimately resolves through these slices.
 - **`RELEASE-007`** — LED stable release; gates WF-LED-STABLE-001
-  (queue item 1) and, downstream, the `REQUIRED_CONFIGS` decision
-  (WF-REQUIRED-001, queue item 2) and any LED-bearing kit
-  (WF-KIT-LED-001, queue item 3).
+  (queue item 6) and, downstream, the `REQUIRED_CONFIGS` decision
+  (WF-REQUIRED-001, queue item 7) and any LED-bearing kit
+  (WF-KIT-LED-001, queue item 8).
 - **`WEBFLASH-RELEASE-MATRIX-ALIGNMENT-001`** — upstream docs-only
   reconciliation at
   [`docs/release-matrix-webflash-alignment.md`](https://github.com/sense360store/esphome-public/blob/main/docs/release-matrix-webflash-alignment.md)
