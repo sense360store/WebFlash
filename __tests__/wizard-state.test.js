@@ -1003,6 +1003,9 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
     // real manifest channels rather than a synthetic mix.
     const currentManifest = {
         builds: [
+            { config_string: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'd.bin', offset: 0 }] },
+            { config_string: 'Ceiling-POE-RoomIQ', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'e.bin', offset: 0 }] },
+            { config_string: 'Ceiling-POE-RoomIQ-LED', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'f.bin', offset: 0 }] },
             { config_string: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable', chipFamily: 'ESP32-S3', parts: [{ path: 'a.bin', offset: 0 }] },
             { config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'b.bin', offset: 0 }] },
             { config_string: 'Rescue', channel: 'rescue', chipFamily: 'ESP32-S3', parts: [{ path: 'c.bin', offset: 0 }] }
@@ -1101,15 +1104,17 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(ledPill.dataset.availabilityTone).toBe('warning');
     });
 
-    test('AirIQ resolves to no-firmware (static override wins over manifest derivation)', async () => {
+    test('AirIQ resolves to available-preview (manifest-derived after the first preview import)', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
 
         const airiqPill = document.querySelector('#airiq-module-section [data-module-availability-pill]');
-        expect(airiqPill.dataset.availabilityState).toBe('no-firmware');
-        expect(airiqPill.textContent).toBe('No WebFlash firmware yet');
+        expect(airiqPill.dataset.availabilityState).toBe('available-preview');
+        expect(airiqPill.textContent).toBe('Preview');
+        // Warning tone matches the preview-channel acknowledgement gate copy.
+        expect(airiqPill.dataset.availabilityTone).toBe('warning');
     });
 
     test('WF-TRIAC-001 — classifyVariantForRender returns advanced-manual-warning for TRIAC, selectable=true, installable=false', async () => {
@@ -1127,16 +1132,16 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(result.tone).toBe('danger');
     });
 
-    test('classifyVariantForRender returns no-firmware (not installable) for AirIQ', async () => {
+    test('classifyVariantForRender returns available-preview (installable) for AirIQ', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
 
         const result = stateModule.__testHooks.classifyVariantForRender('airiq', 'airiq');
-        expect(result.state).toBe('no-firmware');
-        expect(result.installable).toBe(false);
-        // Selectable so the user can still pick AirIQ for planning, but
-        // Step 5 will surface the no-build readiness state.
+        expect(result.state).toBe('available-preview');
+        expect(result.installable).toBe(true);
+        // AirIQ now has a Ceiling-POE-AirIQ-RoomIQ preview build; install still
+        // gates on the preview-channel acknowledgement at Step 5.
         expect(result.selectable).toBe(true);
     });
 });
@@ -1384,6 +1389,9 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
 
     const currentManifest = {
         builds: [
+            { config_string: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'd.bin', offset: 0 }] },
+            { config_string: 'Ceiling-POE-RoomIQ', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'e.bin', offset: 0 }] },
+            { config_string: 'Ceiling-POE-RoomIQ-LED', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'f.bin', offset: 0 }] },
             { config_string: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable', chipFamily: 'ESP32-S3', parts: [{ path: 'a.bin', offset: 0 }] },
             { config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED', channel: 'preview', chipFamily: 'ESP32-S3', parts: [{ path: 'b.bin', offset: 0 }] },
             { config_string: 'Rescue', channel: 'rescue', chipFamily: 'ESP32-S3', parts: [{ path: 'c.bin', offset: 0 }] }
@@ -1426,14 +1434,14 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
         expect(result.state).toBe('available-preview');
     });
 
-    test('AirIQ stays no-firmware (no install path even in custom mode)', async () => {
+    test('AirIQ resolves to available-preview in custom mode (manifest-derived preview build)', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
         const result = stateModule.__testHooks.classifyVariantForRender('airiq', 'airiq');
-        expect(result.state).toBe('no-firmware');
-        expect(result.installable).toBe(false);
+        expect(result.state).toBe('available-preview');
+        expect(result.installable).toBe(true);
     });
 
     test('Relay stays design-pending and PWM / DAC stay no-firmware', async () => {

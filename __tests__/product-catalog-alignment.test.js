@@ -582,13 +582,19 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to exactly Release-One + LED preview + Rescue', () => {
-        // Snapshot lock updated by WF-LED-002: the manifest now exposes
-        // three builds. Release-One stable + Rescue remain unchanged in
-        // content; the LED preview is the third entry.
+    test('manifest.json builds resolve to Release-One + four preview builds + Rescue', () => {
+        // Snapshot lock updated by WF-PREVIEW-IMPORT-FIRST-BATCH-001: the
+        // manifest now exposes six builds. Release-One stable + Rescue remain
+        // unchanged in content; the four preview-channel builds are the LED
+        // preview (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview) plus
+        // the three first-batch previews imported from upstream v1.0.0-preview
+        // (Ceiling-POE-AirIQ-RoomIQ, Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED).
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
         expect(configStrings).toEqual(
             [
+                'Ceiling-POE-AirIQ-RoomIQ',
+                'Ceiling-POE-RoomIQ',
+                'Ceiling-POE-RoomIQ-LED',
                 'Ceiling-POE-VentIQ-RoomIQ',
                 'Ceiling-POE-VentIQ-RoomIQ-LED',
                 'Rescue'

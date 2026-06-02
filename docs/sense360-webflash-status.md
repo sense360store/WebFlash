@@ -37,18 +37,62 @@ wins for *what flashes today*.
 
 ## Currently supported / release-selectable products
 
-These are the **only** builds in `manifest.json` today. Everything else is
-either preview-gated, blocked, or has no imported artifact.
+These are the builds in `manifest.json` today. The **only release-selectable
+(stable) default** is Release-One; everything else is preview-gated, blocked, or
+has no imported artifact.
 
 | Product (`config_string`) | Channel | Version | WebFlash exposure | In `REQUIRED_CONFIGS`? |
 |---|---|---|---|---|
-| **Release-One** — `Ceiling-POE-VentIQ-RoomIQ` | `stable` | 1.0.0 | Release-selectable. Default stable install path. Backs the `S360-KIT-BATH-POE` kit and the `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE` entry in `scripts/data/kits.json`. | **Yes** |
+| **Release-One** — `Ceiling-POE-VentIQ-RoomIQ` | `stable` | 1.0.0 | Release-selectable. Default stable install path (Simple install). Backs the `S360-KIT-BATH-POE` kit and the `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE` entry in `scripts/data/kits.json`. | **Yes** |
 | **LED preview** — `Ceiling-POE-VentIQ-RoomIQ-LED` | `preview` | 1.0.0 | **Preview-only.** Visible in normal mode but never auto-selected; install gates on the `channel:preview` acknowledgement (WF-LED-003 Option A). Not a kit, not recommended. | No |
+| **AirIQ preview** — `Ceiling-POE-AirIQ-RoomIQ` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001). Never auto-selected; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default. | No |
+| **RoomIQ preview** — `Ceiling-POE-RoomIQ` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Same preview gate + posture. | No |
+| **RoomIQ + LED preview** — `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Distinct from the VentIQ LED preview. Same preview gate + posture. | No |
 | **Rescue** — `Rescue` | `rescue` | 1.0.0 | Recovery / unbricking build, reached via the recovery path + rescue modal. WebFlash-owned. | **Yes** |
 
 `REQUIRED_CONFIGS` is **production-only**: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
-The LED preview is deliberately *not* on the allowlist — a `preview` catalog
-status is import / manifest / kit eligible but never `REQUIRED_CONFIGS` eligible.
+None of the four preview builds is on the allowlist — a `preview` catalog status
+is import / manifest / kit eligible but never `REQUIRED_CONFIGS` eligible. The
+default **Simple install** path resolves only to the stable Bathroom PoE build
+(`Ceiling-POE-VentIQ-RoomIQ`); the preview builds appear only in the Advanced /
+custom path behind the preview-channel acknowledgement.
+
+## Preview firmware first batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001)
+
+WebFlash imported the first batch of preview firmware from the upstream
+[`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview)
+release. Three new preview-channel builds were added to `manifest.json`:
+
+| Config string | Asset | SHA256 | Size (bytes) |
+|---|---|---|---|
+| `Ceiling-POE-AirIQ-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin` | `16565de6…722bc7` | 1,089,296 |
+| `Ceiling-POE-RoomIQ` | `Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin` | `2c7d691c…f47b937` | 956,976 |
+| `Ceiling-POE-RoomIQ-LED` | `Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin` | `d4f18824…6c9cb0` | 1,006,848 |
+
+Provenance (recorded in each `.meta.json` sidecar): upstream
+`sense360store/esphome-public@v1.0.0-preview`, build git sha
+`2228bbb785a8d5b214d92cae08d1c760ba36ec47`, ESPHome `2026.4.5`, hosted compile
+proof run `26821900127`. Each `.bin` was SHA-256-verified against the upstream
+`checksums-sha256.txt` **and** the source entry's pinned `expected_sha256` by
+[`scripts/import-firmware-sources.py`](../scripts/import-firmware-sources.py).
+
+**Posture — preview only.** These are **firmware-build proof only**: preview
+firmware, **not stable**, **not recommended**, **not a customer default**, **not
+hardware-verified**, and **not buyable as a public shop product**. No hardware /
+bench / compliance / commercial-availability proof is claimed. They are exposed
+**only** in the Advanced / custom install path and install only after the
+`channel:preview` acknowledgement (`scripts/utils/release-channels.js`); the
+default Simple install path still resolves only to the stable Bathroom PoE build
+`Ceiling-POE-VentIQ-RoomIQ`. Normal customers should use that stable build.
+
+**Not imported / unchanged.** The fourth `v1.0.0-preview` asset
+(`Ceiling-POE-VentIQ-RoomIQ-LED`) was **not** re-imported — that config already
+ships from `v1.0.0-led-preview`, and re-importing the same-named file would
+overwrite a published `.bin` and break the existing LED preview.
+`REQUIRED_CONFIGS` stays `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`
+(production-only), `scripts/data/kits.json` stays Release-One-only, the candidate
+room bundles stay hidden / not buyable, and **no TRIAC and no fan-driver
+(FanRelay / FanPWM / FanDAC) firmware was imported.**
 
 ## Module availability snapshot
 
@@ -62,7 +106,7 @@ The classifier is **not** the install gate. Current per-SKU state:
 | S360-200 | Sense360 RoomIQ | `available-stable` | Part of Release-One. |
 | S360-211 | Sense360 VentIQ | `available-stable` | Part of Release-One (Bathroom toggle). |
 | S360-300 | Sense360 LED | `available-preview` | **Preview-only — not stable.** Derived from the LED preview build behind the preview acknowledgement. |
-| S360-210 | Sense360 AirIQ | `no-firmware` | No WebFlash build ships. |
+| S360-210 | Sense360 AirIQ | `available-preview` | **Preview-only — not stable.** Derived from the `Ceiling-POE-AirIQ-RoomIQ` preview build (WF-PREVIEW-IMPORT-FIRST-BATCH-001) behind the preview acknowledgement. The static `no-firmware` override was removed once the build shipped. |
 | S360-310 | Sense360 Relay | `design-pending` | No S360-310 schematic uploaded upstream. |
 | S360-311 | Sense360 PWM (**FanPWM**) | `no-firmware` | **Hidden / not release-ready.** Schematic exists upstream; no WebFlash build ships. No install card. |
 | S360-312 | Sense360 DAC | `no-firmware` | Schematic exists upstream; no WebFlash build ships. |
@@ -107,17 +151,27 @@ true and visible:
 
 ## Current release version(s)
 
-WebFlash ships from `manifest.json`, which today carries exactly three builds.
-All three are at version **1.0.0**:
+WebFlash ships from `manifest.json`, which today carries exactly six builds.
+All six are at version **1.0.0**:
 
 | Config string | Channel | Version | Upstream release tag | Release-selectable? |
 |---|---|---|---|---|
 | `Ceiling-POE-VentIQ-RoomIQ` | `stable` | 1.0.0 | [`v1.0.0`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0) | **Yes** (default stable path) |
 | `Ceiling-POE-VentIQ-RoomIQ-LED` | `preview` | 1.0.0 | [`v1.0.0-led-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview) | **Preview-only** (gated on `channel:preview` acknowledgement) |
+| `Ceiling-POE-AirIQ-RoomIQ` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
+| `Ceiling-POE-RoomIQ` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
+| `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
 | `Rescue` | `rescue` | 1.0.0 | _(built in-tree under `firmware/rescue/`)_ | Recovery path only |
 
-- **Release-selectable target:** `Ceiling-POE-VentIQ-RoomIQ` (stable).
-- **Preview target:** `Ceiling-POE-VentIQ-RoomIQ-LED` (S360-300 LED ring, preview channel).
+- **Release-selectable target:** `Ceiling-POE-VentIQ-RoomIQ` (stable) — the only
+  Simple-install / customer-default path.
+- **Preview targets (Advanced install, `channel:preview` acknowledgement):**
+  `Ceiling-POE-VentIQ-RoomIQ-LED` (S360-300 LED ring), plus the first preview
+  batch `Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`, and
+  `Ceiling-POE-RoomIQ-LED` (WF-PREVIEW-IMPORT-FIRST-BATCH-001). All are
+  firmware-build-proof only — **not** hardware-verified, **not** stable, **not**
+  recommended, **not** a customer default, and **not** buyable as a public shop
+  product.
 - **Blocked / not WebFlash-exposed targets:** FanPWM (S360-311), FanRelay
   (S360-310), FanDAC (S360-312), FanTRIAC (S360-320), and any broader PoE
   bundle expansion that depends on S360-410 evidence. None of these has a
@@ -288,12 +342,17 @@ Cross-checked against the live repository state on consolidation. Every status
 statement above is sourced from a committed file:
 
 - **Release targets match `manifest.json`.** `manifest.json` carries exactly
-  three builds — `Ceiling-POE-VentIQ-RoomIQ` (stable), `Ceiling-POE-VentIQ-RoomIQ-LED`
-  (preview), `Rescue` (rescue) — matching the targets enumerated above.
-- **Source entries match `firmware/sources.json`.** Two upstream sources are
+  six builds — `Ceiling-POE-VentIQ-RoomIQ` (stable), `Ceiling-POE-VentIQ-RoomIQ-LED`
+  (preview), the first preview batch `Ceiling-POE-AirIQ-RoomIQ` /
+  `Ceiling-POE-RoomIQ` / `Ceiling-POE-RoomIQ-LED` (preview), and `Rescue`
+  (rescue) — matching the targets enumerated above.
+- **Source entries match `firmware/sources.json`.** Five upstream sources are
   declared: the v1.0.0 Release-One stable build (`block_tokens:
-  ["FanTRIAC", "LED"]`) and the v1.0.0-led-preview build (`block_tokens:
-  ["FanTRIAC"]`). No FanPWM / FanRelay / FanDAC / FanTRIAC source entry exists.
+  ["FanTRIAC", "LED"]`), the v1.0.0-led-preview build (`block_tokens:
+  ["FanTRIAC"]`), and three v1.0.0-preview builds — `Ceiling-POE-AirIQ-RoomIQ`
+  and `Ceiling-POE-RoomIQ` (`block_tokens: ["FanTRIAC", "LED"]`) and
+  `Ceiling-POE-RoomIQ-LED` (`block_tokens: ["FanTRIAC"]`). No FanPWM / FanRelay /
+  FanDAC / FanTRIAC source entry exists.
 - **`REQUIRED_CONFIGS` is production-only.** The allowlist in
   [`.github/workflows/firmware-publish.yml`](../.github/workflows/firmware-publish.yml)
   holds exactly `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`. The LED preview is
@@ -321,9 +380,10 @@ signed `.bin` for; upstream re-verification is owned by
 
 - **`FEATURES.md`** (repo root) is **deprecated** as a status/roadmap source and
   now redirects here. Its old "module support" / "recommended bundle" claims had
-  drifted (e.g. AirIQ listed as supported and as the recommended bundle, which is
-  no longer true — AirIQ is `no-firmware` and the recommended state is RoomIQ +
-  VentIQ over PoE with `fan: none`).
+  drifted (e.g. AirIQ listed as supported and as the recommended bundle). AirIQ
+  now ships a **preview-only** build (`Ceiling-POE-AirIQ-RoomIQ`, not stable, not
+  recommended, not a customer default); the recommended state remains RoomIQ +
+  VentIQ over PoE with `fan: none`.
 
 ## Still authoritative — not superseded
 

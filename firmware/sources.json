@@ -53,6 +53,86 @@
       "block_tokens": [
         "FanTRIAC"
       ]
+    },
+    {
+      "source_repo": "sense360store/esphome-public",
+      "release_tag": "v1.0.0-preview",
+      "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview",
+      "version": "1.0.0",
+      "channel": "preview",
+      "config_string": "Ceiling-POE-AirIQ-RoomIQ",
+      "asset_name": "Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin",
+      "expected_sha256": "16565de6cd8b62c51d4fa8041eb5ffdb29fd2b8daddceecd73a6b0df5d722bc7",
+      "min_size_bytes": 102400,
+      "required_assets": [
+        "Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin",
+        "checksums-sha256.txt",
+        "checksums-md5.txt",
+        "manifest.json"
+      ],
+      "required_release_body_sections": [
+        "Changelog",
+        "Known Issues",
+        "Features",
+        "Hardware Requirements"
+      ],
+      "block_tokens": [
+        "FanTRIAC",
+        "LED"
+      ]
+    },
+    {
+      "source_repo": "sense360store/esphome-public",
+      "release_tag": "v1.0.0-preview",
+      "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview",
+      "version": "1.0.0",
+      "channel": "preview",
+      "config_string": "Ceiling-POE-RoomIQ",
+      "asset_name": "Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin",
+      "expected_sha256": "2c7d691c70a557d8df4ef2ba58a6dc43195b952b6c209c89d5522a392f47b937",
+      "min_size_bytes": 102400,
+      "required_assets": [
+        "Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin",
+        "checksums-sha256.txt",
+        "checksums-md5.txt",
+        "manifest.json"
+      ],
+      "required_release_body_sections": [
+        "Changelog",
+        "Known Issues",
+        "Features",
+        "Hardware Requirements"
+      ],
+      "block_tokens": [
+        "FanTRIAC",
+        "LED"
+      ]
+    },
+    {
+      "source_repo": "sense360store/esphome-public",
+      "release_tag": "v1.0.0-preview",
+      "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview",
+      "version": "1.0.0",
+      "channel": "preview",
+      "config_string": "Ceiling-POE-RoomIQ-LED",
+      "asset_name": "Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin",
+      "expected_sha256": "d4f18824466e95ba091dfd80e8159d544613e4c28f70f03ba81e9c8a676c9cb0",
+      "min_size_bytes": 102400,
+      "required_assets": [
+        "Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin",
+        "checksums-sha256.txt",
+        "checksums-md5.txt",
+        "manifest.json"
+      ],
+      "required_release_body_sections": [
+        "Changelog",
+        "Known Issues",
+        "Features",
+        "Hardware Requirements"
+      ],
+      "block_tokens": [
+        "FanTRIAC"
+      ]
     }
   ]
 }

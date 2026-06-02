@@ -24,11 +24,23 @@ follow-up:
 
 State of the repo at TRACKING-001:
 
-- Current import surface has exactly three builds:
+- Current import surface has six builds (updated by
+  WF-PREVIEW-IMPORT-FIRST-BATCH-001):
   - **Release-One stable** — `Ceiling-POE-VentIQ-RoomIQ` v1.0.0 (production)
   - **LED preview** — `Ceiling-POE-VentIQ-RoomIQ-LED` v1.0.0 (preview channel,
     manifest-only exposure under WF-LED-003 Option A)
+  - **AirIQ preview** — `Ceiling-POE-AirIQ-RoomIQ` v1.0.0 (preview channel,
+    first preview batch from upstream `v1.0.0-preview`)
+  - **RoomIQ preview** — `Ceiling-POE-RoomIQ` v1.0.0 (preview channel,
+    first preview batch)
+  - **RoomIQ + LED preview** — `Ceiling-POE-RoomIQ-LED` v1.0.0 (preview channel,
+    first preview batch; distinct from the VentIQ LED preview)
   - **Rescue** — `Rescue` v1.0.0 (WebFlash-owned unbricking build)
+- The three first-batch previews are preview-channel only (Advanced install,
+  `channel:preview` acknowledgement): not stable, not recommended, not a
+  customer default, not in `REQUIRED_CONFIGS`, not a kit, not buyable. The
+  default Simple install path still resolves only to the stable Bathroom PoE
+  build.
 - `REQUIRED_CONFIGS` is production-only:
   `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
 - `scripts/data/kits.json` is Release-One-only.
@@ -150,6 +162,7 @@ State of the repo at TRACKING-001:
 | WF-FRESHNESS-ROOT-MANIFEST-001 | #464 | Merged | Fixed the root-manifest freshness check so the loaded root-manifest metadata (`generated_at`, `manifest_version`, `source_commit`) is captured via `captureManifestMetadata()` on every successful `loadManifestData()` and cleared on a failed load, collapsing the opaque `missing-generated-at` into specific `missing-loaded` / `missing-fetched` / `missing-both` reasons. | `scripts/state.js` + `scripts/services/manifest-freshness.js` + test; freshness verdict semantics (current / stale / unknown) unchanged. No firmware / manifest / sources / `REQUIRED_CONFIGS` / `sw.js`-strategy change. | Loaded-side metadata reliably captured; reason codes sharpened. |
 | WF-UX-018 | #465 | Merged | Fixed **View Release Notes** doing nothing on the live site — removed the `selectFirmwareById()` call in `toggleReleaseNotes()` that rebuilt `#compatible-firmware` and detached the just-captured trigger; the disclosure is presentational and reads the changelog from `firmwareOptionsMap`. Bumped `sw.js` `CACHE_NAME` v10→v11. Adds a live-path test. | Bugfix + cache-name bump + test only; `sw.js` fetch-*strategy*, install gate, freshness engines, FanTRIAC block all unchanged. No firmware / manifest / sources / `REQUIRED_CONFIGS` / `index.html` / CSS change. | Release notes open in-card for stable + LED-preview builds; pinned by a live-path test. |
 | WF-MANIFEST-FRESHNESS-RACE-001 | #466 | Merged | Fixed the manifest-freshness **startup race** — `checkManifestFreshnessNow()` now awaits the in-flight `manifestLoadPromise` and re-captures metadata before comparing; `triggerManifestFreshnessCheckIfNeeded()` no longer pre-marks the check run; added the transient `manifest-load-pending` reason (eleventh code). Adds `__tests__/wf-manifest-freshness-race.test.js` + `docs/wf-manifest-freshness-race-diagnosis.md`. | `scripts/state.js` + `scripts/services/manifest-freshness.js` + test/docs; verdict semantics unchanged, stale still hard-blocks. No firmware / `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / `sw.js`-strategy change. | A full refresh into `step=5` no longer shows a false `missing-generated-at`; initial refresh == manual recheck. |
+| WF-PREVIEW-IMPORT-FIRST-BATCH-001 | — (PR open) | PR open | Imported the first preview firmware batch from upstream `v1.0.0-preview` — three preview-channel builds (`Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`, `Ceiling-POE-RoomIQ-LED`), each SHA-256-verified against the upstream checksums + pinned `expected_sha256`. Added 3 `firmware/sources.json` entries, 3 `.bin` + `.meta.json` sidecars, regenerated `manifest.json` (3→6 builds) + `firmware-*.json`, removed the AirIQ `no-firmware` override so AirIQ derives `available-preview`, refreshed the catalog fixture + alignment/availability tests, and updated status docs. | `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (Release-One-only), Release-One stable + VentIQ LED preview + Rescue build content (signatures/hashes byte-identical; only `source_commit`/`source_url`/`build_date` provenance refreshed), `scripts/utils/release-channels.js`, the install gate, `sw.js`, `_headers`, `index.html`, every workflow. No TRIAC / FanRelay / FanPWM / FanDAC import. The 4th `v1.0.0-preview` asset (`Ceiling-POE-VentIQ-RoomIQ-LED`) was NOT re-imported (already shipped via `v1.0.0-led-preview`). | Preview builds are Advanced-install-only behind the `channel:preview` acknowledgement; firmware-build proof only (no hardware / bench / compliance / commercial-availability proof). Simple install still resolves only to stable Bathroom PoE. |
 
 ## Active / upcoming WebFlash queue
 

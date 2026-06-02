@@ -202,12 +202,62 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
     });
 
     test('summary counts match the fixture today', () => {
-        // 4 entries: Release-One, FanTRIAC, LED preview, 1 legacy-compatible.
-        expect(report.summary.total).toBe(4);
-        expect(report.summary.import_eligible).toBe(2); // Release-One + LED preview
-        expect(report.summary.manifest_eligible).toBe(2);
+        // 7 entries after WF-PREVIEW-IMPORT-FIRST-BATCH-001: Release-One
+        // (production), FanTRIAC (blocked), 1 legacy-compatible, and FOUR
+        // preview builds — the VentIQ LED preview plus the three first-batch
+        // previews (AirIQ-RoomIQ, RoomIQ, RoomIQ-LED).
+        expect(report.summary.total).toBe(7);
+        expect(report.summary.import_eligible).toBe(5); // Release-One + 4 previews
+        expect(report.summary.manifest_eligible).toBe(5);
         expect(report.summary.required_configs_eligible).toBe(1); // Release-One only
-        expect(report.summary.kit_eligible).toBe(2);
+        expect(report.summary.kit_eligible).toBe(5);
+    });
+});
+
+describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility', () => {
+    const report = runForFixture();
+    const FIRST_BATCH = [
+        'Ceiling-POE-AirIQ-RoomIQ',
+        'Ceiling-POE-RoomIQ',
+        'Ceiling-POE-RoomIQ-LED'
+    ];
+
+    test.each(FIRST_BATCH)(
+        '%s is import + manifest + kit eligible but NOT REQUIRED_CONFIGS eligible',
+        (configString) => {
+            const e = findEntry(report, configString);
+            expect(e).toBeDefined();
+            expect(e.status).toBe('preview');
+            expect(e.shape_issues).toEqual([]);
+            expect(e.effective_eligibility.import.eligible).toBe(true);
+            expect(e.effective_eligibility.manifest.eligible).toBe(true);
+            expect(e.effective_eligibility.kit.eligible).toBe(true);
+            // Preview is never production-only REQUIRED_CONFIGS eligible.
+            expect(e.effective_eligibility.required_configs.eligible).toBe(false);
+            expect(
+                e.effective_eligibility.required_configs.reasons.some(r =>
+                    /production-only/i.test(r)
+                )
+            ).toBe(true);
+        }
+    );
+
+    test.each(FIRST_BATCH)(
+        '%s is present in sources + manifest + on disk, absent from REQUIRED_CONFIGS + kits',
+        (configString) => {
+            const e = findEntry(report, configString);
+            expect(e.surface_presence.in_sources).toBe(true);
+            expect(e.surface_presence.in_manifest).toBe(true);
+            expect(e.surface_presence.bin_on_disk).toBe(true);
+            expect(e.surface_presence.sidecar_on_disk).toBe(true);
+            expect(e.surface_presence.in_required_configs).toBe(false);
+            expect(e.surface_presence.in_kits).toBe(false);
+        }
+    );
+
+    test('the first preview batch introduces no cross-surface violations', () => {
+        expect(report.cross_surface).toEqual([]);
+        expect(report.ok).toBe(true);
     });
 });
 

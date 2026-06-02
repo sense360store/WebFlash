@@ -28,8 +28,10 @@
  *         (no WebFlash firmware yet — S360-311-R4 and S360-312-R4
  *         schematic evidence exists upstream but no WebFlash build
  *         ships).
- *       * Sense360 AirIQ / S360-210 (no WebFlash firmware yet —
- *         documented hardware, no build in the current manifest).
+ *     Sense360 AirIQ / S360-210 is NO LONGER a static override: a
+ *     preview-channel build (Ceiling-POE-AirIQ-RoomIQ, imported from
+ *     upstream v1.0.0-preview) now ships, so AirIQ derives
+ *     `available-preview` straight from the manifest, exactly like LED.
  *
  * This module does NOT replace scripts/utils/firmware-readiness.js (which
  * still owns the five canonical Step-5 headlines), the release-channel
@@ -138,13 +140,15 @@ export const MODULE_VARIANT_AVAILABILITY_OVERRIDES = Object.freeze({
             detail: 'Voice is not a customer-selectable WebFlash module. The voice key is retained only as the internal "Core" placeholder so legacy share-links keep parsing.'
         })
     }),
-    airiq: Object.freeze({
-        airiq: Object.freeze({
-            state: AVAILABILITY_STATES.NO_FIRMWARE,
-            reasonCode: AVAILABILITY_REASON_CODES.NO_MANIFEST_BUILD,
-            detail: 'Sense360 AirIQ (S360-210) is documented hardware, but no current WebFlash firmware build targets a Core + AirIQ configuration. You can still select it for planning — Step 5 will show no published firmware.'
-        })
-    }),
+    // AirIQ (S360-210) intentionally has NO static override: a preview-channel
+    // WebFlash build now ships for the Core + PoE + AirIQ + RoomIQ
+    // configuration (Ceiling-POE-AirIQ-RoomIQ, imported from upstream
+    // v1.0.0-preview), so AirIQ is derived straight from the manifest like LED.
+    // With that preview build present it resolves to `available-preview`
+    // (acknowledgement-gated at install). If the manifest ever drops the AirIQ
+    // build the derivation falls back to `no-firmware` automatically — no code
+    // change required. Do NOT re-add a `no-firmware` override here while an
+    // AirIQ build is in the manifest; that would make the pill lie.
     fan: Object.freeze({
         relay: Object.freeze({
             state: AVAILABILITY_STATES.DESIGN_PENDING,

@@ -477,11 +477,11 @@ describe('WF-UX-017 — static surfaces: collapse, release notes, no-policy-chan
         expect(html).not.toMatch(/release-notes[^>]*href="#"/i);
     });
 
-    test('manifest / sources / kits / REQUIRED_CONFIGS unchanged (Release-One + LED preview + Rescue)', () => {
+    test('manifest / sources carry the first preview batch; kits / REQUIRED_CONFIGS unchanged (Release-One + Rescue)', () => {
         expect(readJson('manifest.json').builds.map(b => b.config_string).sort())
-            .toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
+            .toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
         expect((readJson('firmware/sources.json').sources || []).map(s => s.config_string).sort())
-            .toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED']);
+            .toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED']);
         const kits = readJson('scripts/data/kits.json');
         expect(kits.kits).toHaveLength(1);
         const workflow = read('.github/workflows/firmware-publish.yml');

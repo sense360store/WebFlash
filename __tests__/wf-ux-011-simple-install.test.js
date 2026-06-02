@@ -448,11 +448,14 @@ describe('WF-UX-011 — the hero mirrors the install gate (no bypass)', () => {
    Part C — no-change invariants (firmware / manifest / policy surfaces)
    =========================================================================== */
 describe('WF-UX-011 — presentation-only: install / firmware surfaces unchanged', () => {
-    test('manifest still carries exactly Release-One stable + LED preview + Rescue', () => {
+    test('manifest carries Release-One stable + four preview builds + Rescue', () => {
         const manifest = readJson('manifest.json');
-        expect(manifest.builds.length).toBe(3);
+        expect(manifest.builds.length).toBe(6);
         const configs = manifest.builds.map(b => b.config_string).sort();
         expect(configs).toEqual([
+            'Ceiling-POE-AirIQ-RoomIQ',
+            'Ceiling-POE-RoomIQ',
+            'Ceiling-POE-RoomIQ-LED',
             'Ceiling-POE-VentIQ-RoomIQ',
             'Ceiling-POE-VentIQ-RoomIQ-LED',
             'Rescue'
@@ -476,10 +479,10 @@ describe('WF-UX-011 — presentation-only: install / firmware surfaces unchanged
         expect(kits.kits[0].firmware_config_string).toBe('Ceiling-POE-VentIQ-RoomIQ');
     });
 
-    test('firmware/sources.json still declares only Release-One + LED preview, no fan driver', () => {
+    test('firmware/sources.json declares Release-One + four preview sources, no fan driver', () => {
         const sources = readJson('firmware/sources.json');
         const cfgs = (sources.sources || []).map(s => s.config_string).sort();
-        expect(cfgs).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED']);
+        expect(cfgs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED']);
         for (const entry of sources.sources || []) {
             ['FanRelay', 'FanPWM', 'FanDAC', 'FanTRIAC'].forEach(token => {
                 expect(entry.config_string || '').not.toContain(token);
