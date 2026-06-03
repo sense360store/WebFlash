@@ -480,9 +480,9 @@ describe('WF-UX-016 — the Simple hero copy stays calm for unknown / hard for s
    Part G — presentation/deploy-layer only: no policy surface changed.
    =========================================================================== */
 describe('WF-UX-016 — no firmware / manifest / sources / REQUIRED_CONFIGS change', () => {
-    test('manifest still carries exactly Release-One stable + LED preview + Rescue', () => {
+    test('manifest carries Release-One stable + four preview builds + Rescue', () => {
         const configs = readJson('manifest.json').builds.map(b => b.config_string).sort();
-        expect(configs).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
+        expect(configs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
     });
 
     test('REQUIRED_CONFIGS stays production-only (Release-One + Rescue)', () => {
@@ -493,9 +493,9 @@ describe('WF-UX-016 — no firmware / manifest / sources / REQUIRED_CONFIGS chan
         expect(entries).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue']);
     });
 
-    test('firmware/sources.json still declares only Release-One + LED preview', () => {
+    test('firmware/sources.json declares Release-One + four preview sources', () => {
         const cfgs = (readJson('firmware/sources.json').sources || []).map(s => s.config_string).sort();
-        expect(cfgs).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED']);
+        expect(cfgs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED']);
     });
 
     test('the release-notes loader no longer references the dead per-build .md path builder', () => {

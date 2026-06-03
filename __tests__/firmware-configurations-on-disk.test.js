@@ -15,8 +15,9 @@ import path from 'node:path';
 //
 // A stale .bin + matching sidecar landing on disk before manifest
 // regeneration would pass both. This file pins the on-disk file list to
-// exactly the two intended application binaries (Release-One stable +
-// LED preview) plus their sidecars, and additionally rejects any
+// exactly the intended application binaries (Release-One stable, the VentIQ
+// LED preview, and the three first-batch previews imported from upstream
+// v1.0.0-preview) plus their sidecars, and additionally rejects any
 // FanTRIAC segment in any filename in the directory.
 //
 // The Rescue artifact lives under firmware/rescue/ and is intentionally
@@ -31,12 +32,29 @@ const RELEASE_ONE_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.me
 const LED_PREVIEW_BIN = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
 const LED_PREVIEW_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json';
 
-const EXPECTED_FILES = Object.freeze([
-    RELEASE_ONE_BIN,
-    RELEASE_ONE_SIDECAR,
-    LED_PREVIEW_BIN,
-    LED_PREVIEW_SIDECAR
+// WF-PREVIEW-IMPORT-FIRST-BATCH-001 — three first-batch preview builds
+// imported from upstream sense360store/esphome-public v1.0.0-preview.
+const FIRST_BATCH_BINS = Object.freeze([
+    'Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin',
+    'Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin',
+    'Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin'
 ]);
+const FIRST_BATCH_SIDECARS = Object.freeze(
+    FIRST_BATCH_BINS.map(name => name.replace(/\.bin$/, '.meta.json'))
+);
+
+const EXPECTED_BINS = Object.freeze([
+    RELEASE_ONE_BIN,
+    LED_PREVIEW_BIN,
+    ...FIRST_BATCH_BINS
+]);
+const EXPECTED_SIDECARS = Object.freeze([
+    RELEASE_ONE_SIDECAR,
+    LED_PREVIEW_SIDECAR,
+    ...FIRST_BATCH_SIDECARS
+]);
+
+const EXPECTED_FILES = Object.freeze([...EXPECTED_BINS, ...EXPECTED_SIDECARS]);
 
 // Hyphen-bounded segment match so "LED" does not false-match "LEDless"
 // and "FanTRIAC" does not false-match any unrelated longer token.
@@ -50,29 +68,26 @@ function containsSegment(filename, token) {
 }
 
 describe('firmware/configurations/ on-disk state — WF-STALE-001', () => {
-    test('directory contains exactly the four expected files', () => {
+    test('directory contains exactly the expected files', () => {
         const actual = fs.readdirSync(configurationsDir).sort();
         const expected = [...EXPECTED_FILES].sort();
         expect(actual).toEqual(expected);
     });
 
-    test('no other .bin file exists in firmware/configurations/', () => {
+    test('no unexpected .bin file exists in firmware/configurations/', () => {
         const bins = fs
             .readdirSync(configurationsDir)
             .filter(name => name.endsWith('.bin'));
-        const unexpected = bins.filter(
-            name => name !== RELEASE_ONE_BIN && name !== LED_PREVIEW_BIN
-        );
+        const unexpected = bins.filter(name => !EXPECTED_BINS.includes(name));
         expect(unexpected).toEqual([]);
     });
 
-    test('no other .meta.json sidecar exists in firmware/configurations/', () => {
+    test('no unexpected .meta.json sidecar exists in firmware/configurations/', () => {
         const sidecars = fs
             .readdirSync(configurationsDir)
             .filter(name => name.endsWith('.meta.json'));
         const unexpected = sidecars.filter(
-            name =>
-                name !== RELEASE_ONE_SIDECAR && name !== LED_PREVIEW_SIDECAR
+            name => !EXPECTED_SIDECARS.includes(name)
         );
         expect(unexpected).toEqual([]);
     });
@@ -89,8 +104,8 @@ describe('firmware/configurations/ on-disk state — WF-STALE-001', () => {
         expect(offenders).toEqual([]);
     });
 
-    test('both expected binaries are non-empty regular files', () => {
-        for (const name of [RELEASE_ONE_BIN, LED_PREVIEW_BIN]) {
+    test('every expected binary is a non-empty regular file', () => {
+        for (const name of EXPECTED_BINS) {
             const filePath = path.join(configurationsDir, name);
             const stat = fs.statSync(filePath);
             expect(stat.isFile()).toBe(true);
@@ -98,8 +113,8 @@ describe('firmware/configurations/ on-disk state — WF-STALE-001', () => {
         }
     });
 
-    test('both expected sidecars parse as JSON', () => {
-        for (const name of [RELEASE_ONE_SIDECAR, LED_PREVIEW_SIDECAR]) {
+    test('every expected sidecar parses as JSON', () => {
+        for (const name of EXPECTED_SIDECARS) {
             const filePath = path.join(configurationsDir, name);
             const raw = fs.readFileSync(filePath, 'utf8');
             expect(() => JSON.parse(raw)).not.toThrow();

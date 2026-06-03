@@ -81,9 +81,9 @@ function parseRequiredConfigsFromWorkflow() {
 }
 
 describe('github-pages-surface — manifest shape pins the deploy contract', () => {
-    test('manifest.json holds exactly three builds (Release-One stable + LED preview + Rescue)', () => {
+    test('manifest.json holds exactly six builds (Release-One stable + four preview + Rescue)', () => {
         expect(Array.isArray(manifest.builds)).toBe(true);
-        expect(manifest.builds.length).toBe(3);
+        expect(manifest.builds.length).toBe(6);
     });
 
     test('manifest.json source_commit is not the May-7 stale deploy SHA', () => {
@@ -173,8 +173,15 @@ describe('github-pages-surface — stale and blocked builds stay out', () => {
 });
 
 describe('github-pages-surface — firmware-N.json namespace matches manifest', () => {
-    test('firmware-0.json / firmware-1.json / firmware-2.json all exist and resolve to on-disk bins', () => {
-        for (const name of ['firmware-0.json', 'firmware-1.json', 'firmware-2.json']) {
+    test('every firmware-N.json (one per manifest build) exists and resolves to on-disk bins', () => {
+        const perBuild = fs
+            .readdirSync(repoRoot)
+            .filter(name => /^firmware-\d+\.json$/.test(name))
+            .sort((a, b) => Number(a.match(/(\d+)/)[1]) - Number(b.match(/(\d+)/)[1]));
+        // One per-build manifest per manifest.json build (6 after the first
+        // preview batch import).
+        expect(perBuild.length).toBe(manifest.builds.length);
+        for (const name of perBuild) {
             const filePath = path.join(repoRoot, name);
             expect(fs.existsSync(filePath)).toBe(true);
             const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -187,16 +194,17 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
         }
     });
 
-    test('no firmware-N.json beyond index 2 exists (no stale per-build manifests)', () => {
-        // After WF-LED-002 the namespace is firmware-0 (Release-One),
-        // firmware-1 (LED preview), firmware-2 (Rescue). Anything past
-        // index 2 would indicate the manifest regenerator inherited a
-        // legacy index or a stale file shipped in the Pages artifact.
+    test('no firmware-N.json beyond index 5 exists (no stale per-build manifests)', () => {
+        // After WF-PREVIEW-IMPORT-FIRST-BATCH-001 the namespace is firmware-0
+        // … firmware-5 (three first-batch previews, Release-One, the VentIQ LED
+        // preview, and Rescue, in the generator's deterministic order).
+        // Anything past index 5 would indicate the manifest regenerator
+        // inherited a legacy index or a stale file shipped in the Pages artifact.
         const repoFiles = fs.readdirSync(repoRoot);
         const offending = repoFiles.filter(name => {
             const match = name.match(/^firmware-(\d+)\.json$/);
             if (!match) return false;
-            return Number(match[1]) > 2;
+            return Number(match[1]) > 5;
         });
         expect(offending).toEqual([]);
     });

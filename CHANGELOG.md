@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **First preview firmware batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001).** Imported
+  three preview-channel builds from upstream `sense360store/esphome-public`
+  release `v1.0.0-preview`: `Ceiling-POE-AirIQ-RoomIQ` (SHA256 `16565de6…`,
+  1,089,296 bytes), `Ceiling-POE-RoomIQ` (`2c7d691c…`, 956,976 bytes), and
+  `Ceiling-POE-RoomIQ-LED` (`d4f18824…`, 1,006,848 bytes). Each `.bin` was
+  SHA-256-verified against the upstream `checksums-sha256.txt` and the source
+  entry's pinned `expected_sha256`; provenance (upstream git sha
+  `2228bbb7…`, ESPHome `2026.4.5`, compile run `26821900127`) is recorded in
+  each `.meta.json` sidecar. `manifest.json` grew from 3 to 6 builds and AirIQ
+  now derives `available-preview` (the static `no-firmware` override was
+  removed). The three previews are **Advanced-install-only** behind the
+  `channel:preview` acknowledgement — not stable, not recommended, not a
+  customer default, not in `REQUIRED_CONFIGS`, not a kit, not buyable; they are
+  firmware-build proof only (no hardware / bench / compliance /
+  commercial-availability proof). Simple install still resolves only to the
+  stable Bathroom PoE build `Ceiling-POE-VentIQ-RoomIQ`. No TRIAC or fan-driver
+  (FanRelay / FanPWM / FanDAC) firmware was imported, and the existing
+  `v1.0.0-led-preview` build is unchanged.
 - Cross-repo firmware importer: `scripts/import-firmware-sources.py` pulls
   raw `.bin` assets from `sense360store/esphome-public` GitHub Releases,
   verifies SHA256 against the upstream `checksums-sha256.txt`, parses the

@@ -2,13 +2,207 @@
   "name": "Sense360 Modular Platform Firmware",
   "version": "1.0.0",
   "manifest_version": 1,
-  "generated_at": "2026-05-15T13:35:02.602401+00:00",
-  "source_commit": "f75a31ad415f92afc5be81456404a705dbe3b820",
+  "generated_at": "2026-06-02T21:47:03.816831+00:00",
+  "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 15,
   "builds": [
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-POE-AirIQ-RoomIQ configuration. Early-access build intended for limited validation of upcoming updates.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "64ac41cae277f972cff14d42f918a94c",
+          "sha256": "16565de6cd8b62c51d4fa8041eb5ffdb29fd2b8daddceecd73a6b0df5d722bc7",
+          "signature": "GafRTfloLDbGcHA34aW1YcmzP65zI1jFx/I5dxXfSbM=",
+          "signature_ed25519": "njSo82DU2pmWTlG2oRQ8OtaL7nH+lS/5oMaZ+D6l7J7hPTM9ua6S1z0JJcDeiuI7yjQ/+iIYlshgt6TYofOKDw==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "build_date": "2026-06-02T21:04:34+00:00",
+      "file_size": 1089296,
+      "improv": true,
+      "md5": "64ac41cae277f972cff14d42f918a94c",
+      "sha256": "16565de6cd8b62c51d4fa8041eb5ffdb29fd2b8daddceecd73a6b0df5d722bc7",
+      "signature": "GafRTfloLDbGcHA34aW1YcmzP65zI1jFx/I5dxXfSbM=",
+      "signature_ed25519": "njSo82DU2pmWTlG2oRQ8OtaL7nH+lS/5oMaZ+D6l7J7hPTM9ua6S1z0JJcDeiuI7yjQ/+iIYlshgt6TYofOKDw==",
+      "signature_key_id": "dev-2026-01",
+      "features": [
+        "`Ceiling-POE-AirIQ-RoomIQ`: preview firmware for the Kitchen PoE candidate bundle using Sense360 Core, PoE PSU, AirIQ, and RoomIQ.",
+        "`Ceiling-POE-RoomIQ`: preview firmware for the Bedroom PoE candidate bundle using Sense360 Core, PoE PSU, and RoomIQ.",
+        "`Ceiling-POE-RoomIQ-LED`: preview firmware for the Living/Corridor PoE candidate bundles using Sense360 Core, PoE PSU, RoomIQ, and LED.",
+        "WebFlash-compatible artifact naming for preview firmware import after upstream release assets are generated."
+      ],
+      "hardware_requirements": [
+        "`Ceiling-POE-AirIQ-RoomIQ` expects Sense360 Core `S360-100`, AirIQ `S360-210`, RoomIQ `S360-200`, and PoE PSU `S360-410`.",
+        "`Ceiling-POE-RoomIQ` expects Sense360 Core `S360-100`, RoomIQ `S360-200`, and PoE PSU `S360-410`.",
+        "`Ceiling-POE-RoomIQ-LED` expects Sense360 Core `S360-100`, RoomIQ `S360-200`, LED `S360-300`, and PoE PSU `S360-410`.",
+        "These builds are preview firmware only and do not claim hardware verification or compliance certification."
+      ],
+      "known_issues": [
+        "Preview firmware is not stable, not recommended, and not a customer default.",
+        "Candidate bundles remain hidden from normal shop navigation and are not publicly buyable.",
+        "Hardware, bench, compliance, safety, and commercial-availability proof are not claimed for these preview builds.",
+        "LED remains preview-only.",
+        "FanRelay, FanPWM, FanDAC, and FanTRIAC are not included in this release."
+      ],
+      "changelog": [
+        "Added preview firmware artifacts for the Kitchen PoE, Bedroom PoE, and Living/Corridor RoomIQ+LED candidate room-bundle configurations.",
+        "Built from the metadata-ready preview WebFlash build rows added after wrapper, compile, and release-note validation.",
+        "Preserves the stable Bathroom PoE firmware as the only production/customer-default release."
+      ],
+      "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "signed_by": "Sense360 release pipeline",
+      "deprecated": false,
+      "deprecation_reason": null,
+      "artifact_type": "application",
+      "local_only": false,
+      "config_string": "Ceiling-POE-AirIQ-RoomIQ",
+      "core_type": null,
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "AirIQ",
+        "RoomIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-POE-RoomIQ configuration. Early-access build intended for limited validation of upcoming updates.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "36e703b6449987aa19b4f434b68c85f7",
+          "sha256": "2c7d691c70a557d8df4ef2ba58a6dc43195b952b6c209c89d5522a392f47b937",
+          "signature": "j0ZE+ylYpmoxIaxwffJDPkEYWcoRo0VjNsPA/ILdjgA=",
+          "signature_ed25519": "UdoeY4qQg9QLHp8XEv4ZUdfdbYU+yKwGpOuYyO78VyfMg/jEV0ntNaCxHIIgJuD/LuU2KBVD9dLK/kflPl3XCw==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "build_date": "2026-06-02T21:04:34+00:00",
+      "file_size": 956976,
+      "improv": true,
+      "md5": "36e703b6449987aa19b4f434b68c85f7",
+      "sha256": "2c7d691c70a557d8df4ef2ba58a6dc43195b952b6c209c89d5522a392f47b937",
+      "signature": "j0ZE+ylYpmoxIaxwffJDPkEYWcoRo0VjNsPA/ILdjgA=",
+      "signature_ed25519": "UdoeY4qQg9QLHp8XEv4ZUdfdbYU+yKwGpOuYyO78VyfMg/jEV0ntNaCxHIIgJuD/LuU2KBVD9dLK/kflPl3XCw==",
+      "signature_key_id": "dev-2026-01",
+      "features": [
+        "`Ceiling-POE-AirIQ-RoomIQ`: preview firmware for the Kitchen PoE candidate bundle using Sense360 Core, PoE PSU, AirIQ, and RoomIQ.",
+        "`Ceiling-POE-RoomIQ`: preview firmware for the Bedroom PoE candidate bundle using Sense360 Core, PoE PSU, and RoomIQ.",
+        "`Ceiling-POE-RoomIQ-LED`: preview firmware for the Living/Corridor PoE candidate bundles using Sense360 Core, PoE PSU, RoomIQ, and LED.",
+        "WebFlash-compatible artifact naming for preview firmware import after upstream release assets are generated."
+      ],
+      "hardware_requirements": [
+        "`Ceiling-POE-AirIQ-RoomIQ` expects Sense360 Core `S360-100`, AirIQ `S360-210`, RoomIQ `S360-200`, and PoE PSU `S360-410`.",
+        "`Ceiling-POE-RoomIQ` expects Sense360 Core `S360-100`, RoomIQ `S360-200`, and PoE PSU `S360-410`.",
+        "`Ceiling-POE-RoomIQ-LED` expects Sense360 Core `S360-100`, RoomIQ `S360-200`, LED `S360-300`, and PoE PSU `S360-410`.",
+        "These builds are preview firmware only and do not claim hardware verification or compliance certification."
+      ],
+      "known_issues": [
+        "Preview firmware is not stable, not recommended, and not a customer default.",
+        "Candidate bundles remain hidden from normal shop navigation and are not publicly buyable.",
+        "Hardware, bench, compliance, safety, and commercial-availability proof are not claimed for these preview builds.",
+        "LED remains preview-only.",
+        "FanRelay, FanPWM, FanDAC, and FanTRIAC are not included in this release."
+      ],
+      "changelog": [
+        "Added preview firmware artifacts for the Kitchen PoE, Bedroom PoE, and Living/Corridor RoomIQ+LED candidate room-bundle configurations.",
+        "Built from the metadata-ready preview WebFlash build rows added after wrapper, compile, and release-note validation.",
+        "Preserves the stable Bathroom PoE firmware as the only production/customer-default release."
+      ],
+      "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "signed_by": "Sense360 release pipeline",
+      "deprecated": false,
+      "deprecation_reason": null,
+      "artifact_type": "application",
+      "local_only": false,
+      "config_string": "Ceiling-POE-RoomIQ",
+      "core_type": null,
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "RoomIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-POE-RoomIQ-LED configuration. Early-access build intended for limited validation of upcoming updates.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "aeee599ed9f635564710f7bae793399c",
+          "sha256": "d4f18824466e95ba091dfd80e8159d544613e4c28f70f03ba81e9c8a676c9cb0",
+          "signature": "R6WkjhfWqhKk7fy2qxPQsxOsIlWYmO2HlFxdLoQ676I=",
+          "signature_ed25519": "cmzgn5osiT9tZVbYP9cjZoJaecxjLy7s7FQ1fSj3hzlafRN/DYkCz6LMuPl/mTGDPuMSSNlG41wPsrvEuZcFCA==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "build_date": "2026-06-02T21:04:34+00:00",
+      "file_size": 1006848,
+      "improv": true,
+      "md5": "aeee599ed9f635564710f7bae793399c",
+      "sha256": "d4f18824466e95ba091dfd80e8159d544613e4c28f70f03ba81e9c8a676c9cb0",
+      "signature": "R6WkjhfWqhKk7fy2qxPQsxOsIlWYmO2HlFxdLoQ676I=",
+      "signature_ed25519": "cmzgn5osiT9tZVbYP9cjZoJaecxjLy7s7FQ1fSj3hzlafRN/DYkCz6LMuPl/mTGDPuMSSNlG41wPsrvEuZcFCA==",
+      "signature_key_id": "dev-2026-01",
+      "features": [
+        "`Ceiling-POE-AirIQ-RoomIQ`: preview firmware for the Kitchen PoE candidate bundle using Sense360 Core, PoE PSU, AirIQ, and RoomIQ.",
+        "`Ceiling-POE-RoomIQ`: preview firmware for the Bedroom PoE candidate bundle using Sense360 Core, PoE PSU, and RoomIQ.",
+        "`Ceiling-POE-RoomIQ-LED`: preview firmware for the Living/Corridor PoE candidate bundles using Sense360 Core, PoE PSU, RoomIQ, and LED.",
+        "WebFlash-compatible artifact naming for preview firmware import after upstream release assets are generated."
+      ],
+      "hardware_requirements": [
+        "`Ceiling-POE-AirIQ-RoomIQ` expects Sense360 Core `S360-100`, AirIQ `S360-210`, RoomIQ `S360-200`, and PoE PSU `S360-410`.",
+        "`Ceiling-POE-RoomIQ` expects Sense360 Core `S360-100`, RoomIQ `S360-200`, and PoE PSU `S360-410`.",
+        "`Ceiling-POE-RoomIQ-LED` expects Sense360 Core `S360-100`, RoomIQ `S360-200`, LED `S360-300`, and PoE PSU `S360-410`.",
+        "These builds are preview firmware only and do not claim hardware verification or compliance certification."
+      ],
+      "known_issues": [
+        "Preview firmware is not stable, not recommended, and not a customer default.",
+        "Candidate bundles remain hidden from normal shop navigation and are not publicly buyable.",
+        "Hardware, bench, compliance, safety, and commercial-availability proof are not claimed for these preview builds.",
+        "LED remains preview-only.",
+        "FanRelay, FanPWM, FanDAC, and FanTRIAC are not included in this release."
+      ],
+      "changelog": [
+        "Added preview firmware artifacts for the Kitchen PoE, Bedroom PoE, and Living/Corridor RoomIQ+LED candidate room-bundle configurations.",
+        "Built from the metadata-ready preview WebFlash build rows added after wrapper, compile, and release-note validation.",
+        "Preserves the stable Bathroom PoE firmware as the only production/customer-default release."
+      ],
+      "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "signed_by": "Sense360 release pipeline",
+      "deprecated": false,
+      "deprecation_reason": null,
+      "artifact_type": "application",
+      "local_only": false,
+      "config_string": "Ceiling-POE-RoomIQ-LED",
+      "core_type": null,
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "RoomIQ",
+        "LED"
+      ]
+    },
     {
       "device_type": "Core Module",
       "version": "1.0.0",
@@ -59,8 +253,8 @@
         "Builds the no-TRIAC Release-One configuration while Sense360 TRIAC remains blocked pending hardware verification.",
         "Excludes Sense360 LED because the WebFlash config string does not include `LED`."
       ],
-      "source_commit": "f75a31ad415f92afc5be81456404a705dbe3b820",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/f75a31ad415f92afc5be81456404a705dbe3b820",
+      "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -123,8 +317,8 @@
         "This preview extends the Release-One ceiling PoE VentIQ + RoomIQ configuration with the Sense360 LED ring.",
         "This is a preview-channel build for validation and testing. The stable Release-One firmware remains `Ceiling-POE-VentIQ-RoomIQ`."
       ],
-      "source_commit": "f75a31ad415f92afc5be81456404a705dbe3b820",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/f75a31ad415f92afc5be81456404a705dbe3b820",
+      "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -171,8 +365,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "f75a31ad415f92afc5be81456404a705dbe3b820",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/f75a31ad415f92afc5be81456404a705dbe3b820",
+      "source_commit": "c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c23a48cee87bec2d473b53f0e0c75170fe3f8b2a",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,

@@ -4,8 +4,8 @@
  *
  * Pins the per-(module, variant) classification rules and the per-config_string
  * classification rules against the current manifest shape (Release-One stable
- * + LED preview + Rescue) and against the static overrides for Voice (legacy),
- * AirIQ (no-firmware), Relay (design-pending), PWM/DAC (no-firmware) and TRIAC
+ * + four preview builds + Rescue) and against the static overrides for Voice
+ * (legacy), Relay (design-pending), PWM/DAC (no-firmware) and TRIAC
  * (advanced-manual-warning under HW-005 + COMPLIANCE-001 — visible + selectable
  * but install-gated by the orthogonal advanced/manual-warning acknowledgement
  * AND a future imported artifact).
@@ -27,10 +27,15 @@ import {
     deriveManifestIndex
 } from '../scripts/utils/module-availability.js';
 
-// Synthetic mirror of the current manifest.json shape: Release-One stable
-// + LED preview + Rescue. Kept inline so test failures are obvious and the
-// fixture cannot drift silently from the real manifest.
+// Synthetic mirror of the current manifest.json shape after
+// WF-PREVIEW-IMPORT-FIRST-BATCH-001: Release-One stable + four preview builds
+// (the VentIQ LED preview plus the three first-batch previews) + Rescue. Kept
+// inline so test failures are obvious and the fixture cannot drift silently
+// from the real manifest.
 const CURRENT_MANIFEST_BUILDS = [
+    { config_string: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview' },
+    { config_string: 'Ceiling-POE-RoomIQ', channel: 'preview' },
+    { config_string: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' },
     { config_string: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable' },
     { config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED', channel: 'preview' },
     { config_string: 'Rescue', channel: 'rescue' }
@@ -140,12 +145,18 @@ describe('WF-WIZARD-AVAIL-001 — per-module classification against current mani
         expect(result.tone).toBe('warning');
     });
 
-    test('AirIQ static override → no-firmware (documented, no WebFlash build)', () => {
+    test('AirIQ resolves to available-preview from the manifest (no static override)', () => {
+        // WF-PREVIEW-IMPORT-FIRST-BATCH-001 imported a Ceiling-POE-AirIQ-RoomIQ
+        // preview build, so AirIQ is now manifest-derived like LED — the
+        // static no-firmware override was removed.
         const result = classifyAgainstManifest('airiq', 'airiq');
-        expect(result.state).toBe(AVAILABILITY_STATES.NO_FIRMWARE);
-        expect(result.installable).toBe(false);
+        expect(result.state).toBe(AVAILABILITY_STATES.AVAILABLE_PREVIEW);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.PREVIEW_BUILD);
+        expect(result.installable).toBe(true);
         expect(result.selectable).toBe(true);
-        expect(result.label).toBe('No WebFlash firmware yet');
+        expect(result.label).toBe('Preview');
+        // Preview tone matches the preview-channel acknowledgement gate.
+        expect(result.tone).toBe('warning');
     });
 
     test('Fan: Relay → design-pending (no S360-310 schematic uploaded upstream)', () => {
@@ -329,11 +340,14 @@ describe('WF-WIZARD-AVAIL-001 — static overrides are explicit and minimal', ()
         expect(variants.sort()).toEqual(['analog', 'pwm', 'relay', 'triac']);
     });
 
-    test('LED has no static override (relies on manifest derivation)', () => {
-        // LED's availability must change automatically if upstream promotes
-        // the LED build from preview to stable. A static override would
-        // freeze LED at "available-preview" forever.
+    test('LED and AirIQ have no static override (rely on manifest derivation)', () => {
+        // LED's and AirIQ's availability must change automatically if upstream
+        // promotes their builds from preview to stable (or drops them). A
+        // static override would freeze the pill at a stale state. AirIQ's
+        // no-firmware override was removed by WF-PREVIEW-IMPORT-FIRST-BATCH-001
+        // once a Ceiling-POE-AirIQ-RoomIQ preview build shipped.
         expect(MODULE_VARIANT_AVAILABILITY_OVERRIDES.led).toBeUndefined();
+        expect(MODULE_VARIANT_AVAILABILITY_OVERRIDES.airiq).toBeUndefined();
     });
 
     test('WF-TRIAC-001 — TRIAC override never resolves to anything installable at classifier level, regardless of manifest', () => {

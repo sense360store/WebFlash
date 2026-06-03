@@ -394,9 +394,9 @@ describe('WF-UX-014 — app-shell build marker (support-only)', () => {
 describe('WF-UX-014 — deploy-layer + presentation only', () => {
     const readJson = (rel) => JSON.parse(read(path.resolve(REPO_ROOT, rel)));
 
-    test('manifest still carries exactly Release-One stable + LED preview + Rescue', () => {
+    test('manifest carries Release-One stable + four preview builds + Rescue', () => {
         const configs = readJson('manifest.json').builds.map(b => b.config_string).sort();
-        expect(configs).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
+        expect(configs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
     });
 
     test('REQUIRED_CONFIGS stays production-only (Release-One + Rescue)', () => {
