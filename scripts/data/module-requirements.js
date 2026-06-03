@@ -178,12 +178,17 @@ const MODULE_REQUIREMENT_MATRIX = {
                 coreRevision: 'R4',
                 headers: ['Fan_GP8403'],
                 description: '0 to 10V analog fan driver, for example Cloudlift S12.',
-                // WF-WIZARD-AVAIL-001: S360-312-R4 schematic uploaded upstream
-                // (sense360store/esphome-public), but no WebFlash firmware build
-                // ships for a Core + DAC configuration yet.
+                // WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001: a FanDAC preview /
+                // manual-preview build (Ceiling-POE-FanDAC) was imported by the
+                // preview-eligible import automation after upstream marked it
+                // WebFlash-import eligible, so DAC is available-preview
+                // (Advanced-install-only, acknowledgement-gated). The
+                // authoritative override lives in
+                // scripts/utils/module-availability.js; this declarative field is
+                // kept consistent with it.
                 availability: {
-                    state: 'no-firmware',
-                    reasonCode: 'no-manifest-build'
+                    state: 'available-preview',
+                    reasonCode: 'preview-build'
                 },
                 conflicts: [
                     {

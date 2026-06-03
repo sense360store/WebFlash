@@ -2,8 +2,8 @@
   "name": "Sense360 Modular Platform Firmware",
   "version": "1.0.0",
   "manifest_version": 1,
-  "generated_at": "2026-06-03T16:54:17.388667+00:00",
-  "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
+  "generated_at": "2026-06-03T17:33:30.656614+00:00",
+  "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -26,7 +26,7 @@
           "signature_key_id": "dev-2026-01"
         }
       ],
-      "build_date": "2026-06-03T14:50:24.150887+00:00",
+      "build_date": "2026-06-03T17:20:45.672753+00:00",
       "file_size": 1089296,
       "improv": true,
       "md5": "64ac41cae277f972cff14d42f918a94c",
@@ -58,8 +58,8 @@
         "Built from the metadata-ready preview WebFlash build rows added after wrapper, compile, and release-note validation.",
         "Preserves the stable Bathroom PoE firmware as the only production/customer-default release."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -72,6 +72,67 @@
       "modules": [
         "AirIQ",
         "RoomIQ"
+      ]
+    },
+    {
+      "device_type": "Core Module",
+      "version": "1.0.0",
+      "channel": "preview",
+      "description": "Preview firmware for Sense360 Ceiling-POE-FanDAC configuration. Early-access build intended for limited validation of upcoming updates.",
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "024d35c408c9ac04d125e2d5bd1f5d78",
+          "sha256": "151894c1408c5ae9d45f56382e392a82539a87d2882f443fa9bc78cdb6a39b9f",
+          "signature": "qRDbDDRxSMyvdJNMdYrBEdbWtoePsKhtca8e4x4CWlc=",
+          "signature_ed25519": "vSGT1aTTPqvBtjeTzL2mMxXKUDB7iwgcPwixleTPXLeuyBSro3Yaz3IJ8hQNjQjL6rEQEHlZmojTGFH7rmKDAw==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "build_date": "2026-06-03T17:32:45.464736+00:00",
+      "file_size": 930400,
+      "improv": true,
+      "md5": "024d35c408c9ac04d125e2d5bd1f5d78",
+      "sha256": "151894c1408c5ae9d45f56382e392a82539a87d2882f443fa9bc78cdb6a39b9f",
+      "signature": "qRDbDDRxSMyvdJNMdYrBEdbWtoePsKhtca8e4x4CWlc=",
+      "signature_ed25519": "vSGT1aTTPqvBtjeTzL2mMxXKUDB7iwgcPwixleTPXLeuyBSro3Yaz3IJ8hQNjQjL6rEQEHlZmojTGFH7rmKDAw==",
+      "signature_key_id": "dev-2026-01",
+      "features": [
+        "Manual-preview delivery lane for `Ceiling-POE-VentIQ-FanRelay-RoomIQ`.",
+        "Manual-preview delivery lane for `Ceiling-POE-FanPWM`.",
+        "Manual-preview delivery lane for `Ceiling-POE-FanDAC`."
+      ],
+      "hardware_requirements": [
+        "`Ceiling-POE-VentIQ-FanRelay-RoomIQ` uses `products/sense360-ceiling-poe-ventiq-fanrelay-roomiq.yaml`; stable blocker remains: Mains-safety / installation-approval / creepage / clearance evidence + competent-person sign-off + GPIO3 strap-pin boot characterisation.",
+        "`Ceiling-POE-FanPWM` uses `products/sense360-ceiling-poe-fanpwm.yaml`; stable blocker remains: Measured current / thermal evidence (S360-311-CURRENT-THERMAL-001). RPM / TachIO is not claimed (rpm_supported: false).",
+        "`Ceiling-POE-FanDAC` uses `products/sense360-ceiling-poe-fandac.yaml`; stable blocker remains: Cloudlift S12 / J3 harness + product-bench evidence; S360-312 schematic / BOM."
+      ],
+      "known_issues": [
+        "PREVIEW firmware only: not stable, not recommended, not a customer default, not hardware verified, and not buyable.",
+        "Hardware, bench, mains-safety, and compliance evidence remain stable-only blockers; no such proof is claimed by this release.",
+        "`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` is excluded because `HW-005` still blocks buildability.",
+        "These artifacts are not WebFlash one-click imports and are not added to `config/webflash-builds.json`."
+      ],
+      "changelog": [
+        "Publish manual-preview firmware for `Ceiling-POE-VentIQ-FanRelay-RoomIQ` as `Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin`.",
+        "Publish manual-preview firmware for `Ceiling-POE-FanPWM` as `Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin`.",
+        "Publish manual-preview firmware for `Ceiling-POE-FanDAC` as `Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin`."
+      ],
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "signed_by": "Sense360 release pipeline",
+      "deprecated": false,
+      "deprecation_reason": null,
+      "artifact_type": "application",
+      "local_only": false,
+      "config_string": "Ceiling-POE-FanDAC",
+      "core_type": null,
+      "mounting": "Ceiling",
+      "power": "POE",
+      "modules": [
+        "FanDAC"
       ]
     },
     {
@@ -91,7 +152,7 @@
           "signature_key_id": "dev-2026-01"
         }
       ],
-      "build_date": "2026-06-03T16:53:16.808388+00:00",
+      "build_date": "2026-06-03T17:20:45.700753+00:00",
       "file_size": 950720,
       "improv": true,
       "md5": "6e57be68d9400bb395dd8377181563df",
@@ -120,8 +181,8 @@
         "Publish manual-preview firmware for `Ceiling-POE-FanPWM` as `Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin`.",
         "Publish manual-preview firmware for `Ceiling-POE-FanDAC` as `Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin`."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -152,7 +213,7 @@
           "signature_key_id": "dev-2026-01"
         }
       ],
-      "build_date": "2026-06-03T14:50:24.190887+00:00",
+      "build_date": "2026-06-03T17:20:45.732753+00:00",
       "file_size": 956976,
       "improv": true,
       "md5": "36e703b6449987aa19b4f434b68c85f7",
@@ -184,8 +245,8 @@
         "Built from the metadata-ready preview WebFlash build rows added after wrapper, compile, and release-note validation.",
         "Preserves the stable Bathroom PoE firmware as the only production/customer-default release."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -216,7 +277,7 @@
           "signature_key_id": "dev-2026-01"
         }
       ],
-      "build_date": "2026-06-03T14:50:24.174887+00:00",
+      "build_date": "2026-06-03T17:20:45.712753+00:00",
       "file_size": 1006848,
       "improv": true,
       "md5": "aeee599ed9f635564710f7bae793399c",
@@ -248,8 +309,8 @@
         "Built from the metadata-ready preview WebFlash build rows added after wrapper, compile, and release-note validation.",
         "Preserves the stable Bathroom PoE firmware as the only production/customer-default release."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -281,7 +342,7 @@
           "signature_key_id": "dev-2026-01"
         }
       ],
-      "build_date": "2026-06-03T15:50:57.177361+00:00",
+      "build_date": "2026-06-03T17:20:45.736753+00:00",
       "file_size": 989840,
       "improv": true,
       "md5": "957da50def81ff919e028ee1ee40b263",
@@ -310,8 +371,8 @@
         "Publish manual-preview firmware for `Ceiling-POE-FanPWM` as `Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin`.",
         "Publish manual-preview firmware for `Ceiling-POE-FanDAC` as `Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin`."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -377,8 +438,8 @@
         "Builds the no-TRIAC Release-One configuration while Sense360 TRIAC remains blocked pending hardware verification.",
         "Excludes Sense360 LED because the WebFlash config string does not include `LED`."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -441,8 +502,8 @@
         "This preview extends the Release-One ceiling PoE VentIQ + RoomIQ configuration with the Sense360 LED ring.",
         "This is a preview-channel build for validation and testing. The stable Release-One firmware remains `Ceiling-POE-VentIQ-RoomIQ`."
       ],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -489,8 +550,8 @@
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "582d562a23819e3bdfe4fdca104c0c9877d479e0",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/582d562a23819e3bdfe4fdca104c0c9877d479e0",
+      "source_commit": "36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/36bdfb92fbfaa745be8edb7c0e7302f1ad8a861b",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,

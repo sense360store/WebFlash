@@ -7,6 +7,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Preview-eligible firmware import automation + FanDAC import
+  (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001).** Added a guarded automation path
+  ([`scripts/import-preview-eligible-sources.py`](scripts/import-preview-eligible-sources.py))
+  that replaces the one-off, per-family preview imports
+  (WF-PREVIEW-IMPORT-FIRST-BATCH-001 / WEBFLASH-RELAY-001 / WEBFLASH-PWM-001) with
+  one discoverable, idempotent pass. It discovers every upstream catalog entry
+  carrying `webflash_import_eligibility.eligible=true` (FanRelay / FanPWM /
+  FanDAC), cross-checks the pinned `firmware/sources.json` source + on-disk state,
+  and imports the missing ones behind uniform guardrails: eligibility flag,
+  `preview` / `manual-preview` channel only (stable refused), **mandatory**
+  `expected_sha256` pin, upstream `checksums-sha256.txt` match (delegated to the
+  unchanged single-source importer), TRIAC refusal (even if flagged, absent an
+  explicit `triac_preview_import_allowed` opt-in), overwrite protection (never
+  overwrites an on-disk `.bin` with different bytes), idempotency, and a
+  `REQUIRED_CONFIGS`-unchanged assertion. Used the automation to import the last
+  eligible fan-driver preview, `Ceiling-POE-FanDAC`
+  (`Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin`, SHA256 `151894c1…a39b9f`,
+  930,400 bytes), as an **Advanced-install-only, preview / manual-preview**
+  option from the shared `sense360store/esphome-public` `v1.0.0-preview` release.
+  Added a `firmware/sources.json` source entry (`channel: preview`, pinned
+  `expected_sha256`, `block_tokens: ["FanTRIAC", "LED"]`), staged the `.bin` +
+  `.meta.json` sidecar, and regenerated `manifest.json` (8 → **9 builds**) +
+  `firmware-*.json`. `Sense360 DAC` (S360-312) moves from `no-firmware` to
+  `available-preview` in `scripts/utils/module-availability.js` with a bespoke
+  installer/developer-preview warning (0–10V analog fan control); the FanDAC ↔
+  AirIQ DAC-bus mutex is unchanged. Added a 23-test Python suite
+  (`__tests__/python/test_import_preview_eligible_sources.py`) and the full
+  import-proof at `docs/preview-import-automation-proof.md`. **Unchanged:** Simple
+  install (still stable Bathroom PoE `Ceiling-POE-VentIQ-RoomIQ` only),
+  `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only),
+  `scripts/data/kits.json` / `kit-presets.js`, `scripts/import-firmware-sources.py`
+  (reused unchanged), the FanTRIAC block, the WF-LED-003 preview acknowledgement
+  model, and every install / preflight / freshness gate. **No FanTRIAC imported;
+  no hardware / bench / compliance / safety / commercial-availability proof
+  claimed.**
 - **FanPWM preview firmware import (WEBFLASH-PWM-001).** Imported the upstream
   `Ceiling-POE-FanPWM` manual-preview firmware from the shared
   `sense360store/esphome-public` `v1.0.0-preview` release (SHA256

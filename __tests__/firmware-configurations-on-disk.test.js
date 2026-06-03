@@ -53,19 +53,27 @@ const FANRELAY_SIDECAR = FANRELAY_BIN.replace(/\.bin$/, '.meta.json');
 const FANPWM_BIN = 'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin';
 const FANPWM_SIDECAR = FANPWM_BIN.replace(/\.bin$/, '.meta.json');
 
+// WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview build imported
+// from the same upstream v1.0.0-preview release (upstream marked it WebFlash-
+// import eligible) by the preview-eligible import automation.
+const FANDAC_BIN = 'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin';
+const FANDAC_SIDECAR = FANDAC_BIN.replace(/\.bin$/, '.meta.json');
+
 const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
     LED_PREVIEW_BIN,
     ...FIRST_BATCH_BINS,
     FANRELAY_BIN,
-    FANPWM_BIN
+    FANPWM_BIN,
+    FANDAC_BIN
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
     LED_PREVIEW_SIDECAR,
     ...FIRST_BATCH_SIDECARS,
     FANRELAY_SIDECAR,
-    FANPWM_SIDECAR
+    FANPWM_SIDECAR,
+    FANDAC_SIDECAR
 ]);
 
 const EXPECTED_FILES = Object.freeze([...EXPECTED_BINS, ...EXPECTED_SIDECARS]);

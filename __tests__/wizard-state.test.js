@@ -1059,7 +1059,7 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(detail.textContent).not.toMatch(/COMPLIANCE-001/);
     });
 
-    test('Relay and PWM show available-preview, DAC shows no-firmware', async () => {
+    test('Relay, PWM and DAC show available-preview', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
@@ -1077,8 +1077,11 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(pwmPill.dataset.availabilityState).toBe('available-preview');
         expect(pwmPill.textContent).toBe('Preview');
 
+        // WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview build
+        // imported, so DAC is available-preview (was no-firmware).
         const dacPill = document.querySelector('.module-card[data-variant="analog"] [data-module-availability-pill]');
-        expect(dacPill.dataset.availabilityState).toBe('no-firmware');
+        expect(dacPill.dataset.availabilityState).toBe('available-preview');
+        expect(dacPill.textContent).toBe('Preview');
     });
 
     test('RoomIQ and VentIQ resolve to available-stable from the manifest', async () => {
@@ -1448,17 +1451,17 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
         expect(result.installable).toBe(true);
     });
 
-    test('Relay and PWM show available-preview and DAC stays no-firmware', async () => {
+    test('Relay, PWM and DAC show available-preview', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
-        // WEBFLASH-RELAY-001 / WEBFLASH-PWM-001 — Relay and PWM are available-preview
-        // (FanRelay + FanPWM manual-preview builds imported); DAC stays no-firmware
-        // (no build imported).
+        // WEBFLASH-RELAY-001 / WEBFLASH-PWM-001 / WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001
+        // — Relay, PWM and DAC are all available-preview (FanRelay + FanPWM + FanDAC
+        // manual-preview builds imported). TRIAC stays advanced-manual-warning.
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'relay').state).toBe('available-preview');
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'pwm').state).toBe('available-preview');
-        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'analog').state).toBe('no-firmware');
+        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'analog').state).toBe('available-preview');
     });
 });
 

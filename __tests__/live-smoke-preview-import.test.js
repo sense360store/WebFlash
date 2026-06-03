@@ -28,7 +28,7 @@ import {
 // scripts/data/kit-presets.js / scripts/utils/release-channels.js /
 // scripts/utils/module-availability.js):
 //
-//   - the manifest carries exactly the expected eight builds,
+//   - the manifest carries exactly the expected nine builds,
 //   - the preview imports are Advanced-install-only (never default-picked,
 //     acknowledgement-gated),
 //   - Simple install resolves only to the stable Bathroom PoE build,
@@ -72,6 +72,11 @@ const FANRELAY_PREVIEW = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
 // imported after upstream marked it WebFlash-import eligible. Advanced-install-only,
 // acknowledgement-gated, never stable/recommended/default/kit/REQUIRED_CONFIGS.
 const FANPWM_PREVIEW = 'Ceiling-POE-FanPWM';
+// WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview build (also
+// from v1.0.0-preview), imported by the preview-eligible import automation after
+// upstream marked it WebFlash-import eligible. Advanced-install-only,
+// acknowledgement-gated, never stable/recommended/default/kit/REQUIRED_CONFIGS.
+const FANDAC_PREVIEW = 'Ceiling-POE-FanDAC';
 const RESCUE = 'Rescue';
 
 // Every preview-channel build (acknowledgement-gated, Advanced-install-only).
@@ -79,7 +84,8 @@ const ALL_PREVIEWS = Object.freeze([
     ...PREVIEW_FIRST_BATCH,
     VENTIQ_LED_PREVIEW,
     FANRELAY_PREVIEW,
-    FANPWM_PREVIEW
+    FANPWM_PREVIEW,
+    FANDAC_PREVIEW
 ]);
 
 const EXPECTED_BUILDS = Object.freeze([
@@ -87,6 +93,7 @@ const EXPECTED_BUILDS = Object.freeze([
     VENTIQ_LED_PREVIEW,
     FANRELAY_PREVIEW,
     FANPWM_PREVIEW,
+    FANDAC_PREVIEW,
     ...PREVIEW_FIRST_BATCH,
     RESCUE
 ]);
@@ -95,11 +102,11 @@ const EXPECTED_BUILDS = Object.freeze([
 // FanPWM are deliberately EXCLUDED — WEBFLASH-RELAY-001 / WEBFLASH-PWM-001
 // imported them as preview / manual-preview builds (upstream-import-eligible).
 // DAC / TRIAC stay out.
-const FORBIDDEN_FAN_TOKENS = Object.freeze(['FanTRIAC', 'FanDAC']);
+const FORBIDDEN_FAN_TOKENS = Object.freeze(['FanTRIAC']);
 
-describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expected eight builds', () => {
-    test('manifest.json has exactly 8 builds', () => {
-        expect(builds.length).toBe(8);
+describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expected nine builds', () => {
+    test('manifest.json has exactly 9 builds', () => {
+        expect(builds.length).toBe(9);
     });
 
     test('the eight config strings match the expected live set', () => {
@@ -107,7 +114,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expe
         expect(configs).toEqual([...EXPECTED_BUILDS].sort());
     });
 
-    test('channel assignment matches the live posture (1 stable, 6 preview, 1 rescue)', () => {
+    test('channel assignment matches the live posture (1 stable, 7 preview, 1 rescue)', () => {
         expect(buildByConfig.get(STABLE_BATHROOM_POE).channel).toBe('stable');
         ALL_PREVIEWS.forEach(cfg => {
             expect(buildByConfig.get(cfg).channel).toBe('preview');
@@ -118,7 +125,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expe
             acc[b.channel] = (acc[b.channel] || 0) + 1;
             return acc;
         }, {});
-        expect(channelCounts).toEqual({ stable: 1, preview: 6, rescue: 1 });
+        expect(channelCounts).toEqual({ stable: 1, preview: 7, rescue: 1 });
     });
 });
 
