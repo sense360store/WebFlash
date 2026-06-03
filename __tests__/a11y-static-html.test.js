@@ -1280,10 +1280,10 @@ describe('WF-UX-009 — Review reads as a three-task customer flow', () => {
             fs.readFileSync(path.resolve(process.cwd(), 'manifest.json'), 'utf-8')
         );
         expect(Array.isArray(manifest.builds)).toBe(true);
-        // 6 builds after WF-PREVIEW-IMPORT-FIRST-BATCH-001: Release-One stable
-        // + four preview builds + Rescue. The production-only REQUIRED_CONFIGS
+        // 7 builds after WF-PREVIEW-IMPORT-FIRST-BATCH-001 + WEBFLASH-RELAY-001: Release-One stable
+        // + five preview builds + Rescue. The production-only REQUIRED_CONFIGS
         // allowlist below is the surface that must stay unchanged.
-        expect(manifest.builds.length).toBe(6);
+        expect(manifest.builds.length).toBe(7);
 
         const workflow = fs.readFileSync(
             path.resolve(process.cwd(), '.github/workflows/firmware-publish.yml'),

@@ -1059,15 +1059,17 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(detail.textContent).not.toMatch(/COMPLIANCE-001/);
     });
 
-    test('Relay shows design-pending, PWM and DAC show no-firmware', async () => {
+    test('Relay shows available-preview, PWM and DAC show no-firmware', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
 
+        // WEBFLASH-RELAY-001 — FanRelay manual-preview build imported, so Relay
+        // is available-preview (was design-pending).
         const relayPill = document.querySelector('.module-card[data-variant="relay"] [data-module-availability-pill]');
-        expect(relayPill.dataset.availabilityState).toBe('design-pending');
-        expect(relayPill.textContent).toBe('Design pending');
+        expect(relayPill.dataset.availabilityState).toBe('available-preview');
+        expect(relayPill.textContent).toBe('Preview');
 
         const pwmPill = document.querySelector('.module-card[data-variant="pwm"] [data-module-availability-pill]');
         expect(pwmPill.dataset.availabilityState).toBe('no-firmware');
@@ -1444,12 +1446,14 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
         expect(result.installable).toBe(true);
     });
 
-    test('Relay stays design-pending and PWM / DAC stay no-firmware', async () => {
+    test('Relay shows available-preview and PWM / DAC stay no-firmware', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
-        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'relay').state).toBe('design-pending');
+        // WEBFLASH-RELAY-001 — Relay is available-preview (FanRelay manual-preview
+        // build imported); PWM / DAC stay no-firmware (no build imported).
+        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'relay').state).toBe('available-preview');
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'pwm').state).toBe('no-firmware');
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'analog').state).toBe('no-firmware');
     });

@@ -43,15 +43,22 @@ const FIRST_BATCH_SIDECARS = Object.freeze(
     FIRST_BATCH_BINS.map(name => name.replace(/\.bin$/, '.meta.json'))
 );
 
+// WEBFLASH-RELAY-001 — FanRelay manual-preview build imported from the same
+// upstream v1.0.0-preview release (upstream marked it WebFlash-import eligible).
+const FANRELAY_BIN = 'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin';
+const FANRELAY_SIDECAR = FANRELAY_BIN.replace(/\.bin$/, '.meta.json');
+
 const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
     LED_PREVIEW_BIN,
-    ...FIRST_BATCH_BINS
+    ...FIRST_BATCH_BINS,
+    FANRELAY_BIN
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
     LED_PREVIEW_SIDECAR,
-    ...FIRST_BATCH_SIDECARS
+    ...FIRST_BATCH_SIDECARS,
+    FANRELAY_SIDECAR
 ]);
 
 const EXPECTED_FILES = Object.freeze([...EXPECTED_BINS, ...EXPECTED_SIDECARS]);

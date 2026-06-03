@@ -133,6 +133,40 @@
       "block_tokens": [
         "FanTRIAC"
       ]
+    },
+    {
+      "source_repo": "sense360store/esphome-public",
+      "release_tag": "v1.0.0-preview",
+      "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview",
+      "version": "1.0.0",
+      "channel": "preview",
+      "config_string": "Ceiling-POE-VentIQ-FanRelay-RoomIQ",
+      "asset_name": "Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin",
+      "expected_sha256": "f9600a6b7891b520eff28314a001ff3b0d566224d3ab7d82de2e15242d026ca4",
+      "min_size_bytes": 102400,
+      "webflash_import_eligibility": {
+        "eligible": true,
+        "exposure_class": "acknowledgement-gated",
+        "source_of_truth": "config/preview-release-targets.json",
+        "upstream_decision": "RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001",
+        "note": "Upstream catalog status stays hardware-pending and webflash_build_matrix stays false (no committed upstream WebFlash build row). Preview / manual-preview WebFlash import is explicitly eligible (Advanced-install-only, acknowledgement-gated). Stable / full release stays blocked. Not REQUIRED_CONFIGS, not a kit, not recommended, not default."
+      },
+      "required_assets": [
+        "Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin",
+        "checksums-sha256.txt",
+        "checksums-md5.txt",
+        "manifest.json"
+      ],
+      "required_release_body_sections": [
+        "Changelog",
+        "Known Issues",
+        "Features",
+        "Hardware Requirements"
+      ],
+      "block_tokens": [
+        "FanTRIAC",
+        "LED"
+      ]
     }
   ]
 }

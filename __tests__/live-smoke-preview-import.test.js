@@ -28,12 +28,13 @@ import {
 // scripts/data/kit-presets.js / scripts/utils/release-channels.js /
 // scripts/utils/module-availability.js):
 //
-//   - the manifest carries exactly the expected six builds,
+//   - the manifest carries exactly the expected seven builds,
 //   - the preview imports are Advanced-install-only (never default-picked,
 //     acknowledgement-gated),
 //   - Simple install resolves only to the stable Bathroom PoE build,
 //   - every preview build has working in-card release notes (no dead links),
-//   - no TRIAC / fan-driver firmware was imported,
+//   - no PWM / DAC / TRIAC fan-driver firmware was imported (FanRelay is the
+//     deliberate WEBFLASH-RELAY-001 manual-preview exception),
 //   - AirIQ availability derives from the manifest (no static override),
 //   - the stable Simple-install build is not blocked by a channel gate,
 //   - the existing VentIQ LED preview still resolves and stays preview-only.
@@ -63,32 +64,45 @@ const PREVIEW_FIRST_BATCH = Object.freeze([
     'Ceiling-POE-RoomIQ-LED'
 ]);
 const VENTIQ_LED_PREVIEW = 'Ceiling-POE-VentIQ-RoomIQ-LED';
+// WEBFLASH-RELAY-001 — FanRelay manual-preview build (also from v1.0.0-preview),
+// imported after upstream marked it WebFlash-import eligible. Advanced-install-only,
+// acknowledgement-gated, never stable/recommended/default/kit/REQUIRED_CONFIGS.
+const FANRELAY_PREVIEW = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
 const RESCUE = 'Rescue';
+
+// Every preview-channel build (acknowledgement-gated, Advanced-install-only).
+const ALL_PREVIEWS = Object.freeze([
+    ...PREVIEW_FIRST_BATCH,
+    VENTIQ_LED_PREVIEW,
+    FANRELAY_PREVIEW
+]);
 
 const EXPECTED_BUILDS = Object.freeze([
     STABLE_BATHROOM_POE,
     VENTIQ_LED_PREVIEW,
+    FANRELAY_PREVIEW,
     ...PREVIEW_FIRST_BATCH,
     RESCUE
 ]);
 
-// Fan-driver / TRIAC tokens that must NOT have been imported by this batch.
-const FORBIDDEN_FAN_TOKENS = Object.freeze(['FanTRIAC', 'FanRelay', 'FanPWM', 'FanDAC']);
+// PWM / DAC / TRIAC fan-driver tokens that must NOT have been imported. FanRelay
+// is deliberately EXCLUDED — WEBFLASH-RELAY-001 imported it as a preview /
+// manual-preview build (upstream-import-eligible). PWM / DAC / TRIAC stay out.
+const FORBIDDEN_FAN_TOKENS = Object.freeze(['FanTRIAC', 'FanPWM', 'FanDAC']);
 
-describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expected six builds', () => {
-    test('manifest.json has exactly 6 builds', () => {
-        expect(builds.length).toBe(6);
+describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expected seven builds', () => {
+    test('manifest.json has exactly 7 builds', () => {
+        expect(builds.length).toBe(7);
     });
 
-    test('the six config strings match the expected live set', () => {
+    test('the seven config strings match the expected live set', () => {
         const configs = builds.map(b => b.config_string).sort();
         expect(configs).toEqual([...EXPECTED_BUILDS].sort());
     });
 
-    test('channel assignment matches the live posture (1 stable, 4 preview, 1 rescue)', () => {
+    test('channel assignment matches the live posture (1 stable, 5 preview, 1 rescue)', () => {
         expect(buildByConfig.get(STABLE_BATHROOM_POE).channel).toBe('stable');
-        expect(buildByConfig.get(VENTIQ_LED_PREVIEW).channel).toBe('preview');
-        PREVIEW_FIRST_BATCH.forEach(cfg => {
+        ALL_PREVIEWS.forEach(cfg => {
             expect(buildByConfig.get(cfg).channel).toBe('preview');
         });
         expect(buildByConfig.get(RESCUE).channel).toBe('rescue');
@@ -97,7 +111,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expe
             acc[b.channel] = (acc[b.channel] || 0) + 1;
             return acc;
         }, {});
-        expect(channelCounts).toEqual({ stable: 1, preview: 4, rescue: 1 });
+        expect(channelCounts).toEqual({ stable: 1, preview: 5, rescue: 1 });
     });
 });
 
@@ -113,7 +127,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — preview imports are Advanced-inst
     });
 
     test('each preview build requires the channel:preview acknowledgement before install', () => {
-        [...PREVIEW_FIRST_BATCH, VENTIQ_LED_PREVIEW].forEach(cfg => {
+        ALL_PREVIEWS.forEach(cfg => {
             const build = buildByConfig.get(cfg);
             const policy = getChannelPolicy(build.channel);
             expect(policy.key).toBe('preview');
@@ -130,7 +144,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — preview imports are Advanced-inst
         // Preview is hiddenByDefault:false, so it shows up in the Advanced
         // (normal-mode) firmware list — it is just never the default pick.
         const visible = filterBuildsForMode(builds, 'normal').map(b => b.config_string);
-        [...PREVIEW_FIRST_BATCH, VENTIQ_LED_PREVIEW, STABLE_BATHROOM_POE].forEach(cfg => {
+        [...ALL_PREVIEWS, STABLE_BATHROOM_POE].forEach(cfg => {
             expect(visible).toContain(cfg);
         });
         const defaultEligible = filterBuildsForMode(builds, 'normal').filter(
@@ -177,7 +191,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — preview release notes exist and a
         // release_url (external link) or a non-empty changelog (in-card
         // disclosure). With neither, no trigger renders — so a preview build
         // with neither would be a dead/missing link.
-        [...PREVIEW_FIRST_BATCH, VENTIQ_LED_PREVIEW].forEach(cfg => {
+        ALL_PREVIEWS.forEach(cfg => {
             const build = buildByConfig.get(cfg);
             const hasUrl = typeof build.release_url === 'string' && build.release_url.trim() !== '';
             const changelog = Array.isArray(build.changelog)
@@ -196,7 +210,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — preview release notes exist and a
     });
 });
 
-describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — no TRIAC / fan-driver firmware imported', () => {
+describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — no PWM / DAC / TRIAC fan-driver firmware imported (FanRelay excepted)', () => {
     test('no manifest build config_string carries a fan-driver token', () => {
         for (const build of builds) {
             const cfg = build.config_string || '';

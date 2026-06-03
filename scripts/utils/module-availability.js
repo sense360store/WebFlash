@@ -22,8 +22,10 @@
  *         advanced/manual-warning acknowledgement AND a future imported
  *         artifact; never Release-One, never a kit / default, never
  *         recommended, never compliance-certified).
- *       * Sense360 Relay / S360-310 (design pending — no S360-310
- *         schematic has been uploaded upstream yet).
+ *       * Sense360 Relay / S360-310 (available-preview — WEBFLASH-RELAY-001
+ *         imported a FanRelay preview / manual-preview build that upstream
+ *         marked WebFlash-import eligible; Advanced-install-only behind the
+ *         preview acknowledgement, never stable / kit / default / recommended).
  *       * Sense360 PWM / S360-311 and Sense360 DAC / S360-312
  *         (no WebFlash firmware yet — S360-311-R4 and S360-312-R4
  *         schematic evidence exists upstream but no WebFlash build
@@ -43,8 +45,10 @@
  * Per the WF-WIZARD-AVAIL-001 amendments, no new schematic PDFs are
  * committed in WebFlash; the upstream schematic evidence is referenced
  * only in copy. PWM/DAC are 'no-firmware', not 'design-pending', because
- * their upstream schematic uploads cover that gap. Relay stays
- * 'design-pending' until an S360-310 schematic is uploaded upstream.
+ * their upstream schematic uploads cover that gap. Relay is now
+ * 'available-preview' (WEBFLASH-RELAY-001 imported a FanRelay preview build);
+ * the 'design-pending' state stays in the taxonomy for any future
+ * schematic-less module.
  *
  * WF-TRIAC-001 amendment: TRIAC moved from 'blocked' to
  * 'advanced-manual-warning'. The `blocked` taxonomy value stays in the
@@ -109,6 +113,15 @@ export const AVAILABILITY_REASON_CODES = Object.freeze({
 // support/diagnostics can map back to the open hardware/compliance gates.
 const ADVANCED_MANUAL_WARNING_DETAIL = 'Sense360 TRIAC (S360-320) controls mains-connected loads and is not compliance-certified by WebFlash. It is not Release-One, not a kit / default option, and not recommended. No installable firmware has been imported yet, and WebFlash will not install TRIAC firmware until a verified build is available. Selecting TRIAC requires explicit acknowledgement of the advanced/manual warning. Use only if you understand the wiring, load, and local safety requirements.';
 
+// WEBFLASH-RELAY-001 — FanRelay (S360-310) load-bearing manual-preview warning.
+// Upstream marked the FanRelay preview/manual-preview build WebFlash-import
+// eligible (Advanced-install-only) while keeping stable/full release blocked, so
+// a preview build now ships and the Relay card is available-preview. The copy
+// must carry the installer/developer-preview posture and steer normal customers
+// to the stable Bathroom PoE build. Plain language only — no internal task /
+// release / tracking IDs (WF-UX-008); the machine mapping lives in reasonCode.
+const FANRELAY_PREVIEW_DETAIL = 'Sense360 Relay (S360-310) fan relay control ships only as preview / manual-preview firmware — an installer / developer preview. No hardware, bench, compliance, safety, or commercial-availability proof is claimed, so it is not for normal customers. You must acknowledge the preview channel before installing. For a normal install, use the stable Bathroom PoE build instead.';
+
 const DEFAULT_DETAIL_BY_STATE = Object.freeze({
     'available-stable': 'This module is covered by a published WebFlash build.',
     'available-preview': 'This module is only covered by a preview WebFlash build. You must acknowledge the preview channel before installing.',
@@ -151,9 +164,15 @@ export const MODULE_VARIANT_AVAILABILITY_OVERRIDES = Object.freeze({
     // AirIQ build is in the manifest; that would make the pill lie.
     fan: Object.freeze({
         relay: Object.freeze({
-            state: AVAILABILITY_STATES.DESIGN_PENDING,
-            reasonCode: AVAILABILITY_REASON_CODES.DESIGN_PENDING,
-            detail: 'Sense360 Relay (S360-310) has no upstream schematic uploaded yet. WebFlash firmware cannot be planned until S360-310 design evidence lands upstream.'
+            // WEBFLASH-RELAY-001 — was design-pending; a FanRelay preview build
+            // (Ceiling-POE-VentIQ-FanRelay-RoomIQ) is now imported and present in
+            // the manifest, so Relay is available-preview behind the preview
+            // acknowledgement. Kept as an explicit override (not manifest-derived)
+            // so the fan-driver card carries the bespoke installer/developer-
+            // preview warning copy the generic preview detail cannot.
+            state: AVAILABILITY_STATES.AVAILABLE_PREVIEW,
+            reasonCode: AVAILABILITY_REASON_CODES.PREVIEW_BUILD,
+            detail: FANRELAY_PREVIEW_DETAIL
         }),
         pwm: Object.freeze({
             state: AVAILABILITY_STATES.NO_FIRMWARE,

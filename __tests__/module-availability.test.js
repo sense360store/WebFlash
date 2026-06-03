@@ -4,8 +4,8 @@
  *
  * Pins the per-(module, variant) classification rules and the per-config_string
  * classification rules against the current manifest shape (Release-One stable
- * + four preview builds + Rescue) and against the static overrides for Voice
- * (legacy), Relay (design-pending), PWM/DAC (no-firmware) and TRIAC
+ * + five preview builds + Rescue) and against the static overrides for Voice
+ * (legacy), Relay (available-preview — WEBFLASH-RELAY-001), PWM/DAC (no-firmware) and TRIAC
  * (advanced-manual-warning under HW-005 + COMPLIANCE-001 — visible + selectable
  * but install-gated by the orthogonal advanced/manual-warning acknowledgement
  * AND a future imported artifact).
@@ -28,7 +28,7 @@ import {
 } from '../scripts/utils/module-availability.js';
 
 // Synthetic mirror of the current manifest.json shape after
-// WF-PREVIEW-IMPORT-FIRST-BATCH-001: Release-One stable + four preview builds
+// WF-PREVIEW-IMPORT-FIRST-BATCH-001: Release-One stable + five preview builds
 // (the VentIQ LED preview plus the three first-batch previews) + Rescue. Kept
 // inline so test failures are obvious and the fixture cannot drift silently
 // from the real manifest.
@@ -36,6 +36,7 @@ const CURRENT_MANIFEST_BUILDS = [
     { config_string: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview' },
     { config_string: 'Ceiling-POE-RoomIQ', channel: 'preview' },
     { config_string: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' },
+    { config_string: 'Ceiling-POE-VentIQ-FanRelay-RoomIQ', channel: 'preview' },
     { config_string: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable' },
     { config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED', channel: 'preview' },
     { config_string: 'Rescue', channel: 'rescue' }
@@ -159,13 +160,28 @@ describe('WF-WIZARD-AVAIL-001 — per-module classification against current mani
         expect(result.tone).toBe('warning');
     });
 
-    test('Fan: Relay → design-pending (no S360-310 schematic uploaded upstream)', () => {
+    test('WEBFLASH-RELAY-001 — Fan: Relay → available-preview (FanRelay manual-preview build imported)', () => {
         const result = classifyAgainstManifest('fan', 'relay');
-        expect(result.state).toBe(AVAILABILITY_STATES.DESIGN_PENDING);
-        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.DESIGN_PENDING);
-        expect(result.installable).toBe(false);
+        expect(result.state).toBe(AVAILABILITY_STATES.AVAILABLE_PREVIEW);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.PREVIEW_BUILD);
+        // Preview build exists → installable (still gated by the preview ack at install).
+        expect(result.installable).toBe(true);
         expect(result.selectable).toBe(true);
+        expect(result.tone).toBe('warning');
+        expect(result.label).toBe('Preview');
+        // Load-bearing manual-preview warning copy required by WEBFLASH-RELAY-001.
         expect(result.detail).toMatch(/S360-310/);
+        expect(result.detail).toMatch(/preview \/ manual-preview firmware/i);
+        expect(result.detail).toMatch(/installer \/ developer preview/i);
+        expect(result.detail).toMatch(
+            /no hardware, bench, compliance, safety, or commercial-availability proof/i
+        );
+        expect(result.detail).toMatch(/not for normal customers/i);
+        expect(result.detail).toMatch(/stable Bathroom PoE/i);
+        // WF-UX-008: no internal task / release / tracking IDs in rendered copy.
+        expect(result.detail).not.toMatch(/WEBFLASH-RELAY-001/);
+        expect(result.detail).not.toMatch(/HW-005/);
+        expect(result.detail).not.toMatch(/RELEASE-/);
     });
 
     test('Fan: PWM → no-firmware (S360-311-R4 schematic exists upstream, no build yet)', () => {
@@ -305,11 +321,13 @@ describe('WF-WIZARD-AVAIL-001 — config_string classification', () => {
     });
 
     test('Core + Relay config (no manifest match) → no-firmware at config layer', () => {
-        // Note: the per-variant Relay classification is design-pending, but
-        // the config_string layer only knows whether the assembled string is
-        // in the manifest. design-pending vs. no-firmware is a per-variant
-        // distinction the UI surfaces through the per-card pill, not the
-        // assembled config_string pill.
+        // Note: the per-variant Relay classification is available-preview (a
+        // FanRelay preview build was imported under WEBFLASH-RELAY-001), but the
+        // config_string layer only knows whether the *assembled* string is in the
+        // manifest. This synthetic Ceiling-USB-FanRelay string is NOT the imported
+        // Ceiling-POE-VentIQ-FanRelay-RoomIQ config, so it resolves to no-firmware.
+        // available-preview vs. no-firmware is a per-variant distinction the UI
+        // surfaces through the per-card pill, not the assembled config_string pill.
         const result = classifyAssembled('Ceiling-USB-FanRelay');
         expect(result.state).toBe(AVAILABILITY_STATES.NO_FIRMWARE);
     });

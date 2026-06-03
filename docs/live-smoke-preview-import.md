@@ -34,6 +34,7 @@ It complements — and does not replace:
 | `Ceiling-POE-AirIQ-RoomIQ` | `preview` | Advanced only (preview ack) |
 | `Ceiling-POE-RoomIQ` | `preview` | Advanced only (preview ack) |
 | `Ceiling-POE-RoomIQ-LED` | `preview` | Advanced only (preview ack) |
+| `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | Advanced only (preview ack) — FanRelay manual-preview (WEBFLASH-RELAY-001) |
 | `Rescue` | `rescue` | Recovery path / rescue modal |
 
 - **Simple install** must remain **stable Bathroom PoE only**

@@ -143,13 +143,15 @@ const MODULE_REQUIREMENT_MATRIX = {
                 description: 'On / off relay for bathroom fans.',
                 conflicts: [],
                 recommended: true,
-                // WF-WIZARD-AVAIL-001: no S360-310 schematic has been uploaded
-                // upstream yet, so WebFlash firmware cannot be planned for this
-                // driver. Distinct from PWM/DAC which DO have upstream schematic
-                // evidence but no firmware build.
+                // WEBFLASH-RELAY-001: a FanRelay preview / manual-preview build
+                // (Ceiling-POE-VentIQ-FanRelay-RoomIQ) was imported after upstream
+                // marked it WebFlash-import eligible, so Relay is available-preview
+                // (Advanced-install-only, acknowledgement-gated). The authoritative
+                // override lives in scripts/utils/module-availability.js; this
+                // declarative field is kept consistent with it.
                 availability: {
-                    state: 'design-pending',
-                    reasonCode: 'design-pending'
+                    state: 'available-preview',
+                    reasonCode: 'preview-build'
                 }
             },
             pwm: {

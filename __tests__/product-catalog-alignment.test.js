@@ -45,6 +45,33 @@ const RESCUE_CONFIG_STRING = 'Rescue';
 const ELIGIBLE_STATUSES = new Set(['production', 'preview']);
 const PRODUCTION_STATUS = 'production';
 
+// WEBFLASH-RELAY-001 — upstream #711 (RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001)
+// added a structured per-entry WebFlash-import authorisation that is independent
+// of the product-catalog lifecycle `status`. FanRelay / FanPWM / FanDAC keep
+// status=hardware-pending + webflash_build_matrix=false (no committed upstream
+// WebFlash build row) but carry webflash_import_eligibility.eligible=true in
+// upstream config/preview-release-targets.json, which explicitly authorises an
+// Advanced-install-only, acknowledgement-gated preview / manual-preview import.
+// WebFlash honours that flag for import / manifest / kit eligibility ONLY. It is
+// never honoured for REQUIRED_CONFIGS (which stays production-only — see the
+// dedicated test below) and never when eligible !== true (FanTRIAC stays
+// eligible=false and is rejected). This recognises a new, explicit upstream
+// signal; it does not relax the lifecycle-status gate for entries that lack it.
+const FANRELAY_CONFIG_STRING = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
+
+function isWebflashImportEligible(entry) {
+    if (!entry) {
+        return false;
+    }
+    if (ELIGIBLE_STATUSES.has(entry.status)) {
+        return true;
+    }
+    return Boolean(
+        entry.webflash_import_eligibility &&
+            entry.webflash_import_eligibility.eligible === true
+    );
+}
+
 // FanTRIAC is blocked upstream pending S360-320 hardware verification (HW-005).
 // While that status holds, it must not appear in any active WebFlash surface.
 // Tracked here as a named constant so failure messages stay readable.
@@ -233,13 +260,15 @@ describe('firmware/sources.json ↔ product catalog', () => {
                         'upstream to add the product before importing.'
                 );
             }
-            if (!ELIGIBLE_STATUSES.has(entry.status)) {
+            if (!isWebflashImportEligible(entry)) {
                 throw new Error(
                     `firmware/sources.json source "${source.config_string}" has ` +
-                        `upstream status "${entry.status}". WebFlash only imports ` +
-                        `from catalog entries in statuses ` +
-                        `[${[...ELIGIBLE_STATUSES].join(', ')}]. Remove the source ` +
-                        'or wait for upstream to promote it to an eligible status.'
+                        `upstream status "${entry.status}" and no ` +
+                        'webflash_import_eligibility.eligible=true authorisation. ' +
+                        `WebFlash only imports from catalog entries in statuses ` +
+                        `[${[...ELIGIBLE_STATUSES].join(', ')}] OR entries upstream ` +
+                        'has explicitly marked webflash_import_eligibility.eligible=true. ' +
+                        'Remove the source or wait for upstream to promote / authorise it.'
                 );
             }
         }
@@ -287,11 +316,14 @@ describe('manifest.json ↔ product catalog', () => {
                         'wait for upstream to add the product.'
                 );
             }
-            if (!ELIGIBLE_STATUSES.has(entry.status)) {
+            if (!isWebflashImportEligible(entry)) {
                 throw new Error(
                     `manifest.json build "${build.config_string}" has upstream ` +
-                        `status "${entry.status}". WebFlash only ships builds in ` +
-                        `statuses [${[...ELIGIBLE_STATUSES].join(', ')}].`
+                        `status "${entry.status}" and no ` +
+                        'webflash_import_eligibility.eligible=true authorisation. ' +
+                        `WebFlash only ships builds in statuses ` +
+                        `[${[...ELIGIBLE_STATUSES].join(', ')}] OR entries upstream ` +
+                        'has explicitly marked webflash_import_eligibility.eligible=true.'
                 );
             }
         }
@@ -418,12 +450,14 @@ describe('scripts/data/kits.json ↔ product catalog', () => {
                         'upstream to add the product.'
                 );
             }
-            if (!ELIGIBLE_STATUSES.has(entry.status)) {
+            if (!isWebflashImportEligible(entry)) {
                 throw new Error(
                     `Kit "${kit.sku}" maps to firmware_config_string ` +
                         `"${kit.firmware_config_string}" which has upstream ` +
-                        `status "${entry.status}". Kits may only point at ` +
-                        `statuses [${[...ELIGIBLE_STATUSES].join(', ')}].`
+                        `status "${entry.status}" and no ` +
+                        'webflash_import_eligibility.eligible=true authorisation. ' +
+                        `Kits may only point at statuses ` +
+                        `[${[...ELIGIBLE_STATUSES].join(', ')}] OR import-eligible entries.`
                 );
             }
         }
@@ -582,19 +616,22 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to Release-One + four preview builds + Rescue', () => {
-        // Snapshot lock updated by WF-PREVIEW-IMPORT-FIRST-BATCH-001: the
-        // manifest now exposes six builds. Release-One stable + Rescue remain
-        // unchanged in content; the four preview-channel builds are the LED
-        // preview (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview) plus
-        // the three first-batch previews imported from upstream v1.0.0-preview
-        // (Ceiling-POE-AirIQ-RoomIQ, Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED).
+    test('manifest.json builds resolve to Release-One + five preview builds + Rescue', () => {
+        // Snapshot lock updated by WEBFLASH-RELAY-001: the manifest now exposes
+        // seven builds. Release-One stable + Rescue remain unchanged in content;
+        // the five preview-channel builds are the LED preview
+        // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview), the three
+        // first-batch previews from upstream v1.0.0-preview (Ceiling-POE-AirIQ-RoomIQ,
+        // Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED), and the FanRelay
+        // manual-preview (Ceiling-POE-VentIQ-FanRelay-RoomIQ, also from
+        // v1.0.0-preview, authorised by webflash_import_eligibility.eligible=true).
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
         expect(configStrings).toEqual(
             [
                 'Ceiling-POE-AirIQ-RoomIQ',
                 'Ceiling-POE-RoomIQ',
                 'Ceiling-POE-RoomIQ-LED',
+                'Ceiling-POE-VentIQ-FanRelay-RoomIQ',
                 'Ceiling-POE-VentIQ-RoomIQ',
                 'Ceiling-POE-VentIQ-RoomIQ-LED',
                 'Rescue'
@@ -607,5 +644,82 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         // REQUIRED_CONFIGS assertion above for the matching policy.
         const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
         expect(kitConfigs).toEqual(['Ceiling-POE-VentIQ-RoomIQ']);
+    });
+});
+
+describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
+    // Pins the two-concept eligibility model upstream #711 introduced:
+    // FanRelay keeps catalog status=hardware-pending + webflash_build_matrix=false
+    // (no committed upstream WebFlash build row) but carries the separate
+    // webflash_import_eligibility.eligible=true authorisation. WebFlash imports it
+    // as an Advanced-install-only, acknowledgement-gated preview build — present in
+    // sources + manifest, absent from REQUIRED_CONFIGS + kits. FanTRIAC stays
+    // eligible=false / blocked.
+
+    test('fixture FanRelay row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
+        const entry = catalogIndex.get(FANRELAY_CONFIG_STRING);
+        if (!entry) {
+            throw new Error(
+                `Catalog fixture does not contain ${FANRELAY_CONFIG_STRING}. ` +
+                    'WEBFLASH-RELAY-001 mirrors the real upstream FanRelay row; if it ' +
+                    'has been removed, refresh the fixture from upstream ' +
+                    'config/product-catalog.json + config/preview-release-targets.json.'
+            );
+        }
+        expect(entry.status).toBe('hardware-pending');
+        expect(entry.webflash_build_matrix).toBe(false);
+        expect(entry.webflash_import_eligibility).toBeDefined();
+        expect(entry.webflash_import_eligibility.eligible).toBe(true);
+        // Status alone is NOT import-eligible; the explicit flag is what authorises it.
+        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
+        expect(isWebflashImportEligible(entry)).toBe(true);
+        expect(entry.artifact_name).toBe(
+            'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin'
+        );
+        expect(entry.version).toBe('1.0.0');
+        expect(entry.channel).toBe('preview');
+    });
+
+    test('FanTRIAC remains catalog-ineligible (no webflash_import_eligibility=true)', () => {
+        const entry = catalogIndex.get(FANTRIAC_CONFIG_STRING);
+        expect(entry).toBeDefined();
+        expect(entry.status).toBe('blocked');
+        expect(isWebflashImportEligible(entry)).toBe(false);
+    });
+
+    test('firmware/sources.json carries the FanRelay preview source (block_tokens FanTRIAC + LED)', () => {
+        const src = (sources.sources || []).find(
+            s => s.config_string === FANRELAY_CONFIG_STRING
+        );
+        expect(src).toBeDefined();
+        expect(src.channel).toBe('preview');
+        expect(src.version).toBe('1.0.0');
+        expect(src.asset_name).toBe(
+            'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin'
+        );
+        expect(src.expected_sha256).toBe(
+            'f9600a6b7891b520eff28314a001ff3b0d566224d3ab7d82de2e15242d026ca4'
+        );
+        expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+    });
+
+    test('manifest.json carries the FanRelay preview build', () => {
+        const build = (manifest.builds || []).find(
+            b => b.config_string === FANRELAY_CONFIG_STRING
+        );
+        expect(build).toBeDefined();
+        expect(build.channel).toBe('preview');
+        expect(build.version).toBe('1.0.0');
+        expect(build.modules).toEqual(
+            expect.arrayContaining(['VentIQ', 'FanRelay', 'RoomIQ'])
+        );
+    });
+
+    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only) and NOT in kits', () => {
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(FANRELAY_CONFIG_STRING);
+        for (const kit of kits.kits || []) {
+            expect(kit.firmware_config_string).not.toBe(FANRELAY_CONFIG_STRING);
+        }
     });
 });

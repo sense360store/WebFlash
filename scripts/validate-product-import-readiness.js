@@ -102,6 +102,32 @@ export const REQUIRED_IMPORT_FIELDS = [
     'product_yaml'
 ];
 
+// WEBFLASH-RELAY-001 — the manual-preview import lane (upstream #711) does not
+// carry a committed WebFlash build row, so it has no `webflash_wrapper` and
+// `webflash_build_matrix` stays false. It still must declare what to import:
+// artifact_name + version + channel.
+export const PREVIEW_IMPORT_FIELDS = ['artifact_name', 'version', 'channel'];
+
+// WEBFLASH-RELAY-001 — WebFlash import is authorised either by a catalog
+// lifecycle status in ELIGIBLE_STATUSES (production/preview) OR by an explicit
+// upstream webflash_import_eligibility.eligible=true flag (config/preview-
+// release-targets.json), which #711 set for FanRelay/FanPWM/FanDAC while their
+// catalog status stays hardware-pending. The flag is honoured for import /
+// manifest / kit eligibility only — never for REQUIRED_CONFIGS (production-only)
+// and never when eligible !== true (FanTRIAC stays eligible=false / rejected).
+export function isWebflashImportEligible(entry) {
+    if (!entry) {
+        return false;
+    }
+    if (ELIGIBLE_STATUSES.has(entry.status)) {
+        return true;
+    }
+    return Boolean(
+        entry.webflash_import_eligibility &&
+            entry.webflash_import_eligibility.eligible === true
+    );
+}
+
 // --- Helpers ---------------------------------------------------------------
 
 function containsSegment(value, token) {
@@ -266,13 +292,13 @@ export function evaluateEntryCatalogShape(entry) {
     // --- import-eligibility -----------------------------------------------
     let importEligible = false;
     const importReasons = [];
-    if (!ELIGIBLE_STATUSES.has(status)) {
-        importReasons.push(
-            `status='${status || '<missing>'}' is not in {${[...ELIGIBLE_STATUSES].join(', ')}}`
-        );
-    } else if (!buildMatrix) {
-        importReasons.push('webflash_build_matrix is not true');
-    } else {
+    const previewImportFlag = Boolean(
+        entry.webflash_import_eligibility &&
+            entry.webflash_import_eligibility.eligible === true
+    );
+    if (ELIGIBLE_STATUSES.has(status) && buildMatrix) {
+        // Committed WebFlash build-matrix lane: production/preview status with a
+        // committed upstream build row (webflash_build_matrix=true + wrapper).
         const missing = missingImportFields(entry);
         if (missing.length > 0) {
             importReasons.push(`missing required import fields: ${missing.join(', ')}`);
@@ -288,9 +314,42 @@ export function evaluateEntryCatalogShape(entry) {
                 );
             } else {
                 importEligible = true;
-                importReasons.push('all import-eligibility criteria satisfied');
+                importReasons.push('all import-eligibility criteria satisfied (build-matrix lane)');
             }
         }
+    } else if (previewImportFlag) {
+        // WEBFLASH-RELAY-001 manual-preview lane: upstream #711 set
+        // webflash_import_eligibility.eligible=true while catalog status stays
+        // hardware-pending + webflash_build_matrix=false (no committed upstream
+        // build row). Requires the manual-preview import fields (no
+        // webflash_wrapper), a preview channel, and absent blocked tokens.
+        const missing = PREVIEW_IMPORT_FIELDS.filter(k => !nonEmptyString(entry[k]));
+        if (missing.length > 0) {
+            importReasons.push(
+                `webflash_import_eligibility.eligible=true but missing manual-preview import fields: ${missing.join(', ')}`
+            );
+        } else if (channel !== PREVIEW_STATUS) {
+            importReasons.push(
+                `manual-preview lane requires channel='${PREVIEW_STATUS}', got '${channel || '<missing>'}'`
+            );
+        } else if (blockedHits.length > 0) {
+            importReasons.push(
+                `blocked_modules ${blockedHits.join(', ')} appear in artifact_name/config_string`
+            );
+        } else {
+            importEligible = true;
+            importReasons.push(
+                'webflash_import_eligibility.eligible=true (manual-preview lane; status stays hardware-pending)'
+            );
+        }
+    } else if (!ELIGIBLE_STATUSES.has(status)) {
+        importReasons.push(
+            `status='${status || '<missing>'}' is not in {${[...ELIGIBLE_STATUSES].join(', ')}} and webflash_import_eligibility.eligible!=true`
+        );
+    } else if (!buildMatrix) {
+        importReasons.push(
+            'webflash_build_matrix is not true and webflash_import_eligibility.eligible!=true'
+        );
     }
 
     // --- manifest-eligibility (catalog level only) ------------------------
@@ -523,11 +582,11 @@ export function crossCheckSurfaces({
             );
             continue;
         }
-        if (!ELIGIBLE_STATUSES.has(entry.status)) {
+        if (!isWebflashImportEligible(entry)) {
             pushFinding(
                 'firmware/sources.json',
                 cs,
-                `upstream status='${entry.status}' is not import-eligible (must be production|preview)`
+                `upstream status='${entry.status}' is not import-eligible (must be production|preview, or carry webflash_import_eligibility.eligible=true)`
             );
         }
     }
@@ -559,11 +618,11 @@ export function crossCheckSurfaces({
             );
             continue;
         }
-        if (!ELIGIBLE_STATUSES.has(entry.status)) {
+        if (!isWebflashImportEligible(entry)) {
             pushFinding(
                 'manifest.json',
                 cs,
-                `upstream status='${entry.status}' is not manifest-eligible (must be production|preview)`
+                `upstream status='${entry.status}' is not manifest-eligible (must be production|preview, or carry webflash_import_eligibility.eligible=true)`
             );
         }
     }
@@ -640,11 +699,11 @@ export function crossCheckSurfaces({
             );
             continue;
         }
-        if (!ELIGIBLE_STATUSES.has(entry.status)) {
+        if (!isWebflashImportEligible(entry)) {
             pushFinding(
                 'scripts/data/kits.json',
                 id,
-                `firmware_config_string '${cs}' has upstream status='${entry.status}' (must be production|preview)`
+                `firmware_config_string '${cs}' has upstream status='${entry.status}' (must be production|preview, or carry webflash_import_eligibility.eligible=true)`
             );
         }
     }
