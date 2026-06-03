@@ -58,6 +58,12 @@ const PRODUCTION_STATUS = 'production';
 // eligible=false and is rejected). This recognises a new, explicit upstream
 // signal; it does not relax the lifecycle-status gate for entries that lack it.
 const FANRELAY_CONFIG_STRING = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
+// WEBFLASH-PWM-001 — same two-concept eligibility model as FanRelay: catalog
+// status stays hardware-pending + webflash_build_matrix=false, but
+// webflash_import_eligibility.eligible=true authorises the Advanced-install-only
+// preview / manual-preview import. Honoured for import / manifest / kit only,
+// never REQUIRED_CONFIGS.
+const FANPWM_CONFIG_STRING = 'Ceiling-POE-FanPWM';
 
 function isWebflashImportEligible(entry) {
     if (!entry) {
@@ -616,19 +622,21 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to Release-One + five preview builds + Rescue', () => {
-        // Snapshot lock updated by WEBFLASH-RELAY-001: the manifest now exposes
-        // seven builds. Release-One stable + Rescue remain unchanged in content;
-        // the five preview-channel builds are the LED preview
+    test('manifest.json builds resolve to Release-One + six preview builds + Rescue', () => {
+        // Snapshot lock updated by WEBFLASH-PWM-001: the manifest now exposes
+        // eight builds. Release-One stable + Rescue remain unchanged in content;
+        // the six preview-channel builds are the LED preview
         // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview), the three
         // first-batch previews from upstream v1.0.0-preview (Ceiling-POE-AirIQ-RoomIQ,
-        // Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED), and the FanRelay
-        // manual-preview (Ceiling-POE-VentIQ-FanRelay-RoomIQ, also from
-        // v1.0.0-preview, authorised by webflash_import_eligibility.eligible=true).
+        // Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED), the FanRelay
+        // manual-preview (Ceiling-POE-VentIQ-FanRelay-RoomIQ), and the FanPWM
+        // manual-preview (Ceiling-POE-FanPWM) — both also from v1.0.0-preview,
+        // authorised by webflash_import_eligibility.eligible=true.
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
         expect(configStrings).toEqual(
             [
                 'Ceiling-POE-AirIQ-RoomIQ',
+                'Ceiling-POE-FanPWM',
                 'Ceiling-POE-RoomIQ',
                 'Ceiling-POE-RoomIQ-LED',
                 'Ceiling-POE-VentIQ-FanRelay-RoomIQ',
@@ -720,6 +728,74 @@ describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
         expect(required).not.toContain(FANRELAY_CONFIG_STRING);
         for (const kit of kits.kits || []) {
             expect(kit.firmware_config_string).not.toBe(FANRELAY_CONFIG_STRING);
+        }
+    });
+});
+
+describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
+    // Mirrors the FanRelay recognition above for the FanPWM manual-preview build
+    // (Ceiling-POE-FanPWM, from the same upstream v1.0.0-preview release). Catalog
+    // status stays hardware-pending + webflash_build_matrix=false; the explicit
+    // webflash_import_eligibility.eligible=true flag authorises the Advanced-
+    // install-only, acknowledgement-gated preview import — present in sources +
+    // manifest, absent from REQUIRED_CONFIGS + kits. FanTRIAC stays eligible=false
+    // / blocked; FanDAC stays unimported.
+
+    test('fixture FanPWM row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
+        const entry = catalogIndex.get(FANPWM_CONFIG_STRING);
+        if (!entry) {
+            throw new Error(
+                `Catalog fixture does not contain ${FANPWM_CONFIG_STRING}. ` +
+                    'WEBFLASH-PWM-001 mirrors the real upstream FanPWM row; if it ' +
+                    'has been removed, refresh the fixture from upstream ' +
+                    'config/product-catalog.json + config/preview-release-targets.json.'
+            );
+        }
+        expect(entry.status).toBe('hardware-pending');
+        expect(entry.webflash_build_matrix).toBe(false);
+        expect(entry.webflash_import_eligibility).toBeDefined();
+        expect(entry.webflash_import_eligibility.eligible).toBe(true);
+        // Status alone is NOT import-eligible; the explicit flag is what authorises it.
+        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
+        expect(isWebflashImportEligible(entry)).toBe(true);
+        expect(entry.artifact_name).toBe(
+            'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin'
+        );
+        expect(entry.version).toBe('1.0.0');
+        expect(entry.channel).toBe('preview');
+    });
+
+    test('firmware/sources.json carries the FanPWM preview source (block_tokens FanTRIAC + LED)', () => {
+        const src = (sources.sources || []).find(
+            s => s.config_string === FANPWM_CONFIG_STRING
+        );
+        expect(src).toBeDefined();
+        expect(src.channel).toBe('preview');
+        expect(src.version).toBe('1.0.0');
+        expect(src.asset_name).toBe(
+            'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin'
+        );
+        expect(src.expected_sha256).toBe(
+            '4ef9f35346b38be05d270d07b6baa46eae139e7a440af95e80f97c3b91c59926'
+        );
+        expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+    });
+
+    test('manifest.json carries the FanPWM preview build', () => {
+        const build = (manifest.builds || []).find(
+            b => b.config_string === FANPWM_CONFIG_STRING
+        );
+        expect(build).toBeDefined();
+        expect(build.channel).toBe('preview');
+        expect(build.version).toBe('1.0.0');
+        expect(build.modules).toEqual(expect.arrayContaining(['FanPWM']));
+    });
+
+    test('FanPWM is NOT in REQUIRED_CONFIGS (production-only) and NOT in kits', () => {
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(FANPWM_CONFIG_STRING);
+        for (const kit of kits.kits || []) {
+            expect(kit.firmware_config_string).not.toBe(FANPWM_CONFIG_STRING);
         }
     });
 });

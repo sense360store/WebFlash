@@ -1059,7 +1059,7 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(detail.textContent).not.toMatch(/COMPLIANCE-001/);
     });
 
-    test('Relay shows available-preview, PWM and DAC show no-firmware', async () => {
+    test('Relay and PWM show available-preview, DAC shows no-firmware', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
@@ -1071,9 +1071,11 @@ describe('WF-WIZARD-AVAIL-001 — module availability runtime integration', () =
         expect(relayPill.dataset.availabilityState).toBe('available-preview');
         expect(relayPill.textContent).toBe('Preview');
 
+        // WEBFLASH-PWM-001 — FanPWM manual-preview build imported, so PWM is
+        // available-preview (was no-firmware).
         const pwmPill = document.querySelector('.module-card[data-variant="pwm"] [data-module-availability-pill]');
-        expect(pwmPill.dataset.availabilityState).toBe('no-firmware');
-        expect(pwmPill.textContent).toBe('No WebFlash firmware yet');
+        expect(pwmPill.dataset.availabilityState).toBe('available-preview');
+        expect(pwmPill.textContent).toBe('Preview');
 
         const dacPill = document.querySelector('.module-card[data-variant="analog"] [data-module-availability-pill]');
         expect(dacPill.dataset.availabilityState).toBe('no-firmware');
@@ -1446,15 +1448,16 @@ describe('WF-UX-006 — custom path preserves unavailable-module honesty', () =>
         expect(result.installable).toBe(true);
     });
 
-    test('Relay shows available-preview and PWM / DAC stay no-firmware', async () => {
+    test('Relay and PWM show available-preview and DAC stays no-firmware', async () => {
         const stateModule = await import('../scripts/state.js');
         stateModule.__testHooks.initializeWizard();
         await stateModule.__testHooks.manifestReadyPromise();
         stateModule.__testHooks.updateModuleVariantAvailability();
-        // WEBFLASH-RELAY-001 — Relay is available-preview (FanRelay manual-preview
-        // build imported); PWM / DAC stay no-firmware (no build imported).
+        // WEBFLASH-RELAY-001 / WEBFLASH-PWM-001 — Relay and PWM are available-preview
+        // (FanRelay + FanPWM manual-preview builds imported); DAC stays no-firmware
+        // (no build imported).
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'relay').state).toBe('available-preview');
-        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'pwm').state).toBe('no-firmware');
+        expect(stateModule.__testHooks.classifyVariantForRender('fan', 'pwm').state).toBe('available-preview');
         expect(stateModule.__testHooks.classifyVariantForRender('fan', 'analog').state).toBe('no-firmware');
     });
 });

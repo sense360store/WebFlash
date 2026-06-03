@@ -256,7 +256,7 @@ WF-WIZARD-AVAIL-001, amended by [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001
 - `Sense360 LED` (S360-300) → `available-preview`
 - `Sense360 AirIQ` (S360-210) → `no-firmware`
 - `Sense360 Relay` (S360-310) → `available-preview` (WEBFLASH-RELAY-001 — FanRelay manual-preview build imported)
-- `Sense360 PWM` (S360-311) → `no-firmware`
+- `Sense360 PWM` (S360-311) → `available-preview` (WEBFLASH-PWM-001 — FanPWM manual-preview build imported)
 - `Sense360 DAC` (S360-312) → `no-firmware`
 - `Sense360 TRIAC` (S360-320) → `advanced-manual-warning` (per WF-TRIAC-001 — visible + selectable in the custom path, gated by an inline acknowledgement; install still blocked because no FanTRIAC artifact has been imported)
 - Voice → `legacy-only`
@@ -275,7 +275,7 @@ describe the contract a future per-family import PR must satisfy.
 | Candidate family | Required upstream release | Current upstream gate status | Current WebFlash source / import status | Current manifest status | Allowed import action now | Future import class | `REQUIRED_CONFIGS` eligibility | Kit / recommended eligibility | Runtime UX gate | Follow-up owner |
 |---|---|---|---|---|:---:|---|---|---|---|---|
 | Relay / S360-310 | upstream `v1.0.0-preview` artifact + #711 `webflash_import_eligibility.eligible=true` | **import-eligible** via #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`); catalog `status: hardware-pending` + `webflash_build_matrix: false` (stable / full release still blocked) | **imported** — `firmware/sources.json` FanRelay preview source (`block_tokens: ["FanTRIAC", "LED"]`) | **present** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` preview build | **imported (WEBFLASH-RELAY-001)** | `preview import` (landed) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` (live) | **WEBFLASH-RELAY-001 — landed** |
-| PWM / S360-311 | `RELEASE-PWM-001` | `missing-upstream-release-artifact`; S360-311-R4 schematic upstream but no WebFlash build | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-PWM-001` after `RELEASE-PWM-001` |
+| PWM / S360-311 | upstream `v1.0.0-preview` artifact + #711 `webflash_import_eligibility.eligible=true` | **import-eligible** via #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`); catalog `status: hardware-pending` + `webflash_build_matrix: false` (stable / full release still blocked on measured current / thermal evidence) | **imported** — `firmware/sources.json` FanPWM preview source (`block_tokens: ["FanTRIAC", "LED"]`) | **present** — `Ceiling-POE-FanPWM` preview build | **imported (WEBFLASH-PWM-001)** | `preview import` (landed) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` (live) | **WEBFLASH-PWM-001 — landed** |
 | DAC / S360-312 | `RELEASE-DAC-001` | `missing-upstream-release-artifact`; S360-312-R4 schematic upstream but no WebFlash build; FanDAC ↔ AirIQ mutex remains upstream policy | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-DAC-001` after `RELEASE-DAC-001` |
 | TRIAC / S360-320 | `RELEASE-TRIAC-001` | `blocked-from-standard-import` at the importer layer under HW-005 + COMPLIANCE-001; S360-320-R4 schematic exists but mains-side compliance and timing evidence incomplete; `firmware/sources.json` `block_tokens` keeps `FanTRIAC` excluded from every active source. Wizard-side runtime UX precondition satisfied by [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed) (`advanced-manual-warning` availability state + inline ack region). | none (FanTRIAC import-blocked) | none | **none** | `advanced / manual-warning import only` (runtime UX live, upstream gate pending) | `not-required-configs` (never by default) | `not-kit-default`, `not-recommended` (never by default) | `advanced-warning-required` (live — WF-TRIAC-001) | `WF-IMPORT-TRIAC-001` after `RELEASE-TRIAC-001`; `WF-TRIAC-001` runtime UX precondition satisfied |
 | Power / S360-400 (240V PSU) | `RELEASE-POWER-400-001` | `missing-upstream-release-artifact`, `missing-upstream-product-yaml`, `missing-hardware-evidence` | none (no `pwr` config_string in `manifest.json`) | none | **none** | `none` until evidence + product / release gates land; thereafter likely `preview import candidate` | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` (provisional) | `WF-IMPORT-POWER-400-001` after `RELEASE-POWER-400-001` |
@@ -329,21 +329,31 @@ only. Per-family postures below expand each row.
 
 ## PWM / S360-311 import posture
 
-- **Today:** `module-availability.js` classifies PWM as
-  `no-firmware`. The S360-311-R4 schematic exists upstream in
-  `sense360store/esphome-public`, but no upstream release artifact
-  carries a PWM `.bin`. No source entry, no manifest entry.
-- **Allowed import action now:** none.
-- **Future import class:** `preview import candidate` (after the
-  upstream gates clear).
-- **`REQUIRED_CONFIGS` eligibility:** `not-required-configs` by
-  default; production promotion is a separate, later decision.
+- **Landed (WEBFLASH-PWM-001):** `module-availability.js` now classifies
+  PWM as `available-preview`. A FanPWM manual-preview build
+  (`Ceiling-POE-FanPWM`) has been imported from upstream `v1.0.0-preview`
+  and is present in `firmware/sources.json` + `manifest.json`. As with
+  FanRelay, the import was authorised **not** by a catalog `status: preview`
+  promotion but by upstream #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`),
+  which set `webflash_import_eligibility.eligible=true` in
+  `config/preview-release-targets.json` while keeping the catalog status
+  `hardware-pending` and `webflash_build_matrix: false`. WebFlash's
+  catalog-alignment guard + `scripts/validate-product-import-readiness.js`
+  recognise that flag for import / manifest / kit eligibility (via the
+  manual-preview lane), never for `REQUIRED_CONFIGS`.
+- **Allowed import action now:** done — the FanPWM preview is imported as
+  an Advanced-install-only, acknowledgement-gated build.
+- **Future import class:** `preview import` (landed). Stable / full release
+  stays blocked on the measured current / thermal evidence recorded in the
+  upstream `stable_blocker`; RPM / TachIO is not claimed.
+- **`REQUIRED_CONFIGS` eligibility:** `not-required-configs`. The preview
+  import does **not** make PWM `REQUIRED_CONFIGS`-eligible — that requires
+  upstream promoting the catalog entry to `status: production` *and* a
+  deliberate `WF-REQUIRED-001`-class PR.
 - **Kit / recommended eligibility:** `not-kit-default`,
   `not-recommended` by default.
-- **Runtime UX gate:** `preview-acknowledgement-required`.
-- **Follow-up owner:** `WF-IMPORT-PWM-001` after
-  `RELEASE-PWM-001`. Same shape as Relay: source entry, importer
-  run, manifest regeneration, no `REQUIRED_CONFIGS` change, no kit.
+- **Runtime UX gate:** `preview-acknowledgement-required` (live).
+- **Follow-up owner:** **WEBFLASH-PWM-001 (a.k.a. WF-IMPORT-PWM-001) — landed.**
 
 ## DAC / S360-312 import posture
 

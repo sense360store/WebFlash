@@ -4,8 +4,9 @@
  *
  * Pins the per-(module, variant) classification rules and the per-config_string
  * classification rules against the current manifest shape (Release-One stable
- * + five preview builds + Rescue) and against the static overrides for Voice
- * (legacy), Relay (available-preview — WEBFLASH-RELAY-001), PWM/DAC (no-firmware) and TRIAC
+ * + six preview builds + Rescue) and against the static overrides for Voice
+ * (legacy), Relay (available-preview — WEBFLASH-RELAY-001), PWM (available-preview
+ * — WEBFLASH-PWM-001), DAC (no-firmware) and TRIAC
  * (advanced-manual-warning under HW-005 + COMPLIANCE-001 — visible + selectable
  * but install-gated by the orthogonal advanced/manual-warning acknowledgement
  * AND a future imported artifact).
@@ -27,13 +28,14 @@ import {
     deriveManifestIndex
 } from '../scripts/utils/module-availability.js';
 
-// Synthetic mirror of the current manifest.json shape after
-// WF-PREVIEW-IMPORT-FIRST-BATCH-001: Release-One stable + five preview builds
-// (the VentIQ LED preview plus the three first-batch previews) + Rescue. Kept
-// inline so test failures are obvious and the fixture cannot drift silently
-// from the real manifest.
+// Synthetic mirror of the current manifest.json shape after WEBFLASH-PWM-001:
+// Release-One stable + six preview builds (the VentIQ LED preview, the three
+// first-batch previews, the FanRelay manual-preview, and the FanPWM
+// manual-preview) + Rescue. Kept inline so test failures are obvious and the
+// fixture cannot drift silently from the real manifest.
 const CURRENT_MANIFEST_BUILDS = [
     { config_string: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview' },
+    { config_string: 'Ceiling-POE-FanPWM', channel: 'preview' },
     { config_string: 'Ceiling-POE-RoomIQ', channel: 'preview' },
     { config_string: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' },
     { config_string: 'Ceiling-POE-VentIQ-FanRelay-RoomIQ', channel: 'preview' },
@@ -184,15 +186,31 @@ describe('WF-WIZARD-AVAIL-001 — per-module classification against current mani
         expect(result.detail).not.toMatch(/RELEASE-/);
     });
 
-    test('Fan: PWM → no-firmware (S360-311-R4 schematic exists upstream, no build yet)', () => {
+    test('WEBFLASH-PWM-001 — Fan: PWM → available-preview (FanPWM manual-preview build imported)', () => {
         const result = classifyAgainstManifest('fan', 'pwm');
-        expect(result.state).toBe(AVAILABILITY_STATES.NO_FIRMWARE);
-        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.NO_MANIFEST_BUILD);
-        expect(result.installable).toBe(false);
+        expect(result.state).toBe(AVAILABILITY_STATES.AVAILABLE_PREVIEW);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.PREVIEW_BUILD);
+        // Preview build exists → installable (still gated by the preview ack at install).
+        expect(result.installable).toBe(true);
         expect(result.selectable).toBe(true);
-        // Reference S360-311-R4 schematic evidence in copy (per amendments).
+        expect(result.tone).toBe('warning');
+        expect(result.label).toBe('Preview');
+        // Load-bearing manual-preview warning copy required by WEBFLASH-PWM-001.
         expect(result.detail).toMatch(/S360-311/);
-        expect(result.detail).toMatch(/schematic/i);
+        expect(result.detail).toMatch(/PWM fan control/i);
+        expect(result.detail).toMatch(/preview \/ manual-preview firmware/i);
+        expect(result.detail).toMatch(/installer \/ developer preview/i);
+        expect(result.detail).toMatch(/low-voltage \/ DC/i);
+        expect(result.detail).toMatch(
+            /no hardware, bench, compliance, safety, or commercial-availability proof/i
+        );
+        expect(result.detail).toMatch(/not for normal customers/i);
+        expect(result.detail).toMatch(/stable Bathroom PoE/i);
+        // WF-UX-008: no internal task / release / tracking IDs in rendered copy.
+        expect(result.detail).not.toMatch(/WEBFLASH-PWM-001/);
+        expect(result.detail).not.toMatch(/HW-005/);
+        expect(result.detail).not.toMatch(/RELEASE-/);
+        expect(result.detail).not.toMatch(/S360-311-CURRENT-THERMAL/);
     });
 
     test('Fan: DAC → no-firmware (S360-312-R4 schematic exists upstream, no build yet)', () => {

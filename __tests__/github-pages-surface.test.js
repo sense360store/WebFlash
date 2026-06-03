@@ -81,9 +81,9 @@ function parseRequiredConfigsFromWorkflow() {
 }
 
 describe('github-pages-surface — manifest shape pins the deploy contract', () => {
-    test('manifest.json holds exactly seven builds (Release-One stable + five preview + Rescue)', () => {
+    test('manifest.json holds exactly eight builds (Release-One stable + six preview + Rescue)', () => {
         expect(Array.isArray(manifest.builds)).toBe(true);
-        expect(manifest.builds.length).toBe(7);
+        expect(manifest.builds.length).toBe(8);
     });
 
     test('manifest.json source_commit is not the May-7 stale deploy SHA', () => {
@@ -194,17 +194,17 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
         }
     });
 
-    test('no firmware-N.json beyond index 6 exists (no stale per-build manifests)', () => {
-        // After WEBFLASH-RELAY-001 the namespace is firmware-0 … firmware-6
-        // (three first-batch previews, the FanRelay manual-preview, Release-One,
-        // the VentIQ LED preview, and Rescue, in the generator's deterministic
-        // order). Anything past index 6 would indicate the manifest regenerator
+    test('no firmware-N.json beyond index 7 exists (no stale per-build manifests)', () => {
+        // After WEBFLASH-PWM-001 the namespace is firmware-0 … firmware-7
+        // (three first-batch previews, the FanRelay + FanPWM manual-previews,
+        // Release-One, the VentIQ LED preview, and Rescue, in the generator's
+        // deterministic order). Anything past index 7 would indicate the manifest regenerator
         // inherited a legacy index or a stale file shipped in the Pages artifact.
         const repoFiles = fs.readdirSync(repoRoot);
         const offending = repoFiles.filter(name => {
             const match = name.match(/^firmware-(\d+)\.json$/);
             if (!match) return false;
-            return Number(match[1]) > 6;
+            return Number(match[1]) > 7;
         });
         expect(offending).toEqual([]);
     });

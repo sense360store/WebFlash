@@ -26,10 +26,12 @@
  *         imported a FanRelay preview / manual-preview build that upstream
  *         marked WebFlash-import eligible; Advanced-install-only behind the
  *         preview acknowledgement, never stable / kit / default / recommended).
- *       * Sense360 PWM / S360-311 and Sense360 DAC / S360-312
- *         (no WebFlash firmware yet — S360-311-R4 and S360-312-R4
- *         schematic evidence exists upstream but no WebFlash build
- *         ships).
+ *       * Sense360 PWM / S360-311 (available-preview — WEBFLASH-PWM-001
+ *         imported a FanPWM preview / manual-preview build that upstream
+ *         marked WebFlash-import eligible; Advanced-install-only behind the
+ *         preview acknowledgement, never stable / kit / default / recommended).
+ *       * Sense360 DAC / S360-312 (no WebFlash firmware yet — S360-312-R4
+ *         schematic evidence exists upstream but no WebFlash build ships).
  *     Sense360 AirIQ / S360-210 is NO LONGER a static override: a
  *     preview-channel build (Ceiling-POE-AirIQ-RoomIQ, imported from
  *     upstream v1.0.0-preview) now ships, so AirIQ derives
@@ -44,9 +46,10 @@
  *
  * Per the WF-WIZARD-AVAIL-001 amendments, no new schematic PDFs are
  * committed in WebFlash; the upstream schematic evidence is referenced
- * only in copy. PWM/DAC are 'no-firmware', not 'design-pending', because
- * their upstream schematic uploads cover that gap. Relay is now
- * 'available-preview' (WEBFLASH-RELAY-001 imported a FanRelay preview build);
+ * only in copy. DAC is 'no-firmware', not 'design-pending', because its
+ * upstream schematic upload covers that gap. Relay is 'available-preview'
+ * (WEBFLASH-RELAY-001 imported a FanRelay preview build) and PWM is now
+ * 'available-preview' too (WEBFLASH-PWM-001 imported a FanPWM preview build);
  * the 'design-pending' state stays in the taxonomy for any future
  * schematic-less module.
  *
@@ -122,6 +125,17 @@ const ADVANCED_MANUAL_WARNING_DETAIL = 'Sense360 TRIAC (S360-320) controls mains
 // release / tracking IDs (WF-UX-008); the machine mapping lives in reasonCode.
 const FANRELAY_PREVIEW_DETAIL = 'Sense360 Relay (S360-310) fan relay control ships only as preview / manual-preview firmware — an installer / developer preview. No hardware, bench, compliance, safety, or commercial-availability proof is claimed, so it is not for normal customers. You must acknowledge the preview channel before installing. For a normal install, use the stable Bathroom PoE build instead.';
 
+// WEBFLASH-PWM-001 — FanPWM (S360-311) load-bearing manual-preview warning.
+// Same upstream two-concept eligibility model as FanRelay: upstream marked the
+// FanPWM preview/manual-preview build WebFlash-import eligible (Advanced-install-
+// only) while keeping stable/full release blocked on measured current / thermal
+// evidence, so a preview build now ships and the PWM card is available-preview.
+// PWM fan control drives low-voltage / DC fans (12V), so the copy steers it to
+// those installations where appropriate and steers normal customers to the
+// stable Bathroom PoE build. Plain language only — no internal task / release /
+// tracking IDs (WF-UX-008); the machine mapping lives in reasonCode.
+const FANPWM_PREVIEW_DETAIL = 'Sense360 PWM (S360-311) PWM fan control ships only as preview / manual-preview firmware — an installer / developer preview for low-voltage / DC fan installations only where appropriate. No hardware, bench, compliance, safety, or commercial-availability proof is claimed, so it is not for normal customers. You must acknowledge the preview channel before installing. For a normal install, use the stable Bathroom PoE build instead.';
+
 const DEFAULT_DETAIL_BY_STATE = Object.freeze({
     'available-stable': 'This module is covered by a published WebFlash build.',
     'available-preview': 'This module is only covered by a preview WebFlash build. You must acknowledge the preview channel before installing.',
@@ -175,9 +189,15 @@ export const MODULE_VARIANT_AVAILABILITY_OVERRIDES = Object.freeze({
             detail: FANRELAY_PREVIEW_DETAIL
         }),
         pwm: Object.freeze({
-            state: AVAILABILITY_STATES.NO_FIRMWARE,
-            reasonCode: AVAILABILITY_REASON_CODES.NO_MANIFEST_BUILD,
-            detail: 'Sense360 PWM (S360-311) has S360-311-R4 schematic evidence upstream, but no WebFlash firmware build ships for this driver yet.'
+            // WEBFLASH-PWM-001 — was no-firmware; a FanPWM preview build
+            // (Ceiling-POE-FanPWM) is now imported and present in the manifest,
+            // so PWM is available-preview behind the preview acknowledgement.
+            // Kept as an explicit override (not manifest-derived) so the
+            // fan-driver card carries the bespoke installer/developer-preview
+            // warning copy the generic preview detail cannot.
+            state: AVAILABILITY_STATES.AVAILABLE_PREVIEW,
+            reasonCode: AVAILABILITY_REASON_CODES.PREVIEW_BUILD,
+            detail: FANPWM_PREVIEW_DETAIL
         }),
         analog: Object.freeze({
             state: AVAILABILITY_STATES.NO_FIRMWARE,

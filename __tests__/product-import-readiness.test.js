@@ -204,16 +204,16 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
     });
 
     test('summary counts match the fixture today', () => {
-        // 8 entries after WEBFLASH-RELAY-001: Release-One (production), FanTRIAC
+        // 9 entries after WEBFLASH-PWM-001: Release-One (production), FanTRIAC
         // (blocked), 1 legacy-compatible, FOUR preview builds (the VentIQ LED
         // preview plus the three first-batch previews AirIQ-RoomIQ / RoomIQ /
-        // RoomIQ-LED), and the FanRelay manual-preview (status hardware-pending
-        // but webflash_import_eligibility.eligible=true).
-        expect(report.summary.total).toBe(8);
-        expect(report.summary.import_eligible).toBe(6); // Release-One + 4 previews + FanRelay
-        expect(report.summary.manifest_eligible).toBe(6);
+        // RoomIQ-LED), the FanRelay manual-preview, and the FanPWM manual-preview
+        // (both status hardware-pending but webflash_import_eligibility.eligible=true).
+        expect(report.summary.total).toBe(9);
+        expect(report.summary.import_eligible).toBe(7); // Release-One + 4 previews + FanRelay + FanPWM
+        expect(report.summary.manifest_eligible).toBe(7);
         expect(report.summary.required_configs_eligible).toBe(1); // Release-One only
-        expect(report.summary.kit_eligible).toBe(6);
+        expect(report.summary.kit_eligible).toBe(7);
     });
 });
 
@@ -314,6 +314,44 @@ describe('WEBFLASH-RELAY-001 — FanRelay manual-preview import eligibility', ()
         });
         expect(ok.catalog_eligibility.import.eligible).toBe(true);
         expect(ok.catalog_eligibility.required_configs.eligible).toBe(false);
+    });
+});
+
+describe('WEBFLASH-PWM-001 — FanPWM manual-preview import eligibility', () => {
+    const report = runForFixture();
+    const FANPWM_CONFIG = 'Ceiling-POE-FanPWM';
+
+    test('FanPWM is import + manifest + kit eligible but NOT REQUIRED_CONFIGS eligible', () => {
+        const e = findEntry(report, FANPWM_CONFIG);
+        expect(e).toBeDefined();
+        // Status stays hardware-pending; the eligibility flag is what authorises it.
+        expect(e.status).toBe('hardware-pending');
+        expect(e.shape_issues).toEqual([]);
+        expect(e.effective_eligibility.import.eligible).toBe(true);
+        expect(e.effective_eligibility.manifest.eligible).toBe(true);
+        expect(e.effective_eligibility.kit.eligible).toBe(true);
+        expect(e.effective_eligibility.required_configs.eligible).toBe(false);
+        expect(
+            e.effective_eligibility.required_configs.reasons.some(r =>
+                /production-only/i.test(r)
+            )
+        ).toBe(true);
+        // The import reason must name the manual-preview lane explicitly.
+        expect(
+            e.effective_eligibility.import.reasons.some(r =>
+                /manual-preview lane/i.test(r)
+            )
+        ).toBe(true);
+    });
+
+    test('FanPWM is present in sources + manifest + on disk, absent from REQUIRED_CONFIGS + kits', () => {
+        const e = findEntry(report, FANPWM_CONFIG);
+        expect(e.surface_presence.in_sources).toBe(true);
+        expect(e.surface_presence.in_manifest).toBe(true);
+        expect(e.surface_presence.bin_on_disk).toBe(true);
+        expect(e.surface_presence.sidecar_on_disk).toBe(true);
+        expect(e.surface_presence.in_required_configs).toBe(false);
+        expect(e.surface_presence.in_kits).toBe(false);
     });
 });
 
