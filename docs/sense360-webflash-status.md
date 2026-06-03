@@ -294,6 +294,40 @@ The smoke test is **docs / status only**: it changes no runtime behaviour, no
 install card / kit / kit-preset. See the record's verdict section and
 do-not-change confirmation for the full surface statement.
 
+## Live preview-import smoke checklist (WF-LIVE-SMOKE-PREVIEW-IMPORT-001)
+
+After the first preview firmware batch landed
+(`WF-PREVIEW-IMPORT-FIRST-BATCH-001`), the live / manual smoke checklist for the
+deployed page is recorded at
+[`docs/live-smoke-preview-import.md`](live-smoke-preview-import.md). It verifies
+on the live GitHub Pages deployment that **Simple install stays clean and
+stable-only** while **Advanced install can reach the new preview builds** behind
+the `channel:preview` acknowledgement with working release notes:
+
+- **Simple install** loads without a false manifest-freshness error, shows only
+  the stable Bathroom PoE build (`Ceiling-POE-VentIQ-RoomIQ`), surfaces no
+  AirIQ / room-bundle preview choices, and becomes ready after the single safety
+  confirmation.
+- **Advanced install** can select the preview channel and reach
+  `Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`, and `Ceiling-POE-RoomIQ-LED`
+  — each with the preview warning + acknowledgement, working in-card release
+  notes (no dead links), `preview` channel metadata, and never
+  recommended/default.
+- **TRIAC and fan-driver** (`FanRelay` / `FanPWM` / `FanDAC`) firmware stays
+  absent, candidate bundles stay not-buyable, the existing **VentIQ LED preview**
+  still works, and **Rescue / recovery** stays available.
+
+The deterministic half of the checklist is locked by
+[`__tests__/live-smoke-preview-import.test.js`](../__tests__/live-smoke-preview-import.test.js)
+(exactly six builds, preview builds Advanced-only / acknowledgement-gated, Simple
+install resolves only to stable Bathroom PoE, preview release notes present, no
+TRIAC / fan-driver import, AirIQ availability derived from the manifest, VentIQ
+LED preview preserved); the doc carries the browser-observable rows and a manual
+verification template. The checklist is **docs / verification only** — it imports
+no firmware, changes no `manifest.json` / `firmware/sources.json` /
+`REQUIRED_CONFIGS` / kit, and weakens no provenance / signature / freshness
+check. Current status: **pending — live operator pass required.**
+
 ## WebFlash roadmap
 
 WebFlash is **downstream** of the upstream firmware roadmap. The authoritative

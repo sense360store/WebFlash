@@ -194,6 +194,34 @@ These gate every item below and must not be regressed by any queue PR:
 
 ### Queue
 
+0. **WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — Verify live WebFlash after the preview
+   import.**
+   Status: **PR open — docs + test only.**
+   Purpose: Add and run a live / manual smoke checklist for the deployed
+   GitHub Pages site after the first preview firmware batch
+   (`WF-PREVIEW-IMPORT-FIRST-BATCH-001`) landed. Confirms **Simple install
+   stays clean and stable-only** (`Ceiling-POE-VentIQ-RoomIQ`, no false
+   freshness block, no AirIQ / room-bundle preview leakage) while **Advanced
+   install can reach the new preview builds** (`Ceiling-POE-AirIQ-RoomIQ`,
+   `Ceiling-POE-RoomIQ`, `Ceiling-POE-RoomIQ-LED`) behind the `channel:preview`
+   acknowledgement with working in-card release notes. Adds the checklist +
+   manual verification template at
+   [`docs/live-smoke-preview-import.md`](../docs/live-smoke-preview-import.md)
+   and the deterministic guard
+   [`__tests__/live-smoke-preview-import.test.js`](../__tests__/live-smoke-preview-import.test.js)
+   (exactly six builds, preview Advanced-only / acknowledgement-gated, Simple
+   resolves only to stable Bathroom PoE, preview release notes present, no
+   TRIAC / fan-driver import, AirIQ availability derived from the manifest,
+   VentIQ LED preview preserved, Rescue available). Extends the Simple-only
+   `WF-LIVE-SMOKE-SIMPLE-INSTALL-001` row below into the preview-import surface.
+   Dependencies: None — `WF-PREVIEW-IMPORT-FIRST-BATCH-001` merged (#468). A
+   human incognito visual pass is the recommended (non-blocking) confirmation.
+   Note: **Docs / test only.** No firmware imported, no Simple-install default
+   changed, no preview made recommended/default/stable, no candidate bundle
+   exposed as buyable, no TRIAC / fan-driver import, no provenance / signature /
+   freshness check weakened, no preview warning removed, and the existing
+   VentIQ LED preview was not overwritten.
+
 1. **WF-LIVE-SMOKE-SIMPLE-INSTALL-001 — Verify the live Simple install
    end-state.**
    Status: **Ready — next real work (no upstream dependency).**
