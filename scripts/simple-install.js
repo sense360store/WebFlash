@@ -45,9 +45,12 @@
 import { setState, setStep, getMaxReachableStep } from './state.js';
 import {
     SIMPLE_BUNDLES,
+    FAN_CONTROL_BUNDLES,
     findSimpleBundleById,
     getDefaultSimpleBundle,
-    isSimpleBundlePreview
+    isSimpleBundlePreview,
+    getExposableFanControlBundles,
+    bundleRequiresDacAddressAcknowledgement
 } from './data/simple-bundles.js';
 import { triggerSkipWaitingAndReload } from './services/sw-update.js';
 import { announce } from './utils/a11y.js';
@@ -113,6 +116,13 @@ const BUNDLE_PREVIEW_NOTE_TEXT_SELECTOR = '[data-simple-bundle-preview-note-text
 const FAN_CONTROL_REGION_SELECTOR = '[data-simple-bundle-fan-control]';
 const FAN_CONTROL_ACK_SELECTOR = '[data-simple-bundle-fan-control-ack]';
 const FAN_CONTROL_WARNING_SELECTOR = '[data-simple-bundle-fan-control-warning]';
+// WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 — the third, strongest gate for the
+// 0–10V (analog) fan-control bundles: the installer must confirm the GP8403
+// address-switch setting. Layered ON TOP of the preview + fan-control
+// acknowledgements; never replaces or weakens either. No analog-fan bundle ships
+// today, so this region stays hidden until a future firmware import exposes one.
+const DAC_ADDRESS_REGION_SELECTOR = '[data-simple-bundle-dac-address]';
+const DAC_ADDRESS_ACK_SELECTOR = '[data-simple-bundle-dac-address-ack]';
 // Tech-details fields reflect the selected bundle (kept inside the collapsed
 // "Technical details" disclosure so the always-visible copy stays plain).
 const TECH_SKU_SELECTOR = '[data-simple-install-tech-sku]';
@@ -455,6 +465,17 @@ function bindSafetyConfirmMirror() {
         });
         fanAck.dataset.fanControlAckBound = 'true';
     }
+
+    // The analog-fan address-switch acknowledgement (0–10V fan bundles) also
+    // recomposes the authoritative pre-flash gate and refreshes the hero status.
+    const dacAck = document.querySelector(DAC_ADDRESS_ACK_SELECTOR);
+    if (dacAck && dacAck.dataset.dacAddressAckBound !== 'true') {
+        dacAck.addEventListener('change', () => {
+            syncPreflashFromHero();
+            renderStatus(window.webflashInstallReadiness || lastReadiness);
+        });
+        dacAck.dataset.dacAddressAckBound = 'true';
+    }
 }
 
 /**
@@ -577,13 +598,137 @@ export function renderStatus(readiness) {
 }
 
 /**
+ * Resolve a bundle by id across BOTH the always-present Simple bundles and the
+ * import-gated fan-control bundles. A fan-control bundle only ever has a card to
+ * click once it is exposable (its firmware is in the live manifest), so resolving
+ * it here is safe — but installability still flows through state.js + the live
+ * manifest + every acknowledgement gate.
+ *
+ * @param {string} id
+ * @returns {Object|null}
+ */
+function findAnyBundleById(id) {
+    const fromSimple = findSimpleBundleById(id);
+    if (fromSimple) {
+        return fromSimple;
+    }
+    if (typeof id !== 'string') {
+        return null;
+    }
+    const target = id.trim().toUpperCase();
+    return FAN_CONTROL_BUNDLES.find(bundle => bundle.id.toUpperCase() === target) || null;
+}
+
+/**
  * Resolve the active bundle object, falling back to the default (stable
  * Bathroom PoE) bundle if the tracked id no longer resolves.
  *
  * @returns {Object}
  */
 function getActiveBundle() {
-    return findSimpleBundleById(activeBundleId) || getDefaultSimpleBundle();
+    return findAnyBundleById(activeBundleId) || getDefaultSimpleBundle();
+}
+
+/**
+ * The live manifest's config_string set, published by state.js on manifest load
+ * (`window.webflashManifestConfigStrings`). Absent until the manifest loads (and
+ * in unit fixtures) — then this is an empty list, so no fan-control card is
+ * exposed. Presentation-only: it never gates install.
+ *
+ * @returns {string[]}
+ */
+function getManifestConfigStrings() {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+    const value = window.webflashManifestConfigStrings;
+    return Array.isArray(value) ? value : [];
+}
+
+/**
+ * Build a clickable fan-control bundle card matching the static card markup, so
+ * the existing selection / reflection / a11y wiring treats it identically.
+ * Visible copy stays plain (no config string / SKU); the fan driver is described
+ * in plain language.
+ *
+ * @param {Object} bundle
+ * @returns {HTMLButtonElement}
+ */
+function buildFanControlCard(bundle) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'simple-bundle-card simple-bundle-card--preview simple-bundle-card--fan';
+    card.setAttribute('data-simple-bundle-card', '');
+    card.setAttribute('data-simple-bundle-id', bundle.id);
+    card.setAttribute('data-simple-bundle-channel', 'preview');
+    card.setAttribute('role', 'radio');
+    card.setAttribute('aria-checked', 'false');
+    card.setAttribute('aria-pressed', 'false');
+
+    (bundle.badges || []).forEach((badge) => {
+        const span = document.createElement('span');
+        const tone = /fan/i.test(badge) ? 'danger' : 'warning';
+        span.className = `simple-bundle-card__badge simple-bundle-card__badge--${tone}`;
+        span.textContent = badge;
+        card.appendChild(span);
+    });
+
+    const title = document.createElement('span');
+    title.className = 'simple-bundle-card__title';
+    title.textContent = bundle.displayName;
+    card.appendChild(title);
+
+    const room = document.createElement('span');
+    room.className = 'simple-bundle-card__room';
+    room.textContent = bundle.room;
+    card.appendChild(room);
+
+    const channel = document.createElement('span');
+    channel.className = 'simple-bundle-card__channel simple-bundle-card__channel--preview';
+    channel.textContent = bundleRequiresDacAddressAcknowledgement(bundle)
+        ? 'Preview firmware · extra fan-control + address-switch acknowledgements'
+        : 'Preview firmware · extra fan-control acknowledgement';
+    card.appendChild(channel);
+
+    const summary = document.createElement('ul');
+    summary.className = 'simple-bundle-card__summary';
+    summary.setAttribute('aria-label', 'What is included');
+    (bundle.moduleSummary || []).forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        summary.appendChild(li);
+    });
+    card.appendChild(summary);
+
+    return card;
+}
+
+/**
+ * WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 — inject the import-ready fan-control
+ * bundle cards into the picker. A fan-control card is only ever shown when its
+ * exact firmware config_string is present in the LIVE manifest (the import
+ * prerequisite gate in data/simple-bundles.js); with no matching firmware
+ * imported this injects nothing and the picker keeps exactly the original six
+ * cards. Idempotent — a card is appended at most once.
+ *
+ * @returns {string[]} the ids of the exposable fan-control bundles
+ */
+function injectFanControlCards() {
+    if (typeof document === 'undefined') {
+        return [];
+    }
+    const picker = document.querySelector(BUNDLE_PICKER_SELECTOR);
+    if (!picker) {
+        return [];
+    }
+    const exposable = getExposableFanControlBundles(getManifestConfigStrings());
+    exposable.forEach((bundle) => {
+        const existing = picker.querySelector(`[data-simple-bundle-id="${bundle.id}"]`);
+        if (!existing) {
+            picker.appendChild(buildFanControlCard(bundle));
+        }
+    });
+    return exposable.map(bundle => bundle.id);
 }
 
 /**
@@ -620,6 +765,35 @@ function fanControlSatisfied() {
 }
 
 /**
+ * True only when the active bundle's analog-fan address-switch acknowledgement is
+ * satisfied (or the active bundle does not drive an analog fan). Used — together
+ * with fanControlSatisfied() — to compose the authoritative pre-flash gate so a
+ * 0–10V fan bundle stays blocked until the GP8403 address-switch acknowledgement
+ * is checked. This is an ADDITIONAL requirement; it never weakens the gate.
+ *
+ * @returns {boolean}
+ */
+function dacAddressSatisfied() {
+    const bundle = getActiveBundle();
+    if (!bundle || !bundleRequiresDacAddressAcknowledgement(bundle)) {
+        return true;
+    }
+    const ack = document.querySelector(DAC_ADDRESS_ACK_SELECTOR);
+    return Boolean(ack && ack.checked);
+}
+
+/**
+ * True only when EVERY extra Simple-install acknowledgement the active bundle
+ * requires (fan-control, then analog-fan address-switch) is satisfied. Composed
+ * into the authoritative pre-flash gate alongside the hero safety confirmation.
+ *
+ * @returns {boolean}
+ */
+function extraAcknowledgementsSatisfied() {
+    return fanControlSatisfied() && dacAddressSatisfied();
+}
+
+/**
  * Compose the authoritative "Before you flash" acknowledgement
  * ([data-preflash-acknowledge], read by state.js) from the hero safety
  * confirmation AND the fan-control acknowledgement (when the active bundle
@@ -637,7 +811,7 @@ function syncPreflashFromHero() {
         return;
     }
     const hero = document.querySelector(CONFIRM_SELECTOR);
-    const desired = Boolean(hero && hero.checked) && fanControlSatisfied();
+    const desired = Boolean(hero && hero.checked) && extraAcknowledgementsSatisfied();
     if (real.checked !== desired) {
         programmaticPreflashUpdate = true;
         real.checked = desired;
@@ -751,6 +925,22 @@ function renderSelectedBundle(bundle) {
         }
     }
 
+    // Analog-fan address-switch region: the strongest gate, shown only for the
+    // 0–10V (analog) fan bundles. When the active bundle does not require it,
+    // clear the stored ack so a future reselection re-prompts.
+    const requiresDacAddress = bundleRequiresDacAddressAcknowledgement(bundle);
+    const dacRegion = document.querySelector(DAC_ADDRESS_REGION_SELECTOR);
+    if (dacRegion) {
+        dacRegion.hidden = !requiresDacAddress;
+        dacRegion.setAttribute('aria-hidden', String(!requiresDacAddress));
+    }
+    if (!requiresDacAddress) {
+        const dacAck = document.querySelector(DAC_ADDRESS_ACK_SELECTOR);
+        if (dacAck && dacAck.checked) {
+            dacAck.checked = false;
+        }
+    }
+
     syncBundleCards(bundle.id);
 }
 
@@ -766,7 +956,7 @@ function renderSelectedBundle(bundle) {
  * @returns {Object}
  */
 function selectBundle(bundleId, { advance = true } = {}) {
-    const bundle = findSimpleBundleById(bundleId) || getDefaultSimpleBundle();
+    const bundle = findAnyBundleById(bundleId) || getDefaultSimpleBundle();
     activeBundleId = bundle.id;
 
     if (bundle.wizardState) {
@@ -807,7 +997,9 @@ function announceBundleSelection(bundle) {
         return;
     }
     let message = `${bundle.displayName} selected.`;
-    if (bundle.requiresFanControlAcknowledgement) {
+    if (bundleRequiresDacAddressAcknowledgement(bundle)) {
+        message += ' Preview firmware with 0–10V fan control. Review and accept the preview, fan-control, and analog-fan address-switch acknowledgements before installing.';
+    } else if (bundle.requiresFanControlAcknowledgement) {
         message += ' Preview firmware with fan control. Review and accept the preview and fan-control acknowledgements before installing.';
     } else if (bundle.requiresPreviewAcknowledgement) {
         message += ' Preview firmware. Review and accept the preview acknowledgement before installing.';
@@ -1078,6 +1270,10 @@ function subscribeReadiness() {
         return;
     }
     document.addEventListener('webflash:install-readiness-changed', (event) => {
+        // The manifest is loaded by the time readiness first fires, so re-run the
+        // (idempotent) fan-control card injection: any newly-importable bundle
+        // gains a card without a reload. Today this injects nothing.
+        injectFanControlCards();
         renderStatus(event && event.detail ? event.detail : null);
     });
 }
@@ -1094,6 +1290,10 @@ export function initSimpleInstall() {
     subscribeReadiness();
     bindSafetyConfirmMirror();
     bindTechnicalDetailsDisclosure();
+    // WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 — inject any import-ready fan-control
+    // bundle cards (none today; the gate keys off the live manifest). Re-run on
+    // the first readiness broadcast once the manifest has loaded.
+    injectFanControlCards();
     const mode = resolveInitialMode();
     applyMode(mode, { persist: false });
 }
@@ -1129,6 +1329,13 @@ export const __testHooks = Object.freeze({
     renderSelectedBundle,
     syncPreflashFromHero,
     fanControlSatisfied,
+    dacAddressSatisfied,
+    extraAcknowledgementsSatisfied,
+    findAnyBundleById,
+    getManifestConfigStrings,
+    injectFanControlCards,
+    buildFanControlCard,
+    FAN_CONTROL_BUNDLES,
     bundleArtifactName,
     announceBundleSelection,
     SIMPLE_BUNDLES,

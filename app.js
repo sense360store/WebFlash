@@ -25,7 +25,11 @@ import "./scripts/kit-presets.js";
 // wizard-style.css gained the simple-mode collapse rules. Bump the token past
 // 20260601 → 202606012 in lockstep (index.html assets, bootstrap loader, sw.js
 // CACHE_NAME) so neither the module nor the CSS is served stale.
-import "./scripts/simple-install.js?v=202606015";
+// WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 — simple-install.js gained import-gated
+// fan-control card injection + the analog-fan address-switch acknowledgement
+// wiring, so bump the token again (202606015 → 202606016) in lockstep with the
+// index.html assets, the bootstrap loader, and the sw.js CACHE_NAME (webflash-v13).
+import "./scripts/simple-install.js?v=202606016";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";

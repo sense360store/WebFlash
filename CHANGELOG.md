@@ -7,6 +7,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Fan-control room bundles in Simple install (WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001).**
+  Declared and **import-gated** the five full-composition fan-control room
+  bundles from upstream `ROOM-BUNDLE-FAN-CONFIGS-001` (esphome-public #713):
+  `S360-KIT-BATH-P-PWM` (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`), `S360-KIT-BATH-P-DAC`
+  (`Ceiling-POE-VentIQ-FanDAC-RoomIQ`), `S360-KIT-KITCHEN-P-REL`
+  (`Ceiling-POE-AirIQ-FanRelay-RoomIQ`), `S360-KIT-KITCHEN-P-PWM`
+  (`Ceiling-POE-AirIQ-FanPWM-RoomIQ`), and `S360-KIT-KITCHEN-P-DAC`
+  (`Ceiling-POE-AirIQ-FanDAC-RoomIQ`). Added `FAN_CONTROL_BUNDLES` plus the
+  import-readiness gate (`isFanControlBundleImportReady` /
+  `getExposableFanControlBundles` / `isFullRoomBundle` / `validateFanControlBundle`
+  / `bundleRequiresDacAddressAcknowledgement`) to
+  [`scripts/data/simple-bundles.js`](scripts/data/simple-bundles.js); a
+  fan-control card is exposed **only** when its exact firmware `config_string` is
+  present in the live `manifest.json`. Extended
+  [`scripts/simple-install.js`](scripts/simple-install.js) to inject import-ready
+  fan-control cards into the picker and to AND a third **analog-fan
+  address-switch** acknowledgement (GP8403 IC1 `0x58` / IC2 `0x5A`; `0x59`
+  forbidden) into the authoritative pre-flash gate alongside the fan-control
+  acknowledgement; added the staged `[data-simple-bundle-dac-address]` region to
+  [`index.html`](index.html); published the live manifest config-string set as the
+  additive `window.webflashManifestConfigStrings` global from
+  [`scripts/state.js`](scripts/state.js). Bumped `CACHE_NAME` (`webflash-v13`), the
+  cache-bust token (`202606016`), and the app-shell marker (`2026-06-01-6`). Added
+  [`__tests__/wf-easy-bundle-picker-fan-expansion.test.js`](__tests__/wf-easy-bundle-picker-fan-expansion.test.js)
+  and [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](docs/live-smoke-easy-bundle-picker-fan-expansion.md);
+  updated `docs/live-smoke-easy-bundle-picker.md`,
+  `docs/webflash-import-readiness-matrix.md`, `docs/sense360-webflash-status.md`,
+  and `UPCOMING_PR.md`. **No firmware imported** — upstream #713 published no
+  artifact (compile-pending), so today the gate returns nothing and the picker
+  shows exactly the six base bundles. `manifest.json` (9 builds),
+  `firmware/sources.json`, `REQUIRED_CONFIGS`, `scripts/data/kits.json`, and the
+  install / preflight / provenance / signature / freshness engines are unchanged.
+  TRIAC stays excluded; the FanDAC address switch (`FANDAC-I2C-ADDR-001`) is not
+  claimed physically verified. No preview bundle made stable / default /
+  recommended / buyable; no hardware / bench / compliance / safety /
+  commercial-availability proof claimed.
 - **Simple-install bundle picker (WF-EASY-BUNDLE-PICKER-001).** Turned the
   default **Simple install** view from a single fixed Bathroom PoE path into an
   easy **bundle picker** over the supported customer bundle products. The stable

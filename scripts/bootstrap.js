@@ -9,7 +9,7 @@
 // (always revalidated) references it with the same token; the token then flows
 // down to app.js and the changed modules it imports. Keep APP_SHELL_BUILD in
 // lockstep with the `?v=` query in index.html and the sw.js CACHE_NAME.
-const APP_SHELL_BUILD = '202606015';
+const APP_SHELL_BUILD = '202606016';
 const { pathname } = window.location;
 const inRepoSubpath = pathname === '/WebFlash' || pathname.startsWith('/WebFlash/');
 const scriptPath = inRepoSubpath ? '/WebFlash/app.js' : '/app.js';

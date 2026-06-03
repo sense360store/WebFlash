@@ -1529,6 +1529,17 @@ function buildManifestContext(manifest) {
 
     const builds = Array.isArray(manifest?.builds) ? manifest.builds : [];
 
+    // WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 — expose the live manifest's
+    // config_string set so presentation-only surfaces (the Simple-install bundle
+    // picker) can import-gate optional fan-control bundle cards on the firmware
+    // that has actually shipped. Additive + presentation-only: no install gate
+    // reads this, and an absent global degrades to "no optional cards".
+    if (typeof window !== 'undefined') {
+        window.webflashManifestConfigStrings = builds
+            .map(build => (build && typeof build.config_string === 'string' ? build.config_string : null))
+            .filter(Boolean);
+    }
+
     builds.forEach((build, index) => {
         const buildWithIndex = { ...build, manifestIndex: index };
         buildWithIndex.firmwareId = getFirmwareId(buildWithIndex);
