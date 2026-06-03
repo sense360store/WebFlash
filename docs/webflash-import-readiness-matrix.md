@@ -255,7 +255,7 @@ WF-WIZARD-AVAIL-001, amended by [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001
 - `Sense360 VentIQ` (S360-211) → `available-stable`
 - `Sense360 LED` (S360-300) → `available-preview`
 - `Sense360 AirIQ` (S360-210) → `no-firmware`
-- `Sense360 Relay` (S360-310) → `design-pending`
+- `Sense360 Relay` (S360-310) → `available-preview` (WEBFLASH-RELAY-001 — FanRelay manual-preview build imported)
 - `Sense360 PWM` (S360-311) → `no-firmware`
 - `Sense360 DAC` (S360-312) → `no-firmware`
 - `Sense360 TRIAC` (S360-320) → `advanced-manual-warning` (per WF-TRIAC-001 — visible + selectable in the custom path, gated by an inline acknowledgement; install still blocked because no FanTRIAC artifact has been imported)
@@ -274,7 +274,7 @@ describe the contract a future per-family import PR must satisfy.
 
 | Candidate family | Required upstream release | Current upstream gate status | Current WebFlash source / import status | Current manifest status | Allowed import action now | Future import class | `REQUIRED_CONFIGS` eligibility | Kit / recommended eligibility | Runtime UX gate | Follow-up owner |
 |---|---|---|---|---|:---:|---|---|---|---|---|
-| Relay / S360-310 | `RELEASE-RELAY-001` | `missing-upstream-release-artifact`, `missing-upstream-product-yaml`, `missing-upstream-webflash-wrapper`, `missing-hardware-evidence` (no S360-310 schematic uploaded) | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-RELAY-001` after `RELEASE-RELAY-001` |
+| Relay / S360-310 | upstream `v1.0.0-preview` artifact + #711 `webflash_import_eligibility.eligible=true` | **import-eligible** via #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`); catalog `status: hardware-pending` + `webflash_build_matrix: false` (stable / full release still blocked) | **imported** — `firmware/sources.json` FanRelay preview source (`block_tokens: ["FanTRIAC", "LED"]`) | **present** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` preview build | **imported (WEBFLASH-RELAY-001)** | `preview import` (landed) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` (live) | **WEBFLASH-RELAY-001 — landed** |
 | PWM / S360-311 | `RELEASE-PWM-001` | `missing-upstream-release-artifact`; S360-311-R4 schematic upstream but no WebFlash build | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-PWM-001` after `RELEASE-PWM-001` |
 | DAC / S360-312 | `RELEASE-DAC-001` | `missing-upstream-release-artifact`; S360-312-R4 schematic upstream but no WebFlash build; FanDAC ↔ AirIQ mutex remains upstream policy | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | `WF-IMPORT-DAC-001` after `RELEASE-DAC-001` |
 | TRIAC / S360-320 | `RELEASE-TRIAC-001` | `blocked-from-standard-import` at the importer layer under HW-005 + COMPLIANCE-001; S360-320-R4 schematic exists but mains-side compliance and timing evidence incomplete; `firmware/sources.json` `block_tokens` keeps `FanTRIAC` excluded from every active source. Wizard-side runtime UX precondition satisfied by [WF-TRIAC-001](wizard-ux-roadmap.md#wf-triac-001--landed) (`advanced-manual-warning` availability state + inline ack region). | none (FanTRIAC import-blocked) | none | **none** | `advanced / manual-warning import only` (runtime UX live, upstream gate pending) | `not-required-configs` (never by default) | `not-kit-default`, `not-recommended` (never by default) | `advanced-warning-required` (live — WF-TRIAC-001) | `WF-IMPORT-TRIAC-001` after `RELEASE-TRIAC-001`; `WF-TRIAC-001` runtime UX precondition satisfied |
@@ -289,23 +289,30 @@ only. Per-family postures below expand each row.
 
 ## Relay / S360-310 import posture
 
-- **Today:** `module-availability.js` classifies Relay as
-  `design-pending` because no S360-310 schematic has been uploaded
-  upstream. There is no upstream product YAML, no WebFlash wrapper,
-  no upstream release artifact, and no
-  `firmware/sources.json` declaration. `manifest.json` carries no
-  Relay build; `__tests__/manifest-required-configs.test.js` and
-  `__tests__/product-catalog-alignment.test.js` continue to enforce
-  the absence.
-- **Allowed import action now:** none. WF-IMPORT-GAP-001 imports
-  nothing.
-- **Future import class:** `preview import candidate` (after the
-  upstream package / product / wrapper / release gates clear).
-- **`REQUIRED_CONFIGS` eligibility:** `not-required-configs` by
-  default. Even after a preview import lands, Relay would only
-  become `REQUIRED_CONFIGS`-eligible after upstream promotes the
-  matching catalog entry to `status: production` *and* a deliberate
-  `WF-REQUIRED-001`-class PR adds it.
+- **Landed (WEBFLASH-RELAY-001):** `module-availability.js` now classifies
+  Relay as `available-preview`. A FanRelay manual-preview build
+  (`Ceiling-POE-VentIQ-FanRelay-RoomIQ`) has been imported from upstream
+  `v1.0.0-preview` and is present in `firmware/sources.json` +
+  `manifest.json`. The import was authorised **not** by a catalog
+  `status: preview` promotion but by upstream #711
+  (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`), which set
+  `webflash_import_eligibility.eligible=true` in
+  `config/preview-release-targets.json` while keeping the catalog status
+  `hardware-pending` and `webflash_build_matrix: false` (no committed
+  upstream build row). WebFlash's catalog-alignment guard +
+  `scripts/validate-product-import-readiness.js` recognise that explicit
+  flag for import / manifest / kit eligibility (via the manual-preview
+  lane), never for `REQUIRED_CONFIGS`.
+- **Allowed import action now:** done — the FanRelay preview is imported as
+  an Advanced-install-only, acknowledgement-gated build.
+- **Future import class:** `preview import` (landed). Stable / full release
+  stays blocked on the mains-safety / installation-approval / creepage /
+  clearance evidence + competent-person sign-off + GPIO3 strap-pin boot
+  characterisation recorded in the upstream `stable_blocker`.
+- **`REQUIRED_CONFIGS` eligibility:** `not-required-configs`. The preview
+  import does **not** make Relay `REQUIRED_CONFIGS`-eligible — that requires
+  upstream promoting the catalog entry to `status: production` *and* a
+  deliberate `WF-REQUIRED-001`-class PR.
 - **Kit / recommended eligibility:** `not-kit-default`,
   `not-recommended` by default. A Relay kit is a separate UX /
   product decision and is not pre-decided here.

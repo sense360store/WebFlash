@@ -2167,9 +2167,9 @@ function initializeWizard() {
         ensureSingleActiveWizardStep();
         updateFirmwareControls();
         // Render the static availability pills (advanced/manual-warning
-        // TRIAC, design-pending Relay, no-firmware AirIQ/PWM/DAC) before the
-        // manifest finishes loading so the customer never sees a flash of
-        // "everything looks installable" copy at first paint.
+        // TRIAC, available-preview Relay (WEBFLASH-RELAY-001), no-firmware
+        // PWM/DAC) before the manifest finishes loading so the customer never
+        // sees a flash of "everything looks installable" copy at first paint.
         updateModuleVariantAvailability();
     } catch (error) {
         console.error('Failed to finalize wizard initialization:', error);

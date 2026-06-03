@@ -119,9 +119,11 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — supported targets match m
 });
 
 describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays blocked', () => {
-    const fanTokens = ['FanPWM', 'FanRelay', 'FanDAC'];
+    // WEBFLASH-RELAY-001 — FanRelay is now an exposed manual-preview (see the
+    // dedicated describe block below). FanPWM / FanDAC / FanTRIAC stay out.
+    const fanTokens = ['FanPWM', 'FanDAC', 'FanTRIAC'];
 
-    test('no fan-driver firmware is exposed in manifest.json', () => {
+    test('no FanPWM/FanDAC/FanTRIAC firmware is exposed in manifest.json', () => {
         for (const build of manifestBuilds) {
             const cs = build.config_string || '';
             for (const token of fanTokens) {
@@ -130,7 +132,7 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays bl
         }
     });
 
-    test('no fan-driver firmware has a firmware/sources.json source entry', () => {
+    test('no FanPWM/FanDAC/FanTRIAC firmware has a firmware/sources.json source entry', () => {
         for (const entry of sources.sources || []) {
             const cs = entry.config_string || '';
             const asset = entry.asset_name || '';
@@ -154,5 +156,40 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays bl
         expect(canonicalDoc.toLowerCase()).toContain('blocked');
         // No "S360-410 ... verified" claim may appear.
         expect(canonicalDoc).not.toMatch(/S360-410[^.\n]*\bverified\b/i);
+    });
+});
+
+describe('WEBFLASH-RELAY-001 — FanRelay is an exposed manual-preview, not a customer default', () => {
+    const FANRELAY_CONFIG = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
+
+    test('FanRelay IS in manifest.json on the preview channel', () => {
+        const build = manifestByConfig.get(FANRELAY_CONFIG);
+        expect(build).toBeDefined();
+        expect(build.channel).toBe('preview');
+    });
+
+    test('FanRelay has a firmware/sources.json source entry that still blocks FanTRIAC + LED', () => {
+        const entry = (sources.sources || []).find(
+            s => s.config_string === FANRELAY_CONFIG
+        );
+        expect(entry).toBeDefined();
+        expect(entry.channel).toBe('preview');
+        expect(entry.block_tokens).toEqual(['FanTRIAC', 'LED']);
+    });
+
+    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only)', () => {
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(FANRELAY_CONFIG);
+    });
+
+    test('the doc records FanRelay as a preview / manual-preview, Advanced-install-only target', () => {
+        expect(canonicalDoc).toMatch(/FanRelay|S360-310/);
+        // The doc must frame FanRelay as preview / manual-preview, not stable.
+        expect(canonicalDoc.toLowerCase()).toMatch(/manual-preview|preview/);
+        // It must steer normal customers to the stable Bathroom PoE build and
+        // make no hardware/compliance claim for FanRelay.
+        expect(canonicalDoc.toLowerCase()).toMatch(
+            /not for normal customers|advanced install|advanced-install/
+        );
     });
 });

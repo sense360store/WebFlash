@@ -7,6 +7,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **FanRelay preview firmware import (WEBFLASH-RELAY-001).** Imported the upstream
+  `Ceiling-POE-VentIQ-FanRelay-RoomIQ` manual-preview firmware from the shared
+  `sense360store/esphome-public` `v1.0.0-preview` release (SHA256
+  `f9600a6b…d026ca4`, 989,840 bytes) as an **Advanced-install-only, preview /
+  manual-preview** option. The import was authorised by upstream PR #711
+  (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`), which set
+  `webflash_import_eligibility.eligible=true` in
+  `config/preview-release-targets.json` while keeping the catalog status
+  `hardware-pending` and `webflash_build_matrix=false`. Added a
+  `firmware/sources.json` source entry (`channel: preview`, pinned
+  `expected_sha256`, `block_tokens: ["FanTRIAC", "LED"]`), staged the `.bin` +
+  `.meta.json` sidecar, and regenerated `manifest.json` (6 → **7 builds**) +
+  `firmware-*.json`. `Sense360 Relay` (S360-310) moves from `design-pending` to
+  `available-preview` in `scripts/utils/module-availability.js` with a bespoke
+  installer/developer-preview warning. Taught the catalog-alignment guard
+  (`__tests__/product-catalog-alignment.test.js`) and the readiness validator
+  (`scripts/validate-product-import-readiness.js`) to recognise the new
+  `webflash_import_eligibility.eligible` signal for import / manifest / kit
+  eligibility — **never** for `REQUIRED_CONFIGS` (production-only) and **never**
+  when `eligible !== true` (FanTRIAC stays rejected). Full import-proof record at
+  `docs/fanrelay-preview-import-proof.md`. **Unchanged:** Simple install (still
+  stable Bathroom PoE `Ceiling-POE-VentIQ-RoomIQ` only), `REQUIRED_CONFIGS`
+  (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` /
+  `kit-presets.js`, the FanTRIAC block, the WF-LED-003 preview acknowledgement
+  model, and every install / preflight / freshness gate. **No FanPWM / FanDAC /
+  FanTRIAC imported; no hardware / bench / compliance / safety /
+  commercial-availability proof claimed.**
 - **Live preview-import smoke checklist (WF-LIVE-SMOKE-PREVIEW-IMPORT-001).**
   Added a live / manual smoke checklist at `docs/live-smoke-preview-import.md`
   (with a manual verification template) to verify the deployed GitHub Pages site

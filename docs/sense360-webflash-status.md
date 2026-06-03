@@ -48,10 +48,11 @@ has no imported artifact.
 | **AirIQ preview** — `Ceiling-POE-AirIQ-RoomIQ` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001). Never auto-selected; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default. | No |
 | **RoomIQ preview** — `Ceiling-POE-RoomIQ` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Same preview gate + posture. | No |
 | **RoomIQ + LED preview** — `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Distinct from the VentIQ LED preview. Same preview gate + posture. | No |
+| **FanRelay preview** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-RELAY-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Fan relay control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
 | **Rescue** — `Rescue` | `rescue` | 1.0.0 | Recovery / unbricking build, reached via the recovery path + rescue modal. WebFlash-owned. | **Yes** |
 
 `REQUIRED_CONFIGS` is **production-only**: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
-None of the four preview builds is on the allowlist — a `preview` catalog status
+None of the five preview builds is on the allowlist — a `preview` catalog status
 is import / manifest / kit eligible but never `REQUIRED_CONFIGS` eligible. The
 default **Simple install** path resolves only to the stable Bathroom PoE build
 (`Ceiling-POE-VentIQ-RoomIQ`); the preview builds appear only in the Advanced /
@@ -91,8 +92,44 @@ ships from `v1.0.0-led-preview`, and re-importing the same-named file would
 overwrite a published `.bin` and break the existing LED preview.
 `REQUIRED_CONFIGS` stays `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`
 (production-only), `scripts/data/kits.json` stays Release-One-only, the candidate
-room bundles stay hidden / not buyable, and **no TRIAC and no fan-driver
-(FanRelay / FanPWM / FanDAC) firmware was imported.**
+room bundles stay hidden / not buyable, and **the first batch imported no TRIAC
+and no fan-driver firmware** (FanRelay was imported later, by WEBFLASH-RELAY-001
+— see the next section; FanPWM / FanDAC / FanTRIAC remain unimported).
+
+## FanRelay manual-preview (WEBFLASH-RELAY-001)
+
+WebFlash imported the **FanRelay** manual-preview build from the same upstream
+[`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview)
+release after upstream PR #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`)
+marked it **WebFlash-import eligible** — `webflash_import_eligibility.eligible=true`
+in upstream `config/preview-release-targets.json` — while keeping the
+`product-catalog.json` lifecycle status at `hardware-pending` and
+`webflash_build_matrix=false` (no committed upstream build row). That structured
+import-eligibility flag is the authorisation WebFlash honours for import /
+manifest / kit eligibility; it is **never** honoured for `REQUIRED_CONFIGS`
+(production-only), and FanTRIAC stays `eligible=false` / excluded.
+
+| Config string | Asset | SHA256 | Size (bytes) |
+|---|---|---|---|
+| `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin` | `f9600a6b…d026ca4` | 989,840 |
+
+Provenance (in the `.meta.json` sidecar): upstream
+`sense360store/esphome-public@v1.0.0-preview`, source git sha
+`0963afb9c9582f5021019d1635421e41c9dd10f6`, ESPHome `2026.4.5`, hosted compile
+proof run `26821900127`. The `.bin` was SHA-256-verified against the upstream
+`checksums-sha256.txt` **and** the source entry's pinned `expected_sha256`. The
+source entry carries `block_tokens: ["FanTRIAC", "LED"]`.
+
+**Posture — preview / manual-preview only.** Fan relay control is an
+installer / developer preview: **preview / manual-preview firmware**, **not for
+normal customers**, exposed only in the **Advanced install** path behind the
+`channel:preview` acknowledgement. **Not** stable, **not** recommended, **not**
+a customer default, **not** a kit, **not** buyable as a public shop product, and
+**never** auto-selected. **No** hardware, bench, compliance, safety, or
+commercial-availability proof is claimed. Normal customers should use the stable
+Bathroom PoE build `Ceiling-POE-VentIQ-RoomIQ`. **FanPWM / FanDAC / FanTRIAC were
+not imported** (FanPWM / FanDAC are upstream-import-eligible but out of scope for
+this slice; FanTRIAC stays build-blocked and excluded).
 
 ## Module availability snapshot
 
@@ -107,7 +144,7 @@ The classifier is **not** the install gate. Current per-SKU state:
 | S360-211 | Sense360 VentIQ | `available-stable` | Part of Release-One (Bathroom toggle). |
 | S360-300 | Sense360 LED | `available-preview` | **Preview-only — not stable.** Derived from the LED preview build behind the preview acknowledgement. |
 | S360-210 | Sense360 AirIQ | `available-preview` | **Preview-only — not stable.** Derived from the `Ceiling-POE-AirIQ-RoomIQ` preview build (WF-PREVIEW-IMPORT-FIRST-BATCH-001) behind the preview acknowledgement. The static `no-firmware` override was removed once the build shipped. |
-| S360-310 | Sense360 Relay | `design-pending` | No S360-310 schematic uploaded upstream. |
+| S360-310 | Sense360 Relay | `available-preview` | **Preview / manual-preview — Advanced install only (WEBFLASH-RELAY-001).** Derived from the `Ceiling-POE-VentIQ-FanRelay-RoomIQ` preview build behind the `channel:preview` acknowledgement. **Not for normal customers**, not stable, not a kit, not recommended. No hardware / bench / compliance / safety proof claimed. |
 | S360-311 | Sense360 PWM (**FanPWM**) | `no-firmware` | **Hidden / not release-ready.** Schematic exists upstream; no WebFlash build ships. No install card. |
 | S360-312 | Sense360 DAC | `no-firmware` | Schematic exists upstream; no WebFlash build ships. |
 | S360-320 | Sense360 TRIAC | `advanced-manual-warning` | Selectable in the custom path behind an in-installer warning gate (WF-TRIAC-001). **Not** compliance-certified, **not** import-allowed, **not** Release-One. |
@@ -122,9 +159,10 @@ true and visible:
 1. **FanPWM (S360-311) stays hidden / not release-ready.** Classified
    `no-firmware`; no install card; no manifest build; no source entry. Importing
    it is gated behind upstream `RELEASE-PWM-001` and the reserved
-   `WF-IMPORT-PWM-001` follow-up. (The sibling fan drivers — Relay / DAC / TRIAC
-   — are likewise not release-selectable; TRIAC is selectable only behind the
-   WF-TRIAC-001 advanced/manual-warning gate and remains import-blocked.)
+   `WF-IMPORT-PWM-001` follow-up. (Among the sibling fan drivers, **Relay** is now
+   an Advanced-install **preview** under WEBFLASH-RELAY-001 — not release-selectable,
+   not a kit/default; **DAC** stays `no-firmware`; **TRIAC** is selectable only
+   behind the WF-TRIAC-001 advanced/manual-warning gate and remains import-blocked.)
 2. **LED (S360-300) stays preview-only.** The `Ceiling-POE-VentIQ-RoomIQ-LED`
    build ships on the `preview` channel and installs only after the
    `channel:preview` acknowledgement. It is **not** marked stable, **not** in
@@ -151,8 +189,8 @@ true and visible:
 
 ## Current release version(s)
 
-WebFlash ships from `manifest.json`, which today carries exactly six builds.
-All six are at version **1.0.0**:
+WebFlash ships from `manifest.json`, which today carries exactly seven builds.
+All seven are at version **1.0.0**:
 
 | Config string | Channel | Version | Upstream release tag | Release-selectable? |
 |---|---|---|---|---|
@@ -161,22 +199,26 @@ All six are at version **1.0.0**:
 | `Ceiling-POE-AirIQ-RoomIQ` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
 | `Ceiling-POE-RoomIQ` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
 | `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
+| `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview / manual-preview** (Advanced install only; `channel:preview` acknowledgement) — WEBFLASH-RELAY-001 |
 | `Rescue` | `rescue` | 1.0.0 | _(built in-tree under `firmware/rescue/`)_ | Recovery path only |
 
 - **Release-selectable target:** `Ceiling-POE-VentIQ-RoomIQ` (stable) — the only
   Simple-install / customer-default path.
 - **Preview targets (Advanced install, `channel:preview` acknowledgement):**
-  `Ceiling-POE-VentIQ-RoomIQ-LED` (S360-300 LED ring), plus the first preview
+  `Ceiling-POE-VentIQ-RoomIQ-LED` (S360-300 LED ring), the first preview
   batch `Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`, and
-  `Ceiling-POE-RoomIQ-LED` (WF-PREVIEW-IMPORT-FIRST-BATCH-001). All are
-  firmware-build-proof only — **not** hardware-verified, **not** stable, **not**
-  recommended, **not** a customer default, and **not** buyable as a public shop
-  product.
-- **Blocked / not WebFlash-exposed targets:** FanPWM (S360-311), FanRelay
-  (S360-310), FanDAC (S360-312), FanTRIAC (S360-320), and any broader PoE
-  bundle expansion that depends on S360-410 evidence. None of these has a
-  `manifest.json` build, a `firmware/sources.json` source entry, an install
-  card, or a release artifact in this repo.
+  `Ceiling-POE-RoomIQ-LED` (WF-PREVIEW-IMPORT-FIRST-BATCH-001), plus the
+  FanRelay manual-preview `Ceiling-POE-VentIQ-FanRelay-RoomIQ` (S360-310;
+  WEBFLASH-RELAY-001). All are firmware-build-proof only — **not**
+  hardware-verified, **not** stable, **not** recommended, **not** a customer
+  default, and **not** buyable as a public shop product. FanRelay is an
+  installer / developer preview and **not for normal customers**.
+- **Blocked / not WebFlash-exposed targets:** FanPWM (S360-311), FanDAC
+  (S360-312), FanTRIAC (S360-320), and any broader PoE bundle expansion that
+  depends on S360-410 evidence. None of these has a `manifest.json` build, a
+  `firmware/sources.json` source entry, an install card, or a release artifact
+  in this repo. (FanPWM / FanDAC are upstream-import-eligible as previews but
+  were not imported by WEBFLASH-RELAY-001; FanTRIAC stays build-blocked.)
 
 ## Bundle SKU mapping
 

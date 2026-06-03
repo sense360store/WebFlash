@@ -1,0 +1,38 @@
+{
+  "changelog": [
+    "Publish manual-preview firmware for `Ceiling-POE-VentIQ-FanRelay-RoomIQ` as `Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin`.",
+    "Publish manual-preview firmware for `Ceiling-POE-FanPWM` as `Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin`.",
+    "Publish manual-preview firmware for `Ceiling-POE-FanDAC` as `Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin`."
+  ],
+  "known_issues": [
+    "PREVIEW firmware only: not stable, not recommended, not a customer default, not hardware verified, and not buyable.",
+    "Hardware, bench, mains-safety, and compliance evidence remain stable-only blockers; no such proof is claimed by this release.",
+    "`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` is excluded because `HW-005` still blocks buildability.",
+    "These artifacts are not WebFlash one-click imports and are not added to `config/webflash-builds.json`."
+  ],
+  "features": [
+    "Manual-preview delivery lane for `Ceiling-POE-VentIQ-FanRelay-RoomIQ`.",
+    "Manual-preview delivery lane for `Ceiling-POE-FanPWM`.",
+    "Manual-preview delivery lane for `Ceiling-POE-FanDAC`."
+  ],
+  "hardware_requirements": [
+    "`Ceiling-POE-VentIQ-FanRelay-RoomIQ` uses `products/sense360-ceiling-poe-ventiq-fanrelay-roomiq.yaml`; stable blocker remains: Mains-safety / installation-approval / creepage / clearance evidence + competent-person sign-off + GPIO3 strap-pin boot characterisation.",
+    "`Ceiling-POE-FanPWM` uses `products/sense360-ceiling-poe-fanpwm.yaml`; stable blocker remains: Measured current / thermal evidence (S360-311-CURRENT-THERMAL-001). RPM / TachIO is not claimed (rpm_supported: false).",
+    "`Ceiling-POE-FanDAC` uses `products/sense360-ceiling-poe-fandac.yaml`; stable blocker remains: Cloudlift S12 / J3 harness + product-bench evidence; S360-312 schematic / BOM."
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": true,
+  "source": {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.0-preview",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview",
+    "source_asset_name": "Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin",
+    "source_asset_sha256": "f9600a6b7891b520eff28314a001ff3b0d566224d3ab7d82de2e15242d026ca4",
+    "source_manifest_git_sha": "0963afb9c9582f5021019d1635421e41c9dd10f6",
+    "source_manifest_esphome_version": "2026.4.5",
+    "imported_at": "2026-06-03T15:50:56+00:00"
+  }
+}

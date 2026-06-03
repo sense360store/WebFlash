@@ -215,6 +215,45 @@
       "notes": "Real upstream Living-room / Corridor candidate-bundle preview (one buildable RoomIQ + LED firmware shared by the Living and Corridor bundles). DISTINCT from the published VentIQ LED preview Ceiling-POE-VentIQ-RoomIQ-LED, which is unchanged. Build-proofed by run 26821900127 (ESPHome 2026.4.5) and published as a binary in the upstream v1.0.0-preview release. WebFlash imported this preview binary in the first preview batch: preview-channel only (acknowledgement-gated), never stable / recommended / customer-default, never in REQUIRED_CONFIGS or kits. LED stays preview; stable stays blocked by S360-410 schematic verification + the LED preview-to-stable gauntlet. Firmware-build proof only — no hardware / bench / compliance / commercial-availability proof is claimed."
     },
     {
+      "config_string": "Ceiling-POE-VentIQ-FanRelay-RoomIQ",
+      "status": "hardware-pending",
+      "version": "1.0.0",
+      "channel": "preview",
+      "delivery_lane": "manual-preview",
+      "product_yaml": "products/sense360-ceiling-poe-ventiq-fanrelay-roomiq.yaml",
+      "artifact_name": "Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin",
+      "webflash_build_matrix": false,
+      "webflash_import_eligibility": {
+        "eligible": true,
+        "exposure_class": "acknowledgement-gated",
+        "source_of_truth": "config/preview-release-targets.json",
+        "upstream_decision": "RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001",
+        "note": "Upstream PR #711 (RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001) flipped webflash_import_eligibility.eligible to true for FanRelay/FanPWM/FanDAC in config/preview-release-targets.json. The product-catalog.json status stays hardware-pending and webflash_build_matrix stays false (no committed upstream WebFlash build row); the structured import-eligibility signal lives in preview-release-targets.json and authorises an Advanced-install-only, acknowledgement-gated preview/manual-preview WebFlash import only. Missing hardware/bench/compliance evidence blocks stable/full release, never the preview import. FanTRIAC stays eligible=false (build-blocked by HW-005)."
+      },
+      "stable_blocker": "Mains-safety / installation-approval / creepage / clearance evidence + competent-person sign-off + GPIO3 strap-pin boot characterisation.",
+      "modules": {
+        "mount": "Ceiling",
+        "power": "POE",
+        "air_quality": "VentIQ",
+        "room_sense": "RoomIQ",
+        "fan": "FanRelay",
+        "led": "none"
+      },
+      "blocked_modules": [
+        "FanTRIAC",
+        "LED"
+      ],
+      "hardware": {
+        "core": "S360-100",
+        "ventiq": "S360-211",
+        "roomiq": "S360-200",
+        "relay": "S360-310",
+        "poe": "S360-410"
+      },
+      "hardware_status": "package-implemented-product-layer-pending",
+      "notes": "Real upstream FanRelay manual-preview fan-driver target (relay-switched bathroom fan). product-catalog.json keeps status=hardware-pending / webflash_build_matrix=false; the WebFlash-import authorisation is the separate structured webflash_import_eligibility.eligible=true signal added by upstream #711 (RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001) in config/preview-release-targets.json. WebFlash imported this preview binary under WEBFLASH-RELAY-001 as Advanced-install-only, acknowledgement-gated preview firmware: never stable, never recommended, never a customer default, never in REQUIRED_CONFIGS or scripts/data/kits.json, never publicly buyable. The published preview artifact (Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin, run 26821900127, ESPHome 2026.4.5) is firmware-build proof only — no hardware / bench / compliance / mains-safety / commercial-availability proof is claimed. Stable / full release stays blocked. FanTRIAC stays excluded (eligible=false, build-blocked by HW-005); FanPWM / FanDAC are upstream-eligible but were NOT imported by WEBFLASH-RELAY-001."
+    },
+    {
       "product_yaml": "products/sense360-core-c-poe.yaml",
       "legacy_config_id": "sense360-core-c-poe",
       "status": "legacy-compatible",

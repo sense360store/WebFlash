@@ -535,9 +535,9 @@ describe('WF-KIT-PRESETS-001 — installability stays manifest-driven', () => {
         // Six builds after the first preview import (Release-One stable + four
         // preview builds + Rescue). Bundle presets must not have added a source
         // entry or a manifest build of their own.
-        expect(manifest.builds.length).toBe(6);
+        expect(manifest.builds.length).toBe(7);
         const configs = manifest.builds.map(b => b.config_string).sort();
-        expect(configs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
+        expect(configs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-FanRelay-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
         // sources.json still holds the same Release-One + LED-preview pair
         // it had before WF-KIT-PRESETS-001.
         const sourceConfigs = (sources.sources || []).map(s => s.config_string).sort();
