@@ -7,6 +7,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Simple-install bundle picker (WF-EASY-BUNDLE-PICKER-001).** Turned the
+  default **Simple install** view from a single fixed Bathroom PoE path into an
+  easy **bundle picker** over the supported customer bundle products. The stable
+  Bathroom PoE bundle (`Ceiling-POE-VentIQ-RoomIQ`) stays the default +
+  recommended choice; the imported preview room bundles now appear behind clear
+  **Preview** labels and the existing acknowledgement gates. Added a presentation-
+  only bundle data source
+  ([`scripts/data/simple-bundles.js`](scripts/data/simple-bundles.js)) describing
+  six customer bundle choices — `S360-KIT-BATH-P` (Bathroom — PoE, **stable /
+  default**), `S360-KIT-KITCHEN-P` (`Ceiling-POE-AirIQ-RoomIQ`),
+  `S360-KIT-BEDROOM-P` (`Ceiling-POE-RoomIQ`), `S360-KIT-LIVING-P` and
+  `S360-KIT-CORRIDOR-P` (both `Ceiling-POE-RoomIQ-LED`), and `S360-KIT-BATH-P-REL`
+  (`Ceiling-POE-VentIQ-FanRelay-RoomIQ`, **preview + fan-control acknowledgement**)
+  — each carrying its display name, room/use-case, firmware config string,
+  channel, badges, module summary, default/recommended flags, preview- and
+  fan-control-acknowledgement requirements, buyable/shop-ready flag, and warning
+  copy. Selecting a card feeds the bundle's `wizardState` through the same
+  `setState()` the wizard/kit flows use, so Step 5 resolves the matching firmware
+  and **every install gate stays authoritative**: preview bundles still require
+  the `channel:preview` acknowledgement in
+  [`scripts/utils/release-channels.js`](scripts/utils/release-channels.js), and
+  the Bathroom Relay bundle additionally requires a **fan-control acknowledgement**
+  composed (AND-ed) into the authoritative `[data-preflash-acknowledge]` gate so
+  install stays blocked until both are complete. Reworked the
+  [`index.html`](index.html) Simple-install section to lead with "Choose your
+  Sense360 kit" + the six bundle cards (technical metadata stays collapsed in the
+  Technical details disclosure), extended
+  [`scripts/simple-install.js`](scripts/simple-install.js) with the picker
+  controller, added bundle-picker styles to
+  [`css/wizard-style.css`](css/wizard-style.css), registered
+  `scripts/data/simple-bundles.js` in `sw.js` `SCRIPT_MODULES`, and bumped the
+  cache-bust token + `CACHE_NAME` (`webflash-v12`). Added
+  [`__tests__/wf-easy-bundle-picker.test.js`](__tests__/wf-easy-bundle-picker.test.js)
+  and the live-smoke checklist
+  [`docs/live-smoke-easy-bundle-picker.md`](docs/live-smoke-easy-bundle-picker.md).
+  **Unchanged:** every firmware binary, `manifest.json` (still 9 builds),
+  `firmware/sources.json`, `REQUIRED_CONFIGS`
+  (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only),
+  `scripts/data/kits.json` (Release-One-only), `scripts/data/kit-presets.js`,
+  `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, the
+  provenance / signature / freshness / preflight engines, and the FanTRIAC build
+  block. The standalone `Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC` previews and
+  TRIAC are intentionally **not** room-bundle products and never appear in Simple
+  install. No firmware imported. No hardware / bench / compliance / safety /
+  commercial-availability proof claimed.
 - **Preview-eligible firmware import automation + FanDAC import
   (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001).** Added a guarded automation path
   ([`scripts/import-preview-eligible-sources.py`](scripts/import-preview-eligible-sources.py))

@@ -61,13 +61,18 @@ describe('WF-UX-011 — static markup', () => {
             expect(hero.compareDocumentPosition(step1) & FOLLOWING).toBeTruthy();
         });
 
-        test('the hero leads with the product name and a single dominant install framing', () => {
+        test('the hero leads with "Choose your Sense360 kit" and defaults to the stable Bathroom bundle', () => {
             const hero = document.querySelector('[data-simple-install]');
             const heading = hero.querySelector('#simple-install-heading');
             expect(heading).not.toBeNull();
-            expect(heading.textContent.trim()).toBe('Sense360 Bathroom PoE Kit');
+            // WF-EASY-BUNDLE-PICKER-001 — Simple install now leads with the bundle
+            // picker; the default selected bundle is the stable Bathroom PoE build.
+            expect(heading.textContent.trim()).toBe('Choose your Sense360 kit');
+            const selectedName = hero.querySelector('[data-simple-bundle-selected-name]');
+            expect(selectedName).not.toBeNull();
+            expect(selectedName.textContent).toMatch(/Bathroom Bundle/i);
 
-            // The simple-mode install CTA names "Install stable firmware".
+            // The simple-mode install CTA defaults to "Install stable firmware".
             const cta = document.querySelector('[data-simple-install-cta]');
             expect(cta).not.toBeNull();
             expect(cta.textContent).toMatch(/Install stable firmware/i);
@@ -100,7 +105,7 @@ describe('WF-UX-011 — static markup', () => {
             expect(config).not.toBeNull();
             expect(sku).not.toBeNull();
             expect(config.textContent).toContain('Ceiling-POE-VentIQ-RoomIQ');
-            expect(sku.textContent).toContain('S360-KIT-BATH-POE');
+            expect(sku.textContent).toContain('S360-KIT-BATH-P');
             // Both must be inside the Technical details disclosure.
             expect(tech.contains(config)).toBe(true);
             expect(tech.contains(sku)).toBe(true);

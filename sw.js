@@ -68,11 +68,16 @@
  *   per-import query would split it into duplicate module instances — so it
  *   relies on this cache-name bump to re-prime; existing installs must purge v10
  *   to pick up the fix.
+ *   `webflash-v12` (WF-EASY-BUNDLE-PICKER-001) bumps again: Simple install is now
+ *   a bundle picker (index.html markup, css/wizard-style.css, scripts/simple-
+ *   install.js with a new ?v= token, and a new scripts/data/simple-bundles.js
+ *   data module in SCRIPT_MODULES below). Existing installs must purge v11 and
+ *   re-prime so the picker ships intact. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v11';
+const CACHE_NAME = 'webflash-v12';
 const CACHE_VERSION = 5;
 
 /**
@@ -128,6 +133,7 @@ const SCRIPT_MODULES = [
     './scripts/data/module-requirements.js',
     './scripts/data/kits.json',
     './scripts/data/kit-presets.js',
+    './scripts/data/simple-bundles.js',
     './scripts/content/option-tooltips.js',
     './scripts/layout/about-panel.js',
     './scripts/layout/firmware-note.js',

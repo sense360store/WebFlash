@@ -818,6 +818,21 @@ for the longer-form rationale that this section preserves.
 - The decision to expose an imported firmware as a kit is captured
   by a `WF-KIT-…`-class PR (e.g. `WF-KIT-LED-001` for a potential
   LED kit). The matrix reserves the PR slot but does not open it.
+- **Simple-install bundle-picker exposure (WF-EASY-BUNDLE-PICKER-001)
+  is presentation-only and respects every separation invariant.**
+  The bundle picker
+  ([`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js))
+  surfaces the already-imported preview room bundles
+  (`Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`,
+  `Ceiling-POE-RoomIQ-LED`, `Ceiling-POE-VentIQ-FanRelay-RoomIQ`) in
+  Simple install **behind the existing preview acknowledgement** (the
+  relay bundle behind an additional fan-control acknowledgement). It
+  changes no import class, imports no firmware, and never makes a
+  preview bundle stable, default, recommended, buyable, or a
+  `REQUIRED_CONFIGS` / `scripts/data/kits.json` entry — only the stable
+  Bathroom PoE bundle is default/recommended. Standalone fan-driver
+  configs (`Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC`) and TRIAC are
+  **not** room-bundle products and never appear in the picker.
 
 ## Preview acknowledgement policy
 

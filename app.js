@@ -25,7 +25,7 @@ import "./scripts/kit-presets.js";
 // wizard-style.css gained the simple-mode collapse rules. Bump the token past
 // 20260601 → 202606012 in lockstep (index.html assets, bootstrap loader, sw.js
 // CACHE_NAME) so neither the module nor the CSS is served stale.
-import "./scripts/simple-install.js?v=202606014";
+import "./scripts/simple-install.js?v=202606015";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";
