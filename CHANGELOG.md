@@ -7,6 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Live preview-import smoke checklist (WF-LIVE-SMOKE-PREVIEW-IMPORT-001).**
+  Added a live / manual smoke checklist at `docs/live-smoke-preview-import.md`
+  (with a manual verification template) to verify the deployed GitHub Pages site
+  after the first preview firmware batch: Simple install stays clean and
+  stable-only (`Ceiling-POE-VentIQ-RoomIQ`, no false freshness block, no AirIQ /
+  room-bundle preview leakage) while Advanced install can reach the new preview
+  builds (`Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`,
+  `Ceiling-POE-RoomIQ-LED`) behind the `channel:preview` acknowledgement with
+  working in-card release notes. Locked the deterministic invariants in
+  `__tests__/live-smoke-preview-import.test.js` (exactly six manifest builds,
+  preview builds Advanced-only and acknowledgement-gated, Simple install
+  resolves only to the stable Bathroom PoE build, preview release notes present
+  and not dead links, no TRIAC / fan-driver firmware imported, AirIQ availability
+  derived from the manifest, the existing VentIQ LED preview preserved, Rescue
+  still reachable). Docs + test only: no firmware imported, no Simple-install
+  default changed, no preview made recommended/default/stable, no candidate
+  bundle exposed as buyable, no provenance / signature / freshness check
+  weakened, no preview warning removed.
 - **First preview firmware batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001).** Imported
   three preview-channel builds from upstream `sense360store/esphome-public`
   release `v1.0.0-preview`: `Ceiling-POE-AirIQ-RoomIQ` (SHA256 `16565de6…`,
