@@ -396,7 +396,7 @@ describe('WF-UX-014 — deploy-layer + presentation only', () => {
 
     test('manifest carries Release-One stable + six preview builds + Rescue', () => {
         const configs = readJson('manifest.json').builds.map(b => b.config_string).sort();
-        expect(configs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-FanPWM', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-FanRelay-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
+        expect(configs).toEqual(['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-FanDAC', 'Ceiling-POE-FanPWM', 'Ceiling-POE-RoomIQ', 'Ceiling-POE-RoomIQ-LED', 'Ceiling-POE-VentIQ-FanRelay-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ-LED', 'Rescue']);
     });
 
     test('REQUIRED_CONFIGS stays production-only (Release-One + Rescue)', () => {

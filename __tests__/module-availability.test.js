@@ -4,9 +4,10 @@
  *
  * Pins the per-(module, variant) classification rules and the per-config_string
  * classification rules against the current manifest shape (Release-One stable
- * + six preview builds + Rescue) and against the static overrides for Voice
+ * + seven preview builds + Rescue) and against the static overrides for Voice
  * (legacy), Relay (available-preview — WEBFLASH-RELAY-001), PWM (available-preview
- * — WEBFLASH-PWM-001), DAC (no-firmware) and TRIAC
+ * — WEBFLASH-PWM-001), DAC (available-preview —
+ * WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001) and TRIAC
  * (advanced-manual-warning under HW-005 + COMPLIANCE-001 — visible + selectable
  * but install-gated by the orthogonal advanced/manual-warning acknowledgement
  * AND a future imported artifact).
@@ -213,13 +214,30 @@ describe('WF-WIZARD-AVAIL-001 — per-module classification against current mani
         expect(result.detail).not.toMatch(/S360-311-CURRENT-THERMAL/);
     });
 
-    test('Fan: DAC → no-firmware (S360-312-R4 schematic exists upstream, no build yet)', () => {
+    test('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — Fan: DAC → available-preview (FanDAC manual-preview build imported)', () => {
         const result = classifyAgainstManifest('fan', 'analog');
-        expect(result.state).toBe(AVAILABILITY_STATES.NO_FIRMWARE);
-        expect(result.installable).toBe(false);
+        expect(result.state).toBe(AVAILABILITY_STATES.AVAILABLE_PREVIEW);
+        expect(result.reasonCode).toBe(AVAILABILITY_REASON_CODES.PREVIEW_BUILD);
+        // Preview build exists → installable (still gated by the preview ack at install).
+        expect(result.installable).toBe(true);
         expect(result.selectable).toBe(true);
+        expect(result.tone).toBe('warning');
+        expect(result.label).toBe('Preview');
+        // Load-bearing manual-preview warning copy required for the FanDAC import.
         expect(result.detail).toMatch(/S360-312/);
-        expect(result.detail).toMatch(/schematic/i);
+        expect(result.detail).toMatch(/analog fan control/i);
+        expect(result.detail).toMatch(/preview \/ manual-preview firmware/i);
+        expect(result.detail).toMatch(/installer \/ developer preview/i);
+        expect(result.detail).toMatch(/0 to 10V/i);
+        expect(result.detail).toMatch(
+            /no hardware, bench, compliance, safety, or commercial-availability proof/i
+        );
+        expect(result.detail).toMatch(/not for normal customers/i);
+        expect(result.detail).toMatch(/stable Bathroom PoE/i);
+        // WF-UX-008: no internal task / release / tracking IDs in rendered copy.
+        expect(result.detail).not.toMatch(/WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001/);
+        expect(result.detail).not.toMatch(/HW-005/);
+        expect(result.detail).not.toMatch(/RELEASE-/);
     });
 
     test('WF-TRIAC-001 — Fan: TRIAC → advanced-manual-warning (visible + selectable + not installable)', () => {

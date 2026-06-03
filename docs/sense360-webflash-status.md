@@ -50,10 +50,11 @@ has no imported artifact.
 | **RoomIQ + LED preview** — `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Distinct from the VentIQ LED preview. Same preview gate + posture. | No |
 | **FanRelay preview** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-RELAY-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Fan relay control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
 | **FanPWM preview** — `Ceiling-POE-FanPWM` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-PWM-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. PWM fan control (low-voltage / DC fans) is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
+| **FanDAC preview** — `Ceiling-POE-FanDAC` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 (the preview-eligible import automation) after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Analog (0–10V) fan control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
 | **Rescue** — `Rescue` | `rescue` | 1.0.0 | Recovery / unbricking build, reached via the recovery path + rescue modal. WebFlash-owned. | **Yes** |
 
 `REQUIRED_CONFIGS` is **production-only**: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
-None of the six preview builds is on the allowlist — a `preview` catalog status
+None of the seven preview builds is on the allowlist — a `preview` catalog status
 is import / manifest / kit eligible but never `REQUIRED_CONFIGS` eligible. The
 default **Simple install** path resolves only to the stable Bathroom PoE build
 (`Ceiling-POE-VentIQ-RoomIQ`); the preview builds appear only in the Advanced /
@@ -166,9 +167,52 @@ stable, **not** recommended, **not** a customer default, **not** a kit, **not**
 buyable as a public shop product, and **never** auto-selected. RPM / TachIO is
 not claimed. **No** hardware, bench, compliance, safety, or commercial-availability
 proof is claimed. Normal customers should use the stable Bathroom PoE build
-`Ceiling-POE-VentIQ-RoomIQ`. **FanDAC / FanTRIAC were not imported** (FanDAC is
-upstream-import-eligible but reserved for a later slice; FanTRIAC stays
-build-blocked and excluded).
+`Ceiling-POE-VentIQ-RoomIQ`. **FanDAC was imported later, by
+WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — see the next section; FanTRIAC stays
+build-blocked and excluded.**
+
+## FanDAC manual-preview (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001)
+
+WebFlash imported the **FanDAC** manual-preview build from the same upstream
+[`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview)
+release under the same two-concept eligibility model as FanRelay / FanPWM —
+upstream PR #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`) marked it
+**WebFlash-import eligible** (`webflash_import_eligibility.eligible=true`) while
+the `product-catalog.json` lifecycle status stays `hardware-pending` and
+`webflash_build_matrix=false`. This import was performed by the new
+**preview-eligible import automation**
+([`scripts/import-preview-eligible-sources.py`](../scripts/import-preview-eligible-sources.py)),
+which discovers every eligible preview target, cross-checks the pinned source +
+on-disk state, and imports the missing ones behind a uniform set of guardrails
+(eligibility flag, preview channel, mandatory SHA256 pin, upstream checksum
+match, TRIAC refusal, overwrite protection, idempotency, and a
+`REQUIRED_CONFIGS`-unchanged assertion). That structured import-eligibility flag
+is the authorisation WebFlash honours for import / manifest / kit eligibility; it
+is **never** honoured for `REQUIRED_CONFIGS` (production-only), and FanTRIAC stays
+`eligible=false` / excluded.
+
+| Config string | Asset | SHA256 | Size (bytes) |
+|---|---|---|---|
+| `Ceiling-POE-FanDAC` | `Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin` | `151894c1…a39b9f` | 930,400 |
+
+Provenance (in the `.meta.json` sidecar): upstream
+`sense360store/esphome-public@v1.0.0-preview`, source git sha
+`0963afb9c9582f5021019d1635421e41c9dd10f6`, ESPHome `2026.4.5`, hosted compile
+proof run `26821900127`. The `.bin` was SHA-256-verified against the upstream
+`checksums-sha256.txt` **and** the source entry's pinned `expected_sha256`. The
+source entry carries `block_tokens: ["FanTRIAC", "LED"]`.
+
+**Posture — preview / manual-preview only.** Analog (0–10V) fan control (for
+example Cloudlift S12) is an installer / developer preview: **preview /
+manual-preview firmware**, **not for normal customers**, exposed only in the
+**Advanced install** path behind the `channel:preview` acknowledgement. **Not**
+stable, **not** recommended, **not** a customer default, **not** a kit, **not**
+buyable as a public shop product, and **never** auto-selected. **No** hardware,
+bench, compliance, safety, or commercial-availability proof is claimed. The
+FanDAC ↔ AirIQ DAC-bus mutex is unchanged. Normal customers should use the stable
+Bathroom PoE build `Ceiling-POE-VentIQ-RoomIQ`. **FanTRIAC was not imported**
+(it stays build-blocked and excluded). Full import-proof at
+[`docs/preview-import-automation-proof.md`](preview-import-automation-proof.md).
 
 ## Module availability snapshot
 
@@ -185,7 +229,7 @@ The classifier is **not** the install gate. Current per-SKU state:
 | S360-210 | Sense360 AirIQ | `available-preview` | **Preview-only — not stable.** Derived from the `Ceiling-POE-AirIQ-RoomIQ` preview build (WF-PREVIEW-IMPORT-FIRST-BATCH-001) behind the preview acknowledgement. The static `no-firmware` override was removed once the build shipped. |
 | S360-310 | Sense360 Relay | `available-preview` | **Preview / manual-preview — Advanced install only (WEBFLASH-RELAY-001).** Derived from the `Ceiling-POE-VentIQ-FanRelay-RoomIQ` preview build behind the `channel:preview` acknowledgement. **Not for normal customers**, not stable, not a kit, not recommended. No hardware / bench / compliance / safety proof claimed. |
 | S360-311 | Sense360 PWM (**FanPWM**) | `available-preview` | **Preview / manual-preview — Advanced install only (WEBFLASH-PWM-001).** Derived from the `Ceiling-POE-FanPWM` preview build behind the `channel:preview` acknowledgement. Low-voltage / DC fan control. **Not for normal customers**, not stable, not a kit, not recommended. No hardware / bench / compliance / safety proof claimed. |
-| S360-312 | Sense360 DAC | `no-firmware` | Schematic exists upstream; no WebFlash build ships. |
+| S360-312 | Sense360 DAC | `available-preview` | **Preview / manual-preview — Advanced install only (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001).** Derived from the `Ceiling-POE-FanDAC` preview build behind the `channel:preview` acknowledgement. Analog (0–10V) fan control. **Not for normal customers**, not stable, not a kit, not recommended. No hardware / bench / compliance / safety proof claimed. |
 | S360-320 | Sense360 TRIAC | `advanced-manual-warning` | Selectable in the custom path behind an in-installer warning gate (WF-TRIAC-001). **Not** compliance-certified, **not** import-allowed, **not** Release-One. |
 | S360-400 | Sense360 240v PSU | covered transitively | `power=ac` segment; no separate artifact. |
 | S360-410 | Sense360 PoE PSU | covered transitively | `power=poe` segment; **see blocker below.** |
@@ -196,13 +240,12 @@ These four invariants are the point of the consolidation. They must remain
 true and visible:
 
 1. **Fan drivers stay out of Release-One / kits / `REQUIRED_CONFIGS`.** **Relay**
-   (WEBFLASH-RELAY-001) and **PWM** (WEBFLASH-PWM-001) are now Advanced-install
-   **previews** — acknowledgement-gated, not release-selectable, not a kit/default,
-   not recommended, not in `REQUIRED_CONFIGS`, with no hardware/bench/compliance
-   proof claimed. **DAC** stays `no-firmware` (upstream-import-eligible but not yet
-   imported; reserved for the `WF-IMPORT-DAC-001` follow-up). **TRIAC** is
-   selectable only behind the WF-TRIAC-001 advanced/manual-warning gate and remains
-   import-blocked.
+   (WEBFLASH-RELAY-001), **PWM** (WEBFLASH-PWM-001), and **DAC**
+   (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001) are now Advanced-install **previews**
+   — acknowledgement-gated, not release-selectable, not a kit/default, not
+   recommended, not in `REQUIRED_CONFIGS`, with no hardware/bench/compliance proof
+   claimed. **TRIAC** is selectable only behind the WF-TRIAC-001
+   advanced/manual-warning gate and remains import-blocked.
 2. **LED (S360-300) stays preview-only.** The `Ceiling-POE-VentIQ-RoomIQ-LED`
    build ships on the `preview` channel and installs only after the
    `channel:preview` acknowledgement. It is **not** marked stable, **not** in
@@ -229,8 +272,8 @@ true and visible:
 
 ## Current release version(s)
 
-WebFlash ships from `manifest.json`, which today carries exactly eight builds.
-All eight are at version **1.0.0**:
+WebFlash ships from `manifest.json`, which today carries exactly nine builds.
+All nine are at version **1.0.0**:
 
 | Config string | Channel | Version | Upstream release tag | Release-selectable? |
 |---|---|---|---|---|
@@ -241,6 +284,7 @@ All eight are at version **1.0.0**:
 | `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview-only** (Advanced install; `channel:preview` acknowledgement) |
 | `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview / manual-preview** (Advanced install only; `channel:preview` acknowledgement) — WEBFLASH-RELAY-001 |
 | `Ceiling-POE-FanPWM` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview / manual-preview** (Advanced install only; `channel:preview` acknowledgement) — WEBFLASH-PWM-001 |
+| `Ceiling-POE-FanDAC` | `preview` | 1.0.0 | [`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview) | **Preview / manual-preview** (Advanced install only; `channel:preview` acknowledgement) — WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 |
 | `Rescue` | `rescue` | 1.0.0 | _(built in-tree under `firmware/rescue/`)_ | Recovery path only |
 
 - **Release-selectable target:** `Ceiling-POE-VentIQ-RoomIQ` (stable) — the only
@@ -250,17 +294,18 @@ All eight are at version **1.0.0**:
   batch `Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`, and
   `Ceiling-POE-RoomIQ-LED` (WF-PREVIEW-IMPORT-FIRST-BATCH-001), the
   FanRelay manual-preview `Ceiling-POE-VentIQ-FanRelay-RoomIQ` (S360-310;
-  WEBFLASH-RELAY-001), and the FanPWM manual-preview `Ceiling-POE-FanPWM`
-  (S360-311; WEBFLASH-PWM-001). All are firmware-build-proof only — **not**
-  hardware-verified, **not** stable, **not** recommended, **not** a customer
-  default, and **not** buyable as a public shop product. FanRelay and FanPWM are
-  installer / developer previews and **not for normal customers**.
-- **Blocked / not WebFlash-exposed targets:** FanDAC (S360-312), FanTRIAC
-  (S360-320), and any broader PoE bundle expansion that depends on S360-410
-  evidence. None of these has a `manifest.json` build, a
-  `firmware/sources.json` source entry, an install card, or a release artifact
-  in this repo. (FanDAC is upstream-import-eligible as a preview but was not
-  imported by WEBFLASH-PWM-001; FanTRIAC stays build-blocked.)
+  WEBFLASH-RELAY-001), the FanPWM manual-preview `Ceiling-POE-FanPWM`
+  (S360-311; WEBFLASH-PWM-001), and the FanDAC manual-preview
+  `Ceiling-POE-FanDAC` (S360-312; WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001). All are
+  firmware-build-proof only — **not** hardware-verified, **not** stable, **not**
+  recommended, **not** a customer default, and **not** buyable as a public shop
+  product. FanRelay, FanPWM and FanDAC are installer / developer previews and
+  **not for normal customers**.
+- **Blocked / not WebFlash-exposed targets:** FanTRIAC (S360-320) and any broader
+  PoE bundle expansion that depends on S360-410 evidence. Neither has a
+  `manifest.json` build, a `firmware/sources.json` source entry, an install card,
+  or a release artifact in this repo. (FanTRIAC stays `eligible=false` /
+  build-blocked under HW-005.)
 
 ## Bundle SKU mapping
 
@@ -403,10 +448,11 @@ the `channel:preview` acknowledgement with working release notes:
 
 The deterministic half of the checklist is locked by
 [`__tests__/live-smoke-preview-import.test.js`](../__tests__/live-smoke-preview-import.test.js)
-(exactly six builds, preview builds Advanced-only / acknowledgement-gated, Simple
+(exactly nine builds, preview builds Advanced-only / acknowledgement-gated, Simple
 install resolves only to stable Bathroom PoE, preview release notes present, no
-TRIAC / fan-driver import, AirIQ availability derived from the manifest, VentIQ
-LED preview preserved); the doc carries the browser-observable rows and a manual
+TRIAC import (FanRelay / FanPWM / FanDAC are the deliberate manual-preview
+exceptions), AirIQ availability derived from the manifest, VentIQ LED preview
+preserved); the doc carries the browser-observable rows and a manual
 verification template. The checklist is **docs / verification only** — it imports
 no firmware, changes no `manifest.json` / `firmware/sources.json` /
 `REQUIRED_CONFIGS` / kit, and weakens no provenance / signature / freshness
@@ -425,9 +471,9 @@ unblocked, or reprioritised by this doc:
 
 | WebFlash follow-up | Target | Blocked behind |
 |---|---|---|
-| `WF-IMPORT-RELAY-001` | FanRelay (S360-310) import | upstream `RELEASE-RELAY-001` |
-| `WF-IMPORT-PWM-001` | FanPWM (S360-311) import | upstream `RELEASE-PWM-001` |
-| `WF-IMPORT-DAC-001` | FanDAC (S360-312) import | upstream `RELEASE-DAC-001` |
+| `WF-IMPORT-RELAY-001` | FanRelay (S360-310) **preview imported** (WEBFLASH-RELAY-001) | _preview done via #711_; stable promotion blocked behind upstream `RELEASE-RELAY-001` |
+| `WF-IMPORT-PWM-001` | FanPWM (S360-311) **preview imported** (WEBFLASH-PWM-001) | _preview done via #711_; stable promotion blocked behind upstream `RELEASE-PWM-001` |
+| `WF-IMPORT-DAC-001` | FanDAC (S360-312) **preview imported** (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001) | _preview done via #711_; stable promotion blocked behind upstream `RELEASE-DAC-001` |
 | `WF-IMPORT-TRIAC-001` | FanTRIAC (S360-320) import | upstream `RELEASE-TRIAC-001` + `WF-TRIAC-001` runtime UX |
 | `WF-IMPORT-POWER-400-001` | S360-400 240v PSU import | upstream `RELEASE-POWER-400-001` |
 | `WF-IMPORT-POE-410-001` | S360-410 PoE PSU import | S360-410 evidence gate (reserved no-op — PoE covered transitively today) |
@@ -460,26 +506,31 @@ Cross-checked against the live repository state on consolidation. Every status
 statement above is sourced from a committed file:
 
 - **Release targets match `manifest.json`.** `manifest.json` carries exactly
-  six builds — `Ceiling-POE-VentIQ-RoomIQ` (stable), `Ceiling-POE-VentIQ-RoomIQ-LED`
+  nine builds — `Ceiling-POE-VentIQ-RoomIQ` (stable), `Ceiling-POE-VentIQ-RoomIQ-LED`
   (preview), the first preview batch `Ceiling-POE-AirIQ-RoomIQ` /
-  `Ceiling-POE-RoomIQ` / `Ceiling-POE-RoomIQ-LED` (preview), and `Rescue`
-  (rescue) — matching the targets enumerated above.
-- **Source entries match `firmware/sources.json`.** Five upstream sources are
+  `Ceiling-POE-RoomIQ` / `Ceiling-POE-RoomIQ-LED` (preview), the three fan-driver
+  manual-previews `Ceiling-POE-VentIQ-FanRelay-RoomIQ` / `Ceiling-POE-FanPWM` /
+  `Ceiling-POE-FanDAC` (preview), and `Rescue` (rescue) — matching the targets
+  enumerated above.
+- **Source entries match `firmware/sources.json`.** Eight upstream sources are
   declared: the v1.0.0 Release-One stable build (`block_tokens:
   ["FanTRIAC", "LED"]`), the v1.0.0-led-preview build (`block_tokens:
-  ["FanTRIAC"]`), and three v1.0.0-preview builds — `Ceiling-POE-AirIQ-RoomIQ`
-  and `Ceiling-POE-RoomIQ` (`block_tokens: ["FanTRIAC", "LED"]`) and
-  `Ceiling-POE-RoomIQ-LED` (`block_tokens: ["FanTRIAC"]`). No FanPWM / FanRelay /
-  FanDAC / FanTRIAC source entry exists.
+  ["FanTRIAC"]`), and six v1.0.0-preview builds — `Ceiling-POE-AirIQ-RoomIQ`,
+  `Ceiling-POE-RoomIQ`, `Ceiling-POE-VentIQ-FanRelay-RoomIQ`, `Ceiling-POE-FanPWM`
+  and `Ceiling-POE-FanDAC` (`block_tokens: ["FanTRIAC", "LED"]`) and
+  `Ceiling-POE-RoomIQ-LED` (`block_tokens: ["FanTRIAC"]`). No FanTRIAC source
+  entry exists.
 - **`REQUIRED_CONFIGS` is production-only.** The allowlist in
   [`.github/workflows/firmware-publish.yml`](../.github/workflows/firmware-publish.yml)
-  holds exactly `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`. The LED preview is
-  deliberately absent.
-- **FanPWM (S360-311) remains blocked / not release-ready.** No manifest build,
-  no source entry, no install card, classified `no-firmware` by
-  [`scripts/utils/module-availability.js`](../scripts/utils/module-availability.js).
-  Matches upstream §6.2 (compile-proven native path, bench-pending, not
-  release-ready).
+  holds exactly `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`. The six preview builds
+  are deliberately absent.
+- **FanPWM (S360-311) / FanRelay (S360-310) / FanDAC (S360-312) are preview-only.**
+  Each ships a manual-preview build (`available-preview` in
+  [`scripts/utils/module-availability.js`](../scripts/utils/module-availability.js))
+  behind the `channel:preview` acknowledgement — never stable, never a kit /
+  default, never in `REQUIRED_CONFIGS`. Stable / full release stays blocked on the
+  upstream hardware / bench evidence. FanTRIAC (S360-320) remains build-blocked
+  with no manifest build, no source entry, and no install card.
 - **LED (S360-300) remains preview-only.** No LED-stable claim; LED ships on the
   `preview` channel behind the `channel:preview` acknowledgement. Matches
   upstream §7.

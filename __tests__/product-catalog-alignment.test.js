@@ -64,6 +64,7 @@ const FANRELAY_CONFIG_STRING = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
 // preview / manual-preview import. Honoured for import / manifest / kit only,
 // never REQUIRED_CONFIGS.
 const FANPWM_CONFIG_STRING = 'Ceiling-POE-FanPWM';
+const FANDAC_CONFIG_STRING = 'Ceiling-POE-FanDAC';
 
 function isWebflashImportEligible(entry) {
     if (!entry) {
@@ -622,20 +623,22 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to Release-One + six preview builds + Rescue', () => {
-        // Snapshot lock updated by WEBFLASH-PWM-001: the manifest now exposes
-        // eight builds. Release-One stable + Rescue remain unchanged in content;
-        // the six preview-channel builds are the LED preview
-        // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview), the three
-        // first-batch previews from upstream v1.0.0-preview (Ceiling-POE-AirIQ-RoomIQ,
-        // Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED), the FanRelay
-        // manual-preview (Ceiling-POE-VentIQ-FanRelay-RoomIQ), and the FanPWM
-        // manual-preview (Ceiling-POE-FanPWM) — both also from v1.0.0-preview,
-        // authorised by webflash_import_eligibility.eligible=true.
+    test('manifest.json builds resolve to Release-One + seven preview builds + Rescue', () => {
+        // Snapshot lock updated by WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001: the
+        // manifest now exposes nine builds. Release-One stable + Rescue remain
+        // unchanged in content; the seven preview-channel builds are the LED
+        // preview (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview), the
+        // three first-batch previews from upstream v1.0.0-preview
+        // (Ceiling-POE-AirIQ-RoomIQ, Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED),
+        // the FanRelay manual-preview (Ceiling-POE-VentIQ-FanRelay-RoomIQ), the
+        // FanPWM manual-preview (Ceiling-POE-FanPWM), and the FanDAC manual-preview
+        // (Ceiling-POE-FanDAC) — all also from v1.0.0-preview, the three fan
+        // drivers authorised by webflash_import_eligibility.eligible=true.
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
         expect(configStrings).toEqual(
             [
                 'Ceiling-POE-AirIQ-RoomIQ',
+                'Ceiling-POE-FanDAC',
                 'Ceiling-POE-FanPWM',
                 'Ceiling-POE-RoomIQ',
                 'Ceiling-POE-RoomIQ-LED',
@@ -796,6 +799,75 @@ describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
         expect(required).not.toContain(FANPWM_CONFIG_STRING);
         for (const kit of kits.kits || []) {
             expect(kit.firmware_config_string).not.toBe(FANPWM_CONFIG_STRING);
+        }
+    });
+});
+
+describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC preview import recognition', () => {
+    // FanDAC is the third (and last currently eligible) fan-driver preview,
+    // imported by the preview-eligible import automation. Same two-concept
+    // eligibility model as FanRelay / FanPWM: catalog status stays
+    // hardware-pending + webflash_build_matrix=false; the explicit
+    // webflash_import_eligibility.eligible=true flag authorises the Advanced-
+    // install-only, acknowledgement-gated preview import — present in sources +
+    // manifest, absent from REQUIRED_CONFIGS + kits. FanTRIAC stays
+    // eligible=false / blocked.
+
+    test('fixture FanDAC row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
+        const entry = catalogIndex.get(FANDAC_CONFIG_STRING);
+        if (!entry) {
+            throw new Error(
+                `Catalog fixture does not contain ${FANDAC_CONFIG_STRING}. ` +
+                    'WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 mirrors the real upstream ' +
+                    'FanDAC row; if it has been removed, refresh the fixture from ' +
+                    'upstream config/product-catalog.json + config/preview-release-targets.json.'
+            );
+        }
+        expect(entry.status).toBe('hardware-pending');
+        expect(entry.webflash_build_matrix).toBe(false);
+        expect(entry.webflash_import_eligibility).toBeDefined();
+        expect(entry.webflash_import_eligibility.eligible).toBe(true);
+        // Status alone is NOT import-eligible; the explicit flag is what authorises it.
+        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
+        expect(isWebflashImportEligible(entry)).toBe(true);
+        expect(entry.artifact_name).toBe(
+            'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin'
+        );
+        expect(entry.version).toBe('1.0.0');
+        expect(entry.channel).toBe('preview');
+    });
+
+    test('firmware/sources.json carries the FanDAC preview source (block_tokens FanTRIAC + LED)', () => {
+        const src = (sources.sources || []).find(
+            s => s.config_string === FANDAC_CONFIG_STRING
+        );
+        expect(src).toBeDefined();
+        expect(src.channel).toBe('preview');
+        expect(src.version).toBe('1.0.0');
+        expect(src.asset_name).toBe(
+            'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin'
+        );
+        expect(src.expected_sha256).toBe(
+            '151894c1408c5ae9d45f56382e392a82539a87d2882f443fa9bc78cdb6a39b9f'
+        );
+        expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+    });
+
+    test('manifest.json carries the FanDAC preview build', () => {
+        const build = (manifest.builds || []).find(
+            b => b.config_string === FANDAC_CONFIG_STRING
+        );
+        expect(build).toBeDefined();
+        expect(build.channel).toBe('preview');
+        expect(build.version).toBe('1.0.0');
+        expect(build.modules).toEqual(expect.arrayContaining(['FanDAC']));
+    });
+
+    test('FanDAC is NOT in REQUIRED_CONFIGS (production-only) and NOT in kits', () => {
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(FANDAC_CONFIG_STRING);
+        for (const kit of kits.kits || []) {
+            expect(kit.firmware_config_string).not.toBe(FANDAC_CONFIG_STRING);
         }
     });
 });

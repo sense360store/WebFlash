@@ -1283,7 +1283,7 @@ describe('WF-UX-009 — Review reads as a three-task customer flow', () => {
         // 8 builds after WF-PREVIEW-IMPORT-FIRST-BATCH-001 + WEBFLASH-RELAY-001 + WEBFLASH-PWM-001:
         // Release-One stable + six preview builds + Rescue. The production-only REQUIRED_CONFIGS
         // allowlist below is the surface that must stay unchanged.
-        expect(manifest.builds.length).toBe(8);
+        expect(manifest.builds.length).toBe(9);
 
         const workflow = fs.readFileSync(
             path.resolve(process.cwd(), '.github/workflows/firmware-publish.yml'),

@@ -36,17 +36,19 @@ It complements — and does not replace:
 | `Ceiling-POE-RoomIQ-LED` | `preview` | Advanced only (preview ack) |
 | `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | Advanced only (preview ack) — FanRelay manual-preview (WEBFLASH-RELAY-001) |
 | `Ceiling-POE-FanPWM` | `preview` | Advanced only (preview ack) — FanPWM manual-preview (WEBFLASH-PWM-001) |
+| `Ceiling-POE-FanDAC` | `preview` | Advanced only (preview ack) — FanDAC manual-preview (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001) |
 | `Rescue` | `rescue` | Recovery path / rescue modal |
 
 - **Simple install** must remain **stable Bathroom PoE only**
   (`Ceiling-POE-VentIQ-RoomIQ`).
-- The six **preview** builds must be **Advanced-install-only**, never
+- The seven **preview** builds must be **Advanced-install-only**, never
   recommended / default / stable, each gated on the `channel:preview`
   acknowledgement.
 - Candidate room bundles stay hidden / not buyable.
-- **No DAC and no TRIAC** (`FanDAC` / `FanTRIAC`) firmware was imported.
-  `FanRelay` (WEBFLASH-RELAY-001) and `FanPWM` (WEBFLASH-PWM-001) are the
-  deliberate manual-preview exceptions; both are Advanced-install-only.
+- **No TRIAC** (`FanTRIAC`) firmware was imported. `FanRelay`
+  (WEBFLASH-RELAY-001), `FanPWM` (WEBFLASH-PWM-001), and `FanDAC`
+  (WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001) are the deliberate manual-preview
+  exceptions; all three are Advanced-install-only.
 - The existing **VentIQ LED preview** (`Ceiling-POE-VentIQ-RoomIQ-LED`, from
   `v1.0.0-led-preview`) was deliberately **not** overwritten.
 
@@ -103,9 +105,11 @@ It complements — and does not replace:
       build.
 - [ ] **Candidate bundles are not buyable.** The planned fan-control / room
       bundle cards stay in their non-installable subsection.
-- [ ] **TRIAC and FanRelay / FanPWM / FanDAC are absent** from the installable
-      firmware set (TRIAC stays selectable only behind its advanced/manual
-      warning gate, with no imported firmware).
+- [ ] **TRIAC is absent** from the installable firmware set (TRIAC stays
+      selectable only behind its advanced/manual warning gate, with no imported
+      firmware). FanRelay / FanPWM / FanDAC are the deliberate Advanced-install
+      manual-preview exceptions (acknowledgement-gated), not Simple-install
+      options.
 - [ ] **Existing VentIQ LED preview still works.**
       `Ceiling-POE-VentIQ-RoomIQ-LED` still resolves and installs behind the
       preview acknowledgement (unchanged from `v1.0.0-led-preview`).

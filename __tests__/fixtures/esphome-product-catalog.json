@@ -291,6 +291,43 @@
       "notes": "Real upstream FanPWM manual-preview fan-driver target (12V PWM fan driver, up to 4 fans with tach feedback). product-catalog.json keeps status=hardware-pending / webflash_build_matrix=false; the WebFlash-import authorisation is the separate structured webflash_import_eligibility.eligible=true signal added by upstream #711 (RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001) in config/preview-release-targets.json. WebFlash imported this preview binary under WEBFLASH-PWM-001 as Advanced-install-only, acknowledgement-gated preview firmware: never stable, never recommended, never a customer default, never in REQUIRED_CONFIGS or scripts/data/kits.json, never publicly buyable. The published preview artifact (Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin, run 26821900127, ESPHome 2026.4.5) is firmware-build proof only — no hardware / bench / compliance / commercial-availability proof is claimed. Stable / full release stays blocked on measured current / thermal evidence; RPM / TachIO is not claimed. FanTRIAC stays excluded (eligible=false, build-blocked by HW-005); FanDAC is upstream-eligible but was NOT imported by WEBFLASH-PWM-001."
     },
     {
+      "config_string": "Ceiling-POE-FanDAC",
+      "status": "hardware-pending",
+      "version": "1.0.0",
+      "channel": "preview",
+      "delivery_lane": "manual-preview",
+      "product_yaml": "products/sense360-ceiling-poe-fandac.yaml",
+      "artifact_name": "Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin",
+      "webflash_build_matrix": false,
+      "webflash_import_eligibility": {
+        "eligible": true,
+        "exposure_class": "acknowledgement-gated",
+        "source_of_truth": "config/preview-release-targets.json",
+        "upstream_decision": "RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001",
+        "note": "Upstream PR #711 (RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001) flipped webflash_import_eligibility.eligible to true for FanRelay/FanPWM/FanDAC in config/preview-release-targets.json. The product-catalog.json status stays hardware-pending and webflash_build_matrix stays false (no committed upstream WebFlash build row); the structured import-eligibility signal lives in preview-release-targets.json and authorises an Advanced-install-only, acknowledgement-gated preview/manual-preview WebFlash import only. Missing hardware/bench/compliance evidence blocks stable/full release, never the preview import. FanTRIAC stays eligible=false (build-blocked by HW-005)."
+      },
+      "stable_blocker": "Cloudlift S12 / J3 harness + product-bench evidence; S360-312 schematic / BOM.",
+      "modules": {
+        "mount": "Ceiling",
+        "power": "POE",
+        "air_quality": "none",
+        "room_sense": "none",
+        "fan": "FanDAC",
+        "led": "none"
+      },
+      "blocked_modules": [
+        "FanTRIAC",
+        "LED"
+      ],
+      "hardware": {
+        "core": "S360-100",
+        "dac": "S360-312",
+        "poe": "S360-410"
+      },
+      "hardware_status": "package-implemented-product-layer-pending",
+      "notes": "Real upstream FanDAC manual-preview fan-driver target (0 to 10V analog fan driver, for example Cloudlift S12). product-catalog.json keeps status=hardware-pending / webflash_build_matrix=false; the WebFlash-import authorisation is the separate structured webflash_import_eligibility.eligible=true signal added by upstream #711 (RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001) in config/preview-release-targets.json. WebFlash imported this preview binary under WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 (the preview-eligible import automation) as Advanced-install-only, acknowledgement-gated preview firmware: never stable, never recommended, never a customer default, never in REQUIRED_CONFIGS or scripts/data/kits.json, never publicly buyable. The published preview artifact (Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin, run 26821900127, ESPHome 2026.4.5) is firmware-build proof only — no hardware / bench / compliance / commercial-availability proof is claimed. Stable / full release stays blocked on Cloudlift S12 / J3 harness + product-bench evidence and the S360-312 schematic / BOM. The FanDAC ↔ AirIQ DAC-bus mutex remains wizard policy. FanTRIAC stays excluded (eligible=false, build-blocked by HW-005)."
+    },
+    {
       "product_yaml": "products/sense360-core-c-poe.yaml",
       "legacy_config_id": "sense360-core-c-poe",
       "status": "legacy-compatible",

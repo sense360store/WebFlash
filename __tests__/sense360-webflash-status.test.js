@@ -121,7 +121,7 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — supported targets match m
 describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays blocked', () => {
     // WEBFLASH-RELAY-001 + WEBFLASH-PWM-001 — FanRelay and FanPWM are now exposed
     // manual-previews (see the dedicated describe blocks below). FanDAC / FanTRIAC stay out.
-    const fanTokens = ['FanDAC', 'FanTRIAC'];
+    const fanTokens = ['FanTRIAC'];
 
     test('no FanDAC/FanTRIAC firmware is exposed in manifest.json', () => {
         for (const build of manifestBuilds) {
