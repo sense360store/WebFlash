@@ -25,7 +25,7 @@ It complements — and does not replace:
 
 ## Scope — what the live deployment should show today
 
-`manifest.json` carries **exactly six builds**:
+`manifest.json` carries **exactly eight builds**:
 
 | `config_string` | Channel | Install surface |
 |---|---|---|
@@ -35,16 +35,18 @@ It complements — and does not replace:
 | `Ceiling-POE-RoomIQ` | `preview` | Advanced only (preview ack) |
 | `Ceiling-POE-RoomIQ-LED` | `preview` | Advanced only (preview ack) |
 | `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | Advanced only (preview ack) — FanRelay manual-preview (WEBFLASH-RELAY-001) |
+| `Ceiling-POE-FanPWM` | `preview` | Advanced only (preview ack) — FanPWM manual-preview (WEBFLASH-PWM-001) |
 | `Rescue` | `rescue` | Recovery path / rescue modal |
 
 - **Simple install** must remain **stable Bathroom PoE only**
   (`Ceiling-POE-VentIQ-RoomIQ`).
-- The four **preview** builds must be **Advanced-install-only**, never
+- The six **preview** builds must be **Advanced-install-only**, never
   recommended / default / stable, each gated on the `channel:preview`
   acknowledgement.
 - Candidate room bundles stay hidden / not buyable.
-- **No TRIAC and no fan-driver** (`FanRelay` / `FanPWM` / `FanDAC`) firmware was
-  imported.
+- **No DAC and no TRIAC** (`FanDAC` / `FanTRIAC`) firmware was imported.
+  `FanRelay` (WEBFLASH-RELAY-001) and `FanPWM` (WEBFLASH-PWM-001) are the
+  deliberate manual-preview exceptions; both are Advanced-install-only.
 - The existing **VentIQ LED preview** (`Ceiling-POE-VentIQ-RoomIQ-LED`, from
   `v1.0.0-led-preview`) was deliberately **not** overwritten.
 

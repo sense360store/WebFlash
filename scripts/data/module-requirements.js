@@ -161,12 +161,15 @@ const MODULE_REQUIREMENT_MATRIX = {
                 headers: ['12vFan_PWM_PulseCounter'],
                 description: '12V PWM fan driver, up to 4 fans with tach feedback.',
                 conflicts: [],
-                // WF-WIZARD-AVAIL-001: S360-311-R4 schematic uploaded upstream
-                // (sense360store/esphome-public), but no WebFlash firmware build
-                // ships for a Core + PWM configuration yet.
+                // WEBFLASH-PWM-001: a FanPWM preview / manual-preview build
+                // (Ceiling-POE-FanPWM) was imported after upstream marked it
+                // WebFlash-import eligible, so PWM is available-preview
+                // (Advanced-install-only, acknowledgement-gated). The authoritative
+                // override lives in scripts/utils/module-availability.js; this
+                // declarative field is kept consistent with it.
                 availability: {
-                    state: 'no-firmware',
-                    reasonCode: 'no-manifest-build'
+                    state: 'available-preview',
+                    reasonCode: 'preview-build'
                 }
             },
             analog: {

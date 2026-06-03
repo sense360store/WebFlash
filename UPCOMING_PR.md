@@ -24,7 +24,7 @@ follow-up:
 
 State of the repo at TRACKING-001:
 
-- Current import surface has seven builds (updated by WEBFLASH-RELAY-001):
+- Current import surface has eight builds (updated by WEBFLASH-PWM-001):
   - **Release-One stable** — `Ceiling-POE-VentIQ-RoomIQ` v1.0.0 (production)
   - **LED preview** — `Ceiling-POE-VentIQ-RoomIQ-LED` v1.0.0 (preview channel,
     manifest-only exposure under WF-LED-003 Option A)
@@ -38,8 +38,12 @@ State of the repo at TRACKING-001:
     manual-preview channel; WEBFLASH-RELAY-001, from upstream `v1.0.0-preview`
     after #711 marked it `webflash_import_eligibility.eligible=true` — catalog
     status stays `hardware-pending`)
+  - **FanPWM preview** — `Ceiling-POE-FanPWM` v1.0.0 (preview / manual-preview
+    channel; WEBFLASH-PWM-001, from upstream `v1.0.0-preview` under the same
+    #711 `webflash_import_eligibility.eligible=true` signal — catalog status
+    stays `hardware-pending`)
   - **Rescue** — `Rescue` v1.0.0 (WebFlash-owned unbricking build)
-- The five preview builds are preview-channel only (Advanced install,
+- The six preview builds are preview-channel only (Advanced install,
   `channel:preview` acknowledgement): not stable, not recommended, not a
   customer default, not in `REQUIRED_CONFIGS`, not a kit, not buyable. The
   default Simple install path still resolves only to the stable Bathroom PoE
@@ -98,12 +102,12 @@ State of the repo at TRACKING-001:
   `scripts/data/kits.json`, release-channel policy, FanTRIAC block, or
   service-worker fetch-strategy change landed — Simple install remains stable
   Bathroom PoE only, the stale hard block stands, and LED stays preview-only.
-- **`FanRelay` is now imported** as an Advanced-install preview / manual-preview
-  build (WEBFLASH-RELAY-001), authorised by upstream #711's
-  `webflash_import_eligibility.eligible=true` signal. `FanPWM`, `FanDAC`, and
-  `FanTRIAC` remain **not imported**: FanPWM / FanDAC are upstream-import-eligible
-  but reserved for `WF-IMPORT-PWM-001` / `WF-IMPORT-DAC-001`; FanTRIAC stays
-  `eligible=false` / build-blocked.
+- **`FanRelay` and `FanPWM` are now imported** as Advanced-install preview /
+  manual-preview builds (WEBFLASH-RELAY-001, WEBFLASH-PWM-001), authorised by
+  upstream #711's `webflash_import_eligibility.eligible=true` signal. `FanDAC`
+  and `FanTRIAC` remain **not imported**: FanDAC is upstream-import-eligible but
+  reserved for `WF-IMPORT-DAC-001`; FanTRIAC stays `eligible=false` /
+  build-blocked.
 - **LED stable import remains blocked** by:
   - operator hardware proof (WF-HW-TEST-002 follow-up — operator evidence
     still pending; the docs PR merged as #430 without evidence), and
@@ -171,6 +175,7 @@ State of the repo at TRACKING-001:
 | WF-MANIFEST-FRESHNESS-RACE-001 | #466 | Merged | Fixed the manifest-freshness **startup race** — `checkManifestFreshnessNow()` now awaits the in-flight `manifestLoadPromise` and re-captures metadata before comparing; `triggerManifestFreshnessCheckIfNeeded()` no longer pre-marks the check run; added the transient `manifest-load-pending` reason (eleventh code). Adds `__tests__/wf-manifest-freshness-race.test.js` + `docs/wf-manifest-freshness-race-diagnosis.md`. | `scripts/state.js` + `scripts/services/manifest-freshness.js` + test/docs; verdict semantics unchanged, stale still hard-blocks. No firmware / `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / `sw.js`-strategy change. | A full refresh into `step=5` no longer shows a false `missing-generated-at`; initial refresh == manual recheck. |
 | WF-PREVIEW-IMPORT-FIRST-BATCH-001 | — (PR open) | PR open | Imported the first preview firmware batch from upstream `v1.0.0-preview` — three preview-channel builds (`Ceiling-POE-AirIQ-RoomIQ`, `Ceiling-POE-RoomIQ`, `Ceiling-POE-RoomIQ-LED`), each SHA-256-verified against the upstream checksums + pinned `expected_sha256`. Added 3 `firmware/sources.json` entries, 3 `.bin` + `.meta.json` sidecars, regenerated `manifest.json` (3→6 builds) + `firmware-*.json`, removed the AirIQ `no-firmware` override so AirIQ derives `available-preview`, refreshed the catalog fixture + alignment/availability tests, and updated status docs. | `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` (Release-One-only), Release-One stable + VentIQ LED preview + Rescue build content (signatures/hashes byte-identical; only `source_commit`/`source_url`/`build_date` provenance refreshed), `scripts/utils/release-channels.js`, the install gate, `sw.js`, `_headers`, `index.html`, every workflow. No TRIAC / FanRelay / FanPWM / FanDAC import. The 4th `v1.0.0-preview` asset (`Ceiling-POE-VentIQ-RoomIQ-LED`) was NOT re-imported (already shipped via `v1.0.0-led-preview`). | Preview builds are Advanced-install-only behind the `channel:preview` acknowledgement; firmware-build proof only (no hardware / bench / compliance / commercial-availability proof). Simple install still resolves only to stable Bathroom PoE. |
 | WEBFLASH-RELAY-001 (a.k.a. WF-IMPORT-RELAY-001) | _(open — PR # to fill at merge)_ | In review | Imported the `Ceiling-POE-VentIQ-FanRelay-RoomIQ` manual-preview firmware from upstream `v1.0.0-preview` (SHA256 `f9600a6b…d026ca4`, 989,840 bytes) as an **Advanced-install-only preview**. Authorised by upstream #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`) which set `webflash_import_eligibility.eligible=true` while the catalog status stays `hardware-pending` / `webflash_build_matrix=false`. Added 1 `firmware/sources.json` entry (`channel: preview`, pinned `expected_sha256`, `block_tokens: ["FanTRIAC", "LED"]`), staged the `.bin` + `.meta.json`, regenerated `manifest.json` (6→7 builds) + `firmware-*.json`. Flipped `Sense360 Relay` (S360-310) `design-pending`→`available-preview` with bespoke installer/developer-preview copy. Taught `__tests__/product-catalog-alignment.test.js` + `scripts/validate-product-import-readiness.js` to recognise `webflash_import_eligibility.eligible` (import / manifest / kit only — never `REQUIRED_CONFIGS`, never when `eligible!==true`). Mirrored the FanRelay row into the catalog fixture (`status: hardware-pending` + eligibility object). Added `docs/fanrelay-preview-import-proof.md`; updated `docs/sense360-webflash-status.md`, `docs/live-smoke-preview-import.md`, `CHANGELOG.md`. Rebaselined the build-count / source-list test pins (7 builds; FanRelay dropped from the forbidden-fan-token guards). | `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/data/kits.json` (Release-One-only), `scripts/data/kit-presets.js` (no FanRelay card), Release-One stable + first preview batch + VentIQ LED preview + Rescue build **content** (signatures/hashes byte-identical; only provenance refreshed), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, the install gate / preflight / freshness engines, `scripts/simple-install.js`, `sw.js`, `_headers`, `index.html`, every CSS, every `.github/workflows/*` file. FanTRIAC import block, WF-LED-003 preview acknowledgement model, WF-TRIAC-001 advanced/manual-warning gate all stand. **No FanPWM / FanDAC / FanTRIAC imported. No hardware / bench / compliance / safety / commercial-availability proof claimed.** | FanRelay reachable in the Advanced (custom) path behind the existing `channel:preview` acknowledgement; Simple install unchanged (stable Bathroom PoE only). WebFlash now recognises the upstream two-concept eligibility model (`webflash_import_eligibility` vs. `webflash_build_matrix`). FanPWM / FanDAC remain reserved for `WF-IMPORT-PWM-001` / `WF-IMPORT-DAC-001`. |
+| WEBFLASH-PWM-001 (a.k.a. WF-IMPORT-PWM-001) | _(open — PR # to fill at merge)_ | In review | Imported the `Ceiling-POE-FanPWM` manual-preview firmware from upstream `v1.0.0-preview` (SHA256 `4ef9f353…c59926`, 950,720 bytes) as an **Advanced-install-only preview**, the direct sibling of WEBFLASH-RELAY-001. Authorised by the same upstream #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`) `webflash_import_eligibility.eligible=true` signal while the catalog status stays `hardware-pending` / `webflash_build_matrix=false`. Added 1 `firmware/sources.json` entry (`channel: preview`, pinned `expected_sha256`, `block_tokens: ["FanTRIAC", "LED"]`), staged the `.bin` + `.meta.json`, regenerated `manifest.json` (7→8 builds) + `firmware-*.json`. Flipped `Sense360 PWM` (S360-311) `no-firmware`→`available-preview` with bespoke installer/developer-preview copy (low-voltage / DC fan control). Mirrored the FanPWM row into the catalog fixture (`status: hardware-pending` + eligibility object); the catalog-alignment guard + `scripts/validate-product-import-readiness.js` already recognise `webflash_import_eligibility.eligible` (no validator change needed). Added `docs/fanpwm-preview-import-proof.md`; updated `docs/sense360-webflash-status.md`, `docs/live-smoke-preview-import.md`, `docs/webflash-import-readiness-matrix.md`, `CHANGELOG.md`. Rebaselined the build-count / source-list test pins (8 builds; FanPWM dropped from the forbidden-fan-token guards). | `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/data/kits.json` (Release-One-only), `scripts/data/kit-presets.js` (no FanPWM card), Release-One stable + first preview batch + VentIQ LED preview + FanRelay preview + Rescue build **content** (signatures/hashes/`build_date` byte-identical; only `source_commit`/`source_url` provenance refreshed), `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, the install gate / preflight / freshness engines, `scripts/simple-install.js`, `sw.js`, `_headers`, `index.html`, every CSS, every `.github/workflows/*` file. FanTRIAC import block, WF-LED-003 preview acknowledgement model, WF-TRIAC-001 advanced/manual-warning gate all stand. **No FanDAC / FanTRIAC imported. No hardware / bench / compliance / safety / commercial-availability proof claimed.** | FanPWM reachable in the Advanced (custom) path behind the existing `channel:preview` acknowledgement; Simple install unchanged (stable Bathroom PoE only). FanDAC remains reserved for `WF-IMPORT-DAC-001`; FanTRIAC stays build-blocked. |
 
 ## Active / upcoming WebFlash queue
 
@@ -217,9 +222,9 @@ These gate every item below and must not be regressed by any queue PR:
    [`docs/live-smoke-preview-import.md`](../docs/live-smoke-preview-import.md)
    and the deterministic guard
    [`__tests__/live-smoke-preview-import.test.js`](../__tests__/live-smoke-preview-import.test.js)
-   (exactly seven builds after WEBFLASH-RELAY-001, preview Advanced-only /
+   (exactly eight builds after WEBFLASH-PWM-001, preview Advanced-only /
    acknowledgement-gated, Simple resolves only to stable Bathroom PoE, preview
-   release notes present, no PWM / DAC / TRIAC fan-driver import — FanRelay
+   release notes present, no DAC / TRIAC fan-driver import — FanRelay + FanPWM
    excepted, AirIQ availability derived from the manifest, VentIQ LED preview
    preserved, Rescue available). Extends the Simple-only
    `WF-LIVE-SMOKE-SIMPLE-INSTALL-001` row below into the preview-import surface.
@@ -347,10 +352,19 @@ These gate every item below and must not be regressed by any queue PR:
    WF-PRODUCT-004 classifies preview / import-eligible entries as import /
    manifest / kit eligible but never `REQUIRED_CONFIGS`-eligible.
 
-10. **WF-IMPORT-PWM-001 — Import FanPWM preview artifact.**
-    Status: **Blocked.**
-    Purpose: Import S360-311 FanPWM preview `.bin` + sidecar.
-    Dependencies: Upstream `RELEASE-PWM-001`.
+10. **WF-IMPORT-PWM-001 / WEBFLASH-PWM-001 — Import FanPWM preview artifact.**
+    Status: **Done — landed as WEBFLASH-PWM-001 (this PR).**
+    Imported the S360-311 FanPWM preview `.bin` + sidecar
+    (`Ceiling-POE-FanPWM`, from upstream `v1.0.0-preview`), added the source
+    entry with `block_tokens: ["FanTRIAC", "LED"]`, and regenerated manifests
+    (7 → 8 builds). Unblocked — like FanRelay — **not** by a catalog
+    `status: preview` promotion but by upstream #711
+    (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`)'s
+    `webflash_import_eligibility.eligible=true` signal while catalog status
+    stays `hardware-pending`.
+    Note: **Not `REQUIRED_CONFIGS`, not a kit, not recommended, not default.**
+    Preview / import-eligible entries are import / manifest / kit eligible but
+    never `REQUIRED_CONFIGS`-eligible.
 
 11. **WF-IMPORT-DAC-001 — Import FanDAC preview artifact.**
     Status: **Blocked.**

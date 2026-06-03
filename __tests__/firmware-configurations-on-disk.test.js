@@ -48,17 +48,24 @@ const FIRST_BATCH_SIDECARS = Object.freeze(
 const FANRELAY_BIN = 'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin';
 const FANRELAY_SIDECAR = FANRELAY_BIN.replace(/\.bin$/, '.meta.json');
 
+// WEBFLASH-PWM-001 — FanPWM manual-preview build imported from the same upstream
+// v1.0.0-preview release (upstream marked it WebFlash-import eligible).
+const FANPWM_BIN = 'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin';
+const FANPWM_SIDECAR = FANPWM_BIN.replace(/\.bin$/, '.meta.json');
+
 const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
     LED_PREVIEW_BIN,
     ...FIRST_BATCH_BINS,
-    FANRELAY_BIN
+    FANRELAY_BIN,
+    FANPWM_BIN
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
     LED_PREVIEW_SIDECAR,
     ...FIRST_BATCH_SIDECARS,
-    FANRELAY_SIDECAR
+    FANRELAY_SIDECAR,
+    FANPWM_SIDECAR
 ]);
 
 const EXPECTED_FILES = Object.freeze([...EXPECTED_BINS, ...EXPECTED_SIDECARS]);

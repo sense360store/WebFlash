@@ -7,6 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **FanPWM preview firmware import (WEBFLASH-PWM-001).** Imported the upstream
+  `Ceiling-POE-FanPWM` manual-preview firmware from the shared
+  `sense360store/esphome-public` `v1.0.0-preview` release (SHA256
+  `4ef9f353…c59926`, 950,720 bytes) as an **Advanced-install-only, preview /
+  manual-preview** option. Same upstream two-concept eligibility model as
+  FanRelay: upstream PR #711 (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`) set
+  `webflash_import_eligibility.eligible=true` in
+  `config/preview-release-targets.json` while keeping the catalog status
+  `hardware-pending` and `webflash_build_matrix=false`. Added a
+  `firmware/sources.json` source entry (`channel: preview`, pinned
+  `expected_sha256`, `block_tokens: ["FanTRIAC", "LED"]`), staged the `.bin` +
+  `.meta.json` sidecar, and regenerated `manifest.json` (7 → **8 builds**) +
+  `firmware-*.json`. `Sense360 PWM` (S360-311) moves from `no-firmware` to
+  `available-preview` in `scripts/utils/module-availability.js` with a bespoke
+  installer/developer-preview warning (low-voltage / DC fan control). The
+  catalog-alignment guard and the readiness validator already recognise the
+  `webflash_import_eligibility.eligible` signal (from WEBFLASH-RELAY-001), so the
+  FanPWM fixture row rides the existing manual-preview lane — import / manifest /
+  kit eligible, **never** `REQUIRED_CONFIGS` (production-only). Full import-proof
+  record at `docs/fanpwm-preview-import-proof.md`. **Unchanged:** Simple install
+  (still stable Bathroom PoE `Ceiling-POE-VentIQ-RoomIQ` only), `REQUIRED_CONFIGS`
+  (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), `scripts/data/kits.json` /
+  `kit-presets.js`, the FanTRIAC block, the WF-LED-003 preview acknowledgement
+  model, and every install / preflight / freshness gate. **No FanDAC / FanTRIAC
+  imported; no hardware / bench / compliance / safety / commercial-availability
+  proof claimed.**
 - **FanRelay preview firmware import (WEBFLASH-RELAY-001).** Imported the upstream
   `Ceiling-POE-VentIQ-FanRelay-RoomIQ` manual-preview firmware from the shared
   `sense360store/esphome-public` `v1.0.0-preview` release (SHA256

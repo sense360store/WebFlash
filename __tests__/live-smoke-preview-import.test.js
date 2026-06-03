@@ -28,13 +28,13 @@ import {
 // scripts/data/kit-presets.js / scripts/utils/release-channels.js /
 // scripts/utils/module-availability.js):
 //
-//   - the manifest carries exactly the expected seven builds,
+//   - the manifest carries exactly the expected eight builds,
 //   - the preview imports are Advanced-install-only (never default-picked,
 //     acknowledgement-gated),
 //   - Simple install resolves only to the stable Bathroom PoE build,
 //   - every preview build has working in-card release notes (no dead links),
-//   - no PWM / DAC / TRIAC fan-driver firmware was imported (FanRelay is the
-//     deliberate WEBFLASH-RELAY-001 manual-preview exception),
+//   - no DAC / TRIAC fan-driver firmware was imported (FanRelay + FanPWM are
+//     the deliberate manual-preview exceptions),
 //   - AirIQ availability derives from the manifest (no static override),
 //   - the stable Simple-install build is not blocked by a channel gate,
 //   - the existing VentIQ LED preview still resolves and stays preview-only.
@@ -68,39 +68,46 @@ const VENTIQ_LED_PREVIEW = 'Ceiling-POE-VentIQ-RoomIQ-LED';
 // imported after upstream marked it WebFlash-import eligible. Advanced-install-only,
 // acknowledgement-gated, never stable/recommended/default/kit/REQUIRED_CONFIGS.
 const FANRELAY_PREVIEW = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
+// WEBFLASH-PWM-001 — FanPWM manual-preview build (also from v1.0.0-preview),
+// imported after upstream marked it WebFlash-import eligible. Advanced-install-only,
+// acknowledgement-gated, never stable/recommended/default/kit/REQUIRED_CONFIGS.
+const FANPWM_PREVIEW = 'Ceiling-POE-FanPWM';
 const RESCUE = 'Rescue';
 
 // Every preview-channel build (acknowledgement-gated, Advanced-install-only).
 const ALL_PREVIEWS = Object.freeze([
     ...PREVIEW_FIRST_BATCH,
     VENTIQ_LED_PREVIEW,
-    FANRELAY_PREVIEW
+    FANRELAY_PREVIEW,
+    FANPWM_PREVIEW
 ]);
 
 const EXPECTED_BUILDS = Object.freeze([
     STABLE_BATHROOM_POE,
     VENTIQ_LED_PREVIEW,
     FANRELAY_PREVIEW,
+    FANPWM_PREVIEW,
     ...PREVIEW_FIRST_BATCH,
     RESCUE
 ]);
 
-// PWM / DAC / TRIAC fan-driver tokens that must NOT have been imported. FanRelay
-// is deliberately EXCLUDED — WEBFLASH-RELAY-001 imported it as a preview /
-// manual-preview build (upstream-import-eligible). PWM / DAC / TRIAC stay out.
-const FORBIDDEN_FAN_TOKENS = Object.freeze(['FanTRIAC', 'FanPWM', 'FanDAC']);
+// DAC / TRIAC fan-driver tokens that must NOT have been imported. FanRelay and
+// FanPWM are deliberately EXCLUDED — WEBFLASH-RELAY-001 / WEBFLASH-PWM-001
+// imported them as preview / manual-preview builds (upstream-import-eligible).
+// DAC / TRIAC stay out.
+const FORBIDDEN_FAN_TOKENS = Object.freeze(['FanTRIAC', 'FanDAC']);
 
-describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expected seven builds', () => {
-    test('manifest.json has exactly 7 builds', () => {
-        expect(builds.length).toBe(7);
+describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expected eight builds', () => {
+    test('manifest.json has exactly 8 builds', () => {
+        expect(builds.length).toBe(8);
     });
 
-    test('the seven config strings match the expected live set', () => {
+    test('the eight config strings match the expected live set', () => {
         const configs = builds.map(b => b.config_string).sort();
         expect(configs).toEqual([...EXPECTED_BUILDS].sort());
     });
 
-    test('channel assignment matches the live posture (1 stable, 5 preview, 1 rescue)', () => {
+    test('channel assignment matches the live posture (1 stable, 6 preview, 1 rescue)', () => {
         expect(buildByConfig.get(STABLE_BATHROOM_POE).channel).toBe('stable');
         ALL_PREVIEWS.forEach(cfg => {
             expect(buildByConfig.get(cfg).channel).toBe('preview');
@@ -111,7 +118,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — manifest carries exactly the expe
             acc[b.channel] = (acc[b.channel] || 0) + 1;
             return acc;
         }, {});
-        expect(channelCounts).toEqual({ stable: 1, preview: 5, rescue: 1 });
+        expect(channelCounts).toEqual({ stable: 1, preview: 6, rescue: 1 });
     });
 });
 
@@ -210,7 +217,7 @@ describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — preview release notes exist and a
     });
 });
 
-describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — no PWM / DAC / TRIAC fan-driver firmware imported (FanRelay excepted)', () => {
+describe('WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — no DAC / TRIAC fan-driver firmware imported (FanRelay + FanPWM excepted)', () => {
     test('no manifest build config_string carries a fan-driver token', () => {
         for (const build of builds) {
             const cfg = build.config_string || '';

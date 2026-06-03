@@ -119,11 +119,11 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — supported targets match m
 });
 
 describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays blocked', () => {
-    // WEBFLASH-RELAY-001 — FanRelay is now an exposed manual-preview (see the
-    // dedicated describe block below). FanPWM / FanDAC / FanTRIAC stay out.
-    const fanTokens = ['FanPWM', 'FanDAC', 'FanTRIAC'];
+    // WEBFLASH-RELAY-001 + WEBFLASH-PWM-001 — FanRelay and FanPWM are now exposed
+    // manual-previews (see the dedicated describe blocks below). FanDAC / FanTRIAC stay out.
+    const fanTokens = ['FanDAC', 'FanTRIAC'];
 
-    test('no FanPWM/FanDAC/FanTRIAC firmware is exposed in manifest.json', () => {
+    test('no FanDAC/FanTRIAC firmware is exposed in manifest.json', () => {
         for (const build of manifestBuilds) {
             const cs = build.config_string || '';
             for (const token of fanTokens) {
@@ -132,7 +132,7 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays bl
         }
     });
 
-    test('no FanPWM/FanDAC/FanTRIAC firmware has a firmware/sources.json source entry', () => {
+    test('no FanDAC/FanTRIAC firmware has a firmware/sources.json source entry', () => {
         for (const entry of sources.sources || []) {
             const cs = entry.config_string || '';
             const asset = entry.asset_name || '';
@@ -141,14 +141,6 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays bl
                 expect(asset).not.toContain(token);
             }
         }
-    });
-
-    test('the doc records FanPWM (S360-311) as not release-ready / no install card', () => {
-        expect(canonicalDoc).toMatch(/FanPWM|S360-311/);
-        // The standing guardrail copy must keep FanPWM hidden / not release-ready.
-        expect(canonicalDoc.toLowerCase()).toMatch(
-            /not release-ready|no install card|no-firmware|hidden/
-        );
     });
 
     test('the doc keeps the S360-410 PoE blocker visible and makes no verified claim', () => {
@@ -188,6 +180,41 @@ describe('WEBFLASH-RELAY-001 — FanRelay is an exposed manual-preview, not a cu
         expect(canonicalDoc.toLowerCase()).toMatch(/manual-preview|preview/);
         // It must steer normal customers to the stable Bathroom PoE build and
         // make no hardware/compliance claim for FanRelay.
+        expect(canonicalDoc.toLowerCase()).toMatch(
+            /not for normal customers|advanced install|advanced-install/
+        );
+    });
+});
+
+describe('WEBFLASH-PWM-001 — FanPWM is an exposed manual-preview, not a customer default', () => {
+    const FANPWM_CONFIG = 'Ceiling-POE-FanPWM';
+
+    test('FanPWM IS in manifest.json on the preview channel', () => {
+        const build = manifestByConfig.get(FANPWM_CONFIG);
+        expect(build).toBeDefined();
+        expect(build.channel).toBe('preview');
+    });
+
+    test('FanPWM has a firmware/sources.json source entry that still blocks FanTRIAC + LED', () => {
+        const entry = (sources.sources || []).find(
+            s => s.config_string === FANPWM_CONFIG
+        );
+        expect(entry).toBeDefined();
+        expect(entry.channel).toBe('preview');
+        expect(entry.block_tokens).toEqual(['FanTRIAC', 'LED']);
+    });
+
+    test('FanPWM is NOT in REQUIRED_CONFIGS (production-only)', () => {
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(FANPWM_CONFIG);
+    });
+
+    test('the doc records FanPWM as a preview / manual-preview, Advanced-install-only target', () => {
+        expect(canonicalDoc).toMatch(/FanPWM|S360-311/);
+        // The doc must frame FanPWM as preview / manual-preview, not stable.
+        expect(canonicalDoc.toLowerCase()).toMatch(/manual-preview|preview/);
+        // It must steer normal customers to the stable Bathroom PoE build and
+        // make no hardware/compliance claim for FanPWM.
         expect(canonicalDoc.toLowerCase()).toMatch(
             /not for normal customers|advanced install|advanced-install/
         );
