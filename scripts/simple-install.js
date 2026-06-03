@@ -43,13 +43,25 @@
  */
 
 import { setState, setStep, getMaxReachableStep } from './state.js';
-import { findKitPresetById } from './data/kit-presets.js';
+import {
+    SIMPLE_BUNDLES,
+    findSimpleBundleById,
+    getDefaultSimpleBundle,
+    isSimpleBundlePreview
+} from './data/simple-bundles.js';
 import { triggerSkipWaitingAndReload } from './services/sw-update.js';
 import { announce } from './utils/a11y.js';
 
 const STORAGE_KEY = 'webflash-install-mode';
+// WF-UX-011 / WF-EASY-BUNDLE-PICKER-001 — the Step-1 kit-preset id used by
+// resolveInitialMode's `?preset=` deep-link handling. A deep link to any other
+// preset opens the wizard (advanced) so its acknowledgement / module context is
+// visible. This is distinct from the Simple-install bundle SKUs (S360-KIT-*-P).
 const STABLE_PRESET_ID = 'S360-KIT-BATH-POE';
 const REVIEW_STEP = 5;
+// WF-EASY-BUNDLE-PICKER-001 — the default + recommended Simple-install bundle
+// (the stable Bathroom PoE build). Selected on entry to Simple install.
+const DEFAULT_BUNDLE_ID = getDefaultSimpleBundle().id;
 
 const SIMPLE_INSTALL_SELECTOR = '[data-simple-install]';
 const ADVANCED_BAR_SELECTOR = '[data-advanced-bar]';
@@ -80,6 +92,44 @@ const TECH_REVEAL_ATTR = 'data-technical-details-revealed';
 const FRESHNESS_NOTE_SELECTOR = '[data-simple-install-freshness-note]';
 const FRESHNESS_NOTE_TEXT_SELECTOR = '[data-simple-install-freshness-text]';
 const FRESHNESS_NOTE_COPY = 'Couldn’t recheck for updates. You can reload, or continue with the firmware list already loaded.';
+
+// WF-EASY-BUNDLE-PICKER-001 — Simple install is a bundle picker. The picker is a
+// list of supported customer bundle products (data/simple-bundles.js); selecting
+// a card feeds the bundle's wizardState through setState() so Step 5 resolves the
+// matching firmware + every gate. The stable Bathroom PoE bundle is the default.
+const BUNDLE_PICKER_SELECTOR = '[data-simple-bundle-picker]';
+const BUNDLE_CARD_SELECTOR = '[data-simple-bundle-card]';
+const BUNDLE_SELECTED_NAME_SELECTOR = '[data-simple-bundle-selected-name]';
+const BUNDLE_EYEBROW_SELECTOR = '[data-simple-install-eyebrow]';
+const BUNDLE_SUMMARY_SELECTOR = '[data-simple-install-summary]';
+const BUNDLE_PREVIEW_NOTE_SELECTOR = '[data-simple-bundle-preview-note]';
+const BUNDLE_PREVIEW_NOTE_TEXT_SELECTOR = '[data-simple-bundle-preview-note-text]';
+// WF-EASY-BUNDLE-PICKER-001 — the additional, stronger fan-control gate for the
+// Bathroom Relay bundle. It is layered ON TOP of the release-channel preview
+// acknowledgement (which still gates install in state.js): the controller only
+// lets the authoritative "Before you flash" acknowledgement become true when the
+// fan-control acknowledgement is also satisfied, so install stays blocked until
+// both are checked. It never weakens or replaces an existing gate.
+const FAN_CONTROL_REGION_SELECTOR = '[data-simple-bundle-fan-control]';
+const FAN_CONTROL_ACK_SELECTOR = '[data-simple-bundle-fan-control-ack]';
+const FAN_CONTROL_WARNING_SELECTOR = '[data-simple-bundle-fan-control-warning]';
+// Tech-details fields reflect the selected bundle (kept inside the collapsed
+// "Technical details" disclosure so the always-visible copy stays plain).
+const TECH_SKU_SELECTOR = '[data-simple-install-tech-sku]';
+const TECH_CONFIG_SELECTOR = '[data-simple-install-tech-config]';
+const TECH_CHANNEL_SELECTOR = '[data-simple-install-tech-channel]';
+const TECH_ARTIFACT_SELECTOR = '[data-simple-install-tech-artifact]';
+// The Step-5 install CTA copy ("Install stable firmware" / "Install preview
+// firmware") tracks the selected bundle's channel.
+const INSTALL_CTA_SELECTOR = '[data-simple-install-cta]';
+const INSTALL_CTA_LABEL_SELECTOR = '[data-simple-install-cta-label]';
+
+// The active bundle SKU (defaults to the stable Bathroom PoE bundle). Tracked so
+// switching to advanced and back preserves the customer's choice.
+let activeBundleId = DEFAULT_BUNDLE_ID;
+// Guards the preflash mirror against a reverse-sync loop while the controller
+// programmatically composes the authoritative acknowledgement.
+let programmaticPreflashUpdate = false;
 
 // A clean module slate so switching from the advanced wizard back into the
 // stable kit never carries a stray module selection forward. Mirrors the
@@ -368,29 +418,42 @@ function bindSafetyConfirmMirror() {
     }
     const heroAck = document.querySelector(CONFIRM_SELECTOR);
     if (heroAck && heroAck.dataset.confirmMirrorBound !== 'true') {
+        // Forward: the hero confirmation composes (AND-ed with the fan-control
+        // acknowledgement when the active bundle requires it) into the
+        // authoritative [data-preflash-acknowledge] gate.
         heroAck.addEventListener('change', () => {
-            const realAck = document.querySelector(PREFLASH_ACK_SELECTOR);
-            if (realAck && realAck.checked !== heroAck.checked) {
-                realAck.checked = heroAck.checked;
-                try {
-                    realAck.dispatchEvent(new Event('change', { bubbles: true }));
-                } catch {
-                    // restricted environments — the value is still set.
-                }
-            }
+            syncPreflashFromHero();
         });
         heroAck.dataset.confirmMirrorBound = 'true';
     }
 
     const realAck = document.querySelector(PREFLASH_ACK_SELECTOR);
     if (realAck && realAck.dataset.simpleConfirmMirrorBound !== 'true') {
+        // Reverse: keep the hero confirmation in step with a direct toggle of the
+        // authoritative control (e.g. in advanced mode). Skipped while the
+        // controller is composing the gate programmatically so the fan-control
+        // AND-gate never bounces the hero checkbox back off.
         realAck.addEventListener('change', () => {
+            if (programmaticPreflashUpdate) {
+                return;
+            }
             const hero = document.querySelector(CONFIRM_SELECTOR);
             if (hero && hero.checked !== realAck.checked) {
                 hero.checked = realAck.checked;
             }
         });
         realAck.dataset.simpleConfirmMirrorBound = 'true';
+    }
+
+    // The fan-control acknowledgement (Bathroom Relay bundle) recomposes the
+    // authoritative pre-flash gate and refreshes the hero status.
+    const fanAck = document.querySelector(FAN_CONTROL_ACK_SELECTOR);
+    if (fanAck && fanAck.dataset.fanControlAckBound !== 'true') {
+        fanAck.addEventListener('change', () => {
+            syncPreflashFromHero();
+            renderStatus(window.webflashInstallReadiness || lastReadiness);
+        });
+        fanAck.dataset.fanControlAckBound = 'true';
     }
 }
 
@@ -514,28 +577,255 @@ export function renderStatus(readiness) {
 }
 
 /**
- * Apply the stable Release-One kit preset and advance to the review/install
- * step. Idempotent — running it twice just re-applies the same state.
+ * Resolve the active bundle object, falling back to the default (stable
+ * Bathroom PoE) bundle if the tracked id no longer resolves.
+ *
+ * @returns {Object}
  */
-function enterSimpleView() {
-    const preset = findKitPresetById(STABLE_PRESET_ID);
-    if (preset && preset.wizardState) {
+function getActiveBundle() {
+    return findSimpleBundleById(activeBundleId) || getDefaultSimpleBundle();
+}
+
+/**
+ * Friendly firmware artifact filename for the (collapsed) Technical details
+ * display. Presentation-only — the real install path resolves the build via
+ * state.js + manifest.json; this is just the human-readable file name.
+ *
+ * @param {Object} bundle
+ * @returns {string}
+ */
+function bundleArtifactName(bundle) {
+    if (!bundle || !bundle.firmwareConfigString) {
+        return '';
+    }
+    const channel = bundle.channel === 'preview' ? 'preview' : 'stable';
+    return `Sense360-${bundle.firmwareConfigString}-v1.0.0-${channel}.bin`;
+}
+
+/**
+ * True only when the active bundle's fan-control acknowledgement is satisfied
+ * (or the active bundle does not require one). Used to compose the authoritative
+ * pre-flash gate so the Bathroom Relay bundle stays blocked until the
+ * fan-control acknowledgement is checked.
+ *
+ * @returns {boolean}
+ */
+function fanControlSatisfied() {
+    const bundle = getActiveBundle();
+    if (!bundle || !bundle.requiresFanControlAcknowledgement) {
+        return true;
+    }
+    const ack = document.querySelector(FAN_CONTROL_ACK_SELECTOR);
+    return Boolean(ack && ack.checked);
+}
+
+/**
+ * Compose the authoritative "Before you flash" acknowledgement
+ * ([data-preflash-acknowledge], read by state.js) from the hero safety
+ * confirmation AND the fan-control acknowledgement (when the active bundle
+ * requires it). This ANDs in the extra fan-control requirement so install stays
+ * blocked until BOTH are satisfied; it never weakens the gate. The
+ * preview-channel acknowledgement stays a SEPARATE, authoritative gate owned by
+ * state.js — this never touches or bypasses it.
+ */
+function syncPreflashFromHero() {
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const real = document.querySelector(PREFLASH_ACK_SELECTOR);
+    if (!real) {
+        return;
+    }
+    const hero = document.querySelector(CONFIRM_SELECTOR);
+    const desired = Boolean(hero && hero.checked) && fanControlSatisfied();
+    if (real.checked !== desired) {
+        programmaticPreflashUpdate = true;
+        real.checked = desired;
         try {
-            setState({ ...CLEARED_WIZARD_STATE, ...preset.wizardState });
-        } catch (error) {
-            console.warn('[simple-install] applying stable preset failed:', error);
+            real.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch {
+            // restricted environments — the value is still set.
+        }
+        programmaticPreflashUpdate = false;
+    }
+}
+
+/**
+ * Reflect the active selection across the bundle picker cards: the matching
+ * card reads `aria-pressed`/`aria-checked` true + `.is-active`. Safe to call
+ * when the picker is absent (unit fixtures without it).
+ *
+ * @param {string} activeId
+ */
+function syncBundleCards(activeId) {
+    document.querySelectorAll(BUNDLE_CARD_SELECTOR).forEach((card) => {
+        const isActive = card.getAttribute('data-simple-bundle-id') === activeId;
+        card.setAttribute('aria-pressed', String(isActive));
+        card.setAttribute('aria-checked', String(isActive));
+        card.classList.toggle('is-active', isActive);
+    });
+}
+
+/**
+ * Render the selected bundle into the detail card: the bundle name, the
+ * channel/version eyebrow, the included-hardware summary, the collapsed
+ * Technical details (SKU / config / channel / firmware file), the Step-5 install
+ * CTA copy, the preview note (preview bundles only), and the fan-control region
+ * (the Bathroom Relay bundle only). Every write is guarded so this is safe with
+ * minimal unit fixtures. Presentation-only — no install gate is recomputed here.
+ *
+ * @param {Object} bundle
+ */
+function renderSelectedBundle(bundle) {
+    if (typeof document === 'undefined' || !bundle) {
+        return;
+    }
+    const preview = isSimpleBundlePreview(bundle);
+
+    const nameEl = document.querySelector(BUNDLE_SELECTED_NAME_SELECTOR);
+    if (nameEl) {
+        nameEl.textContent = bundle.displayName;
+    }
+
+    const eyebrow = document.querySelector(BUNDLE_EYEBROW_SELECTOR);
+    if (eyebrow) {
+        eyebrow.textContent = preview ? 'Preview firmware · v1.0.0' : 'Stable firmware · v1.0.0';
+    }
+
+    const summary = document.querySelector(BUNDLE_SUMMARY_SELECTOR);
+    if (summary) {
+        summary.innerHTML = '';
+        bundle.moduleSummary.forEach((item) => {
+            const li = document.createElement('li');
+            li.className = 'simple-install__summary-item';
+            li.textContent = item;
+            summary.appendChild(li);
+        });
+    }
+
+    const sku = document.querySelector(TECH_SKU_SELECTOR);
+    if (sku) {
+        sku.textContent = bundle.id;
+    }
+    const config = document.querySelector(TECH_CONFIG_SELECTOR);
+    if (config) {
+        config.textContent = bundle.firmwareConfigString || '';
+    }
+    const channel = document.querySelector(TECH_CHANNEL_SELECTOR);
+    if (channel) {
+        channel.textContent = preview ? 'Preview' : 'Stable';
+    }
+    const artifact = document.querySelector(TECH_ARTIFACT_SELECTOR);
+    if (artifact) {
+        artifact.textContent = bundleArtifactName(bundle);
+    }
+
+    const ctaLabel = document.querySelector(INSTALL_CTA_LABEL_SELECTOR);
+    if (ctaLabel) {
+        ctaLabel.textContent = preview ? 'Install preview firmware.' : 'Install stable firmware.';
+    }
+
+    // Preview note: a calm reminder that a preview-channel acknowledgement is
+    // required at install. The copy is static in the markup; the controller only
+    // toggles visibility. Shown for every preview bundle (including the relay
+    // bundle, which ALSO shows the stronger fan-control region below).
+    const previewNote = document.querySelector(BUNDLE_PREVIEW_NOTE_SELECTOR);
+    if (previewNote) {
+        previewNote.hidden = !preview;
+        previewNote.setAttribute('aria-hidden', String(!preview));
+    }
+
+    // Fan-control region: the additional, stronger gate for the Bathroom Relay
+    // bundle. When the active bundle does not require it, clear the stored ack so
+    // a future reselection re-prompts.
+    const requiresFanControl = Boolean(bundle.requiresFanControlAcknowledgement);
+    const fanRegion = document.querySelector(FAN_CONTROL_REGION_SELECTOR);
+    if (fanRegion) {
+        fanRegion.hidden = !requiresFanControl;
+        fanRegion.setAttribute('aria-hidden', String(!requiresFanControl));
+    }
+    if (!requiresFanControl) {
+        const ack = document.querySelector(FAN_CONTROL_ACK_SELECTOR);
+        if (ack && ack.checked) {
+            ack.checked = false;
         }
     }
-    try {
-        const reachable = getMaxReachableStep();
-        const target = Math.min(REVIEW_STEP, Number.isFinite(reachable) ? reachable : REVIEW_STEP);
-        setStep(target, { animate: false });
-    } catch (error) {
-        console.warn('[simple-install] advancing to review step failed:', error);
+
+    syncBundleCards(bundle.id);
+}
+
+/**
+ * Select a Simple-install bundle: track it, feed its wizardState through the
+ * same setState() the wizard/kit flows use (so Step 5 resolves the matching
+ * firmware + every gate), render the detail card, recompose the authoritative
+ * pre-flash gate (fan-control), and advance to the review/install step.
+ * Idempotent. Returns the resolved bundle.
+ *
+ * @param {string} bundleId
+ * @param {{advance?: boolean}} [options]
+ * @returns {Object}
+ */
+function selectBundle(bundleId, { advance = true } = {}) {
+    const bundle = findSimpleBundleById(bundleId) || getDefaultSimpleBundle();
+    activeBundleId = bundle.id;
+
+    if (bundle.wizardState) {
+        try {
+            setState({ ...CLEARED_WIZARD_STATE, ...bundle.wizardState });
+        } catch (error) {
+            console.warn('[simple-install] applying bundle failed:', error);
+        }
     }
-    syncSafetyConfirmFromGate();
-    syncTechnicalDetailsRevealed();
+
+    renderSelectedBundle(bundle);
+    // The active bundle (and thus its fan-control requirement) may have changed,
+    // so recompose the authoritative pre-flash gate.
+    syncPreflashFromHero();
+
+    if (advance) {
+        try {
+            const reachable = getMaxReachableStep();
+            const target = Math.min(REVIEW_STEP, Number.isFinite(reachable) ? reachable : REVIEW_STEP);
+            setStep(target, { animate: false });
+        } catch (error) {
+            console.warn('[simple-install] advancing to review step failed:', error);
+        }
+    }
+
     renderStatus(window.webflashInstallReadiness || lastReadiness);
+    return bundle;
+}
+
+/**
+ * Plain-language live-region announcement for a bundle selection. Names the
+ * acknowledgement(s) the customer still has to complete before install.
+ *
+ * @param {Object} bundle
+ */
+function announceBundleSelection(bundle) {
+    if (!bundle) {
+        return;
+    }
+    let message = `${bundle.displayName} selected.`;
+    if (bundle.requiresFanControlAcknowledgement) {
+        message += ' Preview firmware with fan control. Review and accept the preview and fan-control acknowledgements before installing.';
+    } else if (bundle.requiresPreviewAcknowledgement) {
+        message += ' Preview firmware. Review and accept the preview acknowledgement before installing.';
+    } else {
+        message += ' Stable firmware. Confirm before installing, then use the Install button.';
+    }
+    announce(message);
+}
+
+/**
+ * Enter the Simple-install view: select the active bundle (the default stable
+ * Bathroom PoE bundle on first entry; the customer's last choice thereafter) and
+ * land on the review/install step. Idempotent.
+ */
+function enterSimpleView() {
+    syncSafetyConfirmFromGate();
+    selectBundle(activeBundleId || DEFAULT_BUNDLE_ID, { advance: true });
+    syncTechnicalDetailsRevealed();
 }
 
 /**
@@ -712,6 +1002,19 @@ function handleDocumentClick(event) {
         return;
     }
 
+    // WF-EASY-BUNDLE-PICKER-001 — the Simple-install bundle picker. Selecting a
+    // card feeds the bundle's wizardState through setState() so Step 5 resolves
+    // the matching firmware + gates. Preview bundles still gate behind the
+    // release-channel preview acknowledgement; the Bathroom Relay bundle also
+    // gates behind the fan-control acknowledgement.
+    const bundleCard = target.closest(BUNDLE_CARD_SELECTOR);
+    if (bundleCard) {
+        event.preventDefault();
+        const bundle = selectBundle(bundleCard.getAttribute('data-simple-bundle-id'), { advance: true });
+        announceBundleSelection(bundle);
+        return;
+    }
+
     // WF-UX-012 — the first-choice path picker. An explicit Simple/Advanced
     // button takes priority and routes through the same applyMode() the legacy
     // [data-enter-*] links use, so the picker, the secondary links, and the
@@ -723,7 +1026,7 @@ function handleDocumentClick(event) {
         applyMode(path);
         announce(path === 'advanced'
             ? 'Advanced install. The full firmware wizard is now shown.'
-            : 'Simple install. Showing the stable Sense360 Bathroom PoE kit.');
+            : 'Simple install. Choose your Sense360 kit.');
         return;
     }
 
@@ -764,7 +1067,7 @@ function handleDocumentClick(event) {
     if (target.closest('[data-enter-simple]')) {
         event.preventDefault();
         applyMode('simple');
-        announce('Simple install. Showing the stable Sense360 Bathroom PoE kit.');
+        announce('Simple install. Choose your Sense360 kit.');
         return;
     }
     handleStatusAction(target);
@@ -819,8 +1122,20 @@ export const __testHooks = Object.freeze({
     acknowledgeLoadedFirmwareList,
     bindSafetyConfirmMirror,
     syncSafetyConfirmFromGate,
+    // WF-EASY-BUNDLE-PICKER-001 — bundle picker hooks.
+    selectBundle,
+    getActiveBundle,
+    getActiveBundleId: () => activeBundleId,
+    renderSelectedBundle,
+    syncPreflashFromHero,
+    fanControlSatisfied,
+    bundleArtifactName,
+    announceBundleSelection,
+    SIMPLE_BUNDLES,
+    DEFAULT_BUNDLE_ID,
+    resetActiveBundleForTests: () => { activeBundleId = DEFAULT_BUNDLE_ID; },
     getLastReadiness: () => lastReadiness,
-    resetForTests: () => { lastReadiness = null; },
+    resetForTests: () => { lastReadiness = null; activeBundleId = DEFAULT_BUNDLE_ID; },
     STORAGE_KEY,
     STABLE_PRESET_ID,
     TECH_REVEAL_ATTR

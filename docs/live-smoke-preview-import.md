@@ -3,9 +3,20 @@
 This is the **live / manual smoke checklist** for the deployed WebFlash site
 after the first preview firmware batch
 (`WF-PREVIEW-IMPORT-FIRST-BATCH-001`) landed. It confirms that, on the live
-GitHub Pages deployment, **Simple install stays clean and stable-only** while
-**Advanced install can reach the new preview builds** behind the preview
-acknowledgement with working release notes.
+GitHub Pages deployment, **Simple install defaults to the stable Bathroom PoE
+bundle** while **Advanced install can reach the new preview builds** behind the
+preview acknowledgement with working release notes.
+
+> **Superseded for the Simple-install path by WF-EASY-BUNDLE-PICKER-001.** Simple
+> install is no longer stable-*only*: it is now an easy **bundle picker** in which
+> the stable Bathroom PoE bundle is the **default + recommended** choice and the
+> imported preview room bundles are selectable behind clear Preview labels and the
+> existing acknowledgement gates (the Bathroom Relay bundle adds a fan-control
+> acknowledgement). The "Simple install shows only stable Bathroom PoE" assertions
+> below describe the **default** state; the picker behaviour is covered by
+> [`docs/live-smoke-easy-bundle-picker.md`](live-smoke-easy-bundle-picker.md). The
+> standalone `Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC` previews and TRIAC are
+> still **not** room-bundle products and never appear in Simple install.
 
 It complements — and does not replace:
 

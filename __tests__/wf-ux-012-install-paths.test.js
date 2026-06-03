@@ -93,8 +93,12 @@ describe('WF-UX-012 — static markup', () => {
             const card = hero.querySelector('[data-simple-install-card]');
             expect(card).not.toBeNull();
 
-            const heading = card.querySelector('#simple-install-heading');
-            expect(heading.textContent.trim()).toBe('Sense360 Bathroom PoE Kit');
+            // WF-EASY-BUNDLE-PICKER-001 — the section leads with the picker heading;
+            // the detail card names the selected (default stable Bathroom) bundle.
+            const heading = hero.querySelector('#simple-install-heading');
+            expect(heading.textContent.trim()).toBe('Choose your Sense360 kit');
+            const selectedName = card.querySelector('[data-simple-bundle-selected-name]');
+            expect(selectedName.textContent).toMatch(/Bathroom Bundle/i);
 
             // Stable firmware version is surfaced in the card (matches the
             // current production target — manifest.json version 1.0.0).
@@ -145,7 +149,7 @@ describe('WF-UX-012 — static markup', () => {
             const config = hero.querySelector('[data-simple-install-tech-config]');
             const sku = hero.querySelector('[data-simple-install-tech-sku]');
             expect(config.textContent).toContain('Ceiling-POE-VentIQ-RoomIQ');
-            expect(sku.textContent).toContain('S360-KIT-BATH-POE');
+            expect(sku.textContent).toContain('S360-KIT-BATH-P');
             expect(tech.contains(config)).toBe(true);
             expect(tech.contains(sku)).toBe(true);
 

@@ -191,7 +191,7 @@ describe('WF-UX-015 — static markup + CSS contract', () => {
             const sku = tech.querySelector('[data-simple-install-tech-sku]');
             const config = tech.querySelector('[data-simple-install-tech-config]');
             const artifact = tech.querySelector('[data-simple-install-tech-artifact]');
-            expect(sku.textContent).toContain('S360-KIT-BATH-POE');
+            expect(sku.textContent).toContain('S360-KIT-BATH-P');
             expect(config.textContent).toContain('Ceiling-POE-VentIQ-RoomIQ');
             // Artifact filename lives behind the disclosure, never in the always-on copy.
             expect(artifact.textContent).toMatch(/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1\.0\.0-stable\.bin/);

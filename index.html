@@ -23,7 +23,7 @@
          together with the `?v=` asset query below and the sw.js CACHE_NAME on every
          UX-only JS deploy. No secrets/PII here — it is copied into diagnostics. -->
     <meta name="webflash-app-version" content="1.0.1">
-    <meta name="webflash-app-shell" content="2026-06-01-4">
+    <meta name="webflash-app-shell" content="2026-06-01-5">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +39,10 @@
          "Cannot install yet" copy from cache. Keep this token in lockstep with
          the sw.js CACHE_NAME and the `webflash-app-shell` marker above; see
          docs/deploy-notes.md. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=202606014">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=202606015">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=202606014">
+    <link rel="stylesheet" href="./css/layout.css?v=202606015">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -212,7 +212,7 @@
                         <!-- WF-UX-012 — the first choice: Simple install (recommended,
                              default) vs Advanced install. Selecting Advanced install
                              switches data-install-mode to "advanced" and reveals the full
-                             wizard; Simple install keeps the clean product card below. -->
+                             wizard; Simple install keeps the clean bundle picker below. -->
                         <div class="install-path-choice" data-install-path-choice role="group" aria-label="Choose how to install">
                             <button
                                 type="button"
@@ -222,7 +222,7 @@
                             >
                                 <span class="install-path-choice__badge" data-install-path-recommended>Recommended</span>
                                 <span class="install-path-choice__title">Simple install</span>
-                                <span class="install-path-choice__desc">Install the supported firmware for the Sense360 Bathroom PoE Kit. Nothing to configure &mdash; this is the right choice for most customers.</span>
+                                <span class="install-path-choice__desc">Choose your Sense360 kit and install the supported firmware. Nothing to configure &mdash; this is the right choice for most customers.</span>
                             </button>
                             <button
                                 type="button"
@@ -235,17 +235,132 @@
                             </button>
                         </div>
 
-                        <div class="simple-install__card" data-simple-install-card>
-                            <p class="simple-install__eyebrow">Stable firmware &middot; v1.0.0</p>
-                            <h2 id="simple-install-heading" class="simple-install__title">Sense360 Bathroom PoE Kit</h2>
-                            <p class="simple-install__lead">Install the production firmware for the kit you bought. Connect your hub over USB and install it right here in your browser &mdash; nothing to configure.</p>
+                        <!-- WF-EASY-BUNDLE-PICKER-001 — Simple install leads with an easy
+                             bundle picker over the supported customer bundle products
+                             (scripts/data/simple-bundles.js). The stable Bathroom Bundle — PoE
+                             is selected by default and recommended; the other room bundles are
+                             preview firmware and clearly labelled Preview. Selecting a card
+                             feeds the bundle's wizardState through setState() so Step 5
+                             resolves the matching firmware and every gate (preview-channel
+                             acknowledgement, provenance, freshness, preflight) stays
+                             authoritative. Technical metadata (SKU / config / firmware file)
+                             stays inside the collapsed Technical details disclosure. The
+                             FanPWM / FanDAC standalone previews and TRIAC are intentionally
+                             NOT room-bundle products and never appear here. -->
+                        <div class="simple-install__bundles">
+                            <h2 id="simple-install-heading" class="simple-install__bundles-heading">Choose your Sense360 kit</h2>
+                            <p class="simple-install__bundles-intro">The Bathroom Bundle &mdash; PoE is the recommended, supported install for most customers. The other room bundles are preview firmware &mdash; experimental, and they ask you to acknowledge the preview channel before installing.</p>
+                            <div class="simple-bundle-picker" data-simple-bundle-picker role="radiogroup" aria-label="Choose your Sense360 kit">
+                                <button type="button" class="simple-bundle-card simple-bundle-card--stable is-active" data-simple-bundle-card data-simple-bundle-id="S360-KIT-BATH-P" data-simple-bundle-channel="stable" role="radio" aria-checked="true" aria-pressed="true">
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--positive">Recommended</span>
+                                    <span class="simple-bundle-card__title">Bathroom Bundle &mdash; PoE</span>
+                                    <span class="simple-bundle-card__room">Bathroom</span>
+                                    <span class="simple-bundle-card__channel simple-bundle-card__channel--stable">Stable firmware &middot; ready to install</span>
+                                    <ul class="simple-bundle-card__summary" aria-label="What is included">
+                                        <li>Sense360 Core</li>
+                                        <li>RoomIQ room sensing</li>
+                                        <li>VentIQ bathroom air sensing</li>
+                                        <li>Power over Ethernet (PoE)</li>
+                                    </ul>
+                                </button>
+                                <button type="button" class="simple-bundle-card simple-bundle-card--preview" data-simple-bundle-card data-simple-bundle-id="S360-KIT-KITCHEN-P" data-simple-bundle-channel="preview" role="radio" aria-checked="false" aria-pressed="false">
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--warning">Preview</span>
+                                    <span class="simple-bundle-card__title">Kitchen Bundle &mdash; PoE</span>
+                                    <span class="simple-bundle-card__room">Kitchen</span>
+                                    <span class="simple-bundle-card__channel simple-bundle-card__channel--preview">Preview firmware &middot; acknowledge before install</span>
+                                    <ul class="simple-bundle-card__summary" aria-label="What is included">
+                                        <li>Sense360 Core</li>
+                                        <li>RoomIQ room sensing</li>
+                                        <li>AirIQ air-quality sensing</li>
+                                        <li>Power over Ethernet (PoE)</li>
+                                    </ul>
+                                </button>
+                                <button type="button" class="simple-bundle-card simple-bundle-card--preview" data-simple-bundle-card data-simple-bundle-id="S360-KIT-BEDROOM-P" data-simple-bundle-channel="preview" role="radio" aria-checked="false" aria-pressed="false">
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--warning">Preview</span>
+                                    <span class="simple-bundle-card__title">Bedroom Bundle &mdash; PoE</span>
+                                    <span class="simple-bundle-card__room">Bedroom</span>
+                                    <span class="simple-bundle-card__channel simple-bundle-card__channel--preview">Preview firmware &middot; acknowledge before install</span>
+                                    <ul class="simple-bundle-card__summary" aria-label="What is included">
+                                        <li>Sense360 Core</li>
+                                        <li>RoomIQ room sensing</li>
+                                        <li>Power over Ethernet (PoE)</li>
+                                    </ul>
+                                </button>
+                                <button type="button" class="simple-bundle-card simple-bundle-card--preview" data-simple-bundle-card data-simple-bundle-id="S360-KIT-LIVING-P" data-simple-bundle-channel="preview" role="radio" aria-checked="false" aria-pressed="false">
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--warning">Preview</span>
+                                    <span class="simple-bundle-card__title">Living Room Bundle &mdash; PoE</span>
+                                    <span class="simple-bundle-card__room">Living room</span>
+                                    <span class="simple-bundle-card__channel simple-bundle-card__channel--preview">Preview firmware &middot; acknowledge before install</span>
+                                    <ul class="simple-bundle-card__summary" aria-label="What is included">
+                                        <li>Sense360 Core</li>
+                                        <li>RoomIQ room sensing</li>
+                                        <li>LED status ring</li>
+                                        <li>Power over Ethernet (PoE)</li>
+                                    </ul>
+                                </button>
+                                <button type="button" class="simple-bundle-card simple-bundle-card--preview" data-simple-bundle-card data-simple-bundle-id="S360-KIT-CORRIDOR-P" data-simple-bundle-channel="preview" role="radio" aria-checked="false" aria-pressed="false">
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--warning">Preview</span>
+                                    <span class="simple-bundle-card__title">Landing / Corridor Bundle &mdash; PoE</span>
+                                    <span class="simple-bundle-card__room">Landing / corridor</span>
+                                    <span class="simple-bundle-card__channel simple-bundle-card__channel--preview">Preview firmware &middot; acknowledge before install</span>
+                                    <ul class="simple-bundle-card__summary" aria-label="What is included">
+                                        <li>Sense360 Core</li>
+                                        <li>RoomIQ room sensing</li>
+                                        <li>LED status ring</li>
+                                        <li>Power over Ethernet (PoE)</li>
+                                    </ul>
+                                </button>
+                                <button type="button" class="simple-bundle-card simple-bundle-card--preview simple-bundle-card--fan" data-simple-bundle-card data-simple-bundle-id="S360-KIT-BATH-P-REL" data-simple-bundle-channel="preview" role="radio" aria-checked="false" aria-pressed="false">
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--warning">Preview</span>
+                                    <span class="simple-bundle-card__badge simple-bundle-card__badge--danger">Fan control</span>
+                                    <span class="simple-bundle-card__title">Bathroom Bundle &mdash; PoE + Relay Fan Control</span>
+                                    <span class="simple-bundle-card__room">Bathroom (with fan)</span>
+                                    <span class="simple-bundle-card__channel simple-bundle-card__channel--preview">Preview firmware &middot; extra fan-control acknowledgement</span>
+                                    <ul class="simple-bundle-card__summary" aria-label="What is included">
+                                        <li>Sense360 Core</li>
+                                        <li>RoomIQ room sensing</li>
+                                        <li>VentIQ bathroom air sensing</li>
+                                        <li>Relay fan control</li>
+                                        <li>Power over Ethernet (PoE)</li>
+                                    </ul>
+                                </button>
+                            </div>
+                        </div>
 
-                            <ul class="simple-install__summary" aria-label="What is included in this kit">
+                        <div class="simple-install__card" data-simple-install-card>
+                            <p class="simple-install__eyebrow" data-simple-install-eyebrow>Stable firmware &middot; v1.0.0</p>
+                            <h3 class="simple-install__title" data-simple-bundle-selected-name>Bathroom Bundle &mdash; PoE</h3>
+                            <p class="simple-install__lead">Connect your Sense360 hub over USB and install the firmware for the kit you picked &mdash; right here in your browser.</p>
+
+                            <ul class="simple-install__summary" data-simple-install-summary aria-label="What is included in this kit">
                                 <li class="simple-install__summary-item">Sense360 Core</li>
                                 <li class="simple-install__summary-item">RoomIQ room sensing</li>
                                 <li class="simple-install__summary-item">VentIQ bathroom air sensing</li>
                                 <li class="simple-install__summary-item">Power over Ethernet (PoE)</li>
                             </ul>
+
+                            <!-- WF-EASY-BUNDLE-PICKER-001 — calm preview note for preview
+                                 bundles. Hidden by default because the stable Bathroom bundle
+                                 is the default selection. The release-channel preview
+                                 acknowledgement stays the authoritative gate in state.js; this
+                                 note only reminds the customer it is required. -->
+                            <p class="simple-install__preview-note" data-simple-bundle-preview-note hidden aria-hidden="true">
+                                <span data-simple-bundle-preview-note-text>This is preview firmware &mdash; experimental and not the recommended choice for most customers. You&rsquo;ll be asked to acknowledge the preview channel on the install step before it can be flashed.</span>
+                            </p>
+
+                            <!-- WF-EASY-BUNDLE-PICKER-001 — the stronger fan-control gate for
+                                 the Bathroom Relay bundle. Hidden unless that bundle is
+                                 selected. It is layered ON TOP of the preview acknowledgement:
+                                 the controller only lets the authoritative "Before you flash"
+                                 acknowledgement become true once this is checked, so install
+                                 stays blocked until both are complete. -->
+                            <div class="simple-install__fan-control" data-simple-bundle-fan-control hidden aria-hidden="true">
+                                <p class="simple-install__fan-control-warning" data-simple-bundle-fan-control-warning>This bundle drives a bathroom fan through the Sense360 Relay. You are responsible for the fan wiring and your local safety rules. It is preview firmware &mdash; not stable, not recommended, and not a customer default.</p>
+                                <label class="simple-install__fan-control-confirm" data-simple-bundle-fan-control-control>
+                                    <input type="checkbox" data-simple-bundle-fan-control-ack aria-describedby="simple-fan-control-desc">
+                                    <span id="simple-fan-control-desc"><strong>Fan-control acknowledgement.</strong> I understand this bundle controls a bathroom fan, I am responsible for the wiring and local safety rules, and I will still acknowledge the preview channel before installing.</span>
+                                </label>
+                            </div>
 
                             <div class="simple-install__status" data-simple-install-status data-level="pending" role="status" aria-live="polite">
                                 <p class="simple-install__status-title" data-simple-install-status-title>Getting things ready&hellip;</p>
@@ -303,7 +418,7 @@
                                     <dl class="simple-install__tech-list">
                                         <div class="simple-install__tech-row">
                                             <dt>Kit</dt>
-                                            <dd data-simple-install-tech-sku>S360-KIT-BATH-POE</dd>
+                                            <dd data-simple-install-tech-sku>S360-KIT-BATH-P</dd>
                                         </div>
                                         <div class="simple-install__tech-row">
                                             <dt>Configuration</dt>
@@ -311,7 +426,7 @@
                                         </div>
                                         <div class="simple-install__tech-row">
                                             <dt>Release channel</dt>
-                                            <dd>Stable</dd>
+                                            <dd data-simple-install-tech-channel>Stable</dd>
                                         </div>
                                         <div class="simple-install__tech-row">
                                             <dt>Firmware file</dt>
@@ -1262,7 +1377,7 @@
                          data-install-mode="simple"; the dominant action is the ESP Web
                          Tools install button rendered into #compatible-firmware below. -->
                     <p class="firmware-section__simple-cta" data-simple-install-cta>
-                        <strong>Install stable firmware.</strong> Connect your Sense360 hub over USB, then use the <strong>Install</strong> button below.
+                        <strong data-simple-install-cta-label>Install stable firmware.</strong> Connect your Sense360 hub over USB, then use the <strong>Install</strong> button below.
                     </p>
                     <h4 class="compatible-firmware-heading">
                         <span data-compatible-firmware-label>Compatible Firmware</span>
@@ -1511,6 +1626,6 @@
          cache-bust token rides on this always-revalidated HTML so the bootstrap
          loader (and the app.js + changed ESM modules it pulls in) is fetched
          fresh on the first load after a deploy, never a stale CDN/SW copy. -->
-    <script type="module" src="./scripts/bootstrap.js?v=202606014"></script>
+    <script type="module" src="./scripts/bootstrap.js?v=202606015"></script>
 </body>
 </html>

@@ -6486,6 +6486,176 @@ body.has-wizard-sidebar .module-step-grid__summary--inline {
     color: var(--text-muted);
 }
 
+/* --- WF-EASY-BUNDLE-PICKER-001 — Simple install bundle picker ------------- */
+.simple-install__bundles {
+    margin: 0 0 20px;
+}
+
+.simple-install__bundles-heading {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.simple-install__bundles-intro {
+    margin: 0 0 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.simple-bundle-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.simple-bundle-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.simple-bundle-card:hover {
+    border-color: var(--accent);
+}
+
+.simple-bundle-card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.simple-bundle-card.is-active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.simple-bundle-card__badge {
+    align-self: flex-start;
+    display: inline-block;
+    margin-right: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.simple-bundle-card__badge--positive {
+    background: color-mix(in srgb, var(--success) 18%, white);
+    color: color-mix(in srgb, var(--success) 60%, black);
+}
+
+.simple-bundle-card__badge--warning {
+    background: var(--warning-surface);
+    color: var(--warning-text);
+}
+
+.simple-bundle-card__badge--danger {
+    background: var(--danger-surface);
+    color: var(--danger-text);
+}
+
+.simple-bundle-card__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.simple-bundle-card__room {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.simple-bundle-card__channel {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.simple-bundle-card__channel--preview {
+    color: var(--warning-text);
+    font-weight: 600;
+}
+
+.simple-bundle-card__summary {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+.simple-bundle-card__summary li {
+    position: relative;
+    padding-left: 16px;
+}
+
+.simple-bundle-card__summary li::before {
+    content: "·";
+    position: absolute;
+    left: 4px;
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* --- WF-EASY-BUNDLE-PICKER-001 — preview note + fan-control gate ---------- */
+.simple-install__preview-note {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--warning-border);
+    border-radius: 10px;
+    background: var(--warning-surface);
+    color: var(--warning-text);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.simple-install__fan-control {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--danger-border);
+    border-radius: 10px;
+    background: var(--danger-surface);
+}
+
+.simple-install__fan-control-warning {
+    margin: 0 0 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--danger-text);
+}
+
+.simple-install__fan-control-confirm {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.simple-install__fan-control-confirm input[type="checkbox"] {
+    margin-top: 2px;
+    flex: 0 0 auto;
+}
+
 /* --- WF-UX-012 — Simple install product card ----------------------------- */
 .simple-install__card {
     margin: 0;

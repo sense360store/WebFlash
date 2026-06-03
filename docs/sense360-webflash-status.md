@@ -214,6 +214,41 @@ Bathroom PoE build `Ceiling-POE-VentIQ-RoomIQ`. **FanTRIAC was not imported**
 (it stays build-blocked and excluded). Full import-proof at
 [`docs/preview-import-automation-proof.md`](preview-import-automation-proof.md).
 
+## Simple-install bundle picker (WF-EASY-BUNDLE-PICKER-001)
+
+The default **Simple install** view is now an easy **bundle picker** over the
+supported customer bundle products (presentation-only data source
+[`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js), wired by
+[`scripts/simple-install.js`](../scripts/simple-install.js)). It leads with
+"Choose your Sense360 kit" and surfaces six bundle cards:
+
+| Bundle SKU | Card | `config_string` | Channel | Gate |
+|---|---|---|---|---|
+| `S360-KIT-BATH-P` | Bathroom Bundle — PoE | `Ceiling-POE-VentIQ-RoomIQ` | **stable** | default / recommended |
+| `S360-KIT-KITCHEN-P` | Kitchen Bundle — PoE | `Ceiling-POE-AirIQ-RoomIQ` | preview | preview ack |
+| `S360-KIT-BEDROOM-P` | Bedroom Bundle — PoE | `Ceiling-POE-RoomIQ` | preview | preview ack |
+| `S360-KIT-LIVING-P` | Living Room Bundle — PoE | `Ceiling-POE-RoomIQ-LED` | preview | preview ack |
+| `S360-KIT-CORRIDOR-P` | Landing / Corridor Bundle — PoE | `Ceiling-POE-RoomIQ-LED` | preview | preview ack |
+| `S360-KIT-BATH-P-REL` | Bathroom Bundle — PoE + Relay Fan Control | `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | preview | preview ack **+ fan-control ack** |
+
+The stable Bathroom PoE bundle is selected by default and is the only
+default/recommended/buyable choice. Selecting any card feeds the bundle's
+`wizardState` through the existing `setState()`, so Step 5 resolves the matching
+build and **every install gate stays authoritative**: preview bundles still
+require the `channel:preview` acknowledgement, and the Bathroom Relay bundle adds
+a **fan-control acknowledgement** composed into the authoritative pre-flash gate
+(install is blocked until both are checked). Technical metadata (SKU / config /
+channel / firmware file) stays inside the collapsed Technical details disclosure.
+
+Intentionally **absent** from Simple install (not room-bundle products): the
+standalone fan-driver previews `Ceiling-POE-FanPWM` and `Ceiling-POE-FanDAC`, any
+TRIAC firmware (`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` stays build-blocked), and any
+raw/custom module combination — all of which remain reachable only through
+**Advanced install**. `REQUIRED_CONFIGS`, `manifest.json` (9 builds),
+`firmware/sources.json`, and `scripts/data/kits.json` are unchanged; no firmware
+was imported. Live checklist:
+[`docs/live-smoke-easy-bundle-picker.md`](live-smoke-easy-bundle-picker.md).
+
 ## Module availability snapshot
 
 Step 4 classifies every module variant through the presentation-only
@@ -312,22 +347,27 @@ All nine are at version **1.0.0**:
 Customer-facing Sense360 PoE **room bundle** SKUs (upstream
 `BUNDLE-SKU-MATRIX-001`) are mirrored for naming consistency in
 [`docs/webflash-bundle-sku-matrix.md`](webflash-bundle-sku-matrix.md). A bundle
-SKU is **not** a firmware identifier — only `S360-KIT-BATH-P` resolves to an
-installable WebFlash build today.
+SKU is **not** a firmware identifier — only `S360-KIT-BATH-P` resolves to a
+**stable** installable WebFlash build; the other room bundles now resolve to
+imported **preview** builds (Advanced-install / preview-acknowledgement-gated)
+and, as of `WF-EASY-BUNDLE-PICKER-001`, are surfaced in the Simple-install
+**bundle picker** behind their Preview labels and acknowledgement gates.
 
 | Bundle SKU | Room | Firmware target today | WebFlash exposure |
 |---|---|---|---|
-| `S360-KIT-BATH-P` | bathroom | `Ceiling-POE-VentIQ-RoomIQ` | **Installable** (Release-One stable; same build as the `S360-KIT-BATH-POE` kit-intent card). |
-| `S360-KIT-KITCHEN-P` | kitchen | _none_ | Naming reference only — no imported build. |
-| `S360-KIT-LIVING-P` | living-room | _none_ | Naming reference only — LED preview-gated upstream. |
-| `S360-KIT-BEDROOM-P` | bedroom | _none_ | Naming reference only — no imported build. |
-| `S360-KIT-CORRIDOR-P` | corridor | _none_ | Naming reference only — LED preview-gated upstream. |
+| `S360-KIT-BATH-P` | bathroom | `Ceiling-POE-VentIQ-RoomIQ` | **Installable — stable** (Release-One; Simple-install default + recommended; same build as the `S360-KIT-BATH-POE` kit-intent card). |
+| `S360-KIT-KITCHEN-P` | kitchen | `Ceiling-POE-AirIQ-RoomIQ` | **Preview** — Simple-install bundle picker, behind the preview acknowledgement. Not stable, not default, not buyable. |
+| `S360-KIT-LIVING-P` | living-room | `Ceiling-POE-RoomIQ-LED` | **Preview** — Simple-install bundle picker, behind the preview acknowledgement. Not stable, not default, not buyable. |
+| `S360-KIT-BEDROOM-P` | bedroom | `Ceiling-POE-RoomIQ` | **Preview** — Simple-install bundle picker, behind the preview acknowledgement. Not stable, not default, not buyable. |
+| `S360-KIT-CORRIDOR-P` | corridor | `Ceiling-POE-RoomIQ-LED` | **Preview** — Simple-install bundle picker (shares the Living build). Not stable, not default, not buyable. |
+| `S360-KIT-BATH-P-REL` | bathroom (with fan) | `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | **Preview** — Simple-install bundle picker, behind the preview **and** fan-control acknowledgements. Not stable, not default, not buyable. |
 
 Per-bundle detail and the three parallel identifier spaces (Module SKU / Kit
 SKU / Bundle SKU / firmware `config_string`) live in the bundle SKU matrix doc.
-Broader PoE bundle expansion (Kitchen / Living / Bedroom / Corridor) stays
-**blocked** until upstream ships the corresponding `RELEASE-…` artifacts and the
-S360-410 PoE evidence gate closes (see guardrail 3).
+Broader PoE bundle promotion to **stable / buyable** (Kitchen / Living / Bedroom /
+Corridor / Relay) stays **blocked** until upstream ships the corresponding
+`RELEASE-…` artifacts and the S360-410 PoE evidence gate closes (see guardrail 3);
+the preview exposure above never implies stability, default, or buyability.
 
 ## First-release gate sync (WEBFLASH-FIRST-RELEASE-GATES-SYNC-001)
 
