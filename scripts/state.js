@@ -5225,6 +5225,356 @@ async function verifyCurrentFirmwareIntegrity() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// WebFlash 2.0 install-gate bindings (PR 5)
+//
+// The 1.0 view drives the install gate through updateFirmwareControls() +
+// verifyCurrentFirmwareIntegrity(), which are entangled with the 1.0 DOM and
+// the module globals (window.currentFirmware, firmwareVerificationState, the
+// preflight rows). The two functions below are the view-agnostic equivalents
+// the WebFlash 2.0 view binds to: they take a resolved manifest build (and the
+// already-computed engine verdicts) as arguments and return plain results,
+// touching no DOM and no module state. The 1.0 path is unchanged.
+// ---------------------------------------------------------------------------
+
+/**
+ * View-agnostic SHA-256 integrity verification for a single resolved manifest
+ * build. This is the WebFlash 2.0 binding for the "SHA-256 verification of the
+ * downloaded bytes via SubtleCrypto in state.js" gate component (PR 5).
+ *
+ * Unlike verifyCurrentFirmwareIntegrity(), it:
+ *   - takes the build as an argument instead of reading window.currentFirmware,
+ *   - never touches the DOM or module globals (firmwareVerificationState,
+ *     window.latestFirmwareProvenance, the render functions),
+ *   - returns a plain result object the caller folds into its own gate.
+ *
+ * It runs the static provenance gate first, so a build with missing or blocked
+ * metadata never triggers a network download, then downloads each firmware part
+ * with `cache: 'no-store'` and compares the SHA-256 of the bytes to the
+ * manifest's declared `sha256`. It does NOT run Ed25519 signature
+ * verification: WebFlash makes no cryptographic-signature-verification claim
+ * (the signature_verified provenance check stays a non-claim), so the 2.0 gate
+ * verifies integrity (the bytes match the manifest hash) and relies on the
+ * static provenance gate for signature-metadata presence. Real signature
+ * verification is a separate, explicit project.
+ *
+ * @param {object} build A resolved manifest `builds[]` entry.
+ * @param {object} [options]
+ * @param {'production'|'development'|'test'} [options.mode] Provenance trust
+ *   mode. Defaults to 'production' to match the 1.0 install-trust mode.
+ * @param {typeof fetch} [options.fetchImpl] Injectable fetch (tests).
+ * @param {AbortSignal} [options.signal] Abort in-flight downloads.
+ * @returns {Promise<{status:'verified'|'failed'|'unsupported', message:string, provenance:object, parts:Array}>}
+ */
+async function verifyFirmwareIntegrity(build, options = {}) {
+    const mode = options.mode || 'production';
+    const provenance = validateFirmwareProvenance(build, { mode });
+    if (!provenance.ok) {
+        return {
+            status: 'failed',
+            message: provenance.summary || 'Firmware provenance validation failed.',
+            provenance,
+            parts: []
+        };
+    }
+
+    const parts = getFirmwarePartsMetadata(build);
+    if (!parts.length) {
+        return {
+            status: 'failed',
+            message: 'No firmware files available for verification.',
+            provenance,
+            parts: []
+        };
+    }
+
+    const subtle = (typeof window !== 'undefined' && window.crypto && window.crypto.subtle)
+        || (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle)
+        || null;
+    if (!subtle) {
+        return {
+            status: 'unsupported',
+            message: 'Firmware verification is not supported in this browser.',
+            provenance,
+            parts: parts.map(part => ({ fileName: part.fileName, sha256Match: false, status: 'unsupported' }))
+        };
+    }
+
+    const fetchImpl = options.fetchImpl || (typeof fetch === 'function' ? fetch : null);
+    if (!fetchImpl) {
+        return {
+            status: 'unsupported',
+            message: 'Network fetch is unavailable for firmware verification.',
+            provenance,
+            parts: []
+        };
+    }
+
+    const results = [];
+    for (const part of parts) {
+        if (!part.sha256) {
+            results.push({ fileName: part.fileName, sha256Match: false, status: 'failed', message: `Missing checksum for ${part.fileName}.` });
+            continue;
+        }
+        try {
+            // eslint-disable-next-line no-await-in-loop
+            const response = await fetchImpl(part.resolvedUrl, { cache: 'no-store', signal: options.signal });
+            if (!response || !response.ok) {
+                results.push({ fileName: part.fileName, sha256Match: false, status: 'failed', message: `Unable to download ${part.fileName}${response ? ` (HTTP ${response.status})` : ''}.` });
+                continue;
+            }
+            // eslint-disable-next-line no-await-in-loop
+            const buffer = await response.arrayBuffer();
+            // eslint-disable-next-line no-await-in-loop
+            const computed = arrayBufferToHex(await subtle.digest('SHA-256', buffer));
+            const match = computed === part.sha256.toLowerCase();
+            results.push({
+                fileName: part.fileName,
+                sha256Match: match,
+                status: match ? 'verified' : 'failed',
+                message: match ? '' : `SHA-256 mismatch for ${part.fileName}.`
+            });
+        } catch (error) {
+            results.push({
+                fileName: part.fileName,
+                sha256Match: false,
+                status: 'failed',
+                message: error instanceof Error ? error.message : `Verification failed for ${part.fileName}.`
+            });
+        }
+    }
+
+    const allMatch = results.length > 0 && results.every(result => result.sha256Match);
+    const firstFailure = results.find(result => !result.sha256Match);
+    const mergedProvenance = applyHashVerificationResult(provenance, {
+        matches: allMatch,
+        message: allMatch
+            ? 'Downloaded firmware bytes match the SHA-256 declared in the manifest.'
+            : (firstFailure?.message || 'Downloaded firmware bytes do not match the manifest SHA-256.')
+    });
+
+    return {
+        status: allMatch ? 'verified' : 'failed',
+        message: allMatch
+            ? 'SHA-256 integrity verified against the manifest.'
+            : (firstFailure?.message || 'Firmware verification failed.'),
+        provenance: mergedProvenance,
+        parts: results
+    };
+}
+
+// Stable, machine-readable ids for the WebFlash 2.0 preflight panel rows. The
+// view renders each row by id and reads its `status`; it never parses the
+// `detail` copy to decide a status (see docs/adr/0001 boundary contract).
+const INSTALL_GATE_CHECK_IDS = Object.freeze({
+    BROWSER_SUPPORT: 'browser-support',
+    SECURE_CONTEXT: 'secure-context',
+    MANIFEST_FRESHNESS: 'manifest-freshness',
+    FIRMWARE_VERIFICATION: 'firmware-verification'
+});
+
+/**
+ * WebFlash 2.0 composite install gate (PR 5). Pure and view-agnostic: it folds
+ * the verdicts the engine's decision functions already produced into a single
+ * machine-readable gate result. It owns the COMPOSITION (the AND across the
+ * gate components and the blocking-reason ranking), but it makes no detection
+ * decision of its own — every input verdict is owned by an engine module:
+ *
+ *   - capabilities:            detectCapabilities() (desktop / Web Serial / secure context)
+ *   - provenance:              validateFirmwareProvenance(build, { mode })
+ *   - integrity:               verifyFirmwareIntegrity(build) (SHA-256 of the bytes)
+ *   - freshness:               checkManifestFreshness(...).verdict
+ *   - serviceWorker:           getServiceWorkerState()
+ *   - acknowledgements:        getRequiredAcknowledgements(build) +
+ *                              getFirmwareAcknowledgementSignature(build)
+ *   - beforeFlashAcknowledged: the before-you-flash checkbox
+ *
+ * The channel acknowledgement gate PRUNES ON A FIRMWARE-IDENTITY MISMATCH: an
+ * accepted acknowledgement only counts when it was recorded against the CURRENT
+ * build's signature (`acknowledgements.accepted` maps ack key -> the signature
+ * it was checked against). When the resolved build changes, its signature
+ * changes, so a prior acknowledgement no longer satisfies the gate — exactly
+ * the 1.0 isChannelAcknowledged() contract.
+ *
+ * @returns {{checks: Array, canInstall: boolean, blockingReason: string,
+ *   serviceWorker: object, acknowledgement: object, beforeFlash: object}}
+ *   `checks` is the four-row preflight panel keyed by INSTALL_GATE_CHECK_IDS.
+ */
+function evaluateInstallGate(input = {}) {
+    const {
+        build = null,
+        capabilities = null,
+        provenance = null,
+        integrity = null,
+        freshness = null,
+        serviceWorker = null,
+        acknowledgements = null,
+        beforeFlashAcknowledged = false
+    } = input;
+
+    const makeCheckRow = (id, label, status, blocking, detail) => ({
+        id,
+        label,
+        status,
+        blocking: Boolean(blocking),
+        detail: detail || ''
+    });
+
+    const checks = [];
+
+    // 1. Browser support (Web Serial). Mobile devices and non-Web-Serial
+    //    browsers cannot flash, so this is a hard block.
+    const hasWebSerial = capabilities
+        ? capabilities.webSerial !== false
+        : (typeof navigator !== 'undefined' && Boolean(navigator.serial));
+    const isMobile = Boolean(capabilities && capabilities.isMobile);
+    const browserName = (capabilities && capabilities.browserName) || 'this browser';
+    if (isMobile) {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.BROWSER_SUPPORT, 'Browser support', 'fail', true,
+            'Web Serial is not available on mobile browsers. Use desktop Chrome, Edge, or Opera.'));
+    } else if (!hasWebSerial) {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.BROWSER_SUPPORT, 'Browser support', 'fail', true,
+            'This browser does not expose the Web Serial API. Use desktop Chrome, Edge, or Opera.'));
+    } else {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.BROWSER_SUPPORT, 'Browser support', 'pass', false,
+            `Web Serial is available in ${browserName}.`));
+    }
+
+    // 2. Secure context. Web Serial requires HTTPS or localhost.
+    const secureContext = capabilities
+        ? capabilities.secureContext !== false
+        : (typeof window !== 'undefined' ? window.isSecureContext !== false : true);
+    checks.push(secureContext
+        ? makeCheckRow(INSTALL_GATE_CHECK_IDS.SECURE_CONTEXT, 'Secure context', 'pass', false,
+            'Served over HTTPS or localhost.')
+        : makeCheckRow(INSTALL_GATE_CHECK_IDS.SECURE_CONTEXT, 'Secure context', 'fail', true,
+            'Web Serial only works over HTTPS or localhost. Reload using the https:// address.'));
+
+    // 3. Manifest freshness. Mirrors evaluateFreshnessGate: stale is a hard
+    //    block; unknown blocks until acknowledged; pending is non-blocking (an
+    //    unrun freshness check is the bootstrap state, not evidence of a stale
+    //    manifest, exactly as the 1.0 gate treats it).
+    const freshnessVerdict = freshness ? freshness.verdict : 'pending';
+    const freshnessAcknowledged = Boolean(freshness && freshness.acknowledged);
+    if (freshnessVerdict === 'current') {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS, 'Firmware manifest', 'pass', false,
+            'Firmware manifest matches the published list.'));
+    } else if (freshnessVerdict === 'stale') {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS, 'Firmware manifest', 'fail', true,
+            'A newer firmware manifest is available. Reload to pick up the latest published firmware list.'));
+    } else if (freshnessVerdict === 'unknown') {
+        checks.push(freshnessAcknowledged
+            ? makeCheckRow(INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS, 'Firmware manifest', 'pass', false,
+                'Could not confirm the firmware list is up to date. You acknowledged this and chose to continue with the list already loaded in this browser.')
+            : makeCheckRow(INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS, 'Firmware manifest', 'warn', true,
+                'WebFlash could not confirm whether the firmware list is up to date. Recheck before installing, or acknowledge to continue with the list already loaded.'));
+    } else {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS, 'Firmware manifest', 'pending', false,
+            'Checking whether the firmware list is up to date…'));
+    }
+
+    // 4. Firmware verification: static provenance (blocks on missing/blocked
+    //    metadata) plus SHA-256 integrity of the downloaded bytes. The signature
+    //    stays a non-claim — this row never asserts cryptographic signature
+    //    verification.
+    const integrityStatus = integrity ? integrity.status : null;
+    if (!build) {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pending', true,
+            'Select firmware to verify.'));
+    } else if (provenance && provenance.blocking) {
+        const firstFailure = Array.isArray(provenance.failures) && provenance.failures.length
+            ? provenance.failures[0]
+            : null;
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'fail', true,
+            firstFailure ? firstFailure.detail : (provenance.summary || 'Firmware provenance validation failed.')));
+    } else if (integrityStatus === 'failed' || integrityStatus === 'unsupported') {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'fail', true,
+            (integrity && integrity.message) || 'Firmware verification failed.'));
+    } else if (integrityStatus === 'verified') {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pass', false,
+            'SHA-256 integrity verified against the manifest. Signature metadata present.'));
+    } else {
+        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pending', true,
+            'Verifying firmware integrity…'));
+    }
+
+    // Channel acknowledgements (seven-tier, firmware-identity bound).
+    const requiredAcks = (acknowledgements && Array.isArray(acknowledgements.required))
+        ? acknowledgements.required
+        : [];
+    const signature = acknowledgements ? acknowledgements.signature : null;
+    const accepted = (acknowledgements && acknowledgements.accepted) || null;
+    const isAcknowledged = (key) => {
+        if (!signature || !accepted) {
+            return false;
+        }
+        const recordedSignature = accepted instanceof Map ? accepted.get(key) : accepted[key];
+        return recordedSignature === signature;
+    };
+    const outstandingAcknowledgements = requiredAcks.filter(item => !isAcknowledged(item.key));
+    const acknowledgementsSatisfied = outstandingAcknowledgements.length === 0;
+
+    // Service-worker update. updateAvailable && !dismissed blocks install.
+    const serviceWorkerBlocking = Boolean(serviceWorker
+        && serviceWorker.updateAvailable
+        && !serviceWorker.updateDismissed);
+    const serviceWorkerReason = serviceWorkerBlocking
+        ? 'A WebFlash update is available. Reload before flashing to use the latest installer and firmware metadata.'
+        : '';
+
+    // Before-you-flash acknowledgement.
+    const beforeFlashSatisfied = Boolean(beforeFlashAcknowledged);
+
+    // Compose. A preflight row blocks when it is marked blocking and is not a
+    // pass. canInstall ANDs every gate component.
+    const checksOk = checks.every(check => check.status === 'pass' || !check.blocking);
+    const canInstall = checksOk
+        && !serviceWorkerBlocking
+        && acknowledgementsSatisfied
+        && beforeFlashSatisfied;
+
+    // Single highest-priority blocking reason for the install-button title,
+    // mirroring deriveInstallReadinessReason()'s ordering.
+    const byId = (id) => checks.find(check => check.id === id);
+    const browserRow = byId(INSTALL_GATE_CHECK_IDS.BROWSER_SUPPORT);
+    const secureRow = byId(INSTALL_GATE_CHECK_IDS.SECURE_CONTEXT);
+    const verifyRow = byId(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION);
+    const manifestRow = byId(INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS);
+    let blockingReason = '';
+    if (browserRow.status === 'fail') {
+        blockingReason = browserRow.detail;
+    } else if (secureRow.status === 'fail') {
+        blockingReason = secureRow.detail;
+    } else if (verifyRow.status === 'fail') {
+        blockingReason = verifyRow.detail;
+    } else if (verifyRow.status === 'pending') {
+        blockingReason = 'Firmware verification is still in progress.';
+    } else if (!beforeFlashSatisfied) {
+        blockingReason = 'Acknowledge the pre-flash checklist to continue.';
+    } else if (!acknowledgementsSatisfied) {
+        blockingReason = outstandingAcknowledgements[0]?.label
+            || 'Acknowledge the firmware-channel warning before installing.';
+    } else if (serviceWorkerBlocking) {
+        blockingReason = serviceWorkerReason;
+    } else if (manifestRow.blocking && manifestRow.status !== 'pass') {
+        blockingReason = manifestRow.detail;
+    }
+
+    return {
+        checks,
+        canInstall,
+        blockingReason,
+        serviceWorker: { blocking: serviceWorkerBlocking, reason: serviceWorkerReason },
+        acknowledgement: {
+            required: requiredAcks,
+            outstanding: outstandingAcknowledgements,
+            satisfied: acknowledgementsSatisfied,
+            signature: signature || null
+        },
+        beforeFlash: { satisfied: beforeFlashSatisfied }
+    };
+}
+
 function buildFirmwarePartsClipboardText(parts) {
     if (!Array.isArray(parts) || parts.length === 0) {
         return '';
@@ -7709,6 +8059,9 @@ export const __testHooks = Object.freeze({
     getManifestFreshnessDetail: () => (manifestFreshnessDetail ? { ...manifestFreshnessDetail } : null),
     getInstallReadiness: () => (typeof window !== 'undefined' ? window.webflashInstallReadiness || null : null),
     getManifestMetadata,
+    verifyFirmwareIntegrity,
+    evaluateInstallGate,
+    INSTALL_GATE_CHECK_IDS,
     postFlashService
 });
 
@@ -7722,5 +8075,8 @@ export {
     setStep,
     getMaxReachableStep,
     getFirmwareReadiness,
-    resolveCompatibleFirmware
+    resolveCompatibleFirmware,
+    verifyFirmwareIntegrity,
+    evaluateInstallGate,
+    INSTALL_GATE_CHECK_IDS
 };

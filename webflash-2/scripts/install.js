@@ -1,23 +1,49 @@
 /* WebFlash 2.0 — Step 2: Install firmware. Ported from install.jsx.
-   Faithful visual prototype: the readiness checklist auto-passes on timers and
-   the flash progress is a simulated esptool run (no real Web Serial here). */
+
+   PR 5 of the WebFlash 2.0 migration replaced the simulated readiness checklist
+   (the CHECKS array that auto-passed on setTimeout) with the real composite
+   install gate, composed from the engine:
+     - capability detection (Web Serial, secure context) via engine.capabilities,
+     - static provenance via engine.provenance.validateFirmwareProvenance,
+     - SHA-256 verification of the downloaded bytes via
+       engine.state.verifyFirmwareIntegrity (SubtleCrypto in state.js),
+     - manifest freshness via engine.freshness.checkManifestFreshness,
+     - service-worker update via engine.swUpdate.getServiceWorkerState,
+     - the seven-tier channel acknowledgement, bound to the firmware-identity
+       signature via engine.channels.getFirmwareAcknowledgementSignature,
+     - and the before-you-flash acknowledgement.
+   engine.state.evaluateInstallGate folds those verdicts into a single
+   machine-readable result; this view renders the preflight panel by stable
+   check id (engine.state.INSTALL_GATE_CHECK_IDS) and arms install only when
+   the gate passes. The view never owns a gate decision.
+
+   The flash PROGRESS below is still a simulation (FLASH_PHASES + a
+   requestAnimationFrame ring). PR 6 replaces it with the real ESP Web Tools
+   install-button lifecycle. It is left untouched here so PR 5 stays scoped to
+   the gate. */
 import { h, mount, fromHTML } from './h.js';
 import { icon } from './icons.js';
 import { StepHead, DeviceChip } from './ui.js';
-import { CHECKS } from './data.js';
 
+// Provenance + integrity always run in production trust mode, matching the 1.0
+// install-trust mode (verifyCurrentFirmwareIntegrity hard-codes production): the
+// deployed wizard refuses dev/test-key signatures and placeholder binaries. On
+// the live (re-signed) deployment the stable build passes; on a local dev
+// checkout the committed dev-signed stable build blocks here exactly as it does
+// in the 1.0 view. The view never relaxes this.
+const GATE_MODE = 'production';
+
+// Maps the engine's machine-readable check status to the preflight row icon.
+// Read by status (pass/warn/fail/pending), never by parsing the detail copy.
 const READY_ICON = {
-  ok: { cls: 'ready__ico--ok', name: 'check' },
-  wait: { cls: 'ready__ico--wait', name: 'spinner', spin: true },
+  pass: { cls: 'ready__ico--ok', name: 'check' },
+  pending: { cls: 'ready__ico--wait', name: 'spinner', spin: true },
   warn: { cls: 'ready__ico--warn', name: 'alert' },
-  err: { cls: 'ready__ico--err', name: 'alert' },
-  // Neutral terminal "not evaluated" state. Reuses the muted wait styling so it
-  // never reads as a green pass; used for the signature check, which is skip.
-  skip: { cls: 'ready__ico--wait', name: 'info' },
+  fail: { cls: 'ready__ico--err', name: 'alert' },
 };
 
 function readyItem(name, sub, status) {
-  const m = READY_ICON[status] || READY_ICON.wait;
+  const m = READY_ICON[status] || READY_ICON.pending;
   return h('div', { class: 'ready__item' },
     h('span', { class: 'ready__ico ' + m.cls }, icon(m.name, { cls: m.spin ? 'spin' : '' })),
     h('div', { class: 'ready__main' },
@@ -27,7 +53,7 @@ function readyItem(name, sub, status) {
   );
 }
 
-/* Flash progress simulation (phases mirror an esptool run). */
+/* Flash progress simulation (phases mirror an esptool run). PR 6 replaces this. */
 const FLASH_PHASES = [
   { p: 'Connecting', sub: 'Opening serial port to your hub', to: 8, lines: ['$ esptool connect', 'Detecting chip type… ESP32-S3', 'Chip is ESP32-S3 (revision v0.2)'] },
   { p: 'Erasing', sub: 'Clearing existing firmware', to: 24, lines: ['Erasing flash (this may take a few seconds)…', 'Flash erased.'] },
@@ -36,63 +62,61 @@ const FLASH_PHASES = [
   { p: 'Rebooting', sub: 'Starting your hub', to: 100, lines: ['Hard resetting via RTS pin…', '✓ Firmware installed successfully'] },
 ];
 
-export function InstallStep({ device, isPreview, onBack, onFlashed }) {
+/**
+ * @param {object} props
+ * @param {{name: string, target: string}} props.device
+ * @param {object|null} [props.build]   The resolved manifest build entry.
+ * @param {object|null} [props.engine]  The engine facade (webflash-2/scripts/engine.js).
+ * @param {object|null} [props.a11y]    Engine accessibility primitives (announce).
+ * @param {() => void} props.onBack
+ * @param {() => void} props.onFlashed
+ */
+export function InstallStep({ device, build = null, engine = null, a11y = null, onBack, onFlashed }) {
   const mainEl = h('div', { class: 'main' });
 
-  // ----- local state -----
-  const statuses = CHECKS.map(() => 'wait');
-  // 'skip' is a terminal, non-blocking status (the signature check is skip, not
-  // a pass). A check is "settled" when it is ok or skip; settled checks do not
-  // block readiness, and the signature check renders its skip sub copy.
-  const isSettled = (s) => s === 'ok' || s === 'skip';
-  const subFor = (c, status) =>
-    status === 'skip' ? c.skipSub : status === 'ok' ? c.okSub : c.waitSub;
-  let ready = false;
-  let ack = false;
-  let previewAck = false;
+  // ----- engine-derived inputs, fixed for this build -----
+  const capabilities = engine ? engine.capabilities.detectCapabilities() : null;
+  const provenance = (engine && build) ? engine.provenance.validateFirmwareProvenance(build, { mode: GATE_MODE }) : null;
+  const requiredAcks = (engine && build) ? engine.channels.getRequiredAcknowledgements(build) : [];
+  const channelWarnings = (engine && build) ? engine.channels.getFirmwareWarnings(build) : [];
+  // The firmware-identity signature binds every acknowledgement to THIS build.
+  // A different resolved build yields a different signature, so a prior
+  // acknowledgement no longer satisfies the gate (prune-on-mismatch).
+  const signature = (engine && build) ? engine.channels.getFirmwareAcknowledgementSignature(build) : null;
+  const MANIFEST_FRESHNESS_ID = engine ? engine.state.INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS : 'manifest-freshness';
 
-  const timers = [];
+  // ----- mutable gate inputs -----
+  let integrity = null;                                // async SHA-256 result
+  let freshness = { verdict: 'pending', acknowledged: false };
+  let beforeFlashAck = false;
+  const channelAccepted = new Map();                   // ackKey -> signature it was accepted against
+  let gate = null;
+  let wasReady = false;
+
+  // ----- async lifecycle -----
+  let disposed = false;
+  const abort = (typeof AbortController === 'function') ? new AbortController() : { abort() {}, signal: undefined };
   let raf = 0;
   let doneTimer = 0;
-
-  const clearReadinessTimers = () => { timers.forEach(clearTimeout); timers.length = 0; };
   mainEl.__dispose = () => {
-    clearReadinessTimers();
+    disposed = true;
+    try { abort.abort(); } catch { /* AbortController not available */ }
     if (raf) cancelAnimationFrame(raf);
     if (doneTimer) clearTimeout(doneTimer);
   };
 
-  // ----- prep view scaffolding -----
+  // ----- scaffolding -----
   const statusbarEl = h('div', { class: 'statusbar' });
   const readyInner = h('div', { class: 'ready' });
-  const installBtn = h('button', { class: 'btn btn--lg', onClick: () => canInstall() && startFlash() },
+  const swNoticeEl = h('div', { class: 'callout callout--warn', hidden: true });
+  const freshnessControlsEl = h('div', {
+    style: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', margin: '4px 0' },
+    hidden: true,
+  });
+  const warnCalloutsEl = h('div');
+  const acksEl = h('div');
+  const installBtn = h('button', { class: 'btn btn--lg', onClick: () => { if (gate && gate.canInstall) startFlash(); } },
     icon('bolt'), ' Install firmware');
-
-  const canInstall = () => ready && ack && (!isPreview || previewAck);
-
-  function renderStatusbar() {
-    statusbarEl.className = 'statusbar ' + (ready ? 'statusbar--ok' : 'statusbar--wait');
-    mount(statusbarEl,
-      ready ? icon('shield') : icon('spinner', { cls: 'spin' }),
-      ready
-        ? h('span', null, h('b', null, 'Ready to install.'),
-            ' Everything checks out — your hub is connected and ready to flash.')
-        : h('span', null, h('b', null, 'Running pre-flight checks…'),
-            ' This takes a couple of seconds.'),
-    );
-  }
-
-  function renderReady() {
-    const allSettled = statuses.every(isSettled);
-    const items = CHECKS.map((c, i) =>
-      readyItem(c.name, subFor(c, statuses[i]), statuses[i]));
-    items.push(readyItem('Hub connected over USB',
-      allSettled ? 'ESP32-S3 detected on /dev/ttyUSB0' : 'Waiting on the checks above…',
-      allSettled ? 'ok' : 'wait'));
-    mount(readyInner, ...items);
-  }
-
-  function updateGate() { installBtn.disabled = !canInstall(); }
 
   function ackRow(checked, onToggle, body) {
     const box = h('span', { class: 'ack__box' }, icon('check'));
@@ -105,32 +129,143 @@ export function InstallStep({ device, isPreview, onBack, onFlashed }) {
     return label;
   }
 
-  // ----- build prep view -----
-  const ackLabel = ackRow(false, (v, label) => {
-    ack = v; label.classList.toggle('is-on', v); updateGate();
+  // ----- gate composition (engine-owned) + render -----
+  function recompute() {
+    if (!engine) {
+      gate = null;
+      installBtn.disabled = true;
+      return;
+    }
+    gate = engine.state.evaluateInstallGate({
+      build,
+      capabilities,
+      provenance,
+      integrity,
+      freshness,
+      serviceWorker: engine.swUpdate.getServiceWorkerState(),
+      acknowledgements: { required: requiredAcks, signature, accepted: channelAccepted },
+      beforeFlashAcknowledged: beforeFlashAck,
+    });
+    renderStatusbar();
+    renderReady();
+    renderSwNotice();
+    renderFreshnessControls();
+    updateGate();
+  }
+
+  function renderStatusbar() {
+    const ready = Boolean(gate && gate.canInstall);
+    const anyPending = Boolean(gate && gate.checks.some((c) => c.status === 'pending'));
+    statusbarEl.className = 'statusbar ' + (ready ? 'statusbar--ok' : 'statusbar--wait');
+    if (ready) {
+      mount(statusbarEl, icon('shield'),
+        h('span', null, h('b', null, 'Ready to install.'),
+          ' Everything checks out — your hub is ready to flash.'));
+    } else if (anyPending) {
+      mount(statusbarEl, icon('spinner', { cls: 'spin' }),
+        h('span', null, h('b', null, 'Running pre-flight checks…'),
+          ' This takes a moment.'));
+    } else {
+      mount(statusbarEl, icon('alert'),
+        h('span', null, h('b', null, 'Action needed before installing.'),
+          gate && gate.blockingReason ? ' ' + gate.blockingReason : ''));
+    }
+  }
+
+  function renderReady() {
+    const items = (gate ? gate.checks : []).map((c) => readyItem(c.label, c.detail, c.status));
+    mount(readyInner, ...items);
+  }
+
+  function renderSwNotice() {
+    const blocking = Boolean(gate && gate.serviceWorker && gate.serviceWorker.blocking);
+    swNoticeEl.hidden = !blocking;
+    if (blocking) {
+      mount(swNoticeEl, icon('alert'),
+        h('span', null, h('b', null, 'Update available. '), gate.serviceWorker.reason, ' '),
+        h('button', { class: 'btn btn--ghost', onClick: () => engine.swUpdate.triggerSkipWaitingAndReload() }, 'Reload'));
+    }
+  }
+
+  // The manifest-freshness recovery controls (recheck button + the unknown
+  // acknowledgement) mirror the 1.0 inline controls. They surface only when the
+  // freshness verdict is stale or unknown; the happy path keeps the panel clean.
+  function renderFreshnessControls() {
+    const row = gate ? gate.checks.find((c) => c.id === MANIFEST_FRESHNESS_ID) : null;
+    const unknown = Boolean(row && row.status === 'warn');
+    const stale = Boolean(row && row.status === 'fail');
+    const show = unknown || stale;
+    freshnessControlsEl.hidden = !show;
+    if (!show) { mount(freshnessControlsEl); return; }
+
+    const children = [
+      h('button', { class: 'btn btn--ghost', onClick: recheckFreshness }, 'Recheck manifest freshness'),
+    ];
+    if (unknown) {
+      children.push(ackRow(freshness.acknowledged, (v, label) => {
+        freshness = { ...freshness, acknowledged: v };
+        label.classList.toggle('is-on', v);
+        recompute();
+      }, ['Continue with the firmware list already loaded in this browser.']));
+    }
+    mount(freshnessControlsEl, ...children);
+  }
+
+  function updateGate() {
+    const ready = Boolean(gate && gate.canInstall);
+    installBtn.disabled = !ready;
+    installBtn.classList.toggle('is-ready', ready);
+    if (!ready && gate && gate.blockingReason) {
+      installBtn.title = gate.blockingReason;
+    } else {
+      installBtn.removeAttribute('title');
+    }
+    if (ready && !wasReady && a11y && typeof a11y.announce === 'function') {
+      a11y.announce('Pre-flight checks passed. Ready to install firmware.');
+    }
+    wasReady = ready;
+  }
+
+  // Channel acknowledgement checkboxes (rendered once; the gate re-reads the
+  // accepted map on every recompute). Each checkbox records the firmware
+  // signature it was accepted against so a build change invalidates it.
+  function renderAcks() {
+    const rows = requiredAcks.map((ackItem) => ackRow(false, (v, label) => {
+      if (v) channelAccepted.set(ackItem.key, signature);
+      else channelAccepted.delete(ackItem.key);
+      label.classList.toggle('is-on', v);
+      recompute();
+    }, [ackItem.label]));
+    mount(acksEl, ...rows);
+  }
+
+  // Channel warning callouts (seven-tier; rendered once from the engine).
+  function renderWarnCallouts() {
+    const callouts = channelWarnings.map((w) => h('div', { class: 'callout callout--warn' },
+      icon('alert'), h('span', null, w.message)));
+    mount(warnCalloutsEl, ...callouts);
+  }
+
+  // ----- before-you-flash acknowledgement -----
+  const beforeFlashLabel = ackRow(false, (v, label) => {
+    beforeFlashAck = v; label.classList.toggle('is-on', v); recompute();
   }, [
     'I understand I should ', h('b', null, 'keep the hub powered and connected'), ' and ',
     h('b', null, 'leave this tab open'), " until flashing finishes. Don't disconnect power or USB during the install.",
   ]);
 
-  const previewLabel = isPreview
-    ? ackRow(false, (v, label) => { previewAck = v; label.classList.toggle('is-on', v); updateGate(); },
-        ['I accept the ', h('b', null, 'preview channel'), ' and understand this firmware is experimental.'])
-    : null;
-
+  // ----- build prep view -----
   mount(mainEl,
     StepHead({ eyebrow: 'Step 2 — Install', eyebrowIcon: 'bolt', title: 'Prepare & install firmware',
-      desc: "We'll run a few safety checks automatically, then flash your hub over USB." }),
+      desc: "We'll run the real pre-flight checks, then flash your hub over USB." }),
     DeviceChip({ name: device.name, target: device.target, onEdit: onBack }),
     statusbarEl,
+    swNoticeEl,
     h('div', { class: 'card', style: { padding: '8px 20px' } }, readyInner),
-    isPreview && h('div', { class: 'callout callout--warn' },
-      icon('alert'),
-      h('span', null, h('b', null, 'Preview firmware.'),
-        " This build is experimental and may be unstable. It hasn't completed the full stable release process. Acknowledge below to continue."),
-    ),
-    ackLabel,
-    previewLabel,
+    freshnessControlsEl,
+    warnCalloutsEl,
+    beforeFlashLabel,
+    acksEl,
     h('div', { class: 'stepnav' },
       h('button', { class: 'btn--ghost btn', onClick: onBack }, icon('arrowL'), ' Back'),
       h('span', { class: 'stepnav__spacer' }),
@@ -138,28 +273,67 @@ export function InstallStep({ device, isPreview, onBack, onFlashed }) {
     ),
   );
 
-  renderStatusbar();
-  renderReady();
-  updateGate();
+  renderWarnCallouts();
+  renderAcks();
+  recompute();        // initial synchronous render (capabilities + provenance)
+  runPreflight();     // kick the async checks (freshness + SHA-256 integrity)
 
-  // ----- start the auto-running readiness checklist -----
-  CHECKS.forEach((c, i) => {
-    const t = setTimeout(() => {
-      statuses[i] = c.terminal === 'skip' ? 'skip' : 'ok';
-      renderReady();
-      if (statuses.every(isSettled)) {
-        ready = true;
-        renderStatusbar();
-        renderReady();
-        updateGate();
+  return mainEl;
+
+  // ----- async preflight -----
+  function runPreflight() {
+    if (!engine) {
+      return;
+    }
+    // Manifest freshness: re-fetch with no-store and compare generated_at.
+    (async () => {
+      try {
+        const result = await engine.freshness.checkManifestFreshness(engine.state.getManifestMetadataForAbout());
+        if (disposed) return;
+        freshness = { verdict: result.verdict, acknowledged: freshness.acknowledged };
+      } catch {
+        if (disposed) return;
+        freshness = { verdict: 'unknown', acknowledged: freshness.acknowledged };
       }
-    }, 600 + i * 520);
-    timers.push(t);
-  });
+      recompute();
+    })();
 
-  // ----- flash progress simulation -----
+    // SHA-256 integrity of the downloaded bytes (skipped when no build, in
+    // which case the verify row stays a blocking pending state).
+    if (build) {
+      (async () => {
+        try {
+          const result = await engine.state.verifyFirmwareIntegrity(build, { mode: GATE_MODE, signal: abort.signal });
+          if (disposed) return;
+          integrity = result;
+        } catch {
+          if (disposed) return;
+          integrity = { status: 'failed', message: 'Firmware verification failed.' };
+        }
+        recompute();
+      })();
+    }
+  }
+
+  async function recheckFreshness() {
+    if (!engine) {
+      return;
+    }
+    freshness = { verdict: 'pending', acknowledged: false };
+    recompute();
+    try {
+      const result = await engine.freshness.checkManifestFreshness(engine.state.getManifestMetadataForAbout());
+      if (disposed) return;
+      freshness = { verdict: result.verdict, acknowledged: false };
+    } catch {
+      if (disposed) return;
+      freshness = { verdict: 'unknown', acknowledged: false };
+    }
+    recompute();
+  }
+
+  // ----- flash progress simulation (PR 6 replaces with ESP Web Tools) -----
   function startFlash() {
-    clearReadinessTimers();
     const R = 52, C = 2 * Math.PI * R;
     const ringSvg = fromHTML(
       `<svg class="flash__ring" width="132" height="132" viewBox="0 0 132 132">
@@ -220,6 +394,4 @@ export function InstallStep({ device, isPreview, onBack, onFlashed }) {
     };
     raf = requestAnimationFrame(tick);
   }
-
-  return mainEl;
 }

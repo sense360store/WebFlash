@@ -219,7 +219,11 @@ function Topbar() {
 }
 
 function buildStep() {
-  const { device, isPreview } = computeDevice();
+  const { device } = computeDevice();
+  // The resolved manifest build entry (PR 4 lookup) is what the PR 5 install
+  // gate validates: provenance, SHA-256 integrity, and the channel
+  // acknowledgement identity all key off it. Null until Step 1 resolves a build.
+  const build = state.resolved && state.resolved.build ? state.resolved.build : null;
   if (state.step === 0) {
     return IdentifyStep({
       mode: state.mode, setMode,
@@ -232,7 +236,7 @@ function buildStep() {
     });
   }
   if (state.step === 1) {
-    return InstallStep({ device, isPreview, onBack: () => goTo(0), onFlashed: () => goTo(2) });
+    return InstallStep({ device, build, engine, a11y, onBack: () => goTo(0), onFlashed: () => goTo(2) });
   }
   return ConnectStep({ device, onDone: reset, onSkip: reset });
 }
