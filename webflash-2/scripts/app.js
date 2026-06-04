@@ -1,5 +1,10 @@
 /* WebFlash 2.0 — App state machine + shell. Ported from app.jsx.
-   Standalone, no-build ES module entry point for the /webflash-2/ preview. */
+   Standalone, no-build ES module. Two entry points mount this view:
+     - webflash-2/scripts/shell.js   — inside the production index.html (?ui=2).
+     - webflash-2/scripts/standalone.js — the isolated /webflash-2/ preview.
+   Both pass the engine accessibility primitives in, so the view renders state
+   and calls engine actions but never owns an accessibility or trust gate
+   (see docs/adr/0001-webflash-2-view-over-engine.md). */
 import { h, mount } from './h.js';
 import { icon } from './icons.js';
 import { Rail } from './ui.js';
@@ -7,6 +12,7 @@ import { IdentifyStep } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
 import { SENSING, POWER, buildTarget } from './data.js';
+import { openModal } from './modal.js';
 
 const STEPS = [
   { key: 'identify', label: 'Identify' },
@@ -22,6 +28,18 @@ const state = {
   sel: { power: 'poe', sensing: 'ventiq', fan: 'none', led: false },
   theme: 'light',
 };
+
+// Engine accessibility primitives, injected at mount time. Defaults are no-ops so
+// the module never assumes a global; the real announce/focus helpers come from
+// scripts/utils/a11y.js via the mounting entry point.
+const a11y = {
+  announce: () => {},
+  trapFocus: () => () => {},
+  restoreFocus: () => {},
+  getFocusableElements: () => [],
+};
+// Honour prefers-reduced-motion for programmatic scrolling. Overridden at mount.
+let prefersReducedMotion = () => false;
 
 // Compute the active device (from kit or advanced build).
 function computeDevice() {
@@ -54,12 +72,18 @@ function computeDevice() {
   };
 }
 
+function announceStep() {
+  const label = STEPS[state.step] ? STEPS[state.step].label : '';
+  a11y.announce(`Step ${state.step + 1} of ${STEPS.length}: ${label}`);
+}
+
 // ----- state transitions -----
 function goTo(n) {
   state.step = n;
   state.maxReached = Math.max(state.maxReached, n);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   render();
+  announceStep();
 }
 
 function reset() {
@@ -68,8 +92,9 @@ function reset() {
   state.mode = 'kit';
   state.kit = null;
   state.sel = { power: 'poe', sensing: 'ventiq', fan: 'none', led: false };
-  window.scrollTo({ top: 0 });
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   render();
+  announceStep();
 }
 
 const setMode = (m) => { state.mode = m; render(); };
@@ -80,6 +105,25 @@ function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', state.theme);
   mount(themeBtn, icon(state.theme === 'dark' ? 'sun' : 'moon'));
+}
+
+// ----- help modal -----
+// Wires the topbar Help button to an accessible dialog so the focus-trap and
+// focus-restoration accessibility pattern is real and exercised in this view.
+// The Rescue button stays a no-op here; PR 8 binds it to the real recovery path.
+function openHelp() {
+  openModal({
+    title: 'WebFlash help',
+    a11y,
+    body: [
+      h('p', null,
+        'WebFlash installs Sense360 firmware straight from your browser over USB. ',
+        'Use a desktop Chromium browser (Chrome, Edge, or Opera) with a USB data cable.'),
+      h('p', null,
+        'Step through Identify, Install, and Connect. Each step unlocks the next once ',
+        'its selections are valid. Press Escape to close this dialog.'),
+    ],
+  });
 }
 
 // ----- shell -----
@@ -94,7 +138,7 @@ function Topbar() {
     ),
     h('div', { class: 'topbar__right' },
       h('button', { class: 'iconbtn', type: 'button' }, icon('life'), ' Rescue'),
-      h('button', { class: 'iconbtn', type: 'button' }, icon('help'), ' Help'),
+      h('button', { class: 'iconbtn', type: 'button', onClick: openHelp }, icon('help'), ' Help'),
       themeBtn,
     ),
   );
@@ -117,6 +161,7 @@ function buildStep() {
 }
 
 let railSlot;
+let mainRegion;
 let currentMain;
 
 function render() {
@@ -125,19 +170,42 @@ function render() {
   railSlot = railNode;
 
   const mainNode = buildStep();
-  if (currentMain) {
-    currentMain.__dispose?.();
-    currentMain.replaceWith(mainNode);
-  }
+  currentMain?.__dispose?.();
+  mount(mainRegion, mainNode);
   currentMain = mainNode;
 }
 
-function mountApp() {
+/**
+ * Mounts the WebFlash 2.0 view into the given root element.
+ *
+ * @param {HTMLElement} root            Mount target inside the host shell.
+ * @param {object} [options]
+ * @param {object} [options.a11y]       Engine accessibility primitives
+ *   ({ announce, trapFocus, restoreFocus, getFocusableElements }). Supplied by
+ *   the mounting entry point so the view consumes the engine rather than
+ *   importing it directly.
+ * @param {() => boolean} [options.prefersReducedMotion]
+ */
+export function mountWebFlash2(root, options = {}) {
+  if (options.a11y) {
+    Object.assign(a11y, options.a11y);
+  }
+  if (typeof options.prefersReducedMotion === 'function') {
+    prefersReducedMotion = options.prefersReducedMotion;
+  }
+
   document.documentElement.setAttribute('data-theme', state.theme);
+
   railSlot = Rail({ steps: STEPS, current: state.step, maxReached: state.maxReached, onJump: goTo });
+  // Stable main landmark + skip-link target. render() swaps the step inside it,
+  // so the id and tabindex survive every step transition.
+  mainRegion = h('main', { id: 'wf2-main-content', class: 'wf2-main-region', tabindex: '-1' });
   currentMain = buildStep();
-  const app = h('div', { class: 'app' }, Topbar(), railSlot, currentMain);
-  mount(document.getElementById('root'), app);
+  mainRegion.appendChild(currentMain);
+
+  const app = h('div', { class: 'app' }, Topbar(), railSlot, mainRegion);
+  mount(root, app);
+  announceStep();
 }
 
-mountApp();
+export const __testHooks = Object.freeze({ STEPS, goTo });

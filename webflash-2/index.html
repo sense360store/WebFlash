@@ -24,7 +24,9 @@
     </p>
   </noscript>
 
-  <!-- Vanilla ES modules — no build step, no React/Babel runtime. -->
-  <script type="module" src="scripts/app.js"></script>
+  <!-- Vanilla ES modules — no build step, no React/Babel runtime. The standalone
+       entry mounts the same 2.0 view that the production shell mounts under
+       ?ui=2 (see webflash-2/scripts/shell.js). -->
+  <script type="module" src="scripts/standalone.js"></script>
 </body>
 </html>

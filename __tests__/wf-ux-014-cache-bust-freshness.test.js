@@ -278,7 +278,9 @@ describe('WF-UX-014 — cache-busted script references carry an updated version 
     test('bootstrap.js threads the cache-bust token onto the app.js import', () => {
         expect(bootstrap).toMatch(/APP_SHELL_BUILD\s*=\s*['"]\d+['"]/);
         // The dynamic import must actually use the token, not just declare it.
-        expect(bootstrap).toMatch(/import\(`?\$\{scriptPath\}\?v=\$\{APP_SHELL_BUILD\}`?\)/);
+        // PR 3 (WebFlash 2.0) branches the entry on ?ui=2, so both the 1.0 app.js
+        // import and the 2.0 shell.js import thread the cache-bust token.
+        expect(bootstrap).toMatch(/import\(`[^`]*\?v=\$\{APP_SHELL_BUILD\}`\)/);
     });
 
     test('index.html CSS links carry the bumped ?v= token (no longer the stale 20260515)', () => {
