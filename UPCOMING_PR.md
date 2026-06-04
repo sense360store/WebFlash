@@ -22,98 +22,85 @@ follow-up:
 
 ## Current WebFlash surface summary
 
-State of the repo at TRACKING-001:
+State of the repo at TRACKING-002 (post WebFlash 2.0 GA):
 
-- Current import surface has eight builds (updated by WEBFLASH-PWM-001):
-  - **Release-One stable** — `Ceiling-POE-VentIQ-RoomIQ` v1.0.0 (production)
-  - **LED preview** — `Ceiling-POE-VentIQ-RoomIQ-LED` v1.0.0 (preview channel,
-    manifest-only exposure under WF-LED-003 Option A)
-  - **AirIQ preview** — `Ceiling-POE-AirIQ-RoomIQ` v1.0.0 (preview channel,
-    first preview batch from upstream `v1.0.0-preview`)
-  - **RoomIQ preview** — `Ceiling-POE-RoomIQ` v1.0.0 (preview channel,
-    first preview batch)
-  - **RoomIQ + LED preview** — `Ceiling-POE-RoomIQ-LED` v1.0.0 (preview channel,
-    first preview batch; distinct from the VentIQ LED preview)
-  - **FanRelay preview** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` v1.0.0 (preview /
-    manual-preview channel; WEBFLASH-RELAY-001, from upstream `v1.0.0-preview`
-    after #711 marked it `webflash_import_eligibility.eligible=true` — catalog
-    status stays `hardware-pending`)
-  - **FanPWM preview** — `Ceiling-POE-FanPWM` v1.0.0 (preview / manual-preview
-    channel; WEBFLASH-PWM-001, from upstream `v1.0.0-preview` under the same
-    #711 `webflash_import_eligibility.eligible=true` signal — catalog status
-    stays `hardware-pending`)
-  - **Rescue** — `Rescue` v1.0.0 (WebFlash-owned unbricking build)
-- The six preview builds are preview-channel only (Advanced install,
-  `channel:preview` acknowledgement): not stable, not recommended, not a
-  customer default, not in `REQUIRED_CONFIGS`, not a kit, not buyable. The
-  default Simple install path still resolves only to the stable Bathroom PoE
-  build.
-- `REQUIRED_CONFIGS` is production-only:
-  `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
-- `scripts/data/kits.json` is Release-One-only.
-- **WF-TRIAC-001 runtime UX has landed** (#432). TRIAC is the eighth
-  module-availability state (`advanced-manual-warning`); the card is visible
-  and selectable in the custom path behind an in-installer
-  acknowledgement gate. TRIAC remains not Release-One, not
-  `REQUIRED_CONFIGS`, not kit / recommended, not auto-selected, not
-  import-allowed (`block_tokens: ["FanTRIAC", "LED"]` on Release-One and
-  `["FanTRIAC"]` on the LED preview source both stand), and not
-  compliance-certified.
-- **WF-STALE-001 minimal cleanup has landed** (#433). Fixture/doc-only
-  cleanup against the current Release-One baseline; no runtime, manifest,
-  firmware, source, kit, or `REQUIRED_CONFIGS` change.
-- **WF-UX-008 customer-facing copy cleanup has landed** (#452). Internal task /
-  release / tracking IDs (`RELEASE-…-001`, `WF-IMPORT-…`, `HW-005`,
-  `COMPLIANCE-001`, `KIT-MATRIX-001`) no longer appear in any customer-visible
-  wizard copy; they survive only in the dev/support-only `kit-presets.js`
-  `upstreamRef` / `blockers` fields and the `module-availability.js`
-  `reasonCode`. The custom path is reframed as **"Advanced setup"**. Copy +
-  test only — no firmware, manifest, source, kit, `REQUIRED_CONFIGS`,
-  install-gate, or safety-semantics change, and no hardware behaviour
-  verified.
-- **WF-UX-009 Review three-task flow has landed** (#454). Step 5 is restructured
-  into three visible customer tasks — **Check your kit** → **Confirm safe
-  flashing** → **Install firmware** — with the selected-kit summary first, the
-  safety/preflight acknowledgements second, and the dominant
-  `<esp-web-install-button>` last. Secondary actions (Download `.bin`, Copy
-  install link, Open Home Assistant, Recovery) are demoted into collapsed
-  labelled `<details>` disclosures; diagnostics stay support-oriented inside the
-  preflight disclosure. Markup + CSS + test only — every install gate (preflight
-  policy, manifest freshness, release-channel acknowledgements, advanced/manual
-  warnings, provenance/installability) and firmware-selection logic is unchanged.
-- **The Simple install UX + manifest-freshness epic has fully landed**
-  (#454–#466). Step 1 now leads with a default, product-focused **Simple
-  install** for the stable Sense360 Bathroom PoE kit behind an explicit
-  **Simple / Advanced** path split; firmware technical detail, secondary
-  actions, and diagnostics are collapsed behind disclosures; **freshness
-  'unknown' is non-blocking** and routed through calm Simple-install copy
-  (Advanced install keeps the acknowledgement gate) while **'stale' stays a
-  hard block in both modes**; the manifest-freshness **startup race** and
-  **root-manifest check** are fixed (`scripts/state.js` waits for the in-flight
-  load before comparing; `scripts/services/manifest-freshness.js` carries
-  structured reason codes incl. `manifest-load-pending`); and **View Release
-  Notes** opens in-card on the live site. Per-PR detail + do-not-change
-  records live in the Completed / merged table: #454 (WF-UX-009), #455
-  (WF-UX-010), #456 (WF-UX-011), #457 (WF-UX-012), #458 (WF-UX-013), #459
-  (WF-UX-014), #460 (WF-UX-015), #461 + #462 (WF-UX-016), #463 (WF-UX-017),
-  #464 (WF-FRESHNESS-ROOT-MANIFEST-001), #465 (WF-UX-018), #466
-  (WF-MANIFEST-FRESHNESS-RACE-001). **No** firmware, `manifest.json`,
-  `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`,
-  `scripts/data/kits.json`, release-channel policy, FanTRIAC block, or
-  service-worker fetch-strategy change landed — Simple install remains stable
-  Bathroom PoE only, the stale hard block stands, and LED stays preview-only.
-- **`FanRelay`, `FanPWM` and `FanDAC` are now imported** as Advanced-install
-  preview / manual-preview builds (WEBFLASH-RELAY-001, WEBFLASH-PWM-001, and
-  WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — the latter via the new preview-eligible
-  import automation), all authorised by upstream #711's
-  `webflash_import_eligibility.eligible=true` signal. Only `FanTRIAC` remains
-  **not imported**: it stays `eligible=false` / build-blocked under HW-005, and
-  the automation refuses it even if the flag were flipped.
-- **LED stable import remains blocked** by:
-  - operator hardware proof (WF-HW-TEST-002 follow-up — operator evidence
-    still pending; the docs PR merged as #430 without evidence), and
-  - upstream `sense360store/esphome-public` `RELEASE-007` (LED stable
-    catalog promotion).
+- **The WebFlash 2.0 view-over-engine migration has fully landed (PRs
+  #478–#492, the `wf2-*` PR 0 → PR 13 sequence).** The 2.0 view was built
+  over the existing 1.0 **engine**, made the production GA default by PR 12
+  (#491), and then PR 13 (#492) removed the 1.0 view, deleted the `?ui=1`
+  fallback plus `scripts/ui-version.js`, and folded the 2.0 view to the
+  repository root. Controlling docs:
+  [`docs/webflash-2-migration.md`](../docs/webflash-2-migration.md),
+  [`docs/webflash-2-migration-delivery.md`](../docs/webflash-2-migration-delivery.md),
+  [`docs/webflash-2-migration-prompts.md`](../docs/webflash-2-migration-prompts.md),
+  and the ADR
+  [`docs/adr/0001-webflash-2-view-over-engine.md`](../docs/adr/0001-webflash-2-view-over-engine.md).
+- **#493 then merged a follow-up bug-fix** — "Fix RoomIQ sensing axis, logo
+  URL, and FIRMWARE TARGET card styling" — a runtime change to
+  `scripts/data.js`, `scripts/identify.js`, `scripts/app.js`, and `app.css`
+  (RoomIQ is now modelled as an optional toggle that coexists with AirIQ /
+  VentIQ, not a base air-quality row).
+- **The 2.0 view is now the sole production installer at the repo root.**
+  There is no `?ui=1` fallback and `scripts/ui-version.js` is gone; the view
+  is a render layer only.
+- **The trust engine survived intact and stays authoritative.**
+  `scripts/state.js`, `scripts/utils/*` (`release-channels`,
+  `firmware-provenance`, `kit-config`, `a11y`), and `scripts/services/*`
+  (`manifest-freshness`, `sw-update`, `diagnostics`) are unchanged by the
+  migration. The view renders the engine verdict (`evaluateInstallGate`,
+  `resolveCompatibleFirmware`) and **owns no gate**.
+- **Release notes, firmware signing, and import / manifest verification all
+  survived and are recorded intact:**
+  - Release notes render from the build's `changelog` / `release_url` in
+    `scripts/state.js`.
+  - Firmware signing stays pipeline-side: `scripts/gen-manifests.py` signs
+    every build with Ed25519 (`signature_ed25519` / `signature_key_id`) and
+    `.github/workflows/firmware-publish.yml` signs in `--mode production`
+    with the CI secret key (production mode rejects unsigned manifests and
+    refuses the committed dev key; secret-less PR builds fall back to
+    `--mode development`, whose output the deployed wizard will not accept).
+    Pinned by `__tests__/firmware-signature.test.js`,
+    `__tests__/firmware-provenance.test.js`, and
+    `__tests__/firmware-provenance-gating.test.js`.
+  - Import / manifest verification stays in
+    `scripts/import-firmware-sources.py`,
+    `scripts/import-preview-eligible-sources.py`, `scripts/gen-manifests.py`,
+    `scripts/sync-from-releases.py`, `firmware/sources.json`, and
+    `__tests__/manifest-health.test.js`. The importer verifies each `.bin`
+    SHA-256 against the upstream `checksums-sha256.txt` **and** the pinned
+    `expected_sha256`.
+- **`manifest.json` still carries nine builds** and `REQUIRED_CONFIGS` is
+  unchanged: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]` (production-only). The
+  nine builds are one stable (`Ceiling-POE-VentIQ-RoomIQ`), seven preview
+  (`Ceiling-POE-VentIQ-RoomIQ-LED`, `Ceiling-POE-AirIQ-RoomIQ`,
+  `Ceiling-POE-RoomIQ`, `Ceiling-POE-RoomIQ-LED`,
+  `Ceiling-POE-VentIQ-FanRelay-RoomIQ`, `Ceiling-POE-FanPWM`,
+  `Ceiling-POE-FanDAC`), and `Rescue`.
+- **`scripts/data/kits.json` has exactly one kit** —
+  `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE` → `Ceiling-POE-VentIQ-RoomIQ`
+  (stable, recommended) — and the 2.0 kit picker shows only this kit.
+- **REGRESSION from PR 13 — the Simple bundle picker was removed.** PR 13
+  deleted `scripts/simple-install.js`, `scripts/data/simple-bundles.js`,
+  `scripts/data/kit-presets.js`, `scripts/recommended-bundle.js`, and
+  `scripts/data/fan-bundle-import-readiness.js`. The five base room bundles,
+  the Bathroom Relay bundle, and the fan-control + FanDAC address
+  acknowledgements no longer exist in the running view. Definitions are
+  recoverable from git history
+  (`git show 7f68bf8:scripts/data/simple-bundles.js`,
+  `git show 7f68bf8:scripts/simple-install.js`). Rebuilding the picker on the
+  2.0 view is queued as `WF2-KIT-BUNDLE-PICKER-001`, with the gates as
+  `WF2-FAN-CONTROL-GATES-001`.
+- **KNOWN BUG — empty amber bars render around the install verdict.**
+  `app.css` `.callout { display: flex }` (with no `[hidden]` reset) overrides
+  the `hidden` attribute on the `.callout--warn` banners (`unsupportedBannerEl`
+  and `swNoticeEl` in `scripts/install.js`; the hidden `freshnessControlsEl`
+  is affected the same way), so they paint as empty warning bars. Fix queued
+  as `WF2-CALLOUT-HIDDEN-FIX-001` (CSS + test only).
+- **Preview firmware stays Advanced-only and gated.** Every preview-channel
+  build remains behind the `channel:preview` acknowledgement — never stable,
+  never recommended, never default, never in `REQUIRED_CONFIGS`, never
+  buyable. FanTRIAC stays build-blocked; LED stable stays blocked on upstream
+  `RELEASE-007` plus operator hardware proof.
 
 ## Completed / merged PRs
 
@@ -182,271 +169,153 @@ State of the repo at TRACKING-001:
 | WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 | _(open — PR # to fill at merge)_ | In review | Expanded the Simple-install bundle picker to **declare and import-gate** the five full-composition fan-control room bundles from upstream `ROOM-BUNDLE-FAN-CONFIGS-001` (#713): `S360-KIT-BATH-P-PWM` (→ `Ceiling-POE-VentIQ-FanPWM-RoomIQ`), `S360-KIT-BATH-P-DAC` (→ `Ceiling-POE-VentIQ-FanDAC-RoomIQ`), `S360-KIT-KITCHEN-P-REL` (→ `Ceiling-POE-AirIQ-FanRelay-RoomIQ`), `S360-KIT-KITCHEN-P-PWM` (→ `Ceiling-POE-AirIQ-FanPWM-RoomIQ`), `S360-KIT-KITCHEN-P-DAC` (→ `Ceiling-POE-AirIQ-FanDAC-RoomIQ`). Added `FAN_CONTROL_BUNDLES` + the import-readiness gate (`isFanControlBundleImportReady` / `getExposableFanControlBundles` / `isFullRoomBundle` / `validateFanControlBundle` / `bundleRequiresDacAddressAcknowledgement`) to [`scripts/data/simple-bundles.js`](scripts/data/simple-bundles.js); extended [`scripts/simple-install.js`](scripts/simple-install.js) to inject import-ready fan cards into the picker (none today) and AND a third **analog-fan address-switch** acknowledgement into the authoritative pre-flash gate; added the staged `[data-simple-bundle-dac-address]` region (0x58 / 0x5A / forbidden 0x59 copy) to [`index.html`](index.html); published the live manifest config_string set as the additive `window.webflashManifestConfigStrings` global from `scripts/state.js`. Bumped `CACHE_NAME` (`webflash-v13`) + cache-bust token (`202606016`) + app-shell marker (`2026-06-01-6`). Added `__tests__/wf-easy-bundle-picker-fan-expansion.test.js` (26 assertions) + `docs/live-smoke-easy-bundle-picker-fan-expansion.md`; updated `docs/live-smoke-easy-bundle-picker.md`, `docs/webflash-import-readiness-matrix.md`, `docs/sense360-webflash-status.md`, `UPCOMING_PR.md`, `CHANGELOG.md`. | **No firmware imported.** Every firmware binary, `manifest.json` (still 9 builds), every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/data/kits.json` (Release-One-only), `scripts/data/kit-presets.js`, `scripts/data/module-requirements.js`, `scripts/utils/release-channels.js`, `scripts/utils/firmware-readiness.js`, `scripts/utils/module-availability.js`, the install gate / preflight / provenance / signature / freshness engines, and every `.github/workflows/*` file are unchanged. The six base bundle cards + the stable Bathroom PoE default are unchanged. | **None of the five fan-control cards is exposed today** — upstream #713 published no firmware (`compile_validation_status: pending-ci`, `buildable-preview-compile-pending`, no `.bin`, no release), so the gate keys off the live manifest and shows exactly the six base bundles. The definitions + gate + acknowledgement plumbing are staged so a future per-config firmware-import PR lights up the matching card automatically. TRIAC stays excluded. FanDAC address policy `FANDAC-I2C-ADDR-001` remains PENDING (referenced only in docs/developer fields). **No preview bundle made stable / default / recommended / buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed; the FanDAC address switch is not claimed physically verified.** |
 | WF-EASY-BUNDLE-PICKER-LIVE-SMOKE-001 | _(open — PR # to fill at merge)_ | In review | **Docs + test only.** Added the consolidated current-state live / manual smoke checklist for the deployed Simple-install bundle picker at [`docs/live-smoke-easy-bundle-picker-current.md`](docs/live-smoke-easy-bundle-picker-current.md) and the deterministic guard [`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](__tests__/wf-easy-bundle-picker-live-smoke.test.js). The guard pins the live end-state: `manifest.json` carries nine builds; all six base bundles (`S360-KIT-BATH-P` → `Ceiling-POE-VentIQ-RoomIQ` stable default, `S360-KIT-KITCHEN-P` → `Ceiling-POE-AirIQ-RoomIQ`, `S360-KIT-BEDROOM-P` → `Ceiling-POE-RoomIQ`, `S360-KIT-LIVING-P` + `S360-KIT-CORRIDOR-P` → `Ceiling-POE-RoomIQ-LED`, `S360-KIT-BATH-P-REL` → `Ceiling-POE-VentIQ-FanRelay-RoomIQ`) resolve to a live build; the five fan-control expansion configs (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) are absent so `getExposableFanControlBundles` is empty; a synthetic manifest exposes a fan card only on its exact full-composition config; the standalone `Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC` previews present in the manifest never become a Simple card; TRIAC is absent everywhere; the stable Bathroom PoE build is the only default-selectable build with no freshness false-blocker; preview bundles stay `channel:preview`-gated. Updated [`docs/sense360-webflash-status.md`](docs/sense360-webflash-status.md) with the smoke-record section. | **No firmware imported.** Every firmware binary, `manifest.json` (still 9 builds), every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/data/kits.json` (Release-One-only), `scripts/data/simple-bundles.js`, `scripts/simple-install.js`, `scripts/data/kit-presets.js`, `scripts/utils/release-channels.js`, `scripts/utils/module-availability.js`, the install gate / preflight / provenance / signature / freshness engines, `index.html`, every CSS file, `sw.js` (cache name / cache-bust token unchanged), and every `.github/workflows/*` file are byte-identical. No hidden fan-control card exposed, no standalone fan / TRIAC card exposed, no preview made stable / recommended / default, no acknowledgement weakened. | Realizes the bundle-picker slice of the planned `WF-LIVE-SMOKE-SIMPLE-INSTALL-001` row below: the deployed picker end-state is now machine-verified after the picker + fan-expansion + fan-driver-preview PRs. A human incognito visual pass on `https://sense360store.github.io/WebFlash/` is the recommended (non-blocking) confirmation. No new `REQUIRED_CONFIGS` / kit entry; fan-control expansion cards stay hidden until their firmware is imported. |
 | WF-FAN-BUNDLE-IMPORT-READINESS-001 | _(open — PR # to fill at merge)_ | In review | **Docs + test only — readiness prep for the five future full-composition fan-control bundle artifacts (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`).** Added the non-runtime readiness descriptor [`scripts/data/fan-bundle-import-readiness.js`](scripts/data/fan-bundle-import-readiness.js) (derived from `FAN_CONTROL_BUNDLES` so it cannot drift) declaring, per future artifact, the expected `config_string`, expected canonical artifact filename (`Sense360-<config>-v1.0.0-preview.bin`) + `.meta.json` sidecar, expected `channel: preview`, expected `block_tokens: ["FanTRIAC", "LED"]`, the full room-bundle flag, the Simple-picker card gate, and the required acknowledgements (preview + fan-control, plus the analog address-switch acknowledgement naming `0x58` / `0x5A` / forbidden `0x59` for the two FanDAC bundles), plus `buildExpectedSourceEntry` (a ready-to-fill `firmware/sources.json` skeleton with everything **except** the human-pinned `expected_sha256`), `validateFanBundleImportExpectation`, and `getFanBundleImportReadinessReport`. Added the test pin [`__tests__/wf-fan-bundle-import-readiness.test.js`](__tests__/wf-fan-bundle-import-readiness.test.js) (33 assertions: expected-shape integrity, naming-policy-conformant filenames, source-entry skeleton vs. a real preview entry minus the pin, FanDAC `0x58`/`0x5A`/`0x59` copy, synthetic manifest exposes exactly the matching card, source-without-manifest stays hidden, standalone fan-only + TRIAC never expose a card, no stable/default/recommended/buyable, live REQUIRED_CONFIGS / manifest / sources / kits / on-disk unchanged). Updated [`docs/webflash-import-readiness-matrix.md`](docs/webflash-import-readiness-matrix.md), [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](docs/live-smoke-easy-bundle-picker-fan-expansion.md), [`docs/sense360-webflash-status.md`](docs/sense360-webflash-status.md), `CLAUDE.md`. | **No firmware imported.** Every firmware binary, `manifest.json` (still 9 builds), every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/data/kits.json` (Release-One-only), `scripts/data/simple-bundles.js`, `scripts/simple-install.js`, `scripts/data/kit-presets.js`, `scripts/utils/release-channels.js`, `scripts/utils/module-availability.js`, `scripts/validate-product-import-readiness.js`, `scripts/import-firmware-sources.py`, `scripts/import-preview-eligible-sources.py`, `__tests__/fixtures/esphome-product-catalog.json`, the install gate / preflight / provenance / signature / freshness engines, `index.html`, every CSS file, `sw.js` (cache name / SCRIPT_MODULES unchanged — the readiness module is non-runtime), and every `.github/workflows/*` file are byte-identical. | None of the five fan-control cards is exposed (still no artifact). The readiness descriptor + test make the future per-config import PR (`WF-IMPORT-FAN-BUNDLES-001`) small and mechanical: copy the source-entry skeleton, pin the published artifact's SHA-256, run the importer + `gen-manifests.py`, and the matching card lights up. No acknowledgement weakened (the analog address-switch gate is strictly additive). TRIAC stays build-blocked. **No preview made stable / default / recommended / buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed.** |
+| WebFlash 2.0 migration epic (`wf2-*` PR 0 → PR 13) | #478–#492 | Merged | The full WebFlash 2.0 migration that rebuilt the installer as a thin **view over the existing 1.0 engine**. PR 0 (#478) added the migration docs + the view-over-engine ADR; PR 1 (#479, #480) landed preview honesty + data-model corrections; PR 2 (#481) introduced the `scripts/engine.js` API seam; PR 3 (#482) mounted the 2.0 shell under `?ui=2` with real accessibility; PR 4 (#483) bound the Identify step to the real engine; PR 5 (#484) put the install gate on the real engine; PR 6 (#485) wired real flashing through ESP Web Tools; PR 7 (#486) added Improv connect + post-flash validation; PR 8 (#487) added rescue + development modes; PR 9 (#488) added diagnostics + the support bundle; PR 10 (#489) reached test + audit parity; PR 11 (#490) made 2.0 the beta default + added the S360-410 evidence gate; PR 12 (#491) flipped the production GA default to 2.0; PR 13 (#492) removed the 1.0 view, deleted the `?ui=1` fallback + `scripts/ui-version.js`, and folded the 2.0 view to the repo root. | The 1.0 **engine** and trust model were preserved — `scripts/state.js`, `scripts/utils/*`, `scripts/services/*`, `manifest.json` (nine builds), every `firmware-*.json`, every firmware binary, `firmware/sources.json`, `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), the Ed25519 signing pipeline (`gen-manifests.py` + `firmware-publish.yml`), and the FanTRIAC HW-005 block are all unchanged. No gate was weakened and no new kit / channel was exposed. | The 2.0 view is now the sole root installer (no `?ui` flag). **Follow-up / regression:** PR 13 also removed the Simple bundle picker (`scripts/simple-install.js`, `scripts/data/simple-bundles.js`, `scripts/data/kit-presets.js`, `scripts/recommended-bundle.js`, `scripts/data/fan-bundle-import-readiness.js`), so the room bundles + fan-control / FanDAC acknowledgements no longer exist in the running view (rebuild queued as `WF2-KIT-BUNDLE-PICKER-001` / `WF2-FAN-CONTROL-GATES-001`). |
+| wf2-identify-sensing-fixes | #493 | Merged | Follow-up bug-fix on the GA 2.0 view — "Fix RoomIQ sensing axis, logo URL, and FIRMWARE TARGET card styling". Re-modelled RoomIQ (S360-200) as an optional presence toggle that coexists with AirIQ / VentIQ instead of a base air-quality row (the manifest proves RoomIQ is optional), corrected the logo URL, and fixed the FIRMWARE TARGET card styling. Runtime change to `scripts/data.js`, `scripts/identify.js`, `scripts/app.js`, and `app.css`; `scripts/connect.js` and the engine untouched. | `scripts/state.js` and the rest of the engine, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, `scripts/data/kits.json`, the signing pipeline, and the FanTRIAC block are all unchanged. | The default 2.0 view renders RoomIQ as an independent axis, the logo loads, and the FIRMWARE TARGET card styles correctly. |
 
 ## Active / upcoming WebFlash queue
 
-Priority-ordered. Update the **Status** column in-place as each PR is opened
-or lands, then move the row to **Completed / merged** on merge.
+Priority-ordered. Update the **Status** of each item in-place as it is opened
+or lands, then move it to **Completed / merged** on merge. Do not invent PR
+numbers — leave "PR # to fill when verified" until the number is confirmed
+against `git log`.
 
 ### Standing blockers / invariants
 
 These gate every item below and must not be regressed by any queue PR:
 
-- **WebFlash cannot import new preview builds until upstream artifacts
-  exist.** Every `WF-IMPORT-…` / `WF-PREVIEW-IMPORT-…` item below is blocked
-  until `sense360store/esphome-public` publishes the corresponding
-  `RELEASE-…` artifact (signed-able `.bin` + checksum + catalog promotion).
-  No speculative import.
-- **Simple install remains stable Bathroom PoE only.** The default Simple
-  install path resolves only to Release-One `Ceiling-POE-VentIQ-RoomIQ`
-  (stable, v1.0.0). No preview, fan, or advanced build is selectable from
-  Simple install.
-- **Preview / advanced-preview appears only in Advanced install.** The LED
-  preview (and any future preview/advanced-preview artifact) is reachable
-  only through Advanced install behind the existing `channel:preview`
-  acknowledgement; it is never auto-selected and never enters the Simple
-  path.
-- **TRIAC remains advanced / manual only.** Sense360 TRIAC (S360-320) stays
-  `advanced-manual-warning` — not recommended, not default, not a kit, not
-  auto-selected, not in `REQUIRED_CONFIGS`, not import-allowed (the
-  `block_tokens` import block stands), and not compliance-certified.
+- **The 2.0 view is the sole root view.** There is no `?ui=1` fallback and the
+  1.0 render modules (`scripts/ui-version.js` and the rest of the 1.0 layer)
+  were removed by PR 13. Any new work targets the single 2.0 view directly.
+- **The engine owns every gate.** The view (`scripts/app.js` and friends)
+  renders the engine verdict (`evaluateInstallGate`, `resolveCompatibleFirmware`)
+  and never owns a gating decision. Provenance, channel acknowledgement,
+  SHA-256 verification, manifest freshness, and the service-worker update gate
+  must **never** be weakened.
+- **Kit-picker default + recommended choice stays stable Bathroom PoE.**
+  `Ceiling-POE-VentIQ-RoomIQ` (the single `scripts/data/kits.json` kit) is the
+  default and recommended selection; preview bundles are never default, never
+  recommended, never buyable.
+- **Preview is never stable or hardware-verified.** Every preview-channel build
+  stays Advanced-only behind the `channel:preview` acknowledgement and carries
+  no hardware / bench / compliance / commercial-availability claim.
+- **Standalone FanPWM / FanDAC stay out of the picker.** The
+  `Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC` previews are advanced-builder
+  only and never appear as bundle / kit cards.
+- **TRIAC stays blocked.** Sense360 TRIAC (S360-320) stays
+  advanced/manual-warning and build-blocked — not recommended, not default,
+  not a kit, not in `REQUIRED_CONFIGS`, not import-allowed, not
+  compliance-certified.
+- **`FANDAC-I2C-ADDR-001` stays pending.** The analog (FanDAC) address-switch
+  acknowledgement (`0x58` / `0x5A`, forbidden `0x59`) is not physically
+  verified; any FanDAC exposure keeps that acknowledgement additive.
+- **No browser-side signature-verification claim.** `signature_verified` stays
+  skip; cryptographic signature verification in the browser is a separate,
+  explicit future project, never claimed on any surface.
 
 ### Queue
 
-0. **WF-LIVE-SMOKE-PREVIEW-IMPORT-001 — Verify live WebFlash after the preview
-   import.**
-   Status: **PR open — docs + test only.**
-   Purpose: Add and run a live / manual smoke checklist for the deployed
-   GitHub Pages site after the first preview firmware batch
-   (`WF-PREVIEW-IMPORT-FIRST-BATCH-001`) landed. Confirms **Simple install
-   stays clean and stable-only** (`Ceiling-POE-VentIQ-RoomIQ`, no false
-   freshness block, no AirIQ / room-bundle preview leakage) while **Advanced
-   install can reach the new preview builds** (`Ceiling-POE-AirIQ-RoomIQ`,
-   `Ceiling-POE-RoomIQ`, `Ceiling-POE-RoomIQ-LED`) behind the `channel:preview`
-   acknowledgement with working in-card release notes. Adds the checklist +
-   manual verification template at
-   [`docs/live-smoke-preview-import.md`](../docs/live-smoke-preview-import.md)
-   and the deterministic guard
-   [`__tests__/live-smoke-preview-import.test.js`](../__tests__/live-smoke-preview-import.test.js)
-   (exactly eight builds after WEBFLASH-PWM-001, preview Advanced-only /
-   acknowledgement-gated, Simple resolves only to stable Bathroom PoE, preview
-   release notes present, no DAC / TRIAC fan-driver import — FanRelay + FanPWM
-   excepted, AirIQ availability derived from the manifest, VentIQ LED preview
-   preserved, Rescue available). Extends the Simple-only
-   `WF-LIVE-SMOKE-SIMPLE-INSTALL-001` row below into the preview-import surface.
-   Dependencies: None — `WF-PREVIEW-IMPORT-FIRST-BATCH-001` merged (#468). A
-   human incognito visual pass is the recommended (non-blocking) confirmation.
-   Note: **Docs / test only.** No firmware imported, no Simple-install default
-   changed, no preview made recommended/default/stable, no candidate bundle
-   exposed as buyable, no TRIAC / fan-driver import, no provenance / signature /
-   freshness check weakened, no preview warning removed, and the existing
-   VentIQ LED preview was not overwritten.
+1. **WF2-CALLOUT-HIDDEN-FIX-001 — Stop empty amber callout bars rendering
+   around the install verdict.**
+   Status: **Ready — next real work (no upstream dependency). PR # to fill
+   when verified.**
+   Purpose: Add `[hidden] { display: none !important; }` to `app.css` so the
+   hidden `.callout--warn` banners (`unsupportedBannerEl`, `swNoticeEl`) and
+   the hidden `freshnessControlsEl` actually stay hidden when empty. Today
+   `.callout { display: flex }` overrides the `hidden` attribute (there is no
+   `[hidden]` reset), so the empty banners paint as empty warning bars around
+   the verdict. CSS + test only.
+   Dependencies: None.
+   Note: Presentation-only. No engine, manifest, firmware, sources,
+   `REQUIRED_CONFIGS`, release-channel, or install-gate change.
 
-1. **WF-LIVE-SMOKE-SIMPLE-INSTALL-001 — Verify the live Simple install
-   end-state.**
-   Status: **Ready — next real work (no upstream dependency).**
-   Purpose: Verify the deployed GitHub Pages
-   (`https://sense360store.github.io/WebFlash/`) Simple install now reflects
-   the merged #454–#466 end-state — **no false freshness warning** (freshness
-   `unknown` is non-blocking; only a genuine `stale` hard-blocks), **View
-   Release Notes opens** in-card, the **Install button becomes available**
-   after the single safety confirmation, and **technical details are
-   collapsed** by default behind the hero disclosure. Record the result as a
-   live-smoke doc under `docs/release-gates/` (extends the existing
-   `WEBFLASH-LIVE-MANIFEST-FRESHNESS-SMOKE-001` pattern). Docs-only; opens a
-   targeted follow-up only if the live page diverges from the merged source.
-   Dependencies: None — the fixes are merged and deployed. A human incognito
-   visual pass is the recommended (non-blocking) confirmation.
-   Note: The **bundle-picker slice** of this verification is now covered by
-   `WF-EASY-BUNDLE-PICKER-LIVE-SMOKE-001` (see the In review table above) —
-   [`docs/live-smoke-easy-bundle-picker-current.md`](../docs/live-smoke-easy-bundle-picker-current.md)
-   + [`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](../__tests__/wf-easy-bundle-picker-live-smoke.test.js)
-   pin the current six-card / stable-default / fan-expansion-hidden end-state.
+2. **WF2-KIT-BUNDLE-PICKER-001 — Rebuild the room bundle picker in the 2.0
+   kit picker.**
+   Status: **Ready — recovers the PR 13 regression. PR # to fill when
+   verified.**
+   Purpose: Restore the five base room bundles (`S360-KIT-BATH-P`,
+   `S360-KIT-KITCHEN-P`, `S360-KIT-BEDROOM-P`, `S360-KIT-LIVING-P`,
+   `S360-KIT-CORRIDOR-P`) plus `S360-KIT-BATH-P-REL` into
+   `scripts/data/kits.json` and the 2.0 kit picker, recovering the definitions
+   from `git show 7f68bf8:scripts/data/simple-bundles.js`. Stable Bathroom PoE
+   (`Ceiling-POE-VentIQ-RoomIQ`) is the default + recommended choice; preview
+   bundles are gated, never default, recommended, or buyable. Standalone
+   `Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC` stay out of the picker (advanced
+   builder only); TRIAC stays blocked.
+   Dependencies: None (definitions recoverable from git history). This is the
+   **only** queue item permitted to edit `scripts/data/kits.json`.
+   Note: Restores customer bundle selection on the 2.0 view; installability
+   stays manifest-driven and every install gate stays authoritative.
 
-2. **WF-PREVIEW-IMPORT-POLICY-001 — Prepare WebFlash import rules for upstream
-   preview artifacts.**
-   Status: **Planned / policy (docs-only; no artifact yet).**
-   Purpose: Define — *before* any preview artifact exists — the WebFlash
-   import rules for upstream preview builds: the required upstream proof
-   fields, the `firmware/sources.json` source-entry shape (`channel: preview`,
-   `block_tokens`, pinned `expected_sha256`), the importer →
-   `gen-manifests.py` → sign → deploy sequence, the Advanced-install-only
-   exposure contract (preview never enters Simple install or
-   `REQUIRED_CONFIGS`), and the do-not-change list. Reuses the
-   `docs/webflash-import-readiness-matrix.md` + `docs/product-import-readiness.md`
-   contracts.
-   Dependencies: None to author (docs/policy). Gates
-   WF-PREVIEW-IMPORT-FIRST-BATCH-001.
-   Note: **Policy only — imports nothing.** No firmware, manifest, sources,
-   `REQUIRED_CONFIGS`, or kit change.
+3. **WF2-FAN-CONTROL-GATES-001 — Port the fan-control + FanDAC address
+   acknowledgements into the 2.0 install gate.**
+   Status: **Queued behind WF2-KIT-BUNDLE-PICKER-001. PR # to fill when
+   verified.**
+   Purpose: Port the fan-control acknowledgement and the FanDAC analog
+   address-switch acknowledgement (`FANDAC-I2C-ADDR-001`: `0x58` / `0x5A`,
+   forbidden `0x59`) into the 2.0 install gate, **additive** to the existing
+   `channel:preview` acknowledgement and never weaker. Recover the copy + logic
+   from `git show 7f68bf8:scripts/simple-install.js`.
+   Dependencies: WF2-KIT-BUNDLE-PICKER-001 (the picker that surfaces the
+   fan-bearing bundles).
+   Note: Strictly additive gating. No existing gate weakened;
+   `FANDAC-I2C-ADDR-001` stays pending hardware verification.
 
-3. **WF-PREVIEW-IMPORT-FIRST-BATCH-001 — Import the first upstream preview
-   artifacts.**
-   Status: **Blocked — upstream preview artifacts do not exist yet.**
-   Purpose: Import the first batch of upstream preview `.bin` + `.meta.json`
-   artifacts once they are published, following WF-PREVIEW-IMPORT-POLICY-001:
-   add the `firmware/sources.json` source entries, regenerate `manifest.json`
-   + per-build manifests, expose in Advanced install behind the preview
-   acknowledgement. **Not before the artifacts exist.**
-   Dependencies: Upstream `sense360store/esphome-public` preview
-   `RELEASE-…` artifacts **and** WF-PREVIEW-IMPORT-POLICY-001 merged.
-   Note: **Not `REQUIRED_CONFIGS`, not Simple install, not a kit.** Preview
-   is import / manifest / kit-eligible but never `REQUIRED_CONFIGS`-eligible.
+4. **WF-LIVE-SMOKE-2-0-DEFAULT-001 — Live smoke on the deployed 2.0 default.**
+   Status: **Ready after items 1–3. PR # to fill when verified.**
+   Purpose: Live / manual smoke of the deployed GitHub Pages 2.0 default — the
+   logo renders, the base bundles show with the correct channels, the
+   fan-control + FanDAC acknowledgements gate, no TRIAC appears in the picker,
+   no standalone fan build appears in the picker, freshness `unknown` is
+   non-blocking, `stale` hard-blocks, and **no empty callout bars** appear.
+   Record the result under `docs/release-gates/`.
+   Dependencies: WF2-CALLOUT-HIDDEN-FIX-001 + WF2-KIT-BUNDLE-PICKER-001 +
+   WF2-FAN-CONTROL-GATES-001 deployed. A human incognito pass is the
+   recommended (non-blocking) confirmation.
+   Note: Docs + test only.
 
-4. **WF-ADVANCED-PREVIEW-TRIAC-GATE-001 — Define the advanced/manual TRIAC
-   preview warning UX before import.**
-   Status: **Planned / UX policy (docs-only; pre-import).**
-   Purpose: Define the advanced/manual warning UX for a future TRIAC
-   *preview* artifact **before** any import — how the existing WF-TRIAC-001
-   `advanced-manual-warning` acknowledgement region, copy, and install-gate
-   clause extend to a preview-channel TRIAC build in Advanced install, so the
-   warning + acknowledgement + non-default + non-recommended + non-kit
-   guarantees are pinned ahead of `WF-IMPORT-TRIAC-001`.
-   Dependencies: None to author (extends the shipped WF-TRIAC-001 UX). Sits in
-   front of `WF-IMPORT-TRIAC-001`, which still requires upstream
-   `RELEASE-TRIAC-001`.
-   Note: Advanced/manual-warning is an in-installer warning gate, **not** a
-   compliance certification claim.
+5. **WF-IMPORT-FAN-BUNDLES-001 — Import the five full-composition fan-control
+   room bundles.**
+   Status: **Blocked — upstream artifacts do not exist yet. PR # to fill when
+   verified.**
+   Purpose: Import the five full-composition fan-control room-bundle `.bin`
+   artifacts (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`,
+   `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`,
+   `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) once
+   upstream publishes them: add the `firmware/sources.json` entries, pin each
+   `expected_sha256`, run the importer + `gen-manifests.py`, and commit the
+   regenerated manifests. The import is **view-agnostic**; the bundles then
+   surface through the rebuilt kit picker (item 2) behind the gates from
+   item 3.
+   Dependencies: Upstream `sense360store/esphome-public`
+   `ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001` + publication of the five
+   artifacts.
+   Note: Preview-only, never `REQUIRED_CONFIGS`, never default / recommended /
+   buyable. TRIAC stays build-blocked.
 
-5. **WF-HW-TEST-002 follow-up — Complete LED preview operator flash proof.**
-   Status: **Planned / hardware required — operator evidence still
-   pending** (the docs PR already merged as #430 *without* operator
-   evidence, so the proof container's rows remain `pending`).
-   Purpose: Fill the LED preview proof with real flash evidence — Web
-   Serial connect, esptool flash, Improv hand-off, Home Assistant
-   hand-off, LED ring behaviour, support-bundle excerpt, reconnect.
-   Dependencies: Real hardware and a human operator; pairs with
-   upstream `sense360store/esphome-public` `S360-300-BENCH-001`. Does
-   not by itself promote LED to stable, change `REQUIRED_CONFIGS`,
-   alter kits, or unblock `RELEASE-007`.
-
-6. **WF-LED-STABLE-001 — Stable LED WebFlash import.**
-   Status: **Blocked by stable artifact.**
-   Purpose: Import a stable-channel LED `.bin` (+ `.meta.json` sidecar)
-   when upstream ships one; add a second source entry / regenerate
-   manifests under the existing importer contract.
-   Dependencies: Upstream `sense360store/esphome-public` `RELEASE-007`
-   (LED stable build + catalog promotion to `status: production`).
-
-7. **WF-REQUIRED-001 — Decide whether LED stable becomes `REQUIRED_CONFIGS`.**
-   Status: **Separate decision.**
-   Purpose: After WF-LED-STABLE-001 lands, decide whether the stable
-   LED config joins the production-only `REQUIRED_CONFIGS` allowlist.
-   Dependencies: WF-LED-STABLE-001 merged.
-   Note: **Stable does not automatically mean `REQUIRED_CONFIGS`.**
-   `REQUIRED_CONFIGS` is the deploy-allowlist and carries WF-PRODUCT-004
-   eligibility rules independent of catalog status.
-
-8. **WF-KIT-LED-001 — Decide LED kit / recommended bundle exposure.**
-   Status: **Separate UX / product decision.**
-   Purpose: Decide whether to add an LED-bearing kit to
-   `scripts/data/kits.json` and/or surface LED in the recommended
-   bundle / quick-start preset.
-   Dependencies: Operator hardware proof (WF-HW-TEST-002 follow-up
-   complete) and/or stable promotion (WF-REQUIRED-001). Either
-   precondition is sufficient for the decision; both should be
-   considered before exposure changes.
-
-9. **WF-IMPORT-RELAY-001 / WEBFLASH-RELAY-001 — Import FanRelay preview artifact.**
-   Status: **Done — landed as WEBFLASH-RELAY-001 (this PR).**
-   Imported the S360-310 FanRelay preview `.bin` + sidecar
-   (`Ceiling-POE-VentIQ-FanRelay-RoomIQ`, from upstream `v1.0.0-preview`),
-   added the source entry with `block_tokens: ["FanTRIAC", "LED"]`, and
-   regenerated manifests (6 → 7 builds). Unblocked **not** by a catalog
-   `status: preview` promotion but by upstream #711
-   (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`), which set
-   `webflash_import_eligibility.eligible=true` in
-   `config/preview-release-targets.json` while keeping catalog status
-   `hardware-pending`. WebFlash recognises that explicit flag for import /
-   manifest / kit eligibility.
-   Note: **Not `REQUIRED_CONFIGS`, not a kit, not recommended, not default.**
-   WF-PRODUCT-004 classifies preview / import-eligible entries as import /
-   manifest / kit eligible but never `REQUIRED_CONFIGS`-eligible.
-
-10. **WF-IMPORT-PWM-001 / WEBFLASH-PWM-001 — Import FanPWM preview artifact.**
-    Status: **Done — landed as WEBFLASH-PWM-001 (this PR).**
-    Imported the S360-311 FanPWM preview `.bin` + sidecar
-    (`Ceiling-POE-FanPWM`, from upstream `v1.0.0-preview`), added the source
-    entry with `block_tokens: ["FanTRIAC", "LED"]`, and regenerated manifests
-    (7 → 8 builds). Unblocked — like FanRelay — **not** by a catalog
-    `status: preview` promotion but by upstream #711
-    (`RELEASE-PREVIEW-FAN-WEBFLASH-ELIGIBILITY-001`)'s
-    `webflash_import_eligibility.eligible=true` signal while catalog status
-    stays `hardware-pending`.
-    Note: **Not `REQUIRED_CONFIGS`, not a kit, not recommended, not default.**
-    Preview / import-eligible entries are import / manifest / kit eligible but
-    never `REQUIRED_CONFIGS`-eligible.
-
-11. **WF-IMPORT-DAC-001 — Import FanDAC preview artifact. ✅ Done**
-    (as **WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001** — see the In review table above).
-    The S360-312 FanDAC preview `.bin` + sidecar were imported via the new
-    preview-eligible import automation, authorised — like FanRelay / FanPWM — by
-    upstream #711's `webflash_import_eligibility.eligible=true` signal (the
-    manual-preview lane), **not** by a stable `RELEASE-DAC-001` promotion. Stable /
-    full release stays blocked behind upstream `RELEASE-DAC-001`.
-    Note: **Not `REQUIRED_CONFIGS`, not a kit, not recommended, not default.**
-
-12. **WF-IMPORT-POWER-400-001 — Import S360-400 artifact.**
-    Status: **Blocked.**
-    Purpose: Import Sense360 240v PSU (S360-400) artifact if upstream
-    ships a separate build (the current Release-One already covers
-    `power=ac` transitively via the Ceiling-POE-VentIQ-RoomIQ source).
-    Dependencies: Upstream `RELEASE-POWER-400-001`.
-
-13. **WF-IMPORT-POE-410-001 — Import S360-410 artifact.**
-    Status: **Blocked / likely no-op unless a separate PoE release
-    exists.**
-    Purpose: Same shape as item 12, for Sense360 PoE PSU (S360-410). PoE
-    is currently covered transitively by both Release-One and LED
-    preview (`power=poe`); a dedicated import is only opened if
-    upstream ships a distinct PoE artifact.
-    Dependencies: Upstream `RELEASE-POE-410-001`.
-
-14. **WF-IMPORT-TRIAC-001 — Import FanTRIAC advanced/manual artifact.**
-    Status: **Blocked.**
-    Purpose: Import S360-320 FanTRIAC `.bin` + sidecar; lift the
-    importer-level `FanTRIAC` block on the specific imported source
-    entry (the other source entries' `block_tokens` stay).
-    Dependencies: Upstream `RELEASE-TRIAC-001`, the advanced/manual-warning
-    policy already shipped by WF-TRIAC-001, **and**
-    WF-ADVANCED-PREVIEW-TRIAC-GATE-001 (item 4).
-    Note: **Not `REQUIRED_CONFIGS`, not kit, not recommended.** WF-TRIAC-001
-    is an in-installer warning gate, not a compliance certification claim;
-    `WF-IMPORT-TRIAC-001` does not by itself unlock production exposure.
-
-15. **WF-PRODUCT-005 — Enforce deprecated/removed import-readiness policy.**
-    Status: **Planned / policy follow-up.**
-    Purpose: Extend `scripts/validate-product-import-readiness.js`
-    and the Jest pin to actively enforce the `deprecated` / `removed`
-    catalog statuses (today they classify as ineligible across all
-    four dimensions but the rule is asserted only at the
-    classification layer).
-    Dependencies: Upstream `sense360store/esphome-public`
-    `PRODUCT-DEP-002`, **or** the first actual upstream
-    `deprecated` / `removed` catalog entry (whichever arrives first).
-
-16. **WF-IMPORT-FAN-BUNDLES-001 — Import the five full-composition fan-control
-    room-bundle artifacts.**
-    Status: **Blocked — upstream artifacts do not exist yet** (compile proof
-    recorded upstream #716; publication planned upstream #717; no `.bin`/release
-    published). Readiness prepared by **WF-FAN-BUNDLE-IMPORT-READINESS-001** (see
-    the In review table above).
-    Purpose: Once upstream publishes the five preview `.bin` artifacts
-    (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`,
-    `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`,
-    `Ceiling-POE-AirIQ-FanDAC-RoomIQ`), import them by copying the
-    `scripts/data/fan-bundle-import-readiness.js` source-entry skeleton into
-    `firmware/sources.json`, pinning each published artifact's `expected_sha256`,
-    running the importer + `scripts/gen-manifests.py`, and committing the
-    regenerated `manifest.json` + per-build manifests. The matching Simple-install
-    cards light up automatically via the existing `getExposableFanControlBundles`
-    gate.
-    Dependencies: Upstream publication of the five fan-bundle artifacts (after
-    upstream #717).
-    Note: **Preview-only, Advanced-install-only.** Not `REQUIRED_CONFIGS`, not a
-    kit, not recommended, not default, never buyable. Each gates on preview +
-    fan-control acknowledgements (the two FanDAC bundles also on the analog
-    address-switch acknowledgement). TRIAC stays build-blocked.
+6. **Still-blocked upstream import items (carried forward unchanged).**
+   These remain blocked on their upstream `RELEASE-…` artifacts; the only
+   change from TRACKING-001 is that any eventual exposure now lands in the
+   **2.0 kit picker** rather than the removed Simple install:
+   - **WF-IMPORT-TRIAC-001** — import the S360-320 FanTRIAC advanced/manual
+     artifact. Blocked on upstream `RELEASE-TRIAC-001`; TRIAC stays
+     build-blocked and advanced/manual-warning until then.
+   - **WF-IMPORT-POWER-400-001** — import a separate Sense360 240v PSU
+     (S360-400) artifact if upstream ships one. Blocked on upstream
+     `RELEASE-POWER-400-001` (Release-One already covers `power=ac`
+     transitively).
+   - **WF-IMPORT-POE-410-001** — import a distinct Sense360 PoE PSU (S360-410)
+     artifact. Blocked / likely no-op (PoE is covered transitively by the
+     existing `power=poe` builds) unless upstream ships a dedicated PoE
+     release.
+   - **WF-LED-STABLE-001** — import a stable-channel LED `.bin`. Blocked on
+     upstream `RELEASE-007` (LED stable build + catalog promotion to
+     `status: production`).
+   - **WF-REQUIRED-001** — decide whether stable LED joins the production-only
+     `REQUIRED_CONFIGS` allowlist. Separate decision after WF-LED-STABLE-001;
+     stable does not automatically mean `REQUIRED_CONFIGS`.
+   - **WF-KIT-LED-001** — decide whether to add an LED-bearing kit to
+     `scripts/data/kits.json` / the 2.0 kit picker. Separate UX / product
+     decision after operator hardware proof and/or stable promotion.
 
 ## Upstream dependencies
 
@@ -460,10 +329,10 @@ are pointers, not status:
   rely on.
 - **`HW-ASSETS-400` / `HW-PINMAP-400-FOLLOWUP`** — S360-400 (240v PSU)
   hardware assets and pinmap; precedes `RELEASE-POWER-400-001` and
-  therefore WF-IMPORT-POWER-400-001 (queue item 12).
+  therefore WF-IMPORT-POWER-400-001 (queue item 6).
 - **`HW-ASSETS-410` / `HW-PINMAP-410-FOLLOWUP`** — S360-410 (PoE PSU)
   hardware assets and pinmap; precedes `RELEASE-POE-410-001` and
-  therefore WF-IMPORT-POE-410-001 (queue item 13).
+  therefore WF-IMPORT-POE-410-001 (queue item 6).
 - **`package/` / `product/` / `WebFlash-upstream/` / `release/` slices** —
   the upstream packaging, product-catalog, WebFlash-bridge, and
   release-orchestration slices that feed every WebFlash import. Any
@@ -471,8 +340,8 @@ are pointers, not status:
   ultimately resolves through these slices.
 - **`RELEASE-007`** — LED stable release; gates WF-LED-STABLE-001
   (queue item 6) and, downstream, the `REQUIRED_CONFIGS` decision
-  (WF-REQUIRED-001, queue item 7) and any LED-bearing kit
-  (WF-KIT-LED-001, queue item 8).
+  (WF-REQUIRED-001, queue item 6) and any LED-bearing kit
+  (WF-KIT-LED-001, queue item 6).
 - **`WEBFLASH-RELEASE-MATRIX-ALIGNMENT-001`** — upstream docs-only
   reconciliation at
   [`docs/release-matrix-webflash-alignment.md`](https://github.com/sense360store/esphome-public/blob/main/docs/release-matrix-webflash-alignment.md)
@@ -488,36 +357,37 @@ are pointers, not status:
 
 ## Do-not-change guardrails
 
-TRACKING-001 is documentation-only. This PR (and every future PR that
-only updates queue state) must not touch:
+TRACKING-002 is documentation-only — it touches **only `UPCOMING_PR.md`**.
+This PR (and every future PR that only updates queue / tracking state) must not
+touch:
 
-- `manifest.json`
-- every `firmware-*.json`
-- `firmware/sources.json`
-- every firmware binary or `.meta.json` sidecar under `firmware/`
-- `scripts/data/kits.json`
-- every file under `scripts/` (including `gen-manifests.py`,
-  `import-firmware-sources.py`, `validate-naming-policy.js`,
-  `validate-product-import-readiness.js`, `smoke-test-deployment.py`,
-  every wizard runtime module under `scripts/`, every layout/utility
-  module, and every content/data helper)
-- every workflow under `.github/workflows/`
+- the engine modules — `scripts/state.js`, `scripts/capabilities.js`, every
+  file under `scripts/utils/` (including `release-channels.js`,
+  `firmware-provenance.js`, `kit-config.js`, `a11y.js`) and every file under
+  `scripts/services/` (including `manifest-freshness.js`, `sw-update.js`,
+  `diagnostics.js`)
+- `manifest.json` and every `firmware-*.json`
+- `firmware/sources.json` and every firmware binary / `.meta.json` sidecar
+  under `firmware/`
 - the `REQUIRED_CONFIGS` allowlist (sourced from
   `.github/workflows/firmware-publish.yml`)
-- the release-channel policy in `scripts/utils/release-channels.js`
-  (preview acknowledgement, `defaultSelectable`, `hiddenByDefault`,
-  visibility)
-- every wizard / UX surface in `index.html` and every file under `css/`
+- `scripts/utils/release-channels.js` (preview acknowledgement,
+  `defaultSelectable`, `hiddenByDefault`, visibility)
+- `sw.js` (service worker, cache name, precache list) and `_headers` (CSP,
+  CORS, cache rules)
+- the FanTRIAC HW-005 block (`block_tokens` stays `["FanTRIAC", "LED"]` on the
+  Release-One source and `["FanTRIAC"]` on the preview sources)
+- the firmware-signing + import pipeline — `scripts/gen-manifests.py`,
+  `scripts/import-firmware-sources.py`,
+  `scripts/import-preview-eligible-sources.py`,
+  `scripts/sync-from-releases.py`, `scripts/validate-naming-policy.js`,
+  `scripts/validate-product-import-readiness.js`, and the signing workflow
+  `.github/workflows/firmware-publish.yml`
+- every other workflow under `.github/workflows/`
 - every test under `__tests__/` (including fixtures)
-- `sw.js` (service worker, cache name, precache list)
-- `_headers` (CSP, CORS, cache rules)
-- the WF-LED-003 preview-channel exposure model
-- the FanTRIAC HW-005 block (`block_tokens` on Release-One source
-  stays `["FanTRIAC", "LED"]`; on the LED preview source stays
-  `["FanTRIAC"]`)
-- the WF-TRIAC-001 advanced/manual-warning runtime UX
-- the Rescue install path
-- every generated manifest output (`manifest.json` + every
-  `firmware-*.json` is generated by `scripts/gen-manifests.py` and must
-  be committed alongside the firmware change that produced it, not by
-  this tracking PR)
+- the 2.0 view files (`scripts/app.js`, `scripts/data.js`,
+  `scripts/identify.js`, `scripts/install.js`, `scripts/connect.js`,
+  `scripts/engine.js`, `index.html`, `app.css`, and every file under `css/`)
+
+`scripts/data/kits.json` is edited only by the bundle-picker rebuild
+(queue item 2, `WF2-KIT-BUNDLE-PICKER-001`) — never by a tracking / docs PR.
