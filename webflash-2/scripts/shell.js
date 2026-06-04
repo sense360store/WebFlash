@@ -16,6 +16,7 @@
 import { mountWebFlash2 } from './app.js';
 import engine from './engine.js';
 import { initServiceWorkerUpdates } from '../../scripts/services/sw-update.js';
+import { openRescueModal } from '../../scripts/layout/rescue-modal.js';
 import {
   announce,
   trapFocus,
@@ -88,5 +89,12 @@ initServiceWorkerUpdates('./sw.js');
 mountWebFlash2(prepareShell(), {
   a11y: { announce, trapFocus, restoreFocus, getFocusableElements },
   engine,
+  // The real recovery path. The production shell shares the 1.0 stylesheet (the
+  // .rescue-modal styles in css/wizard-style.css) and ESP Web Tools, so the
+  // unchanged 1.0 rescue modal renders and flashes the precached rescue binary
+  // here exactly as it does in the 1.0 view. The rescue binary, the rescue
+  // manifest, and rescue-modal.js are all precached by sw.js (STATIC_ASSETS /
+  // SCRIPT_MODULES), so first-visit offline rescue works under ?ui=2 too.
+  recovery: { openRescueModal },
   prefersReducedMotion,
 });

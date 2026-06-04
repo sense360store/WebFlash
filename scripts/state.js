@@ -8078,5 +8078,11 @@ export {
     resolveCompatibleFirmware,
     verifyFirmwareIntegrity,
     evaluateInstallGate,
-    INSTALL_GATE_CHECK_IDS
+    INSTALL_GATE_CHECK_IDS,
+    // Release-mode visibility (?mode=recovery / ?mode=development). These are the
+    // engine's authority for which firmware tiers are visible in the install
+    // path; the WebFlash 2.0 view (PR 8) applies the URL mode through these so
+    // development and recovery visibility behaves exactly as in the 1.0 view.
+    getReleaseMode,
+    setReleaseModeFromUrl
 };

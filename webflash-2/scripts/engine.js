@@ -78,7 +78,9 @@ import {
     resolveCompatibleFirmware,
     verifyFirmwareIntegrity,
     evaluateInstallGate,
-    INSTALL_GATE_CHECK_IDS
+    INSTALL_GATE_CHECK_IDS,
+    getReleaseMode,
+    setReleaseModeFromUrl
 } from '../../scripts/state.js';
 import { getManifestMetadataForAbout } from '../../scripts/state.js';
 
@@ -239,7 +241,15 @@ export const state = Object.freeze({
     // a single machine-readable gate result keyed by INSTALL_GATE_CHECK_IDS.
     verifyFirmwareIntegrity,
     evaluateInstallGate,
-    INSTALL_GATE_CHECK_IDS
+    INSTALL_GATE_CHECK_IDS,
+    // PR 8 — release-mode visibility. setReleaseModeFromUrl applies the URL's
+    // ?mode= opt-in (recovery / development) to the engine's authoritative
+    // release mode, and getReleaseMode reports it. resolveCompatibleFirmware and
+    // the channel model already read getReleaseMode(), so the 2.0 view inherits
+    // the exact 1.0 visibility rules for development and recovery builds without
+    // owning the decision.
+    getReleaseMode,
+    setReleaseModeFromUrl
 });
 
 /** Desktop / Web Serial / secure-context capability detection. The engine decides; the view renders. */
