@@ -47,6 +47,33 @@ room bundle** (room sensors + fan driver) — never a fan-only / manual config.
 TRIAC (`Ceiling-POE-VentIQ-FanTRIAC-RoomIQ`) is deliberately excluded and stays
 build-blocked.
 
+## Import readiness for the five future artifacts (WF-FAN-BUNDLE-IMPORT-READINESS-001)
+
+Upstream `sense360store/esphome-public` then recorded compile proof for the five
+full-composition fan bundles (upstream #716) and planned their publication
+(upstream #717), but **published no artifact**. WF-FAN-BUNDLE-IMPORT-READINESS-001
+prepares WebFlash so the eventual firmware-import PR is small and mechanical —
+**docs + tests + a non-runtime readiness descriptor only**
+([`scripts/data/fan-bundle-import-readiness.js`](../scripts/data/fan-bundle-import-readiness.js),
+pinned by [`__tests__/wf-fan-bundle-import-readiness.test.js`](../__tests__/wf-fan-bundle-import-readiness.test.js)).
+It declares, per future artifact, the **expected canonical filename** below (each
+naming-policy conformant, channel `preview`, `block_tokens: ["FanTRIAC", "LED"]`),
+plus a ready-to-fill `firmware/sources.json` source-entry skeleton with everything
+**except** the human-pinned `expected_sha256`:
+
+| Firmware `config_string` | Expected artifact filename |
+|---|---|
+| `Ceiling-POE-VentIQ-FanPWM-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin` |
+| `Ceiling-POE-VentIQ-FanDAC-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanDAC-RoomIQ-v1.0.0-preview.bin` |
+| `Ceiling-POE-AirIQ-FanRelay-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanRelay-RoomIQ-v1.0.0-preview.bin` |
+| `Ceiling-POE-AirIQ-FanPWM-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanPWM-RoomIQ-v1.0.0-preview.bin` |
+| `Ceiling-POE-AirIQ-FanDAC-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanDAC-RoomIQ-v1.0.0-preview.bin` |
+
+This is **expected** shape — the import PR confirms the version / channel /
+filename / SHA-256 against the real published artifact. The readiness prep imports
+no firmware, edits no `manifest.json` / `firmware/sources.json`, changes no
+`REQUIRED_CONFIGS`, adds no kit, and exposes no card; all five remain hidden.
+
 ### Analog (0–10V) address-switch acknowledgement
 
 The two analog (DAC) bundles require a third, strongest acknowledgement before
