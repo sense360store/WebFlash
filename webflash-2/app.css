@@ -208,6 +208,52 @@ button { font-family: inherit; }
 }
 .main--wide { max-width: 1040px; }
 
+/* Stable <main> landmark + skip-link target. The step's own .main column is
+   swapped inside it on every step transition, so this wrapper carries the
+   layout flex while the inner .main keeps its centering and max-width. */
+.wf2-main-region {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.wf2-main-region:focus { outline: none; }
+
+/* ---------- Modal dialog ---------- */
+.wf2-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.45);
+}
+.wf2-modal {
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-lg);
+}
+.wf2-modal:focus { outline: none; }
+.wf2-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.wf2-modal__title { margin: 0; font-size: 1.05rem; font-weight: 650; }
+.wf2-modal__body { padding: 18px 20px; color: var(--text-body); line-height: 1.55; }
+.wf2-modal__body p { margin: 0 0 12px; }
+.wf2-modal__body p:last-child { margin-bottom: 0; }
+
 .stephead { text-align: center; margin: 14px auto 30px; max-width: 640px; }
 .eyebrow {
   display: inline-flex; align-items: center; gap: 7px;

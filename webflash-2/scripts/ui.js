@@ -22,7 +22,13 @@ export function Rail({ steps, current, maxReached, onJump }) {
       (clickable ? ' is-clickable' : '');
 
     nav.appendChild(
-      h('div', { class: cls, onClick: () => clickable && onJump(i) },
+      h('div', {
+        class: cls,
+        // aria-current="step" marks the active step for assistive technology so
+        // the progress rail announces where the user is in the flow.
+        'aria-current': active ? 'step' : null,
+        onClick: () => clickable && onJump(i),
+      },
         h('span', { class: 'rail__dot' }, done ? icon('check', { size: 15 }) : String(i + 1)),
         h('span', { class: 'rail__label' }, s.label),
       ),
