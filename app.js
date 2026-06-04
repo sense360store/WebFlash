@@ -29,7 +29,11 @@ import "./scripts/kit-presets.js";
 // fan-control card injection + the analog-fan address-switch acknowledgement
 // wiring, so bump the token again (202606015 → 202606016) in lockstep with the
 // index.html assets, the bootstrap loader, and the sw.js CACHE_NAME (webflash-v13).
-import "./scripts/simple-install.js?v=202606016";
+// WebFlash 2.0 migration (beta default) — the app shell changed (host-aware
+// default-view resolver in bootstrap.js + the new ui-version.js module), so the
+// shared cache-bust token is bumped again (202606016 → 202606041) in lockstep
+// with the index.html assets, the bootstrap loader, and sw.js (webflash-v14).
+import "./scripts/simple-install.js?v=202606041";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";
