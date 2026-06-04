@@ -278,6 +278,26 @@ plumbing are staged so a future firmware-import PR lights up the matching card w
 no further wizard code change. TRIAC stays excluded. Live checklist:
 [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](live-smoke-easy-bundle-picker-fan-expansion.md).
 
+**Import readiness prepared (WF-FAN-BUNDLE-IMPORT-READINESS-001).** Upstream then
+recorded compile proof for the five bundles (upstream #716) and planned publication
+(upstream #717) — still **no artifact**, so nothing is imported and all five cards
+stay hidden. WebFlash now stages the **expected import shape** for each future
+artifact in the non-runtime readiness descriptor
+[`scripts/data/fan-bundle-import-readiness.js`](../scripts/data/fan-bundle-import-readiness.js)
+(pinned by `__tests__/wf-fan-bundle-import-readiness.test.js`): the expected
+`config_string`, the expected canonical artifact filename
+(`Sense360-<config>-v1.0.0-preview.bin`) + `.meta.json` sidecar, the expected
+`channel: preview`, the expected `block_tokens: ["FanTRIAC", "LED"]`, the full
+room-bundle flag, the Simple-picker card gate, the required acknowledgements
+(preview + fan-control, plus the analog address-switch acknowledgement for the two
+FanDAC bundles), and a ready-to-fill `firmware/sources.json` source-entry skeleton
+with everything **except** the human-pinned `expected_sha256`. This makes the future
+per-config import PR small and mechanical. It imports no firmware, edits no
+`manifest.json` / `firmware/sources.json`, changes no `REQUIRED_CONFIGS`, adds no
+kit, and exposes no card. See
+[`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) →
+*Full-composition fan-control room bundles import posture*.
+
 ## Module availability snapshot
 
 Step 4 classifies every module variant through the presentation-only

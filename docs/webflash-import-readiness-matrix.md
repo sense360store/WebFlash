@@ -282,7 +282,7 @@ describe the contract a future per-family import PR must satisfy.
 | PoE / S360-410 | n/a — already covered | already shipped *as part of* Release-One (`Ceiling-POE-VentIQ-RoomIQ`) and the LED preview (`Ceiling-POE-VentIQ-RoomIQ-LED`) via the `power=poe` config segment | covered transitively by the Release-One + LED preview source entries | covered transitively (no separate `S360-410`-named build) | **none** (no separate import action in this PR; no separate import action planned unless upstream ships a PoE-PSU-specific image) | not a distinct import class today | n/a (Release-One already in `REQUIRED_CONFIGS`) | n/a (Release-One already a kit) | n/a | `WF-IMPORT-POE-410-001` reserved (expected no-op unless upstream ships a PoE-PSU-specific image) |
 | LED stable | `RELEASE-007` | `missing-upstream-release-artifact` for `status: production` LED catalog entry; upstream currently `status: preview` only; bench evidence (`S360-300-BENCH-001`) pending | LED preview source entry exists (`v1.0.0-led-preview`); no separate stable source entry | LED preview build present; no LED stable build | **none** | `stable import candidate after promotion` | `not-required-configs` (until upstream `status: production` **and** a deliberate `WF-REQUIRED-001`-class PR) | `not-kit-default`, `not-recommended` (until upstream promotes and a deliberate `WF-KIT-LED-001` PR lands) | `preview-acknowledgement-required` (today) → potentially removed only after stable promotion + kit / recommended decision | `WF-LED-STABLE-001` after `RELEASE-007` and `S360-300-BENCH-001` |
 | AirIQ / S360-210 | upstream AirIQ release (identifier TBD) | `missing-upstream-release-artifact`; documented hardware, no current build; AirIQ ↔ VentIQ mutex is settled wizard policy | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | reserved — no `WF-IMPORT-AIRIQ-001` identifier assigned by this matrix; a future PR may number it deliberately |
-| Full-composition fan-control **room bundles** (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) | upstream full-composition fan bundle **compile + publish** (per `ROOM-BUNDLE-FAN-CONFIGS-001` / #713) | **compile-pending / no artifact** — #713 added the five product YAMLs but published no firmware (`compile_validation_status: pending-ci`, `buildable-preview-compile-pending`, no `.bin`, no release, catalog `status: hardware-pending`). FanDAC variants additionally gated on `FANDAC-I2C-ADDR-001` (GP8403 IC1 `0x58` / IC2 `0x5A`; `0x59` forbidden with VentIQ/AirIQ) — bench-verification PENDING. | none (no source entry) | none (no manifest build) | **none** | `preview import candidate` (after upstream compile + publish + a WebFlash firmware-import PR) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` + `fan-control-acknowledgement-required` (+ `analog-fan-address-switch-acknowledgement-required` for the two DAC variants) — **all staged + tested under WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001** | `WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001` (declares the bundles + import-readiness gate; imports nothing). The future per-config firmware-import PR follows after upstream compile/publish. |
+| Full-composition fan-control **room bundles** (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) | upstream full-composition fan bundle **compile + publish** (per `ROOM-BUNDLE-FAN-CONFIGS-001` / #713) | **compile-pending / no artifact** — #713 added the five product YAMLs but published no firmware (`compile_validation_status: pending-ci`, `buildable-preview-compile-pending`, no `.bin`, no release, catalog `status: hardware-pending`). FanDAC variants additionally gated on `FANDAC-I2C-ADDR-001` (GP8403 IC1 `0x58` / IC2 `0x5A`; `0x59` forbidden with VentIQ/AirIQ) — bench-verification PENDING. | none (no source entry) | none (no manifest build) | **none** | `preview import candidate` (after upstream compile + publish + a WebFlash firmware-import PR) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` + `fan-control-acknowledgement-required` (+ `analog-fan-address-switch-acknowledgement-required` for the two DAC variants) — **all staged + tested under WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001; expected import shape staged + tested under WF-FAN-BUNDLE-IMPORT-READINESS-001** | `WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001` (declares the bundles + import-readiness gate; imports nothing) → `WF-FAN-BUNDLE-IMPORT-READINESS-001` (declares the expected artifact name + source-entry skeleton + readiness checks; imports nothing) → `WF-IMPORT-FAN-BUNDLES-001` (the future per-config firmware-import PR, after upstream compile/publish). |
 
 The "Allowed import action now" column is uniformly **none** across
 every non-imported row because WF-IMPORT-GAP-001 is documentation
@@ -301,6 +301,25 @@ only. Per-family postures below expand each row.
 > exposed and the picker shows exactly the six base bundles. TRIAC remains
 > excluded from this lane. See
 > [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](live-smoke-easy-bundle-picker-fan-expansion.md).
+>
+> **Fan-control room-bundle import readiness (WF-FAN-BUNDLE-IMPORT-READINESS-001).**
+> Upstream then recorded compile proof for the five full-composition fan bundles
+> (`ROOM-BUNDLE-FAN-CONFIGS-001` follow-ups, upstream #716) and planned their
+> publication (upstream #717) — but **still published no artifact**, so nothing
+> is imported and every card stays hidden. WF-FAN-BUNDLE-IMPORT-READINESS-001 is a
+> **readiness-prep slice** (docs + tests + a non-runtime readiness descriptor at
+> [`scripts/data/fan-bundle-import-readiness.js`](../scripts/data/fan-bundle-import-readiness.js)):
+> it declares, per future artifact, the **expected `config_string`, the expected
+> canonical artifact filename + `.meta.json` sidecar, the expected `channel:
+> preview`, the expected `block_tokens: ["FanTRIAC", "LED"]`, the full room-bundle
+> flag, the Simple-picker card gate, and the required acknowledgements** (preview +
+> fan-control, plus the analog address-switch acknowledgement for the two FanDAC
+> bundles), and a ready-to-fill `firmware/sources.json` source-entry skeleton with
+> everything **except** the human-pinned `expected_sha256`. It imports no firmware,
+> edits no `manifest.json` / `firmware/sources.json`, changes no `REQUIRED_CONFIGS`,
+> and exposes no card; it only makes the future per-config import PR small and
+> mechanical. See
+> [Full-composition fan-control room bundles import posture](#full-composition-fan-control-room-bundles-import-posture).
 
 ## Relay / S360-310 import posture
 
@@ -584,6 +603,79 @@ only. Per-family postures below expand each row.
   when the upstream package / product / release gates begin to
   resolve. Listing AirIQ here records the candidate; it does not
   pre-commit a PR slot.
+
+## Full-composition fan-control room bundles import posture
+
+The five full-composition fan-control **room bundles**
+(`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`,
+`Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`,
+`Ceiling-POE-AirIQ-FanDAC-RoomIQ`) each carry the room-sensing hardware
+(RoomIQ + a room air sensor: VentIQ or AirIQ) **and** a fan driver. They
+are distinct from the standalone fan-only previews
+(`Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC`), which are Advanced-install-only
+and never a Simple-install bundle.
+
+- **Today:** **declared, gated, and now import-ready-checked, but not
+  imported.** WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 declared the five
+  bundles in [`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js)
+  and gated them on the live manifest (`getExposableFanControlBundles`).
+  Upstream recorded compile proof (upstream #716) and planned publication
+  (upstream #717), but published **no `.bin`, no release asset, no checksum**,
+  so none of the five `config_string` values is in `manifest.json` and every
+  card stays hidden — the picker shows exactly the six base bundles.
+- **WF-FAN-BUNDLE-IMPORT-READINESS-001 (readiness prep, this PR):** added the
+  non-runtime readiness descriptor
+  [`scripts/data/fan-bundle-import-readiness.js`](../scripts/data/fan-bundle-import-readiness.js)
+  + the test pin
+  [`__tests__/wf-fan-bundle-import-readiness.test.js`](../__tests__/wf-fan-bundle-import-readiness.test.js).
+  For each future artifact it declares the **expected `config_string`**, the
+  **expected canonical artifact filename** (`Sense360-<config>-v1.0.0-preview.bin`,
+  naming-policy conformant) + `.meta.json` sidecar, the **expected
+  `channel: preview`**, the **expected `block_tokens: ["FanTRIAC", "LED"]`**, the
+  **full room-bundle flag**, the **Simple-picker card gate**, and the **required
+  acknowledgements** (preview + fan-control, plus the analog address-switch
+  acknowledgement — naming `0x58` / `0x5A` / forbidden `0x59` — for the two FanDAC
+  bundles). It also produces a ready-to-fill `firmware/sources.json` source-entry
+  skeleton with everything **except** the human-pinned `expected_sha256`.
+- **Allowed import action now:** none. WF-FAN-BUNDLE-IMPORT-READINESS-001
+  imports no firmware, edits no `manifest.json` / `firmware/sources.json`,
+  changes no `REQUIRED_CONFIGS`, adds no kit, and exposes no card.
+- **Expected artifact filenames** (the future import PR confirms these against
+  the real published artifacts):
+
+  | Bundle SKU | `config_string` | Expected artifact | Acknowledgements |
+  |---|---|---|---|
+  | `S360-KIT-BATH-P-PWM` | `Ceiling-POE-VentIQ-FanPWM-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin` | preview + fan-control |
+  | `S360-KIT-BATH-P-DAC` | `Ceiling-POE-VentIQ-FanDAC-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanDAC-RoomIQ-v1.0.0-preview.bin` | preview + fan-control + address-switch |
+  | `S360-KIT-KITCHEN-P-REL` | `Ceiling-POE-AirIQ-FanRelay-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanRelay-RoomIQ-v1.0.0-preview.bin` | preview + fan-control |
+  | `S360-KIT-KITCHEN-P-PWM` | `Ceiling-POE-AirIQ-FanPWM-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanPWM-RoomIQ-v1.0.0-preview.bin` | preview + fan-control |
+  | `S360-KIT-KITCHEN-P-DAC` | `Ceiling-POE-AirIQ-FanDAC-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanDAC-RoomIQ-v1.0.0-preview.bin` | preview + fan-control + address-switch |
+
+- **Future import class:** `preview import candidate`. Each lands on
+  `channel: preview` behind the existing preview acknowledgement, plus the
+  WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 fan-control acknowledgement (and the
+  analog address-switch acknowledgement for the two FanDAC bundles).
+- **`REQUIRED_CONFIGS` eligibility:** `not-required-configs`. Preview imports
+  are never `REQUIRED_CONFIGS`-eligible.
+- **Kit / recommended eligibility:** `not-kit-default`, `not-recommended`,
+  never buyable, never default-selectable.
+- **Runtime UX gate:** `preview-acknowledgement-required` +
+  `fan-control-acknowledgement-required` (+
+  `analog-fan-address-switch-acknowledgement-required` for the FanDAC bundles).
+  No gate is weakened; the third (address-switch) gate is strictly additive.
+- **TRIAC stays out.** The fan-control bundle lane never carries a `FanTRIAC` /
+  `TRIAC` token, and the readiness validator rejects any TRIAC-bearing
+  expectation. FanTRIAC remains `blocked-from-standard-import`.
+- **The future import is mechanical.** When upstream publishes a fan-bundle
+  `.bin`, the per-config import PR (provisional `WF-IMPORT-FAN-BUNDLES-001`)
+  copies the readiness module's source-entry skeleton into
+  `firmware/sources.json`, pins the published artifact's SHA-256 as
+  `expected_sha256`, runs the importer + `scripts/gen-manifests.py`, and the
+  matching Simple-install card lights up with no further wizard-code change —
+  exactly as the FanRelay / FanPWM / FanDAC standalone previews already did.
+- **Follow-up owner:** `WF-FAN-BUNDLE-IMPORT-READINESS-001` (this PR, readiness
+  prep only) → `WF-IMPORT-FAN-BUNDLES-001` (the future per-config firmware-import
+  PR, after upstream publishes the artifacts).
 
 ## Upstream compile-only validation signal
 
@@ -981,6 +1073,8 @@ external to this matrix unless otherwise stated.
 | `WF-IMPORT-PWM-001` | `RELEASE-PWM-001` upstream | Import PWM preview only. No `REQUIRED_CONFIGS` change. No kit. |
 | `WF-IMPORT-DAC-001` | `RELEASE-DAC-001` upstream | Import DAC preview only. Preserve FanDAC ↔ AirIQ mutex. No `REQUIRED_CONFIGS` change. No kit. |
 | `WF-IMPORT-TRIAC-001` | `RELEASE-TRIAC-001` upstream **and** `WF-TRIAC-001` runtime UX | Advanced / manual-warning import only. Never `REQUIRED_CONFIGS`. Never kit. Never default-selectable. Not a compliance certification. |
+| `WF-FAN-BUNDLE-IMPORT-READINESS-001` | upstream fan-bundle compile proof (upstream #716) + planned publication (upstream #717) | **Landed (readiness prep).** Declares the expected artifact filename + `firmware/sources.json` source-entry skeleton + readiness checks for the five full-composition fan bundles. Imports nothing; exposes nothing. |
+| `WF-IMPORT-FAN-BUNDLES-001` | upstream publishes the five fan-bundle `.bin` artifacts (after upstream #717) | Import the published fan-control room bundles preview-only, behind the preview + fan-control (+ analog address-switch) acknowledgements. No `REQUIRED_CONFIGS` change. No kit. Never default-selectable. TRIAC excluded. |
 | `WF-IMPORT-POWER-400-001` | `RELEASE-POWER-400-001` upstream | 240V PSU import; class TBD by upstream evidence. |
 | `WF-IMPORT-POE-410-001` | upstream PoE-PSU-specific image (if ever) | Reserved slot; expected no-op unless upstream ships a separate PoE-PSU artifact. |
 | `WF-LED-STABLE-001` | `RELEASE-007` **and** `S360-300-BENCH-001` | LED stable import; **does not** auto-promote to `REQUIRED_CONFIGS`; **does not** auto-add an LED kit. |
