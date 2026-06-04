@@ -1,22 +1,23 @@
 /**
  * PR 11 (WebFlash 2.0 migration) — Beta default + S360-410 evidence gate.
  *
- * PR 11 makes ?ui=2 the default on the internal and beta surface while keeping
- * the production default at ?ui=1 and ?ui=1 as the always-available fallback.
- * The surface-resolution rule lives in scripts/ui-version.js as a pure function
- * so it can be unit tested without the bootstrap's dynamic-import side effect
- * (the bootstrap branch itself is exercised in a browser, not jsdom — see
- * wf2-mount-shell.test.js).
+ * PR 11 introduced scripts/ui-version.js as a pure surface resolver: production
+ * defaulted to the 1.0 view, the internal / beta surfaces to the 2.0 view, with
+ * ?ui=1 / ?ui=2 as explicit per-visit overrides. The PR 12 GA cutover then flipped
+ * the production default to the 2.0 view as well, so this suite now pins the
+ * post-cutover resolver (the cutover-specific delta also lives in
+ * wf2-ga-cutover.test.js). The rule is a pure function so it is unit tested without
+ * the bootstrap's dynamic-import side effect (the bootstrap branch itself is
+ * exercised in a browser, not jsdom — see wf2-mount-shell.test.js).
  *
  * This suite pins:
- *   - production still defaults to the 1.0 view (unchanged),
- *   - the internal / beta surfaces default to the 2.0 view,
- *   - ?ui=1 and ?ui=2 always override the surface default,
+ *   - every surface (production included, after the cutover) defaults to the
+ *     2.0 view,
+ *   - ?ui=1 is the always-available rollback and ?ui=2 the explicit opt-in,
+ *   - isProductionHost still identifies the production host (it no longer gates
+ *     the default; it is retained for the rollback window),
  *   - the bootstrap wires the resolver and the new module is precached and
  *     cache-busted in lockstep (deploy correctness).
- *
- * Nothing here flips the production default — that is the separate GA cutover,
- * gated on real S360-410 PoE flash evidence.
  */
 import { describe, it, expect } from '@jest/globals';
 import fs from 'node:fs';
@@ -32,27 +33,28 @@ import {
 const REPO_ROOT = process.cwd();
 const read = (rel) => fs.readFileSync(path.resolve(REPO_ROOT, rel), 'utf-8');
 
-describe('PR 11 — production surface default is unchanged (1.0 view)', () => {
-    it('defaults to the 1.0 view on the production GitHub Pages host with no ?ui=', () => {
-        expect(resolveUiVersion('', 'sense360store.github.io')).toBe('1');
-        expect(resolveUiVersion('?foo=bar', 'sense360store.github.io')).toBe('1');
+describe('production surface defaults to the 2.0 view after the GA cutover (PR 12)', () => {
+    it('defaults to the 2.0 view on the production GitHub Pages host with no ?ui=', () => {
+        // PR 11 returned '1' here; the PR 12 cutover flips the production default to '2'.
+        expect(resolveUiVersion('', 'sense360store.github.io')).toBe('2');
+        expect(resolveUiVersion('?foo=bar', 'sense360store.github.io')).toBe('2');
     });
 
-    it('matches the production host case-insensitively', () => {
+    it('matches the production host case-insensitively (now resolving to the 2.0 default)', () => {
         expect(isProductionHost('sense360store.github.io')).toBe(true);
         expect(isProductionHost('SENSE360STORE.GITHUB.IO')).toBe(true);
-        expect(resolveUiVersion('', 'Sense360Store.GitHub.io')).toBe('1');
+        expect(resolveUiVersion('', 'Sense360Store.GitHub.io')).toBe('2');
     });
 
-    it('still honours ?ui=2 as a per-visit opt-in to the 2.0 view on production', () => {
+    it('serves ?ui=2 explicitly on production (redundant with the default, still honoured)', () => {
         expect(resolveUiVersion('?ui=2', 'sense360store.github.io')).toBe('2');
     });
 
-    it('still honours ?ui=1 on production', () => {
+    it('keeps ?ui=1 as the one-release rollback on production', () => {
         expect(resolveUiVersion('?ui=1', 'sense360store.github.io')).toBe('1');
     });
 
-    it('a look-alike host is not production (exact match only)', () => {
+    it('a look-alike host is not production (exact match only) and also defaults to 2.0', () => {
         expect(isProductionHost('evil-sense360store.github.io')).toBe(false);
         expect(isProductionHost('sense360store.github.io.evil.test')).toBe(false);
         expect(resolveUiVersion('', 'evil-sense360store.github.io')).toBe('2');
@@ -86,16 +88,16 @@ describe('PR 11 — internal and beta surfaces default to the 2.0 view', () => {
 
 describe('PR 11 — only ?ui=1 / ?ui=2 are honoured as overrides', () => {
     it('ignores an unrecognised ?ui= value and falls back to the surface default', () => {
-        // Production keeps the 1.0 view; beta keeps the 2.0 view.
-        expect(resolveUiVersion('?ui=3', 'sense360store.github.io')).toBe('1');
-        expect(resolveUiVersion('?ui=foo', 'sense360store.github.io')).toBe('1');
+        // After the PR 12 cutover every surface defaults to the 2.0 view.
+        expect(resolveUiVersion('?ui=3', 'sense360store.github.io')).toBe('2');
+        expect(resolveUiVersion('?ui=foo', 'sense360store.github.io')).toBe('2');
         expect(resolveUiVersion('?ui=', 'localhost')).toBe('2');
         expect(resolveUiVersion('?ui=22', 'localhost')).toBe('2');
     });
 
     it('tolerates an absent search string and an absent hostname', () => {
-        expect(resolveUiVersion(undefined, undefined)).toBe('2'); // no host => not production
-        expect(resolveUiVersion(undefined, 'sense360store.github.io')).toBe('1');
+        expect(resolveUiVersion(undefined, undefined)).toBe('2');
+        expect(resolveUiVersion(undefined, 'sense360store.github.io')).toBe('2');
     });
 
     it('exports the canonical flag values and a single production host', () => {

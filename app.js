@@ -33,7 +33,13 @@ import "./scripts/kit-presets.js";
 // default-view resolver in bootstrap.js + the new ui-version.js module), so the
 // shared cache-bust token is bumped again (202606016 → 202606041) in lockstep
 // with the index.html assets, the bootstrap loader, and sw.js (webflash-v14).
-import "./scripts/simple-install.js?v=202606041";
+// WebFlash 2.0 GA cutover (PR 12) — resolveUiVersion now defaults production to
+// the 2.0 view too (?ui=1 stays the fallback). ui-version.js is a tokenless
+// module that rides the sw.js CACHE_NAME bump, so CACHE_NAME goes to webflash-v15
+// and the shared cache-bust token bumps again (202606041 → 202606042) in lockstep
+// across index.html, the bootstrap loader, this import, and the app-shell marker.
+// simple-install.js itself is byte-identical here; it rides the lockstep.
+import "./scripts/simple-install.js?v=202606042";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";

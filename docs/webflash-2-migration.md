@@ -253,9 +253,14 @@ its own. Each PR states its acceptance condition.
   on S360-410 PoE; no regressions reported.
 * **PR 12. GA cutover.** Flip 2.0 to default at the repo root. Keep the 1.0 view
   at `?ui=1` for one release as rollback. Update README, docs, and CHANGELOG.
-  Bump `CACHE_NAME` to `webflash-v5` so the SW serves the new shell; verify the
-  update banner and manifest freshness still gate. Accept: GA live; rollback
-  path verified; freshness and SW gating intact.
+  Bump `CACHE_NAME` so the SW serves the new shell; verify the update banner and
+  manifest freshness still gate. (The flip lives in `scripts/ui-version.js` so
+  `resolveUiVersion` defaults every surface to the 2.0 view, with `?ui=1` the
+  rollback. The cutover landed at `webflash-v15`, not the originally named
+  `webflash-v5`: the WF-UX and bundle-picker work churned the live cache to
+  `webflash-v13` and PR 11 took `webflash-v14`, so the GA bump is the next
+  monotonic step.) Accept: GA live; rollback path verified; freshness and SW
+  gating intact.
 * **PR 13. Decommission the 1.0 view.** After one stable release with no
   regressions, remove `?ui=1` and the old render layer. Keep the engine. Fold the
   `/webflash-2/` path into the root. Accept: single view, engine unchanged,

@@ -6,18 +6,19 @@
  * view (`webflash-2/scripts/shell.js`). Which one renders by default depends on
  * the *surface* the page is served from:
  *
- *   - Production (the GitHub Pages installer at `sense360store.github.io`) keeps
- *     the 1.0 view as its default. The GA cutover is the single commit that flips
- *     the production default to the 2.0 view; nothing before it may change the
- *     production default.
- *   - Every other surface is an internal or beta surface: local development on
- *     `localhost` / `127.0.0.1`, and any internal or beta deployment on a
- *     non-production host. These default to the 2.0 view so it can be dogfooded
- *     ahead of the GA cutover.
+ *   - As of the GA cutover (PR 12) every surface defaults to the 2.0 view,
+ *     production (the GitHub Pages installer at `sense360store.github.io`)
+ *     included. The cutover is the single commit that flipped the production
+ *     default.
+ *   - Before the cutover, production kept the 1.0 view while internal and beta
+ *     surfaces (local development on `localhost` / `127.0.0.1`, and any
+ *     non-production deployment) defaulted to the 2.0 view for dogfooding. That
+ *     surface split is retained in the helpers below for the one-release rollback
+ *     window; PR 13 removes the dual-view machinery entirely.
  *
  * The `?ui=` query parameter is always an explicit, per-visit override and wins
- * over the surface default: `?ui=1` is the fallback to the 1.0 view on the beta
- * surface, and `?ui=2` is the opt-in to the 2.0 view on production. Any other
+ * over the surface default: `?ui=1` is the one-release rollback to the 1.0 view,
+ * and `?ui=2` explicitly selects the 2.0 view (now also the default). Any other
  * `?ui=` value is ignored and the surface default applies.
  *
  * This module is intentionally pure and side-effect free (no DOM read, no
@@ -35,14 +36,12 @@ export const UI_V1 = '1';
 export const UI_V2 = '2';
 
 /**
- * Hosts that serve the production installer. On these hosts the default view is
- * the 1.0 view until the GA cutover. Every host not in this list is treated as
- * an internal or beta surface and defaults to the 2.0 view.
- *
- * Matched case-insensitively and exactly: a look-alike host such as
- * `evil-sense360store.github.io` must not be treated as production. When a real
- * beta or staging origin is added, it does NOT belong here — only production
- * hosts that must stay on the 1.0 view until the GA cutover do.
+ * Hosts that serve the production installer. Before the GA cutover these hosts
+ * defaulted to the 1.0 view; the cutover (PR 12) flipped them to the 2.0 view
+ * like every other surface, so this list no longer changes the default. It is
+ * retained for the one-release rollback window and is matched case-insensitively
+ * and exactly (a look-alike host such as `evil-sense360store.github.io` must not
+ * be treated as production). PR 13 removes the dual-view machinery entirely.
  */
 export const PRODUCTION_HOSTS = Object.freeze(['sense360store.github.io']);
 
@@ -71,7 +70,10 @@ export function resolveUiVersion(search, hostname) {
         return requested;
     }
 
-    // No explicit override: the surface decides. Production stays on the 1.0 view
-    // until the GA cutover; internal and beta surfaces default to the 2.0 view.
-    return isProductionHost(hostname) ? UI_V1 : UI_V2;
+    // No explicit override: the 2.0 view is the default on every surface as of the
+    // GA cutover (PR 12). ?ui=1 above stays the one-release rollback to the 1.0
+    // view. isProductionHost(hostname) no longer changes the default; it is kept
+    // (and still exercised by tests) for the rollback window and is removed with
+    // the dual view in PR 13.
+    return UI_V2;
 }

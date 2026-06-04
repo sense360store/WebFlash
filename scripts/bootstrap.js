@@ -4,15 +4,14 @@
 // needing to allow inline scripts.
 //
 // WebFlash 2.0 migration: this is the single shared bootstrap for both views.
-// Which view renders by default is decided per surface by resolveUiVersion()
-// (scripts/ui-version.js): production (sense360store.github.io) defaults to the
-// 1.0 view (app.js), and the internal / beta surfaces default to the 2.0 view
-// (webflash-2/scripts/shell.js). Either way the 2.0 view mounts inside the SAME
-// production shell, so it inherits this page's CSP, service worker, manifest,
-// and headers. ?ui=1 and ?ui=2 are explicit per-visit overrides; ?ui=1 is the
-// fallback to the 1.0 view on the beta surface and ?ui=2 is the opt-in to the
-// 2.0 view on production. The production default stays the 1.0 view until the GA
-// cutover, which is the single commit that flips it.
+// Which view renders by default is decided by resolveUiVersion()
+// (scripts/ui-version.js). As of the GA cutover (PR 12) the default is the 2.0
+// view (webflash-2/scripts/shell.js) on every surface, including production; the
+// 1.0 view (app.js) stays reachable only via the explicit ?ui=1 override, which
+// is the one-release rollback fallback (PR 13 removes it). Either way the 2.0
+// view mounts inside the SAME production shell, so it inherits this page's CSP,
+// service worker, manifest, and headers. ?ui=1 and ?ui=2 are explicit per-visit
+// overrides that always win over the surface default.
 //
 // WF-UX-014 — the app entry is loaded with the `?v=` cache-bust token so a stale
 // Pages/CDN/service-worker copy can never be served after a UX-only JS deploy.
@@ -24,7 +23,7 @@
 // CACHE_NAME.
 import { resolveUiVersion } from './ui-version.js';
 
-const APP_SHELL_BUILD = '202606041';
+const APP_SHELL_BUILD = '202606042';
 const { pathname, search, hostname } = window.location;
 const inRepoSubpath = pathname === '/WebFlash' || pathname.startsWith('/WebFlash/');
 const base = inRepoSubpath ? '/WebFlash' : '';

@@ -87,11 +87,20 @@
  *   The production default is unchanged, but the changed bootstrap + new module
  *   must re-prime so existing installs purge v13 and the host-aware resolver +
  *   its module are served as one set. See docs/deploy-notes.md.
+ *   `webflash-v15` (WebFlash 2.0 GA cutover, PR 12) bumps again:
+ *   scripts/ui-version.js now defaults EVERY surface (production included) to the
+ *   2.0 view, keeping ?ui=1 as the one-release rollback. ui-version.js carries no
+ *   per-import `?v=` token, so it rides this cache-name bump to re-prime; existing
+ *   installs must purge v14 so the cutover resolver ships intact, in lockstep with
+ *   the index.html / bootstrap / app.js `?v=` token (202606042) and the
+ *   webflash-app-shell marker (2026-06-04-2). The activate handler below still
+ *   purges every non-current `webflash-*` cache, so this bump just works; the
+ *   per-asset-class fetch strategy is unchanged. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v14';
+const CACHE_NAME = 'webflash-v15';
 const CACHE_VERSION = 5;
 
 /**
