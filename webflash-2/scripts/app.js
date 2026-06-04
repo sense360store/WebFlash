@@ -238,7 +238,11 @@ function buildStep() {
   if (state.step === 1) {
     return InstallStep({ device, build, engine, a11y, onBack: () => goTo(0), onFlashed: () => goTo(2) });
   }
-  return ConnectStep({ device, onDone: reset, onSkip: reset });
+  // PR 7 — the Connect step renders the engine's post-flash validation panel
+  // (eight states), with the Home Assistant handoff shown only for improv:true
+  // builds. The engine + resolved build are passed so the panel reads the real
+  // snapshot; it never reads or stores Wi-Fi credentials.
+  return ConnectStep({ device, build, engine, a11y, onDone: reset, onSkip: reset });
 }
 
 let railSlot;

@@ -422,8 +422,28 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   renderEwtNotice();
   recompute();        // initial synchronous render (capabilities + provenance)
   runPreflight();     // kick the async checks (freshness + SHA-256 integrity)
+  capturePostFlashBuild();  // seed the post-flash state machine for the Connect step
 
   return mainEl;
+
+  // ----- post-flash state machine seeding (PR 7) -----
+  // Reset the shared post-flash service and capture the build that is about to
+  // be flashed, so the Connect step's validation panel reports against THIS
+  // selection. The manifest (with its name / improv-wait metadata) is captured
+  // by the engine's manifest load during the Step 1 resolve, so only the build
+  // needs seeding here. Only the build's identity fields are read; no Wi-Fi
+  // credential ever enters the snapshot.
+  function capturePostFlashBuild() {
+    if (!engine || !engine.postFlash || !build) {
+      return;
+    }
+    try {
+      engine.postFlash.service.reset();
+      engine.postFlash.service.captureSelectedBuild(build);
+    } catch {
+      /* defensive — never block install on post-flash wiring */
+    }
+  }
 
   // ----- async preflight -----
   function runPreflight() {
@@ -560,10 +580,25 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // Map one ESP Web Tools lifecycle event onto the ring + console.
   function handleFlashLifecycle(detail) {
     if (disposed) return;
+
+    // PR 7 — forward every lifecycle event (including idle, improv frames, and
+    // the Wi-Fi provisioning signals this view does not render itself) to the
+    // engine's post-flash state machine so the Connect step's validation panel
+    // can report the honest eight-state result. The service owns the lifecycle
+    // to result reduction; this view never decides the validation outcome and
+    // never reads or stores the Wi-Fi credentials ESP Web Tools provisions.
+    if (engine && engine.postFlash) {
+      try {
+        engine.postFlash.service.dispatchLifecycle(detail);
+      } catch {
+        /* never block the flash UI on post-flash bookkeeping */
+      }
+    }
+
     const rawState = typeof detail === 'string' ? detail : (detail && detail.state);
     const state = typeof rawState === 'string' ? rawState.toLowerCase() : '';
     const meta = FLASH_PHASE_META[state];
-    if (!meta) return;  // ignore idle / improv / unknown states
+    if (!meta) return;  // ignore idle / improv / unknown states for the ring
 
     if (!flashStarted) {
       flashStarted = true;
