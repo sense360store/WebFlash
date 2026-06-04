@@ -177,7 +177,7 @@ Self-verify before opening the PR, and paste the output into the PR body:
 
 - `npm test`
 - `python3 scripts/gen-manifests.py --strict-validate --dry-run`
-- `npm run check:headers`
+- `npm run check:headers -- https://sense360store.github.io/WebFlash/`
 - If the PR touches provenance, the manifest, or the install gate, fill the Reviewer checklist from the README "Reviewer checklist" section into the PR body.
 
 PR body: a summary, the key changes, the simulation-to-real items addressed, the verify output, and an explicit statement of what stays gated. Plain prose. Do not use hyphens as sentence breakers. No emojis. Open the PR for Codex review and resolve P1 and P2 findings before merge.

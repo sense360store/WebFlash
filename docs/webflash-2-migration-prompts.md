@@ -55,7 +55,7 @@ Implementation discipline:
 Self-verify before opening the PR, and paste the output into the PR body:
 - npm test
 - python3 scripts/gen-manifests.py --strict-validate --dry-run
-- npm run check:headers
+- npm run check:headers -- https://sense360store.github.io/WebFlash/
 - If the PR touches provenance, the manifest, or the install gate, fill the
   Reviewer checklist from the README "Reviewer checklist" section into the PR body.
 
@@ -414,9 +414,11 @@ Scope:
 - Verify the update banner and manifest freshness still gate after the cache bump.
 
 Acceptance: the 2.0 view is the default at the root; ?ui=1 still loads the 1.0
-view; flipping the default flag back to ui=1 is a verified no-deploy rollback; the
-freshness and service-worker gating still disable install per the matrix;
-npm test, the strict manifest dry run, and check:headers all green.
+view; a user returns to the 1.0 view immediately via ?ui=1, and rolling back the
+site default is a git revert of the cutover commit plus the GitHub Pages rebuild
+it triggers, not a flag flip; the freshness and service-worker gating still
+disable install per the matrix; npm test, the strict manifest dry run, and
+check:headers all green.
 
 PR: branch wf2-12-ga-cutover, base main. Default UI flips to ui=2, ui=1 fallback.
 ```
