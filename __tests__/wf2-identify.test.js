@@ -274,7 +274,9 @@ describe('PR 4 — Identify view bound to the engine', () => {
 
     const viewState = app.__testHooks.getState();
     expect(viewState.mode).toBe('advanced');
-    expect(viewState.sel.sensing).toBe('airiq');
+    // RoomIQ and the air-quality board hydrate as independent axes.
+    expect(viewState.sel.air).toBe('airiq');
+    expect(viewState.sel.roomiq).toBe(true);
     expect(viewState.sel.power).toBe('poe');
     // AirIQ + RoomIQ over PoE is a published preview build, so it is installable.
     expect(viewState.resolved.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');

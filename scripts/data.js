@@ -40,24 +40,44 @@ export const POWER = [
   { id: 'pwr', name: 'Sense360 240V PSU', sku: 'S360-400', desc: 'External mains power module.', code: 'PWR' },
 ];
 
-export const SENSING = [
+// The air-quality board is a single choice: None, AirIQ (S360-210), or the
+// bathroom-tuned VentIQ (S360-211). AirIQ and VentIQ are mutually exclusive by
+// construction here (one selection), and the engine enforces the same
+// exclusivity for share-link hydration. AirIQ keeps only its cross-section
+// conflict with the DAC fan driver (they contend for the same aux bus); the
+// engine lookup remains the authoritative blocked verdict. `code` is the
+// human-readable config_string token for reference only.
+export const AIR = [
   {
-    id: 'roomiq', name: 'Sense360 RoomIQ', sku: 'S360-200', code: 'RoomIQ',
-    desc: 'Presence, light, temperature, humidity and pressure on one board.',
-    req: ['Core R4', 'J3 sensor bus'], conflicts: [],
+    id: 'none', name: 'No air-quality board', sku: '—', code: 'None',
+    desc: 'Skip the dedicated air-quality board.',
+    req: [], conflicts: [],
   },
   {
     id: 'airiq', name: 'Sense360 AirIQ', sku: 'S360-210', code: 'AirIQ',
     desc: 'Balanced air quality: VOC, CO₂ and particulate coverage.',
-    req: ['Core Rev B+', 'J4 bus', 'J7 aux power'], conflicts: ['ventiq', 'dac'],
+    req: ['Core Rev B+', 'J4 bus', 'J7 aux power'], conflicts: ['dac'],
   },
   {
     id: 'ventiq', name: 'Sense360 VentIQ', sku: 'S360-211', code: 'VentIQ',
     desc: 'Humidity, temperature and air quality tuned for bathrooms.',
-    req: ['Core Rev B+', 'J4 bus', 'J7 aux power'], conflicts: ['airiq'],
+    req: ['Core Rev B+', 'J4 bus', 'J7 aux power'], conflicts: [],
     bathroom: true,
   },
 ];
+
+// RoomIQ (S360-200) is the presence + environmental board. It is independent of
+// the air-quality choice and coexists with AirIQ or VentIQ (or neither), so it
+// is its own optional toggle rather than one of the air-quality radio options.
+// The manifest confirms RoomIQ is optional: fan-only builds such as
+// Ceiling-POE-FanDAC / Ceiling-POE-FanPWM carry no RoomIQ token, while
+// Ceiling-POE-RoomIQ, Ceiling-POE-AirIQ-RoomIQ, and Ceiling-POE-VentIQ-RoomIQ
+// all pair it with an independent air-quality choice.
+export const ROOMIQ = {
+  id: 'roomiq', name: 'Sense360 RoomIQ', sku: 'S360-200', code: 'RoomIQ',
+  desc: 'Presence, light, temperature, humidity and pressure on one board.',
+  req: ['Core R4', 'J3 sensor bus'],
+};
 
 // `code` is the human-readable config_string fan token for reference only
 // (FanRelay, FanPWM, FanDAC, FanTRIAC). selToWizardState() maps the builder id
@@ -86,42 +106,46 @@ export const LED = { id: 'led', name: 'Sense360 LED ring', sku: 'S360-300', code
 // firmware-verification row never asserts cryptographic signature verification.
 
 // ---- Builder selection <-> engine wizard-state mapping ----
-// The advanced builder tracks a small UI selection shape:
-//   { power: 'usbc'|'poe'|'pwr', sensing: 'roomiq'|'airiq'|'ventiq',
+// The advanced builder tracks a small UI selection shape with two independent
+// sensing axes:
+//   { power: 'usbc'|'poe'|'pwr', roomiq: boolean, air: 'none'|'airiq'|'ventiq',
 //     fan: 'none'|'relay'|'pwm'|'dac'|'triac', led: boolean }
-// The engine (scripts/state.js) speaks a different vocabulary for two of these:
-// power uses `usb` (not `usbc`) and the DAC fan driver is `analog` (not `dac`,
-// which is the SKU shorthand). These two maps are the single translation point,
-// so the view cannot drift from the engine identifiers.
+// RoomIQ (presence) and the air-quality board are separate selections because
+// the hardware and the manifest treat them independently. The engine
+// (scripts/state.js) speaks a different vocabulary for two fields: power uses
+// `usb` (not `usbc`) and the DAC fan driver is `analog` (not `dac`, which is the
+// SKU shorthand). These two maps are the single translation point, so the view
+// cannot drift from the engine identifiers.
 const POWER_TO_ENGINE = Object.freeze({ usbc: 'usb', poe: 'poe', pwr: 'pwr' });
 const ENGINE_TO_POWER = Object.freeze({ usb: 'usbc', poe: 'poe', pwr: 'pwr' });
 const FAN_TO_ENGINE = Object.freeze({ none: 'none', relay: 'relay', pwm: 'pwm', dac: 'analog', triac: 'triac' });
 const ENGINE_TO_FAN = Object.freeze({ none: 'none', relay: 'relay', pwm: 'pwm', analog: 'dac', triac: 'triac' });
 
 // The advanced builder's default selection: the supported Bathroom PoE
-// configuration (PoE power, VentIQ bathroom sensing, no fan driver, no LED),
-// which resolves to the stable Release-One build.
-export const DEFAULT_SEL = Object.freeze({ power: 'poe', sensing: 'ventiq', fan: 'none', led: false });
+// configuration (PoE power, RoomIQ presence on, VentIQ bathroom air-quality
+// board, no fan driver, no LED), which resolves to the stable Release-One build
+// Ceiling-POE-VentIQ-RoomIQ.
+export const DEFAULT_SEL = Object.freeze({ power: 'poe', roomiq: true, air: 'ventiq', fan: 'none', led: false });
 
 /**
  * Maps the advanced builder selection to the engine wizard-state object that
- * setState() and resolveCompatibleFirmware() consume. Every ceiling build
- * carries RoomIQ, so RoomIQ is always present; the "sensing" choice selects the
- * optional air-quality board (AirIQ or the bathroom VentIQ). VentIQ implies the
- * bathroom toggle, which the engine also enforces.
+ * setState() and resolveCompatibleFirmware() consume. The two sensing axes map
+ * to engine fields independently: RoomIQ (S360-200) is its own optional presence
+ * board, and the air-quality choice selects AirIQ, the bathroom VentIQ, or
+ * neither. VentIQ implies the bathroom toggle, which the engine also enforces.
  *
- * @param {{power?: string, sensing?: string, fan?: string, led?: boolean}} sel
+ * @param {{power?: string, roomiq?: boolean, air?: string, fan?: string, led?: boolean}} sel
  * @returns {object} wizard-state for engine.state.setState()
  */
 export function selToWizardState(sel = {}) {
-  const sensing = sel.sensing || 'roomiq';
+  const air = sel.air || 'none';
   return {
     mount: 'ceiling',
     power: POWER_TO_ENGINE[sel.power] || null,
-    bathroom: sensing === 'ventiq',
-    roomiq: 'roomiq',
-    airiq: sensing === 'airiq' ? 'airiq' : 'none',
-    ventiq: sensing === 'ventiq' ? 'ventiq' : 'none',
+    bathroom: air === 'ventiq',
+    roomiq: sel.roomiq ? 'roomiq' : 'none',
+    airiq: air === 'airiq' ? 'airiq' : 'none',
+    ventiq: air === 'ventiq' ? 'ventiq' : 'none',
     fan: FAN_TO_ENGINE[sel.fan] || 'none',
     led: sel.led ? 'led' : 'none',
     voice: 'none',
@@ -129,23 +153,26 @@ export function selToWizardState(sel = {}) {
 }
 
 /**
- * Inverse of selToWizardState: derives the advanced builder selection shape
- * from an engine wizard-state snapshot (engine.state.getState()). Used to
- * hydrate the builder from a manual share link and to reflect engine-enforced
- * exclusivity (AirIQ/VentIQ) back into the UI.
+ * Inverse of selToWizardState: derives the advanced builder selection shape from
+ * an engine wizard-state snapshot (engine.state.getState()). Used to hydrate the
+ * builder from a manual share link. Both sensing axes are read back
+ * independently: the RoomIQ toggle from the engine `roomiq` field, and the
+ * air-quality choice from `ventiq` / `airiq` (engine-enforced exclusivity
+ * collapses any AirIQ+VentIQ combination to VentIQ).
  *
  * @param {object} state - engine wizard-state snapshot
- * @returns {{power: string, sensing: string, fan: string, led: boolean}}
+ * @returns {{power: string, roomiq: boolean, air: string, fan: string, led: boolean}}
  */
 export function wizardStateToSel(state = {}) {
-  const sensing = state.ventiq && state.ventiq !== 'none'
+  const air = state.ventiq && state.ventiq !== 'none'
     ? 'ventiq'
     : state.airiq && state.airiq !== 'none'
       ? 'airiq'
-      : 'roomiq';
+      : 'none';
   return {
     power: ENGINE_TO_POWER[state.power] || 'poe',
-    sensing,
+    roomiq: Boolean(state.roomiq && state.roomiq !== 'none'),
+    air,
     fan: ENGINE_TO_FAN[state.fan] || 'none',
     led: Boolean(state.led && state.led !== 'none'),
   };

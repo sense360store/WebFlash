@@ -566,17 +566,18 @@ button { font-family: inherit; }
 .sum-empty { color: var(--text-faint); font-size: 0.88rem; padding: 6px 0; }
 
 .target-card {
-  background: linear-gradient(180deg, var(--text) 0%, #1B2638 100%);
-  color: #E2E8F0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
   padding: 16px 18px;
 }
-.target-card h4 { color: #8FA3BD; margin: 0 0 8px; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.target-card h4 { color: var(--text-faint); margin: 0 0 8px; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .target-card code {
   font-family: var(--font-mono); font-size: 0.84rem;
-  color: #5EEAD4; word-break: break-all; line-height: 1.5;
+  color: var(--accent); word-break: break-all; line-height: 1.5;
 }
-.target-card .muted { color: #64748B; }
+.target-card .muted { color: var(--text-muted); }
 
 /* ---------- Readiness checklist ---------- */
 .ready { display: grid; gap: 0; }
@@ -839,7 +840,7 @@ button { font-family: inherit; }
 :root[data-theme="dark"] .devicebox {
   background: repeating-linear-gradient(135deg, var(--surface-2) 0 9px, #131C2B 9px 18px);
 }
-:root[data-theme="dark"] .target-card { background: linear-gradient(180deg, #0A1018 0%, #131C2B 100%); }
+:root[data-theme="dark"] .target-card { background: var(--surface-2); border-color: var(--border-strong); }
 :root[data-theme="dark"] .console { background: #060B14; border-color: #1A2536; }
 /* Brighten themed status/callout text on dark surfaces */
 :root[data-theme="dark"] .statusbar--wait,

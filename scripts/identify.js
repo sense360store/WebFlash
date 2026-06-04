@@ -11,7 +11,7 @@
 import { h } from './h.js';
 import { icon } from './icons.js';
 import { StepHead } from './ui.js';
-import { POWER, SENSING, FAN, LED } from './data.js';
+import { POWER, AIR, ROOMIQ, FAN, LED } from './data.js';
 
 function capitalize(value) {
   const text = (value || '').toString();
@@ -118,9 +118,11 @@ function Section(title, hint, body) {
 
 function AdvancedBuilder(sel, setSel) {
   const conflictsWith = (id) => {
-    // collect ids that conflict with current selection
-    const active = [sel.sensing, sel.fan].filter(Boolean);
-    const all = [...SENSING, ...FAN];
+    // collect ids that conflict with current selection. RoomIQ (presence) and
+    // the LED ring carry no conflicts, so only the air-quality and fan choices
+    // contribute. This keeps the AirIQ/DAC conflict working across sections.
+    const active = [sel.air, sel.fan].filter((x) => x && x !== 'none');
+    const all = [...AIR, ...FAN];
     const out = new Set();
     active.forEach((aid) => {
       const item = all.find((x) => x.id === aid);
@@ -136,14 +138,17 @@ function AdvancedBuilder(sel, setSel) {
           Opt({ ...p, on: sel.power === p.id, onClick: () => setSel({ ...sel, power: p.id }) })),
       ),
     ),
-    Section('Sensing', 'Choose one air-quality board',
+    Section('Presence', 'Optional — Sense360 RoomIQ presence board',
+      Opt({ ...ROOMIQ, on: sel.roomiq, onClick: () => setSel({ ...sel, roomiq: !sel.roomiq }) }),
+    ),
+    Section('Air quality', 'Choose one air-quality board',
       h('div', { class: 'optgrid' },
-        SENSING.map((s) => {
-          const conflict = conflictsWith(s.id) && sel.sensing !== s.id;
+        AIR.map((a) => {
+          const conflict = conflictsWith(a.id) && sel.air !== a.id;
           return Opt({
-            ...s, on: sel.sensing === s.id, disabled: conflict,
-            note: conflict ? 'Conflicts with current selection' : (s.bathroom ? 'Bathroom mode' : null),
-            onClick: () => setSel({ ...sel, sensing: s.id }),
+            ...a, on: sel.air === a.id, disabled: conflict,
+            note: conflict ? 'Conflicts with current selection' : (a.bathroom ? 'Bathroom mode' : null),
+            onClick: () => setSel({ ...sel, air: a.id }),
           });
         }),
       ),
@@ -230,7 +235,7 @@ export function IdentifyStep({ mode, setMode, kits, kitError, kit, setKit, sel, 
   }
 
   // mode === 'advanced'
-  const advHasInputs = Boolean(sel.power && sel.sensing);
+  const advHasInputs = Boolean(sel.power);
   const advInstallable = Boolean(advHasInputs && resolved && resolved.installable);
   const advBlocked = Boolean(advHasInputs && resolved && !resolved.installable && resolved.reason === 'no-build');
   const targetString = resolved && resolved.configString ? resolved.configString : '';
@@ -250,7 +255,8 @@ export function IdentifyStep({ mode, setMode, kits, kitError, kit, setKit, sel, 
         h('div', { class: 'summary-card' },
           h('h4', null, 'Your configuration'),
           sumRow('Power', label(POWER, sel.power)),
-          sumRow('Sensing', label(SENSING, sel.sensing)),
+          sumRow('Presence', sel.roomiq ? ROOMIQ.name : '—'),
+          sumRow('Air quality', sel.air && sel.air !== 'none' ? label(AIR, sel.air) : '—'),
           sumRow('Fan', label(FAN, sel.fan) || 'None'),
           sumRow('Status ring', sel.led ? 'Included' : '—'),
         ),
@@ -259,7 +265,7 @@ export function IdentifyStep({ mode, setMode, kits, kitError, kit, setKit, sel, 
           advHasInputs && targetString
             ? h('code', { class: advInstallable ? '' : 'muted' }, targetString)
             : h('code', { class: 'muted' },
-                advHasInputs ? 'Checking firmware availability…' : 'Select power + sensing to find firmware…'),
+                advHasInputs ? 'Checking firmware availability…' : 'Select power to find firmware…'),
         ),
         h('button', { class: 'btn btn--block', disabled: !advInstallable, onClick: onContinue },
           'Continue ', icon('arrowR')),
