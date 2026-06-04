@@ -691,6 +691,17 @@ button { font-family: inherit; }
 .console .ln b { color: #5EEAD4; font-weight: 500; }
 .console .ln--ok { color: #4ADE80; }
 
+/* ESP Web Tools desktop-only fallback copy (rendered by the install-button's
+   unsupported / not-allowed slots when Web Serial is missing or the context is
+   insecure). Kept small and muted so the native fallback reads as guidance. */
+.wf2-ewt-fallback {
+  display: inline-block;
+  max-width: 460px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 /* ---------- Wi-Fi connect ---------- */
 .field { display: grid; gap: 7px; margin-bottom: 16px; }
 .field label { font-size: 0.88rem; font-weight: 600; color: var(--text-body); }
