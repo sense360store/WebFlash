@@ -10,10 +10,11 @@
  *   - prefers-reduced-motion suppresses smooth scrolling,
  *   - the modal primitive traps focus and restores it to the opener.
  *
- * The bootstrap branch (?ui=2 -> shell.js, default -> app.js) is exercised in a
- * browser, not jsdom (it runs a dynamic import keyed on window.location at module
- * load). The static production shell that ?ui=1 keeps unchanged is pinned by the
- * existing a11y-static-html suite.
+ * The bootstrap branch (?ui=1 -> app.js, default -> shell.js after the PR 12 GA
+ * cutover) is exercised in a browser, not jsdom (it runs a dynamic import keyed on
+ * window.location at module load); the cutover flip itself is pinned by
+ * wf2-ga-cutover.test.js. The static production shell that ?ui=1 keeps unchanged is
+ * pinned by the existing a11y-static-html suite.
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 

@@ -74,7 +74,7 @@ and to read meaningfully in support tooling.
 
 ```html
 <meta name="webflash-app-version" content="1.0.1">
-<meta name="webflash-app-shell" content="2026-06-01-2">
+<meta name="webflash-app-shell" content="2026-06-04-1">
 ```
 
 These are read by `scripts/services/diagnostics.js` (`buildAppSection`) and
@@ -102,3 +102,27 @@ This is a deploy-layer + presentation change only. It does **not** touch
 the release-channel policy, installability / provenance / freshness gate logic,
 or the service-worker fetch **strategy** (only the cache **name**/version
 reference).
+
+## WebFlash 2.0 GA cutover (PR 12) — cache bump
+
+The GA cutover flips the default view to 2.0 (`scripts/bootstrap.js`: the default
+and `?ui=2` load `webflash-2/scripts/shell.js`; `?ui=1` keeps the 1.0 view as a
+one release rollback). Because `scripts/bootstrap.js` is a customer-facing runtime
+module and it changed, the cache-bust token moved in lockstep under the same
+contract above:
+
+- `index.html` `?v=` on the CSS links and the bootstrap loader, plus the
+  `webflash-app-shell` marker: `202606041` / `2026-06-04-1`.
+- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202606041`.
+- `app.js` per-import token on `simple-install.js`: `202606041` (the module is
+  byte-identical; it rides the lockstep so the five-way token equality holds).
+- `scripts/build-info.js` `appShell`: `2026-06-04-1`.
+- `sw.js` `CACHE_NAME`: `webflash-v13` to `webflash-v14`.
+
+This is a deploy-layer plus default-flip change. The per-asset-class fetch
+strategy, the `activate` purge of non-current `webflash-*` caches, and the install
+gate are unchanged. The cutover lands at `webflash-v14` rather than the
+`webflash-v5` named in the migration plan because the WF-UX and bundle-picker work
+churned the live cache to `webflash-v13` in parallel; the cache-name bump stays
+monotonic from there. `__tests__/wf2-ga-cutover.test.js` pins the flip, the
+`webflash-v14` floor, the token lockstep, and the unchanged activate purge.

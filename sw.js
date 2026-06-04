@@ -80,11 +80,19 @@
  *   scripts/data/simple-bundles.js declares them). No fan-control firmware ships
  *   yet, so the picker is visually unchanged today — but existing installs must
  *   purge v12 so the staged copy + gate deploy in lockstep. See docs/deploy-notes.md.
+ *   `webflash-v14` (WebFlash 2.0 GA cutover, PR 12) bumps again: scripts/bootstrap.js
+ *   now defaults to the 2.0 view (webflash-2/scripts/shell.js) and keeps the 1.0
+ *   view reachable at ?ui=1 as the one-release rollback. Existing installs must
+ *   purge v13 and re-prime so the cutover shell ships intact, in lockstep with the
+ *   index.html / bootstrap / app.js `?v=` token (202606041) and the
+ *   webflash-app-shell marker (2026-06-04-1). The activate handler below still
+ *   purges every non-current `webflash-*` cache, so this bump just works. The
+ *   per-asset-class fetch strategy is unchanged. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v13';
+const CACHE_NAME = 'webflash-v14';
 const CACHE_VERSION = 5;
 
 /**

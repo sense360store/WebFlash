@@ -276,6 +276,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Implemented strict Referrer-Policy
 
 ### Changed
+- **WebFlash 2.0 GA cutover (PR 12).** The 2.0 view is now the production default
+  at the site root. `scripts/bootstrap.js` flips so the default (no `?ui`, or
+  `?ui=2`) loads the 2.0 view inside the production shell
+  (`webflash-2/scripts/shell.js`), while the 1.0 view stays reachable at `?ui=1`
+  as the one release rollback (a later PR removes it). Both views run at the same
+  origin and share the same Content Security Policy, service worker, manifest, and
+  install gate, so no gate is weakened: provenance, channel acknowledgement,
+  SHA-256 verification, manifest freshness, service worker update, and
+  installability stay engine owned and are enforced identically in both views.
+  Bumped `sw.js` `CACHE_NAME` to `webflash-v14` (the existing `activate` handler
+  still purges every non-current `webflash-*` cache) and the shared cache-bust
+  token to `202606041` in lockstep across `index.html`, `scripts/bootstrap.js`,
+  `app.js`, and the `webflash-app-shell` marker (`2026-06-04-1`) so the cutover
+  shell is never served stale. Added `__tests__/wf2-ga-cutover.test.js` pinning
+  the routing (default to 2.0, `?ui=1` to 1.0), the cache bump, and the unchanged
+  activate purge and per-asset-class fetch strategy. The `webflash-v5` value in
+  the migration docs predated the WF-UX and bundle-picker cache churn that had
+  already reached `webflash-v13`, so the cutover lands at `webflash-v14`. No
+  firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, kit,
+  release-channel, or install-gate logic changed. Merging the cutover to
+  production stays gated on the PR 11 beta dogfood and clean S360-410 PoE flash
+  evidence, which is a manual hardware step.
 - `Ceiling-POE-VentIQ-RoomIQ` added to the `REQUIRED_CONFIGS` allowlist in
   `.github/workflows/firmware-publish.yml`. The 9 pre-existing required
   configs are unchanged; pruning stale entries is tracked as a separate

@@ -10,6 +10,21 @@ WebFlash provides a step-by-step wizard for configuring and flashing Sense360 fi
 
 For how WebFlash is built — the publishing pipeline and wizard frontend, the `manifest.json` boundary, the desktop-only constraint, and the deploy gate — see [`docs/architecture.md`](docs/architecture.md).
 
+## Interface version (WebFlash 2.0)
+
+The installer ships two views over the same engine. The 2.0 view is the
+production default at the site root. The 1.0 view stays reachable at
+[`?ui=1`](https://sense360store.github.io/WebFlash/?ui=1) as a one release
+rollback, and a later release removes it. Both views run at the same origin and
+inherit the same Content Security Policy, service worker, manifest, and install
+gate, so the trust model is identical whichever view loads. The view is a render
+layer only: every gating decision (provenance, channel acknowledgement, SHA-256
+verification of the downloaded bytes, manifest freshness, service worker update,
+installability per the release gates, and the desktop only capability check) is
+owned by the engine and enforced the same in both views. See
+[`docs/webflash-2-migration.md`](docs/webflash-2-migration.md) and the decision
+record [`docs/adr/0001-webflash-2-view-over-engine.md`](docs/adr/0001-webflash-2-view-over-engine.md).
+
 ## Requirements
 
 - Chromium-based browser (Chrome, Edge, Opera)
@@ -703,9 +718,10 @@ Documented in the comment block at the top of
 | Firmware binaries (`*.bin`) | network-first             | Cached on success so a previously-flashed config is offline-available; never serve stale. The rescue binary is additionally precached so first-visit offline rescue works. |
 | Cross-origin (unpkg ESPWT)  | not intercepted           | Browser-managed.                                     |
 
-`CACHE_NAME` is `webflash-v4`. The `activate` handler purges any cache
-that starts with `webflash-` but is not the current name, so subsequent
-bumps just work.
+`CACHE_NAME` is `webflash-v14` (bumped at the WebFlash 2.0 GA cutover so
+existing installs re-prime the new default shell). The `activate` handler
+purges any cache that starts with `webflash-` but is not the current name, so
+subsequent bumps just work.
 
 ## Deployment & security headers
 

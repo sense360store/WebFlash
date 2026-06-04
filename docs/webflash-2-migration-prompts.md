@@ -408,8 +408,10 @@ Prerequisites: PR 11 merged and the S360-410 PoE flash evidence attached and cle
 Scope:
 - Flip the default UI to ui=2 at the repo root. Keep the 1.0 view reachable at
   ?ui=1 as the rollback for one release.
-- Bump CACHE_NAME to webflash-v5 so the service worker serves the new shell.
-  Confirm the activate handler purges the old webflash- cache.
+- Bump CACHE_NAME so the service worker serves the new shell (the plan named
+  webflash-v5; the live cache had already advanced to webflash-v13 via the WF-UX
+  and bundle-picker work, so the GA bump landed at webflash-v14). Confirm the
+  activate handler purges the old webflash- cache.
 - Update README, the docs, and CHANGELOG.
 - Verify the update banner and manifest freshness still gate after the cache bump.
 

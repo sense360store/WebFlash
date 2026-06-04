@@ -156,8 +156,11 @@ lands together and the reviewer sees coherent units:
 * **Same origin throughout.** The 2.0 view always renders inside the production
   shell, so it inherits the CSP, the service worker, the manifest, and the
   headers. Never a separate site.
-* **Cache:** PR 12 bumps `CACHE_NAME` to `webflash-v5` so the service worker
-  serves the new shell. The existing `activate` purge removes the old
+* **Cache:** PR 12 bumps `CACHE_NAME` so the service worker serves the new shell.
+  The plan originally named `webflash-v5`, but the WF-UX and bundle-picker work
+  churned the live cache to `webflash-v13` in parallel, so the cutover lands at
+  `webflash-v14` (the next monotonic bump; an existing test already requires the
+  name to be past `webflash-v5`). The existing `activate` purge removes the old
   `webflash-` cache. Verify the update banner and manifest freshness still gate
   after the bump.
 * **Rollback ladder:** before GA, revert the offending PR and production is
