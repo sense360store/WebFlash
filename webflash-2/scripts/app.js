@@ -135,6 +135,10 @@ async function syncSelection() {
     engine.state.setState(wizardState, { skipUrlUpdate: true });
   }
 
+  // Keep the diagnostics session in step with the live kit / custom selection so
+  // a support bundle copied from any 2.0 surface reflects the current mode.
+  recordDiagnosticsConfiguration();
+
   render();
 
   if (!engine || !wizardState) {
@@ -219,6 +223,124 @@ function openHelp() {
         'its selections are valid. Press Escape to close this dialog.'),
     ],
   });
+}
+
+// ----- diagnostics / support bundle (PR 9) -----
+// Wire the engine's redacted schema_version:1 support bundle into the 2.0 view.
+// The bundle builder, every section, and the redaction (passwords, tokens, MACs,
+// filesystem paths, URL query strings) all live in the engine
+// (scripts/services/diagnostics.js, re-exported via engine.diagnostics). The view
+// only supplies a snapshot of its own resolved state and renders the copy /
+// download actions. It never assembles the bundle, so it cannot leak a firmware
+// binary, a raw sha256 / signature, or a Wi-Fi password — that contract is the
+// engine's, not re-implemented here.
+//
+// The 1.0 view installs its own state provider in state.js, but that provider
+// reads the 1.0 render-layer globals (window.currentFirmware /
+// window.currentConfigString) that the 2.0 view never populates — it resolves
+// builds through the pure engine.state.resolveCompatibleFirmware lookup instead.
+// So under ?ui=2 the view installs its own provider that reflects the 2.0
+// resolved build and selection. The schema and field names are unchanged; only
+// the values come from the 2.0 view's own state.
+function buildDiagnosticsSnapshot() {
+  if (!engine || !engine.diagnostics) {
+    return {};
+  }
+
+  const resolved = state.resolved;
+  const build = resolved && resolved.build ? resolved.build : null;
+
+  let configuration = {};
+  try {
+    configuration = engine.state.getState();
+  } catch {
+    configuration = {};
+  }
+
+  // Top-level manifest metadata (generated_at / manifest_version / source_commit
+  // / freshness). The 2.0 view's firmware resolve loads the manifest into the
+  // engine, so this is populated once a build has resolved.
+  let manifestData = null;
+  try {
+    manifestData = engine.state.getManifestMetadataForAbout();
+  } catch {
+    manifestData = null;
+  }
+  const manifestFreshness = (manifestData && manifestData.freshness) || 'unknown';
+
+  let releaseMode = 'normal';
+  try {
+    releaseMode = engine.state.getReleaseMode() || 'normal';
+  } catch {
+    releaseMode = 'normal';
+  }
+
+  // Recommended-default is derived (not stored on the build), so compute it at
+  // snapshot time exactly as the 1.0 provider does: the resolved build is the
+  // recommended default only when it is the channel model's default-selectable
+  // pick among the builds matching this config_string. A preview-only config
+  // resolves to a preview build, which is never default-selectable, so it reads
+  // as not-recommended — matching the 1.0 bundle.
+  let firmwareIsRecommendedDefault = false;
+  try {
+    const builds = resolved && Array.isArray(resolved.builds) ? resolved.builds : [];
+    const def = engine.channels.pickDefaultBuild(builds, { mode: releaseMode });
+    firmwareIsRecommendedDefault = Boolean(build && def && def === build);
+  } catch {
+    firmwareIsRecommendedDefault = false;
+  }
+
+  let postFlashSnapshot = null;
+  try {
+    postFlashSnapshot = engine.postFlash.service.getSnapshot();
+  } catch {
+    postFlashSnapshot = null;
+  }
+
+  return {
+    configuration,
+    // The 2.0 flow has three steps (Identify, Install, Connect); report them
+    // 1-indexed so the bundle's current_step / max_reachable_step read honestly
+    // for this view rather than borrowing the 1.0 five-step numbering.
+    stepInfo: { current: state.step + 1, maxReachable: state.maxReached + 1 },
+    manifestData,
+    manifestFreshness,
+    currentFirmware: build,
+    releaseMode,
+    firmwareIsRecommendedDefault,
+    // channelAcknowledgementsCompleted is intentionally left unset: the 2.0
+    // channel-acknowledgement state lives inside the InstallStep gate, not in a
+    // shared store this snapshot can read. The engine's buildFirmwareSection then
+    // falls back to "no acknowledgement required => complete", which is honest —
+    // it never reports a required acknowledgement as satisfied without evidence.
+    postFlashSnapshot,
+    configStringRequested: (resolved && resolved.configString) || null,
+  };
+}
+
+// Record the active configuration mode (kit vs custom) and the selected kit into
+// the engine's diagnostics session state so the bundle's configuration section
+// reflects the 2.0 selection, mirroring how the 1.0 kit-mode controller records
+// it. Called on every selection change. The SKU and kit display name are product
+// identifiers, not customer data; no Wi-Fi credential is ever recorded.
+function recordDiagnosticsConfiguration() {
+  if (!engine || !engine.diagnostics) {
+    return;
+  }
+  if (state.mode === 'kit' && state.kit) {
+    engine.diagnostics.setConfigurationMode('kit');
+    engine.diagnostics.setSelectedKitSku(state.kit.sku || null);
+    engine.diagnostics.setActiveKitMetadata({
+      sku: state.kit.sku || null,
+      display_name: state.kit.display_name || null,
+      firmware_config_string: state.kit.firmware_config_string || null,
+      sample: Boolean(state.kit.sample),
+    });
+  } else {
+    engine.diagnostics.setConfigurationMode('manual');
+    engine.diagnostics.setSelectedKitSku(null);
+    engine.diagnostics.setActiveKitMetadata(null);
+  }
 }
 
 // ----- shell -----
@@ -411,6 +533,17 @@ export function mountWebFlash2(root, options = {}) {
   }
   if (options.recovery) {
     recovery = options.recovery;
+  }
+
+  // PR 9 — install the 2.0 support-bundle state provider and the delegated copy /
+  // download action handler. The provider makes the engine's redacted bundle
+  // reflect the 2.0 resolved build and selection; initSupportBundleActions binds
+  // the [data-copy-support-bundle] / [data-download-support-bundle] controls that
+  // the 2.0 preflight panel and the reused 1.0 rescue + error-log modals render.
+  // Both are idempotent, so this is safe across remounts.
+  if (engine && engine.diagnostics) {
+    engine.diagnostics.setSupportBundleStateProvider(buildDiagnosticsSnapshot);
+    engine.diagnostics.initSupportBundleActions();
   }
 
   document.documentElement.setAttribute('data-theme', state.theme);

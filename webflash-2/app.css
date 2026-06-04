@@ -654,6 +654,22 @@ button { font-family: inherit; }
 .callout--info { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent-press); }
 .callout--warn b, .callout--info b { font-weight: 700; }
 
+/* ---------- Support bundle (preflight panel footer) ---------- */
+.wf2-support {
+  margin: 22px 0 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.wf2-support__title { font-size: 0.95rem; font-weight: 650; margin: 0 0 4px; }
+.wf2-support__text {
+  font-size: 0.85rem; line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.wf2-support__actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
 /* ---------- Flash progress ---------- */
 .flash {
   text-align: center;
