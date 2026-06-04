@@ -47,8 +47,15 @@
  * (Identify step on the real engine) added the pure compatible-firmware lookup
  * `state.resolveCompatibleFirmware`, which resolves a wizard-state snapshot to the
  * real manifest builds by config_string without touching the 1.0 DOM or the shared
- * `configuration` object. This module remains a facade only; every export is a live
- * reference to the real engine function.
+ * `configuration` object. PR 5 (Install gate on the real engine) added two more
+ * view-agnostic bindings on the same principle: `state.verifyFirmwareIntegrity`
+ * (SHA-256 verification of the downloaded bytes via SubtleCrypto, owned by
+ * state.js) and `state.evaluateInstallGate` (the pure composite gate over
+ * provenance, integrity, freshness, service-worker, the seven-tier channel
+ * acknowledgement, and the before-you-flash acknowledgement), plus the
+ * `capabilities` namespace for the desktop / Web Serial / secure-context decision.
+ * This module remains a facade only; every export is a live reference to the real
+ * engine function.
  *
  * @module webflash-2/engine
  */
@@ -68,9 +75,21 @@ import {
     setStep,
     getMaxReachableStep,
     getFirmwareReadiness,
-    resolveCompatibleFirmware
+    resolveCompatibleFirmware,
+    verifyFirmwareIntegrity,
+    evaluateInstallGate,
+    INSTALL_GATE_CHECK_IDS
 } from '../../scripts/state.js';
 import { getManifestMetadataForAbout } from '../../scripts/state.js';
+
+// ---------------------------------------------------------------------------
+// scripts/capabilities.js — desktop / Web Serial / secure-context detection.
+// The engine owns the capability decision; the view renders it.
+// ---------------------------------------------------------------------------
+import {
+    detectCapabilities,
+    evaluateBrowserReadiness
+} from '../../scripts/capabilities.js';
 
 // ---------------------------------------------------------------------------
 // scripts/utils/release-channels.js — seven-tier channel model, badges,
@@ -199,7 +218,21 @@ export const state = Object.freeze({
     getMaxReachableStep,
     getFirmwareReadiness,
     getManifestMetadataForAbout,
-    resolveCompatibleFirmware
+    resolveCompatibleFirmware,
+    // PR 5 — view-agnostic install-gate bindings. verifyFirmwareIntegrity runs
+    // SHA-256 verification of the downloaded bytes against the manifest;
+    // evaluateInstallGate folds every engine verdict (provenance, integrity,
+    // freshness, service-worker, channel acknowledgement, before-you-flash) into
+    // a single machine-readable gate result keyed by INSTALL_GATE_CHECK_IDS.
+    verifyFirmwareIntegrity,
+    evaluateInstallGate,
+    INSTALL_GATE_CHECK_IDS
+});
+
+/** Desktop / Web Serial / secure-context capability detection. The engine decides; the view renders. */
+export const capabilities = Object.freeze({
+    detectCapabilities,
+    evaluateBrowserReadiness
 });
 
 /** Seven-tier release-channel model: badges, warnings, acknowledgement needs, default-build pick. */
@@ -304,6 +337,7 @@ export const diagnostics = Object.freeze({
 /** The full engine surface, one namespace per engine module. */
 export const engine = Object.freeze({
     state,
+    capabilities,
     channels,
     provenance,
     freshness,

@@ -76,16 +76,14 @@ export const FAN = [
 export const LED = { id: 'led', name: 'Sense360 LED ring', sku: 'S360-300', code: 'LED', desc: 'Visual feedback ring with optional microphone for voice-enabled cores.', req: ['Core R4', 'J11 data', 'J12 power'] };
 
 // ---- Readiness checks (preflight) ----
-// The `verify` check is terminal:'skip', not a pass. WebFlash 1.0 does not
-// perform cryptographic signature verification and reports signature_verified as
-// skip; the 2.0 preview mirrors that non-claim. Do not render it as a pass and
-// do not reintroduce a "signature valid" claim until real verification ships.
-export const CHECKS = [
-  { id: 'browser', name: 'Browser support', okSub: 'Chrome 124 · Web Serial available', waitSub: 'Checking Web Serial support…' },
-  { id: 'secure', name: 'Secure context', okSub: 'Served over HTTPS', waitSub: 'Verifying secure origin…' },
-  { id: 'manifest', name: 'Firmware manifest', okSub: 'Up to date · checked just now', waitSub: 'Fetching latest manifest…' },
-  { id: 'verify', name: 'Firmware verification', terminal: 'skip', skipSub: 'Signature metadata present', waitSub: 'Checking firmware metadata…' },
-];
+// PR 5 of the WebFlash 2.0 migration removed the simulated `CHECKS` array (the
+// readiness checklist that auto-passed on setTimeout). The Install step now
+// composes the real install gate from the engine and renders the preflight
+// panel from the machine-readable results keyed by
+// engine.state.INSTALL_GATE_CHECK_IDS. There is no simulated readiness data
+// left here; the panel rows and their statuses come from
+// engine.state.evaluateInstallGate(). The signature stays a non-claim: the
+// firmware-verification row never asserts cryptographic signature verification.
 
 // ---- Builder selection <-> engine wizard-state mapping ----
 // The advanced builder tracks a small UI selection shape:

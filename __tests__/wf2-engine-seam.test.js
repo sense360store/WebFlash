@@ -20,6 +20,7 @@ import { describe, it, expect } from '@jest/globals';
 
 import engine, {
     state,
+    capabilities,
     channels,
     provenance,
     freshness,
@@ -32,7 +33,7 @@ import engine, {
 
 // Direct imports of one representative export per engine module, used to prove
 // the seam re-exports live references rather than reimplementing anything.
-import { setState } from '../scripts/state.js';
+import { setState, verifyFirmwareIntegrity, evaluateInstallGate, INSTALL_GATE_CHECK_IDS } from '../scripts/state.js';
 import { isStableChannel } from '../scripts/utils/release-channels.js';
 import { validateFirmwareProvenance, CHECK_IDS } from '../scripts/utils/firmware-provenance.js';
 import { checkManifestFreshness } from '../scripts/services/manifest-freshness.js';
@@ -41,6 +42,7 @@ import { clearWebFlashCache } from '../scripts/services/cache-clear.js';
 import { loadKitCatalog } from '../scripts/utils/kit-config.js';
 import { getFocusableElements } from '../scripts/utils/a11y.js';
 import { buildSupportBundle } from '../scripts/services/diagnostics.js';
+import { detectCapabilities } from '../scripts/capabilities.js';
 
 describe('PR 2 — WebFlash 2.0 engine seam', () => {
     it('imports every engine module from a 2.0-side module without throwing', () => {
@@ -56,6 +58,7 @@ describe('PR 2 — WebFlash 2.0 engine seam', () => {
         expect(Object.keys(engine).sort()).toEqual([
             'a11y',
             'cache',
+            'capabilities',
             'channels',
             'diagnostics',
             'freshness',
@@ -71,6 +74,7 @@ describe('PR 2 — WebFlash 2.0 engine seam', () => {
 
     it('named namespace exports are the same objects as the default export bundles', () => {
         expect(engine.state).toBe(state);
+        expect(engine.capabilities).toBe(capabilities);
         expect(engine.channels).toBe(channels);
         expect(engine.provenance).toBe(provenance);
         expect(engine.freshness).toBe(freshness);
@@ -103,11 +107,36 @@ describe('PR 2 — WebFlash 2.0 engine seam', () => {
             expect(state.setState).toBe(setState);
         });
 
+        it('exposes the PR 5 install-gate bindings as live references', () => {
+            // SHA-256 verification of the downloaded bytes + the composite gate.
+            expect(typeof state.verifyFirmwareIntegrity).toBe('function');
+            expect(typeof state.evaluateInstallGate).toBe('function');
+            expect(state.verifyFirmwareIntegrity).toBe(verifyFirmwareIntegrity);
+            expect(state.evaluateInstallGate).toBe(evaluateInstallGate);
+            // Stable preflight-panel check ids the view renders by.
+            expect(state.INSTALL_GATE_CHECK_IDS).toBe(INSTALL_GATE_CHECK_IDS);
+            expect(state.INSTALL_GATE_CHECK_IDS && typeof state.INSTALL_GATE_CHECK_IDS).toBe('object');
+            expect(Object.values(state.INSTALL_GATE_CHECK_IDS)).toEqual(
+                expect.arrayContaining(['browser-support', 'secure-context', 'manifest-freshness', 'firmware-verification'])
+            );
+        });
+
         it('does not leak the 1.0 render internals or test hooks', () => {
             expect(state.__testHooks).toBeUndefined();
             expect(state.updateFirmwareControls).toBeUndefined();
             expect(state.findCompatibleFirmware).toBeUndefined();
             expect(state.createFirmwareCardHtml).toBeUndefined();
+        });
+    });
+
+    describe('capabilities surface', () => {
+        it('exposes the desktop / Web Serial / secure-context detection', () => {
+            expect(typeof capabilities.detectCapabilities).toBe('function');
+            expect(typeof capabilities.evaluateBrowserReadiness).toBe('function');
+        });
+
+        it('re-exports the live capabilities function', () => {
+            expect(capabilities.detectCapabilities).toBe(detectCapabilities);
         });
     });
 
