@@ -388,6 +388,31 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     h('b', null, 'leave this tab open'), " until flashing finishes. Don't disconnect power or USB during the install.",
   ]);
 
+  // ----- support bundle (PR 9) -----
+  // The preflight panel is one of the three 2.0 surfaces that expose the engine's
+  // redacted schema_version:1 support bundle (alongside the rescue / recovery
+  // modal and the error log modal). The buttons carry the same
+  // [data-copy-support-bundle] / [data-download-support-bundle] hooks the 1.0
+  // preflight help modal uses, driven by the same delegated handler the view
+  // wires through engine.diagnostics.initSupportBundleActions(). The bundle is
+  // built and redacted entirely by the engine; this panel never assembles or
+  // stores it, so it cannot leak a firmware binary, a raw sha256 / signature, or
+  // a Wi-Fi password. Rendered only when the engine is present (the bare scaffold
+  // mount has no bundle to copy).
+  const supportEl = engine ? h('div', { class: 'wf2-support', 'data-wf2-support': '' },
+    h('h3', { class: 'wf2-support__title' }, 'Sharing this with support?'),
+    h('p', { class: 'wf2-support__text' },
+      'Copy a structured, redacted snapshot of your browser, manifest, firmware ',
+      'selection, preflight, and recent flash attempts. Wi-Fi passwords, tokens, ',
+      'MAC addresses, and filesystem paths are stripped before it leaves your browser.'),
+    h('div', { class: 'wf2-support__actions' },
+      h('button', { class: 'btn btn--ghost', type: 'button', 'data-copy-support-bundle': '' },
+        icon('shield'), ' Copy support bundle'),
+      h('button', { class: 'btn btn--ghost', type: 'button', 'data-download-support-bundle': '' },
+        icon('download'), ' Download JSON'),
+    ),
+  ) : null;
+
   // ----- prep view + (hidden) real flash-progress view -----
   // Both live inside mainEl so the ESP Web Tools host stays attached for the whole
   // flash: when flashing starts we hide the prep view and reveal the progress
@@ -411,6 +436,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
       h('span', { class: 'stepnav__spacer' }),
       installHost,
     ),
+    supportEl,
   );
   const flashEl = h('div', { hidden: true });
 
