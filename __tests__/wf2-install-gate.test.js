@@ -14,7 +14,7 @@
  *     the manifest SHA-256 via SubtleCrypto without touching the DOM;
  *   - the 2.0 InstallStep renders the preflight panel by stable check id and arms
  *     install only when the gate passes;
- *   - the CHECKS simulation is gone from webflash-2/scripts/data.js.
+ *   - the CHECKS simulation is gone from scripts/data.js.
  *
  * Node 22's crypto.webcrypto.subtle implements the same Web Crypto SHA-256
  * surface the wizard uses, so we patch globalThis.crypto to exercise the real
@@ -377,8 +377,8 @@ describe('PR 5 — InstallStep bound to the engine', () => {
   });
 
   async function mountInstallStep(wizardState) {
-    const engine = (await import('../webflash-2/scripts/engine.js')).default;
-    const { InstallStep } = await import('../webflash-2/scripts/install.js');
+    const engine = (await import('../scripts/engine.js')).default;
+    const { InstallStep } = await import('../scripts/install.js');
     const resolved = await engine.state.resolveCompatibleFirmware(wizardState);
     const root = document.createElement('div');
     document.body.appendChild(root);
@@ -431,7 +431,7 @@ describe('PR 5 — InstallStep bound to the engine', () => {
 
 describe('PR 5 — the CHECKS simulation is deleted', () => {
   it('no longer exports a simulated readiness CHECKS array from data.js', async () => {
-    const data = await import('../webflash-2/scripts/data.js');
+    const data = await import('../scripts/data.js');
     expect(data.CHECKS).toBeUndefined();
   });
 });

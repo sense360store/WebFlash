@@ -1,8 +1,7 @@
 /**
- * Tests focus restoration and ARIA semantics for the changelog and error
- * log modals. The rescue and preflight-help modal already cover the focus
- * restoration pattern — these tests catch regressions in the other two
- * dialog surfaces.
+ * Tests focus restoration and ARIA semantics for the error log modal. The
+ * rescue modal already covers the focus restoration pattern — this test catches
+ * regressions in the other dialog surface the 2.0 view still mounts.
  */
 import { jest } from '@jest/globals';
 
@@ -65,57 +64,5 @@ describe('error log modal accessibility', () => {
                 resolve();
             }, 150);
         });
-    });
-});
-
-describe('changelog modal accessibility', () => {
-    let mod;
-
-    beforeEach(async () => {
-        jest.resetModules();
-        document.body.innerHTML = '';
-        document.body.style.overflow = '';
-
-        jest.unstable_mockModule('../scripts/services/changelog.js', () => ({
-            getChangelog: jest.fn(async () => []),
-            getChangelogForConfig: jest.fn(async () => []),
-            formatDate: jest.fn(() => '')
-        }));
-
-        mod = await import('../scripts/layout/changelog-modal.js');
-    });
-
-    afterEach(() => {
-        document.body.innerHTML = '';
-    });
-
-    test('opens with dialog semantics and focuses close button', async () => {
-        const trigger = document.createElement('button');
-        trigger.dataset.changelogTrigger = '';
-        document.body.appendChild(trigger);
-        trigger.focus();
-
-        await mod.openChangelogModal('Ceiling-USB', { trigger });
-
-        const modal = document.querySelector('.changelog-modal');
-        expect(modal).not.toBeNull();
-        expect(modal.getAttribute('role')).toBe('dialog');
-        expect(modal.getAttribute('aria-modal')).toBe('true');
-        expect(modal.getAttribute('aria-labelledby')).toBe('changelog-modal-title');
-    });
-
-    test('closeModal restores focus to the original trigger', async () => {
-        const trigger = document.createElement('button');
-        trigger.dataset.changelogTrigger = '';
-        document.body.appendChild(trigger);
-        trigger.focus();
-
-        await mod.openChangelogModal('Ceiling-USB', { trigger });
-
-        // Allow the modal's deferred close-button focus to run.
-        await new Promise((resolve) => setTimeout(resolve, 150));
-
-        mod.closeModal();
-        expect(document.activeElement).toBe(trigger);
     });
 });

@@ -78,8 +78,8 @@ async function boot(search = '') {
   if (search) {
     window.history.replaceState({}, '', '/' + search);
   }
-  const engine = (await import('../webflash-2/scripts/engine.js')).default;
-  const app = await import('../webflash-2/scripts/app.js');
+  const engine = (await import('../scripts/engine.js')).default;
+  const app = await import('../scripts/app.js');
   return { engine, app };
 }
 
@@ -104,7 +104,7 @@ afterEach(() => {
 
 describe('PR 8 — engine seam exposes release-mode visibility', () => {
   it('re-exports getReleaseMode and setReleaseModeFromUrl as live references', async () => {
-    const engine = (await import('../webflash-2/scripts/engine.js')).default;
+    const engine = (await import('../scripts/engine.js')).default;
     const stateMod = await import('../scripts/state.js');
     expect(typeof engine.state.getReleaseMode).toBe('function');
     expect(typeof engine.state.setReleaseModeFromUrl).toBe('function');
@@ -113,7 +113,7 @@ describe('PR 8 — engine seam exposes release-mode visibility', () => {
   });
 
   it('applies the URL ?mode= opt-in to the engine release mode', async () => {
-    const engine = (await import('../webflash-2/scripts/engine.js')).default;
+    const engine = (await import('../scripts/engine.js')).default;
     // Default is the safe production mode.
     engine.state.setReleaseModeFromUrl(new URLSearchParams(''));
     expect(engine.state.getReleaseMode()).toBe('normal');

@@ -16,7 +16,7 @@
  *     shown only when the selected build advertises improv:true;
  *   - builds without Improv report the honest `unknown` validation result by
  *     default;
- *   - the NETWORKS simulation is gone from webflash-2/scripts/connect.js.
+ *   - the NETWORKS simulation is gone from scripts/connect.js.
  *
  * The post-flash state machine itself is exhaustively unit-tested by
  * __tests__/post-flash-state-machine.test.js and post-flash-validation.test.js.
@@ -36,9 +36,9 @@ beforeAll(() => {
 });
 
 const ROOT = process.cwd();
-const CONNECT_SRC = readFileSync(join(ROOT, 'webflash-2', 'scripts', 'connect.js'), 'utf8');
-const INSTALL_SRC = readFileSync(join(ROOT, 'webflash-2', 'scripts', 'install.js'), 'utf8');
-const ENGINE_SRC = readFileSync(join(ROOT, 'webflash-2', 'scripts', 'engine.js'), 'utf8');
+const CONNECT_SRC = readFileSync(join(ROOT, 'scripts', 'connect.js'), 'utf8');
+const INSTALL_SRC = readFileSync(join(ROOT, 'scripts', 'install.js'), 'utf8');
+const ENGINE_SRC = readFileSync(join(ROOT, 'scripts', 'engine.js'), 'utf8');
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const kitsJson = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'kits.json'), 'utf8'));
 
@@ -143,7 +143,7 @@ describe('PR 7 — engine.postFlash binding', () => {
     a11yStub.announce.mockReset();
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
-    engine = (await import('../webflash-2/scripts/engine.js')).default;
+    engine = (await import('../scripts/engine.js')).default;
     engine.postFlash.service.reset();
   });
 
@@ -163,7 +163,7 @@ describe('PR 7 — engine.postFlash binding', () => {
   });
 
   it('the Install step seeds the service with the resolved build and lifecycle', async () => {
-    const { InstallStep } = await import('../webflash-2/scripts/install.js');
+    const { InstallStep } = await import('../scripts/install.js');
     const resolved = await engine.state.resolveCompatibleFirmware({
       mount: 'ceiling', power: 'poe', bathroom: true, ventiq: 'ventiq', roomiq: 'roomiq',
     });
@@ -203,8 +203,8 @@ describe('PR 7 — ConnectStep renders the post-flash validation panel', () => {
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
     document.body.innerHTML = '';
-    engine = (await import('../webflash-2/scripts/engine.js')).default;
-    ({ ConnectStep } = await import('../webflash-2/scripts/connect.js'));
+    engine = (await import('../scripts/engine.js')).default;
+    ({ ConnectStep } = await import('../scripts/connect.js'));
     engine.postFlash.service.reset();
   });
 

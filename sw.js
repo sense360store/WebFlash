@@ -96,11 +96,21 @@
  *   webflash-app-shell marker (2026-06-04-2). The activate handler below still
  *   purges every non-current `webflash-*` cache, so this bump just works; the
  *   per-asset-class fetch strategy is unchanged. See docs/deploy-notes.md.
+ *   `webflash-v16` (WebFlash 2.0 migration, PR 13) bumps again: the 1.0 view and
+ *   the dual-view `?ui` flag were removed after the GA cutover soaked one release.
+ *   The 2.0 view (scripts/shell.js, folded in from the old webflash-2/ path) is
+ *   now the only view and the precache list below was rewritten accordingly: the
+ *   removed 1.0 render-layer modules, ui-version.js, and the old root app.js / ui.js
+ *   are dropped, and the 2.0 view modules plus app.css were added. Existing installs
+ *   must purge v15 so the single-view shell ships intact, in lockstep with the
+ *   index.html / bootstrap `?v=` token (202606043) and the webflash-app-shell marker
+ *   (2026-06-04-3). The activate purge and the per-asset-class fetch strategy are
+ *   unchanged. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v15';
+const CACHE_NAME = 'webflash-v16';
 const CACHE_VERSION = 5;
 
 /**
@@ -110,8 +120,7 @@ const CACHE_VERSION = 5;
 const STATIC_ASSETS = [
     './',
     './index.html',
-    './app.js',
-    './ui.js',
+    './app.css',
     './manifest.json',
     './firmware/rescue/manifest.json',
     // The rescue binary is precached because the rescue/recovery flow is
@@ -128,51 +137,56 @@ const STATIC_ASSETS = [
     './css/features.css',
     './css/device-qr.css',
     './sense360-logo-new.png',
-    './sense360-favicon-32.png'
+    './sense360-favicon-32.png',
+    './assets/sense360-logo.png'
 ];
 
 /**
- * Script modules to cache.
+ * Script modules to cache for offline use.
  *
- * IMPORTANT: any new top-level script imported by index.html or app.js
- * must be listed here, otherwise it will be unavailable when the page is
- * loaded offline (the `import` statement will 404 against the SW cache).
+ * IMPORTANT: any new module imported by index.html, scripts/bootstrap.js, or the
+ * 2.0 view (scripts/shell.js and the modules it pulls in) must be listed here,
+ * otherwise it will be unavailable when the page is loaded offline (the `import`
+ * statement will 404 against the SW cache). Conversely, every entry below MUST
+ * exist on disk: cache.addAll() rejects the whole install if any URL 404s.
+ *
+ * After the WebFlash 2.0 GA (PR 13) this is the single-view module graph: the
+ * bootstrap, the 2.0 view (folded in from the old webflash-2/ path), and the 1.0
+ * engine the view renders over.
  */
 const SCRIPT_MODULES = [
     './scripts/bootstrap.js',
-    './scripts/ui-version.js',
-    './scripts/build-info.js',
-    './scripts/capabilities.js',
-    './scripts/compat-config.js',
-    './scripts/init-review.js',
-    './scripts/navigation.js',
-    './scripts/prefs.js',
-    './scripts/recommended-bundle.js',
-    './scripts/kit-mode.js',
-    './scripts/kit-presets.js',
-    './scripts/simple-install.js',
+    // 2.0 view (folded in from webflash-2/scripts/).
+    './scripts/shell.js',
+    './scripts/app.js',
+    './scripts/connect.js',
+    './scripts/data.js',
+    './scripts/engine.js',
+    './scripts/h.js',
+    './scripts/icons.js',
+    './scripts/identify.js',
+    './scripts/install.js',
+    './scripts/modal.js',
+    './scripts/ui.js',
+    // Engine: central state machine + capability detection.
     './scripts/state.js',
-    './scripts/ui-capability-bar.js',
-    './scripts/wizard-state-observer.js',
+    './scripts/capabilities.js',
+    // Engine data (kits.json is fetched at runtime by utils/kit-config.js).
     './scripts/data/module-requirements.js',
     './scripts/data/kits.json',
-    './scripts/data/kit-presets.js',
-    './scripts/data/simple-bundles.js',
-    './scripts/content/option-tooltips.js',
-    './scripts/layout/about-panel.js',
-    './scripts/layout/firmware-note.js',
-    './scripts/layout/freshness-banner.js',
-    './scripts/layout/init-splitview.js',
-    './scripts/layout/option-info-popover.js',
-    './scripts/layout/post-flash-panel.js',
-    './scripts/layout/preflight-banner.js',
-    './scripts/layout/preflight-help-modal.js',
-    './scripts/layout/rescue-entry.js',
+    // Shared modals the 2.0 view reuses (rescue / recovery + error log) plus the
+    // freshness banner state.js drives.
     './scripts/layout/rescue-modal.js',
-    './scripts/layout/state-summary.js',
+    './scripts/layout/error-log-modal.js',
+    './scripts/layout/freshness-banner.js',
+    // Engine services.
+    './scripts/services/cache-clear.js',
     './scripts/services/diagnostics.js',
+    './scripts/services/error-log.js',
     './scripts/services/manifest-freshness.js',
     './scripts/services/post-flash.js',
+    './scripts/services/sw-update.js',
+    // Engine utilities.
     './scripts/utils/a11y.js',
     './scripts/utils/channel-alias.js',
     './scripts/utils/copy-to-clipboard.js',
@@ -180,11 +194,12 @@ const SCRIPT_MODULES = [
     './scripts/utils/file-download.js',
     './scripts/utils/firmware-nearest.js',
     './scripts/utils/firmware-provenance.js',
+    './scripts/utils/firmware-readiness.js',
     './scripts/utils/firmware-signature.js',
     './scripts/utils/firmware-trusted-keys.js',
     './scripts/utils/flash-history.js',
     './scripts/utils/kit-config.js',
-    './scripts/utils/preset-storage.js',
+    './scripts/utils/module-availability.js',
     './scripts/utils/release-channels.js',
     './scripts/utils/url-config.js'
 ];

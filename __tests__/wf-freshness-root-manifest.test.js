@@ -342,8 +342,7 @@ describe('WF-FRESHNESS-ROOT-MANIFEST-001 — state.js end-to-end', () => {
         expect(result.reason).toBe('missing-loaded-generated-at');
     });
 
-    test('the install-readiness freshness axis reads current (Simple install shows no firmware-list warning)', async () => {
-        document.documentElement.setAttribute('data-install-mode', 'simple');
+    test('the install-readiness freshness axis reads current after a healthy manifest load', async () => {
         const mod = await import('../scripts/state.js');
         const { __testHooks } = mod;
         await __testHooks.loadManifestData({ forceReload: true });
@@ -353,23 +352,6 @@ describe('WF-FRESHNESS-ROOT-MANIFEST-001 — state.js end-to-end', () => {
         expect(readiness).not.toBeNull();
         expect(readiness.freshness.state).toBe('current');
         expect(readiness.freshness.hardBlock).toBe(false);
-
-        // Feed the REAL readiness into the Simple-install controller: the calm
-        // secondary "Couldn't recheck for updates" note must stay hidden.
-        const simple = await import('../scripts/simple-install.js');
-        simple.renderStatus(readiness);
-        const note = document.querySelector('[data-simple-install-freshness-note]');
-        expect(note.hidden).toBe(true);
-        expect(note.getAttribute('aria-hidden')).toBe('true');
-    });
-
-    test('contrast: an unknown freshness axis DOES surface the calm Simple-install note', async () => {
-        document.documentElement.setAttribute('data-install-mode', 'simple');
-        const mod = await import('../scripts/state.js');
-        const simple = await import('../scripts/simple-install.js');
-        simple.renderStatus({ reason: 'ready', freshness: { state: 'unknown', hasRun: true, acknowledged: false, hardBlock: false } });
-        const note = document.querySelector('[data-simple-install-freshness-note]');
-        expect(note.hidden).toBe(false);
     });
 
     test('stale manifest still hard-blocks in Simple install', async () => {

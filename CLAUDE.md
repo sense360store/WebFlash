@@ -64,11 +64,11 @@ There is no lint or typecheck step. CI runs `npm test -- --ci` with `continue-on
 
 ## Architecture
 
-### Wizard frontend (entry: `app.js`)
+### Wizard frontend (entry: `index.html` → `scripts/bootstrap.js` → `scripts/shell.js`)
 
-`app.js` imports each wizard module exactly once and registers the service worker. The order in `app.js` matters — `state.js` must load before modules that read state, and `error-log.js` is imported early via `state.js` to capture manifest-load failures.
+After the WebFlash 2.0 migration completed (PR 13) there is a **single view**. `index.html` loads `scripts/bootstrap.js`, which mounts the 2.0 view (`scripts/shell.js` → `scripts/app.js`'s `mountWebFlash2`) inside the production shell. The 2.0 view is a render layer only: it reaches the 1.0 **engine** through the `scripts/engine.js` facade and never owns a gating decision. The old 1.0 render layer (the repo-root `app.js` and its wizard modules) and the `?ui` dual-view flag (`scripts/ui-version.js`) were removed; the 2.0 view files were folded from `webflash-2/` into the repo root. Some "Other notable pieces" below (e.g. `kit-mode.js`, `kit-presets.js`, `recommended-bundle.js`, `preset-storage.js`, `wizard-state-observer.js`, `esp-web-tools-overrides.js`) were part of that removed 1.0 layer and no longer exist; they are kept here only as historical context.
 
-`scripts/state.js` (~5000 lines) is the **central state module** and the source of truth. It owns:
+`scripts/state.js` (~5000 lines) is the **central state module** and the source of truth (unchanged by the migration). It owns:
 
 - The wizard configuration object (`mounting`, `power`, `bathroom`, plus module keys `voice`, `led`, `airiq`, `fan`, `ventiq`).
 - Step gating via `getMaxReachableStep()` — step 2 unlocks once `mounting` is set, step 3 once `power` is set, etc.
@@ -152,6 +152,8 @@ Otherwise the frontend will fail to find a build that the manifest claims exists
 ## WebFlash 2.0 migration (standing instructions)
 
 These standing instructions apply to every WebFlash 2.0 migration PR (the `wf2-*` sequence that moves the installer from the 1.0 view to the 2.0 view over the same 1.0 engine). The controlling plan is [`docs/webflash-2-migration.md`](docs/webflash-2-migration.md) (what to build: the simulation-to-real mapping, the data-model corrections, and the GA acceptance gates); the delivery method is [`docs/webflash-2-migration-delivery.md`](docs/webflash-2-migration-delivery.md); the per-PR runbook is [`docs/webflash-2-migration-prompts.md`](docs/webflash-2-migration-prompts.md); the architecture decision is recorded in [`docs/adr/0001-webflash-2-view-over-engine.md`](docs/adr/0001-webflash-2-view-over-engine.md). Read the strategy doc and the delivery plan before starting any `wf2-*` PR.
+
+**Migration status — complete (PR 13).** The full `wf2-*` sequence (PR 0 through PR 13) has landed. The 2.0 view is the **only** view: PR 12 flipped the production default to it, and PR 13 then removed the `?ui=1` fallback, deleted `scripts/ui-version.js` and the dual-view branch in `scripts/bootstrap.js`, removed the entire 1.0 render layer (the repo-root `app.js` / `ui.js`, every 1.0-only `scripts/*.js` / `scripts/layout/*` / `scripts/services/{changelog,device-info,sensor-health,update-checker}.js` / `scripts/data/{kit-presets,simple-bundles,fan-bundle-import-readiness}.js` / `scripts/content/option-tooltips.js` module, and the 1.0 wizard markup in `index.html`), and folded the former `webflash-2/` tree into the repo root (its `scripts/*` now live under `scripts/`, `app.css` and `assets/` at the root). The **engine** (`scripts/state.js`, `scripts/capabilities.js`, `scripts/utils/*`, `scripts/services/*` minus the four removed UI-only services, `scripts/data/{module-requirements.js,kits.json}`, and the kept `scripts/layout/{rescue-modal,error-log-modal,freshness-banner}.js`) and the **trust model** are unchanged — no firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, kit, or release-channel/install-gate logic changed. The flag-discipline rule below is therefore historical: there is no `?ui` flag any more, and any future work targets the single 2.0 view directly. The retained `css/*.css` sheets stay because the reused rescue / error-log modals render with them.
 
 Repo conventions:
 

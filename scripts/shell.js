@@ -1,9 +1,9 @@
 /* WebFlash 2.0 — production-shell boot.
 
-   PR 3 of the WebFlash 2.0 migration. Mounts the 2.0 view inside the production
-   index.html when the page is loaded with ?ui=2. Reachable only through
-   scripts/bootstrap.js, which imports this module instead of app.js when it sees
-   ?ui=2; the default ?ui=1 path never imports this file.
+   The sole view entry point. scripts/bootstrap.js always imports this module to
+   mount the 2.0 view inside the production index.html. (The 1.0 view and the
+   ?ui dual-view flag were removed in PR 13 of the WebFlash 2.0 migration, which
+   also folded this file from webflash-2/scripts/ into scripts/.)
 
    Mounting at the same origin is the whole point: the 2.0 view inherits the
    production Content-Security-Policy (the meta tag in index.html), the service
@@ -15,14 +15,14 @@
    to the 2.0 view with the engine accessibility primitives. */
 import { mountWebFlash2 } from './app.js';
 import engine from './engine.js';
-import { initServiceWorkerUpdates } from '../../scripts/services/sw-update.js';
-import { openRescueModal } from '../../scripts/layout/rescue-modal.js';
+import { initServiceWorkerUpdates } from './services/sw-update.js';
+import { openRescueModal } from './layout/rescue-modal.js';
 import {
   announce,
   trapFocus,
   restoreFocus,
   getFocusableElements,
-} from '../../scripts/utils/a11y.js';
+} from './utils/a11y.js';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&

@@ -54,7 +54,7 @@ import {
   restoreFocus,
   getFocusableElements,
 } from '../scripts/utils/a11y.js';
-import { openModal } from '../webflash-2/scripts/modal.js';
+import { openModal } from '../scripts/modal.js';
 
 beforeAll(() => {
   // jsdom's default crypto does not always expose subtle.digest; back it with
@@ -70,7 +70,7 @@ beforeAll(() => {
 const ROOT = process.cwd();
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const kitsJson = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'kits.json'), 'utf8'));
-const INSTALL_SRC = readFileSync(join(ROOT, 'webflash-2', 'scripts', 'install.js'), 'utf8');
+const INSTALL_SRC = readFileSync(join(ROOT, 'scripts', 'install.js'), 'utf8');
 
 const OK_CAPS = Object.freeze({ webSerial: true, secureContext: true, isMobile: false, browserName: 'Chrome' });
 
@@ -208,7 +208,7 @@ function channelAck(root) {
 }
 
 async function mountInstall(engine, build, props = {}) {
-  const { InstallStep } = await import('../webflash-2/scripts/install.js');
+  const { InstallStep } = await import('../scripts/install.js');
   const root = document.createElement('div');
   document.body.appendChild(root);
   const node = InstallStep({
@@ -236,7 +236,7 @@ describe('PR 10 — provenance gate parity (2.0 view bound to the engine)', () =
     a11yStub.announce.mockReset();
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
-    baseEngine = (await import('../webflash-2/scripts/engine.js')).default;
+    baseEngine = (await import('../scripts/engine.js')).default;
     baseEngine.postFlash.service.reset();
   });
 
@@ -308,7 +308,7 @@ describe('PR 10 — channel acknowledgement prune-on-mismatch (2.0 view)', () =>
     a11yStub.announce.mockReset();
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
-    baseEngine = (await import('../webflash-2/scripts/engine.js')).default;
+    baseEngine = (await import('../scripts/engine.js')).default;
     baseEngine.postFlash.service.reset();
   });
 
@@ -384,7 +384,7 @@ describe('PR 10 — manifest freshness matrix (2.0 view rendering)', () => {
     a11yStub.announce.mockReset();
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
-    baseEngine = (await import('../webflash-2/scripts/engine.js')).default;
+    baseEngine = (await import('../scripts/engine.js')).default;
     baseEngine.postFlash.service.reset();
   });
 
@@ -465,8 +465,8 @@ describe('PR 10 — kit-config rejection paths (2.0 view)', () => {
   async function boot(search, kitsPayload) {
     if (search) window.history.replaceState({}, '', '/' + search);
     global.fetch = makeFetch(kitsPayload);
-    const engine = (await import('../webflash-2/scripts/engine.js')).default;
-    const app = await import('../webflash-2/scripts/app.js');
+    const engine = (await import('../scripts/engine.js')).default;
+    const app = await import('../scripts/app.js');
     return { engine, app };
   }
 
@@ -569,7 +569,7 @@ describe('PR 10 — accessibility focus and modal behaviour (2.0 view)', () => {
   });
 
   it('opens the topbar Help affordance as a labelled dialog and restores focus on Escape', async () => {
-    const app = await import('../webflash-2/scripts/app.js');
+    const app = await import('../scripts/app.js');
     const root = document.createElement('div');
     document.body.appendChild(root);
     // Mount with the REAL engine a11y primitives so the focus trap and restore run.
@@ -626,7 +626,7 @@ describe('PR 10 — accessibility focus and modal behaviour (2.0 view)', () => {
   });
 
   it('renders a single focusable skip-link target main landmark for the shared skip link', async () => {
-    const app = await import('../webflash-2/scripts/app.js');
+    const app = await import('../scripts/app.js');
     const root = document.createElement('div');
     document.body.appendChild(root);
     app.mountWebFlash2(root, { a11y: realA11y, prefersReducedMotion: () => true });
@@ -661,8 +661,8 @@ describe('PR 10 — post-flash validation states (2.0 view)', () => {
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
     document.body.innerHTML = '';
-    engine = (await import('../webflash-2/scripts/engine.js')).default;
-    ConnectStep = (await import('../webflash-2/scripts/connect.js')).ConnectStep;
+    engine = (await import('../scripts/engine.js')).default;
+    ConnectStep = (await import('../scripts/connect.js')).ConnectStep;
     engine.postFlash.service.reset();
     serialConnectHandler = null;
   });

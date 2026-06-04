@@ -18,15 +18,15 @@
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
-import { Rail } from '../webflash-2/scripts/ui.js';
-import { openModal } from '../webflash-2/scripts/modal.js';
+import { Rail } from '../scripts/ui.js';
+import { openModal } from '../scripts/modal.js';
 import {
   announce,
   trapFocus,
   restoreFocus,
   getFocusableElements,
 } from '../scripts/utils/a11y.js';
-import { mountWebFlash2, __testHooks } from '../webflash-2/scripts/app.js';
+import { mountWebFlash2, __testHooks } from '../scripts/app.js';
 
 const STEPS = [
   { key: 'identify', label: 'Identify' },

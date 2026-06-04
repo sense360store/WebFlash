@@ -10,18 +10,18 @@ WebFlash provides a step-by-step wizard for configuring and flashing Sense360 fi
 
 For how WebFlash is built — the publishing pipeline and wizard frontend, the `manifest.json` boundary, the desktop-only constraint, and the deploy gate — see [`docs/architecture.md`](docs/architecture.md).
 
-## Interface version (WebFlash 2.0)
+## Interface version
 
-The installer ships two views over the same engine. The 2.0 view is the
-production default at the site root. The 1.0 view stays reachable at
-[`?ui=1`](https://sense360store.github.io/WebFlash/?ui=1) as a one release
-rollback, and a later release removes it. Both views run at the same origin and
-inherit the same Content Security Policy, service worker, manifest, and install
-gate, so the trust model is identical whichever view loads. The view is a render
-layer only: every gating decision (provenance, channel acknowledgement, SHA-256
-verification of the downloaded bytes, manifest freshness, service worker update,
-installability per the release gates, and the desktop only capability check) is
-owned by the engine and enforced the same in both views. See
+WebFlash ships a single installer view at the site root, served from the
+production shell (`index.html` loads `scripts/bootstrap.js`, which mounts the 2.0
+view in `scripts/shell.js`). There is no `?ui` flag and no alternate view: the
+WebFlash 2.0 redesign is the only view. The earlier 1.0 view and its one release
+`?ui=1` rollback were removed after the 2.0 GA cutover soaked a stable release.
+The view is a render layer only: every gating decision (provenance, channel
+acknowledgement, SHA-256 verification of the downloaded bytes, manifest
+freshness, service worker update, installability per the release gates, and the
+desktop only capability check) is owned by the engine (`scripts/state.js`,
+`scripts/utils/*`, `scripts/services/*`), which the migration left unchanged. See
 [`docs/webflash-2-migration.md`](docs/webflash-2-migration.md) and the decision
 record [`docs/adr/0001-webflash-2-view-over-engine.md`](docs/adr/0001-webflash-2-view-over-engine.md).
 

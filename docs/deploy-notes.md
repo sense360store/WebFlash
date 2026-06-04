@@ -129,3 +129,28 @@ churned the live cache to `webflash-v13` and PR 11's beta-default work took
 `webflash-v14`; the cache-name bump stays monotonic from there.
 `__tests__/wf2-ga-cutover.test.js` pins the flip, the `webflash-v15` floor, the
 token lockstep, and the unchanged activate purge.
+
+## WebFlash 2.0 single-view decommission (PR 13) — cache bump
+
+PR 13 removed the 1.0 view and the dual-view `?ui` flag after the GA cutover
+soaked a stable release, and folded the former `webflash-2/` tree into the repo
+root. `scripts/bootstrap.js` no longer branches on `resolveUiVersion()` (the
+`scripts/ui-version.js` module was deleted); it now always mounts the 2.0 view
+from `scripts/shell.js`. The changed shell + the rewritten `sw.js` precache list
+must re-prime, so the cache bumped in lockstep under the same contract above:
+
+- `index.html` `?v=` on the CSS links and the bootstrap loader, plus the
+  `webflash-app-shell` marker: `202606043` / `2026-06-04-3`.
+- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202606043`.
+- `sw.js` `CACHE_NAME`: `webflash-v15` to `webflash-v16`.
+
+The old root `app.js` per-import token and `scripts/build-info.js` `appShell`
+marker are gone with those files, so the lockstep is now the three points above
+(the deeper 2.0 modules carry no per-import token and re-prime on the cache-name
+bump, exactly like `state.js`). This is a deploy-layer plus view-removal change.
+The per-asset-class fetch strategy and the `activate` purge of non-current
+`webflash-*` caches are unchanged, and the install gate, manifest, firmware,
+`firmware/sources.json`, and `REQUIRED_CONFIGS` are untouched. The dedicated
+GA-cutover token-lockstep test (`__tests__/wf2-ga-cutover.test.js`) was removed
+with the dual-view surfaces it pinned, so the three-point lockstep above is
+maintained by this contract and verified before deploy.
