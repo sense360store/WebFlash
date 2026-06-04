@@ -18,8 +18,15 @@ import { Rail } from './ui.js';
 import { IdentifyStep } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
-import { SENSING, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
+import { AIR, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
 import { openModal } from './modal.js';
+
+// Brand logo, resolved relative to this module via import.meta.url (mirroring how
+// scripts/shell.js resolves the 2.0 stylesheet). A page-relative 'assets/…'
+// resolves against the host document, so it is only correct while the document
+// sits at the same depth as assets/; module-relative resolution is robust to
+// where the view is mounted.
+const LOGO_URL = new URL('../assets/sense360-logo.png', import.meta.url).href;
 
 const STEPS = [
   { key: 'identify', label: 'Identify' },
@@ -88,8 +95,9 @@ function computeDevice() {
   }
 
   const bits = [];
-  const sn = SENSING.find((s) => s.id === state.sel.sensing);
-  if (sn) bits.push(sn.name.replace('Sense360 ', ''));
+  const air = AIR.find((a) => a.id === state.sel.air);
+  if (air && air.id !== 'none') bits.push(air.name.replace('Sense360 ', ''));
+  if (state.sel.roomiq) bits.push('RoomIQ');
   const pw = POWER.find((p) => p.id === state.sel.power);
   if (pw && pw.id !== 'usbc') bits.push(pw.name.replace('Sense360 ', ''));
   return {
@@ -116,11 +124,11 @@ function announceStep() {
 // (installable / preview / blocked) by config_string. The verdict is computed
 // purely from the snapshot, so it is correct regardless of the host DOM.
 //
-// Note on exclusivity: the advanced builder's single "sensing" choice already
+// Note on exclusivity: the advanced builder's single air-quality choice already
 // makes AirIQ and VentIQ mutually exclusive in the view, so the builder never
 // sends the engine a state it would have to reduce. The engine's enforcement
 // stays authoritative for share-link hydration (wizardStateToSel collapses any
-// AirIQ+VentIQ combination to one choice).
+// AirIQ+VentIQ combination to one choice). RoomIQ is an independent axis.
 async function syncSelection() {
   const token = ++resolveToken;
   let wizardState = null;
@@ -350,7 +358,7 @@ function Topbar() {
     icon(state.theme === 'dark' ? 'sun' : 'moon'));
   return h('div', { class: 'topbar' },
     h('div', { class: 'brand' },
-      h('img', { src: 'assets/sense360-logo.png', alt: 'Sense360' }),
+      h('img', { src: LOGO_URL, alt: 'Sense360' }),
       h('span', { class: 'brand__name' }, 'WebFlash ', h('span', null, '· Firmware Installer')),
     ),
     h('div', { class: 'topbar__right' },
