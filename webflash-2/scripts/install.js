@@ -17,10 +17,18 @@
    check id (engine.state.INSTALL_GATE_CHECK_IDS) and arms install only when
    the gate passes. The view never owns a gate decision.
 
-   The flash PROGRESS below is still a simulation (FLASH_PHASES + a
-   requestAnimationFrame ring). PR 6 replaces it with the real ESP Web Tools
-   install-button lifecycle. It is left untouched here so PR 5 stays scoped to
-   the gate. */
+   PR 6 of the WebFlash 2.0 migration replaces the simulated flash (the
+   FLASH_PHASES array plus a requestAnimationFrame ring) with real flashing
+   through the ESP Web Tools <esp-web-install-button> web component, the same
+   component the 1.0 view uses. The PR 5 gate stays authoritative over whether
+   the component's activate button is armed; ESP Web Tools then drives
+   connect / erase / write / verify, and this view maps its lifecycle events
+   (initializing, manifest, preparing, erasing, writing, finished, error) onto
+   the 2.0 progress ring and console. The ring and console are a live mirror of
+   real esptool state, never a timer. Desktop Chromium stays enforced by the gate
+   (Web Serial plus secure context), by the component's own unsupported /
+   not-allowed fallbacks, and by an explicit mobile / unsupported banner derived
+   from engine.capabilities.evaluateBrowserReadiness. */
 import { h, mount, fromHTML } from './h.js';
 import { icon } from './icons.js';
 import { StepHead, DeviceChip } from './ui.js';
@@ -53,14 +61,39 @@ function readyItem(name, sub, status) {
   );
 }
 
-/* Flash progress simulation (phases mirror an esptool run). PR 6 replaces this. */
-const FLASH_PHASES = [
-  { p: 'Connecting', sub: 'Opening serial port to your hub', to: 8, lines: ['$ esptool connect', 'Detecting chip type… ESP32-S3', 'Chip is ESP32-S3 (revision v0.2)'] },
-  { p: 'Erasing', sub: 'Clearing existing firmware', to: 24, lines: ['Erasing flash (this may take a few seconds)…', 'Flash erased.'] },
-  { p: 'Writing firmware', sub: 'Do not disconnect power or USB', to: 86, lines: ['Writing at 0x00000000…', 'Writing at 0x00040000… 38%', 'Writing at 0x000a0000… 71%', 'Writing at 0x00100000… 96%'] },
-  { p: 'Verifying', sub: 'Checking the flashed image', to: 98, lines: ['Verifying hash of data…', 'Hash of data verified.'] },
-  { p: 'Rebooting', sub: 'Starting your hub', to: 100, lines: ['Hard resetting via RTS pin…', '✓ Firmware installed successfully'] },
-];
+// ESP Web Tools FlashState (the `state-changed` event detail.state) mapped onto
+// the 2.0 progress ring. The lifecycle is OWNED by the upstream component; this
+// table only describes how each real phase reads on the ring (phase label, sub
+// copy, and the ring baseline percentage). The WRITING phase additionally tracks
+// the real esptool byte percentage (detail.details.percentage). These are the
+// canonical esp-web-tools FlashStateType values; any other state (idle, improv,
+// …) is ignored here — PR 7 owns the connect/post-flash surface.
+const FLASH_PHASE_META = Object.freeze({
+  initializing: { label: 'Initializing', sub: 'Opening the serial port to your hub', pct: 3 },
+  manifest: { label: 'Reading manifest', sub: 'Loading the firmware build list', pct: 8 },
+  preparing: { label: 'Preparing', sub: 'Preparing the installation', pct: 14 },
+  erasing: { label: 'Erasing', sub: 'Clearing the existing firmware', pct: 22 },
+  writing: { label: 'Writing firmware', sub: 'Keep the hub powered and connected over USB', pct: 25 },
+  finished: { label: 'Firmware installed', sub: 'Firmware written to your hub', pct: 100 },
+  error: { label: 'Installation failed', sub: 'Check the details below, then try again', pct: 0 },
+});
+// During WRITING the ring tracks the real esptool byte percentage across this
+// band (writing 0% -> 25, writing 100% -> 98), so the pre-write phases keep a
+// short ramp and the finished state snaps to 100.
+const WRITE_RING_BASE = 25;
+const WRITE_RING_SPAN = 73;
+
+// True when the ESP Web Tools custom element is registered. The production
+// index.html (under ?ui=2) loads it from the unpkg origin allowed by the CSP, so
+// it is present there. The standalone /webflash-2/ design preview deliberately
+// loads no third-party script, so the component is absent; the install gate
+// already blocks that path (the committed dev-signed build fails verification),
+// and this flag lets the view show an honest notice instead of an inert button.
+function espWebToolsRegistered() {
+  return typeof customElements !== 'undefined'
+    && typeof customElements.get === 'function'
+    && Boolean(customElements.get('esp-web-install-button'));
+}
 
 /**
  * @param {object} props
@@ -93,15 +126,28 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   let gate = null;
   let wasReady = false;
 
+  // ----- real flash-progress state (driven by ESP Web Tools, never a timer) -----
+  // The ring + console nodes are built lazily on the first lifecycle event; these
+  // references and the transition trackers are mutated only by handleFlashLifecycle.
+  let ringFg = null;
+  let ringPctText = null;
+  let ringCirc = 0;
+  let phaseEl = null;
+  let subEl = null;
+  let consoleEl = null;
+  let errorEl = null;
+  let flashStarted = false;
+  let lastState = '';
+  let lastConsoleLine = '';
+  let lastWriteBucket = -1;
+
   // ----- async lifecycle -----
   let disposed = false;
   const abort = (typeof AbortController === 'function') ? new AbortController() : { abort() {}, signal: undefined };
-  let raf = 0;
   let doneTimer = 0;
   mainEl.__dispose = () => {
     disposed = true;
     try { abort.abort(); } catch { /* AbortController not available */ }
-    if (raf) cancelAnimationFrame(raf);
     if (doneTimer) clearTimeout(doneTimer);
   };
 
@@ -109,14 +155,65 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   const statusbarEl = h('div', { class: 'statusbar' });
   const readyInner = h('div', { class: 'ready' });
   const swNoticeEl = h('div', { class: 'callout callout--warn', hidden: true });
+  // Desktop-only / mobile fallback. The PR 5 gate is the real block (its
+  // browser-support row fails on mobile or without Web Serial); this banner is
+  // the prominent, plain-language message that the install path will not work.
+  const unsupportedBannerEl = h('div', { class: 'callout callout--warn', 'data-unsupported-banner': '', hidden: true });
+  // Honest notice for the standalone design preview, where ESP Web Tools is not
+  // loaded so a real USB flash cannot run.
+  const ewtNoticeEl = h('div', { class: 'callout callout--info', 'data-ewt-unavailable-notice': '', hidden: true });
   const freshnessControlsEl = h('div', {
     style: { display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', margin: '4px 0' },
     hidden: true,
   });
   const warnCalloutsEl = h('div');
   const acksEl = h('div');
-  const installBtn = h('button', { class: 'btn btn--lg', onClick: () => { if (gate && gate.canInstall) startFlash(); } },
-    icon('bolt'), ' Install firmware');
+
+  // ----- the install affordance: the ESP Web Tools activate button -----
+  // The visible "Install firmware" button is the component's [slot=activate]
+  // button. ESP Web Tools opens its install dialog and runs the real flash when
+  // this button is clicked; a disabled button emits no click, so the PR 5 gate
+  // (updateGate -> installBtn.disabled) controls whether flashing can start. The
+  // capture-phase guard is defense in depth for a gate that changed between
+  // render and click (e.g. freshness going stale), matching the 1.0 view.
+  const installBtn = h('button', { slot: 'activate', class: 'btn btn--lg' }, icon('bolt'), ' Install firmware');
+  installBtn.addEventListener('click', (event) => {
+    if (!gate || !gate.canInstall) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+
+  // When a build is resolved, render the real component so it drives the flash.
+  // The relative manifest path matches the 1.0 view (firmware-<index>.json
+  // resolved against the production document), so it is correct at the repo root
+  // and under the GitHub Pages /WebFlash/ subpath. Without a build there is
+  // nothing to flash, so we fall back to the bare (gated, disabled) button.
+  const manifestIndex = (build && build.manifestIndex != null) ? build.manifestIndex : null;
+  let installHost;
+  if (manifestIndex != null) {
+    installHost = h('esp-web-install-button',
+      {
+        manifest: `firmware-${manifestIndex}.json`,
+        'data-webflash-install': '',
+        'data-firmware-id': build.firmwareId || '',
+      },
+      installBtn,
+      // Desktop-Chromium-only fallbacks rendered by the component when Web Serial
+      // is unavailable (covers mobile, Safari, Firefox) or the context is
+      // insecure. They project through the component's shadow DOM in production.
+      h('span', { slot: 'unsupported' },
+        h('span', { class: 'wf2-ewt-fallback' },
+          'Web Serial flashing needs desktop ', h('b', null, 'Chrome'), ', ', h('b', null, 'Edge'),
+          ', or ', h('b', null, 'Opera'), '. Mobile browsers, Safari, and Firefox cannot flash over USB.')),
+      h('span', { slot: 'not-allowed' },
+        h('span', { class: 'wf2-ewt-fallback' },
+          'Web flashing needs a secure connection. Open this page over ', h('b', null, 'HTTPS'), ' and try again.')),
+    );
+    installHost.addEventListener('state-changed', (event) => handleFlashLifecycle(event && event.detail));
+  } else {
+    installHost = installBtn;
+  }
 
   function ackRow(checked, onToggle, body) {
     const box = h('span', { class: 'ack__box' }, icon('check'));
@@ -246,6 +343,43 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     mount(warnCalloutsEl, ...callouts);
   }
 
+  // Desktop-only / mobile fallback message. Derived from the engine's browser
+  // readiness evaluation over the detected capabilities; surfaced only when the
+  // page genuinely cannot flash (mobile, no Web Serial, insecure context).
+  function renderUnsupportedBanner() {
+    if (!engine || !capabilities) { unsupportedBannerEl.hidden = true; return; }
+    const readiness = engine.capabilities.evaluateBrowserReadiness(capabilities);
+    const blocker = readiness.reasons.find((r) => r.severity === 'block');
+    if (readiness.level === 'block' && blocker) {
+      unsupportedBannerEl.hidden = false;
+      mount(unsupportedBannerEl, icon('alert'),
+        h('span', null, h('b', null, blocker.title + '. '), blocker.message));
+    } else {
+      unsupportedBannerEl.hidden = true;
+    }
+  }
+
+  // Standalone-preview honesty: when ESP Web Tools is not registered there is no
+  // way to open a USB connection, so say so rather than leave an inert button.
+  function renderEwtNotice() {
+    const show = manifestIndex != null && !espWebToolsRegistered();
+    ewtNoticeEl.hidden = !show;
+    if (show) {
+      mount(ewtNoticeEl, icon('info'),
+        h('span', null, h('b', null, 'Flashing runs in the published installer. '),
+          'This design preview cannot open a USB connection. Use the live WebFlash installer to flash a hub.'));
+    }
+  }
+  // If the component registers after this step mounts (a late unpkg load under
+  // ?ui=2), drop the notice once it defines.
+  if (manifestIndex != null && !espWebToolsRegistered()
+    && typeof customElements !== 'undefined' && typeof customElements.whenDefined === 'function') {
+    customElements.whenDefined('esp-web-install-button').then(() => {
+      if (disposed) return;
+      renderEwtNotice();
+    }).catch(() => { /* never registers (standalone preview) */ });
+  }
+
   // ----- before-you-flash acknowledgement -----
   const beforeFlashLabel = ackRow(false, (v, label) => {
     beforeFlashAck = v; label.classList.toggle('is-on', v); recompute();
@@ -254,11 +388,16 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     h('b', null, 'leave this tab open'), " until flashing finishes. Don't disconnect power or USB during the install.",
   ]);
 
-  // ----- build prep view -----
-  mount(mainEl,
+  // ----- prep view + (hidden) real flash-progress view -----
+  // Both live inside mainEl so the ESP Web Tools host stays attached for the whole
+  // flash: when flashing starts we hide the prep view and reveal the progress
+  // view, but the component (inside the hidden prep view) keeps driving the flash
+  // and emitting the lifecycle events this view mirrors.
+  const prepEl = h('div', null,
     StepHead({ eyebrow: 'Step 2 — Install', eyebrowIcon: 'bolt', title: 'Prepare & install firmware',
       desc: "We'll run the real pre-flight checks, then flash your hub over USB." }),
     DeviceChip({ name: device.name, target: device.target, onEdit: onBack }),
+    unsupportedBannerEl,
     statusbarEl,
     swNoticeEl,
     h('div', { class: 'card', style: { padding: '8px 20px' } }, readyInner),
@@ -266,15 +405,21 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     warnCalloutsEl,
     beforeFlashLabel,
     acksEl,
+    ewtNoticeEl,
     h('div', { class: 'stepnav' },
       h('button', { class: 'btn--ghost btn', onClick: onBack }, icon('arrowL'), ' Back'),
       h('span', { class: 'stepnav__spacer' }),
-      installBtn,
+      installHost,
     ),
   );
+  const flashEl = h('div', { hidden: true });
+
+  mount(mainEl, prepEl, flashEl);
 
   renderWarnCallouts();
   renderAcks();
+  renderUnsupportedBanner();
+  renderEwtNotice();
   recompute();        // initial synchronous render (capabilities + provenance)
   runPreflight();     // kick the async checks (freshness + SHA-256 integrity)
 
@@ -332,9 +477,13 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     recompute();
   }
 
-  // ----- flash progress simulation (PR 6 replaces with ESP Web Tools) -----
-  function startFlash() {
+  // ----- real flash progress, driven by ESP Web Tools lifecycle events -----
+  // The ring + console (built lazily in buildFlashView, below) are updated only
+  // from the component's `state-changed` detail. There is no timer.
+
+  function buildFlashView() {
     const R = 52, C = 2 * Math.PI * R;
+    ringCirc = C;
     const ringSvg = fromHTML(
       `<svg class="flash__ring" width="132" height="132" viewBox="0 0 132 132">
         <circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--bg-elev)" stroke-width="9"/>
@@ -352,46 +501,135 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
         <text x="66" y="82" text-anchor="middle" font-size="11" fill="var(--text-muted)"
           font-family="var(--font-mono)" letter-spacing="1">PERCENT</text>
       </svg>`);
-    const fg = ringSvg.querySelector('[data-fg]');
-    const pctText = ringSvg.querySelector('[data-pct]');
-    const phaseEl = h('div', { class: 'flash__phase' });
-    const subEl = h('div', { class: 'flash__sub' });
-    const consoleEl = h('div', { class: 'console' });
-    mount(mainEl, h('div', { class: 'flash fadein' }, ringSvg, phaseEl, subEl, consoleEl));
+    ringFg = ringSvg.querySelector('[data-fg]');
+    ringPctText = ringSvg.querySelector('[data-pct]');
+    phaseEl = h('div', { class: 'flash__phase' });
+    subEl = h('div', { class: 'flash__sub' });
+    errorEl = h('div', { class: 'callout callout--warn', 'data-flash-error': '', hidden: true });
+    consoleEl = h('div', { class: 'console' });
+    mount(flashEl, h('div', { class: 'flash fadein' }, ringSvg, phaseEl, subEl, errorEl, consoleEl));
+  }
 
-    let pi = 0, cur = 0, lineQueue = [...FLASH_PHASES[0].lines], lineTimer = 0;
-    const setPct = (v) => { pctText.textContent = String(v); fg.style.strokeDashoffset = String(C - (v / 100) * C); };
-    const setPhase = (idx) => { const p = FLASH_PHASES[idx]; phaseEl.textContent = p.p + '…'; subEl.textContent = p.sub; };
-    const appendLine = (ln) => {
-      consoleEl.appendChild(h('div', { class: 'ln' + (ln.startsWith('✓') ? ' ln--ok' : '') },
-        ln.startsWith('$') ? h('b', null, ln) : ln));
-      consoleEl.scrollTop = consoleEl.scrollHeight;
-    };
-    const pushLine = () => { if (lineQueue.length) appendLine(lineQueue.shift()); };
+  function showFlashView() {
+    if (!consoleEl) buildFlashView();
+    prepEl.hidden = true;
+    flashEl.hidden = false;
+  }
 
-    setPhase(0); setPct(0); pushLine();
+  function setRing(pct) {
+    const v = Math.max(0, Math.min(100, Math.round(pct)));
+    if (ringPctText) ringPctText.textContent = String(v);
+    if (ringFg) ringFg.style.strokeDashoffset = String(ringCirc - (v / 100) * ringCirc);
+  }
 
-    const tick = () => {
-      const phase = FLASH_PHASES[pi];
-      const target = phase.to;
-      const speed = phase.p === 'Writing firmware' ? 0.55 : 0.9;
-      cur = Math.min(target, cur + speed);
-      setPct(Math.round(cur));
+  function appendConsole(line) {
+    if (!consoleEl || !line) return;
+    const isOk = line.startsWith('✓');
+    const isCmd = line.startsWith('$');
+    consoleEl.appendChild(h('div', { class: 'ln' + (isOk ? ' ln--ok' : '') },
+      isCmd ? h('b', null, line) : line));
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
 
-      lineTimer += 1;
-      if (lineTimer > 26) { lineTimer = 0; pushLine(); }
+  // Fallback console line when the component reports no message for a phase.
+  function defaultConsoleLine(state) {
+    switch (state) {
+      case 'initializing': return '$ esptool connect';
+      case 'manifest': return 'Reading firmware manifest…';
+      case 'preparing': return 'Preparing installation…';
+      case 'erasing': return 'Erasing flash…';
+      case 'finished': return '✓ Firmware installed successfully';
+      case 'error': return 'Installation failed.';
+      default: return '';
+    }
+  }
 
-      if (cur >= target - 0.1) {
-        if (pi < FLASH_PHASES.length - 1) {
-          pi += 1; setPhase(pi); lineQueue = [...FLASH_PHASES[pi].lines]; lineTimer = 20;
-        } else {
-          lineQueue.forEach(appendLine); lineQueue = [];
-          doneTimer = setTimeout(() => onFlashed && onFlashed(), 900);
-          return;
-        }
+  function retryFlash() {
+    flashStarted = false;
+    lastState = '';
+    lastConsoleLine = '';
+    lastWriteBucket = -1;
+    if (errorEl) errorEl.hidden = true;
+    if (consoleEl) mount(consoleEl);
+    setRing(0);
+    flashEl.hidden = true;
+    prepEl.hidden = false;
+    recompute();  // re-read the gate so the armed button is ready for another run
+  }
+
+  // Map one ESP Web Tools lifecycle event onto the ring + console.
+  function handleFlashLifecycle(detail) {
+    if (disposed) return;
+    const rawState = typeof detail === 'string' ? detail : (detail && detail.state);
+    const state = typeof rawState === 'string' ? rawState.toLowerCase() : '';
+    const meta = FLASH_PHASE_META[state];
+    if (!meta) return;  // ignore idle / improv / unknown states
+
+    if (!flashStarted) {
+      flashStarted = true;
+      showFlashView();
+    }
+
+    // Ring: WRITING tracks the real byte percentage; other phases use the ramp.
+    let pct = meta.pct;
+    let writePct = null;
+    if (state === 'writing') {
+      const raw = detail && detail.details && typeof detail.details.percentage === 'number'
+        ? detail.details.percentage : 0;
+      writePct = Math.max(0, Math.min(100, raw));
+      pct = WRITE_RING_BASE + (writePct / 100) * WRITE_RING_SPAN;
+    }
+    setRing(pct);
+
+    if (phaseEl) phaseEl.textContent = (state === 'finished' || state === 'error') ? meta.label : meta.label + '…';
+    if (subEl) subEl.textContent = meta.sub;
+
+    // Console: append a line on each phase transition, plus throttled progress
+    // during WRITING (every 20%) so the log reads like an esptool run without one
+    // line per percent.
+    const message = (detail && typeof detail.message === 'string') ? detail.message.trim() : '';
+    if (state === 'writing') {
+      const shown = Math.round(writePct);
+      const bucket = Math.floor(shown / 20);
+      if (bucket !== lastWriteBucket) {
+        lastWriteBucket = bucket;
+        appendConsole(`Writing firmware… ${shown}%`);
       }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
+    } else if (state !== lastState) {
+      const line = message || defaultConsoleLine(state);
+      if (line && line !== lastConsoleLine) {
+        appendConsole(line);
+        lastConsoleLine = line;
+      }
+    }
+    lastState = state;
+
+    if (a11y && typeof a11y.announce === 'function' && state !== 'writing') {
+      a11y.announce(meta.label);
+    }
+
+    if (state === 'error') {
+      const reason = (detail && (detail.message
+        || (detail.details && (detail.details.error || detail.details.details)))) || 'Installation failed.';
+      if (errorEl) {
+        errorEl.hidden = false;
+        mount(errorEl, icon('alert'),
+          h('span', null, h('b', null, 'Flashing failed. '), String(reason), ' '),
+          h('button', { class: 'btn btn--ghost', onClick: retryFlash }, 'Try again'));
+      }
+      return;
+    }
+
+    if (state === 'finished') {
+      setRing(100);
+      appendConsole('✓ Firmware installed successfully');
+      if (a11y && typeof a11y.announce === 'function') {
+        a11y.announce('Firmware installed successfully.');
+      }
+      if (doneTimer) clearTimeout(doneTimer);
+      doneTimer = setTimeout(() => {
+        if (!disposed && typeof onFlashed === 'function') onFlashed();
+      }, 1100);
+    }
   }
 }
