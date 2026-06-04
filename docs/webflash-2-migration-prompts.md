@@ -410,8 +410,8 @@ Scope:
   ?ui=1 as the rollback for one release.
 - Bump CACHE_NAME so the service worker serves the new shell (the plan named
   webflash-v5; the live cache had already advanced to webflash-v13 via the WF-UX
-  and bundle-picker work, so the GA bump landed at webflash-v14). Confirm the
-  activate handler purges the old webflash- cache.
+  and bundle-picker work and PR 11 took webflash-v14, so the GA bump landed at
+  webflash-v15). Confirm the activate handler purges the old webflash- cache.
 - Update README, the docs, and CHANGELOG.
 - Verify the update banner and manifest freshness still gate after the cache bump.
 

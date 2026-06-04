@@ -29,7 +29,7 @@
 
 export const BUILD_INFO = Object.freeze({
     appVersion: '1.0.1',
-    appShell: '2026-06-04-1',
+    appShell: '2026-06-04-2',
     buildCommit: 'unknown',
     buildTimestamp: 'unknown'
 });

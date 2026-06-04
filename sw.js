@@ -80,19 +80,27 @@
  *   scripts/data/simple-bundles.js declares them). No fan-control firmware ships
  *   yet, so the picker is visually unchanged today — but existing installs must
  *   purge v12 so the staged copy + gate deploy in lockstep. See docs/deploy-notes.md.
- *   `webflash-v14` (WebFlash 2.0 GA cutover, PR 12) bumps again: scripts/bootstrap.js
- *   now defaults to the 2.0 view (webflash-2/scripts/shell.js) and keeps the 1.0
- *   view reachable at ?ui=1 as the one-release rollback. Existing installs must
- *   purge v13 and re-prime so the cutover shell ships intact, in lockstep with the
- *   index.html / bootstrap / app.js `?v=` token (202606041) and the
- *   webflash-app-shell marker (2026-06-04-1). The activate handler below still
- *   purges every non-current `webflash-*` cache, so this bump just works. The
+ *   `webflash-v14` (WebFlash 2.0 migration, beta default) bumps again:
+ *   scripts/bootstrap.js now resolves the default view per surface via the new
+ *   scripts/ui-version.js module (added to SCRIPT_MODULES below), so internal and
+ *   beta surfaces default to the 2.0 view while production stays on the 1.0 view.
+ *   The production default is unchanged, but the changed bootstrap + new module
+ *   must re-prime so existing installs purge v13 and the host-aware resolver +
+ *   its module are served as one set. See docs/deploy-notes.md.
+ *   `webflash-v15` (WebFlash 2.0 GA cutover, PR 12) bumps again:
+ *   scripts/ui-version.js now defaults EVERY surface (production included) to the
+ *   2.0 view, keeping ?ui=1 as the one-release rollback. ui-version.js carries no
+ *   per-import `?v=` token, so it rides this cache-name bump to re-prime; existing
+ *   installs must purge v14 so the cutover resolver ships intact, in lockstep with
+ *   the index.html / bootstrap / app.js `?v=` token (202606042) and the
+ *   webflash-app-shell marker (2026-06-04-2). The activate handler below still
+ *   purges every non-current `webflash-*` cache, so this bump just works; the
  *   per-asset-class fetch strategy is unchanged. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v14';
+const CACHE_NAME = 'webflash-v15';
 const CACHE_VERSION = 5;
 
 /**
@@ -132,6 +140,7 @@ const STATIC_ASSETS = [
  */
 const SCRIPT_MODULES = [
     './scripts/bootstrap.js',
+    './scripts/ui-version.js',
     './scripts/build-info.js',
     './scripts/capabilities.js',
     './scripts/compat-config.js',

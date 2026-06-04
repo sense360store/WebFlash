@@ -718,9 +718,10 @@ Documented in the comment block at the top of
 | Firmware binaries (`*.bin`) | network-first             | Cached on success so a previously-flashed config is offline-available; never serve stale. The rescue binary is additionally precached so first-visit offline rescue works. |
 | Cross-origin (unpkg ESPWT)  | not intercepted           | Browser-managed.                                     |
 
-`CACHE_NAME` is `webflash-v14` (bumped at the WebFlash 2.0 GA cutover so
-existing installs re-prime the new default shell). The `activate` handler
-purges any cache that starts with `webflash-` but is not the current name, so
+`CACHE_NAME` is `webflash-v15` (bumped at the WebFlash 2.0 GA cutover so
+existing installs re-prime the new default shell; PR 11's beta-default work
+took `webflash-v14`). The `activate` handler purges any cache that starts with
+`webflash-` but is not the current name, so
 subsequent bumps just work.
 
 ## Deployment & security headers

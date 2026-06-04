@@ -29,12 +29,17 @@ import "./scripts/kit-presets.js";
 // fan-control card injection + the analog-fan address-switch acknowledgement
 // wiring, so bump the token again (202606015 → 202606016) in lockstep with the
 // index.html assets, the bootstrap loader, and the sw.js CACHE_NAME (webflash-v13).
-// WebFlash 2.0 GA cutover (PR 12) — the default view flips to 2.0 and sw.js
-// CACHE_NAME bumps to webflash-v14, so the shared cache-bust token bumps again
-// (202606016 → 202606041) in lockstep across index.html, the bootstrap loader,
-// this import, and the webflash-app-shell marker. simple-install.js itself is
-// byte-identical here; it rides the lockstep so the tokens stay consistent.
-import "./scripts/simple-install.js?v=202606041";
+// WebFlash 2.0 migration (beta default) — the app shell changed (host-aware
+// default-view resolver in bootstrap.js + the new ui-version.js module), so the
+// shared cache-bust token is bumped again (202606016 → 202606041) in lockstep
+// with the index.html assets, the bootstrap loader, and sw.js (webflash-v14).
+// WebFlash 2.0 GA cutover (PR 12) — resolveUiVersion now defaults production to
+// the 2.0 view too (?ui=1 stays the fallback). ui-version.js is a tokenless
+// module that rides the sw.js CACHE_NAME bump, so CACHE_NAME goes to webflash-v15
+// and the shared cache-bust token bumps again (202606041 → 202606042) in lockstep
+// across index.html, the bootstrap loader, this import, and the app-shell marker.
+// simple-install.js itself is byte-identical here; it rides the lockstep.
+import "./scripts/simple-install.js?v=202606042";
 import "./scripts/compat-config.js";
 import "./scripts/init-review.js";
 import "./scripts/layout/state-summary.js";

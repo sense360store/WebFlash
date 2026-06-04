@@ -105,24 +105,27 @@ reference).
 
 ## WebFlash 2.0 GA cutover (PR 12) — cache bump
 
-The GA cutover flips the default view to 2.0 (`scripts/bootstrap.js`: the default
-and `?ui=2` load `webflash-2/scripts/shell.js`; `?ui=1` keeps the 1.0 view as a
-one release rollback). Because `scripts/bootstrap.js` is a customer-facing runtime
-module and it changed, the cache-bust token moved in lockstep under the same
-contract above:
+The GA cutover flips the default view to 2.0 inside `scripts/ui-version.js`:
+`resolveUiVersion()` now returns the 2.0 view (`webflash-2/scripts/shell.js`) as
+the surface default on every host, production included, while `?ui=1` stays the
+explicit rollback to the 1.0 view. `scripts/bootstrap.js` still delegates to that
+resolver. `ui-version.js` is a tokenless module (it carries no per-import `?v=`
+query), so it re-primes by riding the `sw.js` `CACHE_NAME` bump, exactly like
+`state.js`. The bump moved in lockstep under the same contract above:
 
 - `index.html` `?v=` on the CSS links and the bootstrap loader, plus the
-  `webflash-app-shell` marker: `202606041` / `2026-06-04-1`.
-- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202606041`.
-- `app.js` per-import token on `simple-install.js`: `202606041` (the module is
+  `webflash-app-shell` marker: `202606042` / `2026-06-04-2`.
+- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202606042`.
+- `app.js` per-import token on `simple-install.js`: `202606042` (the module is
   byte-identical; it rides the lockstep so the five-way token equality holds).
-- `scripts/build-info.js` `appShell`: `2026-06-04-1`.
-- `sw.js` `CACHE_NAME`: `webflash-v13` to `webflash-v14`.
+- `scripts/build-info.js` `appShell`: `2026-06-04-2`.
+- `sw.js` `CACHE_NAME`: `webflash-v14` to `webflash-v15`.
 
 This is a deploy-layer plus default-flip change. The per-asset-class fetch
 strategy, the `activate` purge of non-current `webflash-*` caches, and the install
-gate are unchanged. The cutover lands at `webflash-v14` rather than the
+gate are unchanged. The cutover lands at `webflash-v15` rather than the
 `webflash-v5` named in the migration plan because the WF-UX and bundle-picker work
-churned the live cache to `webflash-v13` in parallel; the cache-name bump stays
-monotonic from there. `__tests__/wf2-ga-cutover.test.js` pins the flip, the
-`webflash-v14` floor, the token lockstep, and the unchanged activate purge.
+churned the live cache to `webflash-v13` and PR 11's beta-default work took
+`webflash-v14`; the cache-name bump stays monotonic from there.
+`__tests__/wf2-ga-cutover.test.js` pins the flip, the `webflash-v15` floor, the
+token lockstep, and the unchanged activate purge.

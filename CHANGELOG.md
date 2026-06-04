@@ -277,24 +277,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - **WebFlash 2.0 GA cutover (PR 12).** The 2.0 view is now the production default
-  at the site root. `scripts/bootstrap.js` flips so the default (no `?ui`, or
-  `?ui=2`) loads the 2.0 view inside the production shell
-  (`webflash-2/scripts/shell.js`), while the 1.0 view stays reachable at `?ui=1`
-  as the one release rollback (a later PR removes it). Both views run at the same
-  origin and share the same Content Security Policy, service worker, manifest, and
-  install gate, so no gate is weakened: provenance, channel acknowledgement,
-  SHA-256 verification, manifest freshness, service worker update, and
-  installability stay engine owned and are enforced identically in both views.
-  Bumped `sw.js` `CACHE_NAME` to `webflash-v14` (the existing `activate` handler
-  still purges every non-current `webflash-*` cache) and the shared cache-bust
-  token to `202606041` in lockstep across `index.html`, `scripts/bootstrap.js`,
-  `app.js`, and the `webflash-app-shell` marker (`2026-06-04-1`) so the cutover
-  shell is never served stale. Added `__tests__/wf2-ga-cutover.test.js` pinning
-  the routing (default to 2.0, `?ui=1` to 1.0), the cache bump, and the unchanged
-  activate purge and per-asset-class fetch strategy. The `webflash-v5` value in
-  the migration docs predated the WF-UX and bundle-picker cache churn that had
-  already reached `webflash-v13`, so the cutover lands at `webflash-v14`. No
-  firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, kit,
+  at the site root. PR 11 had introduced `scripts/ui-version.js` with a host-aware
+  `resolveUiVersion(search, hostname)` (production defaulted to the 1.0 view, beta
+  surfaces to the 2.0 view); the cutover flips the production surface default to
+  the 2.0 view too, so `resolveUiVersion` now returns the 2.0 view as the default
+  on every surface, with `?ui=1` kept as the one release rollback override (a
+  later PR removes the dual view). `scripts/bootstrap.js` still delegates to
+  `resolveUiVersion`; both views run at the same origin and share the same Content
+  Security Policy, service worker, manifest, and install gate, so no gate is
+  weakened: provenance, channel acknowledgement, SHA-256 verification, manifest
+  freshness, service worker update, and installability stay engine owned and are
+  enforced identically in both views. Bumped `sw.js` `CACHE_NAME` to `webflash-v15`
+  (the existing `activate` handler still purges every non-current `webflash-*`
+  cache) and the shared cache-bust token to `202606042` in lockstep across
+  `index.html`, `scripts/bootstrap.js`, `app.js`, `scripts/build-info.js`, and the
+  `webflash-app-shell` marker (`2026-06-04-2`) so the changed tokenless resolver is
+  never served stale. Updated `__tests__/wf2-beta-default.test.js` for the flipped
+  production default and added `__tests__/wf2-ga-cutover.test.js` pinning the
+  cutover (production defaults to 2.0, `?ui=1` fallback), the `webflash-v15` floor,
+  the token lockstep, and the unchanged activate purge and per-asset-class fetch
+  strategy. The migration docs named `webflash-v5`, but the WF-UX and
+  bundle-picker work churned the live cache to `webflash-v13` and PR 11 took
+  `webflash-v14`, so the cutover lands at `webflash-v15`. No firmware,
+  `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, kit,
   release-channel, or install-gate logic changed. Merging the cutover to
   production stays gated on the PR 11 beta dogfood and clean S360-410 PoE flash
   evidence, which is a manual hardware step.
