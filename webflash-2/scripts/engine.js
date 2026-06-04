@@ -43,12 +43,12 @@
  * 2.0 view does its own rendering and only consumes engine logic.
  *
  * Scope note (PR 2): all nine engine modules already expose named, view-agnostic
- * exports, so no render/logic extraction or `views/` boundary was required. The
- * compatible-firmware lookup the view will resolve selections against is currently
- * entangled with the 1.0 DOM inside state.js; exposing a pure lookup is the binding
- * work of PR 4 (Identify step on the real engine) and is intentionally not done
- * here. This module is a facade only and adds no runtime behaviour to either view
- * until the 2.0 shell is mounted under ?ui=2 in PR 3.
+ * exports, so no render/logic extraction or `views/` boundary was required. PR 4
+ * (Identify step on the real engine) added the pure compatible-firmware lookup
+ * `state.resolveCompatibleFirmware`, which resolves a wizard-state snapshot to the
+ * real manifest builds by config_string without touching the 1.0 DOM or the shared
+ * `configuration` object. This module remains a facade only; every export is a live
+ * reference to the real engine function.
  *
  * @module webflash-2/engine
  */
@@ -67,7 +67,8 @@ import {
     getTotalSteps,
     setStep,
     getMaxReachableStep,
-    getFirmwareReadiness
+    getFirmwareReadiness,
+    resolveCompatibleFirmware
 } from '../../scripts/state.js';
 import { getManifestMetadataForAbout } from '../../scripts/state.js';
 
@@ -197,7 +198,8 @@ export const state = Object.freeze({
     setStep,
     getMaxReachableStep,
     getFirmwareReadiness,
-    getManifestMetadataForAbout
+    getManifestMetadataForAbout,
+    resolveCompatibleFirmware
 });
 
 /** Seven-tier release-channel model: badges, warnings, acknowledgement needs, default-build pick. */

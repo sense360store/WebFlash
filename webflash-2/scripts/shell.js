@@ -14,6 +14,7 @@
    service worker through the engine, prepares the shared shell DOM, and hands off
    to the 2.0 view with the engine accessibility primitives. */
 import { mountWebFlash2 } from './app.js';
+import engine from './engine.js';
 import { initServiceWorkerUpdates } from '../../scripts/services/sw-update.js';
 import {
   announce,
@@ -86,5 +87,6 @@ initServiceWorkerUpdates('./sw.js');
 
 mountWebFlash2(prepareShell(), {
   a11y: { announce, trapFocus, restoreFocus, getFocusableElements },
+  engine,
   prefersReducedMotion,
 });

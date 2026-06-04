@@ -1,31 +1,74 @@
-/* WebFlash 2.0 — Step 1: Identify your hardware. Ported from identify.jsx. */
+/* WebFlash 2.0 — Step 1: Identify your hardware.
+
+   PR 4 of the WebFlash 2.0 migration binds this step to the real engine:
+     - kit cards come from the real catalogue (scripts/data/kits.json), passed
+       in as `kits`. There is no hardcoded kit list.
+     - the firmware target and the installability verdict come from the engine's
+       compatible-firmware lookup, passed in as `resolved`. The view renders the
+       verdict; it never decides installability itself.
+     - a configuration with no installable stable or preview build is blocked
+       from Continue and routed to the ESPHome source path instead. */
 import { h } from './h.js';
 import { icon } from './icons.js';
 import { StepHead } from './ui.js';
-import { POWER, SENSING, FAN, LED, KITS, buildTarget } from './data.js';
+import { POWER, SENSING, FAN, LED } from './data.js';
+
+function capitalize(value) {
+  const text = (value || '').toString();
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
 
 function KitParts(parts) {
   return h('div', { class: 'parts' },
     parts.map((p) =>
       h('span', { class: 'part' },
         h('span', { class: 'part__dot' }),
-        p.name,
-        h('span', { class: 'part__sku' }, p.sku),
+        p.label || p.name,
+        p.sku && h('span', { class: 'part__sku' }, p.sku),
       ),
     ),
   );
 }
 
-function KitHero(kit, selected, onSelect) {
-  const isPreview = kit.flag === 'preview';
+/* A blocked configuration (no signed stable or preview build) is never routed
+   to the install flow. This callout points the user at the ESPHome source path
+   instead, exactly as the 1.0 view does for an unsupported selection. */
+function SourceCallout(sourceUrl, configString) {
+  return h('div', { class: 'callout callout--warn' },
+    icon('alert'),
+    h('span', null,
+      h('b', null, 'No installable firmware for this configuration. '),
+      "This combination doesn't have a signed WebFlash build yet, so it can't be flashed here. ",
+      'You can build it from source with ',
+      h('a', { href: sourceUrl, target: '_blank', rel: 'noopener noreferrer' }, 'ESPHome YAML'),
+      configString ? [' (firmware target ', h('code', null, configString), ').'] : '.',
+    ),
+  );
+}
+
+function KitHero(kit, selected, onSelect, resolved) {
+  // The live channel / installability for a kit is only known once it is the
+  // active selection (the engine lookup runs against the selected state). For an
+  // unselected card fall back to the catalogue's declared channel.
+  const liveResolved = selected ? resolved : null;
+  const isPreview = liveResolved ? liveResolved.isPreview : kit.firmware_channel === 'preview';
+  const channelLabel = liveResolved && liveResolved.channel
+    ? capitalize(liveResolved.channel)
+    : (isPreview ? 'Preview' : 'Stable');
+  const target = liveResolved && liveResolved.configString
+    ? liveResolved.configString
+    : kit.firmware_config_string;
+  const flagLabel = kit.recommended ? 'Recommended for you' : (isPreview ? 'Preview channel' : 'Supported kit');
+
   return h('div', { class: 'kit-hero fadein' + (selected ? ' is-selected' : '') },
     h('div', { class: 'kit-hero__top' },
       h('div', { class: 'kit-hero__body' },
-        h('span', { class: 'flag ' + (isPreview ? 'flag--preview' : 'flag--rec') },
-          isPreview ? 'Preview channel' : 'Recommended for you'),
-        h('h2', null, kit.name),
-        h('p', { class: 'kit-hero__desc' }, kit.desc),
-        KitParts(kit.parts),
+        h('span', { class: 'flag ' + (isPreview ? 'flag--preview' : 'flag--rec') }, flagLabel),
+        h('h2', null, kit.display_name || kit.sku),
+        kit.description && h('p', { class: 'kit-hero__desc' }, kit.description),
+        kit.sample && h('p', { class: 'kit-hero__desc', style: { opacity: '0.75' } },
+          'Sample configuration — replace with your purchased kit SKU.'),
+        KitParts(kit.components || []),
       ),
       h('div', { class: 'devicebox' },
         h('span', { class: 'devicebox__tag' }, 'ceiling hub render'),
@@ -33,7 +76,7 @@ function KitHero(kit, selected, onSelect) {
     ),
     h('div', { class: 'kit-hero__foot' },
       h('span', { class: 'kit-hero__target' },
-        (isPreview ? 'Preview' : 'Stable') + ' · ', h('b', null, kit.target)),
+        channelLabel + ' · ', h('b', null, target)),
       h('button', {
         class: selected ? 'btn' : 'btn--ghost btn',
         onClick: () => onSelect(kit),
@@ -140,29 +183,38 @@ function sumRow(k, v) {
 }
 
 /* ---------- The step ---------- */
-export function IdentifyStep({ mode, setMode, kit, setKit, sel, setSel, onContinue }) {
-  const advancedTarget = buildTarget(sel);
-  // A not-installable target (for example TRIAC, installable:false) must not
-  // reach Step 2. The card is disabled in the builder above; this gate is the
-  // second line of defence so a blocked selection can never enable Continue.
-  const selectedFan = FAN.find((f) => f.id === sel.fan);
-  const blockedSelection = !!(selectedFan && selectedFan.installable === false);
-  const advValid = sel.power && sel.sensing && !blockedSelection;
-
+export function IdentifyStep({ mode, setMode, kits, kitError, kit, setKit, sel, setSel, resolved, sourceUrl, onContinue }) {
   const head = StepHead({
     eyebrow: 'Step 1 — Identify',
     eyebrowIcon: 'chip',
     title: mode === 'kit' ? "Let's find your hardware" : 'Build your hub',
     desc: mode === 'kit'
       ? 'Most customers have the standard Bathroom PoE kit. Confirm it below — or build a setup module by module.'
-      : "Pick the exact boards in your hub. We'll generate the matching firmware target as you go.",
+      : "Pick the exact boards in your hub. We'll resolve the matching firmware target as you go.",
   });
 
   if (mode === 'kit') {
+    // The Continue gate is the engine verdict for the selected kit. A kit can
+    // only advance once the engine resolves it to an installable build; a kit
+    // that resolves to no build is routed to the source path, never to install.
+    const selectedInstallable = Boolean(kit && resolved && resolved.installable);
+    const selectedBlocked = Boolean(kit && resolved && !resolved.installable && resolved.reason === 'no-build');
+
     return h('div', { class: 'main' }, head,
-      KITS.map((k) =>
+      kitError && h('div', { class: 'callout callout--warn' },
+        icon('alert'),
+        h('span', null, h('b', null, 'Unknown kit. '), kitError),
+      ),
+      kits.length === 0 && !kitError && h('div', { class: 'callout callout--warn' },
+        icon('alert'),
+        h('span', null,
+          h('b', null, 'No kits are available right now. '),
+          'Build your hub module by module instead.'),
+      ),
+      kits.map((k) =>
         h('div', { style: { marginBottom: '18px' } },
-          KitHero(k, kit?.id === k.id, setKit))),
+          KitHero(k, kit?.sku === k.sku, setKit, resolved))),
+      selectedBlocked && SourceCallout(sourceUrl, resolved.configString),
       h('div', { class: 'hatch' },
         h('span', null, 'Different hardware, or no kit?'),
         h('button', { class: 'linkbtn', onClick: () => setMode('advanced') },
@@ -170,18 +222,24 @@ export function IdentifyStep({ mode, setMode, kit, setKit, sel, setSel, onContin
       ),
       h('div', { class: 'stepnav' },
         h('span', { class: 'stepnav__spacer' }),
-        h('button', { class: 'btn btn--lg', disabled: !kit, onClick: onContinue },
-          'Continue ' + (kit ? `with ${kit.name.split('—')[0].trim()} ` : ''),
+        h('button', { class: 'btn btn--lg', disabled: !selectedInstallable, onClick: onContinue },
+          'Continue ' + (kit ? `with ${(kit.display_name || kit.sku).split('—')[0].trim()} ` : ''),
           icon('arrowR')),
       ),
     );
   }
 
   // mode === 'advanced'
+  const advHasInputs = Boolean(sel.power && sel.sensing);
+  const advInstallable = Boolean(advHasInputs && resolved && resolved.installable);
+  const advBlocked = Boolean(advHasInputs && resolved && !resolved.installable && resolved.reason === 'no-build');
+  const targetString = resolved && resolved.configString ? resolved.configString : '';
+
   return h('div', { class: 'main' }, head,
     h('div', { class: 'with-aside' },
       h('div', null,
         AdvancedBuilder(sel, setSel),
+        advBlocked && SourceCallout(sourceUrl, targetString),
         h('div', { class: 'hatch' },
           h('span', null, 'Have the standard kit after all?'),
           h('button', { class: 'linkbtn', onClick: () => setMode('kit') },
@@ -198,11 +256,12 @@ export function IdentifyStep({ mode, setMode, kit, setKit, sel, setSel, onContin
         ),
         h('div', { class: 'target-card' },
           h('h4', null, 'Firmware target'),
-          advValid
-            ? h('code', null, advancedTarget)
-            : h('code', { class: 'muted' }, 'Select power + sensing to generate a target…'),
+          advHasInputs && targetString
+            ? h('code', { class: advInstallable ? '' : 'muted' }, targetString)
+            : h('code', { class: 'muted' },
+                advHasInputs ? 'Checking firmware availability…' : 'Select power + sensing to find firmware…'),
         ),
-        h('button', { class: 'btn btn--block', disabled: !advValid, onClick: onContinue },
+        h('button', { class: 'btn btn--block', disabled: !advInstallable, onClick: onContinue },
           'Continue ', icon('arrowR')),
       ),
     ),

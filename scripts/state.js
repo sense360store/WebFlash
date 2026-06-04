@@ -28,6 +28,7 @@ import {
     getFirmwareAcknowledgementSignature,
     filterBuildsForMode,
     isBuildVisibleInMode,
+    isStableChannel,
     pickDefaultBuild,
     normaliseReleaseChannel
 } from './utils/release-channels.js';
@@ -6909,6 +6910,96 @@ async function findCompatibleFirmware() {
     }
 }
 
+/**
+ * Pure, view-agnostic compatible-firmware lookup.
+ *
+ * Resolves a wizard-state snapshot to the real manifest builds whose
+ * config_string matches the assembled firmware target, honouring the active
+ * release-mode visibility filter. Unlike findCompatibleFirmware() — which
+ * drives the 1.0 DOM and mutates module-level globals — this function reads
+ * nothing from and writes nothing to the page or the shared `configuration`
+ * object. It is the engine lookup the WebFlash 2.0 view (PR 4 of the
+ * migration) resolves Step 1 selections against.
+ *
+ * Installability follows the release gates exactly: a config is installable
+ * only when the loaded manifest carries a build for it that is visible in the
+ * current release mode. Stable wins when both a stable and a preview build
+ * exist for the same config_string (the WF-LED-003 exposure model); a config
+ * that only has a preview build resolves to that preview, still behind the
+ * preview acknowledgement the install gate enforces. A config with no visible
+ * build is not installable and the caller must route it to the ESPHome source
+ * path rather than the install flow. This function never weakens a gate and
+ * never claims signature verification; it only reports what the manifest and
+ * the release-channel policy already decide.
+ *
+ * @param {Object} [stateInput] Wizard-state snapshot. Accepts either `mount`
+ *   or `mounting`; the remaining keys mirror getState() (power, airiq, ventiq,
+ *   roomiq, fan, led, bathroom). AirIQ/VentIQ exclusivity and the bathroom
+ *   toggle are normalised exactly as setState() applies them.
+ * @param {Object} [options]
+ * @param {string} [options.mode] Release-mode override; defaults to the active
+ *   release mode (getReleaseMode()).
+ * @returns {Promise<{
+ *   configString: string,
+ *   builds: Array<Object>,
+ *   build: Object|null,
+ *   installable: boolean,
+ *   isPreview: boolean,
+ *   channel: string|null,
+ *   reason: ('incomplete'|'no-build'|'installable')
+ * }>}
+ */
+async function resolveCompatibleFirmware(stateInput = {}, options = {}) {
+    const snapshot = normalizeStateForConfiguration(stateInput);
+    const configString = buildFirmwareTargetPreviewString(snapshot);
+
+    if (!configString) {
+        return Object.freeze({
+            configString: '',
+            builds: Object.freeze([]),
+            build: null,
+            installable: false,
+            isPreview: false,
+            channel: null,
+            reason: 'incomplete'
+        });
+    }
+
+    await loadManifestData();
+
+    const releaseMode = options.mode || getReleaseMode();
+    const visibleBuilds = filterBuildsForMode(manifestBuildsWithIndex, releaseMode);
+    const { configGroups } = groupBuildsByConfig(visibleBuilds);
+    const matching = sortBuildsByChannelAndVersion(configGroups.get(configString) || []);
+
+    if (!matching.length) {
+        return Object.freeze({
+            configString,
+            builds: Object.freeze([]),
+            build: null,
+            installable: false,
+            isPreview: false,
+            channel: null,
+            reason: 'no-build'
+        });
+    }
+
+    // Stable wins when present (WF-LED-003 exposure model); a config that only
+    // ships a preview build resolves to that preview, still behind the preview
+    // acknowledgement enforced at install time.
+    const resolvedBuild = matching.find(build => isStableChannel(build.channel)) || matching[0];
+
+    return Object.freeze({
+        configString,
+        builds: Object.freeze(matching.slice()),
+        build: resolvedBuild,
+        installable: true,
+        isPreview: !isStableChannel(resolvedBuild.channel),
+        channel: normaliseReleaseChannel(resolvedBuild.channel),
+        reason: 'installable'
+    });
+}
+
 function buildNotAvailableStatusMessage(configString, availableBuilds) {
     const expectedFilename = `Sense360-${configString}-v1.0.0-stable.bin`;
     const availableConfigStrings = Array.from(new Set(
@@ -7545,6 +7636,7 @@ export const __testHooks = Object.freeze({
     initializeWizard,
     loadManifestData,
     findCompatibleFirmware,
+    resolveCompatibleFirmware,
     manifestReadyPromise: () => manifestReadyPromise,
     isManifestReady,
     renderSelectedFirmware,
@@ -7629,5 +7721,6 @@ export {
     getTotalSteps,
     setStep,
     getMaxReachableStep,
-    getFirmwareReadiness
+    getFirmwareReadiness,
+    resolveCompatibleFirmware
 };

@@ -13,9 +13,14 @@ is unchanged.
 
 A faithful, **pixel-for-pixel** rebuild of the three-step 2.0 flow:
 
-1. **Identify** — recommended-kit picker (stable + preview) and an advanced
-   "build it module by module" path with live conflict gating, the TRIAC
-   "not installable yet" guard, and a generated firmware target.
+1. **Identify** — kit picker and an advanced "build it module by module" path.
+   As of PR 4 of the migration this step is **bound to the real engine**: kits
+   load from the real catalogue (`scripts/data/kits.json`), selections flow
+   through the real `setState`, and the firmware target plus installability
+   verdict come from the engine's compatible-firmware lookup over
+   `manifest.json`. A configuration with no installable build is routed to the
+   ESPHome source path instead of the install flow, and the
+   `?configmode=kit&sku=` and manual share links are honoured.
 2. **Install** — auto-running pre-flight readiness checklist, the
    preview-channel acknowledgement gate, and an animated flash progress
    ring with a streaming esptool console.
@@ -24,12 +29,19 @@ A faithful, **pixel-for-pixel** rebuild of the three-step 2.0 flow:
 
 ## What it is *not* (yet)
 
-This is a **visual prototype**. The readiness checks, flash progress, and
-Wi-Fi scan are **simulated** (timers + animation) — it does **not** drive real
-Web Serial / ESP Web Tools, the live `manifest.json`, signing, or preflight.
-The catalog in `scripts/data.js` mirrors the live Sense360 kits/SKUs/channels
-but is a local copy. Wiring the design to the real flashing stack is a
-separate, larger effort.
+Step 1 (Identify) is wired to the real engine, but the **Install** and
+**Connect** steps are still a **visual prototype**: their readiness checks,
+flash progress, and Wi-Fi scan are **simulated** (timers + animation) and do
+**not** drive real Web Serial / ESP Web Tools, signing, or preflight. Those are
+bound in later migration PRs (PR 5 install gate, PR 6 real flash, PR 7 Improv).
+
+The real, fully functional 2.0 view runs inside the production shell at
+**`?ui=2`** (the same origin as the 1.0 installer), where the engine can reach
+the root `manifest.json` and `scripts/data/kits.json`. Opening the isolated
+`/webflash-2/` preview directly cannot reach those root files, so its Identify
+step shows the honest empty states (no kits resolved, build-from-source) rather
+than live firmware. The local module-presentation data in `scripts/data.js`
+(power/sensing/fan/LED option labels) mirrors the live Sense360 SKUs.
 
 ## Run locally
 
@@ -51,7 +63,8 @@ webflash-2/
   scripts/
     h.js              tiny hyperscript/DOM helper (the only "framework")
     icons.js          icon set (ported 1:1 from the prototype's ui.jsx)
-    data.js           hardware + firmware catalog (kits, modules, conflicts)
+    data.js           advanced-builder option labels + selection<->engine mapping
+    engine.js         view-agnostic facade over the 1.0 engine (kits, state, lookup)
     ui.js             progress rail, step header, device chip
     identify.js       Step 1
     install.js        Step 2
