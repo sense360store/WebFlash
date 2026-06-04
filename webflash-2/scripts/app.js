@@ -60,6 +60,15 @@ let prefersReducedMotion = () => false;
 // loading state and resolves nothing — there is no simulated fallback path.
 let engine = null;
 
+// The real recovery path, injected at mount time by the production shell
+// (shell.js) as { openRescueModal }. It is the unchanged 1.0 rescue/recovery
+// modal (scripts/layout/rescue-modal.js): the real rescue manifest, the
+// erase-first install, the acknowledgement gate, and its own focus trap and
+// restoration. The view only triggers it; it never reimplements the recovery
+// flow. Left null in the isolated /webflash-2/ preview, which does not load the
+// 1.0 stylesheet or ESP Web Tools, so the topbar Rescue button stays inert there.
+let recovery = null;
+
 // Monotonic token so a slow resolve from a superseded selection can never
 // overwrite the verdict for the current one.
 let resolveToken = 0;
@@ -181,10 +190,22 @@ function toggleTheme() {
   mount(themeBtn, icon(state.theme === 'dark' ? 'sun' : 'moon'));
 }
 
+// ----- recovery / rescue -----
+// Opens the real 1.0 rescue/recovery modal (scripts/layout/rescue-modal.js),
+// injected by the production shell as `recovery.openRescueModal`. The modal owns
+// its own accessible focus trap and restoration, the real rescue manifest, and
+// the erase-first install behind the acknowledgement gate, so the view never
+// owns the recovery trust gate. No-op when recovery is not wired (the isolated
+// preview), matching the pre-PR-8 inert button.
+function openRescue(event) {
+  if (!recovery || typeof recovery.openRescueModal !== 'function') return;
+  const trigger = event && event.currentTarget ? event.currentTarget : null;
+  recovery.openRescueModal({ trigger });
+}
+
 // ----- help modal -----
 // Wires the topbar Help button to an accessible dialog so the focus-trap and
 // focus-restoration accessibility pattern is real and exercised in this view.
-// The Rescue button stays a no-op here; PR 8 binds it to the real recovery path.
 function openHelp() {
   openModal({
     title: 'WebFlash help',
@@ -211,7 +232,9 @@ function Topbar() {
       h('span', { class: 'brand__name' }, 'WebFlash ', h('span', null, '· Firmware Installer')),
     ),
     h('div', { class: 'topbar__right' },
-      h('button', { class: 'iconbtn', type: 'button' }, icon('life'), ' Rescue'),
+      h('button',
+        { class: 'iconbtn', type: 'button', 'data-rescue-open': '', 'aria-haspopup': 'dialog', onClick: openRescue },
+        icon('life'), ' Rescue'),
       h('button', { class: 'iconbtn', type: 'button', onClick: openHelp }, icon('help'), ' Help'),
       themeBtn,
     ),
@@ -302,6 +325,19 @@ function urlHasManualMarkers() {
 // Load the real kit catalogue and hydrate Step 1 from the URL, then resolve the
 // initial selection against the engine.
 async function initFromEngine() {
+  // Honour the release-mode opt-in (?mode=recovery / ?mode=development) before
+  // resolving any firmware. The engine's resolveCompatibleFirmware and the
+  // channel model read getReleaseMode(), so applying the URL mode here makes
+  // development and recovery build visibility behave exactly as the 1.0 view
+  // does. Normal loads (no ?mode) stay on the production 'normal' mode.
+  if (engine.state && typeof engine.state.setReleaseModeFromUrl === 'function') {
+    try {
+      engine.state.setReleaseModeFromUrl(new URLSearchParams(window.location.search || ''));
+    } catch {
+      // Malformed URL: the engine defaults to safe 'normal' mode itself.
+    }
+  }
+
   let catalog = { kits: [], skipped: [] };
   try {
     catalog = await engine.kits.loadKitCatalog();
@@ -357,6 +393,10 @@ async function initFromEngine() {
  *   importing it directly.
  * @param {object} [options.engine]     The engine facade (webflash-2/scripts/engine.js).
  *   Required for the real Step 1 binding (kits, setState, firmware lookup).
+ * @param {object} [options.recovery]   The real recovery path
+ *   ({ openRescueModal }) from scripts/layout/rescue-modal.js. Supplied by the
+ *   production shell (PR 8) so the topbar Rescue button opens the real rescue
+ *   modal. Omitted by the isolated preview, which leaves the button inert.
  * @param {() => boolean} [options.prefersReducedMotion]
  */
 export function mountWebFlash2(root, options = {}) {
@@ -368,6 +408,9 @@ export function mountWebFlash2(root, options = {}) {
   }
   if (options.engine) {
     engine = options.engine;
+  }
+  if (options.recovery) {
+    recovery = options.recovery;
   }
 
   document.documentElement.setAttribute('data-theme', state.theme);
@@ -388,4 +431,10 @@ export function mountWebFlash2(root, options = {}) {
   }
 }
 
-export const __testHooks = Object.freeze({ STEPS, goTo, getRequestedModeFromUrl, getState: () => state });
+export const __testHooks = Object.freeze({
+  STEPS,
+  goTo,
+  getRequestedModeFromUrl,
+  getState: () => state,
+  getRecovery: () => recovery,
+});
