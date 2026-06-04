@@ -7,6 +7,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Live Simple-install bundle-picker smoke verification (WF-EASY-BUNDLE-PICKER-LIVE-SMOKE-001).**
+  Docs + test only — verifies the **current deployed** Simple-install end-state
+  after the bundle picker (`WF-EASY-BUNDLE-PICKER-001`) and the import-gated
+  fan-control expansion (`WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001`) landed, and
+  after the standalone FanRelay / FanPWM / FanDAC manual-previews were imported.
+  Added the consolidated current-state checklist at
+  [`docs/live-smoke-easy-bundle-picker-current.md`](docs/live-smoke-easy-bundle-picker-current.md)
+  and the deterministic guard
+  [`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](__tests__/wf-easy-bundle-picker-live-smoke.test.js),
+  pinned against the live `manifest.json` (9 builds): all six base bundles resolve
+  to a live build with the stable `S360-KIT-BATH-P` (`Ceiling-POE-VentIQ-RoomIQ`)
+  as the default / recommended / only default-selectable choice; the Bathroom
+  Relay base card (`Ceiling-POE-VentIQ-FanRelay-RoomIQ`) is import-ready and
+  visible; the five fan-control **expansion** configs
+  (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`,
+  `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`,
+  `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) are absent so `getExposableFanControlBundles`
+  is empty (declared-but-hidden); a synthetic manifest exposes a fan card only on
+  its exact full-composition config; the standalone `Ceiling-POE-FanPWM` /
+  `Ceiling-POE-FanDAC` previews present in the manifest never become a Simple card;
+  TRIAC is absent everywhere; the stable build has no channel-ack / freshness
+  false-blocker; preview bundles stay `channel:preview`-gated. Added the
+  smoke-record section to `docs/sense360-webflash-status.md` and the queue rows in
+  `UPCOMING_PR.md`. **No firmware imported, no runtime surface changed** —
+  `manifest.json` (9 builds), `firmware/sources.json`, `REQUIRED_CONFIGS`,
+  `scripts/data/kits.json`, `scripts/data/simple-bundles.js`,
+  `scripts/simple-install.js`, `index.html`, `sw.js`, and every workflow are
+  byte-identical. No hidden fan-control card exposed, no standalone fan / TRIAC
+  card exposed, no preview made stable / recommended / default, no acknowledgement
+  weakened.
 - **Fan-control room bundles in Simple install (WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001).**
   Declared and **import-gated** the five full-composition fan-control room
   bundles from upstream `ROOM-BUNDLE-FAN-CONFIGS-001` (esphome-public #713):

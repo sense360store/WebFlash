@@ -527,6 +527,48 @@ no firmware, changes no `manifest.json` / `firmware/sources.json` /
 `REQUIRED_CONFIGS` / kit, and weakens no provenance / signature / freshness
 check. Current status: **pending — live operator pass required.**
 
+## Live bundle-picker smoke checklist (WF-EASY-BUNDLE-PICKER-LIVE-SMOKE-001)
+
+After the Simple-install **bundle picker** (`WF-EASY-BUNDLE-PICKER-001`) and the
+import-gated **fan-control expansion** (`WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001`)
+landed — and after the standalone FanRelay / FanPWM / FanDAC manual-previews were
+imported — the consolidated current-state live / manual smoke checklist for the
+deployed picker is recorded at
+[`docs/live-smoke-easy-bundle-picker-current.md`](live-smoke-easy-bundle-picker-current.md).
+It verifies on the live GitHub Pages deployment that Simple install shows exactly
+the **six base bundle cards** with the stable Bathroom PoE bundle as the default,
+while every other surface stays honest:
+
+- **Simple install loads cleanly** with no false manifest-freshness block; the
+  **Bathroom Bundle — PoE** (`Ceiling-POE-VentIQ-RoomIQ`) is the **Stable /
+  Recommended / default** selection.
+- The **Kitchen / Bedroom / Living / Corridor** base preview cards appear behind
+  the `channel:preview` acknowledgement, and the **Bathroom Relay** card
+  (`Ceiling-POE-VentIQ-FanRelay-RoomIQ`) is import-ready and visible behind its
+  preview **and** fan-control acknowledgements.
+- The **five fan-control expansion cards** (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`,
+  `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`,
+  `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) stay
+  **hidden** — their firmware is not imported, so the import-readiness gate shows
+  nothing.
+- The standalone fan-driver previews `Ceiling-POE-FanPWM` / `Ceiling-POE-FanDAC`
+  are in the manifest but **never** become a Simple-install card, **TRIAC** is
+  absent, **Advanced install** + **Recovery / Rescue** stay reachable, release
+  notes open, and install-button gating stays authoritative.
+
+The deterministic half of the checklist is locked by
+[`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](../__tests__/wf-easy-bundle-picker-live-smoke.test.js)
+(exactly nine builds; six base bundles backed by live builds; the five
+fan-control expansion configs absent so no card is exposable; the import gate
+lights a card only on its exact full-composition config; standalone FanPWM /
+FanDAC and TRIAC never become Simple cards; stable Bathroom PoE the only
+default-selectable build with no freshness false-blocker; preview bundles
+`channel:preview`-gated; `REQUIRED_CONFIGS` / `manifest.json` / `firmware/sources.json`
+/ `scripts/data/kits.json` unchanged). The checklist is **docs / verification
+only** — it imports no firmware, exposes no hidden card, marks no preview
+stable / recommended / default, weakens no acknowledgement, and changes no
+`REQUIRED_CONFIGS`. Current status: **pending — live operator pass required.**
+
 ## WebFlash roadmap
 
 WebFlash is **downstream** of the upstream firmware roadmap. The authoritative
