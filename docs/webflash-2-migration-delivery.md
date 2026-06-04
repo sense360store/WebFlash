@@ -13,8 +13,11 @@ large PR, and not a long-lived integration branch.**
 
 The defining property: 1.0 stays the default until the very last step, so
 `main` is releasable after every single merge. There is never a half-migrated
-production state. The cutover is a one-line flag flip, and the rollback is
-flipping it back.
+production state. The cutover is a one-line default change that ships through the
+normal GitHub Pages deploy. A user can return to the 1.0 view immediately via
+`?ui=1`, but rolling back the site default is a git revert of the cutover commit
+plus the Pages rebuild it triggers, not a flag flip, because GitHub Pages serves
+a static default with no remotely mutable flag.
 
 ### Alternatives considered
 
@@ -108,13 +111,15 @@ UI stays `ui=1` (1.0) for every PR until PR 12.
 | 9 | `wf2-09-diagnostics` | main (after 3) | ui=1 | Yes (behind flag) | Revert commit |
 | 10 | `wf2-10-test-parity` | main (after 7,8,9) | ui=1 | Yes (tests only) | Revert commit |
 | 11 | `wf2-11-beta-default` | main (after 10) | ui=1 (prod) / ui=2 (beta) | Yes (beta only) | Revert commit |
-| 12 | `wf2-12-ga-cutover` | main (after 11) | **ui=2** (ui=1 fallback) | Yes (flip default back to ui=1) | Flip flag or revert |
+| 12 | `wf2-12-ga-cutover` | main (after 11) | **ui=2** (ui=1 fallback) | Yes (revert restores the ui=1 default) | Revert commit + Pages rebuild |
 | 13 | `wf2-13-remove-1.0-view` | main (after 12, one clean release) | ui=2 (no fallback) | Yes (single view) | Revert commit |
 
 The "revert" column is the point of the method. Up to PR 11, every revert is a
 plain commit revert with zero production impact, because production is still on
-1.0. At PR 12, the revert is faster than a revert: you flip the default flag
-back to `ui=1` with no deploy.
+1.0. At PR 12, a user returns to the 1.0 view immediately via `?ui=1`, but
+rolling back the site default is a git revert of the cutover commit plus the
+GitHub Pages rebuild it triggers, not a flag flip, because GitHub Pages serves a
+static default with no remotely mutable flag.
 
 ---
 
@@ -155,9 +160,13 @@ lands together and the reviewer sees coherent units:
   serves the new shell. The existing `activate` purge removes the old
   `webflash-` cache. Verify the update banner and manifest freshness still gate
   after the bump.
-* **Rollback ladder:** before GA, revert the offending PR (production
-  unaffected). At GA, flip the default flag back to `ui=1` (no deploy). If the
-  flag itself is broken, revert PR 12.
+* **Rollback ladder:** before GA, revert the offending PR and production is
+  unaffected because the default is still `ui=1`. At and after GA, a user returns
+  to the 1.0 view immediately via `?ui=1`, but rolling back the site default is a
+  git revert of the cutover commit plus the GitHub Pages rebuild it triggers, not
+  a flag flip, because GitHub Pages serves a static default with no remotely
+  mutable flag. A true no-deploy default toggle would require a runtime flag
+  source and likely a different host and is out of scope.
 
 ---
 

@@ -71,8 +71,11 @@ Section 8).
 Positive:
 
 - `main` stays releasable after every merge. Production stays on 1.0 until the
-  one-line flag flip at PR 12, so the rollback is flipping the flag back with no
-  deploy.
+  default cutover at PR 12. Before GA every revert is a plain commit revert with
+  no production impact, and rolling back the site default after GA is a git
+  revert of the cutover commit plus the GitHub Pages rebuild it triggers, not a
+  flag flip, because GitHub Pages serves a static default with no remotely
+  mutable flag.
 - The audit surface is not duplicated. There is one trust model, reviewed once.
 - Per-PR review (the Codex bot) stays the safety mechanism, and the binding chain
   lands as small, sequential, reviewable units.

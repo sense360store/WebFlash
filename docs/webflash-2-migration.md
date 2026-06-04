@@ -267,11 +267,18 @@ its own. Each PR states its acceptance condition.
 
 * Same origin throughout, so the CSP, service worker, headers, and manifest are
   inherited. Never a separate site.
-* Flag-gated (`?ui=2` and `?ui=1`) so the default can flip and roll back without
-  a deploy.
+* Flag-gated (`?ui=2` and `?ui=1`) so a user can opt into either view immediately
+  by changing the URL. Changing the site default is a separate operation: it is a
+  commit that ships through the GitHub Pages deploy.
 * Bump `CACHE_NAME` on GA so the stale 1.0 shell is purged. The existing
   `activate` purge already removes non-current `webflash-` caches.
-* Rollback is flipping the default back to `?ui=1`, or reverting the GA PR.
+* Rollback: before GA, revert the offending PR and production is unaffected
+  because the default is still `?ui=1`. At and after GA, a user returns to the
+  1.0 view immediately via `?ui=1`, but rolling back the site default is a git
+  revert of the cutover commit plus the GitHub Pages rebuild it triggers, not a
+  flag flip, because GitHub Pages serves a static default with no remotely
+  mutable flag. A true no-deploy default toggle would require a runtime flag
+  source and likely a different host and is out of scope.
 * Do not GA without the S360-410 PoE flash evidence. It is the existing master
   shipping gate and applies to the 2.0 cutover unchanged.
 
