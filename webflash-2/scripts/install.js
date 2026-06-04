@@ -11,6 +11,9 @@ const READY_ICON = {
   wait: { cls: 'ready__ico--wait', name: 'spinner', spin: true },
   warn: { cls: 'ready__ico--warn', name: 'alert' },
   err: { cls: 'ready__ico--err', name: 'alert' },
+  // Neutral terminal "not evaluated" state. Reuses the muted wait styling so it
+  // never reads as a green pass; used for the signature check, which is skip.
+  skip: { cls: 'ready__ico--wait', name: 'info' },
 };
 
 function readyItem(name, sub, status) {
@@ -38,6 +41,12 @@ export function InstallStep({ device, isPreview, onBack, onFlashed }) {
 
   // ----- local state -----
   const statuses = CHECKS.map(() => 'wait');
+  // 'skip' is a terminal, non-blocking status (the signature check is skip, not
+  // a pass). A check is "settled" when it is ok or skip; settled checks do not
+  // block readiness, and the signature check renders its skip sub copy.
+  const isSettled = (s) => s === 'ok' || s === 'skip';
+  const subFor = (c, status) =>
+    status === 'skip' ? c.skipSub : status === 'ok' ? c.okSub : c.waitSub;
   let ready = false;
   let ack = false;
   let previewAck = false;
@@ -67,19 +76,19 @@ export function InstallStep({ device, isPreview, onBack, onFlashed }) {
       ready ? icon('shield') : icon('spinner', { cls: 'spin' }),
       ready
         ? h('span', null, h('b', null, 'Ready to install.'),
-            ' Everything checks out — your hub is connected and the firmware is verified.')
+            ' Everything checks out — your hub is connected and ready to flash.')
         : h('span', null, h('b', null, 'Running pre-flight checks…'),
             ' This takes a couple of seconds.'),
     );
   }
 
   function renderReady() {
-    const allOk = statuses.every((s) => s === 'ok');
+    const allSettled = statuses.every(isSettled);
     const items = CHECKS.map((c, i) =>
-      readyItem(c.name, statuses[i] === 'ok' ? c.okSub : c.waitSub, statuses[i]));
+      readyItem(c.name, subFor(c, statuses[i]), statuses[i]));
     items.push(readyItem('Hub connected over USB',
-      allOk ? 'ESP32-S3 detected on /dev/ttyUSB0' : 'Waiting on the checks above…',
-      allOk ? 'ok' : 'wait'));
+      allSettled ? 'ESP32-S3 detected on /dev/ttyUSB0' : 'Waiting on the checks above…',
+      allSettled ? 'ok' : 'wait'));
     mount(readyInner, ...items);
   }
 
@@ -134,11 +143,11 @@ export function InstallStep({ device, isPreview, onBack, onFlashed }) {
   updateGate();
 
   // ----- start the auto-running readiness checklist -----
-  CHECKS.forEach((_, i) => {
+  CHECKS.forEach((c, i) => {
     const t = setTimeout(() => {
-      statuses[i] = 'ok';
+      statuses[i] = c.terminal === 'skip' ? 'skip' : 'ok';
       renderReady();
-      if (statuses.every((s) => s === 'ok')) {
+      if (statuses.every(isSettled)) {
         ready = true;
         renderStatusbar();
         renderReady();

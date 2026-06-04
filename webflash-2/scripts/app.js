@@ -33,12 +33,24 @@ function computeDevice() {
   if (sn) bits.push(sn.name.replace('Sense360 ', ''));
   const pw = POWER.find((p) => p.id === state.sel.power);
   if (pw && pw.id !== 'usbc') bits.push(pw.name.replace('Sense360 ', ''));
+  // Derive the preview channel from the selected modules and the resolved
+  // target. Today the only advanced selection that maps to a stable WebFlash
+  // build is the Bathroom PoE configuration (PoE power, VentIQ bathroom sensing,
+  // no fan driver, no LED ring). Every other selection maps to a preview or
+  // not-yet-stable build and must carry the preview acknowledgement into Step 2.
+  // Without this, preview-only hardware such as the LED ring would reach Step 2
+  // ungated (the second Codex finding on #477).
+  // TODO(PR 4): replace this heuristic and buildTarget() with the 1.0 engine's
+  // compatible-firmware lookup and release-channel resolution over manifest.json,
+  // which returns the real channel for any selection.
+  const { power, sensing, fan, led } = state.sel;
+  const isStable = power === 'poe' && sensing === 'ventiq' && fan === 'none' && !led;
   return {
     device: {
       name: 'Custom Sense360 build' + (bits.length ? ' · ' + bits.join(' + ') : ''),
       target: buildTarget(state.sel),
     },
-    isPreview: false,
+    isPreview: !isStable,
   };
 }
 

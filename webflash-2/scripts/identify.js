@@ -111,7 +111,7 @@ function AdvancedBuilder(sel, setSel) {
           const conflict = conflictsWith(f.id) && sel.fan !== f.id;
           const blocked = f.installable === false;
           return Opt({
-            ...f, on: sel.fan === f.id, disabled: conflict,
+            ...f, on: sel.fan === f.id, disabled: conflict || blocked,
             note: blocked ? 'Not installable in WebFlash yet'
               : conflict ? 'Conflicts with current selection'
                 : f.advancedWarn ? 'Advanced — requires acknowledgement' : null,
@@ -142,7 +142,12 @@ function sumRow(k, v) {
 /* ---------- The step ---------- */
 export function IdentifyStep({ mode, setMode, kit, setKit, sel, setSel, onContinue }) {
   const advancedTarget = buildTarget(sel);
-  const advValid = sel.power && sel.sensing;
+  // A not-installable target (for example TRIAC, installable:false) must not
+  // reach Step 2. The card is disabled in the builder above; this gate is the
+  // second line of defence so a blocked selection can never enable Continue.
+  const selectedFan = FAN.find((f) => f.id === sel.fan);
+  const blockedSelection = !!(selectedFan && selectedFan.installable === false);
+  const advValid = sel.power && sel.sensing && !blockedSelection;
 
   const head = StepHead({
     eyebrow: 'Step 1 — Identify',
