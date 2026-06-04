@@ -2,16 +2,23 @@
    Standalone, no-build ES module. Two entry points mount this view:
      - webflash-2/scripts/shell.js   — inside the production index.html (?ui=2).
      - webflash-2/scripts/standalone.js — the isolated /webflash-2/ preview.
-   Both pass the engine accessibility primitives in, so the view renders state
-   and calls engine actions but never owns an accessibility or trust gate
-   (see docs/adr/0001-webflash-2-view-over-engine.md). */
+   Both inject the engine accessibility primitives, and (PR 4) the engine itself,
+   so the view renders state and calls engine actions but never owns an
+   accessibility or trust gate (see docs/adr/0001-webflash-2-view-over-engine.md).
+
+   PR 4 binds Step 1 (Identify) to the real engine: kits come from the real
+   catalogue (scripts/data/kits.json), selections flow through the real setState,
+   and the firmware target plus installability verdict come from the engine's
+   compatible-firmware lookup over manifest.json. The view never decides what is
+   installable; it renders the engine verdict and routes blocked configurations
+   to the ESPHome source path instead of the install flow. */
 import { h, mount } from './h.js';
 import { icon } from './icons.js';
 import { Rail } from './ui.js';
 import { IdentifyStep } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
-import { SENSING, POWER, buildTarget } from './data.js';
+import { SENSING, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
 import { openModal } from './modal.js';
 
 const STEPS = [
@@ -20,12 +27,19 @@ const STEPS = [
   { key: 'connect', label: 'Connect' },
 ];
 
+// Where a blocked configuration (no signed WebFlash build) is routed. This is
+// the same open-source path the 1.0 view points to for unsupported selections.
+const ESPHOME_SOURCE_URL = 'https://github.com/sense360store/esphome-public';
+
 const state = {
   step: 0,
   maxReached: 0,
-  mode: 'kit',
-  kit: null,
-  sel: { power: 'poe', sensing: 'ventiq', fan: 'none', led: false },
+  mode: 'kit', // 'kit' | 'advanced'
+  kits: [], // catalogue kits (from engine.kits.loadKitCatalog)
+  kitError: '', // unknown-SKU fallback message
+  kit: null, // selected catalogue kit
+  sel: { ...DEFAULT_SEL },
+  resolved: null, // last engine compatible-firmware verdict (null = pending)
   theme: 'light',
 };
 
@@ -41,40 +55,98 @@ const a11y = {
 // Honour prefers-reduced-motion for programmatic scrolling. Overridden at mount.
 let prefersReducedMotion = () => false;
 
-// Compute the active device (from kit or advanced build).
+// The 1.0 engine, injected at mount time (engine.js facade). When absent (a bare
+// app.js mount in a unit test of the shell scaffolding), Step 1 renders its
+// loading state and resolves nothing — there is no simulated fallback path.
+let engine = null;
+
+// Monotonic token so a slow resolve from a superseded selection can never
+// overwrite the verdict for the current one.
+let resolveToken = 0;
+
+// Compute the active device + the engine verdict for the current selection.
 function computeDevice() {
+  const resolved = state.resolved;
   if (state.mode === 'kit' && state.kit) {
-    return { device: { name: state.kit.name, target: state.kit.target }, isPreview: state.kit.channel === 'preview' };
+    return {
+      device: {
+        name: state.kit.display_name || state.kit.sku,
+        target: (resolved && resolved.configString) || state.kit.firmware_config_string || '',
+      },
+      isPreview: resolved ? resolved.isPreview : state.kit.firmware_channel === 'preview',
+      installable: resolved ? resolved.installable : false,
+    };
   }
+
   const bits = [];
   const sn = SENSING.find((s) => s.id === state.sel.sensing);
   if (sn) bits.push(sn.name.replace('Sense360 ', ''));
   const pw = POWER.find((p) => p.id === state.sel.power);
   if (pw && pw.id !== 'usbc') bits.push(pw.name.replace('Sense360 ', ''));
-  // Derive the preview channel from the selected modules and the resolved
-  // target. Today the only advanced selection that maps to a stable WebFlash
-  // build is the Bathroom PoE configuration (PoE power, VentIQ bathroom sensing,
-  // no fan driver, no LED ring). Every other selection maps to a preview or
-  // not-yet-stable build and must carry the preview acknowledgement into Step 2.
-  // Without this, preview-only hardware such as the LED ring would reach Step 2
-  // ungated (the second Codex finding on #477).
-  // TODO(PR 4): replace this heuristic and buildTarget() with the 1.0 engine's
-  // compatible-firmware lookup and release-channel resolution over manifest.json,
-  // which returns the real channel for any selection.
-  const { power, sensing, fan, led } = state.sel;
-  const isStable = power === 'poe' && sensing === 'ventiq' && fan === 'none' && !led;
   return {
     device: {
       name: 'Custom Sense360 build' + (bits.length ? ' · ' + bits.join(' + ') : ''),
-      target: buildTarget(state.sel),
+      target: (resolved && resolved.configString) || '',
     },
-    isPreview: !isStable,
+    isPreview: resolved ? resolved.isPreview : false,
+    installable: resolved ? resolved.installable : false,
   };
 }
 
 function announceStep() {
   const label = STEPS[state.step] ? STEPS[state.step].label : '';
   a11y.announce(`Step ${state.step + 1} of ${STEPS.length}: ${label}`);
+}
+
+// Push the current Step 1 selection through the real engine and resolve the
+// matching firmware. The wizard state is built from the view selection by
+// selToWizardState() (kit mode uses the kit's own wizard_state). setState() is
+// the authoritative engine transition — it keeps the engine state, the URL, and
+// diagnostics in sync and applies AirIQ/VentIQ exclusivity and the bathroom
+// toggle. resolveCompatibleFirmware() then returns the real manifest verdict
+// (installable / preview / blocked) by config_string. The verdict is computed
+// purely from the snapshot, so it is correct regardless of the host DOM.
+//
+// Note on exclusivity: the advanced builder's single "sensing" choice already
+// makes AirIQ and VentIQ mutually exclusive in the view, so the builder never
+// sends the engine a state it would have to reduce. The engine's enforcement
+// stays authoritative for share-link hydration (wizardStateToSel collapses any
+// AirIQ+VentIQ combination to one choice).
+async function syncSelection() {
+  const token = ++resolveToken;
+  let wizardState = null;
+
+  if (state.mode === 'kit' && state.kit) {
+    wizardState = state.kit.wizard_state;
+  } else if (state.mode === 'advanced') {
+    wizardState = selToWizardState(state.sel);
+  }
+
+  if (engine && wizardState) {
+    engine.state.setState(wizardState, { skipUrlUpdate: true });
+  }
+
+  render();
+
+  if (!engine || !wizardState) {
+    return;
+  }
+
+  try {
+    const resolved = await engine.state.resolveCompatibleFirmware(wizardState);
+    if (token !== resolveToken) return;
+    state.resolved = resolved;
+  } catch {
+    if (token !== resolveToken) return;
+    state.resolved = { configString: '', builds: [], build: null, installable: false, isPreview: false, channel: null, reason: 'no-build' };
+  }
+  render();
+}
+
+// A selection changed: mark the verdict pending, then re-resolve.
+function onSelectionChanged() {
+  state.resolved = null;
+  syncSelection();
 }
 
 // ----- state transitions -----
@@ -91,15 +163,17 @@ function reset() {
   state.maxReached = 0;
   state.mode = 'kit';
   state.kit = null;
-  state.sel = { power: 'poe', sensing: 'ventiq', fan: 'none', led: false };
+  state.kitError = '';
+  state.sel = { ...DEFAULT_SEL };
+  state.resolved = null;
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-  render();
+  onSelectionChanged();
   announceStep();
 }
 
-const setMode = (m) => { state.mode = m; render(); };
-const setKit = (k) => { state.kit = k; render(); };
-const setSel = (s) => { state.sel = s; render(); };
+const setMode = (m) => { state.mode = m; state.kitError = ''; onSelectionChanged(); };
+const setKit = (k) => { state.kit = k; state.kitError = ''; onSelectionChanged(); };
+const setSel = (s) => { state.sel = s; onSelectionChanged(); };
 
 function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
@@ -149,8 +223,11 @@ function buildStep() {
   if (state.step === 0) {
     return IdentifyStep({
       mode: state.mode, setMode,
+      kits: state.kits, kitError: state.kitError,
       kit: state.kit, setKit,
       sel: state.sel, setSel,
+      resolved: state.resolved,
+      sourceUrl: ESPHOME_SOURCE_URL,
       onContinue: () => goTo(1),
     });
   }
@@ -175,6 +252,92 @@ function render() {
   currentMain = mainNode;
 }
 
+// Read the requested Step 1 mode + kit SKU from the URL, mirroring the 1.0
+// kit-mode contract: ?configmode=kit[&sku=…], ?configmode=custom|manual, or a
+// legacy manual share link (mount/power/module params). A dedicated configmode=
+// namespace keeps the kit picker independent of the release-mode ?mode= knob.
+function getRequestedModeFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    const configMode = (params.get('configmode') || '').toLowerCase();
+    const sku = params.get('sku');
+
+    if (configMode === 'manual' || configMode === 'custom') {
+      return { mode: 'advanced', sku: '' };
+    }
+    if (configMode === 'kit' || sku) {
+      return { mode: 'kit', sku: sku || '' };
+    }
+    if (urlHasManualMarkers()) {
+      return { mode: 'advanced', sku: '' };
+    }
+  } catch {
+    // ignore malformed URLs
+  }
+  return { mode: 'kit', sku: '' };
+}
+
+// True when the URL carries explicit manual configuration params (the legacy
+// share-link shape). Used to decide whether to hydrate the advanced builder from
+// the engine state: a bare ?configmode=manual keeps the builder default, while a
+// real share link with module params hydrates from the engine.
+function urlHasManualMarkers() {
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    const manualMarkers = ['core', 'mount', 'power', 'airiq', 'ventiq', 'roomiq', 'fan', 'led', 'voice', 'bathroom'];
+    return manualMarkers.some((key) => params.has(key));
+  } catch {
+    return false;
+  }
+}
+
+// Load the real kit catalogue and hydrate Step 1 from the URL, then resolve the
+// initial selection against the engine.
+async function initFromEngine() {
+  let catalog = { kits: [], skipped: [] };
+  try {
+    catalog = await engine.kits.loadKitCatalog();
+  } catch {
+    catalog = { kits: [], skipped: [] };
+  }
+  // The loader already drops invalid (skipped) entries; only valid kits surface.
+  state.kits = Array.isArray(catalog.kits) ? catalog.kits.slice() : [];
+
+  const requested = getRequestedModeFromUrl();
+  if (requested.mode === 'advanced') {
+    state.mode = 'advanced';
+    // A real manual share link (module params present) hydrates the builder from
+    // the engine state that initializeWizard() already applied from the URL. A
+    // bare ?configmode=manual keeps the supported Bathroom PoE default.
+    if (urlHasManualMarkers()) {
+      try {
+        state.sel = wizardStateToSel(engine.state.getState());
+      } catch {
+        state.sel = { ...DEFAULT_SEL };
+      }
+    } else {
+      state.sel = { ...DEFAULT_SEL };
+    }
+  } else if (requested.sku) {
+    const kit = engine.kits.findKitBySku(catalog, requested.sku);
+    if (kit) {
+      state.mode = 'kit';
+      state.kit = kit;
+    } else {
+      // Unknown SKU: fall back to the kit picker with a clear message and a
+      // one-click switch to the advanced builder (the "Build it module by
+      // module" hatch already renders below the kit list).
+      state.mode = 'kit';
+      state.kitError = `We couldn't find a kit matching "${requested.sku}". Pick a kit below, or switch to advanced setup to choose your boards.`;
+    }
+  } else {
+    state.mode = 'kit';
+  }
+
+  render();
+  syncSelection();
+}
+
 /**
  * Mounts the WebFlash 2.0 view into the given root element.
  *
@@ -184,6 +347,8 @@ function render() {
  *   ({ announce, trapFocus, restoreFocus, getFocusableElements }). Supplied by
  *   the mounting entry point so the view consumes the engine rather than
  *   importing it directly.
+ * @param {object} [options.engine]     The engine facade (webflash-2/scripts/engine.js).
+ *   Required for the real Step 1 binding (kits, setState, firmware lookup).
  * @param {() => boolean} [options.prefersReducedMotion]
  */
 export function mountWebFlash2(root, options = {}) {
@@ -192,6 +357,9 @@ export function mountWebFlash2(root, options = {}) {
   }
   if (typeof options.prefersReducedMotion === 'function') {
     prefersReducedMotion = options.prefersReducedMotion;
+  }
+  if (options.engine) {
+    engine = options.engine;
   }
 
   document.documentElement.setAttribute('data-theme', state.theme);
@@ -206,6 +374,10 @@ export function mountWebFlash2(root, options = {}) {
   const app = h('div', { class: 'app' }, Topbar(), railSlot, mainRegion);
   mount(root, app);
   announceStep();
+
+  if (engine) {
+    initFromEngine();
+  }
 }
 
-export const __testHooks = Object.freeze({ STEPS, goTo });
+export const __testHooks = Object.freeze({ STEPS, goTo, getRequestedModeFromUrl, getState: () => state });
