@@ -182,6 +182,19 @@ import {
 } from '../../scripts/utils/a11y.js';
 
 // ---------------------------------------------------------------------------
+// scripts/services/post-flash.js — post-flash validation + handoff state
+// machine (eight result states). The engine owns the lifecycle-to-result
+// reduction and the honest validation aggregation; the view renders snapshots
+// and never claims a passed check without engine evidence. It never reads,
+// logs, or stores Wi-Fi credentials.
+// ---------------------------------------------------------------------------
+import {
+    postFlashService,
+    POST_FLASH_STATES,
+    VALIDATION_CHECK_IDS
+} from '../../scripts/services/post-flash.js';
+
+// ---------------------------------------------------------------------------
 // scripts/services/diagnostics.js — redacted schema_version:1 support bundle.
 // ---------------------------------------------------------------------------
 import {
@@ -334,6 +347,20 @@ export const diagnostics = Object.freeze({
     recordUpdateAvailable
 });
 
+/**
+ * Post-flash validation and handoff state machine (PR 7). The view feeds the
+ * shared singleton the selected build and the ESP Web Tools lifecycle events,
+ * then renders the resulting eight-state snapshot. The engine owns the honest
+ * validation aggregation (never `passed` without evidence, `unknown` by
+ * default) and never reads, logs, or stores Wi-Fi credentials. `service` is a
+ * live reference to the same singleton the 1.0 view drives.
+ */
+export const postFlash = Object.freeze({
+    service: postFlashService,
+    POST_FLASH_STATES,
+    VALIDATION_CHECK_IDS
+});
+
 /** The full engine surface, one namespace per engine module. */
 export const engine = Object.freeze({
     state,
@@ -345,7 +372,8 @@ export const engine = Object.freeze({
     cache,
     kits,
     a11y,
-    diagnostics
+    diagnostics,
+    postFlash
 });
 
 export default engine;

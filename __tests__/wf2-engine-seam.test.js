@@ -28,7 +28,8 @@ import engine, {
     cache,
     kits,
     a11y,
-    diagnostics
+    diagnostics,
+    postFlash
 } from '../webflash-2/scripts/engine.js';
 
 // Direct imports of one representative export per engine module, used to prove
@@ -37,6 +38,7 @@ import { setState, verifyFirmwareIntegrity, evaluateInstallGate, INSTALL_GATE_CH
 import { isStableChannel } from '../scripts/utils/release-channels.js';
 import { validateFirmwareProvenance, CHECK_IDS } from '../scripts/utils/firmware-provenance.js';
 import { checkManifestFreshness } from '../scripts/services/manifest-freshness.js';
+import { postFlashService } from '../scripts/services/post-flash.js';
 import { subscribeServiceWorkerState } from '../scripts/services/sw-update.js';
 import { clearWebFlashCache } from '../scripts/services/cache-clear.js';
 import { loadKitCatalog } from '../scripts/utils/kit-config.js';
@@ -63,6 +65,7 @@ describe('PR 2 — WebFlash 2.0 engine seam', () => {
             'diagnostics',
             'freshness',
             'kits',
+            'postFlash',
             'provenance',
             'state',
             'swUpdate'
@@ -83,6 +86,9 @@ describe('PR 2 — WebFlash 2.0 engine seam', () => {
         expect(engine.kits).toBe(kits);
         expect(engine.a11y).toBe(a11y);
         expect(engine.diagnostics).toBe(diagnostics);
+        expect(engine.postFlash).toBe(postFlash);
+        // The post-flash namespace re-exports the live singleton service.
+        expect(postFlash.service).toBe(postFlashService);
     });
 
     describe('state machine surface', () => {
