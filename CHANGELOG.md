@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+- **WebFlash 1.0 view decommissioned; WebFlash 2.0 is the only view (PR 13).**
+  The final step of the WebFlash 2.0 migration. After the GA cutover (PR 12)
+  soaked a stable release, the `?ui=1` rollback and the entire 1.0 render layer
+  were removed, and the 2.0 view was folded from `webflash-2/` into the repo
+  root, so the 2.0 redesign is now the single installer view at the site root.
+  Removed the dual-view machinery (`scripts/ui-version.js` and the `?ui` branch in
+  `scripts/bootstrap.js`, which now always mounts `scripts/shell.js`), the 1.0
+  entry points (the repo-root `app.js` and `ui.js`), every 1.0-only render module
+  (`kit-mode`, `kit-presets`, `navigation`, `recommended-bundle`, `simple-install`,
+  `theme-toggle`, `wizard-state-observer`, `compat-config`, `init-review`,
+  `ui-capability-bar`, `prefs`, `build-info`, the `scripts/layout/*` panels except
+  the reused `rescue-modal` / `error-log-modal` / `freshness-banner`, the four
+  UI-only `scripts/services/*`, the `scripts/data/{kit-presets,simple-bundles,fan-bundle-import-readiness}.js`
+  and `scripts/content/option-tooltips.js` data modules, and
+  `scripts/utils/{esp-web-tools-overrides,preset-storage,qr-code}.js`), and the 1.0
+  wizard markup from `index.html` (now a minimal 2.0 shell). Folded
+  `webflash-2/scripts/*` into `scripts/`, `webflash-2/app.css` to `app.css`, and
+  `webflash-2/assets/` to `assets/`. Rebuilt `sw.js` (`CACHE_NAME` to
+  `webflash-v16`, precache list rewritten for the single-view module graph) and
+  bumped the cache-bust token to `202606043`. The **engine and the trust model are
+  unchanged**: no firmware, `manifest.json`, `firmware/sources.json`,
+  `REQUIRED_CONFIGS`, kit, release-channel, provenance, freshness, or install-gate
+  logic changed, and the kept `css/*.css` sheets remain because the reused rescue
+  and error-log modals render with them. Removed the obsolete 1.0 and dual-view
+  Jest suites and rebased the `wf2-*` view suites onto the folded `scripts/` paths.
+
 ### Added
 - **Live Simple-install bundle-picker smoke verification (WF-EASY-BUNDLE-PICKER-LIVE-SMOKE-001).**
   Docs + test only — verifies the **current deployed** Simple-install end-state

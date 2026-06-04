@@ -36,23 +36,6 @@ function renderDom() {
     </div>`;
 }
 
-describe('cache freshness — build-info module', () => {
-    test('exports BUILD_INFO with the three documented keys', async () => {
-        const { BUILD_INFO } = await import('../scripts/build-info.js');
-        expect(BUILD_INFO).toBeDefined();
-        expect(BUILD_INFO).toEqual(expect.objectContaining({
-            appVersion: expect.any(String),
-            buildCommit: expect.any(String),
-            buildTimestamp: expect.any(String)
-        }));
-    });
-
-    test('object is frozen so consumers cannot mutate the build info', async () => {
-        const { BUILD_INFO } = await import('../scripts/build-info.js');
-        expect(Object.isFrozen(BUILD_INFO)).toBe(true);
-    });
-});
-
 describe('cache freshness — manifest-freshness service', () => {
     test("returns 'current' when generated_at matches", async () => {
         const { checkManifestFreshness } = await import('../scripts/services/manifest-freshness.js');
@@ -296,38 +279,6 @@ describe('cache freshness — freshness banner', () => {
             false
         );
         expect(active).toBeNull();
-    });
-});
-
-describe('cache freshness — about panel', () => {
-    beforeEach(() => {
-        jest.resetModules();
-        renderDom();
-    });
-
-    test('renders BUILD_INFO and manifest metadata, falling back to "unknown" for missing fields', async () => {
-        const { __testHooks } = await import('../scripts/layout/about-panel.js');
-        const mount = document.querySelector(__testHooks.MOUNT_SELECTOR);
-        __testHooks.renderInto(mount, {
-            manifest_version: 1,
-            generated_at: '2026-05-04T00:00:00.000Z',
-            source_commit: 'abc1234',
-            freshness: 'current'
-        });
-        expect(mount.querySelector('[data-about="about-manifest-version"]').textContent).toBe('1');
-        expect(mount.querySelector('[data-about="about-manifest-generated"]').textContent)
-            .toContain('2026-05-04');
-        expect(mount.querySelector('[data-about="about-manifest-commit"]').textContent).toBe('abc1234');
-        expect(mount.querySelector('[data-about="about-manifest-freshness"]').textContent).toBe('current');
-        expect(mount.querySelector('[data-cache-clear]')).not.toBeNull();
-    });
-
-    test('renders "unknown" when manifest metadata is missing entirely', async () => {
-        const { __testHooks } = await import('../scripts/layout/about-panel.js');
-        const mount = document.querySelector(__testHooks.MOUNT_SELECTOR);
-        __testHooks.renderInto(mount, null);
-        expect(mount.querySelector('[data-about="about-manifest-version"]').textContent).toBe('unknown');
-        expect(mount.querySelector('[data-about="about-manifest-commit"]').textContent).toBe('unknown');
     });
 });
 

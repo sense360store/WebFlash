@@ -17,7 +17,7 @@
  *   - finished advances to the connect step; error surfaces a retry path;
  *   - desktop Chromium is enforced (mobile / unsupported fallback message);
  *   - the FLASH_PHASES + requestAnimationFrame simulation is gone from
- *     webflash-2/scripts/install.js.
+ *     scripts/install.js.
  *
  * The gate cannot pass in this environment (GATE_MODE is production and the
  * committed builds are dev-signed, so provenance blocks), exactly as the PR 5
@@ -41,7 +41,7 @@ beforeAll(() => {
 });
 
 const ROOT = process.cwd();
-const INSTALL_SRC = readFileSync(join(ROOT, 'webflash-2', 'scripts', 'install.js'), 'utf8');
+const INSTALL_SRC = readFileSync(join(ROOT, 'scripts', 'install.js'), 'utf8');
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const kitsJson = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'kits.json'), 'utf8'));
 
@@ -114,8 +114,8 @@ describe('PR 6 — InstallStep renders the real ESP Web Tools component', () => 
     a11yStub.announce.mockReset();
     global.fetch = makeFetch();
     window.history.replaceState({}, '', '/');
-    engine = (await import('../webflash-2/scripts/engine.js')).default;
-    ({ InstallStep } = await import('../webflash-2/scripts/install.js'));
+    engine = (await import('../scripts/engine.js')).default;
+    ({ InstallStep } = await import('../scripts/install.js'));
   });
 
   async function mountStep(wizardState, opts = {}) {

@@ -4,7 +4,7 @@
  * Goal: prove the 2.0 view can import the 1.0 logic as a view-agnostic engine.
  * This is the "trivial smoke import from a scratch module" acceptance criterion
  * from docs/webflash-2-migration-prompts.md (PR 2). The scratch module is
- * webflash-2/scripts/engine.js: a 2.0-side facade that imports each of the nine
+ * scripts/engine.js: a 2.0-side facade that imports each of the nine
  * engine modules and re-exports their view-agnostic surface. If any engine
  * module failed to import in a 2.0 context, the top-level import below would
  * throw and this suite would error before a single assertion ran.
@@ -30,7 +30,7 @@ import engine, {
     a11y,
     diagnostics,
     postFlash
-} from '../webflash-2/scripts/engine.js';
+} from '../scripts/engine.js';
 
 // Direct imports of one representative export per engine module, used to prove
 // the seam re-exports live references rather than reimplementing anything.

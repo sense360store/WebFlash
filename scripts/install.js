@@ -84,11 +84,10 @@ const WRITE_RING_BASE = 25;
 const WRITE_RING_SPAN = 73;
 
 // True when the ESP Web Tools custom element is registered. The production
-// index.html (under ?ui=2) loads it from the unpkg origin allowed by the CSP, so
-// it is present there. The standalone /webflash-2/ design preview deliberately
-// loads no third-party script, so the component is absent; the install gate
-// already blocks that path (the committed dev-signed build fails verification),
-// and this flag lets the view show an honest notice instead of an inert button.
+// index.html loads it from the unpkg origin allowed by the CSP, so it is present
+// there. In a unit test (or any host that loads no third-party script) the
+// component is absent; this flag lets the view show an honest notice instead of
+// an inert button.
 function espWebToolsRegistered() {
   return typeof customElements !== 'undefined'
     && typeof customElements.get === 'function'
@@ -99,7 +98,7 @@ function espWebToolsRegistered() {
  * @param {object} props
  * @param {{name: string, target: string}} props.device
  * @param {object|null} [props.build]   The resolved manifest build entry.
- * @param {object|null} [props.engine]  The engine facade (webflash-2/scripts/engine.js).
+ * @param {object|null} [props.engine]  The engine facade (scripts/engine.js).
  * @param {object|null} [props.a11y]    Engine accessibility primitives (announce).
  * @param {() => void} props.onBack
  * @param {() => void} props.onFlashed

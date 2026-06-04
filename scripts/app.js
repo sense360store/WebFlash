@@ -1,10 +1,10 @@
 /* WebFlash 2.0 — App state machine + shell. Ported from app.jsx.
-   Standalone, no-build ES module. Two entry points mount this view:
-     - webflash-2/scripts/shell.js   — inside the production index.html (?ui=2).
-     - webflash-2/scripts/standalone.js — the isolated /webflash-2/ preview.
-   Both inject the engine accessibility primitives, and (PR 4) the engine itself,
-   so the view renders state and calls engine actions but never owns an
-   accessibility or trust gate (see docs/adr/0001-webflash-2-view-over-engine.md).
+   No-build ES module. The view is mounted by scripts/shell.js inside the
+   production index.html (the sole entry since PR 13 removed the 1.0 view and the
+   isolated /webflash-2/ standalone preview). The mounting entry injects the
+   engine accessibility primitives and the engine itself, so the view renders
+   state and calls engine actions but never owns an accessibility or trust gate
+   (see docs/adr/0001-webflash-2-view-over-engine.md).
 
    PR 4 binds Step 1 (Identify) to the real engine: kits come from the real
    catalogue (scripts/data/kits.json), selections flow through the real setState,
@@ -65,8 +65,8 @@ let engine = null;
 // modal (scripts/layout/rescue-modal.js): the real rescue manifest, the
 // erase-first install, the acknowledgement gate, and its own focus trap and
 // restoration. The view only triggers it; it never reimplements the recovery
-// flow. Left null in the isolated /webflash-2/ preview, which does not load the
-// 1.0 stylesheet or ESP Web Tools, so the topbar Rescue button stays inert there.
+// flow. Defaults to null so a bare app.js mount in a unit test (without the
+// production shell) leaves the topbar Rescue button inert rather than throwing.
 let recovery = null;
 
 // Monotonic token so a slow resolve from a superseded selection can never
@@ -513,7 +513,7 @@ async function initFromEngine() {
  *   ({ announce, trapFocus, restoreFocus, getFocusableElements }). Supplied by
  *   the mounting entry point so the view consumes the engine rather than
  *   importing it directly.
- * @param {object} [options.engine]     The engine facade (webflash-2/scripts/engine.js).
+ * @param {object} [options.engine]     The engine facade (scripts/engine.js).
  *   Required for the real Step 1 binding (kits, setState, firmware lookup).
  * @param {object} [options.recovery]   The real recovery path
  *   ({ openRescueModal }) from scripts/layout/rescue-modal.js. Supplied by the

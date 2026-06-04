@@ -57,7 +57,7 @@
  * This module remains a facade only; every export is a live reference to the real
  * engine function.
  *
- * @module webflash-2/engine
+ * @module engine
  */
 
 // ---------------------------------------------------------------------------
@@ -81,8 +81,8 @@ import {
     INSTALL_GATE_CHECK_IDS,
     getReleaseMode,
     setReleaseModeFromUrl
-} from '../../scripts/state.js';
-import { getManifestMetadataForAbout } from '../../scripts/state.js';
+} from './state.js';
+import { getManifestMetadataForAbout } from './state.js';
 
 // ---------------------------------------------------------------------------
 // scripts/capabilities.js — desktop / Web Serial / secure-context detection.
@@ -91,7 +91,7 @@ import { getManifestMetadataForAbout } from '../../scripts/state.js';
 import {
     detectCapabilities,
     evaluateBrowserReadiness
-} from '../../scripts/capabilities.js';
+} from './capabilities.js';
 
 // ---------------------------------------------------------------------------
 // scripts/utils/release-channels.js — seven-tier channel model, badges,
@@ -111,7 +111,7 @@ import {
     isBuildVisibleInMode,
     pickDefaultBuild,
     getChannelPriority
-} from '../../scripts/utils/release-channels.js';
+} from './utils/release-channels.js';
 
 // ---------------------------------------------------------------------------
 // scripts/utils/firmware-provenance.js — the blocking install gate, stable
@@ -130,7 +130,7 @@ import {
     applyHashVerificationResult,
     pickDefaultEligibleBuilds,
     describeVerificationChecks
-} from '../../scripts/utils/firmware-provenance.js';
+} from './utils/firmware-provenance.js';
 
 // ---------------------------------------------------------------------------
 // scripts/services/manifest-freshness.js — live no-store re-fetch verdict.
@@ -139,7 +139,7 @@ import {
     FRESHNESS_REASON,
     resolveManifestUrl,
     checkManifestFreshness
-} from '../../scripts/services/manifest-freshness.js';
+} from './services/manifest-freshness.js';
 
 // ---------------------------------------------------------------------------
 // scripts/services/sw-update.js — service-worker update detection + actions.
@@ -151,12 +151,12 @@ import {
     dismissPendingUpdate,
     triggerSkipWaitingAndReload,
     markCacheClearRequested
-} from '../../scripts/services/sw-update.js';
+} from './services/sw-update.js';
 
 // ---------------------------------------------------------------------------
 // scripts/services/cache-clear.js — Cache Storage clearing for recovery.
 // ---------------------------------------------------------------------------
-import { clearWebFlashCache } from '../../scripts/services/cache-clear.js';
+import { clearWebFlashCache } from './services/cache-clear.js';
 
 // ---------------------------------------------------------------------------
 // scripts/utils/kit-config.js — kit catalogue loader + wizard-state mapping.
@@ -171,7 +171,7 @@ import {
     summariseKitModules,
     normaliseSku,
     validateKitEntry
-} from '../../scripts/utils/kit-config.js';
+} from './utils/kit-config.js';
 
 // ---------------------------------------------------------------------------
 // scripts/utils/a11y.js — focus trap, focus restoration, live-region announce.
@@ -181,7 +181,7 @@ import {
     trapFocus,
     restoreFocus,
     announce
-} from '../../scripts/utils/a11y.js';
+} from './utils/a11y.js';
 
 // ---------------------------------------------------------------------------
 // scripts/services/post-flash.js — post-flash validation + handoff state
@@ -194,7 +194,7 @@ import {
     postFlashService,
     POST_FLASH_STATES,
     VALIDATION_CHECK_IDS
-} from '../../scripts/services/post-flash.js';
+} from './services/post-flash.js';
 
 // ---------------------------------------------------------------------------
 // scripts/services/diagnostics.js — redacted schema_version:1 support bundle.
@@ -219,7 +219,7 @@ import {
     recordRecoveryAcknowledged,
     recordBootloaderInstructionsShown,
     recordUpdateAvailable
-} from '../../scripts/services/diagnostics.js';
+} from './services/diagnostics.js';
 
 /** Central state machine and stepper. The view reads and drives wizard state through these. */
 export const state = Object.freeze({

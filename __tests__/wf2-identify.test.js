@@ -83,8 +83,8 @@ async function boot(search = '') {
   if (search) {
     window.history.replaceState({}, '', '/' + search);
   }
-  const engine = (await import('../webflash-2/scripts/engine.js')).default;
-  const app = await import('../webflash-2/scripts/app.js');
+  const engine = (await import('../scripts/engine.js')).default;
+  const app = await import('../scripts/app.js');
   return { engine, app };
 }
 
