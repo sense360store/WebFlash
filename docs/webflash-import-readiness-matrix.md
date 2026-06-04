@@ -282,10 +282,25 @@ describe the contract a future per-family import PR must satisfy.
 | PoE / S360-410 | n/a — already covered | already shipped *as part of* Release-One (`Ceiling-POE-VentIQ-RoomIQ`) and the LED preview (`Ceiling-POE-VentIQ-RoomIQ-LED`) via the `power=poe` config segment | covered transitively by the Release-One + LED preview source entries | covered transitively (no separate `S360-410`-named build) | **none** (no separate import action in this PR; no separate import action planned unless upstream ships a PoE-PSU-specific image) | not a distinct import class today | n/a (Release-One already in `REQUIRED_CONFIGS`) | n/a (Release-One already a kit) | n/a | `WF-IMPORT-POE-410-001` reserved (expected no-op unless upstream ships a PoE-PSU-specific image) |
 | LED stable | `RELEASE-007` | `missing-upstream-release-artifact` for `status: production` LED catalog entry; upstream currently `status: preview` only; bench evidence (`S360-300-BENCH-001`) pending | LED preview source entry exists (`v1.0.0-led-preview`); no separate stable source entry | LED preview build present; no LED stable build | **none** | `stable import candidate after promotion` | `not-required-configs` (until upstream `status: production` **and** a deliberate `WF-REQUIRED-001`-class PR) | `not-kit-default`, `not-recommended` (until upstream promotes and a deliberate `WF-KIT-LED-001` PR lands) | `preview-acknowledgement-required` (today) → potentially removed only after stable promotion + kit / recommended decision | `WF-LED-STABLE-001` after `RELEASE-007` and `S360-300-BENCH-001` |
 | AirIQ / S360-210 | upstream AirIQ release (identifier TBD) | `missing-upstream-release-artifact`; documented hardware, no current build; AirIQ ↔ VentIQ mutex is settled wizard policy | none | none | **none** | `preview import candidate` (after gates) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` | reserved — no `WF-IMPORT-AIRIQ-001` identifier assigned by this matrix; a future PR may number it deliberately |
+| Full-composition fan-control **room bundles** (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) | upstream full-composition fan bundle **compile + publish** (per `ROOM-BUNDLE-FAN-CONFIGS-001` / #713) | **compile-pending / no artifact** — #713 added the five product YAMLs but published no firmware (`compile_validation_status: pending-ci`, `buildable-preview-compile-pending`, no `.bin`, no release, catalog `status: hardware-pending`). FanDAC variants additionally gated on `FANDAC-I2C-ADDR-001` (GP8403 IC1 `0x58` / IC2 `0x5A`; `0x59` forbidden with VentIQ/AirIQ) — bench-verification PENDING. | none (no source entry) | none (no manifest build) | **none** | `preview import candidate` (after upstream compile + publish + a WebFlash firmware-import PR) | `not-required-configs` | `not-kit-default`, `not-recommended` | `preview-acknowledgement-required` + `fan-control-acknowledgement-required` (+ `analog-fan-address-switch-acknowledgement-required` for the two DAC variants) — **all staged + tested under WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001** | `WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001` (declares the bundles + import-readiness gate; imports nothing). The future per-config firmware-import PR follows after upstream compile/publish. |
 
 The "Allowed import action now" column is uniformly **none** across
 every non-imported row because WF-IMPORT-GAP-001 is documentation
 only. Per-family postures below expand each row.
+
+> **Fan-control room-bundle exposure (WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001).**
+> The Simple-install bundle picker now *declares* the five full-composition
+> fan-control room bundles and gates them on the live manifest
+> (`getExposableFanControlBundles` in
+> [`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js)): a card
+> appears only when the exact firmware `config_string` is present in
+> `manifest.json` — which only happens after a firmware-import PR fetches the
+> signed `.bin`, writes the `.meta.json` sidecar, pins the SHA-256 in
+> `firmware/sources.json`, and regenerates the manifest. As of this PR **none of
+> the five firmware configs is compiled, published, or imported**, so no card is
+> exposed and the picker shows exactly the six base bundles. TRIAC remains
+> excluded from this lane. See
+> [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](live-smoke-easy-bundle-picker-fan-expansion.md).
 
 ## Relay / S360-310 import posture
 

@@ -73,11 +73,18 @@
  *   install.js with a new ?v= token, and a new scripts/data/simple-bundles.js
  *   data module in SCRIPT_MODULES below). Existing installs must purge v11 and
  *   re-prime so the picker ships intact. See docs/deploy-notes.md.
+ *   `webflash-v13` (WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001) bumps again: the
+ *   Simple-install bundle picker gained import-gated fan-control room bundles
+ *   (index.html now carries the analog-fan address-switch acknowledgement region,
+ *   scripts/simple-install.js injects import-ready fan-control cards, and
+ *   scripts/data/simple-bundles.js declares them). No fan-control firmware ships
+ *   yet, so the picker is visually unchanged today — but existing installs must
+ *   purge v12 so the staged copy + gate deploy in lockstep. See docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v12';
+const CACHE_NAME = 'webflash-v13';
 const CACHE_VERSION = 5;
 
 /**

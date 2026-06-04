@@ -249,6 +249,35 @@ raw/custom module combination — all of which remain reachable only through
 was imported. Live checklist:
 [`docs/live-smoke-easy-bundle-picker.md`](live-smoke-easy-bundle-picker.md).
 
+## Fan-control room bundles — declared + import-gated, not yet exposed (WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001)
+
+The Simple-install picker now **declares** five full-composition fan-control room
+bundles and **import-gates** them on the live manifest. A fan-control card only
+ever appears once its exact firmware `config_string` is present in `manifest.json`
+(via `getExposableFanControlBundles` in
+[`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js)).
+
+| Bundle SKU | Card name | Firmware `config_string` | Acknowledgements | Exposed today? |
+|---|---|---|---|:---:|
+| `S360-KIT-BATH-P-PWM` | Bathroom Bundle — PoE + PWM Fan Control | `Ceiling-POE-VentIQ-FanPWM-RoomIQ` | preview + fan-control | **No** |
+| `S360-KIT-BATH-P-DAC` | Bathroom Bundle — PoE + 0–10V Fan Control | `Ceiling-POE-VentIQ-FanDAC-RoomIQ` | preview + fan-control + address-switch | **No** |
+| `S360-KIT-KITCHEN-P-REL` | Kitchen Bundle — PoE + Relay Extract Control | `Ceiling-POE-AirIQ-FanRelay-RoomIQ` | preview + fan-control | **No** |
+| `S360-KIT-KITCHEN-P-PWM` | Kitchen Bundle — PoE + PWM Extract Control | `Ceiling-POE-AirIQ-FanPWM-RoomIQ` | preview + fan-control | **No** |
+| `S360-KIT-KITCHEN-P-DAC` | Kitchen Bundle — PoE + 0–10V Extract Control | `Ceiling-POE-AirIQ-FanDAC-RoomIQ` | preview + fan-control + address-switch | **No** |
+
+**None is exposed today.** Upstream `ROOM-BUNDLE-FAN-CONFIGS-001` (#713) added the
+five product YAMLs but published **no firmware** (`compile_validation_status:
+pending-ci`, `buildable-preview-compile-pending`, no `.bin`, no release; catalog
+`status: hardware-pending`), so the matching builds are absent from `manifest.json`
+and the gate returns an empty list — the picker shows exactly the six base
+bundles. The two analog (DAC) bundles carry an additional GP8403 **address-switch**
+acknowledgement (IC1 `0x58` / IC2 `0x5A`; `0x59` forbidden with VentIQ/AirIQ); the
+upstream bench gate `FANDAC-I2C-ADDR-001` is PENDING and the address switch is
+**not** claimed physically verified. The definitions + gate + acknowledgement
+plumbing are staged so a future firmware-import PR lights up the matching card with
+no further wizard code change. TRIAC stays excluded. Live checklist:
+[`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](live-smoke-easy-bundle-picker-fan-expansion.md).
+
 ## Module availability snapshot
 
 Step 4 classifies every module variant through the presentation-only

@@ -23,7 +23,7 @@
          together with the `?v=` asset query below and the sw.js CACHE_NAME on every
          UX-only JS deploy. No secrets/PII here — it is copied into diagnostics. -->
     <meta name="webflash-app-version" content="1.0.1">
-    <meta name="webflash-app-shell" content="2026-06-01-5">
+    <meta name="webflash-app-shell" content="2026-06-01-6">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +39,10 @@
          "Cannot install yet" copy from cache. Keep this token in lockstep with
          the sw.js CACHE_NAME and the `webflash-app-shell` marker above; see
          docs/deploy-notes.md. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=202606015">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=202606016">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=202606015">
+    <link rel="stylesheet" href="./css/layout.css?v=202606016">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -359,6 +359,24 @@
                                 <label class="simple-install__fan-control-confirm" data-simple-bundle-fan-control-control>
                                     <input type="checkbox" data-simple-bundle-fan-control-ack aria-describedby="simple-fan-control-desc">
                                     <span id="simple-fan-control-desc"><strong>Fan-control acknowledgement.</strong> I understand this bundle controls a bathroom fan, I am responsible for the wiring and local safety rules, and I will still acknowledge the preview channel before installing.</span>
+                                </label>
+                            </div>
+
+                            <!-- WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001 — the third,
+                                 strongest gate, for the 0–10V (analog) fan-control bundles
+                                 only. Hidden unless an analog-fan bundle is selected (none
+                                 ship today; this is staged so a future firmware import lights
+                                 it up). It is layered ON TOP of the preview AND fan-control
+                                 acknowledgements: the controller only lets the authoritative
+                                 "Before you flash" acknowledgement become true once all three
+                                 are checked. The copy stays plain (no internal IDs) and names
+                                 the GP8403 addresses 0x58 / 0x5A and the forbidden 0x59; this
+                                 address setting has NOT been physically verified. -->
+                            <div class="simple-install__fan-control simple-install__dac-address" data-simple-bundle-dac-address hidden aria-hidden="true">
+                                <p class="simple-install__fan-control-warning" data-simple-bundle-dac-address-warning>This bundle drives a 0&ndash;10V analog fan. The GP8403 analog fan driver must be switched so IC1 uses 0x58 and IC2 uses 0x5A. Address 0x59 must not be used, because the room air-quality sensor already uses it on the shared bus. This address setting has not been physically verified.</p>
+                                <label class="simple-install__fan-control-confirm" data-simple-bundle-dac-address-control>
+                                    <input type="checkbox" data-simple-bundle-dac-address-ack aria-describedby="simple-dac-address-desc">
+                                    <span id="simple-dac-address-desc"><strong>Address-switch acknowledgement.</strong> I have set the analog fan driver (GP8403) address switches so IC1 uses 0x58 and IC2 uses 0x5A. I understand 0x59 must not be used with the room air-quality sensor on the shared bus, and that this address setting has not been physically verified.</span>
                                 </label>
                             </div>
 
@@ -1626,6 +1644,6 @@
          cache-bust token rides on this always-revalidated HTML so the bootstrap
          loader (and the app.js + changed ESM modules it pulls in) is fetched
          fresh on the first load after a deploy, never a stale CDN/SW copy. -->
-    <script type="module" src="./scripts/bootstrap.js?v=202606015"></script>
+    <script type="module" src="./scripts/bootstrap.js?v=202606016"></script>
 </body>
 </html>

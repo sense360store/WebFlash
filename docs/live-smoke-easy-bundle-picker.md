@@ -10,6 +10,12 @@ or raw module combination.
 
 It complements — and does not replace:
 
+- [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](live-smoke-easy-bundle-picker-fan-expansion.md)
+  — the follow-up checklist for the import-gated full-composition **fan-control**
+  room bundles (Bathroom/Kitchen + fan driver). As of
+  `WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001` those five bundles are **declared and
+  gated but not exposed** — their firmware is not yet compiled/published/imported,
+  so the live picker still shows exactly the six base bundle cards below.
 - [`docs/live-smoke-preview-import.md`](live-smoke-preview-import.md) — the live
   smoke checklist for the preview firmware imports the picker now surfaces.
 - [`docs/sense360-webflash-status.md`](sense360-webflash-status.md) — the
