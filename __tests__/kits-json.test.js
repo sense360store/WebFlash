@@ -226,4 +226,100 @@ describe('scripts/data/kits.json', () => {
             expect(kit.wizard_state.fan).not.toBe('triac');
         });
     });
+
+    // WF2-FAN-EXPANSION-001 — the five full-composition fan bundles imported into
+    // the manifest by WF-IMPORT-FAN-BUNDLES-001, surfaced as preview kit cards.
+    // Two Bathroom fan variants (PWM / DAC) and three Kitchen fan variants
+    // (Relay / PWM / DAC) join the existing six bundles, taking the catalogue to
+    // eleven. The install acknowledgements are config-driven (scripts/install.js)
+    // so they apply automatically; this block pins the kit-data contract.
+    describe('WF2-FAN-EXPANSION-001 — five fan bundle kit cards', () => {
+        const NEW_FAN_KITS = [
+            { sku: 'S360-KIT-BATH-P-PWM', config: 'Ceiling-POE-VentIQ-FanPWM-RoomIQ', fan: 'pwm', air: 'ventiq', bathroom: true },
+            { sku: 'S360-KIT-BATH-P-DAC', config: 'Ceiling-POE-VentIQ-FanDAC-RoomIQ', fan: 'analog', air: 'ventiq', bathroom: true },
+            { sku: 'S360-KIT-KITCHEN-P-REL', config: 'Ceiling-POE-AirIQ-FanRelay-RoomIQ', fan: 'relay', air: 'airiq', bathroom: false },
+            { sku: 'S360-KIT-KITCHEN-P-PWM', config: 'Ceiling-POE-AirIQ-FanPWM-RoomIQ', fan: 'pwm', air: 'airiq', bathroom: false },
+            { sku: 'S360-KIT-KITCHEN-P-DAC', config: 'Ceiling-POE-AirIQ-FanDAC-RoomIQ', fan: 'analog', air: 'airiq', bathroom: false }
+        ];
+
+        test('the catalogue holds exactly eleven kits', () => {
+            // Six pre-existing bundles (five base + Bathroom Relay) plus the five
+            // new fan bundles. The kit-mode picker renders one card per kit.
+            expect(catalog.kits).toHaveLength(11);
+            expect(catalog.skipped).toEqual([]);
+        });
+
+        test('all five new fan SKUs are present with the correct config string and preview channel', () => {
+            NEW_FAN_KITS.forEach(expected => {
+                const kit = catalog.kits.find(k => k.sku === expected.sku);
+                expect(kit).toBeTruthy();
+                expect(kit.firmware_config_string).toBe(expected.config);
+                expect(kit.firmware_channel).toBe('preview');
+            });
+        });
+
+        test('every new fan kit config resolves to a real manifest build', () => {
+            NEW_FAN_KITS.forEach(expected => {
+                expect(manifestConfigStrings.has(expected.config)).toBe(true);
+            });
+        });
+
+        test('every new fan kit is a full room bundle (RoomIQ + air sensor + fan driver)', () => {
+            NEW_FAN_KITS.forEach(expected => {
+                const kit = catalog.kits.find(k => k.sku === expected.sku);
+                const state = kit.wizard_state;
+                expect(state.roomiq).toBe('roomiq');
+                expect(state.fan).toBe(expected.fan);
+                expect(state[expected.air]).toBe(expected.air);
+                expect(state.bathroom).toBe(expected.bathroom);
+                // VentIQ and AirIQ stay mutually exclusive.
+                const hasAir = state.airiq && state.airiq !== 'none';
+                const hasVent = state.ventiq && state.ventiq !== 'none';
+                expect(hasAir && hasVent).toBe(false);
+            });
+        });
+
+        test('no new fan kit is recommended / stable / default / buyable', () => {
+            NEW_FAN_KITS.forEach(expected => {
+                const kit = catalog.kits.find(k => k.sku === expected.sku);
+                expect(kit.recommended).toBe(false);
+                expect(kit.firmware_channel).toBe('preview');
+                // The schema carries no buyable / default flag; preview fan-control
+                // kits must never smuggle one in.
+                expect(kit.buyable).toBeUndefined();
+                expect(kit.isDefault).toBeUndefined();
+            });
+        });
+
+        test('S360-KIT-BATH-P stays the only stable / recommended kit', () => {
+            const recommended = catalog.kits.filter(k => k.recommended);
+            expect(recommended.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
+            const stable = catalog.kits.filter(k => k.firmware_channel === 'stable');
+            expect(stable.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
+        });
+
+        test('the two FanDAC kits combine FanDAC with a VentIQ / AirIQ air sensor', () => {
+            // This is exactly the SGP41 analog-address conflict the FanDAC address
+            // acknowledgement (scripts/install.js) covers, so it must be a real,
+            // resolvable combination here.
+            const dacKits = ['S360-KIT-BATH-P-DAC', 'S360-KIT-KITCHEN-P-DAC'];
+            dacKits.forEach(sku => {
+                const kit = catalog.kits.find(k => k.sku === sku);
+                expect(kit.wizard_state.fan).toBe('analog');
+                expect(kit.firmware_config_string).toContain('FanDAC');
+                const hasAirSensor = (kit.wizard_state.ventiq && kit.wizard_state.ventiq !== 'none')
+                    || (kit.wizard_state.airiq && kit.wizard_state.airiq !== 'none');
+                expect(hasAirSensor).toBe(true);
+            });
+        });
+
+        test('the standalone fan-only previews and TRIAC are never kit cards', () => {
+            const forbiddenFanOnly = ['Ceiling-POE-FanPWM', 'Ceiling-POE-FanDAC'];
+            catalog.kits.forEach(kit => {
+                expect(forbiddenFanOnly).not.toContain(kit.firmware_config_string);
+                expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
+                expect(kit.wizard_state.fan).not.toBe('triac');
+            });
+        });
+    });
 });
