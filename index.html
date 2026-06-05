@@ -22,7 +22,7 @@
          together with the `?v=` asset query below and the sw.js CACHE_NAME on every
          JS/CSS deploy. No secrets/PII here — it is copied into diagnostics. -->
     <meta name="webflash-app-version" content="1.0.1">
-    <meta name="webflash-app-shell" content="2026-06-04-3">
+    <meta name="webflash-app-shell" content="2026-06-05-1">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,10 +41,10 @@
          and error-log-modal.js, reused by the 2.0 view) render with its styles.
          The remaining sheets and the 2.0 app stylesheet (app.css, injected by
          scripts/shell.js) provide the rest of the presentation. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=202606043">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=202606051">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=202606043">
+    <link rel="stylesheet" href="./css/layout.css?v=202606051">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
@@ -70,6 +70,6 @@
          cache-bust token rides on this always-revalidated HTML so the bootstrap
          loader (and the ESM module graph it pulls in) is fetched fresh on the
          first load after a deploy, never a stale CDN/SW copy. -->
-    <script type="module" src="./scripts/bootstrap.js?v=202606043"></script>
+    <script type="module" src="./scripts/bootstrap.js?v=202606051"></script>
 </body>
 </html>

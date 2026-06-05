@@ -15,7 +15,7 @@
 import { h, mount } from './h.js';
 import { icon } from './icons.js';
 import { Rail } from './ui.js';
-import { IdentifyStep } from './identify.js';
+import { IdentifyStep, resetIdentifyPickerState } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
 import { AIR, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
@@ -187,6 +187,10 @@ function reset() {
   state.kitError = '';
   state.sel = { ...DEFAULT_SEL };
   state.resolved = null;
+  // Clear the Step 1 kit-picker's local UI state (search, channel filter, focus)
+  // so a fresh flow starts on a clean picker, matching the prototype's
+  // fresh-on-remount local state.
+  resetIdentifyPickerState();
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   onSelectionChanged();
   announceStep();

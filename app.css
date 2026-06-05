@@ -395,6 +395,190 @@ button { font-family: inherit; }
 }
 .kit-hero__target b { color: var(--text-body); font-weight: 600; }
 
+/* ---------- Kit picker (master–detail browser) ----------
+   WF2 Step 1 redesign: replaces the stacked KitHero cards with a compact,
+   height-capped master list (left) plus a sticky detail panel (right) so the
+   page height stays constant as the catalogue grows. Recreated from the design
+   handoff prototype using the existing design tokens, so light + dark follow
+   automatically. The channel chips are scoped as .kit-chip (not the prototype's
+   generic .chip) to avoid colliding with the legacy .chip rule in css/theme.css. */
+.kit-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: 22px;
+  align-items: start;
+}
+
+.kit-browser { min-width: 0; display: flex; flex-direction: column; }
+
+/* toolbar: search + filter chips */
+.kit-toolbar {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.kit-search {
+  position: relative; flex: 1; min-width: 220px;
+  display: flex; align-items: center;
+}
+.kit-search__ico {
+  position: absolute; left: 13px;
+  width: 17px; height: 17px; color: var(--text-faint);
+  pointer-events: none;
+}
+.kit-search__input {
+  width: 100%; height: 44px;
+  padding: 0 38px 0 38px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-family: inherit; font-size: 0.92rem; color: var(--text);
+  transition: border-color .16s, box-shadow .16s;
+}
+.kit-search__input::placeholder { color: var(--text-faint); }
+.kit-search__input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.kit-search__clear {
+  position: absolute; right: 8px;
+  width: 26px; height: 26px; border-radius: 50%;
+  border: none; background: var(--bg-elev); color: var(--text-muted);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+  display: grid; place-items: center;
+}
+.kit-search__clear:hover { background: var(--border-strong); color: var(--text); }
+
+.kit-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+.kit-chip {
+  height: 36px; padding: 0 15px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.85rem; font-weight: 550; cursor: pointer;
+  transition: all .16s;
+}
+.kit-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.kit-chip.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-press);
+}
+
+/* the scrollable list itself — this is what keeps the page short */
+.kit-list {
+  display: grid; gap: 8px;
+  max-height: min(60vh, 540px);
+  overflow-y: auto;
+  padding: 2px;
+  margin: -2px;
+}
+.kit-list::-webkit-scrollbar { width: 10px; }
+.kit-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 3px solid var(--bg); }
+
+.kitrow {
+  display: flex; align-items: center; gap: 13px;
+  width: 100%; text-align: left;
+  padding: 13px 15px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s, transform .1s;
+}
+.kitrow:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.kitrow.is-focused {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: var(--ring);
+}
+.kitrow__dot {
+  flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--text-faint);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--text-faint) 18%, transparent);
+}
+.kitrow__dot--recommended { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.kitrow__dot--stable { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.kitrow__dot--preview { background: var(--warning); box-shadow: 0 0 0 4px var(--warning-soft); }
+
+.kitrow__main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.kitrow__name {
+  font-weight: 600; font-size: 0.94rem; letter-spacing: -0.01em;
+  color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.kitrow__rec {
+  font-family: var(--font-mono);
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  padding: 2px 6px; border-radius: var(--r-pill);
+  flex: 0 0 auto;
+}
+.kitrow__meta {
+  font-family: var(--font-mono);
+  font-size: 0.74rem; color: var(--text-faint);
+}
+.kitrow__right { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; }
+.kitrow__chev { width: 16px; height: 16px; color: var(--text-faint); transition: color .15s, transform .15s; }
+.kitrow:hover .kitrow__chev { color: var(--text-muted); transform: translateX(2px); }
+.kitrow__check {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: grid; place-items: center;
+}
+.kitrow__check svg { width: 13px; height: 13px; }
+
+.kit-empty {
+  text-align: center; color: var(--text-muted);
+  padding: 32px 16px; font-size: 0.92rem;
+  border: 1px dashed var(--border-strong); border-radius: var(--r-md);
+  display: grid; gap: 8px; justify-items: center;
+}
+.kit-count {
+  font-family: var(--font-mono);
+  font-size: 0.74rem; color: var(--text-faint);
+  padding: 12px 2px 0;
+}
+
+/* sticky detail panel */
+.kit-aside { position: sticky; top: 92px; }
+.kitdetail {
+  background:
+    radial-gradient(130% 150% at 100% 0%, var(--accent-soft) 0%, transparent 50%),
+    var(--surface);
+  border: 1.5px solid var(--accent-line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-md);
+  padding: 22px 22px 20px;
+  display: grid; gap: 16px;
+}
+.kitdetail__head h2 {
+  margin: 10px 0 8px;
+  font-size: 1.28rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15;
+}
+.kitdetail__desc { margin: 0; color: var(--text-body); font-size: 0.92rem; line-height: 1.55; }
+.devicebox--detail { flex: none; width: 100%; height: 120px; }
+.kitdetail__lbl {
+  display: block;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 8px;
+}
+.kitdetail__parts .parts { margin: 0; }
+.kitdetail__foot {
+  display: grid; gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.kitdetail__foot .kit-hero__target { word-break: break-all; }
+
+.flag--stable { color: var(--green); background: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 28%, transparent); }
+
+@media (max-width: 860px) {
+  .kit-picker { grid-template-columns: 1fr; }
+  .kit-aside { position: static; }
+  .kit-list { max-height: none; }
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
