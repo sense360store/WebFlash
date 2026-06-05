@@ -174,16 +174,56 @@ describe('scripts/data/kits.json', () => {
         });
 
         test('standalone fan-only previews and TRIAC are not kit cards', () => {
-            const forbidden = ['Ceiling-POE-FanPWM', 'Ceiling-POE-FanDAC'];
+            // Fan-only manual previews must never be a kit card, and TRIAC stays
+            // build-blocked everywhere. A kit MAY drive a fan, but only as part of
+            // a full room bundle (room sensors + fan), never as a fan-only config.
+            const forbiddenFanOnly = ['Ceiling-POE-FanPWM', 'Ceiling-POE-FanDAC'];
             catalog.kits.forEach(kit => {
-                expect(forbidden).not.toContain(kit.firmware_config_string);
+                expect(forbiddenFanOnly).not.toContain(kit.firmware_config_string);
                 expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
-                expect(kit.wizard_state.fan).toBe('none');
+                const state = kit.wizard_state;
+                if (state.fan && state.fan !== 'none') {
+                    const hasRoomSensor = state.roomiq && state.roomiq !== 'none';
+                    const hasAirSensor = (state.ventiq && state.ventiq !== 'none')
+                        || (state.airiq && state.airiq !== 'none');
+                    expect(hasRoomSensor && hasAirSensor).toBe(true);
+                    // Fan-control kits are preview-only and never recommended.
+                    expect(kit.firmware_channel).toBe('preview');
+                    expect(kit.recommended).toBe(false);
+                }
             });
         });
+    });
 
-        test('the Bathroom Relay fan-control bundle is deferred and not present yet', () => {
-            expect(catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL')).toBeUndefined();
+    // WF2-FAN-CONTROL-GATES-001 — the Bathroom Relay fan-control bundle, restored
+    // as a preview-channel kit card behind the additive fan-control acknowledgement
+    // (layered in scripts/install.js on top of the engine's preview-channel gate).
+    describe('WF2-FAN-CONTROL-GATES-001 — Bathroom Relay fan-control bundle', () => {
+        test('the Bathroom Relay bundle is present and maps to the preview FanRelay build', () => {
+            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL');
+            expect(kit).toBeTruthy();
+            expect(kit.firmware_config_string).toBe('Ceiling-POE-VentIQ-FanRelay-RoomIQ');
+            expect(kit.firmware_channel).toBe('preview');
+            expect(manifestConfigStrings.has(kit.firmware_config_string)).toBe(true);
+        });
+
+        test('it is a full room bundle (RoomIQ + VentIQ + relay fan), never recommended / stable / default / buyable', () => {
+            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL');
+            expect(kit.wizard_state.roomiq).toBe('roomiq');
+            expect(kit.wizard_state.ventiq).toBe('ventiq');
+            expect(kit.wizard_state.fan).toBe('relay');
+            expect(kit.wizard_state.bathroom).toBe(true);
+            expect(kit.recommended).toBe(false);
+            // The schema carries no buyable / default flag; preview fan-control
+            // kits must never smuggle one in.
+            expect(kit.buyable).toBeUndefined();
+            expect(kit.isDefault).toBeUndefined();
+        });
+
+        test('it carries no blocked FanTRIAC token', () => {
+            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL');
+            expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
+            expect(kit.wizard_state.fan).not.toBe('triac');
         });
     });
 });

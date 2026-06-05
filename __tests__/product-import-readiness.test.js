@@ -250,14 +250,18 @@ describe('WEBFLASH-RELAY-001 — FanRelay manual-preview import eligibility', ()
         ).toBe(true);
     });
 
-    test('FanRelay is present in sources + manifest + on disk, absent from REQUIRED_CONFIGS + kits', () => {
+    test('FanRelay is present in sources + manifest + on disk + kits, absent from REQUIRED_CONFIGS', () => {
+        // WF2-FAN-CONTROL-GATES-001 surfaced FanRelay as the preview Bathroom
+        // Relay kit card (S360-KIT-BATH-P-REL), so it is now present in kits —
+        // which is kit-eligible by the lifecycle model. The production-only
+        // REQUIRED_CONFIGS allowlist is unchanged: FanRelay must never enter it.
         const e = findEntry(report, FANRELAY_CONFIG);
         expect(e.surface_presence.in_sources).toBe(true);
         expect(e.surface_presence.in_manifest).toBe(true);
         expect(e.surface_presence.bin_on_disk).toBe(true);
         expect(e.surface_presence.sidecar_on_disk).toBe(true);
         expect(e.surface_presence.in_required_configs).toBe(false);
-        expect(e.surface_presence.in_kits).toBe(false);
+        expect(e.surface_presence.in_kits).toBe(true);
     });
 
     test('isWebflashImportEligible honours the flag but stays strict otherwise', () => {

@@ -664,6 +664,19 @@ button { font-family: inherit; }
 .callout--info { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent-press); }
 .callout--warn b, .callout--info b { font-weight: 700; }
 
+/* WF2-FAN-CONTROL-GATES-001 — additive fan-control / analog-fan address-switch
+   acknowledgement region. Empty for any config that drives no fan, so the
+   :not(:empty) guard keeps the accent border off the happy path. Groups the
+   stronger, config-driven gates as an extra step on top of the preview-channel
+   acknowledgement. */
+.fan-gates:not(:empty) {
+  margin-top: 18px;
+  padding-left: 14px;
+  border-left: 3px solid var(--warning-line);
+}
+.fan-gates .callout { margin: 0 0 4px; }
+.fan-gates .ack { margin-top: 12px; }
+
 /* ---------- Support bundle (preflight panel footer) ---------- */
 .wf2-support {
   margin: 22px 0 4px;

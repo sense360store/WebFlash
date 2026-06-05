@@ -659,13 +659,15 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         );
     });
 
-    test('scripts/data/kits.json references the five customer room bundles', () => {
+    test('scripts/data/kits.json references the customer room bundles', () => {
         // WF2-KIT-BUNDLE-PICKER-001 restored the customer room bundle picker:
-        // one stable Release-One bundle plus four preview room bundles. Every
-        // config string must be a real manifest build, and only the stable
-        // Release-One config may be the recommended / stable default. The
-        // production-only REQUIRED_CONFIGS allowlist is unaffected (see the
-        // REQUIRED_CONFIGS assertions above).
+        // one stable Release-One bundle plus four preview room bundles.
+        // WF2-FAN-CONTROL-GATES-001 then added the preview Bathroom Relay
+        // fan-control bundle (Ceiling-POE-VentIQ-FanRelay-RoomIQ). Every config
+        // string must be a real manifest build, and only the stable Release-One
+        // config may be the recommended / stable default. The production-only
+        // REQUIRED_CONFIGS allowlist is unaffected (see the REQUIRED_CONFIGS
+        // assertions above).
         const manifestConfigs = new Set((manifest.builds || []).map(b => b.config_string));
         const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
         expect(kitConfigs).toEqual([
@@ -673,7 +675,8 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
             'Ceiling-POE-AirIQ-RoomIQ',
             'Ceiling-POE-RoomIQ',
             'Ceiling-POE-RoomIQ-LED',
-            'Ceiling-POE-RoomIQ-LED'
+            'Ceiling-POE-RoomIQ-LED',
+            'Ceiling-POE-VentIQ-FanRelay-RoomIQ'
         ]);
         for (const cfg of kitConfigs) {
             expect(manifestConfigs.has(cfg)).toBe(true);
@@ -755,12 +758,18 @@ describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
         );
     });
 
-    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only) and NOT in kits', () => {
+    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only) but IS a preview kit', () => {
+        // WF2-FAN-CONTROL-GATES-001 surfaced FanRelay as the preview Bathroom Relay
+        // kit (S360-KIT-BATH-P-REL). Preview is kit-eligible by the lifecycle model;
+        // the production-only REQUIRED_CONFIGS allowlist is unchanged.
         const required = parseRequiredConfigsFromWorkflow();
         expect(required).not.toContain(FANRELAY_CONFIG_STRING);
-        for (const kit of kits.kits || []) {
-            expect(kit.firmware_config_string).not.toBe(FANRELAY_CONFIG_STRING);
-        }
+        const relayKits = (kits.kits || []).filter(k => k.firmware_config_string === FANRELAY_CONFIG_STRING);
+        expect(relayKits.map(k => k.sku)).toEqual(['S360-KIT-BATH-P-REL']);
+        relayKits.forEach(kit => {
+            expect(kit.firmware_channel).toBe('preview');
+            expect(kit.recommended).toBe(false);
+        });
     });
 });
 
