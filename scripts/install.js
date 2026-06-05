@@ -41,6 +41,76 @@ import { StepHead, DeviceChip } from './ui.js';
 // in the 1.0 view. The view never relaxes this.
 const GATE_MODE = 'production';
 
+// ---------------------------------------------------------------------------
+// WF2-FAN-CONTROL-GATES-001 — additive, config-driven install acknowledgements.
+//
+// PR 13 removed the stronger fan-control / analog-fan address acknowledgements
+// that lived in the old simple-install.js. They are restored here as ADDITIVE,
+// view-level clauses, AND-ed into the flash-enable condition exactly as
+// WF-TRIAC-001 added its advanced/manual-warning acknowledgement to the 1.0
+// install gate. They are CONFIG-DRIVEN: they key off the resolved build's
+// config_string, so they fire whether the config came from a kit card or the
+// Advanced builder. The engine gate (engine.state.evaluateInstallGate) stays
+// authoritative — these clauses can only make install HARDER, never bypass or
+// weaken it, and they are strictly additive to the existing preview-channel
+// acknowledgement the engine already enforces. Copy is recovered (not invented)
+// from the pre-PR-13 simple-install.js / index.html fan-control + analog-fan
+// address-switch regions.
+
+// A fan-control acknowledgement is required when the config drives a fan: the
+// relay (FanRelay), low-voltage PWM (FanPWM), or 0-10V analog (FanDAC) driver.
+// FanTRIAC is intentionally NOT in this set — it stays build-blocked and never
+// resolves to an installable build, so it never reaches this gate.
+export const FAN_CONTROL_TOKENS = Object.freeze(['FanRelay', 'FanPWM', 'FanDAC']);
+
+export const FAN_CONTROL_WARNING = 'This is preview fan-control firmware for installer and developer validation. It is not a normal production install. It is not stable, not recommended, and not a customer default, and no hardware, bench, compliance, safety, or commercial-availability testing has been completed. You must still acknowledge the preview channel before installing.';
+export const FAN_CONTROL_ACK_TEXT = 'I understand this firmware controls a fan or switching load, that I am responsible for the fan wiring and my local safety rules, and that I am installing a preview build for validation rather than a production install.';
+
+export const FAN_DAC_ADDRESS_WARNING = 'This firmware drives a 0-10V analog fan through the GP8403 driver. The GP8403 must be switched so IC1 uses 0x58 and IC2 uses 0x5A. Address 0x59 must not be used, because the AirIQ / VentIQ air-quality sensor (SGP41) already uses 0x59 on the shared I2C bus. This address policy (FANDAC-I2C-ADDR-001) is pending bench verification and has not been physically verified.';
+export const FAN_DAC_ADDRESS_ACK_TEXT = 'I have set the analog fan driver (GP8403) address switches so IC1 uses 0x58 and IC2 uses 0x5A. I understand 0x59 must not be used with the AirIQ / VentIQ air-quality sensor (SGP41) on the shared bus, and that this address setting (FANDAC-I2C-ADDR-001) is pending bench verification and has not been physically verified.';
+
+/**
+ * True when the resolved config_string drives a fan (relay, PWM, or analog), so
+ * the additive fan-control acknowledgement is required before install.
+ *
+ * @param {string} configString
+ * @returns {boolean}
+ */
+export function configRequiresFanControlAck(configString) {
+  const cfg = typeof configString === 'string' ? configString : '';
+  return FAN_CONTROL_TOKENS.some((token) => cfg.includes(token));
+}
+
+/**
+ * True when the resolved config_string drives a 0-10V analog (GP8403) fan, so
+ * the additional address-switch acknowledgement is required ON TOP of the
+ * fan-control one.
+ *
+ * @param {string} configString
+ * @returns {boolean}
+ */
+export function configRequiresDacAddressAck(configString) {
+  const cfg = typeof configString === 'string' ? configString : '';
+  return cfg.includes('FanDAC');
+}
+
+/**
+ * The additive gate composition. Install is enabled only when the engine gate
+ * verdict passes AND every additive view-level acknowledgement the config
+ * requires is satisfied. The engine verdict is authoritative: when it blocks,
+ * install stays blocked no matter how many acknowledgements are checked, so
+ * these clauses can only make install HARDER — they never bypass the engine.
+ *
+ * @param {{gateCanInstall: boolean, configString: string, fanControlAck: boolean, dacAddressAck: boolean}} input
+ * @returns {boolean}
+ */
+export function composeInstallEnabled({ gateCanInstall, configString, fanControlAck, dacAddressAck }) {
+  if (!gateCanInstall) return false;
+  if (configRequiresFanControlAck(configString) && !fanControlAck) return false;
+  if (configRequiresDacAddressAck(configString) && !dacAddressAck) return false;
+  return true;
+}
+
 // Maps the engine's machine-readable check status to the preflight row icon.
 // Read by status (pass/warn/fail/pending), never by parsing the detail copy.
 const READY_ICON = {
@@ -117,11 +187,22 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   const signature = (engine && build) ? engine.channels.getFirmwareAcknowledgementSignature(build) : null;
   const MANIFEST_FRESHNESS_ID = engine ? engine.state.INSTALL_GATE_CHECK_IDS.MANIFEST_FRESHNESS : 'manifest-freshness';
 
+  // WF2-FAN-CONTROL-GATES-001 — the additive, config-driven acknowledgement
+  // requirements for THIS resolved build, keyed off its config_string. They are
+  // fixed for the build, so the region renders once; the live verdict comes from
+  // composeInstallEnabled() in canInstallNow(), which the engine gate dominates.
+  const configString = (build && typeof build.config_string === 'string') ? build.config_string : '';
+  const needsFanControlAck = configRequiresFanControlAck(configString);
+  const needsDacAddressAck = configRequiresDacAddressAck(configString);
+
   // ----- mutable gate inputs -----
   let integrity = null;                                // async SHA-256 result
   let freshness = { verdict: 'pending', acknowledged: false };
   let beforeFlashAck = false;
   const channelAccepted = new Map();                   // ackKey -> signature it was accepted against
+  // WF2-FAN-CONTROL-GATES-001 — session-only, additive view-level acknowledgements.
+  let fanControlAck = false;
+  let dacAddressAck = false;
   let gate = null;
   let wasReady = false;
 
@@ -167,6 +248,10 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   });
   const warnCalloutsEl = h('div');
   const acksEl = h('div');
+  // WF2-FAN-CONTROL-GATES-001 — the additive fan-control / analog-fan
+  // address-switch acknowledgement region. Empty (and CSS-collapsed) for any
+  // config that drives no fan.
+  const fanGatesEl = h('div', { 'data-fan-control-gates': '', class: 'fan-gates' });
 
   // ----- the install affordance: the ESP Web Tools activate button -----
   // The visible "Install firmware" button is the component's [slot=activate]
@@ -177,7 +262,9 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // render and click (e.g. freshness going stale), matching the 1.0 view.
   const installBtn = h('button', { slot: 'activate', class: 'btn btn--lg' }, icon('bolt'), ' Install firmware');
   installBtn.addEventListener('click', (event) => {
-    if (!gate || !gate.canInstall) {
+    // Defense in depth for a gate that changed between render and click, now
+    // including the additive fan-control / address-switch acknowledgements.
+    if (!canInstallNow()) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -214,15 +301,43 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     installHost = installBtn;
   }
 
-  function ackRow(checked, onToggle, body) {
+  function ackRow(checked, onToggle, body, inputAttrs = {}) {
     const box = h('span', { class: 'ack__box' }, icon('check'));
     const input = h('input', {
       type: 'checkbox', checked, hidden: true,
       onChange: (e) => onToggle(e.target.checked, label),
+      ...inputAttrs,
     });
     const label = h('label', { class: 'ack' + (checked ? ' is-on' : '') },
       box, input, h('span', { class: 'ack__text' }, body));
     return label;
+  }
+
+  // WF2-FAN-CONTROL-GATES-001 — the single source of truth for whether install
+  // may proceed: the engine gate verdict AND every additive view-level
+  // acknowledgement the resolved config requires. The engine verdict dominates,
+  // so these clauses can only make install harder, never bypass it.
+  function canInstallNow() {
+    return composeInstallEnabled({
+      gateCanInstall: Boolean(gate && gate.canInstall),
+      configString,
+      fanControlAck,
+      dacAddressAck,
+    });
+  }
+
+  // The plain-language reason an additive acknowledgement is still blocking
+  // install once the engine gate itself has passed. The engine's own
+  // blockingReason takes precedence (it is authoritative); this only fills in
+  // when the engine gate is clear but an extra acknowledgement is outstanding.
+  function viewAckBlockingReason() {
+    if (needsFanControlAck && !fanControlAck) {
+      return 'Confirm the fan-control acknowledgement before installing.';
+    }
+    if (needsDacAddressAck && !dacAddressAck) {
+      return 'Confirm the analog fan address-switch acknowledgement before installing.';
+    }
+    return '';
   }
 
   // ----- gate composition (engine-owned) + render -----
@@ -250,7 +365,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   }
 
   function renderStatusbar() {
-    const ready = Boolean(gate && gate.canInstall);
+    const ready = canInstallNow();
     const anyPending = Boolean(gate && gate.checks.some((c) => c.status === 'pending'));
     statusbarEl.className = 'statusbar ' + (ready ? 'statusbar--ok' : 'statusbar--wait');
     if (ready) {
@@ -262,9 +377,12 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
         h('span', null, h('b', null, 'Running pre-flight checks…'),
           ' This takes a moment.'));
     } else {
+      // Engine blocking reason is authoritative; fall back to the additive
+      // view-level acknowledgement reason when the engine gate is otherwise clear.
+      const reason = (gate && gate.blockingReason) || viewAckBlockingReason();
       mount(statusbarEl, icon('alert'),
         h('span', null, h('b', null, 'Action needed before installing.'),
-          gate && gate.blockingReason ? ' ' + gate.blockingReason : ''));
+          reason ? ' ' + reason : ''));
     }
   }
 
@@ -308,11 +426,14 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   }
 
   function updateGate() {
-    const ready = Boolean(gate && gate.canInstall);
+    const ready = canInstallNow();
     installBtn.disabled = !ready;
     installBtn.classList.toggle('is-ready', ready);
-    if (!ready && gate && gate.blockingReason) {
-      installBtn.title = gate.blockingReason;
+    // Engine blocking reason is authoritative; the additive view-level
+    // acknowledgement reason fills in only when the engine gate is otherwise clear.
+    const reason = (gate && gate.blockingReason) || (!ready ? viewAckBlockingReason() : '');
+    if (!ready && reason) {
+      installBtn.title = reason;
     } else {
       installBtn.removeAttribute('title');
     }
@@ -340,6 +461,41 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     const callouts = channelWarnings.map((w) => h('div', { class: 'callout callout--warn' },
       icon('alert'), h('span', null, w.message)));
     mount(warnCalloutsEl, ...callouts);
+  }
+
+  // WF2-FAN-CONTROL-GATES-001 — render the additive fan-control + analog-fan
+  // address-switch acknowledgement checkboxes for THIS build (config-driven).
+  // Rendered once; the requirements are fixed for the resolved build. Each
+  // checkbox flips its boolean and calls recompute(), which re-reads the
+  // combined verdict through canInstallNow(). The preview-channel acknowledgement
+  // stays a SEPARATE, engine-owned gate (renderAcks); these are layered on top.
+  function renderFanControlGates() {
+    const children = [];
+    if (needsFanControlAck) {
+      children.push(
+        h('div', { class: 'callout callout--warn', 'data-fan-control-warning': '' },
+          icon('alert'), h('span', null, FAN_CONTROL_WARNING)),
+        ackRow(fanControlAck, (v, label) => {
+          fanControlAck = v;
+          label.classList.toggle('is-on', v);
+          recompute();
+        }, [h('b', null, 'Fan-control acknowledgement. '), FAN_CONTROL_ACK_TEXT],
+          { 'data-fan-control-ack': '' }),
+      );
+    }
+    if (needsDacAddressAck) {
+      children.push(
+        h('div', { class: 'callout callout--warn', 'data-dac-address-warning': '' },
+          icon('alert'), h('span', null, FAN_DAC_ADDRESS_WARNING)),
+        ackRow(dacAddressAck, (v, label) => {
+          dacAddressAck = v;
+          label.classList.toggle('is-on', v);
+          recompute();
+        }, [h('b', null, 'Address-switch acknowledgement. '), FAN_DAC_ADDRESS_ACK_TEXT],
+          { 'data-dac-address-ack': '' }),
+      );
+    }
+    mount(fanGatesEl, ...children);
   }
 
   // Desktop-only / mobile fallback message. Derived from the engine's browser
@@ -429,6 +585,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     warnCalloutsEl,
     beforeFlashLabel,
     acksEl,
+    fanGatesEl,
     ewtNoticeEl,
     h('div', { class: 'stepnav' },
       h('button', { class: 'btn--ghost btn', onClick: onBack }, icon('arrowL'), ' Back'),
@@ -443,6 +600,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
 
   renderWarnCallouts();
   renderAcks();
+  renderFanControlGates();
   renderUnsupportedBanner();
   renderEwtNotice();
   recompute();        // initial synchronous render (capabilities + provenance)

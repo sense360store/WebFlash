@@ -7,7 +7,8 @@
         "firmware_config_string: must exactly match a build.config_string in manifest.json. The kit-config.js loader rejects entries that don't resolve.",
         "firmware_channel: optional default channel preference. Provenance + release-channel UI still gate the actual install — kit metadata never bypasses those checks. The four preview room bundles resolve to preview manifest builds, so the engine's preview-channel acknowledgement applies at install time. Only the stable Bathroom PoE bundle installs without that acknowledgement.",
         "WF2-KIT-BUNDLE-PICKER-001: restored the five customer room bundles deleted by the WebFlash 2.0 PR 13 cleanup. S360-KIT-BATH-P is the stable, default, recommended choice (Release-One Ceiling-POE-VentIQ-RoomIQ); the Kitchen/Bedroom/Living/Corridor bundles are preview-channel only and are never default, recommended, or buyable. Living and Corridor intentionally share the Ceiling-POE-RoomIQ-LED preview build as separate customer cards. The single legacy S360-KIT-CEILING-VENTIQ-ROOMIQ-POE entry was reconciled into S360-KIT-BATH-P rather than kept as a duplicate of the same stable build.",
-        "Standalone fan-only previews (Ceiling-POE-FanPWM, Ceiling-POE-FanDAC) and any FanTRIAC config are intentionally NOT room-bundle products and must never be added here — they stay reachable only through the advanced module builder. FanTRIAC stays build-blocked, and the Bathroom Relay fan-control bundle (S360-KIT-BATH-P-REL) is deferred to WF2-FAN-CONTROL-GATES-001 so it lands together with its stronger fan-control acknowledgement.",
+        "Standalone fan-only previews (Ceiling-POE-FanPWM, Ceiling-POE-FanDAC) and any FanTRIAC config are intentionally NOT room-bundle products and must never be added here — they stay reachable only through the advanced module builder. FanTRIAC stays build-blocked.",
+        "WF2-FAN-CONTROL-GATES-001: added the Bathroom Relay fan-control bundle (S360-KIT-BATH-P-REL → Ceiling-POE-VentIQ-FanRelay-RoomIQ, preview channel). It is a full room bundle (RoomIQ + VentIQ + relay fan), never recommended/stable/default/buyable. Selecting it requires the preview-channel acknowledgement (engine-owned, state.js) AND the additive fan-control acknowledgement layered in scripts/install.js; both must be confirmed before install. The FanDAC kit bundles (and their stronger analog address-switch acknowledgement) arrive later via WF-IMPORT-FAN-BUNDLES-001.",
         "WF-CLEANUP-010 history: the 6 legacy sample kits (AirIQ-POE/USB/PWR, Core-USB, Fan-USB, Bathroom-VentIQ-POE) were removed because their firmware_config_string values were not published in manifest.json. LED is excluded from the STABLE Release-One config via firmware/sources.json block_tokens; LED room bundles here resolve only to the preview Ceiling-POE-RoomIQ-LED build."
     ],
     "kits": [
@@ -153,6 +154,36 @@
             "firmware_config_string": "Ceiling-POE-RoomIQ-LED",
             "firmware_channel": "preview",
             "notes": ["Preview firmware. The stable Bathroom Bundle — PoE is the supported default."],
+            "known_limitations": []
+        },
+        {
+            "sku": "S360-KIT-BATH-P-REL",
+            "display_name": "Bathroom Bundle — PoE + Relay Fan Control",
+            "description": "The Bathroom PoE bundle plus the Sense360 Relay for on/off bathroom fan control. Preview firmware with an extra fan-control acknowledgement — not the recommended choice for most customers.",
+            "recommended": false,
+            "sample": false,
+            "wizard_state": {
+                "mount": "ceiling",
+                "power": "poe",
+                "bathroom": true,
+                "airiq": "none",
+                "ventiq": "ventiq",
+                "roomiq": "roomiq",
+                "fan": "relay",
+                "led": "none",
+                "voice": "none"
+            },
+            "components": [
+                { "sku": "S360-100", "label": "Sense360 Core" },
+                { "sku": "S360-200", "label": "Sense360 RoomIQ" },
+                { "sku": "S360-211", "label": "Sense360 VentIQ" },
+                { "sku": "S360-310", "label": "Sense360 Relay" },
+                { "sku": "S360-410", "label": "Sense360 PoE PSU" }
+            ],
+            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
+            "firmware_config_string": "Ceiling-POE-VentIQ-FanRelay-RoomIQ",
+            "firmware_channel": "preview",
+            "notes": ["Preview fan-control firmware. Requires the preview-channel acknowledgement and an extra fan-control acknowledgement before installing. The stable Bathroom Bundle — PoE is the supported default."],
             "known_limitations": []
         }
     ]
