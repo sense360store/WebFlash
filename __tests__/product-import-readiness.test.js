@@ -422,8 +422,12 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
         }
     );
 
+    // WF2-KIT-BUNDLE-PICKER-001 — these three preview configs are now surfaced as
+    // customer room-bundle kit cards (Kitchen / Bedroom / Living + Corridor). That
+    // is kit-eligible by the lifecycle model (preview is import + manifest + kit
+    // eligible); they remain absent from the production-only REQUIRED_CONFIGS.
     test.each(FIRST_BATCH)(
-        '%s is present in sources + manifest + on disk, absent from REQUIRED_CONFIGS + kits',
+        '%s is present in sources + manifest + on disk + kits, absent from REQUIRED_CONFIGS',
         (configString) => {
             const e = findEntry(report, configString);
             expect(e.surface_presence.in_sources).toBe(true);
@@ -431,7 +435,7 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
             expect(e.surface_presence.bin_on_disk).toBe(true);
             expect(e.surface_presence.sidecar_on_disk).toBe(true);
             expect(e.surface_presence.in_required_configs).toBe(false);
-            expect(e.surface_presence.in_kits).toBe(false);
+            expect(e.surface_presence.in_kits).toBe(true);
         }
     );
 
