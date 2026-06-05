@@ -92,13 +92,17 @@ describe('scripts/data/kits.json', () => {
         });
     });
 
-    // WF-CLEANUP-010: LED is excluded from Release-One via the same
-    // block_tokens mechanism. No active kit can opt into LED until a
-    // dedicated LED build is imported.
-    test('no active kit enables LED for Release-One', () => {
+    // WF-CLEANUP-010 / WF2-KIT-BUNDLE-PICKER-001: LED is excluded from the
+    // STABLE Release-One config via firmware/sources.json block_tokens. LED room
+    // bundles are allowed, but only on the preview channel — they resolve to the
+    // preview Ceiling-POE-RoomIQ-LED build, never to a stable build.
+    test('no STABLE-channel kit enables LED; LED is preview-only', () => {
         catalog.kits.forEach(kit => {
-            expect(kit.wizard_state.led).toBe('none');
-            expect(kit.firmware_config_string.toLowerCase()).not.toMatch(/(^|-)led(-|$)/);
+            const ledOn = kit.wizard_state.led && kit.wizard_state.led !== 'none';
+            const configHasLed = /(^|-)led(-|$)/.test(kit.firmware_config_string.toLowerCase());
+            if (ledOn || configHasLed) {
+                expect(kit.firmware_channel).toBe('preview');
+            }
         });
     });
 
@@ -109,5 +113,77 @@ describe('scripts/data/kits.json', () => {
         const releaseOne = 'Ceiling-POE-VentIQ-RoomIQ';
         const matching = catalog.kits.filter(kit => kit.firmware_config_string === releaseOne);
         expect(matching.length).toBeGreaterThanOrEqual(1);
+    });
+
+    // WF2-KIT-BUNDLE-PICKER-001 — the five customer room bundles restored into
+    // the 2.0 kit picker. The picker reads kits.json directly, so these pins
+    // double as the kit-card contract.
+    describe('WF2-KIT-BUNDLE-PICKER-001 — room bundle picker', () => {
+        const EXPECTED_BUNDLES = [
+            { sku: 'S360-KIT-BATH-P', config: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable' },
+            { sku: 'S360-KIT-KITCHEN-P', config: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview' },
+            { sku: 'S360-KIT-BEDROOM-P', config: 'Ceiling-POE-RoomIQ', channel: 'preview' },
+            { sku: 'S360-KIT-LIVING-P', config: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' },
+            { sku: 'S360-KIT-CORRIDOR-P', config: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' }
+        ];
+
+        test('all five base room bundles are present with the correct config string and channel', () => {
+            EXPECTED_BUNDLES.forEach(expected => {
+                const kit = catalog.kits.find(k => k.sku === expected.sku);
+                expect(kit).toBeTruthy();
+                expect(kit.firmware_config_string).toBe(expected.config);
+                expect(kit.firmware_channel).toBe(expected.channel);
+            });
+        });
+
+        test('every bundle config resolves to a real manifest build', () => {
+            EXPECTED_BUNDLES.forEach(expected => {
+                expect(manifestConfigStrings.has(expected.config)).toBe(true);
+            });
+        });
+
+        test('S360-KIT-BATH-P is the only default / recommended / stable bundle', () => {
+            const recommended = catalog.kits.filter(k => k.recommended);
+            expect(recommended.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
+
+            const stable = catalog.kits.filter(k => k.firmware_channel === 'stable');
+            expect(stable.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
+        });
+
+        test('the four preview bundles are never recommended / stable / buyable', () => {
+            const previewSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-BEDROOM-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
+            previewSkus.forEach(sku => {
+                const kit = catalog.kits.find(k => k.sku === sku);
+                expect(kit).toBeTruthy();
+                expect(kit.recommended).toBe(false);
+                expect(kit.firmware_channel).toBe('preview');
+                // The schema carries no "buyable" / "default" flag; preview kits
+                // must never smuggle one in (it would otherwise be dropped, but
+                // pin the intent so a future schema change cannot regress it).
+                expect(kit.buyable).toBeUndefined();
+                expect(kit.isDefault).toBeUndefined();
+            });
+        });
+
+        test('Living and Corridor are separate cards sharing the LED preview build', () => {
+            const living = catalog.kits.find(k => k.sku === 'S360-KIT-LIVING-P');
+            const corridor = catalog.kits.find(k => k.sku === 'S360-KIT-CORRIDOR-P');
+            expect(living.sku).not.toBe(corridor.sku);
+            expect(living.firmware_config_string).toBe('Ceiling-POE-RoomIQ-LED');
+            expect(corridor.firmware_config_string).toBe('Ceiling-POE-RoomIQ-LED');
+        });
+
+        test('standalone fan-only previews and TRIAC are not kit cards', () => {
+            const forbidden = ['Ceiling-POE-FanPWM', 'Ceiling-POE-FanDAC'];
+            catalog.kits.forEach(kit => {
+                expect(forbidden).not.toContain(kit.firmware_config_string);
+                expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
+                expect(kit.wizard_state.fan).toBe('none');
+            });
+        });
+
+        test('the Bathroom Relay fan-control bundle is deferred and not present yet', () => {
+            expect(catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL')).toBeUndefined();
+        });
     });
 });

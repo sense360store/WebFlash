@@ -614,11 +614,20 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         expect(required).not.toContain(LED_PREVIEW_CONFIG_STRING);
     });
 
-    test('no active kit references the LED preview', () => {
-        // WF-LED-002 invariant: kits remain Release-One-only. Adding an LED
-        // preview kit is a deferred UX decision (WF-LED-003), not part of
-        // the import PR.
+    test('any kit referencing the LED preview stays preview-channel and out of REQUIRED_CONFIGS', () => {
+        // WF2-KIT-BUNDLE-PICKER-001 superseded the WF-LED-002/WF-LED-003 "kits
+        // stay Release-One-only" deferral: the LED preview build is now surfaced
+        // as the Living Room / Corridor room-bundle cards. That is kit-eligible by
+        // the lifecycle model (preview = import + manifest + kit eligible). The
+        // production-only REQUIRED_CONFIGS invariant is unchanged — the LED preview
+        // must never enter it, and any kit on it must declare the preview channel.
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).not.toContain(LED_PREVIEW_CONFIG_STRING);
         for (const kit of kits.kits || []) {
+            if (kit.firmware_config_string === 'Ceiling-POE-RoomIQ-LED') {
+                expect(kit.firmware_channel).toBe('preview');
+            }
+            // The VentIQ LED preview is a manifest-only build, never a kit card.
             expect(kit.firmware_config_string).not.toBe(LED_PREVIEW_CONFIG_STRING);
         }
     });
@@ -650,11 +659,31 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         );
     });
 
-    test('scripts/data/kits.json references only Release-One', () => {
-        // Kit catalog stays Release-One-only by design — see the
-        // REQUIRED_CONFIGS assertion above for the matching policy.
+    test('scripts/data/kits.json references the five customer room bundles', () => {
+        // WF2-KIT-BUNDLE-PICKER-001 restored the customer room bundle picker:
+        // one stable Release-One bundle plus four preview room bundles. Every
+        // config string must be a real manifest build, and only the stable
+        // Release-One config may be the recommended / stable default. The
+        // production-only REQUIRED_CONFIGS allowlist is unaffected (see the
+        // REQUIRED_CONFIGS assertions above).
+        const manifestConfigs = new Set((manifest.builds || []).map(b => b.config_string));
         const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
-        expect(kitConfigs).toEqual(['Ceiling-POE-VentIQ-RoomIQ']);
+        expect(kitConfigs).toEqual([
+            'Ceiling-POE-VentIQ-RoomIQ',
+            'Ceiling-POE-AirIQ-RoomIQ',
+            'Ceiling-POE-RoomIQ',
+            'Ceiling-POE-RoomIQ-LED',
+            'Ceiling-POE-RoomIQ-LED'
+        ]);
+        for (const cfg of kitConfigs) {
+            expect(manifestConfigs.has(cfg)).toBe(true);
+        }
+
+        const stableKits = (kits.kits || []).filter(k => (k.firmware_channel || 'stable') === 'stable');
+        expect(stableKits.map(k => k.firmware_config_string)).toEqual(['Ceiling-POE-VentIQ-RoomIQ']);
+
+        const required = parseRequiredConfigsFromWorkflow();
+        expect(required).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue']);
     });
 });
 
