@@ -173,6 +173,7 @@ State of the repo at TRACKING-002 (post WebFlash 2.0 GA):
 | wf2-identify-sensing-fixes | #493 | Merged | Follow-up bug-fix on the GA 2.0 view — "Fix RoomIQ sensing axis, logo URL, and FIRMWARE TARGET card styling". Re-modelled RoomIQ (S360-200) as an optional presence toggle that coexists with AirIQ / VentIQ instead of a base air-quality row (the manifest proves RoomIQ is optional), corrected the logo URL, and fixed the FIRMWARE TARGET card styling. Runtime change to `scripts/data.js`, `scripts/identify.js`, `scripts/app.js`, and `app.css`; `scripts/connect.js` and the engine untouched. | `scripts/state.js` and the rest of the engine, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, `scripts/data/kits.json`, the signing pipeline, and the FanTRIAC block are all unchanged. | The default 2.0 view renders RoomIQ as an independent axis, the logo loads, and the FIRMWARE TARGET card styles correctly. |
 | WF2-CALLOUT-HIDDEN-FIX-001 | _(open — PR # to fill at merge)_ | Merged | **CSS + test only.** Added the global `[hidden] { display: none !important; }` reset to `app.css` so the install-step `.callout--warn` banners created with `hidden: true` (`swNoticeEl`, `unsupportedBannerEl`) and the inline-`display: flex` `freshnessControlsEl` no longer paint as empty amber bars around the "Ready to install" verdict; previously `.callout { display: flex }` with no `[hidden]` reset defeated the attribute. Added `__tests__/wf2-callout-hidden.test.js` asserting the reset and the `hidden: true` install.js contract. | No `scripts/install.js` or runtime JS behaviour change, no engine, install gate, manifest, firmware, sources, `REQUIRED_CONFIGS`, kits, release-channels, signing, workflow, or `sw.js` change. | Empty install-step callout bars no longer render; genuinely triggered notices still show. |
 | WF2-KIT-BUNDLE-PICKER-001 | #496 | In review | **`scripts/data/kits.json` + test only — recovers the PR 13 regression.** Restored the five customer BASE room bundles into the 2.0 kit picker by populating `scripts/data/kits.json` (the catalogue the 2.0 `IdentifyStep` reads via the engine), recovering the customer-facing names / rooms / module summaries from `git show 7f68bf8:scripts/data/simple-bundles.js`: `S360-KIT-BATH-P` → `Ceiling-POE-VentIQ-RoomIQ` (stable, default + recommended), `S360-KIT-KITCHEN-P` → `Ceiling-POE-AirIQ-RoomIQ` (preview), `S360-KIT-BEDROOM-P` → `Ceiling-POE-RoomIQ` (preview), `S360-KIT-LIVING-P` + `S360-KIT-CORRIDOR-P` → `Ceiling-POE-RoomIQ-LED` (preview, two separate cards on the shared LED preview build). The legacy single `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE` entry was reconciled into `S360-KIT-BATH-P` (same stable build; stays `kits[0]` so the `wf2-identify` / `wf2-diagnostics` Release-One pins still resolve). `scripts/identify.js` needed no change (it already renders one `KitHero` per catalogue kit and derives the Preview/Recommended flag + Continue gate from the engine verdict). Extended `__tests__/kits-json.test.js` with the `WF2-KIT-BUNDLE-PICKER-001` guard (five bundles + channels, single recommended/stable, preview never recommended/stable/buyable, Living/Corridor shared build, fan-only + TRIAC excluded, `S360-KIT-BATH-P-REL` deferred) and reframed the LED guard to preview-only; updated `__tests__/product-catalog-alignment.test.js` + `__tests__/product-import-readiness.test.js` so the LED/AirIQ/RoomIQ preview configs are recognised as kit-eligible room bundles while staying out of the production-only `REQUIRED_CONFIGS`. Every `firmware_config_string` was verified to resolve to a real manifest build through `engine.state.resolveCompatibleFirmware` (correct config string, installable, correct preview flag). | No engine (`scripts/state.js`, `scripts/utils/*`, `scripts/services/*`), install gate, `manifest.json`, `firmware-*.json`, firmware binary, `firmware/sources.json`, `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/utils/release-channels.js`, `scripts/gen-manifests.py`, importer, signing workflow, or `sw.js` change. The VentIQ LED preview (`Ceiling-POE-VentIQ-RoomIQ-LED`) stays manifest-only, never a kit card. `S360-KIT-BATH-P-REL` not added. | Restores customer room bundle selection on the GA 2.0 kit picker: Bathroom PoE is the stable default/recommended choice, the other four are labelled Preview and gate on the engine's existing `channel:preview` acknowledgement. Standalone fan previews + TRIAC stay advanced-builder only. The fan-control Bathroom Relay bundle + its stronger acknowledgement are deferred to `WF2-FAN-CONTROL-GATES-001` (next Active item). |
+| WF2-FAN-CONTROL-GATES-001 | #497 | In review | **`scripts/install.js` + `scripts/data/kits.json` + CSS + test only — restores the PR 13 acknowledgement regression and exposes the fan-control Bathroom Relay bundle.** Restored the fan-control + FanDAC analog address-switch acknowledgements (deleted with the old `simple-install.js`) as ADDITIVE, config-driven, view-level clauses in the 2.0 `InstallStep`, mirroring WF-TRIAC-001. Added pure helpers `configRequiresFanControlAck` / `configRequiresDacAddressAck` / `composeInstallEnabled` (the install verdict is the engine gate AND every additive ack; the engine verdict dominates, so acks can only make install harder, never bypass it). The fan-control ack fires for any `FanRelay` / `FanPWM` / `FanDAC` config (config-driven, so it fires from a kit card or the Advanced builder); the FanDAC address ack fires additionally for `FanDAC`, naming the GP8403 `0x58` / `0x5A` policy + the forbidden `0x59` (SGP41 on AirIQ / VentIQ) and referencing `FANDAC-I2C-ADDR-001` as pending bench verification. Copy recovered (not invented) from `git show 7f68bf8`. Added the preview Bathroom Relay kit `S360-KIT-BATH-P-REL` → `Ceiling-POE-VentIQ-FanRelay-RoomIQ` to `scripts/data/kits.json` (verified to resolve to a real preview manifest build via `engine.state.resolveCompatibleFirmware`). New `__tests__/wf2-fan-control-gates.test.js` (pure contract + recovered copy + fake-engine additive-gate integration proving the acks never bypass a blocking engine verdict + real-engine kit / Advanced-builder integration); updated `__tests__/kits-json.test.js` + `__tests__/product-catalog-alignment.test.js` + `__tests__/product-import-readiness.test.js`. | Engine (`scripts/state.js`, `scripts/utils/*`, `scripts/services/*`), `evaluateInstallGate`, `manifest.json`, every `firmware-*.json`, every firmware binary, `firmware/sources.json`, `REQUIRED_CONFIGS` (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), `scripts/utils/release-channels.js`, `gen-manifests.py`, the importers, the signing workflow, and `sw.js` are all unchanged. No cryptographic signature-verification claim added. | The Bathroom Relay bundle is selectable as Preview and cannot be flashed until BOTH the preview-channel and fan-control acknowledgements are confirmed; any FanDAC config additionally requires the address acknowledgement; the base bundles are unaffected. Preview stays never stable / recommended / default / buyable. TRIAC stays build-blocked. `FANDAC-I2C-ADDR-001` stays pending; no hardware / bench proof claimed. Next: `WF-IMPORT-FAN-BUNDLES-001`. |
 
 ## Active / upcoming WebFlash queue
 
@@ -227,18 +228,15 @@ These gate every item below and must not be regressed by any queue PR:
    acknowledgement. See the Completed / merged row for the full record.
 
 3. **WF2-FAN-CONTROL-GATES-001 — Port the fan-control + FanDAC address
-   acknowledgements into the 2.0 install gate.** *(Next Active item.)*
-   Status: **Next Active — unblocked now that WF2-KIT-BUNDLE-PICKER-001 (#496)
-   restored the room bundle picker. PR # to fill when verified.**
-   Purpose: Port the fan-control acknowledgement and the FanDAC analog
-   address-switch acknowledgement (`FANDAC-I2C-ADDR-001`: `0x58` / `0x5A`,
-   forbidden `0x59`) into the 2.0 install gate, **additive** to the existing
-   `channel:preview` acknowledgement and never weaker. Recover the copy + logic
-   from `git show 7f68bf8:scripts/simple-install.js`.
-   Dependencies: WF2-KIT-BUNDLE-PICKER-001 (the picker that surfaces the
-   fan-bearing bundles).
-   Note: Strictly additive gating. No existing gate weakened;
-   `FANDAC-I2C-ADDR-001` stays pending hardware verification.
+   acknowledgements into the 2.0 install gate.**
+   Status: **Done — PR #497 (in review). Moved to the Completed / merged table
+   above.** Restored the fan-control + FanDAC analog address-switch
+   acknowledgements (`FANDAC-I2C-ADDR-001`: `0x58` / `0x5A`, forbidden `0x59`)
+   as additive, config-driven, view-level clauses in the 2.0 `InstallStep`,
+   strictly additive to the engine-owned `channel:preview` acknowledgement and
+   never weaker, and added the preview Bathroom Relay kit `S360-KIT-BATH-P-REL`
+   behind them. Copy + logic recovered from `git show 7f68bf8`. See the
+   Completed / merged row for the full record.
 
 4. **WF-LIVE-SMOKE-2-0-DEFAULT-001 — Live smoke on the deployed 2.0 default.**
    Status: **Ready after items 1–3. PR # to fill when verified.**
@@ -254,21 +252,22 @@ These gate every item below and must not be regressed by any queue PR:
    Note: Docs + test only.
 
 5. **WF-IMPORT-FAN-BUNDLES-001 — Import the five full-composition fan-control
-   room bundles.**
-   Status: **Blocked — upstream artifacts do not exist yet. PR # to fill when
-   verified.**
+   room bundles.** *(Next Active item.)*
+   Status: **Next Active — unblocked now that WF2-FAN-CONTROL-GATES-001 (#497)
+   landed the additive fan-control + FanDAC address gates and upstream #720
+   published the five WebFlash-eligible artifacts. PR # to fill when verified.**
    Purpose: Import the five full-composition fan-control room-bundle `.bin`
    artifacts (`Ceiling-POE-VentIQ-FanPWM-RoomIQ`,
    `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`,
-   `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`) once
-   upstream publishes them: add the `firmware/sources.json` entries, pin each
-   `expected_sha256`, run the importer + `gen-manifests.py`, and commit the
-   regenerated manifests. The import is **view-agnostic**; the bundles then
-   surface through the rebuilt kit picker (item 2) behind the gates from
-   item 3.
-   Dependencies: Upstream `sense360store/esphome-public`
-   `ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001` + publication of the five
-   artifacts.
+   `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`): add the
+   `firmware/sources.json` entries, pin each `expected_sha256`, run the importer
+   + `gen-manifests.py`, and commit the regenerated manifests. The import is
+   **view-agnostic**; the bundles then surface through the rebuilt kit picker
+   (item 2) behind the additive gates landed in item 3 (the fan-control
+   acknowledgement, plus the FanDAC analog address-switch acknowledgement for the
+   two FanDAC bundles).
+   Dependencies: Upstream `sense360store/esphome-public` publication of the five
+   artifacts (upstream #720) with `webflash_import_eligibility.eligible=true`.
    Note: Preview-only, never `REQUIRED_CONFIGS`, never default / recommended /
    buyable. TRIAC stays build-blocked.
 
