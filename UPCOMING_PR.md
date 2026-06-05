@@ -241,10 +241,27 @@ These gate every item below and must not be regressed by any queue PR:
    Completed / merged row for the full record.
 
 4. **WF-LIVE-SMOKE-2-0-DEFAULT-001 — Live smoke on the deployed 2.0 default.**
-   *(Next Active item.)*
-   Status: **Next Active — items 1–3 and item 6 (`WF2-FAN-EXPANSION-001`, #500)
-   are done, so the deployed 2.0 default now carries all eleven kits plus the
-   fan-control / FanDAC acknowledgement gates. PR # to fill when verified.**
+   *(Implemented on the development branch — pending PR.)*
+   Status: **Done (docs + test, implemented on branch) — PR # to fill when
+   verified.** Recorded the live-origin smoke of the deployed GitHub Pages 2.0
+   default at
+   [`docs/release-gates/WF-LIVE-SMOKE-2-0-DEFAULT-001.md`](../docs/release-gates/WF-LIVE-SMOKE-2-0-DEFAULT-001.md)
+   and added the deterministic guard
+   [`__tests__/wf-live-smoke-2-0-default.test.js`](../__tests__/wf-live-smoke-2-0-default.test.js)
+   (15 tests). Live evidence, all HTTP 200 from
+   `https://sense360store.github.io/WebFlash/`: `manifest.json` `generated_at`
+   2026-06-05, 14 builds (1 stable / 12 preview / 1 rescue); `kits.json` 11 kits
+   (only `S360-KIT-BATH-P` stable + recommended); the live `scripts/install.js`
+   fan-control / FanDAC acknowledgement gate (`FAN_CONTROL_TOKENS =
+   ['FanRelay','FanPWM','FanDAC']`, the `0x58` / `0x5A` / `0x59` +
+   `FANDAC-I2C-ADDR-001` copy); the `app.css` `[hidden] { display: none
+   !important }` callout fix; and the brand logo asset. The default resolves to
+   the stable `Ceiling-POE-VentIQ-RoomIQ`; no TRIAC and no standalone fan-only
+   build appears as a kit card; freshness bootstrap / `unknown` is
+   non-hard-blocking while `stale` hard-blocks. **PASS.** With items 1–3 and 5–6
+   done and item 4 implemented, the remaining queue item 7 is blocked on upstream
+   `RELEASE-…` artifacts. A human incognito desktop-Chromium pass remains the
+   recommended (non-blocking) visual confirmation.
    Purpose: Live / manual smoke of the deployed GitHub Pages 2.0 default — the
    logo renders, the base bundles show with the correct channels, the
    fan-control + FanDAC acknowledgements gate, no TRIAC appears in the picker,
