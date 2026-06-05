@@ -59,6 +59,15 @@
 
 * { box-sizing: border-box; }
 
+/* Re-assert the hidden attribute over author display rules. Several callouts
+   (service-worker update notice, unsupported-browser banner, freshness
+   controls) are created with the `hidden` attribute and only shown by removing
+   it. Without this, `.callout { display: flex }` (and the freshness control's
+   inline `display: flex`) override the user-agent `[hidden] { display: none }`
+   rule, so empty bars render. `!important` is required to beat the inline
+   style. */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
