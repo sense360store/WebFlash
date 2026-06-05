@@ -1,0 +1,34 @@
+{
+  "name": "Sense360 ESP32 Firmware - Core Module",
+  "version": "1.0.0",
+  "home_assistant_domain": "esphome",
+  "funding_url": "https://sense360store.com/support",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 15,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        {
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
+          "offset": 0,
+          "md5": "c754586f6a809fe94e0dc724c07546dd",
+          "sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
+          "signature": "BWpXtSgDJrSo1OvGy6X/VWJpvXOX92p2J1MS/S2Bo1I=",
+          "signature_ed25519": "hnseAuyizhqrJtGQilxYIsj3sUg/MOC5YCJDa9rFQ1E4gbktJqtCdkJOwjJqfYhhrgGtnupVdYjDGTCNdN7PDg==",
+          "signature_key_id": "dev-2026-01"
+        }
+      ],
+      "improv": true,
+      "md5": "c754586f6a809fe94e0dc724c07546dd",
+      "sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
+      "signature": "BWpXtSgDJrSo1OvGy6X/VWJpvXOX92p2J1MS/S2Bo1I=",
+      "signature_ed25519": "hnseAuyizhqrJtGQilxYIsj3sUg/MOC5YCJDa9rFQ1E4gbktJqtCdkJOwjJqfYhhrgGtnupVdYjDGTCNdN7PDg==",
+      "signature_key_id": "dev-2026-01",
+      "file_size": 1135904,
+      "source_commit": "16261d8e2b33a01b4bc6189a1186762272f5718b",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/16261d8e2b33a01b4bc6189a1186762272f5718b",
+      "deprecated": false
+    }
+  ]
+}

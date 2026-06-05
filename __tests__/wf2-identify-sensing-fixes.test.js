@@ -198,12 +198,22 @@ describe('Bug 1 — RoomIQ is an independent axis from the air-quality choice', 
     expect(ventiq.installable).toBe(true);
   });
 
-  it('the AirIQ + DAC conflict still has no matching build across sections', async () => {
+  it('AirIQ + DAC resolves to the imported room-bundle preview build; the mutex stays the UI gate', async () => {
+    // WF-IMPORT-FAN-BUNDLES-001 imported Ceiling-POE-AirIQ-FanDAC-RoomIQ as a
+    // preview build, so the pure resolver now finds it (previously "no-build"
+    // only because the build was absent). The AirIQ/DAC conflict asserted above
+    // (airiq.conflicts=['dac'], dac.conflicts=['airiq']) is unchanged and remains
+    // the selection gate: the advanced builder hard-disables the conflicting
+    // option, so a user can never construct this combo in the wizard. Install
+    // still gates on the preview-channel + fan-control + FanDAC-address
+    // acknowledgements.
     const { engine } = await boot();
     const resolved = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'airiq', fan: 'dac' }));
-    expect(resolved.installable).toBe(false);
-    expect(resolved.reason).toBe('no-build');
+    expect(resolved.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
+    expect(resolved.installable).toBe(true);
+    expect(resolved.isPreview).toBe(true);
+    expect(resolved.channel).toBe('preview');
   });
 });
 

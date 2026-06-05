@@ -51,10 +51,15 @@ has no imported artifact.
 | **FanRelay preview** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-RELAY-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Fan relay control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
 | **FanPWM preview** — `Ceiling-POE-FanPWM` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-PWM-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. PWM fan control (low-voltage / DC fans) is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
 | **FanDAC preview** — `Ceiling-POE-FanDAC` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 (the preview-eligible import automation) after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Analog (0–10V) fan control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
+| **Bathroom + PWM bundle** — `Ceiling-POE-VentIQ-FanPWM-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview imported by WF-IMPORT-FAN-BUNDLES-001 (upstream `ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001`, catalog status `hardware-pending`). `channel:preview` + fan-control acknowledgements required. Not stable, not a kit yet, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety proof claimed. | No |
+| **Bathroom + DAC bundle** — `Ceiling-POE-VentIQ-FanDAC-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). `channel:preview` + fan-control + FanDAC analog address-switch acknowledgements required (S360-312 IC2 `0x5A`; `0x59` forbidden). `FANDAC-I2C-ADDR-001` bench verification stays pending. Not stable / kit / recommended / default / buyable. | No |
+| **Kitchen + Relay bundle** — `Ceiling-POE-AirIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). `channel:preview` + fan-control acknowledgements required. Not stable / kit / recommended / default / buyable. No hardware / bench / compliance / safety proof claimed. | No |
+| **Kitchen + DAC bundle** — `Ceiling-POE-AirIQ-FanDAC-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). The `fandac_conflicts_with_airiq` mutex keeps AirIQ + FanDAC out of the one-click grammar; this is the address-overridden advanced exception. `channel:preview` + fan-control + FanDAC address-switch acknowledgements required; `FANDAC-I2C-ADDR-001` pending. Not stable / kit / recommended / default / buyable. | No |
+| **Kitchen + PWM bundle** — `Ceiling-POE-AirIQ-FanPWM-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). `channel:preview` + fan-control acknowledgements required. Not stable / kit / recommended / default / buyable. No hardware / bench / compliance / safety proof claimed. | No |
 | **Rescue** — `Rescue` | `rescue` | 1.0.0 | Recovery / unbricking build, reached via the recovery path + rescue modal. WebFlash-owned. | **Yes** |
 
 `REQUIRED_CONFIGS` is **production-only**: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
-None of the seven preview builds is on the allowlist — a `preview` catalog status
+None of the twelve preview builds is on the allowlist — a `preview` catalog status
 is import / manifest / kit eligible but never `REQUIRED_CONFIGS` eligible. The
 default **Simple install** path resolves only to the stable Bathroom PoE build
 (`Ceiling-POE-VentIQ-RoomIQ`); the preview builds appear only in the Advanced /
@@ -213,6 +218,49 @@ FanDAC ↔ AirIQ DAC-bus mutex is unchanged. Normal customers should use the sta
 Bathroom PoE build `Ceiling-POE-VentIQ-RoomIQ`. **FanTRIAC was not imported**
 (it stays build-blocked and excluded). Full import-proof at
 [`docs/preview-import-automation-proof.md`](preview-import-automation-proof.md).
+
+## Full-composition fan-bundle previews (WF-IMPORT-FAN-BUNDLES-001)
+
+WebFlash imported the five **full-composition Bathroom / Kitchen fan-control
+room-bundle** preview builds from the same upstream
+[`v1.0.0-preview`](https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview)
+release (release id `333373906`), authorised by upstream
+`ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001` (`webflash_import_eligibility.eligible=true`
+in `config/room-bundle-fan-variants.json`; catalog status stays `hardware-pending`,
+`webflash_build_matrix` stays `false`). `manifest.json` grew from **9 to 14 builds**:
+
+| Config string | Asset | SHA256 | Size (bytes) |
+|---|---|---|---|
+| `Ceiling-POE-VentIQ-FanPWM-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin` | `6d988708…85befba` | 1,010,192 |
+| `Ceiling-POE-VentIQ-FanDAC-RoomIQ` | `Sense360-Ceiling-POE-VentIQ-FanDAC-RoomIQ-v1.0.0-preview.bin` | `a08c82f7…41d8ef8` | 990,112 |
+| `Ceiling-POE-AirIQ-FanRelay-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanRelay-RoomIQ-v1.0.0-preview.bin` | `97e54930…0f24a83f` | 1,090,656 |
+| `Ceiling-POE-AirIQ-FanDAC-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanDAC-RoomIQ-v1.0.0-preview.bin` | `903a37dc…b19a994b` | 1,090,400 |
+| `Ceiling-POE-AirIQ-FanPWM-RoomIQ` | `Sense360-Ceiling-POE-AirIQ-FanPWM-RoomIQ-v1.0.0-preview.bin` | `0ca10a2f…9c853a1cc` | 1,113,872 |
+
+Provenance (recorded in each `.meta.json`): upstream
+`sense360store/esphome-public@v1.0.0-preview`, build git sha
+`ad1d9575e17a1da450f31964401bb485a6b130c7`, ESPHome `2026.4.5`, compile run
+`26913592989`, publish run `26947595936`. Each `.bin` was SHA-256-verified against
+the upstream `checksums-sha256.txt` **and** the source entry's pinned
+`expected_sha256` (from the publish evidence) by the preview-eligible import
+automation.
+
+**Posture — preview / manual-preview only, import-only PR.** These are
+**firmware-build / release proof only**: full-composition fan-control room bundles
+are an installer / developer preview, **not stable**, **not recommended**, **not a
+customer default**, **not a kit** (this PR imports only — surfacing as kit cards is
+the follow-up `WF2-FAN-EXPANSION-001`), **not buyable**, and **never**
+auto-selected. Install gates on the `channel:preview` acknowledgement plus the
+WF2-FAN-CONTROL-GATES-001 fan-control acknowledgement, and (for the two FanDAC
+bundles) the FanDAC analog address-switch acknowledgement (S360-312 IC2 `0x5A`;
+`0x59` forbidden — it collides with the air-quality SGP41). `FANDAC-I2C-ADDR-001`
+bench verification stays **pending**; no FanDAC address is claimed physically
+verified. The `fandac_conflicts_with_airiq` mutex (`scripts/data.js` +
+`scripts/identify.js`) is unchanged, so AirIQ + FanDAC stays unselectable in the
+wizard. **FanTRIAC was not imported** (build-blocked, excluded). No hardware /
+bench / compliance / safety / commercial-availability proof claimed. Full
+import-proof at
+[`docs/fan-bundle-preview-import-proof.md`](fan-bundle-preview-import-proof.md).
 
 ## Simple-install bundle picker (WF-EASY-BUNDLE-PICKER-001)
 

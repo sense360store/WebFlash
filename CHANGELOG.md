@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Imported the five full-composition fan-control room-bundle previews
+  (WF-IMPORT-FAN-BUNDLES-001).** Imported `Ceiling-POE-VentIQ-FanPWM-RoomIQ`,
+  `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`,
+  `Ceiling-POE-AirIQ-FanDAC-RoomIQ`, and `Ceiling-POE-AirIQ-FanPWM-RoomIQ` from the
+  upstream `sense360store/esphome-public` `v1.0.0-preview` release (release id
+  333373906) as Advanced-install-only preview builds, authorised by upstream
+  `ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001` (`webflash_import_eligibility.eligible=true`).
+  Added five `firmware/sources.json` entries (channel `preview`, pinned
+  `expected_sha256`, `block_tokens: ["FanTRIAC", "LED"]`), staged the five `.bin` +
+  `.meta.json` sidecars via the preview-eligible import automation (each SHA-256
+  verified against the upstream `checksums-sha256.txt` and the pinned value), and
+  regenerated `manifest.json` (9 → **14 builds**) + `firmware-*.json`. Mirrored the
+  five rows into `__tests__/fixtures/esphome-product-catalog.json` (status
+  `hardware-pending` + the eligibility block) and rebaselined the build-count /
+  source-list / readiness test pins from 9 to 14 builds. Import-proof at
+  [`docs/fan-bundle-preview-import-proof.md`](docs/fan-bundle-preview-import-proof.md).
+  **Import-only:** no kit card added (`scripts/data/kits.json` stays at six;
+  surfacing is the follow-up `WF2-FAN-EXPANSION-001`), no install gate / engine /
+  view / `scripts/install.js` change, `REQUIRED_CONFIGS` unchanged
+  (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only), the stable
+  Bathroom PoE build and all previously imported builds byte-identical in
+  signature and hash (only provenance fields refreshed), and the
+  `fandac_conflicts_with_airiq` mutex unchanged. TRIAC not imported; FanTRIAC stays
+  build-blocked. `FANDAC-I2C-ADDR-001` stays pending — no FanDAC address claimed
+  physically verified. No hardware / bench / compliance / safety /
+  commercial-availability proof claimed.
+
 ### Removed
 - **WebFlash 1.0 view decommissioned; WebFlash 2.0 is the only view (PR 13).**
   The final step of the WebFlash 2.0 migration. After the GA cutover (PR 12)

@@ -204,17 +204,19 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
     });
 
     test('summary counts match the fixture today', () => {
-        // 10 entries after WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001: Release-One
-        // (production), FanTRIAC (blocked), 1 legacy-compatible, FOUR preview
-        // builds (the VentIQ LED preview plus the three first-batch previews
-        // AirIQ-RoomIQ / RoomIQ / RoomIQ-LED), and the THREE fan-driver
-        // manual-previews FanRelay / FanPWM / FanDAC (all status hardware-pending
-        // but webflash_import_eligibility.eligible=true).
-        expect(report.summary.total).toBe(10);
-        expect(report.summary.import_eligible).toBe(8); // Release-One + 4 previews + FanRelay + FanPWM + FanDAC
-        expect(report.summary.manifest_eligible).toBe(8);
+        // 15 entries after WF-IMPORT-FAN-BUNDLES-001: Release-One (production),
+        // FanTRIAC (blocked), 1 legacy-compatible, FOUR preview builds (the
+        // VentIQ LED preview plus the three first-batch previews AirIQ-RoomIQ /
+        // RoomIQ / RoomIQ-LED), the THREE single-driver fan manual-previews
+        // FanRelay / FanPWM / FanDAC, and the FIVE full-composition room-bundle
+        // fan previews (VentIQ-FanPWM / VentIQ-FanDAC / AirIQ-FanRelay /
+        // AirIQ-FanDAC / AirIQ-FanPWM) — all status hardware-pending but
+        // webflash_import_eligibility.eligible=true.
+        expect(report.summary.total).toBe(15);
+        expect(report.summary.import_eligible).toBe(13); // Release-One + 4 previews + 3 single-driver fans + 5 room-bundle fans
+        expect(report.summary.manifest_eligible).toBe(13);
         expect(report.summary.required_configs_eligible).toBe(1); // Release-One only
-        expect(report.summary.kit_eligible).toBe(8);
+        expect(report.summary.kit_eligible).toBe(13);
     });
 });
 
