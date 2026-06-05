@@ -16,9 +16,10 @@ import path from 'node:path';
 // A stale .bin + matching sidecar landing on disk before manifest
 // regeneration would pass both. This file pins the on-disk file list to
 // exactly the intended application binaries (Release-One stable, the VentIQ
-// LED preview, and the three first-batch previews imported from upstream
-// v1.0.0-preview) plus their sidecars, and additionally rejects any
-// FanTRIAC segment in any filename in the directory.
+// LED preview, the three first-batch previews, the three single-driver fan
+// manual-previews, and the five full-composition room-bundle fan previews,
+// all imported from upstream v1.0.0-preview) plus their sidecars, and
+// additionally rejects any FanTRIAC segment in any filename in the directory.
 //
 // The Rescue artifact lives under firmware/rescue/ and is intentionally
 // out of scope for this test — it is built in-tree, not imported, and
@@ -59,13 +60,30 @@ const FANPWM_SIDECAR = FANPWM_BIN.replace(/\.bin$/, '.meta.json');
 const FANDAC_BIN = 'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin';
 const FANDAC_SIDECAR = FANDAC_BIN.replace(/\.bin$/, '.meta.json');
 
+// WF-IMPORT-FAN-BUNDLES-001 — the five full-composition Bathroom / Kitchen
+// fan-control room-bundle preview builds imported from the same upstream
+// v1.0.0-preview release (upstream ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001
+// marked them WebFlash-import eligible). Advanced-install-only previews; none
+// carries a FanTRIAC or LED token.
+const FAN_BUNDLE_BINS = Object.freeze([
+    'Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin',
+    'Sense360-Ceiling-POE-VentIQ-FanDAC-RoomIQ-v1.0.0-preview.bin',
+    'Sense360-Ceiling-POE-AirIQ-FanRelay-RoomIQ-v1.0.0-preview.bin',
+    'Sense360-Ceiling-POE-AirIQ-FanDAC-RoomIQ-v1.0.0-preview.bin',
+    'Sense360-Ceiling-POE-AirIQ-FanPWM-RoomIQ-v1.0.0-preview.bin'
+]);
+const FAN_BUNDLE_SIDECARS = Object.freeze(
+    FAN_BUNDLE_BINS.map(name => name.replace(/\.bin$/, '.meta.json'))
+);
+
 const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
     LED_PREVIEW_BIN,
     ...FIRST_BATCH_BINS,
     FANRELAY_BIN,
     FANPWM_BIN,
-    FANDAC_BIN
+    FANDAC_BIN,
+    ...FAN_BUNDLE_BINS
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
@@ -73,7 +91,8 @@ const EXPECTED_SIDECARS = Object.freeze([
     ...FIRST_BATCH_SIDECARS,
     FANRELAY_SIDECAR,
     FANPWM_SIDECAR,
-    FANDAC_SIDECAR
+    FANDAC_SIDECAR,
+    ...FAN_BUNDLE_SIDECARS
 ]);
 
 const EXPECTED_FILES = Object.freeze([...EXPECTED_BINS, ...EXPECTED_SIDECARS]);

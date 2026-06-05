@@ -81,9 +81,9 @@ function parseRequiredConfigsFromWorkflow() {
 }
 
 describe('github-pages-surface — manifest shape pins the deploy contract', () => {
-    test('manifest.json holds exactly nine builds (Release-One stable + seven preview + Rescue)', () => {
+    test('manifest.json holds exactly fourteen builds (Release-One stable + twelve preview + Rescue)', () => {
         expect(Array.isArray(manifest.builds)).toBe(true);
-        expect(manifest.builds.length).toBe(9);
+        expect(manifest.builds.length).toBe(14);
     });
 
     test('manifest.json source_commit is not the May-7 stale deploy SHA', () => {
@@ -194,18 +194,19 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
         }
     });
 
-    test('no firmware-N.json beyond index 8 exists (no stale per-build manifests)', () => {
-        // After WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 the namespace is
-        // firmware-0 … firmware-8 (three first-batch previews, the FanRelay +
-        // FanPWM + FanDAC manual-previews, Release-One, the VentIQ LED preview,
-        // and Rescue, in the generator's deterministic order). Anything past
-        // index 8 would indicate the manifest regenerator inherited a legacy
-        // index or a stale file shipped in the Pages artifact.
+    test('no firmware-N.json beyond index 13 exists (no stale per-build manifests)', () => {
+        // After WF-IMPORT-FAN-BUNDLES-001 the namespace is firmware-0 …
+        // firmware-13 (three first-batch previews, the FanRelay + FanPWM +
+        // FanDAC manual-previews, the five full-composition room-bundle fan
+        // previews, Release-One, the VentIQ LED preview, and Rescue, in the
+        // generator's deterministic order). Anything past index 13 would
+        // indicate the manifest regenerator inherited a legacy index or a
+        // stale file shipped in the Pages artifact.
         const repoFiles = fs.readdirSync(repoRoot);
         const offending = repoFiles.filter(name => {
             const match = name.match(/^firmware-(\d+)\.json$/);
             if (!match) return false;
-            return Number(match[1]) > 8;
+            return Number(match[1]) > 13;
         });
         expect(offending).toEqual([]);
     });

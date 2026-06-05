@@ -140,13 +140,23 @@ describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
     expect(result.build).toBeNull();
   });
 
-  it('blocks an AirIQ + DAC conflict selection (no matching build)', async () => {
+  it('resolves an AirIQ + DAC selection to the imported room-bundle preview build', async () => {
+    // WF-IMPORT-FAN-BUNDLES-001 imported the five full-composition room-bundle
+    // fan previews, so Ceiling-POE-AirIQ-FanDAC-RoomIQ now ships a signed preview
+    // build and this pure manifest lookup finds it (previously "no-build" only
+    // because the build was absent). The AirIQ/DAC conflict that keeps this combo
+    // unselectable lives in the view layer (scripts/data.js airiq.conflicts=['dac']
+    // + scripts/identify.js hard-disables the conflicting option) and is unchanged.
+    // Install still gates on the preview-channel + fan-control + FanDAC-address
+    // acknowledgements; nothing here weakens that.
     const { engine } = await boot();
     const result = await engine.state.resolveCompatibleFirmware({
       mount: 'ceiling', power: 'poe', airiq: 'airiq', roomiq: 'roomiq', fan: 'analog',
     });
-    expect(result.installable).toBe(false);
-    expect(result.reason).toBe('no-build');
+    expect(result.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
+    expect(result.installable).toBe(true);
+    expect(result.isPreview).toBe(true);
+    expect(result.channel).toBe('preview');
   });
 
   it('blocks a USB power selection that has no published build', async () => {
