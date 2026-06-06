@@ -18,7 +18,7 @@
    surface a "Wi-Fi setup not available for this firmware" handoff instead. */
 import { h, mount } from './h.js';
 import { icon } from './icons.js';
-import { StepHead, DeviceChip } from './ui.js';
+import { DeviceChip } from './ui.js';
 
 const HOME_ASSISTANT_URL = 'https://my.home-assistant.io/redirect/integrations/';
 
@@ -99,25 +99,40 @@ const SHOW_HANDOFF_STATES = new Set([
 const FAILURE_STATES = new Set(['failed', 'cancelled']);
 
 export function ConnectStep({ device, build = null, engine = null, a11y = null, onDone, onSkip }) {
-  const mainEl = h('div', { class: 'main' });
+  // The step fills the window content area as a flex column so the footer action
+  // bar sits at the bottom while the post-flash panel scrolls above it.
+  const mainEl = h('div', { class: 'flowstep' });
 
   const service = engine && engine.postFlash ? engine.postFlash.service : null;
+
+  // Compact flow header (the design's flowhead), shared by the engine-absent
+  // fallback and the live panel.
+  function flowHead(desc) {
+    return h('div', { class: 'flowhead' },
+      h('span', { class: 'mlbl' }, 'Step 3 · Connect'),
+      h('h1', null, 'Connect your hub to Wi-Fi'),
+      h('p', null, desc),
+    );
+  }
 
   // Engine-absent fallback (a bare app.js mount with no engine, e.g. a shell
   // scaffolding unit test). There is no real flash and no post-flash state to
   // render, so show an honest notice instead of a simulated success screen.
   if (!service) {
     mount(mainEl,
-      StepHead({ eyebrow: 'Step 3 — Connect', eyebrowIcon: 'wifi', title: 'Connect your hub to Wi-Fi',
-        desc: 'Wi-Fi setup runs over the same USB connection in the published installer.' }),
-      DeviceChip({ name: device.name, target: device.target }),
-      h('div', { class: 'card', style: { padding: '22px' } },
-        h('div', { class: 'callout callout--info' }, icon('info'),
-          h('span', null, h('b', null, 'Wi-Fi setup runs in the published installer. '),
-            'This design preview cannot open a USB connection. Use the live WebFlash installer to flash a hub and join it to Wi-Fi.'))),
-      h('div', { class: 'stepnav' },
-        h('span', { class: 'stepnav__spacer' }),
-        h('button', { class: 'btn btn--lg', onClick: onDone }, 'Flash another hub')),
+      h('div', { class: 'flowbody' },
+        h('div', { class: 'flowcol' },
+          flowHead('Wi-Fi setup runs over the same USB connection in the published installer.'),
+          DeviceChip({ name: device.name, target: device.target }),
+          h('div', { class: 'card', style: { padding: '22px' } },
+            h('div', { class: 'callout callout--info' }, icon('info'),
+              h('span', null, h('b', null, 'Wi-Fi setup runs in the published installer. '),
+                'This design preview cannot open a USB connection. Use the live WebFlash installer to flash a hub and join it to Wi-Fi.'))),
+        ),
+      ),
+      h('div', { class: 'winfoot' },
+        h('span', { class: 'winfoot__spacer' }),
+        h('button', { class: 'btn', onClick: onDone }, 'Flash another hub')),
     );
     return mainEl;
   }
@@ -149,8 +164,7 @@ export function ConnectStep({ device, build = null, engine = null, a11y = null, 
 
   function head() {
     return [
-      StepHead({ eyebrow: 'Step 3 — Connect', eyebrowIcon: 'wifi', title: 'Connect your hub to Wi-Fi',
-        desc: 'Your hub is flashed. Finish Wi-Fi setup over the same USB connection in the installer dialog — no app needed — then verify it below.' }),
+      flowHead('Your hub is flashed. Finish Wi-Fi setup over the same USB connection in the installer dialog — no app needed — then verify it below.'),
       DeviceChip({ name: device.name, target: device.target }),
     ];
   }
@@ -236,16 +250,18 @@ export function ConnectStep({ device, build = null, engine = null, a11y = null, 
         icon('life'), ' Open Rescue & Recovery'));
   }
 
-  function actions(snapshot) {
+  // Footer action-bar items: Open Home Assistant (only for an improv build in a
+  // handoff state) plus the always-present "Flash another hub" reset.
+  function footActions(snapshot) {
     const children = [];
     if (SHOW_HANDOFF_STATES.has(snapshot.status) && snapshot.selected_improv_supported === true) {
       children.push(
-        h('a', { class: 'btn btn--lg', href: HOME_ASSISTANT_URL, target: '_blank', rel: 'noopener noreferrer' },
+        h('a', { class: 'btn', href: HOME_ASSISTANT_URL, target: '_blank', rel: 'noopener noreferrer' },
           icon('home'), ' Open Home Assistant'));
     }
     children.push(
-      h('button', { class: 'btn--ghost btn btn--lg', onClick: onDone }, 'Flash another hub'));
-    return h('div', { class: 'success__actions' }, ...children);
+      h('button', { class: 'btn--ghost btn', onClick: onDone }, 'Flash another hub'));
+    return children;
   }
 
   function render(snapshot) {
@@ -256,16 +272,20 @@ export function ConnectStep({ device, build = null, engine = null, a11y = null, 
     try {
       const copy = STATE_COPY[snapshot.status] || STATE_COPY.not_started;
       const busy = snapshot.status === 'in_progress' || snapshot.status === 'completed';
+      const isSuccess = copy.tone === 'success';
 
       // Root hook is wf2-namespaced so it can never be hijacked by the 1.0
       // post-flash-panel.js module (which does a global query for
-      // [data-post-flash-panel]); the two views never manage the same DOM.
+      // [data-post-flash-panel]); the two views never manage the same DOM. A
+      // validated success gets the design's green check badge in the panel head.
       const card = h('div', { class: 'card', 'data-wf2-post-flash-panel': '', 'data-state': snapshot.status,
         'data-tone': copy.tone, style: { padding: '22px' } },
         h('div', { class: 'pf-head' },
           busy
             ? icon('spinner', { cls: 'spin', size: 22, style: { color: 'var(--accent)' } })
-            : null,
+            : isSuccess
+              ? h('span', { class: 'success__badge success__badge--sm' }, icon('check', { style: { strokeWidth: '2.5' } }))
+              : null,
           h('div', null,
             h('h2', { class: 'pf-title', 'data-post-flash-title': '' }, copy.title),
             h('p', { class: 'pf-summary', 'data-post-flash-summary': '' }, copy.summary))),
@@ -275,13 +295,15 @@ export function ConnectStep({ device, build = null, engine = null, a11y = null, 
         wifiHandoff(snapshot),
         recoveryHandoff(snapshot));
 
+      // Flow layout: the post-flash panel scrolls in the body; the actions live
+      // in the persistent footer action bar.
       mount(mainEl,
-        ...head(),
-        card,
-        h('div', { class: 'stepnav' },
+        h('div', { class: 'flowbody' },
+          h('div', { class: 'flowcol' }, ...head(), card)),
+        h('div', { class: 'winfoot' },
           onSkip ? h('button', { class: 'btn--quiet btn', onClick: onSkip }, 'Set up Wi-Fi later') : null,
-          h('span', { class: 'stepnav__spacer' }),
-          actions(snapshot)));
+          h('span', { class: 'winfoot__spacer' }),
+          ...footActions(snapshot)));
 
       if (a11y && typeof a11y.announce === 'function') {
         a11y.announce(copy.title);
