@@ -297,7 +297,7 @@ These gate every item below and must not be regressed by any queue PR:
      catalogue / release-channel / kit-data change. The recommended kit and the
      TRIAC fail-closed behaviour are exactly as #516 shipped.
      `wf2-kit-picker.test.js` and the full Jest suite stay green untouched (1122
-     tests). Status: **Done — PR #NNN (targets `main`).**
+     tests). Status: **Done — PR #520 (targets `main`).**
    - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install bound to the real
      `state.js` gate verdict and the real ESP Web Tools events, built directly to
      the v3 two-column panel layout (pre-flight panel with a status pill, a
