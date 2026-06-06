@@ -1,0 +1,16 @@
+# Dependabot configuration (security.md finding #2).
+#
+# Every `uses:` in the workflows under .github/workflows/ is pinned to a full
+# commit SHA with a trailing version comment. Dependabot's github-actions
+# ecosystem opens PRs that bump each pin to the new release's commit SHA and
+# refreshes the trailing comment, so the SHA pins stay current without manual
+# tracking. directory "/" is correct for the github-actions ecosystem: it
+# scans .github/workflows/ regardless of this value.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"

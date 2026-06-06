@@ -433,6 +433,27 @@ These gate every item below and must not be regressed by any queue PR:
      `scripts/data/kits.json` / the 2.0 kit picker. Separate UX / product
      decision after operator hardware proof and/or stable promotion.
 
+8. **SEC-WF-HYGIENE-001 — Secret-file `.gitignore` patterns plus the
+   github-actions Dependabot ecosystem.** Findings #5 and #2 (remainder) from
+   `security.md`.
+   Status: **Open — awaiting human review (no auto-merge). PR # to fill when
+   verified.** Added the secret-file patterns (`.env`, `.env.*`, `*.key`,
+   `*.pem`, `*.p12`, `*.pfx`, `secrets/`) to `.gitignore` with a
+   `!firmware-signing/keys/dev-2026-01-*.pem` negation so the tracked `test_only`
+   dev key pair stays tracked (verified: `git ls-files` still lists
+   `dev-2026-01-private.pem` and the signature backstop stays green). Added
+   `.github/dependabot.yml` with the `github-actions` ecosystem (weekly) so the
+   SHA-pinned actions stay current, closing the remainder of finding #2 (the
+   SHA-pin itself landed earlier). Flipped `security.md` findings #2 and #5 to
+   Resolved.
+   Purpose: defense in depth against committing local secrets, and keep the
+   action SHA pins maintained.
+   Dependencies: none. Human-review, no auto-merge.
+   Note: No firmware, `manifest.json`, `firmware/sources.json`,
+   `REQUIRED_CONFIGS`, kit, release-channel, install-gate, `sw.js`, runtime JS,
+   or workflow-logic change. The committed `test_only` dev key (finding #4)
+   stays tracked by design.
+
 ## Upstream dependencies
 
 These are tracked in `sense360store/esphome-public`'s own `UPCOMING_PR.md` —
