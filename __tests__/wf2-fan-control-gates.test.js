@@ -212,7 +212,7 @@ describe('WF2-FAN-CONTROL-GATES-001 — additive gate in the InstallStep (fake e
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  const installBtnOf = (root) => root.querySelector('.stepnav .btn--lg');
+  const installBtnOf = (root) => root.querySelector('.winfoot .btn--lg');
 
   it('renders no fan-control / address regions for a non-fan config and arms install (no regression)', async () => {
     const { root } = mountStep(fakeBuild(STABLE_CONFIG), makeFakeEngine({ canInstall: true }));
@@ -354,7 +354,7 @@ describe('WF2-FAN-CONTROL-GATES-001 — Bathroom Relay kit + real engine', () =>
     expect(root.textContent).toMatch(/preview fan-control firmware/i);
     // The real gate still blocks here (served bytes never match the SHA-256), so
     // install cannot be armed — the additive ack only ever makes it stricter.
-    const installBtn = root.querySelector('.stepnav .btn--lg');
+    const installBtn = root.querySelector('.winfoot .btn--lg');
     expect(installBtn.disabled).toBe(true);
   });
 

@@ -251,7 +251,11 @@ These gate every item below and must not be regressed by any queue PR:
    - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install (device chip, status
      bar, readiness checklist, preview callout + acknowledgement, install button,
      flash ring + console) bound to the real `state.js` gate verdict and the real
-     ESP Web Tools events. Status: **Queued.**
+     ESP Web Tools events. Status: **Done — PR #507 (in review, targets slice 2).**
+     `scripts/install.js` reskinned to the flow layout (`.flowstep` / `.flowbody`
+     / `.flowcol` / footer action bar / centered flash); `app.css` flow layout;
+     install-button selector moved `.stepnav` → `.winfoot` in the install view
+     tests (gating assertions unchanged); full suite green (1113 tests).
    - Slice 4 — **WF2-CONNECT-RESKIN**: reskinned Connect (network card /
      post-flash panel, connecting + success states) over the real Improv /
      post-flash service. Status: **Queued.**
