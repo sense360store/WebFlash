@@ -274,7 +274,7 @@ These gate every item below and must not be regressed by any queue PR:
      shared `.flag`/`.devicebox`/`.parts`/`.kit-chip` kept). `wf2-kit-picker.test.js`
      was rewritten for the two views (19 tests); `wf2-identify.test.js`,
      `wf2-audit-parity.test.js`, and the engine-level TRIAC fail-closed pins stay
-     green **untouched**. Status: **Done — PR #__PR__ (targets `main`).** Flagged
+     green **untouched**. Status: **Done — PR #516 (targets `main`).** Flagged
      for close review (TRIAC-exclusion + gate surfaces). Independent of the
      install/polish stack (#511/#512); built on top of them. Full suite green
      (1122 tests).
