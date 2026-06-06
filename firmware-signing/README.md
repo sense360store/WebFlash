@@ -211,7 +211,7 @@ before pinning.
      Treat this as a credential of the same sensitivity as a deploy
      token.
 
-   The `Firmware publish` workflow already wires those env vars through
+   The `Publish: Deploy Site (auto on merge)` workflow already wires those env vars through
    to `gen-manifests.py` (see
    `.github/workflows/firmware-publish.yml` and the
    `Generate firmware manifests` step). No workflow edit is required.
@@ -273,7 +273,7 @@ and can be tracked separately in a deployment ticket.
 
 - [ ] **4. Run a production manifest generation.**
   Push the firmware-replacement commit to `main` (or trigger the
-  `Firmware publish` workflow manually). In the workflow log for the
+  `Publish: Deploy Site (auto on merge)` workflow manually). In the workflow log for the
   `Generate firmware manifests` step, confirm the line
   `Production signing key provided; running gen-manifests in --mode
   production.`. If you see the warning
