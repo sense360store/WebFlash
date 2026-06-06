@@ -436,8 +436,8 @@ These gate every item below and must not be regressed by any queue PR:
 8. **SEC-WF-HYGIENE-001 — Secret-file `.gitignore` patterns plus the
    github-actions Dependabot ecosystem.** Findings #5 and #2 (remainder) from
    `security.md`.
-   Status: **Open — awaiting human review (no auto-merge). PR # to fill when
-   verified.** Added the secret-file patterns (`.env`, `.env.*`, `*.key`,
+   Status: **Open — awaiting human review (no auto-merge). PR #519.** Added
+   the secret-file patterns (`.env`, `.env.*`, `*.key`,
    `*.pem`, `*.p12`, `*.pfx`, `secrets/`) to `.gitignore` with a
    `!firmware-signing/keys/dev-2026-01-*.pem` negation so the tracked `test_only`
    dev key pair stays tracked (verified: `git ls-files` still lists
