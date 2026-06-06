@@ -227,39 +227,62 @@ These gate every item below and must not be regressed by any queue PR:
    dense Browse table, and reskinned Install / Connect) as a VIEW reskin over the
    existing WebFlash 2.0 engine. The view renders the engine verdict and owns no
    gate; the engine, the install gate, release channels, provenance, freshness,
-   `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, `sw.js`, and the
-   CSP are untouched. TRIAC stays fail-closed and preview kits still require the
-   `channel:preview` acknowledgement. Delivered as five stacked branches / PRs
+   `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, and `sw.js` are
+   untouched. (v3 hardens the CSP by dropping `style-src 'unsafe-inline'`; see
+   below.) TRIAC stays fail-closed and preview kits still require the
+   `channel:preview` acknowledgement. Delivered as stacked branches / PRs
    (slice 1 targets `main`; each later slice targets the previous), human-review
    only.
+
+   **WF2-INSTALLER-FLOW-REDESIGN-V3 (authoritative; supersedes v2).** The handoff
+   was revised to v3: the shell becomes a full-page web app (full-bleed sticky
+   `.winbar` / `.winfoot`, 1080px column, page scroll) instead of a floating
+   window-card, and Install becomes a two-column panel layout (`.install__grid`
+   with a pre-flight panel and a selected-device / confirm rail, collapsing at
+   ~920px). Identify and Connect are unchanged by v3. The v3 delta landed as
+   three slices: **WF2-SHELL-FULLPAGE-001** (PR #511, follow-up to the merged
+   WF2-SHELL-TOKENS), **WF2-INSTALL-RESKIN** (PR #512, v3 two-column panels), and
+   **WF2-FLOW-POLISH** (PR #513, narrow-window shell polish plus the
+   SEC-WF-CSP-STYLES-001 drop of `style-src 'unsafe-inline'`). The esp-web-tools
+   SRI tag (SEC-WF-ESPTOOLS-SRI-001) had not landed, so it was left intact.
    - Slice 1 — **WF2-SHELL-TOKENS**: app-shell chrome (window bar + inline
      stepper + scrolling content body + persistent footer action bar) over the
      already-ported tokens + dark theme; existing step bodies render unchanged
-     inside the window. Status: **Done — PR #505 (in review, targets `main`).**
-     `scripts/ui.js` (`Rail` → `WinBar`), the `scripts/app.js` shell, and the
-     `app.css` shell scaffolding; five view tests rebaselined from `.topbar` /
-     `.rail` to `.winbar` / `.istep`; full suite green (1112 tests).
+     inside the window. Status: **Done — PR #505 (merged).** Superseded for v3 by
+     **WF2-SHELL-FULLPAGE-001 — PR #511 (merged to `main`)**, which rebuilt the
+     shell as the v3 full-page layout (full-bleed sticky bars, 1080px column,
+     page scroll), added `.iconbtn--sm`, and redrew the theme-toggle moon as a
+     stroked crescent. Full suite green (1112 tests).
    - Slice 2 — **WF2-IDENTIFY-RECO**: recommendation-first RecommendView plus the
      dense Browse table from the real catalogue (search + channel filter +
      selection summary), superseding the master-detail picker; TRIAC absent /
      fail-closed. Status: **Queued.**
-   - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install (device chip, status
-     bar, readiness checklist, preview callout + acknowledgement, install button,
-     flash ring + console) bound to the real `state.js` gate verdict and the real
-     ESP Web Tools events. Status: **Queued.**
+   - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install bound to the real
+     `state.js` gate verdict and the real ESP Web Tools events, built directly to
+     the v3 two-column panel layout (pre-flight panel with a status pill, a
+     selected-device / confirm rail, the additive fan-control + FanDAC
+     acknowledgements, flash ring + console). Status: **Done — PR #512 (targets
+     `main`).** Flagged for close review (install-gate + TRIAC-exclusion
+     surfaces). Full suite green (1112 tests); install-coupled view tests pass
+     unchanged.
    - Slice 4 — **WF2-CONNECT-RESKIN**: reskinned Connect (network card /
      post-flash panel, connecting + success states) over the real Improv /
      post-flash service. Status: **Queued.**
-   - Slice 5 — **WF2-FLOW-POLISH**: dark-theme toggle, responsive breakpoints
-     (1040 / 720), device-render placeholder, icon mapping, accessibility +
-     reduced-motion pass. Status: **Queued.**
+   - Slice 5 — **WF2-FLOW-POLISH**: adapt the polish layer to the v3 full-page
+     shell (narrow-window sticky-bar rule, the Install ~920px collapse) and fold
+     in the SEC-WF-CSP-STYLES-001 hardening (drop `style-src 'unsafe-inline'`;
+     move the last inline style, the noscript fallback, into a linked sheet).
+     Status: **Done — PR #513 (stacked on #512; retargets to `main` once #512
+     merges).** Full suite green (1112 tests).
    Purpose: deliver the approved installer-flow redesign without touching the
    trust engine.
    Dependencies: none (view-only). Slices 2 and 3 touch the TRIAC-exclusion and
    install-gate surfaces and are flagged for close human review in their PR
    bodies.
    Note: View + test only. No firmware, manifest, sources, `REQUIRED_CONFIGS`,
-   release-channel, service-worker, or gate change.
+   release-channel, service-worker, or gate change. The v3 polish slice also
+   tightens the CSP (`style-src` no longer allows `'unsafe-inline'`), which is a
+   security hardening, not a gate weakening.
 
 2. **WF2-KIT-BUNDLE-PICKER-001 — Rebuild the room bundle picker in the 2.0
    kit picker.**

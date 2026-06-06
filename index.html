@@ -12,7 +12,7 @@
       a known limitation documented in README.md → "Deployment & security
       headers". Run `npm run check:headers -- <URL>` to audit a deployment.
     -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob:; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob:; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
     <!-- Support-only app-shell build marker. These meta tags are read verbatim by
          scripts/services/diagnostics.js (buildAppSection) so the support bundle
          reports which app shell the live GitHub Pages page is running. Because
@@ -58,7 +58,7 @@
     <div id="webflash-a11y-live-region" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
     <div id="webflash-a11y-alert-region" class="sr-only" role="alert" aria-live="assertive" aria-atomic="true"></div>
     <noscript>
-        <p style="max-width:640px;margin:48px auto;padding:0 24px;font-family:system-ui,sans-serif;line-height:1.5;">
+        <p class="wf-noscript">
             WebFlash needs JavaScript and a desktop Chromium browser (Chrome, Edge or Opera)
             with Web Serial to flash a Sense360 hub.
         </p>

@@ -10,7 +10,7 @@ import {
 
 const FULL_HEADERS = {
   'content-security-policy':
-    "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; frame-ancestors 'none'; object-src 'none'",
+    "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://fonts.googleapis.com; frame-ancestors 'none'; object-src 'none'",
   'permissions-policy': 'serial=(self), usb=(self), camera=(), microphone=(), geolocation=()',
   'cross-origin-opener-policy': 'same-origin',
   'cross-origin-resource-policy': 'cross-origin',
