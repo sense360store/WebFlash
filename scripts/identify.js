@@ -1,13 +1,34 @@
 /* WebFlash 2.0 — Step 1: Identify your hardware.
 
-   PR 4 of the WebFlash 2.0 migration binds this step to the real engine:
-     - kit cards come from the real catalogue (scripts/data/kits.json), passed
-       in as `kits`. There is no hardcoded kit list.
+   WF2-IDENTIFY-RECO redesign. Step 1's kit chooser is a recommendation-first,
+   two-view experience (the v3 design_handoff_installer_flow "Step 1 — Identify":
+   README + flow-identify.jsx + app.css/mockups.css), replacing the #502
+   master–detail browser. There are two customer-facing views with a toggle:
+
+     View 1 — Recommendation (the default landing): one big .B__rec card for the
+       catalogue's recommended kit (name, description, part chips) with an
+       "Install this kit" primary CTA, plus a .B__more strip that teases the rest
+       of the catalogue and links into View 2.
+     View 2 — Browse (the full table): every catalogue kit in a sortable-feeling
+       .ktable with search + channel filter chips and a sticky footer Continue.
+
+   It stays bound to the real engine, exactly as PR 4 established:
+     - kit cards/rows come from the real catalogue (scripts/data/kits.json),
+       passed in as `kits`. There is no hardcoded kit list, and the recommended
+       kit is the catalogue's own `recommended` flag (S360-KIT-BATH-P).
      - the firmware target and the installability verdict come from the engine's
-       compatible-firmware lookup, passed in as `resolved`. The view renders the
-       verdict; it never decides installability itself.
+       compatible-firmware lookup (`resolved` for the committed kit, `recResolved`
+       for the recommendation card). The view renders the verdict; it never
+       decides installability itself.
      - a configuration with no installable stable or preview build is blocked
-       from Continue and routed to the ESPHome source path instead. */
+       from Continue / Install and routed to the ESPHome source path instead.
+
+   TRIAC fail-closed: the table and the recommendation strip surface ONLY real
+   catalogue kits, and the catalogue has no FanTRIAC (or fan-only standalone)
+   entry, so no TRIAC row can appear. FanTRIAC and the fan-only previews remain
+   reachable only through "Build it module by module" (the advanced builder
+   below), where a TRIAC selection still resolves to no signed build and is
+   routed to source — the engine, not this view, owns that gate. */
 import { h, mount } from './h.js';
 import { icon } from './icons.js';
 import { StepHead } from './ui.js';
@@ -16,6 +37,14 @@ import { POWER, AIR, ROOMIQ, FAN, LED } from './data.js';
 function capitalize(value) {
   const text = (value || '').toString();
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
+// Trim a kit's display name to its lead segment for a compact label (e.g. the
+// footer selected-kit indicator / Continue button), dropping the "— PoE" suffix.
+function shortKitName(kit) {
+  if (!kit) return '';
+  const name = kit.display_name || kit.sku || '';
+  return name.split('—')[0].trim() || name;
 }
 
 function KitParts(parts) {
@@ -46,43 +75,9 @@ function SourceCallout(sourceUrl, configString) {
   );
 }
 
-/* ---------- Kit picker (master–detail browser) ----------
-   WF2 Step 1 redesign. Replaces the stacked KitHero cards with a compact,
-   height-capped master list (search + channel chips) and a sticky detail panel,
-   recreated from the design handoff prototype on the real engine. The list is
-   the real catalogue (scripts/data/kits.json, passed in as `kits`); the firmware
-   target + installability still come from the engine verdict (`resolved`) for
-   the committed kit, and Continue still gates on that verdict.
-
-   State ownership mirrors the prototype: the committed selection (kit/setKit) is
-   lifted to the app, while the picker's own UI state — search query, channel
-   filter, and which row's detail is focused — is local to this step. It lives in
-   module scope (not app state) so it survives the app-level re-render a commit
-   triggers, and so search/filter/focus changes can re-render only the list +
-   detail without rebuilding the search input (which would drop the caret).
-   resetIdentifyPickerState() clears it when the whole flow resets. */
-const picker = { q: '', chan: 'all', focusId: null };
-
-/**
- * Clears the picker's local UI state (search query, channel filter, focused
- * row). Called by the app when the flow resets so Step 1 returns to a clean
- * picker, matching the prototype's fresh-on-remount local state.
- */
-export function resetIdentifyPickerState() {
-  picker.q = '';
-  picker.chan = 'all';
-  picker.focusId = null;
-}
-
-// Channel metadata for the detail flag pill. `recommended` is its own visual key
-// (teal) but resolves to the stable channel for filtering; preview is amber.
-const FLAG_META = {
-  recommended: { cls: 'flag--rec', tag: 'Recommended for you' },
-  stable: { cls: 'flag--stable', tag: 'Stable firmware' },
-  preview: { cls: 'flag--preview', tag: 'Preview channel' },
-};
-
-// The kit's resting channel key (drives the row dot + detail flag).
+// ---- channel helpers (shared by both views) ----
+// The kit's resting channel key (drives the status dot + recommendation pill).
+// `recommended` is its own visual key (accent) but ships on the stable channel.
 function kitChannelKey(kit) {
   if (kit.recommended) return 'recommended';
   return kit.firmware_channel === 'preview' ? 'preview' : 'stable';
@@ -92,20 +87,19 @@ function kitChannelKey(kit) {
 function kitFilterChannel(kit) {
   return kit.firmware_channel === 'preview' ? 'preview' : 'stable';
 }
-// The mono "· Stable" / "· Preview" word shown in the row meta.
+// The "Stable" / "Preview" word shown in row + minikit meta.
 function channelWord(key) {
   return key === 'preview' ? 'Preview' : 'Stable';
 }
-// A short channel tagline for search. The catalogue has no `tagline` field, so
-// this mirrors the prototype's per-channel supporting line.
+// A short channel tagline used only to widen search matches. The catalogue has
+// no `tagline` field, so this mirrors the per-channel supporting line.
 function kitTagline(kit) {
   return kitFilterChannel(kit) === 'preview'
     ? 'Preview firmware · acknowledge before install'
     : 'Stable firmware · ready to install';
 }
-// Case-insensitive match over name + tagline + description + each part's
-// label + SKU, gated by the active channel chip. The description is included
-// because it is the catalogue's real supporting text (the spec's "tagline").
+// Case-insensitive match over name + tagline + description + each part's label,
+// SKU, and the firmware target, gated by the active channel chip.
 function kitMatches(kit, q, chan) {
   if (chan !== 'all' && kitFilterChannel(kit) !== chan) return false;
   const query = (q || '').trim().toLowerCase();
@@ -113,133 +107,278 @@ function kitMatches(kit, q, chan) {
   const partsText = (kit.components || [])
     .map((p) => `${p.label || p.name || ''} ${p.sku || ''}`)
     .join(' ');
-  const hay = `${kit.display_name || kit.sku} ${kitTagline(kit)} ${kit.description || ''} ${partsText}`.toLowerCase();
+  const hay = `${kit.display_name || kit.sku} ${kit.sku} ${kitTagline(kit)} ${kit.description || ''} ${partsText} ${kit.firmware_config_string || ''}`.toLowerCase();
   return hay.includes(query);
 }
 
-/* ---------- Compact list row (master) ---------- */
-function KitRow(kit, { focused, selected, onFocus }) {
+/* ---------- Step 1 kit selection — local view state ----------
+   The committed selection (kit/setKit) is lifted to the app; this is the
+   picker's own UI state — which of the two views is showing, plus the Browse
+   view's search query and channel filter. It lives in module scope (not app
+   state) so it survives the app-level re-render a commit triggers, and so a
+   search / filter change can re-render only the table rows + count without
+   rebuilding the search input (which would drop the caret).
+   resetIdentifyPickerState() clears it when the whole flow resets. */
+const picker = { view: 'rec', q: '', chan: 'all' };
+
+/**
+ * Clears the picker's local UI state (active view, search query, channel
+ * filter). Called by the app when the flow resets so Step 1 returns to the
+ * recommendation landing with a clean catalogue table.
+ */
+export function resetIdentifyPickerState() {
+  picker.view = 'rec';
+  picker.q = '';
+  picker.chan = 'all';
+}
+
+/**
+ * Sets which Step 1 view opens first. The app calls this during init so a
+ * deep link to a specific catalogue kit (?configmode=kit&sku=…) opens straight
+ * into the Browse table with that kit selected, while the default landing — and
+ * every unknown-SKU / empty-catalogue fallback — stays on the recommendation
+ * view. Presentation-only: it never changes the committed kit or the engine
+ * verdict.
+ *
+ * @param {'rec'|'browse'} view
+ */
+export function setIdentifyInitialView(view) {
+  if (view === 'rec' || view === 'browse') {
+    picker.view = view;
+  }
+}
+
+// The reassurance line under the recommendation CTA. A stable kit reads as the
+// safe default (green check); a preview kit carries the acknowledge-first
+// warning variant. The acknowledgement itself is still enforced by the engine
+// at the Install step — this is reassurance copy, not a gate.
+function Reassurance(isPreview) {
+  if (isPreview) {
+    return h('div', { class: 'B__reassure B__reassure--preview' },
+      icon('alert', { size: 15 }),
+      h('span', null, 'Preview firmware · acknowledge before install'));
+  }
+  return h('div', { class: 'B__reassure B__reassure--ok' },
+    icon('check', { size: 15 }),
+    h('span', null, 'Stable firmware · right for most people'));
+}
+
+// The escape hatch to the advanced module builder. Kept on every kit view so
+// "I have different hardware" is always one click away (this is also where
+// FanTRIAC and the fan-only previews are reached — the catalogue never lists
+// them).
+function Hatch(onAdvanced) {
+  return h('div', { class: 'hatch' },
+    h('span', null, 'Different hardware, or no kit?'),
+    h('button', { class: 'linkbtn', type: 'button', onClick: onAdvanced },
+      'Build it module by module →'),
+  );
+}
+
+/* ---------- Recommendation view (View 1, default) ---------- */
+function Minikit(kit, onBrowse) {
   const key = kitChannelKey(kit);
-  return h('button', {
-    class: 'kitrow' + (focused ? ' is-focused' : '') + (selected ? ' is-selected' : ''),
-    type: 'button',
-    // aria-pressed marks which row's detail is currently shown on the right.
-    'aria-pressed': String(!!focused),
-    onClick: () => onFocus(kit),
-  },
-    // Visually hidden marker so assistive tech announces the committed kit (the
-    // check glyph is decorative / aria-hidden).
-    selected && h('span', { class: 'sr-only' }, 'Selected. '),
-    h('span', { class: 'kitrow__dot kitrow__dot--' + key }),
-    h('span', { class: 'kitrow__main' },
-      h('span', { class: 'kitrow__name' },
-        kit.display_name || kit.sku,
-        kit.recommended && h('span', { class: 'kitrow__rec' }, 'Recommended'),
+  return h('button', { class: 'minikit', type: 'button', onClick: onBrowse },
+    h('span', { class: 'minikit__dot minikit__dot--' + key }),
+    h('span', { class: 'minikit__main' },
+      h('span', { class: 'minikit__name' }, kit.display_name || kit.sku),
+      h('span', { class: 'minikit__meta' },
+        `${(kit.components || []).length} parts · ${channelWord(kitFilterChannel(kit))}`),
+    ),
+  );
+}
+
+function MoreStrip({ kits, recKit, onBrowse }) {
+  const others = kits.filter((k) => !recKit || k.sku !== recKit.sku);
+  return h('div', { class: 'B__more' },
+    h('div', { class: 'B__more-head' },
+      h('span', { class: 'B__more-lbl' }, 'More configurations'),
+      h('button', { class: 'linkbtn', type: 'button', onClick: onBrowse },
+        `Browse all ${kits.length} kits →`),
+    ),
+    h('div', { class: 'minikit-row' },
+      others.map((k) => Minikit(k, onBrowse)),
+    ),
+  );
+}
+
+function RecommendationView(props) {
+  const { kits, recKit, recResolved, kitError, sourceUrl, onInstallKit, onBrowse, onAdvanced } = props;
+
+  const lede = h('header', { class: 'idlede fadein' },
+    h('div', { class: 'eyebrow' }, icon('chip', { size: 13 }), 'Step 1 · Identify'),
+    h('h1', null, 'Recommended for your setup'),
+    h('p', null,
+      'Most Sense360 hubs ship as the Bathroom PoE kit. Install it in one click — ',
+      'or browse the full catalogue to match your exact hardware.'),
+  );
+
+  // No catalogue at all: there is nothing to recommend, so point the user
+  // straight at the advanced builder (parity with the 1.0 empty-catalogue path).
+  if (!recKit) {
+    return h('div', { class: 'main' }, lede,
+      h('div', { class: 'callout callout--warn' },
+        icon('alert'),
+        h('span', null,
+          h('b', null, 'No kits are available right now. '),
+          'Build your hub module by module instead.'),
       ),
-      h('span', { class: 'kitrow__meta' },
-        `${(kit.components || []).length} parts · ${channelWord(key)}`),
-    ),
-    h('span', { class: 'kitrow__right' },
-      selected
-        ? h('span', { class: 'kitrow__check' }, icon('check'))
-        : icon('arrowR', { cls: 'kitrow__chev' }),
-    ),
-  );
-}
-
-/* ---------- Detail panel (detail) ----------
-   `liveResolved` is the engine verdict, passed only when this kit is the
-   committed selection (the engine resolves against the committed state). For a
-   merely focused kit it is null and the panel falls back to the catalogue's
-   declared channel + config_string. */
-function KitDetail(kit, { selected, liveResolved, onSelect }) {
-  const liveChannel = liveResolved && liveResolved.channel ? liveResolved.channel : null;
-  const key = kit.recommended
-    ? 'recommended'
-    : ((liveChannel || kit.firmware_channel) === 'preview' ? 'preview' : 'stable');
-  const meta = FLAG_META[key] || FLAG_META.stable;
-  const word = liveChannel ? capitalize(liveChannel) : channelWord(key);
-  const target = (liveResolved && liveResolved.configString) || kit.firmware_config_string || '';
-
-  return h('div', { class: 'kitdetail fadein' },
-    h('div', { class: 'kitdetail__head' },
-      h('span', { class: 'flag ' + meta.cls }, meta.tag),
-      h('h2', null, kit.display_name || kit.sku),
-      kit.description && h('p', { class: 'kitdetail__desc' }, kit.description),
-    ),
-    h('div', { class: 'devicebox devicebox--detail' },
-      h('span', { class: 'devicebox__tag' }, 'ceiling hub render'),
-    ),
-    h('div', { class: 'kitdetail__parts' },
-      h('span', { class: 'kitdetail__lbl' }, 'Included boards'),
-      KitParts(kit.components || []),
-    ),
-    h('div', { class: 'kitdetail__foot' },
-      h('span', { class: 'kit-hero__target' }, word + ' · ', h('b', null, target)),
-      h('button', {
-        class: (selected ? 'btn' : 'btn--ghost btn') + ' btn--block',
-        type: 'button',
-        onClick: () => onSelect(kit),
-      }, selected ? [icon('check'), ' Selected'] : 'Select this kit'),
-    ),
-  );
-}
-
-/* ---------- The picker (master + detail wired together) ----------
-   Builds the two-column browser and owns the targeted re-render. The search
-   input and channel chips are stable nodes; only the list, the count, and the
-   detail panel are rebuilt on a search / filter / focus change. */
-function KitPicker({ kits, kit, setKit, resolved }) {
-  const selectedSku = kit ? kit.sku : null;
-
-  // Initialise focus to the committed kit (e.g. a kit share link), else the
-  // first kit. Re-derive if the remembered focus is no longer in the catalogue.
-  if (!picker.focusId || !kits.some((k) => k.sku === picker.focusId)) {
-    picker.focusId = selectedSku && kits.some((k) => k.sku === selectedSku)
-      ? selectedSku
-      : (kits[0] ? kits[0].sku : null);
+      Hatch(onAdvanced),
+    );
   }
 
-  const listEl = h('div', { class: 'kit-list', 'aria-label': 'Firmware kits' });
-  const countEl = h('div', { class: 'kit-count' });
-  const asideEl = h('aside', { class: 'kit-aside' });
-  let lastDetailSku = null;
+  // The recommendation card renders the engine verdict for the recommended kit
+  // when it has resolved; until then it falls back to the catalogue's declared
+  // channel + firmware target. The view owns no gate — `installable` is the
+  // engine's verdict, and a blocked recommendation is routed to source.
+  const isPreview = recResolved ? recResolved.isPreview : (recKit.firmware_channel === 'preview');
+  const installable = Boolean(recResolved && recResolved.installable);
+  const blocked = Boolean(recResolved && !recResolved.installable && recResolved.reason === 'no-build');
+  const target = (recResolved && recResolved.configString) || recKit.firmware_config_string || '';
+  const channelLabel = recResolved && recResolved.channel
+    ? capitalize(recResolved.channel)
+    : channelWord(kitFilterChannel(recKit));
+
+  const pill = recKit.recommended
+    ? h('span', { class: 'flag flag--rec' }, 'Recommended')
+    : h('span', { class: 'flag ' + (isPreview ? 'flag--preview' : 'flag--stable') },
+        isPreview ? 'Preview' : 'Stable');
+
+  const card = h('div', { class: 'B__rec' + (isPreview ? ' B__rec--preview' : '') },
+    h('div', { class: 'B__render' },
+      h('div', { class: 'devicebox devicebox--rec' },
+        h('span', { class: 'devicebox__tag' }, 'ceiling hub render')),
+    ),
+    h('div', { class: 'B__body' },
+      pill,
+      h('h2', null, recKit.display_name || recKit.sku),
+      recKit.description && h('p', { class: 'B__desc' }, recKit.description),
+      KitParts(recKit.components || []),
+    ),
+    h('div', { class: 'B__cta' },
+      h('button', {
+        class: 'btn btn--lg btn--block',
+        type: 'button',
+        disabled: !installable,
+        onClick: () => onInstallKit(recKit, recResolved),
+      }, 'Install this kit ', icon('arrowR')),
+      h('button', { class: 'btn btn--ghost btn--block', type: 'button', onClick: onBrowse },
+        'See full details'),
+      Reassurance(isPreview),
+      h('span', { class: 'B__target' }, channelLabel, ' · ', h('b', null, target)),
+    ),
+  );
+
+  return h('div', { class: 'main' }, lede,
+    kitError && h('div', { class: 'callout callout--warn' },
+      icon('alert'),
+      h('span', null, h('b', null, 'Unknown kit. '), kitError),
+    ),
+    card,
+    blocked && SourceCallout(sourceUrl, target),
+    MoreStrip({ kits, recKit, onBrowse }),
+    Hatch(onAdvanced),
+  );
+}
+
+/* ---------- Browse view (View 2, the full catalogue table) ---------- */
+function KitTableRow(kit, { selected, recommended, onSelect }) {
+  const dotKey = kitChannelKey(kit);
+  const chanKey = kitFilterChannel(kit);
+  const skus = (kit.components || []).map((c) => c.sku).filter(Boolean);
+  const shown = skus.slice(0, 4);
+  const extra = skus.length - shown.length;
+
+  return h('tr', {
+    class: 'ktable__row' + (selected ? ' is-selected' : '') + (recommended ? ' is-recommended' : ''),
+    tabindex: '0',
+    role: 'button',
+    'aria-pressed': String(!!selected),
+    onClick: onSelect,
+    onKeydown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); }
+    },
+  },
+    h('td', { class: 'kt-kit' },
+      h('span', { class: 'kt-dot kt-dot--' + dotKey }),
+      h('span', { class: 'kt-name' },
+        kit.display_name || kit.sku,
+        recommended && h('span', { class: 'kt-rec' }, 'Rec'),
+      ),
+    ),
+    h('td', null, h('span', { class: 'kt-chan kt-chan--' + chanKey }, channelWord(chanKey))),
+    h('td', { class: 'kt-parts' }, String((kit.components || []).length)),
+    h('td', { class: 'kt-boards' },
+      shown.map((s) => h('span', { class: 'kt-board' }, s)),
+      extra > 0 && h('span', { class: 'kt-board kt-board--more' }, `+${extra}`),
+    ),
+    h('td', null, h('code', { class: 'kt-target' }, kit.firmware_config_string || '')),
+  );
+}
+
+function BrowseView(props) {
+  const { kits, kit, resolved, sourceUrl, setKit, onContinue, onRecommendation, onAdvanced } = props;
+  const total = kits.length;
+  const selectedSku = kit ? kit.sku : null;
 
   // --- toolbar: stable nodes the targeted re-render never rebuilds ---
   const searchInput = h('input', {
-    class: 'kit-search__input',
+    class: 'C__search-input',
     type: 'text',
     autocomplete: 'off',
-    placeholder: 'Search kits, boards or SKU…',
-    'aria-label': 'Search kits, boards or SKU',
+    placeholder: 'Search by name, board or SKU…',
+    'aria-label': 'Search kits by name, board or SKU',
     value: picker.q,
-    onInput: (e) => { picker.q = e.target.value; syncToolbar(); syncList(); },
+    onInput: (e) => { picker.q = e.target.value; syncToolbar(); syncTable(); },
   });
   const clearBtn = h('button', {
-    class: 'kit-search__clear', type: 'button', 'aria-label': 'Clear search',
-    onClick: () => { picker.q = ''; searchInput.value = ''; syncToolbar(); syncList(); searchInput.focus(); },
+    class: 'C__search-clear', type: 'button', 'aria-label': 'Clear search',
+    onClick: () => { picker.q = ''; searchInput.value = ''; syncToolbar(); syncTable(); searchInput.focus(); },
   }, '×');
-  const search = h('div', { class: 'kit-search' },
-    icon('chip', { cls: 'kit-search__ico' }),
+  const searchEl = h('div', { class: 'C__search' },
+    icon('chip', { cls: 'C__search-ico' }),
     searchInput,
     clearBtn,
   );
 
   const FILTERS = [
-    { id: 'all', label: 'All kits' },
+    { id: 'all', label: 'All' },
     { id: 'stable', label: 'Stable' },
     { id: 'preview', label: 'Preview' },
   ];
   const chipEls = new Map();
-  const chips = h('div', { class: 'kit-chips', role: 'group', 'aria-label': 'Filter kits by channel' },
+  const chipsEl = h('div', { class: 'C__chips', role: 'group', 'aria-label': 'Filter kits by channel' },
     FILTERS.map((f) => {
       const el = h('button', {
         class: 'kit-chip', type: 'button',
-        onClick: () => { picker.chan = f.id; syncToolbar(); syncList(); },
+        onClick: () => { picker.chan = f.id; syncToolbar(); syncTable(); },
       }, f.label);
       chipEls.set(f.id, el);
       return el;
     }),
+  );
+
+  const countEl = h('span', { class: 'C__count' });
+  const bar = h('div', { class: 'C__bar' },
+    h('button', { class: 'linkbtn C__back', type: 'button', onClick: onRecommendation },
+      '← Recommendation'),
+    h('span', { class: 'C__title' }, 'All firmware kits'),
+    countEl,
+    h('div', { class: 'C__tools' }, searchEl, chipsEl),
+  );
+
+  const tbody = h('tbody', { class: 'ktable__body' });
+  const table = h('table', { class: 'ktable' },
+    h('thead', null,
+      h('tr', null,
+        h('th', { class: 'kt-h-kit' }, 'Kit'),
+        h('th', null, 'Channel'),
+        h('th', null, 'Parts'),
+        h('th', null, 'Boards'),
+        h('th', null, 'Firmware target'),
+      ),
+    ),
+    tbody,
   );
 
   // Reflect q + chan onto the stable toolbar nodes (no rebuild → caret kept).
@@ -254,66 +393,97 @@ function KitPicker({ kits, kit, setKit, resolved }) {
     });
   }
 
-  // --- targeted re-render of list + count + detail ---
-  function syncList() {
+  // Targeted re-render of the table rows + count. The search input and chips are
+  // stable nodes outside tbody, so typing only re-mounts the rows (caret kept).
+  function syncTable() {
     const filtered = kits.filter((k) => kitMatches(k, picker.q, picker.chan));
-
-    // The detail must always reflect a selectable (visible) row: if the focused
-    // kit was filtered out, refocus the first visible result. When nothing
-    // matches there is no selectable row, so keep the last focus so the panel
-    // does not vanish (the empty state + Clear filters drives recovery). This is
-    // the one deliberate deviation from the prototype, which keeps focus stable.
-    let focusKit = kits.find((k) => k.sku === picker.focusId) || null;
-    if (filtered.length && (!focusKit || !filtered.some((k) => k.sku === picker.focusId))) {
-      focusKit = filtered[0];
-      picker.focusId = focusKit.sku;
-    }
-    if (!focusKit) focusKit = filtered[0] || kits[0] || null;
+    countEl.textContent = `${filtered.length} of ${total}`;
 
     if (filtered.length === 0) {
-      mount(listEl,
-        h('div', { class: 'kit-empty' },
-          `No kits match “${picker.q}”.`,
-          h('button', {
-            class: 'linkbtn', type: 'button',
-            onClick: () => { picker.q = ''; picker.chan = 'all'; searchInput.value = ''; syncToolbar(); syncList(); },
-          }, 'Clear filters'),
+      mount(tbody,
+        h('tr', { class: 'ktable__empty-row' },
+          h('td', { colspan: '5' },
+            h('div', { class: 'ktable__empty' },
+              `No kits match “${picker.q}”.`,
+              h('button', {
+                class: 'linkbtn', type: 'button',
+                onClick: () => { picker.q = ''; picker.chan = 'all'; searchInput.value = ''; syncToolbar(); syncTable(); },
+              }, 'Clear filters'),
+            ),
+          ),
         ),
       );
     } else {
-      mount(listEl, filtered.map((k) =>
-        KitRow(k, {
-          focused: !!(focusKit && focusKit.sku === k.sku),
+      mount(tbody, filtered.map((k) =>
+        KitTableRow(k, {
           selected: selectedSku === k.sku,
-          onFocus: () => { picker.focusId = k.sku; syncList(); },
+          recommended: Boolean(k.recommended),
+          // Selecting a row commits the kit through the engine (setKit), which
+          // resolves its verdict and re-renders this view with the footer
+          // reflecting the gate verdict.
+          onSelect: () => setKit(k),
         })));
-    }
-
-    countEl.textContent = `Showing ${filtered.length} of ${kits.length} kits`;
-
-    // Only re-mount the detail (replaying its fadein) when the focused kit
-    // actually changes — not on every keystroke that leaves focus unchanged.
-    const sku = focusKit ? focusKit.sku : null;
-    if (sku !== lastDetailSku) {
-      lastDetailSku = sku;
-      const isSelected = !!(focusKit && selectedSku === focusKit.sku);
-      mount(asideEl, focusKit
-        ? KitDetail(focusKit, { selected: isSelected, liveResolved: isSelected ? resolved : null, onSelect: setKit })
-        : null);
     }
   }
 
-  syncToolbar();
-  syncList();
-
-  return h('div', { class: 'kit-picker' },
-    h('div', { class: 'kit-browser' },
-      h('div', { class: 'kit-toolbar' }, search, chips),
-      listEl,
-      countEl,
+  // --- footer: hint + selected-kit indicator + Continue (the gate verdict) ---
+  // Continue advances only when the committed kit resolves to an installable
+  // build; a blocked kit disables it and is routed to source (callout below).
+  const installable = Boolean(kit && resolved && resolved.installable);
+  const blocked = Boolean(kit && resolved && !resolved.installable && resolved.reason === 'no-build');
+  const continueBtn = h('button', {
+    class: 'btn btn--lg', type: 'button', disabled: !installable, onClick: onContinue,
+  }, 'Continue ', icon('arrowR'));
+  const footEl = h('div', { class: 'winfoot identify-step__foot' },
+    h('div', { class: 'stepnav' },
+      h('span', { class: 'winfoot__hint' },
+        'Click a row to select · ',
+        h('button', { class: 'linkbtn', type: 'button', onClick: onAdvanced },
+          'Build module by module →'),
+      ),
+      h('span', { class: 'stepnav__spacer' }),
+      kit
+        ? h('span', { class: 'winfoot__sel' }, h('span', { class: 'winfoot__seldot' }), h('b', null, shortKitName(kit)))
+        : null,
+      continueBtn,
     ),
-    asideEl,
   );
+
+  syncToolbar();
+  syncTable();
+
+  return h('div', { class: 'identify-step__browse fadein' },
+    h('div', { class: 'browse-body' },
+      bar,
+      table,
+      blocked && SourceCallout(sourceUrl, resolved.configString),
+    ),
+    footEl,
+  );
+}
+
+/* ---------- The kit chooser (the two views + the toggle between them) ---------- */
+function KitChooser(props) {
+  // A stable container the app mounts; the active view is mounted inside it. A
+  // view toggle (See full details / Browse all / back to recommendation) is a
+  // local re-render here, so it never re-resolves the engine or rebuilds the
+  // app. Committing a kit (Install this kit / a Browse row) goes through the app
+  // (setKit / onInstallKit), which re-renders this step and reads picker.view.
+  const root = h('div', { class: 'identify-step' });
+
+  function renderView() {
+    if (picker.view === 'browse') {
+      mount(root, BrowseView({ ...props, onRecommendation: showRec, onAdvanced }));
+    } else {
+      mount(root, RecommendationView({ ...props, onBrowse: showBrowse, onAdvanced }));
+    }
+  }
+  function showBrowse() { picker.view = 'browse'; renderView(); }
+  function showRec() { picker.view = 'rec'; renderView(); }
+  function onAdvanced() { props.setMode('advanced'); }
+
+  renderView();
+  return root;
 }
 
 /* ---------- Advanced module builder ---------- */
@@ -419,51 +589,23 @@ function sumRow(k, v) {
 }
 
 /* ---------- The step ---------- */
-export function IdentifyStep({ mode, setMode, kits, kitError, kit, setKit, sel, setSel, resolved, sourceUrl, onContinue }) {
+export function IdentifyStep(props) {
+  const { mode } = props;
+
+  // mode === 'kit' — the recommendation-first kit chooser (two views).
+  if (mode === 'kit') {
+    return KitChooser(props);
+  }
+
+  // mode === 'advanced' — the module-by-module builder (unchanged).
+  const { setMode, sel, setSel, resolved, sourceUrl, onContinue } = props;
   const head = StepHead({
     eyebrow: 'Step 1 — Identify',
     eyebrowIcon: 'chip',
-    title: mode === 'kit' ? "Let's find your hardware" : 'Build your hub',
-    desc: mode === 'kit'
-      ? 'Most customers have the standard Bathroom PoE kit. Confirm it below — or build a setup module by module.'
-      : "Pick the exact boards in your hub. We'll resolve the matching firmware target as you go.",
+    title: 'Build your hub',
+    desc: "Pick the exact boards in your hub. We'll resolve the matching firmware target as you go.",
   });
 
-  if (mode === 'kit') {
-    // The Continue gate is the engine verdict for the selected kit. A kit can
-    // only advance once the engine resolves it to an installable build; a kit
-    // that resolves to no build is routed to the source path, never to install.
-    const selectedInstallable = Boolean(kit && resolved && resolved.installable);
-    const selectedBlocked = Boolean(kit && resolved && !resolved.installable && resolved.reason === 'no-build');
-
-    return h('div', { class: 'main' }, head,
-      kitError && h('div', { class: 'callout callout--warn' },
-        icon('alert'),
-        h('span', null, h('b', null, 'Unknown kit. '), kitError),
-      ),
-      kits.length === 0 && !kitError && h('div', { class: 'callout callout--warn' },
-        icon('alert'),
-        h('span', null,
-          h('b', null, 'No kits are available right now. '),
-          'Build your hub module by module instead.'),
-      ),
-      kits.length > 0 && KitPicker({ kits, kit, setKit, resolved }),
-      selectedBlocked && SourceCallout(sourceUrl, resolved.configString),
-      h('div', { class: 'hatch' },
-        h('span', null, 'Different hardware, or no kit?'),
-        h('button', { class: 'linkbtn', onClick: () => setMode('advanced') },
-          'Build it module by module →'),
-      ),
-      h('div', { class: 'stepnav' },
-        h('span', { class: 'stepnav__spacer' }),
-        h('button', { class: 'btn btn--lg', disabled: !selectedInstallable, onClick: onContinue },
-          'Continue ' + (kit ? `with ${(kit.display_name || kit.sku).split('—')[0].trim()} ` : ''),
-          icon('arrowR')),
-      ),
-    );
-  }
-
-  // mode === 'advanced'
   const advHasInputs = Boolean(sel.power);
   const advInstallable = Boolean(advHasInputs && resolved && resolved.installable);
   const advBlocked = Boolean(advHasInputs && resolved && !resolved.installable && resolved.reason === 'no-build');

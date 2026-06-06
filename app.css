@@ -425,29 +425,9 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   box-shadow: var(--sh-sm);
 }
 
-/* Recommended kit hero card */
-.kit-hero {
-  position: relative;
-  border-radius: var(--r-xl);
-  overflow: hidden;
-  border: 1.5px solid var(--accent-line);
-  background:
-    radial-gradient(120% 140% at 100% 0%, var(--accent-soft) 0%, transparent 55%),
-    var(--surface);
-  box-shadow: var(--sh-md);
-  transition: box-shadow .25s, transform .2s, border-color .2s;
-}
-.kit-hero.is-selected {
-  border-color: var(--accent);
-  box-shadow: var(--sh-accent), var(--sh-md);
-}
-.kit-hero__top {
-  display: flex;
-  gap: 28px;
-  padding: 28px 30px 24px;
-  align-items: flex-start;
-}
-.kit-hero__body { flex: 1; min-width: 0; }
+/* Channel flag pills, device-render block, and component part chips. Shared by
+   the Step 1 recommendation card (WF2-IDENTIFY-RECO) and the install / connect
+   surfaces — the design tokens keep light + dark in sync automatically. */
 .flag {
   display: inline-flex; align-items: center; gap: 6px;
   font-family: var(--font-mono);
@@ -459,11 +439,6 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .flag--rec  { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); }
 .flag--preview { color: var(--warning); background: var(--warning-soft); border: 1px solid var(--warning-line); }
 .flag--planned { color: var(--text-muted); background: var(--bg-elev); border: 1px solid var(--border); }
-.kit-hero h2 {
-  margin: 0 0 8px;
-  font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em;
-}
-.kit-hero__desc { margin: 0; color: var(--text-body); font-size: 0.98rem; line-height: 1.55; max-width: 52ch; }
 
 /* device illustration block */
 .devicebox {
@@ -505,74 +480,156 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .part__sku { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); }
 .part__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
 
-.kit-hero__foot {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 18px; flex-wrap: wrap;
-  padding: 18px 30px;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.kit-hero__target {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-.kit-hero__target b { color: var(--text-body); font-weight: 600; }
+/* ---------- Step 1 — Identify (WF2-IDENTIFY-RECO two-view chooser) ----------
+   The v3 design_handoff_installer_flow "Step 1 — Identify": a recommendation-first
+   landing (View 1) with a toggle into the full catalogue table (View 2). Built on
+   the existing design tokens so light + dark follow automatically. The recommended
+   kit, every row, and every firmware target come from the real catalogue
+   (scripts/data/kits.json); the install verdict comes from the engine. The
+   catalogue has no FanTRIAC / fan-only standalone entry, so neither view can ever
+   surface a TRIAC row — those stay reachable only via the advanced builder. */
+.identify-step { width: 100%; }
 
-/* ---------- Kit picker (master–detail browser) ----------
-   WF2 Step 1 redesign: replaces the stacked KitHero cards with a compact,
-   height-capped master list (left) plus a sticky detail panel (right) so the
-   page height stays constant as the catalogue grows. Recreated from the design
-   handoff prototype using the existing design tokens, so light + dark follow
-   automatically. The channel chips are scoped as .kit-chip (not the prototype's
-   generic .chip) to avoid colliding with the legacy .chip rule in css/theme.css. */
-.kit-picker {
+/* Shared flow lede (left-aligned eyebrow + headline + supporting line). */
+.idlede { max-width: 64ch; margin-bottom: 26px; }
+.idlede h1 {
+  margin: 14px 0 10px;
+  font-size: clamp(1.7rem, 3.2vw, 2.2rem);
+  font-weight: 700; letter-spacing: -0.025em; line-height: 1.1;
+}
+.idlede p { margin: 0; font-size: 1.04rem; line-height: 1.5; color: var(--text-body); text-wrap: pretty; }
+
+/* ----- View 1: recommendation card (3-col 260px | 1fr | auto) ----- */
+.B__rec {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 372px;
-  gap: 22px;
-  align-items: start;
+  grid-template-columns: 260px minmax(0, 1fr) auto;
+  gap: 30px;
+  align-items: center;
+  border-radius: var(--r-xl);
+  border: 1.5px solid var(--accent-line);
+  background:
+    radial-gradient(120% 150% at 100% 0%, var(--accent-soft) 0%, transparent 52%),
+    var(--surface);
+  box-shadow: var(--sh-md);
+  padding: 28px 30px;
+}
+.B__rec--preview { border-color: var(--warning-line); }
+.B__rec--preview {
+  background:
+    radial-gradient(120% 150% at 100% 0%, var(--warning-soft) 0%, transparent 52%),
+    var(--surface);
+}
+.B__render { min-width: 0; }
+.devicebox--rec { flex: none; width: 100%; height: 168px; }
+.B__body { min-width: 0; display: grid; gap: 6px; align-content: center; }
+.B__body h2 { margin: 8px 0 4px; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; }
+.B__desc { margin: 0 0 6px; color: var(--text-body); font-size: 0.98rem; line-height: 1.5; max-width: 52ch; }
+.B__cta { display: flex; flex-direction: column; gap: 10px; min-width: 232px; }
+.B__cta .btn { width: 100%; }
+.B__reassure {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.86rem; line-height: 1.4; margin-top: 2px;
+}
+.B__reassure svg { flex: 0 0 auto; }
+.B__reassure--ok { color: color-mix(in srgb, var(--green) 72%, var(--text)); }
+.B__reassure--ok svg { color: var(--green); }
+.B__reassure--preview { color: var(--warning); }
+.B__target {
+  font-family: var(--font-mono);
+  font-size: 0.74rem; color: var(--text-faint);
+  word-break: break-all; line-height: 1.5;
+}
+.B__target b { color: var(--text-muted); font-weight: 600; }
+
+/* ----- View 1: "more configurations" teaser strip ----- */
+.B__more { margin-top: 30px; }
+.B__more-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.B__more-lbl {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.minikit-row {
+  display: flex; gap: 12px; flex-wrap: nowrap;
+  overflow-x: auto; padding: 2px 2px 8px; margin: -2px;
+}
+.minikit-row::-webkit-scrollbar { height: 8px; }
+.minikit-row::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 2px solid var(--bg); }
+.minikit {
+  flex: 0 0 auto; min-width: 200px; max-width: 260px;
+  display: flex; align-items: center; gap: 11px; text-align: left;
+  padding: 13px 15px;
+  border: 1.5px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.minikit:hover { border-color: var(--border-strong); background: var(--surface-2); transform: translateY(-1px); }
+.minikit:focus-visible { outline: none; box-shadow: var(--ring); border-color: var(--accent); }
+.minikit__dot {
+  flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--text-faint); box-shadow: 0 0 0 4px color-mix(in srgb, var(--text-faint) 18%, transparent);
+}
+.minikit__dot--recommended { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.minikit__dot--stable { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.minikit__dot--preview { background: var(--warning); box-shadow: 0 0 0 4px var(--warning-soft); }
+.minikit__main { min-width: 0; display: grid; gap: 2px; }
+.minikit__name {
+  font-weight: 600; font-size: 0.9rem; letter-spacing: -0.01em; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.minikit__meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); }
+
+@media (max-width: 1040px) {
+  .B__rec { grid-template-columns: 220px minmax(0, 1fr); }
+  .B__cta { grid-column: 1 / -1; min-width: 0; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .B__cta .btn { width: auto; flex: 1 1 200px; }
+  .B__reassure, .B__target { flex-basis: 100%; }
+}
+@media (max-width: 720px) {
+  .B__rec { grid-template-columns: 1fr; gap: 20px; padding: 22px; }
+  .devicebox--rec { height: 132px; }
 }
 
-.kit-browser { min-width: 0; display: flex; flex-direction: column; }
+/* ----- View 2: catalogue table ----- */
+.identify-step__browse { width: 100%; }
+.browse-body { padding: 48px var(--page-pad) 28px; }
 
-/* toolbar: search + filter chips */
-.kit-toolbar {
-  display: flex; align-items: center; gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
+.C__bar {
+  display: flex; align-items: center; gap: 12px 16px;
+  flex-wrap: wrap; margin-bottom: 18px;
 }
-.kit-search {
-  position: relative; flex: 1; min-width: 220px;
-  display: flex; align-items: center;
+.C__back { display: inline-flex; align-items: center; gap: 5px; }
+.C__title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
+.C__count { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+.C__tools { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+
+.C__search { position: relative; display: flex; align-items: center; min-width: 240px; flex: 1; }
+.C__search-ico {
+  position: absolute; left: 13px; width: 17px; height: 17px;
+  color: var(--text-faint); pointer-events: none;
 }
-.kit-search__ico {
-  position: absolute; left: 13px;
-  width: 17px; height: 17px; color: var(--text-faint);
-  pointer-events: none;
-}
-.kit-search__input {
-  width: 100%; height: 44px;
-  padding: 0 38px 0 38px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-pill);
+.C__search-input {
+  width: 100%; height: 42px; padding: 0 38px;
+  border: 1.5px solid var(--border); border-radius: var(--r-pill);
   background: var(--surface);
   font-family: inherit; font-size: 0.92rem; color: var(--text);
   transition: border-color .16s, box-shadow .16s;
 }
-.kit-search__input::placeholder { color: var(--text-faint); }
-.kit-search__input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
-.kit-search__clear {
-  position: absolute; right: 8px;
-  width: 26px; height: 26px; border-radius: 50%;
+.C__search-input::placeholder { color: var(--text-faint); }
+.C__search-input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.C__search-clear {
+  position: absolute; right: 8px; width: 26px; height: 26px; border-radius: 50%;
   border: none; background: var(--bg-elev); color: var(--text-muted);
-  font-size: 1.1rem; line-height: 1; cursor: pointer;
-  display: grid; place-items: center;
+  font-size: 1.1rem; line-height: 1; cursor: pointer; display: grid; place-items: center;
 }
-.kit-search__clear:hover { background: var(--border-strong); color: var(--text); }
+.C__search-clear:hover { background: var(--border-strong); color: var(--text); }
 
-.kit-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+.C__chips { display: flex; gap: 7px; flex-wrap: wrap; }
+/* channel filter chips (shared with the previous picker; kept for both views) */
 .kit-chip {
-  height: 36px; padding: 0 15px;
+  height: 38px; padding: 0 15px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--border);
   background: var(--surface);
@@ -587,120 +644,84 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   color: var(--accent-press);
 }
 
-/* the scrollable list itself — this is what keeps the page short */
-.kit-list {
-  display: grid; gap: 8px;
-  max-height: min(60vh, 540px);
-  overflow-y: auto;
-  padding: 2px;
-  margin: -2px;
-}
-.kit-list::-webkit-scrollbar { width: 10px; }
-.kit-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 3px solid var(--bg); }
-
-.kitrow {
-  display: flex; align-items: center; gap: 13px;
-  width: 100%; text-align: left;
-  padding: 13px 15px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
+.ktable {
+  width: 100%; border-collapse: collapse;
   background: var(--surface);
-  cursor: pointer;
-  transition: border-color .15s, background .15s, box-shadow .15s, transform .1s;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+  overflow: hidden;
+  font-size: 0.92rem;
 }
-.kitrow:hover { border-color: var(--border-strong); background: var(--surface-2); }
-.kitrow.is-focused {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  box-shadow: var(--ring);
+/* sticky header sits just under the full-page sticky top bar (60px) */
+.ktable thead th {
+  position: sticky; top: 60px; z-index: 5;
+  text-align: left;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 13px 16px;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
-.kitrow__dot {
-  flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
-  background: var(--text-faint);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--text-faint) 18%, transparent);
+.ktable__row { cursor: pointer; transition: background .14s; }
+.ktable__row > td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
 }
-.kitrow__dot--recommended { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
-.kitrow__dot--stable { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
-.kitrow__dot--preview { background: var(--warning); box-shadow: 0 0 0 4px var(--warning-soft); }
+.ktable__body tr:last-child > td { border-bottom: none; }
+.ktable__row:hover { background: var(--surface-2); }
+.ktable__row.is-selected { background: var(--accent-soft); }
+.ktable__row:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 
-.kitrow__main { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.kitrow__name {
-  font-weight: 600; font-size: 0.94rem; letter-spacing: -0.01em;
-  color: var(--text);
-  display: flex; align-items: center; gap: 8px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.kt-dot {
+  display: inline-block; vertical-align: middle; margin-right: 10px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--text-faint); box-shadow: 0 0 0 4px color-mix(in srgb, var(--text-faint) 18%, transparent);
 }
-.kitrow__rec {
+.kt-dot--recommended { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.kt-dot--stable { background: var(--green); box-shadow: 0 0 0 4px var(--green-soft); }
+.kt-dot--preview { background: var(--warning); box-shadow: 0 0 0 4px var(--warning-soft); }
+.kt-name { font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.kt-rec {
   font-family: var(--font-mono);
   font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--accent); background: var(--accent-soft);
   border: 1px solid var(--accent-line);
-  padding: 2px 6px; border-radius: var(--r-pill);
-  flex: 0 0 auto;
+  padding: 2px 6px; border-radius: var(--r-pill); margin-left: 9px;
 }
-.kitrow__meta {
-  font-family: var(--font-mono);
-  font-size: 0.74rem; color: var(--text-faint);
+.kt-chan {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-mono); font-size: 0.66rem; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: var(--r-pill);
 }
-.kitrow__right { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; }
-.kitrow__chev { width: 16px; height: 16px; color: var(--text-faint); transition: color .15s, transform .15s; }
-.kitrow:hover .kitrow__chev { color: var(--text-muted); transform: translateX(2px); }
-.kitrow__check {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  display: grid; place-items: center;
+.kt-chan--stable { color: var(--green); background: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 28%, transparent); }
+.kt-chan--preview { color: var(--warning); background: var(--warning-soft); border: 1px solid var(--warning-line); }
+.kt-parts { font-variant-numeric: tabular-nums; color: var(--text-body); }
+.kt-boards { display: flex; flex-wrap: wrap; gap: 5px; }
+.kt-board {
+  font-family: var(--font-mono); font-size: 0.68rem;
+  padding: 2px 7px; border-radius: var(--r-sm);
+  background: var(--bg-elev); color: var(--text-muted); border: 1px solid var(--border);
 }
-.kitrow__check svg { width: 13px; height: 13px; }
+.kt-board--more { color: var(--text-faint); }
+.kt-target { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); word-break: break-all; }
 
-.kit-empty {
-  text-align: center; color: var(--text-muted);
-  padding: 32px 16px; font-size: 0.92rem;
-  border: 1px dashed var(--border-strong); border-radius: var(--r-md);
-  display: grid; gap: 8px; justify-items: center;
-}
-.kit-count {
-  font-family: var(--font-mono);
-  font-size: 0.74rem; color: var(--text-faint);
-  padding: 12px 2px 0;
-}
+.ktable__empty { text-align: center; color: var(--text-muted); padding: 30px 16px; display: grid; gap: 8px; justify-items: center; }
 
-/* sticky detail panel */
-.kit-aside { position: sticky; top: 92px; }
-.kitdetail {
-  background:
-    radial-gradient(130% 150% at 100% 0%, var(--accent-soft) 0%, transparent 50%),
-    var(--surface);
-  border: 1.5px solid var(--accent-line);
-  border-radius: var(--r-xl);
-  box-shadow: var(--sh-md);
-  padding: 22px 22px 20px;
-  display: grid; gap: 16px;
-}
-.kitdetail__head h2 {
-  margin: 10px 0 8px;
-  font-size: 1.28rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15;
-}
-.kitdetail__desc { margin: 0; color: var(--text-body); font-size: 0.92rem; line-height: 1.55; }
-.devicebox--detail { flex: none; width: 100%; height: 120px; }
-.kitdetail__lbl {
-  display: block;
-  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--text-faint); margin-bottom: 8px;
-}
-.kitdetail__parts .parts { margin: 0; }
-.kitdetail__foot {
-  display: grid; gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-.kitdetail__foot .kit-hero__target { word-break: break-all; }
+/* the browse footer reuses the shell's .winfoot chrome; the actions sit in a
+   full-width .stepnav with no top margin inside the bar (mirrors install.js) */
+.identify-step__foot .stepnav { margin: 0; flex: 1; width: 100%; }
 
 .flag--stable { color: var(--green); background: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 28%, transparent); }
 
-@media (max-width: 860px) {
-  .kit-picker { grid-template-columns: 1fr; }
-  .kit-aside { position: static; }
-  .kit-list { max-height: none; }
+@media (max-width: 760px) {
+  .C__tools { margin-left: 0; width: 100%; }
+  .C__search { min-width: 0; }
+  .ktable { font-size: 0.86rem; }
+  .ktable thead th, .ktable__row > td { padding: 11px 12px; }
 }
 
 /* ---------- Buttons ---------- */
