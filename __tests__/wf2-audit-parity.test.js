@@ -533,8 +533,11 @@ describe('PR 10 — kit-config rejection paths (2.0 view)', () => {
     expect(viewState.resolved.installable).toBe(false);
     expect(viewState.resolved.reason).toBe('no-build');
 
-    const continueBtn = root.querySelector('.stepnav .btn--lg');
-    expect(continueBtn.disabled).toBe(true);
+    // Recommendation-first landing: the non-recommended USB kit shows as the
+    // committed selection with its in-content install button disarmed (no build).
+    const installBtn = root.querySelector('.B__cta .btn--lg');
+    expect(installBtn).not.toBeNull();
+    expect(installBtn.disabled).toBe(true);
 
     const callout = root.querySelector('.callout--warn');
     expect(callout).not.toBeNull();

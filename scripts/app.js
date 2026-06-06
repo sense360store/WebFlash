@@ -14,7 +14,7 @@
    to the ESPHome source path instead of the install flow. */
 import { h, mount } from './h.js';
 import { WinBar } from './ui.js';
-import { IdentifyStep, resetIdentifyPickerState } from './identify.js';
+import { IdentifyStep, resetIdentifyPickerState, recommendedKit } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
 import { AIR, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
@@ -41,6 +41,7 @@ const state = {
   step: 0,
   maxReached: 0,
   mode: 'kit', // 'kit' | 'advanced'
+  identifyView: 'recommend', // Step 1 kit sub-view: 'recommend' | 'browse'
   kits: [], // catalogue kits (from engine.kits.loadKitCatalog)
   kitError: '', // unknown-SKU fallback message
   kit: null, // selected catalogue kit
@@ -182,22 +183,27 @@ function reset() {
   state.step = 0;
   state.maxReached = 0;
   state.mode = 'kit';
-  state.kit = null;
+  state.identifyView = 'recommend';
+  // Recommendation-first: a fresh flow lands on the recommended kit committed.
+  state.kit = recommendedKit(state.kits);
   state.kitError = '';
   state.sel = { ...DEFAULT_SEL };
   state.resolved = null;
-  // Clear the Step 1 kit-picker's local UI state (search, channel filter, focus)
-  // so a fresh flow starts on a clean picker, matching the prototype's
-  // fresh-on-remount local state.
+  // Clear the Browse table's local UI state (search, channel filter) so a fresh
+  // flow starts on a clean table, matching the prototype's fresh-on-remount
+  // local state.
   resetIdentifyPickerState();
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   onSelectionChanged();
   announceStep();
 }
 
-const setMode = (m) => { state.mode = m; state.kitError = ''; onSelectionChanged(); };
+const setMode = (m) => { state.mode = m; state.kitError = ''; state.identifyView = 'recommend'; onSelectionChanged(); };
 const setKit = (k) => { state.kit = k; state.kitError = ''; onSelectionChanged(); };
 const setSel = (s) => { state.sel = s; onSelectionChanged(); };
+// The Step 1 kit sub-view (recommendation landing vs Browse table) is a
+// presentation-only toggle; it changes no selection, so it only re-renders.
+const setIdentifyView = (v) => { state.identifyView = v; render(); };
 
 function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
@@ -385,6 +391,7 @@ function buildStep() {
   if (state.step === 0) {
     return IdentifyStep({
       mode: state.mode, setMode,
+      view: state.identifyView, setView: setIdentifyView,
       kits: state.kits, kitError: state.kitError,
       kit: state.kit, setKit,
       sel: state.sel, setSel,
@@ -529,14 +536,17 @@ async function initFromEngine() {
       state.mode = 'kit';
       state.kit = kit;
     } else {
-      // Unknown SKU: fall back to the kit picker with a clear message and a
-      // one-click switch to the advanced builder (the "Build it module by
-      // module" hatch already renders below the kit list).
+      // Unknown SKU: fall back to the recommendation landing with a clear
+      // message and the one-click switch to the advanced builder (the "Build it
+      // module by module" hatch renders in the recommendation view).
       state.mode = 'kit';
-      state.kitError = `We couldn't find a kit matching "${requested.sku}". Pick a kit below, or switch to advanced setup to choose your boards.`;
+      state.kitError = `We couldn't find a kit matching "${requested.sku}". We've shown the recommended kit instead — browse all kits, or build it module by module.`;
+      state.kit = recommendedKit(state.kits);
     }
   } else {
+    // Recommendation-first: lead with the catalogue's recommended kit committed.
     state.mode = 'kit';
+    state.kit = recommendedKit(state.kits);
   }
 
   render();

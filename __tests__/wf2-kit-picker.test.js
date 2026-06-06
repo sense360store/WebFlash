@@ -1,21 +1,23 @@
 /**
- * WF2 Step 1 — kit picker (master–detail browser) redesign.
+ * WF2 Step 1 — Identify recommendation-first redesign (WF2-IDENTIFY-RECO).
  *
- * Pins the behavior of the redesigned Identify kit picker that replaced the
- * stacked KitHero cards with a compact, height-capped master list plus a sticky
- * detail panel. These tests drive the real view + engine through the DOM, the
- * same way wf2-identify.test.js does (real kits.json + manifest.json served via
- * a fetch stub). They lock:
- *   - the master/detail layout + "Showing X of Y kits" count;
- *   - live search over name / SKU with the empty state + Clear filters reset;
+ * Pins the behaviour of the redesigned Identify step that supersedes the #502
+ * master-detail picker: a recommendation-first landing (RecommendView) that
+ * leads with the catalogue's recommended kit and a one-click "Install this kit",
+ * plus a dense Browse table (BrowseView) for everyone else. These tests drive
+ * the real view + engine through the DOM (real kits.json + manifest.json served
+ * via a fetch stub), the same way wf2-identify.test.js does. They lock:
+ *   - the recommendation landing leading with the recommended kit, committed by
+ *     default, with the one-click install armed once it resolves;
+ *   - the Browse table: one row per kit, the "N of M" count, the Rec badge,
+ *     channel pills, board SKUs, and the firmware target;
+ *   - live search over name / SKU / target with the empty state + Clear filters;
  *   - the All / Stable / Preview channel chips;
- *   - focus (which detail shows) being independent of selection (what Continue
- *     commits) in both directions;
- *   - refocus-to-first-visible when the focused kit is filtered out, while the
- *     committed selection stays put;
- *   - the search input node staying stable across keystrokes (caret preserved).
+ *   - row click committing the selection (footer summary + Continue update);
+ *   - the recommend <-> browse navigation and the "Your selection" reframing;
+ *   - TRIAC fail-closed: no TRIAC card appears in the table.
  *
- * The picker wires the real catalogue, so the assertions derive their expected
+ * The view wires the real catalogue, so the assertions derive their expected
  * counts from kits.json rather than hardcoding them.
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
@@ -89,7 +91,7 @@ async function boot(search = '') {
   return { engine, app };
 }
 
-async function mountPicker(search = '') {
+async function mountStep(search = '') {
   const { engine, app } = await boot(search);
   const root = document.createElement('div');
   document.body.appendChild(root);
@@ -99,21 +101,35 @@ async function mountPicker(search = '') {
 }
 
 // ----- DOM helpers -----
-const rows = (root) => [...root.querySelectorAll('.kit-list .kitrow')];
-const rowName = (row) => (row.querySelector('.kitrow__name').firstChild.textContent || '').trim();
-const rowByName = (root, name) => rows(root).find((r) => rowName(r) === name) || null;
-const focusedRow = (root) => root.querySelector('.kit-list .kitrow.is-focused');
-const selectedRows = (root) => [...root.querySelectorAll('.kit-list .kitrow.is-selected')];
-const detailName = (root) => root.querySelector('.kit-aside .kitdetail h2').textContent;
-const countText = (root) => root.querySelector('.kit-count').textContent;
+const recommendBody = (root) => root.querySelector('.B');
+const browseBody = (root) => root.querySelector('.C');
+const recName = (root) => root.querySelector('.B__recbody h2').textContent;
+const recFlag = (root) => root.querySelector('.B__rec .flag');
+const installBtn = (root) => root.querySelector('.B__cta .btn--lg');
+const seeDetailsBtn = (root) => root.querySelector('.B__cta .btn--ghost');
+const moreLink = (root) => root.querySelector('.B__more .linkbtn');
+const miniKits = (root) => [...root.querySelectorAll('.minikit')];
+
+const tableRows = (root) => [...root.querySelectorAll('.ktable tbody tr')].filter((r) => !r.querySelector('.ktable__empty'));
+const rowByName = (root, name) => tableRows(root).find((r) => r.querySelector('.kt__name').textContent.includes(name)) || null;
+const selectedRow = (root) => root.querySelector('.ktable tbody tr.is-sel');
+const countText = (root) => root.querySelector('.C__count').textContent;
 const searchInput = (root) => root.querySelector('.kit-search__input');
-const chipByLabel = (root, label) => [...root.querySelectorAll('.kit-chips .kit-chip')].find((c) => c.textContent === label);
-const continueBtn = (root) => root.querySelector('.stepnav .btn--lg');
+const chipByLabel = (root, label) => [...root.querySelectorAll('.chips .chip')].find((c) => c.textContent === label);
+const backLink = (root) => root.querySelector('.C__bar .backlink');
+const footer = (root) => root.querySelector('.winfoot');
+const footerContinue = (root) => root.querySelector('.winfoot .btn');
+const footerSel = (root) => root.querySelector('.winfoot .winfoot__sel');
 
 function type(root, value) {
   const input = searchInput(root);
   input.value = value;
   input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+async function gotoBrowse(root) {
+  seeDetailsBtn(root).click();
+  await flush();
 }
 
 beforeEach(() => {
@@ -124,76 +140,118 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/');
 });
 
-describe('WF2 kit picker — master/detail layout', () => {
-  it('renders the height-capped master list, sticky detail, and the result count', async () => {
-    const { root } = await mountPicker();
+describe('WF2-IDENTIFY-RECO — recommendation landing', () => {
+  it('leads with the recommended kit, committed by default, install armed once resolved', async () => {
+    const { root } = await mountStep();
 
-    // Master/detail browser is present (not the old stacked hero cards).
-    expect(root.querySelector('.kit-picker')).not.toBeNull();
-    expect(root.querySelector('.kit-browser')).not.toBeNull();
-    expect(root.querySelector('.kit-aside')).not.toBeNull();
-    expect(root.querySelector('.kit-search__input')).not.toBeNull();
-    expect(root.querySelector('.kit-chips')).not.toBeNull();
-    expect(root.querySelector('.kit-hero')).toBeNull();
+    // The recommendation landing is shown (not the old master-detail picker).
+    expect(recommendBody(root)).not.toBeNull();
+    expect(browseBody(root)).toBeNull();
+    expect(root.querySelector('.kit-picker')).toBeNull();
 
-    // One row per catalogue kit, and the count reflects the real total.
-    expect(rows(root)).toHaveLength(TOTAL);
-    expect(countText(root)).toBe(`Showing ${TOTAL} of ${TOTAL} kits`);
+    // Recommended kit leads, with the teal Recommended flag.
+    expect(recName(root)).toBe(RECOMMENDED.display_name);
+    expect(recFlag(root).classList.contains('flag--rec')).toBe(true);
+    expect(recFlag(root).textContent).toMatch(/Recommended/);
+
+    // The headline uses the softer "Recommended for your setup" (no live USB
+    // auto-detection is claimed).
+    expect(root.querySelector('.B__lede h1').textContent).toBe('Recommended for your setup');
+
+    // One-click install is armed (the recommended kit resolves to the stable build).
+    expect(installBtn(root)).not.toBeNull();
+    expect(installBtn(root).disabled).toBe(false);
+    expect(installBtn(root).textContent).toMatch(/Install this kit/);
+
+    // The demoted strip offers browsing + a mini-kit per other kit (capped at 5).
+    expect(moreLink(root).textContent).toMatch(new RegExp(`Browse all ${TOTAL} kits`));
+    expect(miniKits(root).length).toBe(Math.min(5, TOTAL - 1));
+
+    // The recommendation landing intentionally omits the footer action bar.
+    expect(footer(root).hidden).toBe(true);
   });
 
-  it('focuses the recommended kit by default and commits nothing until selected', async () => {
-    const { root } = await mountPicker();
-
-    // Default focus is the recommended kit; its detail shows the recommended flag.
-    expect(focusedRow(root)).toBe(rowByName(root, RECOMMENDED.display_name));
-    expect(detailName(root)).toBe(RECOMMENDED.display_name);
-    expect(root.querySelector('.kit-aside .flag').textContent).toBe('Recommended for you');
-    expect(root.querySelector('.kit-aside .flag').classList.contains('flag--rec')).toBe(true);
-    expect(rowByName(root, RECOMMENDED.display_name).querySelector('.kitrow__rec').textContent).toBe('Recommended');
-
-    // Nothing committed yet → no selected row, Continue disabled, ghost button.
-    expect(selectedRows(root)).toHaveLength(0);
-    expect(continueBtn(root).disabled).toBe(true);
-    expect(root.querySelector('.kit-aside .btn--block').textContent).toMatch(/Select this kit/);
+  it('keeps the advanced builder reachable from the landing', async () => {
+    const { root, app } = await mountStep();
+    const hatchLink = root.querySelector('.hatch .linkbtn');
+    expect(hatchLink).not.toBeNull();
+    expect(hatchLink.textContent).toMatch(/module by module/i);
+    hatchLink.click();
+    await flush();
+    expect(app.__testHooks.getState().mode).toBe('advanced');
   });
 });
 
-describe('WF2 kit picker — search', () => {
+describe('WF2-IDENTIFY-RECO — Browse table', () => {
+  it('renders one row per kit with the count, Rec badge, channel pill and target', async () => {
+    const { root } = await mountStep();
+    await gotoBrowse(root);
+
+    expect(browseBody(root)).not.toBeNull();
+    expect(recommendBody(root)).toBeNull();
+    expect(tableRows(root)).toHaveLength(TOTAL);
+    expect(countText(root)).toBe(`${TOTAL} of ${TOTAL}`);
+
+    // The recommended row carries the Rec badge and the recommended dot.
+    const recRow = rowByName(root, RECOMMENDED.display_name);
+    expect(recRow.querySelector('.kitrow__rec')).not.toBeNull();
+    expect(recRow.querySelector('.kt__dot--recommended')).not.toBeNull();
+    expect(recRow.querySelector('.kt__target').textContent).toBe(RECOMMENDED.firmware_config_string);
+
+    // A preview kit carries the amber preview channel pill.
+    const kitchenRow = rowByName(root, KITCHEN.display_name);
+    expect(kitchenRow.querySelector('.kt__chan--preview')).not.toBeNull();
+
+    // The footer action bar is present with the committed selection + Continue.
+    expect(footer(root).hidden).toBe(false);
+    expect(footerContinue(root)).not.toBeNull();
+  });
+
+  it('TRIAC stays fail-closed — no TRIAC card appears in the table', async () => {
+    const { root } = await mountStep();
+    await gotoBrowse(root);
+    const targets = tableRows(root).map((r) => r.querySelector('.kt__target').textContent);
+    expect(targets.every((t) => !/FanTRIAC/i.test(t))).toBe(true);
+    expect(root.textContent).not.toMatch(/TRIAC/i);
+  });
+});
+
+describe('WF2-IDENTIFY-RECO — Browse search', () => {
   it('live-filters by name, updates the count, and matches part SKUs', async () => {
-    const { root } = await mountPicker();
+    const { root } = await mountStep();
+    await gotoBrowse(root);
 
-    // Search by a unique kit name.
     type(root, 'bedroom');
-    expect(rows(root)).toHaveLength(1);
-    expect(rowName(rows(root)[0])).toBe(BEDROOM.display_name);
-    expect(countText(root)).toBe(`Showing 1 of ${TOTAL} kits`);
+    expect(tableRows(root)).toHaveLength(1);
+    expect(tableRows(root)[0].querySelector('.kt__name').textContent).toMatch(/Bedroom/);
+    expect(countText(root)).toBe(`1 of ${TOTAL}`);
 
-    // Search by a board SKU — matches every kit that includes that part.
     type(root, 'S360-211');
-    expect(rows(root)).toHaveLength(VENTIQ_KITS.length);
-    expect(countText(root)).toBe(`Showing ${VENTIQ_KITS.length} of ${TOTAL} kits`);
+    expect(tableRows(root)).toHaveLength(VENTIQ_KITS.length);
+    expect(countText(root)).toBe(`${VENTIQ_KITS.length} of ${TOTAL}`);
   });
 
   it('shows the empty state and Clear filters resets query + channel', async () => {
-    const { root } = await mountPicker();
+    const { root } = await mountStep();
+    await gotoBrowse(root);
 
     chipByLabel(root, 'Preview').click();
     type(root, 'zzz-nothing-matches');
-    expect(rows(root)).toHaveLength(0);
-    const empty = root.querySelector('.kit-empty');
+    expect(tableRows(root)).toHaveLength(0);
+    const empty = root.querySelector('.ktable__empty');
     expect(empty).not.toBeNull();
     expect(empty.textContent).toMatch(/No kits match/);
 
     empty.querySelector('.linkbtn').click();
-    // Query and channel both reset → full catalogue, All chip active again.
     expect(searchInput(root).value).toBe('');
-    expect(rows(root)).toHaveLength(TOTAL);
-    expect(countText(root)).toBe(`Showing ${TOTAL} of ${TOTAL} kits`);
-    expect(chipByLabel(root, 'All kits').classList.contains('is-on')).toBe(true);
+    expect(tableRows(root)).toHaveLength(TOTAL);
+    expect(countText(root)).toBe(`${TOTAL} of ${TOTAL}`);
+    expect(chipByLabel(root, 'All').classList.contains('is-on')).toBe(true);
   });
 
   it('toggles the clear (×) button with the query and keeps the input node stable', async () => {
-    const { root } = await mountPicker();
+    const { root } = await mountStep();
+    await gotoBrowse(root);
     const before = searchInput(root);
 
     expect(root.querySelector('.kit-search__clear').hidden).toBe(true);
@@ -205,96 +263,65 @@ describe('WF2 kit picker — search', () => {
 
     root.querySelector('.kit-search__clear').click();
     expect(before.value).toBe('');
-    expect(root.querySelector('.kit-search__clear').hidden).toBe(true);
-    expect(rows(root)).toHaveLength(TOTAL);
+    expect(tableRows(root)).toHaveLength(TOTAL);
   });
 });
 
-describe('WF2 kit picker — channel filter chips', () => {
+describe('WF2-IDENTIFY-RECO — channel filter chips', () => {
   it('filters by channel and reflects the active chip', async () => {
-    const { root } = await mountPicker();
+    const { root } = await mountStep();
+    await gotoBrowse(root);
 
     chipByLabel(root, 'Stable').click();
-    expect(rows(root)).toHaveLength(STABLE_KITS.length);
-    expect(rowName(rows(root)[0])).toBe(RECOMMENDED.display_name);
+    expect(tableRows(root)).toHaveLength(STABLE_KITS.length);
     expect(chipByLabel(root, 'Stable').classList.contains('is-on')).toBe(true);
     expect(chipByLabel(root, 'Stable').getAttribute('aria-pressed')).toBe('true');
-    expect(chipByLabel(root, 'All kits').getAttribute('aria-pressed')).toBe('false');
+    expect(chipByLabel(root, 'All').getAttribute('aria-pressed')).toBe('false');
 
     chipByLabel(root, 'Preview').click();
-    expect(rows(root)).toHaveLength(PREVIEW_KITS.length);
-    // A preview kit's detail carries the amber preview flag.
-    expect(root.querySelector('.kit-aside .flag').classList.contains('flag--preview')).toBe(true);
+    expect(tableRows(root)).toHaveLength(PREVIEW_KITS.length);
 
-    chipByLabel(root, 'All kits').click();
-    expect(rows(root)).toHaveLength(TOTAL);
+    chipByLabel(root, 'All').click();
+    expect(tableRows(root)).toHaveLength(TOTAL);
   });
 });
 
-describe('WF2 kit picker — focus is independent of selection', () => {
-  it('clicking a row focuses it without committing; the detail button commits', async () => {
-    const { root } = await mountPicker();
-
-    // Focus a non-recommended row: detail updates, but nothing is committed yet.
-    rowByName(root, KITCHEN.display_name).click();
-    expect(focusedRow(root)).toBe(rowByName(root, KITCHEN.display_name));
-    expect(detailName(root)).toBe(KITCHEN.display_name);
-    expect(selectedRows(root)).toHaveLength(0);
-    expect(continueBtn(root).disabled).toBe(true);
-
-    // Commit via the detail button → the focused kit becomes the selection.
-    root.querySelector('.kit-aside .btn--block').click();
-    await flush();
-    expect(rowByName(root, KITCHEN.display_name).classList.contains('is-selected')).toBe(true);
-    expect(rowByName(root, KITCHEN.display_name).querySelector('.kitrow__check')).not.toBeNull();
-    expect(root.querySelector('.kit-aside .btn--block').textContent).toMatch(/Selected/);
-    expect(continueBtn(root).disabled).toBe(false);
-    expect(continueBtn(root).textContent).toMatch(/Continue with Kitchen Bundle/);
-  });
-
-  it('a committed kit stays selected while the user focuses other rows', async () => {
-    const { root } = await mountPicker();
+describe('WF2-IDENTIFY-RECO — selection + navigation', () => {
+  it('clicking a row commits it: the footer summary + Continue update', async () => {
+    const { root } = await mountStep();
+    await gotoBrowse(root);
 
     rowByName(root, KITCHEN.display_name).click();
-    root.querySelector('.kit-aside .btn--block').click();
     await flush();
 
-    // Now focus a different row. Selection (Kitchen) must persist while focus moves.
-    rowByName(root, BEDROOM.display_name).click();
-    expect(focusedRow(root)).toBe(rowByName(root, BEDROOM.display_name));
-    expect(detailName(root)).toBe(BEDROOM.display_name);
-    expect(root.querySelector('.kit-aside .btn--block').textContent).toMatch(/Select this kit/);
-
-    // Kitchen is selected-but-not-focused; Bedroom is focused-but-not-selected.
-    expect(selectedRows(root)).toHaveLength(1);
-    expect(rowName(selectedRows(root)[0])).toBe(KITCHEN.display_name);
-    expect(rowByName(root, BEDROOM.display_name).classList.contains('is-selected')).toBe(false);
-    // Continue still reflects the committed kit, not the focused one.
-    expect(continueBtn(root).textContent).toMatch(/Continue with Kitchen Bundle/);
+    expect(selectedRow(root)).toBe(rowByName(root, KITCHEN.display_name));
+    expect(footerSel(root).textContent).toMatch(/Kitchen Bundle/);
+    // The Kitchen preview bundle resolves to an installable preview build, so
+    // Continue is armed (the preview acknowledgement is enforced at install time).
+    expect(footerContinue(root).disabled).toBe(false);
   });
-});
 
-describe('WF2 kit picker — refocus when the focused kit is filtered out', () => {
-  it('refocuses the first visible result while keeping the committed selection', async () => {
-    const { root } = await mountPicker();
+  it('navigates browse <-> recommendation and reframes a non-recommended pick', async () => {
+    const { root } = await mountStep();
+    await gotoBrowse(root);
 
-    // Commit the recommended kit, leaving it focused.
-    root.querySelector('.kit-aside .btn--block').click();
+    // Pick the Kitchen (preview) kit, then go back to the landing.
+    rowByName(root, KITCHEN.display_name).click();
     await flush();
-    expect(rowName(selectedRows(root)[0])).toBe(RECOMMENDED.display_name);
+    backLink(root).click();
+    await flush();
 
-    // Search to something that excludes the focused+committed recommended kit.
-    type(root, 'bedroom');
-    // Detail refocuses to the first (only) visible result…
-    expect(rows(root)).toHaveLength(1);
-    expect(detailName(root)).toBe(BEDROOM.display_name);
-    expect(focusedRow(root)).toBe(rowByName(root, BEDROOM.display_name));
-    // …but the committed selection is unchanged (Continue still names it).
-    expect(continueBtn(root).disabled).toBe(false);
-    expect(continueBtn(root).textContent).toMatch(/Continue with Bathroom Bundle/);
+    // The landing reframes to "Your selected kit" with the amber preview flag.
+    expect(recommendBody(root)).not.toBeNull();
+    expect(recName(root)).toBe(KITCHEN.display_name);
+    expect(root.querySelector('.B__lede h1').textContent).toBe('Your selected kit');
+    expect(recFlag(root).classList.contains('flag--preview')).toBe(true);
 
-    // Clearing the search brings the committed kit back, still selected.
-    type(root, '');
-    expect(rowByName(root, RECOMMENDED.display_name).classList.contains('is-selected')).toBe(true);
+    // "Use the recommended kit" returns to the recommended selection.
+    expect(moreLink(root).textContent).toMatch(/Use the recommended kit/);
+    moreLink(root).click();
+    await flush();
+    expect(recName(root)).toBe(RECOMMENDED.display_name);
+    expect(recFlag(root).classList.contains('flag--rec')).toBe(true);
   });
 });

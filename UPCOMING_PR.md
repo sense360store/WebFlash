@@ -242,7 +242,12 @@ These gate every item below and must not be regressed by any queue PR:
    - Slice 2 — **WF2-IDENTIFY-RECO**: recommendation-first RecommendView plus the
      dense Browse table from the real catalogue (search + channel filter +
      selection summary), superseding the master-detail picker; TRIAC absent /
-     fail-closed. Status: **Queued.**
+     fail-closed. Status: **Done — PR #506 (in review, targets slice 1).**
+     `scripts/identify.js` rewritten; `scripts/app.js` sub-view state +
+     recommended default; `app.css` B / C / chips / mini-kit / viewfade;
+     `wf2-kit-picker.test.js` rewritten (incl. TRIAC-absent), `wf2-identify` /
+     `wf2-audit-parity` rebaselined to the in-content install button; full suite
+     green (1113 tests).
    - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install (device chip, status
      bar, readiness checklist, preview callout + acknowledgement, install button,
      flash ring + console) bound to the real `state.js` gate verdict and the real
