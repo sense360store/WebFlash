@@ -27,7 +27,7 @@
  *      catalogue kits, routes a kit that resolves to no signed build to the source
  *      path, and shows the empty-catalogue fallback (parity with kit-config.test.js
  *      at the 2.0 view layer; complements the advanced-mode rejection PR 4 pinned).
- *   5. Accessibility focus and modal behaviour — the topbar Help affordance opens a
+ *   5. Accessibility focus and modal behaviour — the window bar Help affordance opens a
  *      labelled dialog with a real focus trap and restores focus on Escape, and the
  *      modal traps Tab / Shift+Tab inside itself (parity with a11y-modal-focus
  *      .test.js / a11y-utils.test.js, at the 2.0 view layer).
@@ -568,14 +568,14 @@ describe('PR 10 — accessibility focus and modal behaviour (2.0 view)', () => {
     window.history.replaceState({}, '', '/');
   });
 
-  it('opens the topbar Help affordance as a labelled dialog and restores focus on Escape', async () => {
+  it('opens the window bar Help affordance as a labelled dialog and restores focus on Escape', async () => {
     const app = await import('../scripts/app.js');
     const root = document.createElement('div');
     document.body.appendChild(root);
     // Mount with the REAL engine a11y primitives so the focus trap and restore run.
     app.mountWebFlash2(root, { a11y: realA11y, prefersReducedMotion: () => true });
 
-    const helpBtn = [...root.querySelectorAll('.topbar button')].find((b) => /help/i.test(b.textContent));
+    const helpBtn = [...root.querySelectorAll('.winbar button')].find((b) => /help/i.test(b.textContent));
     expect(helpBtn).not.toBeNull();
     helpBtn.focus();
     expect(document.activeElement).toBe(helpBtn);

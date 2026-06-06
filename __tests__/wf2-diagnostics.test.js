@@ -257,7 +257,7 @@ describe('PR 9 — rescue / recovery modal and error log modal surfaces', () => 
       const root = mountInto(app, engine, { recovery: { openRescueModal } });
       await flush();
 
-      root.querySelector('.topbar [data-rescue-open]').click();
+      root.querySelector('.winbar [data-rescue-open]').click();
       const modal = document.querySelector('.rescue-modal');
       expect(modal).not.toBeNull();
 

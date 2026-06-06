@@ -13,8 +13,7 @@
    installable; it renders the engine verdict and routes blocked configurations
    to the ESPHome source path instead of the install flow. */
 import { h, mount } from './h.js';
-import { icon } from './icons.js';
-import { Rail } from './ui.js';
+import { WinBar } from './ui.js';
 import { IdentifyStep, resetIdentifyPickerState } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
@@ -203,7 +202,8 @@ const setSel = (s) => { state.sel = s; onSelectionChanged(); };
 function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', state.theme);
-  mount(themeBtn, icon(state.theme === 'dark' ? 'sun' : 'moon'));
+  // Rebuild the window bar so the toggle's sun/moon icon reflects the new theme.
+  renderWinBar();
 }
 
 // ----- recovery / rescue -----
@@ -356,23 +356,24 @@ function recordDiagnosticsConfiguration() {
 }
 
 // ----- shell -----
-let themeBtn;
-function Topbar() {
-  themeBtn = h('button', { class: 'iconbtn iconbtn--square', onClick: toggleTheme, 'aria-label': 'Toggle theme' },
-    icon(state.theme === 'dark' ? 'sun' : 'moon'));
-  return h('div', { class: 'topbar' },
-    h('div', { class: 'brand' },
-      h('img', { src: LOGO_URL, alt: 'Sense360' }),
-      h('span', { class: 'brand__name' }, 'WebFlash ', h('span', null, '· Firmware Installer')),
-    ),
-    h('div', { class: 'topbar__right' },
-      h('button',
-        { class: 'iconbtn', type: 'button', 'data-rescue-open': '', 'aria-haspopup': 'dialog', onClick: openRescue },
-        icon('life'), ' Rescue'),
-      h('button', { class: 'iconbtn', type: 'button', onClick: openHelp }, icon('help'), ' Help'),
-      themeBtn,
-    ),
-  );
+// The app-shell window bar (brand lockup + inline stepper + Rescue / Help /
+// theme actions), the design's flow-shell FlowBar. It is rebuilt on every step
+// change and theme toggle so the inline stepper and the sun/moon icon stay in
+// sync. The Rescue button keeps the [data-rescue-open] / aria-haspopup hooks the
+// real rescue-modal delegated handler listens for, so recovery still routes to
+// the engine modal, not a reimplemented gate.
+function buildWinBar() {
+  return WinBar({
+    steps: STEPS,
+    step: state.step,
+    maxReached: state.maxReached,
+    onJump: goTo,
+    logoUrl: LOGO_URL,
+    theme: state.theme,
+    onRescue: openRescue,
+    onHelp: openHelp,
+    onToggleTheme: toggleTheme,
+  });
 }
 
 function buildStep() {
@@ -402,19 +403,45 @@ function buildStep() {
   return ConnectStep({ device, build, engine, a11y, onDone: reset, onSkip: reset });
 }
 
-let railSlot;
+let winbarSlot;
 let mainRegion;
+let footSlot;
 let currentMain;
 
-function render() {
-  const railNode = Rail({ steps: STEPS, current: state.step, maxReached: state.maxReached, onJump: goTo });
-  railSlot.replaceWith(railNode);
-  railSlot = railNode;
+// Replace the window bar in place. Used by render() on a step change (so the
+// inline stepper advances) and by toggleTheme() (so the sun/moon icon flips).
+function renderWinBar() {
+  const node = buildWinBar();
+  winbarSlot.replaceWith(node);
+  winbarSlot = node;
+}
 
-  const mainNode = buildStep();
+function render() {
+  renderWinBar();
+
+  // A step returns either a body node (with an optional __dispose) or a
+  // { body, foot } pair. `foot` is the persistent footer action bar (.winfoot)
+  // for the steps that own one; the recommendation landing and the flash /
+  // success states omit it, matching the design. Slice 1 keeps the existing step
+  // bodies unchanged, so they return a bare body node and the footer stays hidden.
+  const step = buildStep();
+  const body = step && step.nodeType ? step : step.body;
+  const foot = step && step.nodeType ? null : (step.foot || null);
+
   currentMain?.__dispose?.();
-  mount(mainRegion, mainNode);
-  currentMain = mainNode;
+  mount(mainRegion, body);
+  currentMain = body;
+
+  if (foot) {
+    mount(footSlot, foot);
+    footSlot.hidden = false;
+  } else {
+    mount(footSlot);
+    footSlot.hidden = true;
+  }
+
+  // Scroll the content body (not the page) back to the top on a step change.
+  mainRegion.scrollTop = 0;
 }
 
 // Read the requested Step 1 mode + kit SKU from the URL, mirroring the 1.0
@@ -560,14 +587,22 @@ export function mountWebFlash2(root, options = {}) {
 
   document.documentElement.setAttribute('data-theme', state.theme);
 
-  railSlot = Rail({ steps: STEPS, current: state.step, maxReached: state.maxReached, onJump: goTo });
-  // Stable main landmark + skip-link target. render() swaps the step inside it,
-  // so the id and tabindex survive every step transition.
-  mainRegion = h('main', { id: 'wf2-main-content', class: 'wf2-main-region', tabindex: '-1' });
-  currentMain = buildStep();
+  winbarSlot = buildWinBar();
+  // Stable main landmark + skip-link target (the .winbody content region). render()
+  // swaps the step inside it, so the id and tabindex survive every step transition.
+  mainRegion = h('main', { id: 'wf2-main-content', class: 'wf2-main-region winbody', tabindex: '-1' });
+  // The persistent footer action bar. Steps that own a footer (Install, Connect,
+  // Browse) fill it via render(); otherwise it stays hidden.
+  footSlot = h('div', { class: 'winfoot', hidden: true });
+
+  const initial = buildStep();
+  currentMain = initial && initial.nodeType ? initial : initial.body;
   mainRegion.appendChild(currentMain);
 
-  const app = h('div', { class: 'app' }, Topbar(), railSlot, mainRegion);
+  // The app shell: a centered window (.win) with the window bar, the scrolling
+  // content body, and the footer action bar, on the page background (.stage).
+  const win = h('div', { class: 'win' }, winbarSlot, mainRegion, footSlot);
+  const app = h('div', { class: 'stage' }, win);
   mount(root, app);
   announceStep();
 

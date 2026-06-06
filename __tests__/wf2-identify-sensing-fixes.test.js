@@ -297,12 +297,12 @@ describe('Bug 1 — advanced builder renders RoomIQ and air-quality as separate 
 });
 
 describe('Bug 2 — the brand logo resolves relative to the module', () => {
-  it('the topbar logo src is module-relative and absolute, not page-relative', async () => {
+  it('the window bar logo src is module-relative and absolute, not page-relative', async () => {
     const { engine, app } = await boot();
     const root = mountInto(app, engine);
     await flush();
 
-    const img = root.querySelector('.brand img');
+    const img = root.querySelector('.winbar__brand img');
     expect(img).not.toBeNull();
     const src = img.getAttribute('src');
     // Module-relative resolution points at the root assets/ and is absolute, so
