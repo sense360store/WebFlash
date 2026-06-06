@@ -37,6 +37,21 @@ const STEPS = [
 // the same open-source path the 1.0 view points to for unsupported selections.
 const ESPHOME_SOURCE_URL = 'https://github.com/sense360store/esphome-public';
 
+// First-load theme: honour the OS preference (prefers-color-scheme) when the
+// host exposes matchMedia, otherwise default to light. The window-bar toggle then
+// flips it. Guarded so a host without matchMedia (jsdom unit tests) stays light.
+function initialTheme() {
+  try {
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+  } catch {
+    /* matchMedia unavailable — fall through to light */
+  }
+  return 'light';
+}
+
 const state = {
   step: 0,
   maxReached: 0,
@@ -47,7 +62,7 @@ const state = {
   kit: null, // selected catalogue kit
   sel: { ...DEFAULT_SEL },
   resolved: null, // last engine compatible-firmware verdict (null = pending)
-  theme: 'light',
+  theme: initialTheme(),
 };
 
 // Engine accessibility primitives, injected at mount time. Defaults are no-ops so

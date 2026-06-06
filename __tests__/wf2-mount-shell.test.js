@@ -62,6 +62,11 @@ describe('PR 3 — inline stepper aria-current', () => {
     // The window bar keeps the Rescue affordance the rescue modal delegates on.
     expect(bar.querySelector('.winbar__brand')).not.toBeNull();
     expect(bar.querySelector('[data-rescue-open]')).not.toBeNull();
+
+    // The theme toggle exposes its action and pressed state (light => not pressed).
+    const themeBtn = bar.querySelector('.iconbtn--square');
+    expect(themeBtn.getAttribute('aria-pressed')).toBe('false');
+    expect(themeBtn.getAttribute('aria-label')).toMatch(/dark theme/i);
   });
 });
 
