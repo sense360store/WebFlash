@@ -225,6 +225,18 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .iconbtn--sm svg { width: 15px; height: 15px; }
 .iconbtn svg { width: 17px; height: 17px; }
 
+/* Full-page shell on a narrow window. WebFlash is desktop only, but the window
+   can be resized below the design's ~900px target. Keep the full-bleed sticky
+   top bar from overflowing by dropping the brand subtitle and the inline
+   stepper's text labels (the numbered dots stay). WF2-FLOW-POLISH. */
+@media (max-width: 760px) {
+  .winbar { gap: 14px; }
+  .winbar__name span { display: none; }
+  .istep { gap: 8px; }
+  .istep__lbl { display: none; }
+  .istep__sep { width: 16px; }
+}
+
 /* ---------- Main column (the step body inside the page content column) ----------
    Full-bleed wrapper whose content aligns to the same 1080px column as the sticky
    bars (via --page-pad). The top padding clears the sticky header; the bottom
@@ -241,6 +253,104 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
    id and tabindex survive. The page scrolls (the shell has no inner scroll
    container), so this stays a plain block that grows with its content. */
 .wf2-main-region:focus { outline: none; }
+
+/* ---------- Step 2 — Install (v3 two-column panel layout) ----------
+   The Install step (scripts/install.js) renders a left "Pre-flight checks"
+   panel and a right rail with "Selected device" + "Confirm & install" panels,
+   over a full-bleed sticky footer. Below ~920px the grid collapses to one
+   column. WF2-INSTALL-RESKIN built this from design_handoff_installer_flow. */
+.install-step { width: 100%; }
+.install-body { padding: 48px var(--page-pad) 28px; }
+
+.flowhead { margin-bottom: 18px; }
+.flowhead .mlbl { display: block; margin-bottom: 8px; }
+.flowhead h1 { margin: 0 0 6px; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.025em; }
+.flowhead p { margin: 0; color: var(--text-body); font-size: 0.95rem; line-height: 1.5; max-width: 56ch; }
+.mlbl {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+
+.install__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  gap: 22px;
+  align-items: start;
+}
+.install__main { min-width: 0; display: grid; gap: 14px; align-content: start; }
+.install__side { display: grid; gap: 14px; align-content: start; }
+
+/* generic header-ed panel used on this step */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+  overflow: hidden;
+}
+.panel__head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.panel__title { font-size: 0.95rem; font-weight: 650; letter-spacing: -0.01em; }
+.panel__head--right { margin-left: auto; }
+.panel__body { padding: 6px 20px; }
+.panel__body--pad { padding: 14px 18px; }
+.confirm-body { display: grid; gap: 14px; }
+
+/* compact status pill that lives in the pre-flight panel header */
+.statuspill {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 0.76rem; font-weight: 600;
+  padding: 5px 11px 5px 9px; border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.statuspill svg { width: 14px; height: 14px; }
+.statuspill--wait { background: var(--accent-soft); color: var(--accent-press); border: 1px solid var(--accent-line); }
+.statuspill--ok { background: var(--green-soft); color: color-mix(in srgb, var(--green) 72%, #062b16); border: 1px solid color-mix(in srgb, var(--green) 38%, transparent); }
+.statuspill--blocked { background: var(--warning-soft); color: var(--warning); border: 1px solid var(--warning-line); }
+
+/* tighten the readiness rows inside the narrower panel body */
+.install__main .ready__item { padding: 11px 0; }
+
+/* device summary inside the side rail */
+.devsum { display: flex; align-items: center; gap: 13px; padding: 14px 20px; }
+.devsum__ico {
+  width: 42px; height: 42px; border-radius: var(--r-sm);
+  background: var(--accent-soft); color: var(--accent);
+  display: grid; place-items: center; flex: 0 0 auto;
+}
+.devsum__ico svg { width: 22px; height: 22px; }
+.devsum__main { min-width: 0; }
+.devsum__name { font-weight: 650; font-size: 0.96rem; letter-spacing: -0.01em; }
+.devsum__meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
+
+/* acks + callouts inside the side rail sit flush (no outer margins) */
+.install__side .ack { margin-top: 0; padding: 13px 15px; }
+.install__side .ack__text { font-size: 0.88rem; line-height: 1.45; }
+.install__side .callout { margin: 0; padding: 12px 14px; font-size: 0.86rem; }
+
+/* the install footer reuses the shell's .winfoot chrome; the actions sit in a
+   full-width .stepnav with no top margin inside the bar */
+.install-step__foot .stepnav { margin: 0; flex: 1; width: 100%; }
+
+/* flash-progress view fills the page between the sticky bars and has no footer */
+.install-step__flash {
+  min-height: calc(100vh - 60px);
+  display: grid; place-items: center;
+  padding: 40px var(--page-pad);
+}
+.install-step__flash .flash,
+.install-step__flash .console { width: 100%; max-width: 600px; }
+
+/* the progress-ring transition lives in CSS (not an inline style) so dropping
+   style-src 'unsafe-inline' in a later slice never strips it */
+.flash__ring circle[data-fg] { transition: stroke-dashoffset .3s; }
+
+@media (max-width: 920px) {
+  .install__grid { grid-template-columns: 1fr; }
+}
 
 /* ---------- Modal dialog ---------- */
 .wf2-modal__overlay {

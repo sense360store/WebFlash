@@ -31,7 +31,6 @@
    from engine.capabilities.evaluateBrowserReadiness. */
 import { h, mount, fromHTML } from './h.js';
 import { icon } from './icons.js';
-import { StepHead, DeviceChip } from './ui.js';
 
 // Provenance + integrity always run in production trust mode, matching the 1.0
 // install-trust mode (verifyCurrentFirmwareIntegrity hard-codes production): the
@@ -174,7 +173,10 @@ function espWebToolsRegistered() {
  * @param {() => void} props.onFlashed
  */
 export function InstallStep({ device, build = null, engine = null, a11y = null, onBack, onFlashed }) {
-  const mainEl = h('div', { class: 'main' });
+  // The Install step root. It is full-width (no column padding of its own): the
+  // prep view's .install-body applies the page column, and its footer is a
+  // full-bleed sticky action bar. The flash-progress view centers in the page.
+  const mainEl = h('div', { class: 'install-step' });
 
   // ----- engine-derived inputs, fixed for this build -----
   const capabilities = engine ? engine.capabilities.detectCapabilities() : null;
@@ -232,7 +234,11 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   };
 
   // ----- scaffolding -----
-  const statusbarEl = h('div', { class: 'statusbar' });
+  // The v3 pre-flight panel header status pill (Checking… / All checks passed /
+  // Action needed). It reflects the engine gate's preflight CHECKS only; the
+  // acknowledgements and the final install-enable verdict are surfaced
+  // separately (the Confirm & install panel and the footer install button).
+  const statuspillEl = h('span', { class: 'panel__head--right statuspill' });
   const readyInner = h('div', { class: 'ready' });
   const swNoticeEl = h('div', { class: 'callout callout--warn', hidden: true });
   // Desktop-only / mobile fallback. The PR 5 gate is the real block (its
@@ -357,32 +363,33 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
       acknowledgements: { required: requiredAcks, signature, accepted: channelAccepted },
       beforeFlashAcknowledged: beforeFlashAck,
     });
-    renderStatusbar();
+    renderStatuspill();
     renderReady();
     renderSwNotice();
     renderFreshnessControls();
     updateGate();
   }
 
-  function renderStatusbar() {
-    const ready = canInstallNow();
-    const anyPending = Boolean(gate && gate.checks.some((c) => c.status === 'pending'));
-    statusbarEl.className = 'statusbar ' + (ready ? 'statusbar--ok' : 'statusbar--wait');
-    if (ready) {
-      mount(statusbarEl, icon('shield'),
-        h('span', null, h('b', null, 'Ready to install.'),
-          ' Everything checks out — your hub is ready to flash.'));
-    } else if (anyPending) {
-      mount(statusbarEl, icon('spinner', { cls: 'spin' }),
-        h('span', null, h('b', null, 'Running pre-flight checks…'),
-          ' This takes a moment.'));
+  // The v3 pre-flight panel status pill. It reports the engine gate's preflight
+  // CHECKS only (browser support, secure context, manifest freshness, firmware
+  // verification): "Checking…" while any check is pending, "All checks passed"
+  // once they all pass, "Action needed" if a check fails. The acknowledgement
+  // and the overall install-enable verdict are surfaced by the Confirm & install
+  // panel and the footer install button (whose tooltip carries the blocking
+  // reason), matching the v3 design.
+  function renderStatuspill() {
+    const checks = gate ? gate.checks : [];
+    const anyPending = checks.some((c) => c.status === 'pending');
+    const anyFailed = checks.some((c) => c.status === 'fail' || c.status === 'warn');
+    if (anyPending) {
+      statuspillEl.className = 'panel__head--right statuspill statuspill--wait';
+      mount(statuspillEl, icon('spinner', { cls: 'spin' }), 'Checking…');
+    } else if (anyFailed) {
+      statuspillEl.className = 'panel__head--right statuspill statuspill--blocked';
+      mount(statuspillEl, icon('alert'), 'Action needed');
     } else {
-      // Engine blocking reason is authoritative; fall back to the additive
-      // view-level acknowledgement reason when the engine gate is otherwise clear.
-      const reason = (gate && gate.blockingReason) || viewAckBlockingReason();
-      mount(statusbarEl, icon('alert'),
-        h('span', null, h('b', null, 'Action needed before installing.'),
-          reason ? ' ' + reason : ''));
+      statuspillEl.className = 'panel__head--right statuspill statuspill--ok';
+      mount(statuspillEl, icon('shield'), 'All checks passed');
     }
   }
 
@@ -573,28 +580,78 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // flash: when flashing starts we hide the prep view and reveal the progress
   // view, but the component (inside the hidden prep view) keeps driving the flash
   // and emitting the lifecycle events this view mirrors.
-  const prepEl = h('div', null,
-    StepHead({ eyebrow: 'Step 2 — Install', eyebrowIcon: 'bolt', title: 'Prepare & install firmware',
-      desc: "We'll run the real pre-flight checks, then flash your hub over USB." }),
-    DeviceChip({ name: device.name, target: device.target, onEdit: onBack }),
-    unsupportedBannerEl,
-    statusbarEl,
-    swNoticeEl,
-    h('div', { class: 'card', style: { padding: '8px 20px' } }, readyInner),
-    freshnessControlsEl,
-    warnCalloutsEl,
-    beforeFlashLabel,
-    acksEl,
-    fanGatesEl,
-    ewtNoticeEl,
+  //
+  // The prep view is the v3 two-column Install layout: a left "Pre-flight checks"
+  // panel and a right rail with a "Selected device" panel and a "Confirm &
+  // install" panel, over a full-bleed sticky footer action bar. The footer lives
+  // INSIDE the prep view, so revealing the flash view (which hides the prep view)
+  // also hides the footer — matching the v3 design, where the flash-progress and
+  // success states have no footer.
+  const shortName = String(device.name || '').split('·')[0].split('—')[0].trim() || device.name || '';
+  const footEl = h('div', { class: 'winfoot install-step__foot' },
     h('div', { class: 'stepnav' },
-      h('button', { class: 'btn--ghost btn', onClick: onBack }, icon('arrowL'), ' Back'),
+      h('button', { class: 'btn btn--ghost', type: 'button', onClick: onBack }, icon('arrowL'), ' Back'),
       h('span', { class: 'stepnav__spacer' }),
+      shortName
+        ? h('span', { class: 'winfoot__sel' }, h('span', { class: 'winfoot__seldot' }), h('b', null, shortName))
+        : null,
       installHost,
     ),
-    supportEl,
   );
-  const flashEl = h('div', { hidden: true });
+  const prepEl = h('div', null,
+    h('div', { class: 'install-body' },
+      h('header', { class: 'flowhead' },
+        h('span', { class: 'mlbl' }, 'Step 2 · Install'),
+        h('h1', null, 'Prepare & install firmware'),
+        h('p', null, "We'll run the real pre-flight checks, then flash your hub over USB."),
+      ),
+      unsupportedBannerEl,
+      h('div', { class: 'install__grid' },
+        h('div', { class: 'install__main' },
+          h('div', { class: 'panel' },
+            h('div', { class: 'panel__head' },
+              h('span', { class: 'panel__title' }, 'Pre-flight checks'),
+              statuspillEl,
+            ),
+            h('div', { class: 'panel__body' }, readyInner),
+          ),
+          swNoticeEl,
+          freshnessControlsEl,
+        ),
+        h('div', { class: 'install__side' },
+          h('div', { class: 'panel' },
+            h('div', { class: 'panel__head' },
+              h('span', { class: 'panel__title' }, 'Selected device'),
+              h('button', { class: 'panel__head--right iconbtn iconbtn--sm', type: 'button', onClick: onBack },
+                icon('edit'), ' Change'),
+            ),
+            h('div', { class: 'devsum' },
+              h('span', { class: 'devsum__ico' }, icon('chip')),
+              h('div', { class: 'devsum__main' },
+                h('div', { class: 'devsum__name' }, device.name),
+                h('div', { class: 'devsum__meta' }, device.target),
+              ),
+            ),
+          ),
+          h('div', { class: 'panel' },
+            h('div', { class: 'panel__head' },
+              h('span', { class: 'panel__title' }, 'Confirm & install'),
+            ),
+            h('div', { class: 'panel__body--pad confirm-body' },
+              warnCalloutsEl,
+              beforeFlashLabel,
+              acksEl,
+              fanGatesEl,
+              ewtNoticeEl,
+            ),
+          ),
+        ),
+      ),
+      supportEl,
+    ),
+    footEl,
+  );
+  const flashEl = h('div', { class: 'install-step__flash', hidden: true });
 
   mount(mainEl, prepEl, flashEl);
 
@@ -692,7 +749,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
         <circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--bg-elev)" stroke-width="9"/>
         <circle data-fg cx="66" cy="66" r="${R}" fill="none" stroke="url(#wf2-flash-grad)" stroke-width="9"
           stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}"
-          transform="rotate(-90 66 66)" style="transition: stroke-dashoffset .3s"/>
+          transform="rotate(-90 66 66)"/>
         <defs>
           <linearGradient id="wf2-flash-grad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="var(--accent)"/>
