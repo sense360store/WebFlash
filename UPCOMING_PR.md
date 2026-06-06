@@ -258,7 +258,12 @@ These gate every item below and must not be regressed by any queue PR:
      tests (gating assertions unchanged); full suite green (1113 tests).
    - Slice 4 — **WF2-CONNECT-RESKIN**: reskinned Connect (network card /
      post-flash panel, connecting + success states) over the real Improv /
-     post-flash service. Status: **Queued.**
+     post-flash service. Status: **Done — PR #508 (in review, targets slice 3).**
+     `scripts/connect.js` reskinned to the flow layout + footer action bar +
+     success badge over the unchanged post-flash service binding (prototype Wi-Fi
+     scan / password sim NOT shipped — Improv runs in the ESP Web Tools dialog);
+     `app.css` `.success__badge--sm`; full suite green (1113 tests), all
+     post-flash hooks + no-credential guards preserved.
    - Slice 5 — **WF2-FLOW-POLISH**: dark-theme toggle, responsive breakpoints
      (1040 / 720), device-render placeholder, icon mapping, accessibility +
      reduced-motion pass. Status: **Queued.**
