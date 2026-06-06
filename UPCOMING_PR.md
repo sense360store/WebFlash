@@ -253,10 +253,31 @@ These gate every item below and must not be regressed by any queue PR:
      shell as the v3 full-page layout (full-bleed sticky bars, 1080px column,
      page scroll), added `.iconbtn--sm`, and redrew the theme-toggle moon as a
      stroked crescent. Full suite green (1112 tests).
-   - Slice 2 — **WF2-IDENTIFY-RECO**: recommendation-first RecommendView plus the
-     dense Browse table from the real catalogue (search + channel filter +
-     selection summary), superseding the master-detail picker; TRIAC absent /
-     fail-closed. Status: **Queued.**
+   - Slice 2 — **WF2-IDENTIFY-RECO**: recommendation-first two-view Identify —
+     View 1 a `.B__rec` recommendation card (device render, RECOMMENDED pill,
+     part chips, "Install this kit" / "See full details" CTAs, stable-vs-preview
+     reassurance) plus a `.B__more` "Browse all N kits" strip of minikits; View 2
+     a dense `.ktable` Browse table (search over name/board/SKU, All/Stable/Preview
+     channel chips, status dot + Rec/channel pills + board tags + firmware target,
+     sticky thead, footer Continue + selected-kit indicator). Toggle in both
+     directions. Bound to the real engine: the recommended kit is the catalogue's
+     `recommended` flag (`S360-KIT-BATH-P`), and "Install this kit" / "Continue"
+     render the `state.js` gate verdict (`resolveCompatibleFirmware`), routing a
+     no-build kit to the ESPHome source path. TRIAC absent / fail-closed — the
+     catalogue carries no FanTRIAC (or fan-only standalone) entry, so neither view
+     can surface a TRIAC row; FanTRIAC stays reachable only via the unchanged
+     advanced builder, where the engine still fails it closed. Replaced the
+     master-detail picker in `scripts/identify.js`; `scripts/app.js` resolves the
+     recommended kit's verdict (`recResolved`) for the card and routes an explicit
+     `?sku=` deep link straight into Browse. `app.css` swaps the master-detail
+     block for the two-view styles (dead pre-#502 `.kit-hero*` rules removed;
+     shared `.flag`/`.devicebox`/`.parts`/`.kit-chip` kept). `wf2-kit-picker.test.js`
+     was rewritten for the two views (19 tests); `wf2-identify.test.js`,
+     `wf2-audit-parity.test.js`, and the engine-level TRIAC fail-closed pins stay
+     green **untouched**. Status: **Done — PR #__PR__ (targets `main`).** Flagged
+     for close review (TRIAC-exclusion + gate surfaces). Independent of the
+     install/polish stack (#511/#512); built on top of them. Full suite green
+     (1122 tests).
    - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install bound to the real
      `state.js` gate verdict and the real ESP Web Tools events, built directly to
      the v3 two-column panel layout (pre-flight panel with a status pill, a

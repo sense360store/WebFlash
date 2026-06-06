@@ -14,7 +14,7 @@
    to the ESPHome source path instead of the install flow. */
 import { h, mount } from './h.js';
 import { WinBar } from './ui.js';
-import { IdentifyStep, resetIdentifyPickerState } from './identify.js';
+import { IdentifyStep, resetIdentifyPickerState, setIdentifyInitialView } from './identify.js';
 import { InstallStep } from './install.js';
 import { ConnectStep } from './connect.js';
 import { AIR, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
@@ -44,10 +44,21 @@ const state = {
   kits: [], // catalogue kits (from engine.kits.loadKitCatalog)
   kitError: '', // unknown-SKU fallback message
   kit: null, // selected catalogue kit
+  recKit: null, // the catalogue's recommended kit (the recommendation card hero)
+  recResolved: null, // engine verdict for recKit, resolved once (null = pending)
   sel: { ...DEFAULT_SEL },
   resolved: null, // last engine compatible-firmware verdict (null = pending)
   theme: 'light',
 };
+
+// The catalogue's recommended kit — the WF2-IDENTIFY-RECO recommendation card's
+// fixed hero — is the entry flagged `recommended` in kits.json (S360-KIT-BATH-P),
+// falling back to the first kit if no flag is set. Never invented here; it is the
+// catalogue's own flag.
+function recommendedKit(kits) {
+  if (!Array.isArray(kits) || kits.length === 0) return null;
+  return kits.find((k) => k && k.recommended) || kits[0];
+}
 
 // Engine accessibility primitives, injected at mount time. Defaults are no-ops so
 // the module never assumes a global; the real announce/focus helpers come from
@@ -186,9 +197,9 @@ function reset() {
   state.kitError = '';
   state.sel = { ...DEFAULT_SEL };
   state.resolved = null;
-  // Clear the Step 1 kit-picker's local UI state (search, channel filter, focus)
-  // so a fresh flow starts on a clean picker, matching the prototype's
-  // fresh-on-remount local state.
+  // Clear the Step 1 kit-chooser's local UI state (active view, search query,
+  // channel filter) so a fresh flow starts on the recommendation landing with a
+  // clean catalogue table.
   resetIdentifyPickerState();
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   onSelectionChanged();
@@ -198,6 +209,26 @@ function reset() {
 const setMode = (m) => { state.mode = m; state.kitError = ''; onSelectionChanged(); };
 const setKit = (k) => { state.kit = k; state.kitError = ''; onSelectionChanged(); };
 const setSel = (s) => { state.sel = s; onSelectionChanged(); };
+
+// WF2-IDENTIFY-RECO — the recommendation card's "Install this kit" action.
+// Commits the recommended kit (so the install gate, diagnostics, and the Install
+// step all key off it) and advances, reusing the verdict already resolved for
+// the recommendation card. The engine stays authoritative: we only advance when
+// its verdict is installable; a blocked recommendation stays on Step 1, where the
+// view routes it to the ESPHome source path. setKit's async re-resolve confirms
+// the same verdict on the next render, so this never advances on a stale gate.
+function onInstallKit(kit, knownResolved) {
+  if (!kit) return;
+  state.kit = kit;
+  state.kitError = '';
+  if (knownResolved) state.resolved = knownResolved;
+  syncSelection(); // sync engine state + diagnostics to this commit (re-resolves)
+  if (state.resolved && state.resolved.installable) {
+    goTo(1);
+  } else {
+    render();
+  }
+}
 
 function toggleTheme() {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
@@ -387,6 +418,7 @@ function buildStep() {
       mode: state.mode, setMode,
       kits: state.kits, kitError: state.kitError,
       kit: state.kit, setKit,
+      recKit: state.recKit, recResolved: state.recResolved, onInstallKit,
       sel: state.sel, setSel,
       resolved: state.resolved,
       sourceUrl: ESPHOME_SOURCE_URL,
@@ -507,6 +539,7 @@ async function initFromEngine() {
   }
   // The loader already drops invalid (skipped) entries; only valid kits surface.
   state.kits = Array.isArray(catalog.kits) ? catalog.kits.slice() : [];
+  state.recKit = recommendedKit(state.kits);
 
   const requested = getRequestedModeFromUrl();
   if (requested.mode === 'advanced') {
@@ -526,12 +559,15 @@ async function initFromEngine() {
   } else if (requested.sku) {
     const kit = engine.kits.findKitBySku(catalog, requested.sku);
     if (kit) {
+      // A deep link to a specific catalogue kit opens straight into the Browse
+      // table with that kit selected (the recommendation landing is for the
+      // no-link default and the fallbacks below).
       state.mode = 'kit';
       state.kit = kit;
+      setIdentifyInitialView('browse');
     } else {
-      // Unknown SKU: fall back to the kit picker with a clear message and a
-      // one-click switch to the advanced builder (the "Build it module by
-      // module" hatch already renders below the kit list).
+      // Unknown SKU: fall back to the recommendation view with a clear message
+      // and the always-present "Build it module by module" escape hatch.
       state.mode = 'kit';
       state.kitError = `We couldn't find a kit matching "${requested.sku}". Pick a kit below, or switch to advanced setup to choose your boards.`;
     }
@@ -540,6 +576,21 @@ async function initFromEngine() {
   }
 
   render();
+
+  // Resolve the recommended kit's verdict once for the recommendation card. This
+  // is a pure manifest lookup (it never mutates the engine's shared state), so it
+  // is independent of the committed selection: the card always renders the
+  // engine's verdict for the recommended kit, while syncSelection() below
+  // resolves whatever (if anything) is committed.
+  if (engine && state.recKit) {
+    try {
+      state.recResolved = await engine.state.resolveCompatibleFirmware(state.recKit.wizard_state);
+    } catch {
+      state.recResolved = null;
+    }
+    render();
+  }
+
   syncSelection();
 }
 
