@@ -1,4 +1,4 @@
-name: Firmware import
+name: "Release 5: Import Firmware"
 
 # Pulls raw firmware assets from upstream GitHub releases declared in
 # firmware/sources.json (currently sense360store/esphome-public), verifies

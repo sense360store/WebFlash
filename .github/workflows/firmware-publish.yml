@@ -1,4 +1,4 @@
-name: Firmware publish
+name: "Publish: Deploy Site (auto on merge)"
 
 # Publishes the static WebFlash site (and the generated firmware catalog) to
 # GitHub Pages. The publish TRIGGER is push (see `on:` below); the publish GATE

@@ -1,4 +1,4 @@
-name: Add firmware source
+name: "Release 4: Add Source"
 
 # Publish-time source authoring. Turns "add a firmware/sources.json entry" from
 # a hand-edit into a reviewed, machine-generated change.
