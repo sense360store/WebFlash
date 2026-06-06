@@ -435,8 +435,8 @@ These gate every item below and must not be regressed by any queue PR:
 
 8. **SEC-WF-ESPTOOLS-SRI-001 — Pin esp-web-tools to an exact version with
    Subresource Integrity.** Finding #1 (High) from `security.md`.
-   Status: **Open — awaiting human review (no auto-merge). PR # to fill when
-   verified.** Pinned the esp-web-tools entry module in `index.html` from the
+   Status: **Open — awaiting human review (no auto-merge). PR #518.** Pinned
+   the esp-web-tools entry module in `index.html` from the
    floating `@10` to the exact `@10.2.1` it resolved to and added
    `integrity="sha384-2Ea4…fYDUZ"` + `crossorigin="anonymous"`. The hash is
    computed over the `?module` byte stream the `src` actually requests. SRI
