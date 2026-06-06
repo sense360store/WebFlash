@@ -275,7 +275,7 @@ These gate every item below and must not be regressed by any queue PR:
      Status: **Done — PR #513 (stacked on #512; retargets to `main` once #512
      merges).** Full suite green (1112 tests).
      The remaining polish-pass items #513 deferred land as
-     **WF2-FLOW-POLISH-002 — PR #pending (stacked on #512's branch; PR into it)**:
+     **WF2-FLOW-POLISH-002 — PR #514 (stacked on #512's branch; PR into it)**:
      the Selected-device **device-render placeholder** + **icon mapping**
      (`deviceGlyph` from the resolved `config_string`), the **accessibility pass**
      on the new Install panels (the pre-flight status pill is a `role="status"`
