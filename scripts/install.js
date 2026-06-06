@@ -164,6 +164,25 @@ function espWebToolsRegistered() {
 }
 
 /**
+ * WF2-FLOW-POLISH — icon mapping for the Selected device card. Presentation
+ * only: it picks a representative glyph from the resolved config_string so the
+ * device render hints at the hardware family. It never affects the install gate,
+ * the resolved build, or which firmware flashes. Every supported device is a
+ * Core hub, so the default is the chip glyph; a fan-driver config (FanRelay /
+ * FanPWM / FanDAC / FanTRIAC) maps to the inline-driver plug, and an
+ * air-quality config (AirIQ / VentIQ) maps to the sensor-board box.
+ *
+ * @param {string} configString
+ * @returns {string} an icon name registered in scripts/icons.js
+ */
+export function deviceGlyph(configString) {
+  const cfg = typeof configString === 'string' ? configString : '';
+  if (/Fan(Relay|PWM|DAC|TRIAC)/.test(cfg)) return 'plug';
+  if (/AirIQ|VentIQ/.test(cfg)) return 'box';
+  return 'chip';
+}
+
+/**
  * @param {object} props
  * @param {{name: string, target: string}} props.device
  * @param {object|null} [props.build]   The resolved manifest build entry.
@@ -238,7 +257,12 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // Action needed). It reflects the engine gate's preflight CHECKS only; the
   // acknowledgements and the final install-enable verdict are surfaced
   // separately (the Confirm & install panel and the footer install button).
-  const statuspillEl = h('span', { class: 'panel__head--right statuspill' });
+  //
+  // WF2-FLOW-POLISH — the pill is a live status region: role="status" with
+  // aria-live="polite" so assistive tech hears each transition (Checking… ->
+  // All checks passed / Action needed). renderStatuspill only rewrites the
+  // pill's class + text, so these attributes persist across re-renders.
+  const statuspillEl = h('span', { class: 'panel__head--right statuspill', role: 'status', 'aria-live': 'polite' });
   const readyInner = h('div', { class: 'ready' });
   const swNoticeEl = h('div', { class: 'callout callout--warn', hidden: true });
   // Desktop-only / mobile fallback. The PR 5 gate is the real block (its
@@ -588,6 +612,9 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // also hides the footer — matching the v3 design, where the flash-progress and
   // success states have no footer.
   const shortName = String(device.name || '').split('·')[0].split('—')[0].trim() || device.name || '';
+  // WF2-FLOW-POLISH — the icon-mapped device glyph for the Selected device render
+  // + summary, derived once from the resolved config_string (presentation only).
+  const glyph = deviceGlyph(device.target);
   const footEl = h('div', { class: 'winfoot install-step__foot' },
     h('div', { class: 'stepnav' },
       h('button', { class: 'btn btn--ghost', type: 'button', onClick: onBack }, icon('arrowL'), ' Back'),
@@ -600,7 +627,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   );
   const prepEl = h('div', null,
     h('div', { class: 'install-body' },
-      h('header', { class: 'flowhead' },
+      h('header', { class: 'flowhead fadein' },
         h('span', { class: 'mlbl' }, 'Step 2 · Install'),
         h('h1', null, 'Prepare & install firmware'),
         h('p', null, "We'll run the real pre-flight checks, then flash your hub over USB."),
@@ -610,7 +637,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
         h('div', { class: 'install__main' },
           h('div', { class: 'panel' },
             h('div', { class: 'panel__head' },
-              h('span', { class: 'panel__title' }, 'Pre-flight checks'),
+              h('h2', { class: 'panel__title' }, 'Pre-flight checks'),
               statuspillEl,
             ),
             h('div', { class: 'panel__body' }, readyInner),
@@ -621,12 +648,19 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
         h('div', { class: 'install__side' },
           h('div', { class: 'panel' },
             h('div', { class: 'panel__head' },
-              h('span', { class: 'panel__title' }, 'Selected device'),
+              h('h2', { class: 'panel__title' }, 'Selected device'),
               h('button', { class: 'panel__head--right iconbtn iconbtn--sm', type: 'button', onClick: onBack },
                 icon('edit'), ' Change'),
             ),
+            // WF2-FLOW-POLISH — device-render placeholder. Decorative (aria-hidden):
+            // a real product render would sit here. The glyph is icon-mapped from
+            // the resolved config_string via deviceGlyph(); it never affects the gate.
+            h('div', { class: 'devicebox install__devicebox', 'data-device-render': '', 'aria-hidden': 'true' },
+              icon(glyph, { cls: 'install__devicebox-glyph' }),
+              h('span', { class: 'devicebox__tag' }, 'Ceiling hub'),
+            ),
             h('div', { class: 'devsum' },
-              h('span', { class: 'devsum__ico' }, icon('chip')),
+              h('span', { class: 'devsum__ico' }, icon(glyph)),
               h('div', { class: 'devsum__main' },
                 h('div', { class: 'devsum__name' }, device.name),
                 h('div', { class: 'devsum__meta' }, device.target),
@@ -635,7 +669,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
           ),
           h('div', { class: 'panel' },
             h('div', { class: 'panel__head' },
-              h('span', { class: 'panel__title' }, 'Confirm & install'),
+              h('h2', { class: 'panel__title' }, 'Confirm & install'),
             ),
             h('div', { class: 'panel__body--pad confirm-body' },
               warnCalloutsEl,

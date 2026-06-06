@@ -293,7 +293,9 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   padding: 15px 20px;
   border-bottom: 1px solid var(--border);
 }
-.panel__title { font-size: 0.95rem; font-weight: 650; letter-spacing: -0.01em; }
+/* The panel titles are <h2> headings (WF2-FLOW-POLISH heading outline), so the
+   user-agent heading margin is reset to keep the panel head a single flex row. */
+.panel__title { margin: 0; font-size: 0.95rem; font-weight: 650; letter-spacing: -0.01em; }
 .panel__head--right { margin-left: auto; }
 .panel__body { padding: 6px 20px; }
 .panel__body--pad { padding: 14px 18px; }
@@ -326,6 +328,17 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .devsum__name { font-weight: 650; font-size: 0.96rem; letter-spacing: -0.01em; }
 .devsum__meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
 
+/* WF2-FLOW-POLISH — device-render placeholder in the Selected device panel. It
+   reuses .devicebox (which already themes for dark mode via the
+   :root[data-theme="dark"] .devicebox rule), so it follows the theme toggle
+   automatically. The mapped glyph (deviceGlyph in install.js) sits centered above
+   the placeholder tag; both are decorative (the container is aria-hidden). The
+   compound .devicebox.install__devicebox selector (specificity 0,2,0) wins over
+   the later single-class .devicebox sizing rule, so the placeholder fills the
+   side panel (minus its margins) at a shorter height. */
+.devicebox.install__devicebox { width: auto; height: 110px; margin: 16px 18px 2px; gap: 10px; }
+.install__devicebox-glyph { width: 38px; height: 38px; color: var(--text-faint); }
+
 /* acks + callouts inside the side rail sit flush (no outer margins) */
 .install__side .ack { margin-top: 0; padding: 13px 15px; }
 .install__side .ack__text { font-size: 0.88rem; line-height: 1.45; }
@@ -350,6 +363,15 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 
 @media (max-width: 920px) {
   .install__grid { grid-template-columns: 1fr; }
+}
+
+/* WF2-FLOW-POLISH — keep the full-bleed sticky install footer graceful on a
+   narrow window (WebFlash stays desktop only). Below 760px the selected-device
+   chip in the footer drops so Back and Install never crowd; both stay reachable.
+   This pairs with the winbar narrow-window rule above and the ~920px install
+   grid collapse. */
+@media (max-width: 760px) {
+  .install-step__foot .winfoot__sel { display: none; }
 }
 
 /* ---------- Modal dialog ---------- */
@@ -919,18 +941,9 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .spin { animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.statusbar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 18px;
-  border-radius: var(--r-md);
-  font-size: 0.95rem;
-  margin-bottom: 20px;
-}
-.statusbar--ok   { background: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 38%, transparent); color: color-mix(in srgb, var(--green) 72%, #062b16); }
-.statusbar--wait { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent-press); }
-.statusbar--err  { background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger); }
-.statusbar b { font-weight: 700; }
-.statusbar svg { width: 20px; height: 20px; flex: 0 0 auto; }
+/* WF2-FLOW-POLISH — the single-column .statusbar stack was replaced by the
+   pre-flight panel's .statuspill in the v3 install reskin; its now-dead rules are
+   removed here. The status pill styles live in the Install section above. */
 
 /* acknowledgement checkbox */
 .ack {
@@ -1172,7 +1185,9 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 }
 :root[data-theme="dark"] .target-card { background: var(--surface-2); border-color: var(--border-strong); }
 :root[data-theme="dark"] .console { background: #060B14; border-color: #1A2536; }
-/* Brighten themed status/callout text on dark surfaces */
-:root[data-theme="dark"] .statusbar--wait,
+/* Brighten themed status/callout text on dark surfaces. WF2-FLOW-POLISH: the
+   pre-flight .statuspill replaces the old .statusbar, so the dark-mode brighten
+   follows the pill (the blocked pill uses the already-bright dark warning vars). */
+:root[data-theme="dark"] .statuspill--wait,
 :root[data-theme="dark"] .callout--info { color: var(--accent-hover); }
-:root[data-theme="dark"] .statusbar--ok { color: var(--green); }
+:root[data-theme="dark"] .statuspill--ok { color: var(--green); }

@@ -274,15 +274,34 @@ These gate every item below and must not be regressed by any queue PR:
      move the last inline style, the noscript fallback, into a linked sheet).
      Status: **Done — PR #513 (stacked on #512; retargets to `main` once #512
      merges).** Full suite green (1112 tests).
+     The remaining polish-pass items #513 deferred land as
+     **WF2-FLOW-POLISH-002 — PR #514 (stacked on #512's branch; PR into it)**:
+     the Selected-device **device-render placeholder** + **icon mapping**
+     (`deviceGlyph` from the resolved `config_string`), the **accessibility pass**
+     on the new Install panels (the pre-flight status pill is a `role="status"`
+     polite live region; the panel titles are real `<h2>` headings under the step
+     `<h1>`), the **dark-theme** rules that follow the new `.statuspill` plus
+     removal of the now-dead `.statusbar` rules the reskin replaced, a narrow
+     install-footer rule, and the **deploy cache-bust** the combined v3 view change
+     still needed (`sw.js` `CACHE_NAME` `webflash-v17` → `v18`, the `?v=` token +
+     `webflash-app-shell` marker + `APP_SHELL_BUILD` in lockstep). View + CSS +
+     deploy-marker only; the engine, install gate, resolved build, manifest,
+     firmware, kits, release channels, and the SW fetch strategy / precache lists
+     are unchanged, and TRIAC stays fail-closed (no FanTRIAC config resolves to an
+     installable build, so it never reaches this view). Adds
+     `__tests__/wf2-flow-polish.test.js`; full suite green (1130 tests).
    Purpose: deliver the approved installer-flow redesign without touching the
    trust engine.
    Dependencies: none (view-only). Slices 2 and 3 touch the TRIAC-exclusion and
    install-gate surfaces and are flagged for close human review in their PR
    bodies.
    Note: View + test only. No firmware, manifest, sources, `REQUIRED_CONFIGS`,
-   release-channel, service-worker, or gate change. The v3 polish slice also
-   tightens the CSP (`style-src` no longer allows `'unsafe-inline'`), which is a
-   security hardening, not a gate weakening.
+   release-channel, or gate change. The v3 polish slice also tightens the CSP
+   (`style-src` no longer allows `'unsafe-inline'`), which is a security
+   hardening, not a gate weakening; the WF2-FLOW-POLISH-002 completion bumps only
+   the `sw.js` `CACHE_NAME` cache-invalidation marker (so returning users
+   re-prime onto the redesign), not the SW fetch strategy, precache lists, or any
+   trust logic.
 
 2. **WF2-KIT-BUNDLE-PICKER-001 — Rebuild the room bundle picker in the 2.0
    kit picker.**

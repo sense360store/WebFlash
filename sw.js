@@ -107,10 +107,19 @@
  *   (2026-06-04-3). The activate purge and the per-asset-class fetch strategy are
  *   unchanged. See docs/deploy-notes.md.
  *
+ *   `webflash-v18` (WF2 v3 installer-flow redesign) bumps again: the v3 install
+ *   reskin + polish changed app.css, scripts/install.js, and css/layout.css (the
+ *   two-column Install panel layout, the status pill, the device-render
+ *   placeholder, the narrow-window shell rules, and the noscript style move). The
+ *   redesign rides on precached assets, so existing installs must purge v17 and
+ *   re-prime, in lockstep with the index.html / bootstrap `?v=` token (202606061)
+ *   and the webflash-app-shell marker (2026-06-06-1). The activate purge and the
+ *   per-asset-class fetch strategy are unchanged. See docs/deploy-notes.md.
+ *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v17';
+const CACHE_NAME = 'webflash-v18';
 const CACHE_VERSION = 5;
 
 /**
