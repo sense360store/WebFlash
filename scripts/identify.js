@@ -196,7 +196,20 @@ function RecommendView({ kit, isRec, kits, resolved, sourceUrl, onBrowse, onCont
 function KitTableRow(kit, selected, onSelect) {
   const flag = kitFlag(kit);
   const boards = (kit.components || []).map((c) => c.sku).filter(Boolean);
-  return h('tr', { class: selected ? 'is-sel' : '', onClick: onSelect },
+  const name = kit.display_name || kit.sku;
+  return h('tr', {
+    class: selected ? 'is-sel' : '',
+    // The whole row is the selection control, so make it keyboard operable:
+    // focusable, Enter / Space select, with a descriptive label for assistive
+    // tech (a plain clickable <tr> would otherwise be mouse only).
+    tabindex: '0',
+    'aria-label': (selected ? 'Selected. ' : '')
+      + `${name}, ${channelWord(kit)} channel, ${(kit.components || []).length} parts. Select this kit.`,
+    onClick: onSelect,
+    onKeydown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); }
+    },
+  },
     h('td', null,
       h('span', { class: 'kt__name' },
         h('span', { class: 'kt__dot kt__dot--' + flag }),

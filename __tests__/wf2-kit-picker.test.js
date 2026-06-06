@@ -301,6 +301,21 @@ describe('WF2-IDENTIFY-RECO — selection + navigation', () => {
     expect(footerContinue(root).disabled).toBe(false);
   });
 
+  it('selects a row from the keyboard (focusable + Enter), not mouse only', async () => {
+    const { root } = await mountStep();
+    await gotoBrowse(root);
+
+    const row = rowByName(root, KITCHEN.display_name);
+    // Each selection row is focusable and self-describing for assistive tech.
+    expect(row.getAttribute('tabindex')).toBe('0');
+    expect(row.getAttribute('aria-label')).toMatch(/Select this kit/);
+
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await flush();
+    expect(selectedRow(root)).toBe(rowByName(root, KITCHEN.display_name));
+    expect(footerSel(root).textContent).toMatch(/Kitchen Bundle/);
+  });
+
   it('navigates browse <-> recommendation and reframes a non-recommended pick', async () => {
     const { root } = await mountStep();
     await gotoBrowse(root);

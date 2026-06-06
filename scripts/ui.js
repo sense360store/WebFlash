@@ -59,7 +59,11 @@ export function WinBar({ steps, step, maxReached, onJump, logoUrl, theme, onResc
         icon('life'), ' Rescue'),
       h('button', { class: 'iconbtn', type: 'button', onClick: onHelp }, icon('help'), ' Help'),
       h('button',
-        { class: 'iconbtn iconbtn--square', type: 'button', 'aria-label': 'Toggle theme', onClick: onToggleTheme },
+        { class: 'iconbtn iconbtn--square', type: 'button',
+          'aria-label': theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme',
+          'aria-pressed': String(theme === 'dark'),
+          title: theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme',
+          onClick: onToggleTheme },
         icon(theme === 'dark' ? 'sun' : 'moon')),
     ),
   );
