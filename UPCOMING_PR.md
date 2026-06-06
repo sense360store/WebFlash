@@ -235,7 +235,7 @@ These gate every item below and must not be regressed by any queue PR:
    - Slice 1 — **WF2-SHELL-TOKENS**: app-shell chrome (window bar + inline
      stepper + scrolling content body + persistent footer action bar) over the
      already-ported tokens + dark theme; existing step bodies render unchanged
-     inside the window. Status: **Done — PR # to fill when verified.**
+     inside the window. Status: **Done — PR #505 (in review, targets `main`).**
      `scripts/ui.js` (`Rail` → `WinBar`), the `scripts/app.js` shell, and the
      `app.css` shell scaffolding; five view tests rebaselined from `.topbar` /
      `.rail` to `.winbar` / `.istep`; full suite green (1112 tests).
