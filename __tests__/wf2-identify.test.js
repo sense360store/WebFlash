@@ -226,9 +226,11 @@ describe('PR 4 — Identify view bound to the engine', () => {
     expect(viewState.resolved.configString).toBe('Ceiling-POE-VentIQ-RoomIQ');
     expect(viewState.resolved.installable).toBe(true);
 
-    const continueBtn = root.querySelector('.stepnav .btn--lg');
-    expect(continueBtn).not.toBeNull();
-    expect(continueBtn.disabled).toBe(false);
+    // Recommendation-first: the committed recommended kit's one-click install
+    // button (in-content, not a footer Continue) is armed once it resolves.
+    const installBtn = root.querySelector('.B__cta .btn--lg');
+    expect(installBtn).not.toBeNull();
+    expect(installBtn.disabled).toBe(false);
   });
 
   it('shows the unknown-SKU fallback and keeps the switch-to-advanced affordance', async () => {

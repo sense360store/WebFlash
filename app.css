@@ -571,6 +571,176 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   .kit-list { max-height: none; }
 }
 
+/* ---------- Step 1 Identify: recommendation landing + Browse table ----------
+   The design's B (recommendation-first) and C (dense table) views, recreated
+   over the real catalogue. Each renders as a child of the window content body
+   (main.winbody), which scrolls; the Browse toolbar + table header stick so they
+   stay visible while the catalogue scrolls. The superseded master-detail picker
+   rules above (.kit-picker / .kitrow base / .kit-aside / .kitdetail) are no
+   longer rendered; the reused dot + Rec badge (.kitrow__dot* / .kitrow__rec) and
+   the search box (.kit-search*) are kept. */
+
+/* small mono section label (eyebrow) */
+.mlbl {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+
+/* view cross-fade — base state is VISIBLE; only a subtle slide animates, so a
+   reduced-motion context can never leave it hidden. */
+.viewfade { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .viewfade { animation: viewfade .34s cubic-bezier(.2,.7,.3,1) both; }
+}
+@keyframes viewfade { from { transform: translateY(8px); } to { transform: none; } }
+
+/* back link at the top of the Browse view */
+.backlink {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-weight: 600; font-size: 0.86rem;
+  padding: 6px 10px 6px 6px; border-radius: var(--r-pill);
+  transition: background .14s, color .14s;
+}
+.backlink:hover { background: var(--bg-elev); color: var(--text); }
+.backlink svg { width: 16px; height: 16px; }
+
+/* --- B: recommendation-first landing --- */
+.B {
+  padding: 26px clamp(28px, 6vw, 72px);
+  display: flex; flex-direction: column; gap: 18px;
+}
+.B__lede { max-width: 640px; }
+.B__lede h1 { margin: 8px 0 6px; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.025em; }
+.B__lede p { margin: 0; color: var(--text-body); font-size: 1rem; line-height: 1.5; }
+
+.B__rec {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) auto;
+  gap: 28px; align-items: center;
+  padding: 22px 28px;
+  border-radius: var(--r-xl);
+  border: 1.5px solid var(--accent-line);
+  background:
+    radial-gradient(120% 160% at 0% 0%, var(--accent-soft) 0%, transparent 50%),
+    var(--surface);
+  box-shadow: var(--sh-md);
+}
+.B__device {
+  width: 100%; height: 148px; border-radius: var(--r-lg);
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 9px, #EFF3F8 9px 18px);
+  border: 1px solid var(--border);
+  display: grid; place-items: center;
+}
+.B__recbody h2 { margin: 10px 0 8px; font-size: 1.55rem; font-weight: 700; letter-spacing: -0.02em; }
+.B__recbody p { margin: 0 0 14px; color: var(--text-body); font-size: 0.96rem; line-height: 1.55; max-width: 48ch; }
+.B__cta { display: grid; gap: 12px; justify-items: stretch; min-width: 220px; }
+.B__reassure {
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  font-size: 0.82rem; color: var(--text-muted);
+}
+.B__reassure svg { width: 15px; height: 15px; color: var(--green); }
+.B__reassure--warn svg { color: var(--warning); }
+
+@media (max-width: 1040px) {
+  .B__rec { grid-template-columns: minmax(0, 1fr) minmax(200px, 260px); }
+  .B__device { display: none; }
+}
+@media (max-width: 720px) {
+  .B__rec { grid-template-columns: 1fr; }
+}
+
+/* demoted "other kits" strip */
+.B__more { margin-top: 2px; }
+.B__morehead { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.B__morehead .linkbtn { font-size: 0.86rem; margin-left: auto; }
+.B__strip {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 232px;
+  gap: 12px; overflow-x: auto; padding-bottom: 4px;
+}
+.minikit {
+  text-align: left;
+  border: 1.5px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); padding: 14px 15px;
+  display: grid; gap: 7px; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.minikit:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.minikit__name { font-weight: 600; font-size: 0.9rem; letter-spacing: -0.01em; }
+.minikit__meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); }
+
+/* the "your selection" framing flag (teal), shown when a non-recommended kit
+   was picked from the table and the user returned to the landing. */
+.flag--mine { color: var(--accent-press); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+
+/* --- C: dense table browser --- */
+.C { display: flex; flex-direction: column; }
+.C__bar {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px clamp(20px, 4vw, 28px);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.C__title { font-size: 1rem; font-weight: 650; letter-spacing: -0.01em; }
+.C__count { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-faint); }
+.C__tablewrap { padding: 0 clamp(8px, 2vw, 16px) 16px; }
+
+.ktable { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.ktable thead th {
+  position: sticky; top: 53px;
+  text-align: left; font-weight: 600; color: var(--text-muted);
+  font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 12px 16px; background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.ktable tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.ktable tbody tr { cursor: pointer; transition: background .14s; }
+.ktable tbody tr:hover { background: var(--surface-2); }
+.ktable tbody tr.is-sel { background: var(--accent-soft); }
+.ktable tbody tr.is-sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.ktable__empty { text-align: center; color: var(--text-muted); padding: 30px; }
+.kt__name { font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+.kt__dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.kt__dot--recommended { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.kt__dot--stable { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.kt__dot--preview { background: var(--warning); box-shadow: 0 0 0 3px var(--warning-soft); }
+.kt__chan {
+  font-family: var(--font-mono); font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: var(--r-pill); display: inline-block;
+}
+.kt__chan--stable { color: var(--green); background: var(--green-soft); }
+.kt__chan--preview { color: var(--warning); background: var(--warning-soft); }
+.kt__boards { display: flex; gap: 5px; flex-wrap: wrap; }
+.kt__board {
+  font-family: var(--font-mono); font-size: 0.66rem;
+  padding: 2px 6px; border-radius: var(--r-sm);
+  background: var(--bg-elev); color: var(--text-muted); border: 1px solid var(--border);
+}
+.kt__target { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted); }
+.kt__parts { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+
+/* channel filter chips (Browse toolbar) */
+.chips { display: flex; gap: 7px; flex-wrap: wrap; }
+.chip {
+  height: 36px; padding: 0 15px;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.85rem; font-weight: 550; cursor: pointer;
+  transition: background .16s, border-color .16s, color .16s;
+}
+.chip:hover { border-color: var(--border-strong); color: var(--text); }
+.chip.is-on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-press); }
+
+/* dark device fill parity */
+:root[data-theme="dark"] .B__device {
+  background: repeating-linear-gradient(135deg, var(--surface-2) 0 9px, #131C2B 9px 18px);
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
