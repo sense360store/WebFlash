@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **WF-IMPORT-PWM-001 closure note (docs-only, record-only).** Added
+  [`docs/wf-import-pwm-001-closure.md`](docs/wf-import-pwm-001-closure.md)
+  recording the SELV FanPWM publish-and-host rehearsal as CLOSED: the FanPWM SELV
+  room bundle `Ceiling-POE-VentIQ-FanPWM-RoomIQ` is published upstream as a real
+  preview artifact (`Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin`,
+  SHA256 `6d988708…85befba`, 1,010,192 bytes, on the shared `v1.0.0-preview`
+  release; compile-proof run `26913592989`, publish run `26947595936`, ESPHome
+  `2026.4.5`) and hosted in WebFlash as a `channel: preview`,
+  acknowledgement-gated build that landed via #498 (`WF-IMPORT-FAN-BUNDLES-001`),
+  with the kit card `S360-KIT-BATH-P-PWM` added by #500. Reuses the published
+  artifact: no recompile, no re-import, no re-sign, no overwrite, no
+  `expected_sha256` change, no fabricated CI id. The preview stays not stable, not
+  default, not recommended, not buyable, and out of `REQUIRED_CONFIGS`; FanTRIAC
+  stays build-blocked and the upstream TRIAC publish gate is unaffected. No
+  firmware, manifest, source, eligibility, signing, or runtime surface changed.
 - **Imported the five full-composition fan-control room-bundle previews
   (WF-IMPORT-FAN-BUNDLES-001).** Imported `Ceiling-POE-VentIQ-FanPWM-RoomIQ`,
   `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`,
