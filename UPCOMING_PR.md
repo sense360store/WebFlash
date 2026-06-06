@@ -266,7 +266,13 @@ These gate every item below and must not be regressed by any queue PR:
      post-flash hooks + no-credential guards preserved.
    - Slice 5 — **WF2-FLOW-POLISH**: dark-theme toggle, responsive breakpoints
      (1040 / 720), device-render placeholder, icon mapping, accessibility +
-     reduced-motion pass. Status: **Queued.**
+     reduced-motion pass. Status: **Done — PR #509 (in review, targets slice 4).**
+     Browse-table rows keyboard operable (focus ring + Enter/Space + aria-label);
+     theme toggle aria-label / aria-pressed + OS `prefers-color-scheme` default
+     (guarded); ≤720px window bar / footer compaction; reduced-motion verified
+     base-visible; icon set + device placeholder verified (no change). Superseded
+     master-detail CSS left in place (interleaved with reused rules — dedicated
+     refactor follow-up). Full suite green (1114 tests).
    Purpose: deliver the approved installer-flow redesign without touching the
    trust engine.
    Dependencies: none (view-only). Slices 2 and 3 touch the TRIAC-exclusion and
