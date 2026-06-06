@@ -3,7 +3,7 @@
  *
  * Covers the accessibility wiring PR 3 adds to the 2.0 view that is mounted
  * inside the production shell under ?ui=2:
- *   - the progress rail marks the active step with aria-current="step",
+ *   - the inline stepper marks the active step with aria-current="step",
  *   - the view renders a single <main id="wf2-main-content"> landmark that the
  *     skip link targets,
  *   - step transitions announce through the engine live region,
@@ -18,7 +18,7 @@
  */
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
-import { Rail } from '../scripts/ui.js';
+import { WinBar } from '../scripts/ui.js';
 import { openModal } from '../scripts/modal.js';
 import {
   announce,
@@ -34,17 +34,34 @@ const STEPS = [
   { key: 'connect', label: 'Connect' },
 ];
 
-describe('PR 3 — progress rail aria-current', () => {
-  it('marks only the active step with aria-current="step"', () => {
-    const rail = Rail({ steps: STEPS, current: 1, maxReached: 2, onJump: () => {} });
-    const steps = rail.querySelectorAll('.rail__step');
-    expect(steps.length).toBe(3);
-    expect(steps[0].getAttribute('aria-current')).toBeNull();
-    expect(steps[1].getAttribute('aria-current')).toBe('step');
-    expect(steps[2].getAttribute('aria-current')).toBeNull();
-    // The rail itself is a labelled navigation landmark.
-    expect(rail.tagName.toLowerCase()).toBe('nav');
-    expect(rail.getAttribute('aria-label')).toBe('Progress');
+describe('PR 3 — inline stepper aria-current', () => {
+  it('marks only the active step with aria-current="step" inside a labelled progress nav', () => {
+    const bar = WinBar({
+      steps: STEPS, step: 1, maxReached: 2, onJump: () => {},
+      logoUrl: 'logo.png', theme: 'light',
+      onRescue: () => {}, onHelp: () => {}, onToggleTheme: () => {},
+    });
+    // The inline stepper is the labelled progress navigation landmark.
+    const stepper = bar.querySelector('.istep');
+    expect(stepper).not.toBeNull();
+    expect(stepper.tagName.toLowerCase()).toBe('nav');
+    expect(stepper.getAttribute('aria-label')).toBe('Progress');
+
+    const nodes = bar.querySelectorAll('.istep__node');
+    expect(nodes.length).toBe(3);
+    expect(nodes[0].getAttribute('aria-current')).toBeNull();
+    expect(nodes[1].getAttribute('aria-current')).toBe('step');
+    expect(nodes[2].getAttribute('aria-current')).toBeNull();
+
+    // Completed (index 0) and reached-but-future (index 2) nodes are
+    // keyboard-operable jump-back buttons; the active node (index 1) is inert.
+    expect(nodes[0].tagName.toLowerCase()).toBe('button');
+    expect(nodes[1].tagName.toLowerCase()).toBe('div');
+    expect(nodes[2].tagName.toLowerCase()).toBe('button');
+
+    // The window bar keeps the Rescue affordance the rescue modal delegates on.
+    expect(bar.querySelector('.winbar__brand')).not.toBeNull();
+    expect(bar.querySelector('[data-rescue-open]')).not.toBeNull();
   });
 });
 
@@ -138,7 +155,9 @@ describe('PR 3 — view mount and step announcements', () => {
     const mains = root.querySelectorAll('main#wf2-main-content');
     expect(mains.length).toBe(1);
     expect(mains[0].getAttribute('tabindex')).toBe('-1');
-    expect(root.querySelector('.rail')).not.toBeNull();
+    // The shell renders the window bar with the inline stepper (no separate rail).
+    expect(root.querySelector('.winbar')).not.toBeNull();
+    expect(root.querySelector('.istep')).not.toBeNull();
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     expect(announceMock).toHaveBeenCalledWith('Step 1 of 3: Identify');
   });
@@ -160,8 +179,8 @@ describe('PR 3 — view mount and step announcements', () => {
     expect(announceMock).toHaveBeenCalledWith('Step 2 of 3: Install');
     // Reduced motion: programmatic scroll must not request smooth behaviour.
     expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'auto' });
-    // The rail re-renders with the new active step.
-    const active = root.querySelector('.rail__step[aria-current="step"] .rail__label');
+    // The inline stepper re-renders with the new active step.
+    const active = root.querySelector('.istep__node[aria-current="step"] .istep__lbl');
     expect(active.textContent).toBe('Install');
   });
 });

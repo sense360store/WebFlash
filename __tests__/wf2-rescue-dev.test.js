@@ -3,7 +3,7 @@
  *
  * Covers the recovery and development-visibility wiring PR 8 adds to the 2.0
  * view that is mounted inside the production shell under ?ui=2:
- *   - the topbar Rescue button opens the real 1.0 rescue/recovery modal
+ *   - the window bar Rescue button opens the real 1.0 rescue/recovery modal
  *     (scripts/layout/rescue-modal.js), injected by the production shell as the
  *     `recovery` mount option, with the trigger passed through so focus is
  *     restored to it on close;
@@ -130,14 +130,14 @@ describe('PR 8 — engine seam exposes release-mode visibility', () => {
   });
 });
 
-describe('PR 8 — topbar Rescue button wiring', () => {
+describe('PR 8 — window bar Rescue button wiring', () => {
   it('opens the injected recovery path, passing the button as the focus trigger', async () => {
     const { engine, app } = await boot();
     const openRescueModal = jest.fn();
     const root = mountInto(app, engine, { recovery: { openRescueModal } });
     await flush();
 
-    const button = root.querySelector('.topbar [data-rescue-open]');
+    const button = root.querySelector('.winbar [data-rescue-open]');
     expect(button).not.toBeNull();
     expect(button.getAttribute('aria-haspopup')).toBe('dialog');
 
@@ -152,7 +152,7 @@ describe('PR 8 — topbar Rescue button wiring', () => {
     const root = mountInto(app, engine); // no recovery option
     await flush();
 
-    const button = root.querySelector('.topbar [data-rescue-open]');
+    const button = root.querySelector('.winbar [data-rescue-open]');
     expect(button).not.toBeNull();
     // Clicking must not throw when recovery is absent.
     expect(() => button.click()).not.toThrow();
@@ -165,7 +165,7 @@ describe('PR 8 — topbar Rescue button wiring', () => {
       const root = mountInto(app, engine, { recovery: { openRescueModal } });
       await flush();
 
-      const button = root.querySelector('.topbar [data-rescue-open]');
+      const button = root.querySelector('.winbar [data-rescue-open]');
       button.click();
 
       const modal = document.querySelector('.rescue-modal');

@@ -85,42 +85,102 @@ button { font-family: inherit; }
 
 ::selection { background: var(--accent-soft); color: var(--accent-press); }
 
-/* ---------- App shell ---------- */
-.app {
+/* ---------- App shell (a desktop-app window over the page background) ----------
+   The design's app shell (mockups.css): the page background centers a single
+   capped window with a slim window bar (brand + inline stepper + actions), a
+   scrolling content body, and a persistent footer action bar. This replaces the
+   previous sticky top bar + separate full-width progress rail. */
+.stage {
   min-height: 100vh;
+  padding: clamp(16px, 3vw, 36px);
+  display: flex;
+}
+.win {
+  margin: auto;
+  width: 100%;
+  max-width: 1240px;
+  height: min(800px, calc(100vh - 2 * clamp(16px, 3vw, 36px)));
   display: flex;
   flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--sh-lg);
+  -webkit-font-smoothing: antialiased;
 }
 
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 40;
+/* Slim window bar with the inline stepper (no separate rail row). */
+.winbar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 14px clamp(20px, 5vw, 56px);
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: saturate(140%) blur(14px);
+  gap: 24px;
+  padding: 0 22px;
+  height: 58px;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
+.winbar__brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.winbar__brand img { height: 22px; width: auto; display: block; }
+.winbar__name { font-size: 0.9rem; font-weight: 650; letter-spacing: -0.01em; }
+.winbar__name span { color: var(--text-faint); font-weight: 500; }
+.winbar__right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
+/* Compact inline stepper that lives in the window bar. Completed / reachable
+   nodes are <button>s (keyboard-operable jump-back); the current node is inert
+   and marked aria-current="step"; future nodes are inert. */
+.istep { display: flex; align-items: center; gap: 10px; }
+.istep__node {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; padding: 0; margin: 0;
+  font: inherit; color: inherit; cursor: default;
 }
-.brand img { height: 26px; width: auto; display: block; }
-.brand__name {
-  font-size: 0.95rem;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  color: var(--text);
+button.istep__node { cursor: pointer; border-radius: var(--r-pill); }
+button.istep__node:focus-visible { outline: none; box-shadow: var(--ring); }
+.istep__dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.72rem; font-weight: 700;
+  border: 2px solid var(--border-strong);
+  background: var(--surface); color: var(--text-faint);
+  flex: 0 0 auto;
+  transition: background .25s, border-color .25s, color .25s;
 }
-.brand__name span { color: var(--text-faint); font-weight: 500; }
+.istep__dot svg { width: 13px; height: 13px; }
+.istep__node.is-active .istep__dot,
+.istep__node.is-done .istep__dot {
+  background: var(--accent); border-color: var(--accent); color: var(--on-accent);
+}
+.istep__node.is-active .istep__dot { box-shadow: var(--ring); }
+.istep__lbl { font-size: 0.82rem; font-weight: 600; color: var(--text-faint); transition: color .25s; }
+.istep__node.is-active .istep__lbl { color: var(--text); }
+.istep__node.is-done .istep__lbl { color: var(--text-body); }
+button.istep__node:hover .istep__lbl { color: var(--text); }
+.istep__sep { width: 26px; height: 2px; background: var(--border-strong); border-radius: 2px; }
+.istep__sep.is-done { background: var(--accent); }
 
-.topbar__right { display: flex; align-items: center; gap: 8px; }
+/* Persistent footer action bar — the primary action is always reachable. Filled
+   per step (Install, Connect, Browse); hidden (via [hidden]) when a step has no
+   footer, such as the recommendation landing and the flash / success states. */
+.winfoot {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 22px;
+  height: 72px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+.winfoot__hint { font-size: 0.88rem; color: var(--text-muted); }
+.winfoot__hint .linkbtn { font-size: 0.88rem; }
+.winfoot__spacer { flex: 1; }
+.winfoot__sel { display: flex; align-items: center; gap: 9px; font-size: 0.86rem; color: var(--text-body); }
+.winfoot__sel b { color: var(--text); font-weight: 650; }
+.winfoot__seldot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+/* The scrolling content body that fills the window between bar and footer. */
+.winbody { flex: 1; min-height: 0; overflow: auto; }
 
 .iconbtn {
   display: inline-flex;
@@ -143,71 +203,7 @@ button { font-family: inherit; }
 .iconbtn--square { width: 38px; padding: 0; }
 .iconbtn svg { width: 17px; height: 17px; }
 
-/* ---------- Progress rail ---------- */
-.rail {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  padding: 26px 24px 4px;
-}
-.rail__step {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  cursor: default;
-}
-.rail__step.is-clickable { cursor: pointer; }
-.rail__dot {
-  width: 30px; height: 30px;
-  border-radius: var(--r-pill);
-  display: grid; place-items: center;
-  font-size: 0.82rem; font-weight: 700;
-  border: 2px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text-faint);
-  transition: all .25s;
-  flex: 0 0 auto;
-}
-.rail__step.is-active .rail__dot {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--ring);
-}
-.rail__step.is-done .rail__dot {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.rail__label {
-  font-size: 0.84rem;
-  font-weight: 600;
-  color: var(--text-faint);
-  transition: color .25s;
-  letter-spacing: -0.005em;
-}
-.rail__step.is-active .rail__label { color: var(--text); }
-.rail__step.is-done .rail__label { color: var(--text-body); }
-.rail__line {
-  width: clamp(36px, 7vw, 88px);
-  height: 2px;
-  margin: 0 14px;
-  background: var(--border-strong);
-  border-radius: 2px;
-  position: relative;
-  overflow: hidden;
-}
-.rail__line::after {
-  content: "";
-  position: absolute; inset: 0;
-  background: var(--accent);
-  transform: scaleX(var(--fill, 0));
-  transform-origin: left;
-  transition: transform .45s ease;
-}
-
-/* ---------- Main column ---------- */
+/* ---------- Main column (the step body inside the window content area) ---------- */
 .main {
   flex: 1;
   width: 100%;
@@ -217,15 +213,11 @@ button { font-family: inherit; }
 }
 .main--wide { max-width: 1040px; }
 
-/* Stable <main> landmark + skip-link target. The step's own .main column is
-   swapped inside it on every step transition, so this wrapper carries the
-   layout flex while the inner .main keeps its centering and max-width. */
-.wf2-main-region {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
+/* Stable <main> landmark + skip-link target (the .winbody scroll region). The
+   step's own .main column is swapped inside it on every step transition, so the
+   id and tabindex survive while the inner .main keeps its centering and max-width.
+   .winbody (above) provides flex:1 + min-height:0 + overflow; this stays a plain
+   block scroll container so the inner .main flows and centers normally. */
 .wf2-main-region:focus { outline: none; }
 
 /* ---------- Modal dialog ---------- */

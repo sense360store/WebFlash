@@ -3,38 +3,66 @@
 import { h } from './h.js';
 import { icon } from './icons.js';
 
-/* ---------- Progress rail ---------- */
-export function Rail({ steps, current, maxReached, onJump }) {
-  const nav = h('nav', { class: 'rail', 'aria-label': 'Progress' });
+/* ---------- App-shell window bar (brand + inline stepper + actions) ----------
+   The design's flow-shell.jsx FlowBar: a slim header that hosts the brand
+   lockup, a compact inline stepper that reflects the current step, and the
+   Rescue / Help / theme actions. It replaces the previous separate full-width
+   progress rail. Completed and previously reached steps render as real
+   <button>s so the jump-back affordance is keyboard operable; the current step
+   is a non-interactive node marked aria-current="step", and not-yet-reached
+   steps are inert. The nav keeps aria-label="Progress" so it is announced as the
+   progress landmark exactly as the old rail was. */
+export function WinBar({ steps, step, maxReached, onJump, logoUrl, theme, onRescue, onHelp, onToggleTheme }) {
+  const stepper = h('nav', { class: 'istep', 'aria-label': 'Progress' });
   steps.forEach((s, i) => {
-    const done = i < current;
-    const active = i === current;
-    const clickable = i <= maxReached && i !== current;
+    const done = i < step;
+    const active = i === step;
+    const clickable = i <= maxReached && i !== step;
 
     if (i > 0) {
-      nav.appendChild(h('span', { class: 'rail__line', style: { '--fill': i <= current ? 1 : 0 } }));
+      stepper.appendChild(h('span', { class: 'istep__sep' + (i <= step ? ' is-done' : '') }));
     }
 
-    const cls =
-      'rail__step' +
-      (active ? ' is-active' : '') +
-      (done ? ' is-done' : '') +
-      (clickable ? ' is-clickable' : '');
+    const dot = h('span', { class: 'istep__dot' }, done ? icon('check', { size: 13 }) : String(i + 1));
+    const lbl = h('span', { class: 'istep__lbl' }, s.label);
 
-    nav.appendChild(
-      h('div', {
-        class: cls,
-        // aria-current="step" marks the active step for assistive technology so
-        // the progress rail announces where the user is in the flow.
-        'aria-current': active ? 'step' : null,
-        onClick: () => clickable && onJump(i),
-      },
-        h('span', { class: 'rail__dot' }, done ? icon('check', { size: 15 }) : String(i + 1)),
-        h('span', { class: 'rail__label' }, s.label),
-      ),
-    );
+    if (clickable) {
+      stepper.appendChild(
+        h('button', {
+          class: 'istep__node' + (done ? ' is-done' : ''),
+          type: 'button',
+          'aria-label': `Go to step ${i + 1}: ${s.label}`,
+          onClick: () => onJump(i),
+        }, dot, lbl),
+      );
+    } else {
+      stepper.appendChild(
+        h('div', {
+          class: 'istep__node' + (active ? ' is-active' : ''),
+          // aria-current="step" marks the active step for assistive technology so
+          // the stepper announces where the user is in the flow.
+          'aria-current': active ? 'step' : null,
+        }, dot, lbl),
+      );
+    }
   });
-  return nav;
+
+  return h('div', { class: 'winbar' },
+    h('div', { class: 'winbar__brand' },
+      h('img', { src: logoUrl, alt: 'Sense360' }),
+      h('span', { class: 'winbar__name' }, 'WebFlash ', h('span', null, '· Firmware Installer')),
+    ),
+    stepper,
+    h('div', { class: 'winbar__right' },
+      h('button',
+        { class: 'iconbtn', type: 'button', 'data-rescue-open': '', 'aria-haspopup': 'dialog', onClick: onRescue },
+        icon('life'), ' Rescue'),
+      h('button', { class: 'iconbtn', type: 'button', onClick: onHelp }, icon('help'), ' Help'),
+      h('button',
+        { class: 'iconbtn iconbtn--square', type: 'button', 'aria-label': 'Toggle theme', onClick: onToggleTheme },
+        icon(theme === 'dark' ? 'sun' : 'moon')),
+    ),
+  );
 }
 
 /* ---------- Step header ---------- */
