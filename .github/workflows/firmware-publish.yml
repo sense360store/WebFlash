@@ -13,6 +13,7 @@ name: Firmware publish
 
 on:
   push:
+    branches: ['main']
     paths:
       - 'firmware/**'
       - 'scripts/**'
