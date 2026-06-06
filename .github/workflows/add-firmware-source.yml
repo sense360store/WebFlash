@@ -1,0 +1,192 @@
+name: Add firmware source
+
+# Publish-time source authoring. Turns "add a firmware/sources.json entry" from
+# a hand-edit into a reviewed, machine-generated change.
+#
+# Flow (manual dispatch only):
+#   1. scripts/add-firmware-source.py reads the upstream release, derives the
+#      asset name, pins the SHA256 from checksums-sha256.txt, and computes the
+#      block_tokens deny-list, then upserts ONE firmware/sources.json entry.
+#   2. If sources.json did not change, the job stops cleanly (no PR).
+#   3. scripts/import-firmware-sources.py --dry-run proves the new entry
+#      RESOLVES against the live upstream release (asset present, upstream
+#      checksum match, pinned SHA match, block tokens absent, required release
+#      body sections present). It writes/deploys nothing.
+#   4. The change is pushed to a unique branch and a PR is opened for review.
+#
+# This workflow never signs firmware, regenerates manifest.json, or deploys.
+# Signing + manifest regeneration stay in firmware-import.yml / firmware-publish.yml,
+# which run on the resulting merge through the normal review gate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Upstream release tag (e.g. v1.0.0 or v1.0.0-preview).'
+        required: true
+        type: string
+      config_string:
+        description: 'Release-eligible room config to author.'
+        required: true
+        type: choice
+        options:
+          - Ceiling-POE-VentIQ-RoomIQ
+          - Ceiling-POE-VentIQ-RoomIQ-LED
+          - Ceiling-POE-AirIQ-RoomIQ
+          - Ceiling-POE-RoomIQ
+          - Ceiling-POE-RoomIQ-LED
+      channel:
+        description: 'Release channel.'
+        required: false
+        type: choice
+        default: stable
+        options:
+          - stable
+          - preview
+      version:
+        description: 'Semver version (optional). Default: parsed from the tag.'
+        required: false
+        type: string
+        default: ''
+      source_repo:
+        description: 'Upstream source repo.'
+        required: false
+        type: string
+        default: sense360store/esphome-public
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: add-firmware-source-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  author:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          # Full history so we can branch + push the commit back.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.11'
+
+      - name: Generate firmware/sources.json entry
+        env:
+          # The default GITHUB_TOKEN reads public cross-repo releases (no PAT
+          # required for public sense360store/esphome-public).
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Inputs are passed through env (never interpolated into the script
+          # body) to avoid shell injection.
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          CONFIG_STRING: ${{ inputs.config_string }}
+          CHANNEL: ${{ inputs.channel }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          args=(
+            --repo "${SOURCE_REPO}"
+            --tag "${RELEASE_TAG}"
+            --config "${CONFIG_STRING}"
+            --channel "${CHANNEL}"
+          )
+          if [ -n "${VERSION}" ]; then
+            args+=(--version "${VERSION}")
+          fi
+          python scripts/add-firmware-source.py "${args[@]}" --write
+
+      - name: Detect sources.json change
+        id: diff
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- firmware/sources.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No change to firmware/sources.json; nothing to do."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "firmware/sources.json changed:"
+            git --no-pager diff -- firmware/sources.json
+          fi
+
+      - name: Validate entry resolves against upstream (dry-run import)
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          # The dry-run importer does NOT sign or regenerate manifests, so it
+          # needs no cryptography package. It only proves the new entry
+          # resolves: asset present, upstream checksum match, pinned SHA match,
+          # block tokens absent, required release-body sections present.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          python scripts/import-firmware-sources.py \
+            --source-repo "${SOURCE_REPO}" \
+            --release-tag "${RELEASE_TAG}" \
+            --dry-run
+
+      - name: Commit, push, and open PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          CONFIG_STRING: ${{ inputs.config_string }}
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          set -euo pipefail
+          BRANCH="ci/add-firmware-source-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BRANCH}"
+          git add firmware/sources.json
+          git commit \
+            -m "Add firmware source: ${CONFIG_STRING} (${CHANNEL})" \
+            -m "Authored from ${SOURCE_REPO}@${RELEASE_TAG} by scripts/add-firmware-source.py via workflow_dispatch."
+          # Push with the simple retry the repo conventions call for.
+          pushed=false
+          for delay in 0 2 4 8 16; do
+            if [ "${delay}" -gt 0 ]; then sleep "${delay}"; fi
+            if git push -u origin "${BRANCH}"; then
+              pushed=true
+              break
+            fi
+          done
+          if [ "${pushed}" != "true" ]; then
+            echo "::error::Push failed after retries." >&2
+            exit 1
+          fi
+          BODY=$(cat <<EOF
+          Automated by the \`Add firmware source\` workflow (run ${{ github.run_id }}).
+
+          This adds (or updates) one \`firmware/sources.json\` entry:
+
+          - source repo: \`${SOURCE_REPO}\`
+          - release tag: \`${RELEASE_TAG}\`
+          - config_string: \`${CONFIG_STRING}\`
+          - channel: \`${CHANNEL}\`
+
+          The entry was validated against the live upstream release with
+          \`scripts/import-firmware-sources.py --dry-run\` (asset present, upstream
+          checksum match, pinned SHA match, block tokens absent, required
+          release-body sections present). No firmware was imported, signed, or
+          deployed by this workflow.
+
+          REVIEWER: confirm the pinned \`expected_sha256\` in the diff matches the
+          intended upstream asset before merging. On merge, the existing
+          firmware-import / firmware-publish workflows handle the actual import,
+          signing, and manifest regeneration through the normal review gate.
+          EOF
+          )
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "Add firmware source: ${CONFIG_STRING} (${CHANNEL})" \
+            --body "${BODY}"

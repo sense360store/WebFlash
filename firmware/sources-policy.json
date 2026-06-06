@@ -1,0 +1,20 @@
+{
+    "_comment": "Optional overrides for scripts/add-firmware-source.py. The script works identically when this file is ABSENT (these values equal its built-in defaults). block_tokens are NOT taken from here directly: for each config the script computes block_tokens = base_block_tokens MINUS the config's own hyphen-split lowercased tokens. That subtraction is load-bearing because scripts/import-firmware-sources.py (assert_block_tokens_absent) UNIONS the config's own tokens into the haystack it scans, so leaving a self-token in the deny-list would reject the config's own legitimate binary. Examples: Ceiling-POE-VentIQ-RoomIQ -> [FanTRIAC, LED]; Ceiling-POE-VentIQ-RoomIQ-LED -> [FanTRIAC] (LED is its own token). To force an exact deny-list for one config, add overrides.<config_string>.block_tokens, which wins outright.",
+    "base_block_tokens": [
+        "FanTRIAC",
+        "LED"
+    ],
+    "required_release_body_sections": [
+        "Changelog",
+        "Known Issues",
+        "Features",
+        "Hardware Requirements"
+    ],
+    "min_size_bytes": 102400,
+    "standard_assets": [
+        "checksums-sha256.txt",
+        "checksums-md5.txt",
+        "manifest.json"
+    ],
+    "overrides": {}
+}
