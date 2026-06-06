@@ -16,7 +16,7 @@
 // imports carry no token and re-prime on the sw.js CACHE_NAME bump, exactly like
 // state.js. Keep APP_SHELL_BUILD in lockstep with the `?v=` query in index.html
 // and the sw.js CACHE_NAME. See docs/deploy-notes.md.
-const APP_SHELL_BUILD = '202606051';
+const APP_SHELL_BUILD = '202606061';
 const { pathname } = window.location;
 const inRepoSubpath = pathname === '/WebFlash' || pathname.startsWith('/WebFlash/');
 const base = inRepoSubpath ? '/WebFlash' : '';
