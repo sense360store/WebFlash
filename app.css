@@ -741,6 +741,21 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   background: repeating-linear-gradient(135deg, var(--surface-2) 0 9px, #131C2B 9px 18px);
 }
 
+/* ---------- Step 2 / 3 flow layout (Install / Connect) ----------
+   A flow step fills the window content area as a flex column: the scrolling flow
+   body (a centered .flowcol of cards) sits above the persistent footer action
+   bar (.winfoot). The flash / success states center their content in the body. */
+.flowstep { min-height: 100%; display: flex; flex-direction: column; }
+.flowstep__prep { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.flowbody { flex: 1; min-height: 0; overflow: auto; padding: 28px clamp(28px, 6vw, 72px); }
+.flowcol { width: 100%; max-width: 720px; margin: 0 auto; display: grid; gap: 16px; }
+.flowhead { margin-bottom: 4px; }
+.flowhead .mlbl { display: block; margin-bottom: 8px; }
+.flowhead h1 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+.flowhead p { margin: 0; color: var(--text-body); font-size: 0.98rem; line-height: 1.5; max-width: 56ch; }
+.flowbody--center { display: flex; align-items: center; justify-content: center; }
+.flowbody--center .flash, .flowbody--center .success { width: 100%; max-width: 600px; }
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;

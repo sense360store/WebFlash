@@ -409,7 +409,7 @@ describe('PR 5 — InstallStep bound to the engine', () => {
     const { root } = await mountInstallStep({
       mount: 'ceiling', power: 'poe', bathroom: true, ventiq: 'ventiq', roomiq: 'roomiq',
     });
-    const installBtn = root.querySelector('.stepnav .btn--lg');
+    const installBtn = root.querySelector('.winfoot .btn--lg');
     expect(installBtn).not.toBeNull();
     // Before-you-flash is unchecked and the served .bin bytes do not match the
     // manifest SHA-256, so the gate cannot be satisfied here.

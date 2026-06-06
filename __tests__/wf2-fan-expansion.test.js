@@ -205,7 +205,7 @@ describe('WF2-FAN-EXPANSION-001 — InstallStep gate regions per fan kit (fake e
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  const installBtnOf = (root) => root.querySelector('.stepnav .btn--lg');
+  const installBtnOf = (root) => root.querySelector('.winfoot .btn--lg');
 
   it.each(NEW_FAN_KITS.filter((k) => !k.dac))('$sku (non-analog) blocks install until the fan-control ack is checked', async ({ config }) => {
     const root = mountStep(fakeBuild(config), makeFakeEngine({ canInstall: true }));
@@ -299,6 +299,6 @@ describe('WF2-FAN-EXPANSION-001 — Kitchen FanDAC kit + real engine', () => {
     expect(root.textContent).toMatch(/0x59/);
     // The real gate still blocks (served bytes never match the SHA-256), so the
     // additive acknowledgements can only ever make install stricter, never arm it.
-    expect(root.querySelector('.stepnav .btn--lg').disabled).toBe(true);
+    expect(root.querySelector('.winfoot .btn--lg').disabled).toBe(true);
   });
 });

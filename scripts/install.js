@@ -31,7 +31,7 @@
    from engine.capabilities.evaluateBrowserReadiness. */
 import { h, mount, fromHTML } from './h.js';
 import { icon } from './icons.js';
-import { StepHead, DeviceChip } from './ui.js';
+import { DeviceChip } from './ui.js';
 
 // Provenance + integrity always run in production trust mode, matching the 1.0
 // install-trust mode (verifyCurrentFirmwareIntegrity hard-codes production): the
@@ -174,7 +174,11 @@ function espWebToolsRegistered() {
  * @param {() => void} props.onFlashed
  */
 export function InstallStep({ device, build = null, engine = null, a11y = null, onBack, onFlashed }) {
-  const mainEl = h('div', { class: 'main' });
+  // The step fills the window content area as a flex column so the footer action
+  // bar sits at the bottom while the flow content scrolls above it.
+  const mainEl = h('div', { class: 'flowstep' });
+  // Short device label for the footer selection summary (mirrors the design).
+  const deviceShortName = String(device.name || '').split('·')[0].split('—')[0].trim();
 
   // ----- engine-derived inputs, fixed for this build -----
   const capabilities = engine ? engine.capabilities.detectCapabilities() : null;
@@ -573,28 +577,45 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // flash: when flashing starts we hide the prep view and reveal the progress
   // view, but the component (inside the hidden prep view) keeps driving the flash
   // and emitting the lifecycle events this view mirrors.
-  const prepEl = h('div', null,
-    StepHead({ eyebrow: 'Step 2 — Install', eyebrowIcon: 'bolt', title: 'Prepare & install firmware',
-      desc: "We'll run the real pre-flight checks, then flash your hub over USB." }),
-    DeviceChip({ name: device.name, target: device.target, onEdit: onBack }),
-    unsupportedBannerEl,
-    statusbarEl,
-    swNoticeEl,
-    h('div', { class: 'card', style: { padding: '8px 20px' } }, readyInner),
-    freshnessControlsEl,
-    warnCalloutsEl,
-    beforeFlashLabel,
-    acksEl,
-    fanGatesEl,
-    ewtNoticeEl,
-    h('div', { class: 'stepnav' },
+  // Prep view: the scrolling flow content (compact header, device chip, status
+  // bar, readiness checklist, callouts, acknowledgements, support) above the
+  // persistent footer action bar (Back, the selection summary, and the install
+  // affordance). The footer lives inside the prep view so it hides with it during
+  // the flash, while the ESP Web Tools host stays attached (display:none) and
+  // keeps driving the flash and emitting its lifecycle events.
+  const prepEl = h('div', { class: 'flowstep__prep' },
+    h('div', { class: 'flowbody' },
+      h('div', { class: 'flowcol' },
+        h('div', { class: 'flowhead' },
+          h('span', { class: 'mlbl' }, 'Step 2 · Install'),
+          h('h1', null, 'Prepare & install firmware'),
+          h('p', null, "We'll run the real pre-flight checks, then flash your hub over USB."),
+        ),
+        DeviceChip({ name: device.name, target: device.target, onEdit: onBack }),
+        unsupportedBannerEl,
+        statusbarEl,
+        swNoticeEl,
+        h('div', { class: 'card', style: { padding: '8px 20px' } }, readyInner),
+        freshnessControlsEl,
+        warnCalloutsEl,
+        beforeFlashLabel,
+        acksEl,
+        fanGatesEl,
+        ewtNoticeEl,
+        supportEl,
+      ),
+    ),
+    h('div', { class: 'winfoot' },
       h('button', { class: 'btn--ghost btn', onClick: onBack }, icon('arrowL'), ' Back'),
-      h('span', { class: 'stepnav__spacer' }),
+      h('span', { class: 'winfoot__spacer' }),
+      h('span', { class: 'winfoot__sel' },
+        h('span', { class: 'winfoot__seldot' }), ' ', h('b', null, deviceShortName)),
       installHost,
     ),
-    supportEl,
   );
-  const flashEl = h('div', { hidden: true });
+  // Flash view: the centered progress ring + console, built lazily on the first
+  // lifecycle event (buildFlashView mounts .flash into this element).
+  const flashEl = h('div', { class: 'flowbody flowbody--center', hidden: true });
 
   mount(mainEl, prepEl, flashEl);
 

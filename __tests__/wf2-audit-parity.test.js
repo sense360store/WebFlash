@@ -222,7 +222,7 @@ async function mountInstall(engine, build, props = {}) {
   });
   root.appendChild(node);
   await flush();
-  const installBtn = root.querySelector('.stepnav .btn--lg');
+  const installBtn = root.querySelector('.winfoot .btn--lg');
   return { root, node, installBtn };
 }
 
