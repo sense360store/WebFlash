@@ -24,6 +24,9 @@ const STROKE = {
   sliders: '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
   box: '<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/>',
   plug: '<path d="M12 22v-5"/><path d="M9 8V2M15 8V2"/><path d="M7 8h10v3a5 5 0 0 1-10 0z"/>',
+  // WF2-SHELL-FULLPAGE-001 — the v3 theme toggle uses a stroked crescent moon
+  // (the design's ui.jsx Ic.moon), replacing the previous filled-glyph moon.
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',
 };
 
 /* Filled / custom-attribute icons stored as complete <svg> markup. */
@@ -37,10 +40,6 @@ const RAW = {
     '<line x1="5.2" y1="5.2" x2="6.8" y2="6.8"/><line x1="17.2" y1="17.2" x2="18.8" y2="18.8"/>' +
     '<line x1="5.2" y1="18.8" x2="6.8" y2="17.2"/><line x1="17.2" y1="6.8" x2="18.8" y2="5.2"/>' +
     '</g></svg>',
-  moon:
-    '<svg viewBox="0 0 24 24">' +
-    '<path fill="currentColor" d="M20.2 14.6a8.2 8.2 0 0 1-10.8-10A0.8 0.8 0 0 0 8.3 3.6 9.7 9.7 0 1 0 20.4 15.7a0.8 0.8 0 0 0-1.2-1.1z"/>' +
-    '</svg>',
 };
 
 function markup(name) {

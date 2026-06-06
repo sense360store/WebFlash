@@ -85,41 +85,55 @@ button { font-family: inherit; }
 
 ::selection { background: var(--accent-soft); color: var(--accent-press); }
 
-/* ---------- App shell (a desktop-app window over the page background) ----------
-   The design's app shell (mockups.css): the page background centers a single
-   capped window with a slim window bar (brand + inline stepper + actions), a
-   scrolling content body, and a persistent footer action bar. This replaces the
-   previous sticky top bar + separate full-width progress rail. */
+/* ---------- App shell (a full-page web app over the page background) ----------
+   The design's v3 app shell (mockups.css full-page block): the installer renders
+   as an ordinary, page-scrolling web app — a full-bleed sticky top bar, a
+   centered 1080px content column, and a full-bleed sticky bottom action bar.
+   There is no floating window-card and no inner scroll container; the page
+   itself scrolls and the sticky bars stay pinned. The shell classes keep their
+   historical win* names. WF2-SHELL-FULLPAGE-001 replaced the v2 window-card. */
 .stage {
+  --page-max: 1080px;
+  --page-gutter: clamp(20px, 5vw, 48px);
+  /* Centered-column trick: the gutter on narrow screens, otherwise exactly
+     (viewport - 1080px) / 2, so the bar content and the body content share one
+     column edge. Applied to .winbar, .winfoot, and the .main content wrapper. */
+  --page-pad: max(var(--page-gutter), calc((100% - var(--page-max)) / 2));
   min-height: 100vh;
-  padding: clamp(16px, 3vw, 36px);
-  display: flex;
+  background: var(--bg);
 }
 .win {
-  margin: auto;
   width: 100%;
-  max-width: 1240px;
-  height: min(800px, calc(100vh - 2 * clamp(16px, 3vw, 36px)));
+  max-width: none;
+  min-height: 100vh;
+  height: auto;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: transparent;
   color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: var(--sh-lg);
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Slim window bar with the inline stepper (no separate rail row). */
+/* Full-bleed sticky window bar with the inline stepper (no separate rail row).
+   Its content aligns to the page column via --page-pad. */
 .winbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 24px;
-  padding: 0 22px;
-  height: 58px;
-  background: var(--surface);
+  padding-left: var(--page-pad);
+  padding-right: var(--page-pad);
+  height: 60px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: saturate(150%) blur(14px);
   border-bottom: 1px solid var(--border);
 }
 .winbar__brand { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
@@ -165,11 +179,16 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
    per step (Install, Connect, Browse); hidden (via [hidden]) when a step has no
    footer, such as the recommendation landing and the flash / success states. */
 .winfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
   flex: 0 0 auto;
   display: flex; align-items: center; gap: 16px;
-  padding: 0 22px;
-  height: 72px;
-  background: var(--surface);
+  padding-left: var(--page-pad);
+  padding-right: var(--page-pad);
+  height: 74px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: saturate(150%) blur(14px);
   border-top: 1px solid var(--border);
 }
 .winfoot__hint { font-size: 0.88rem; color: var(--text-muted); }
@@ -179,8 +198,9 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .winfoot__sel b { color: var(--text); font-weight: 650; }
 .winfoot__seldot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 
-/* The scrolling content body that fills the window between bar and footer. */
-.winbody { flex: 1; min-height: 0; overflow: auto; }
+/* The content region between the sticky bars. The page (not this element)
+   scrolls, so it grows with its content rather than clipping. */
+.winbody { flex: 1 0 auto; min-height: 0; overflow: visible; }
 
 .iconbtn {
   display: inline-flex;
@@ -201,23 +221,25 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .iconbtn:hover { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
 .iconbtn:active { transform: translateY(1px); }
 .iconbtn--square { width: 38px; padding: 0; }
+.iconbtn--sm { height: 32px; padding: 0 11px; font-size: 0.8rem; }
+.iconbtn--sm svg { width: 15px; height: 15px; }
 .iconbtn svg { width: 17px; height: 17px; }
 
-/* ---------- Main column (the step body inside the window content area) ---------- */
+/* ---------- Main column (the step body inside the page content column) ----------
+   Full-bleed wrapper whose content aligns to the same 1080px column as the sticky
+   bars (via --page-pad). The top padding clears the sticky header; the bottom
+   padding clears the sticky footer so the last content is never hidden under it. */
 .main {
-  flex: 1;
   width: 100%;
-  max-width: 940px;
-  margin: 0 auto;
-  padding: 18px clamp(20px, 5vw, 40px) 80px;
+  max-width: none;
+  margin: 0;
+  padding: 48px var(--page-pad) 40px;
 }
-.main--wide { max-width: 1040px; }
 
-/* Stable <main> landmark + skip-link target (the .winbody scroll region). The
+/* Stable <main> landmark + skip-link target (the .winbody content region). The
    step's own .main column is swapped inside it on every step transition, so the
-   id and tabindex survive while the inner .main keeps its centering and max-width.
-   .winbody (above) provides flex:1 + min-height:0 + overflow; this stays a plain
-   block scroll container so the inner .main flows and centers normally. */
+   id and tabindex survive. The page scrolls (the shell has no inner scroll
+   container), so this stays a plain block that grows with its content. */
 .wf2-main-region:focus { outline: none; }
 
 /* ---------- Modal dialog ---------- */
