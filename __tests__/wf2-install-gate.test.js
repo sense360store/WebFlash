@@ -427,6 +427,38 @@ describe('PR 5 — InstallStep bound to the engine', () => {
     expect(acks.length).toBeGreaterThanOrEqual(2);
     expect(root.textContent).toMatch(/preview/i);
   });
+
+  it('shows the resolved build version and channel read from the manifest', async () => {
+    const { root, resolved } = await mountInstallStep({
+      mount: 'ceiling', power: 'poe', bathroom: true, ventiq: 'ventiq', roomiq: 'roomiq',
+    });
+    // The stable Bathroom PoE build resolves to v1.0.2 (stable) in the current
+    // manifest. The label must mirror the resolved build, not a hardcoded value.
+    const fwEl = root.querySelector('[data-firmware-version]');
+    expect(fwEl).not.toBeNull();
+    expect(fwEl.textContent).toBe(`Firmware v${resolved.build.version} (${resolved.build.channel})`);
+    expect(fwEl.textContent).toBe('Firmware v1.0.2 (stable)');
+  });
+});
+
+describe('formatFirmwareVersion', () => {
+  it('formats version and channel from the build entry', async () => {
+    const { formatFirmwareVersion } = await import('../scripts/install.js');
+    expect(formatFirmwareVersion({ version: '1.0.2', channel: 'stable' })).toBe('Firmware v1.0.2 (stable)');
+    expect(formatFirmwareVersion({ version: '1.0.0', channel: 'preview' })).toBe('Firmware v1.0.0 (preview)');
+  });
+
+  it('omits the channel suffix when the build has no channel', async () => {
+    const { formatFirmwareVersion } = await import('../scripts/install.js');
+    expect(formatFirmwareVersion({ version: '2.3.4' })).toBe('Firmware v2.3.4');
+  });
+
+  it('fails gracefully when a build lacks a version', async () => {
+    const { formatFirmwareVersion } = await import('../scripts/install.js');
+    expect(formatFirmwareVersion({ channel: 'stable' })).toBe('Firmware version unknown');
+    expect(formatFirmwareVersion(null)).toBe('');
+    expect(formatFirmwareVersion(undefined)).toBe('');
+  });
 });
 
 describe('PR 5 — the CHECKS simulation is deleted', () => {

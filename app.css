@@ -325,6 +325,7 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .devsum__main { min-width: 0; }
 .devsum__name { font-weight: 650; font-size: 0.96rem; letter-spacing: -0.01em; }
 .devsum__meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
+.devsum__fw { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
 
 /* acks + callouts inside the side rail sit flush (no outer margins) */
 .install__side .ack { margin-top: 0; padding: 13px 15px; }
