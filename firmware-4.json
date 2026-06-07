@@ -15,19 +15,19 @@
           "md5": "024d35c408c9ac04d125e2d5bd1f5d78",
           "sha256": "151894c1408c5ae9d45f56382e392a82539a87d2882f443fa9bc78cdb6a39b9f",
           "signature": "qRDbDDRxSMyvdJNMdYrBEdbWtoePsKhtca8e4x4CWlc=",
-          "signature_ed25519": "vSGT1aTTPqvBtjeTzL2mMxXKUDB7iwgcPwixleTPXLeuyBSro3Yaz3IJ8hQNjQjL6rEQEHlZmojTGFH7rmKDAw==",
-          "signature_key_id": "dev-2026-01"
+          "signature_ed25519": "14KJ9AuznxjJgnJpZZDDbjwspZDSDIuYh20yMTJa+TvJEr9xKH+Rg66NEcdAkFoSz77eoeiwXGverZjlmViGDw==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
       "improv": true,
       "md5": "024d35c408c9ac04d125e2d5bd1f5d78",
       "sha256": "151894c1408c5ae9d45f56382e392a82539a87d2882f443fa9bc78cdb6a39b9f",
       "signature": "qRDbDDRxSMyvdJNMdYrBEdbWtoePsKhtca8e4x4CWlc=",
-      "signature_ed25519": "vSGT1aTTPqvBtjeTzL2mMxXKUDB7iwgcPwixleTPXLeuyBSro3Yaz3IJ8hQNjQjL6rEQEHlZmojTGFH7rmKDAw==",
-      "signature_key_id": "dev-2026-01",
+      "signature_ed25519": "14KJ9AuznxjJgnJpZZDDbjwspZDSDIuYh20yMTJa+TvJEr9xKH+Rg66NEcdAkFoSz77eoeiwXGverZjlmViGDw==",
+      "signature_key_id": "sense360-prod-2026-02",
       "file_size": 930400,
-      "source_commit": "d17b52ffd2b86eb48f9521a042c137829477d71e",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/d17b52ffd2b86eb48f9521a042c137829477d71e",
+      "source_commit": "eea5f83c9440f38353e5b03b6e5be01b1a2b7c5f",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/eea5f83c9440f38353e5b03b6e5be01b1a2b7c5f",
       "deprecated": false
     }
   ]
