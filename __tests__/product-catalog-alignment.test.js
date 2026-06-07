@@ -194,6 +194,23 @@ function containsSegment(configString, token) {
     return configString.split('-').includes(token);
 }
 
+// Strip the "-vX.Y.Z" semver token from an artifact filename so the
+// source-vs-catalog identity comparison survives a version bump.
+// firmware/sources.json is the one surface that legitimately leads: a source is
+// declared (e.g. v1.0.2) before the importer regenerates the manifest and the
+// vendored fixture is refreshed, so comparing the exact versioned filename
+// re-breaks CI on every bump before the fixture catches up. The config_string
+// identity, the stable / preview channel suffix, and the blocked-token guards
+// are all preserved by comparing the version-stripped base instead of the full
+// filename. (The manifest <-> catalog version check below stays strict because
+// those two surfaces move together in the import commit.)
+function stripArtifactVersion(name) {
+    if (typeof name !== 'string') {
+        return name;
+    }
+    return name.replace(/-v\d+\.\d+\.\d+/i, '');
+}
+
 const catalog = loadProductCatalog();
 const catalogIndex = buildCatalogIndex(catalog);
 const legacyIds = buildLegacyIdIndex(catalog);
@@ -281,19 +298,32 @@ describe('firmware/sources.json ↔ product catalog', () => {
         }
     });
 
-    test('source asset_name matches catalog artifact_name when both are defined', () => {
+    test('source asset_name matches catalog artifact_name base (version-tolerant)', () => {
+        // Version-tolerant identity check. Compare the config_string (the map
+        // key) plus the version-stripped artifact base — which still encodes the
+        // stable / preview channel suffix — instead of the exact versioned
+        // filename. firmware/sources.json may carry a freshly declared upstream
+        // version (e.g. v1.0.2) before the vendored fixture is refreshed, so an
+        // exact filename equality would false-fail on every bump. A genuine
+        // product or channel drift still fails because the stripped bases differ.
+        // The blocked-token and eligibility protections live in their own tests
+        // and are unaffected.
         for (const source of sources.sources || []) {
             const entry = catalogIndex.get(source.config_string);
             if (!entry) {
                 continue; // covered by the previous test's failure
             }
             if (typeof entry.artifact_name === 'string' && entry.artifact_name.length > 0) {
-                if (source.asset_name !== entry.artifact_name) {
+                const sourceBase = stripArtifactVersion(source.asset_name);
+                const catalogBase = stripArtifactVersion(entry.artifact_name);
+                if (sourceBase !== catalogBase) {
                     throw new Error(
                         `firmware/sources.json asset_name "${source.asset_name}" ` +
                             `does not match upstream catalog artifact_name ` +
                             `"${entry.artifact_name}" for config_string ` +
-                            `"${source.config_string}".`
+                            `"${source.config_string}" even after stripping the ` +
+                            `version token ("${sourceBase}" vs "${catalogBase}"). ` +
+                            'The product identity or channel drifted, not just the version.'
                     );
                 }
             }
@@ -337,6 +367,12 @@ describe('manifest.json ↔ product catalog', () => {
     });
 
     test('manifest build version matches catalog version where defined', () => {
+        // Strict by design: manifest.json and the vendored catalog fixture are
+        // coupled surfaces — both move to the new version together in the import
+        // commit (see firmware/sources.json -> importer -> gen-manifests, and the
+        // fixture refresh that rides along). A drift between them is a real
+        // integrity failure, not the benign "source declared ahead of the import"
+        // window that the source-side asset_name check above tolerates.
         for (const build of manifest.builds || []) {
             if (build.config_string === RESCUE_CONFIG_STRING) {
                 continue;

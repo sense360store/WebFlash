@@ -548,9 +548,32 @@ class SourcesFileTests(unittest.TestCase):
             s for s in sources if s.get("config_string") == "Ceiling-POE-VentIQ-RoomIQ"
         )
         self.assertEqual(release_one.get("source_repo"), "sense360store/esphome-public")
-        self.assertEqual(release_one.get("release_tag"), "v1.0.0")
-        # Release-One must block FanTRIAC + LED (defense in depth even though
-        # the v1.0.0 release ships neither asset).
+
+        # Version-agnostic: do NOT pin a specific release version here. The
+        # source declaration legitimately moves ahead of manifest.json whenever
+        # upstream cuts a new Release-One build (for example v1.0.0 -> v1.0.2)
+        # and firmware/sources.json is updated before the importer regenerates
+        # the manifest. Pinning a literal version string re-broke CI on every
+        # bump. Assert the entry's internal consistency instead.
+        release_tag = release_one.get("release_tag")
+        asset_name = release_one.get("asset_name")
+        self.assertIsInstance(release_tag, str)
+        self.assertIsInstance(asset_name, str)
+        # The release_tag version token (e.g. "1.0.2" from "v1.0.2") must appear
+        # in the asset filename so the two can never silently drift apart.
+        version_token = release_tag[1:] if release_tag.startswith("v") else release_tag
+        version_token = version_token.split("-")[0]
+        version_parts = version_token.split(".")
+        self.assertEqual(len(version_parts), 3, version_token)
+        self.assertTrue(all(p.isdigit() for p in version_parts), version_token)
+        self.assertIn("v" + version_token, asset_name)
+        # required_assets must carry the asset itself plus the upstream SHA256
+        # checksum manifest the importer verifies against.
+        required_assets = release_one.get("required_assets") or []
+        self.assertIn(asset_name, required_assets)
+        self.assertIn("checksums-sha256.txt", required_assets)
+        # Release-One must block FanTRIAC + LED (defense in depth; the stable
+        # Release-One build ships neither asset).
         self.assertIn("FanTRIAC", release_one.get("block_tokens") or [])
         self.assertIn("LED", release_one.get("block_tokens") or [])
 

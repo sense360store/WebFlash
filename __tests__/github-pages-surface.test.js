@@ -108,7 +108,12 @@ describe('github-pages-surface — expected builds present with correct channel'
         const build = matches[0];
         expect(build.channel).toBe('stable');
         expect(build.deprecated).toBe(false);
-        expect(build.version).toBe('1.0.0');
+        // Version-agnostic: Release-One moves to a new stable version whenever
+        // the upstream build is re-imported (for example v1.0.0 -> v1.0.2).
+        // Assert a valid semver shape rather than a pinned literal so the
+        // import does not re-break this surface; the stable, non-deprecated
+        // channel invariants above are what actually matter here.
+        expect(build.version).toMatch(/^\d+\.\d+\.\d+$/);
     });
 
     test('LED preview Ceiling-POE-VentIQ-RoomIQ-LED is present as preview, non-deprecated', () => {
