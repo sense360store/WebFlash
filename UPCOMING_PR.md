@@ -278,6 +278,26 @@ These gate every item below and must not be regressed by any queue PR:
      for close review (TRIAC-exclusion + gate surfaces). Independent of the
      install/polish stack (#511/#512); built on top of them. Full suite green
      (1122 tests).
+   - Follow-up — **WF2-IDENTIFY-TABLE-STICKY-FIX**: bug fix to slice 2's Browse
+     `.ktable`. The recommended / selected first row (`S360-KIT-BATH-P`, Bathroom
+     Bundle) was clipped under the sticky column header and could not be seen, so
+     "Kitchen Bundle — PoE" read as the first row even though the footer showed
+     Bathroom Bundle selected and the count said 11 of 11. Root cause:
+     `border-collapse: collapse` plus a sticky `thead` mispaints (in the collapsed
+     border model the table, not the cell, paints the shared borders, so a pinned
+     header loses its bottom edge and the first row bleeds up into it), and no
+     scroll offset reserved the pinned-header height (the page
+     `:root scroll-padding-top: 72px` only clears the 60px winbar, not the table's
+     own `top: 60px` sticky header). Fixed in `app.css` only: switched `.ktable`
+     to `border-collapse: separate; border-spacing: 0`, gave the sticky `th` an
+     opaque background plus an inset box-shadow bottom divider that paints above
+     the rows, and added `scroll-margin-top: 60px` on `.ktable__row` so a
+     focus-stepped / scrolled row clears the winbar + table header. View / CSS
+     only: no `scripts/identify.js` structure change, and no engine / gate /
+     catalogue / release-channel / kit-data change. The recommended kit and the
+     TRIAC fail-closed behaviour are exactly as #516 shipped.
+     `wf2-kit-picker.test.js` and the full Jest suite stay green untouched (1122
+     tests). Status: **Done — PR #520 (targets `main`).**
    - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install bound to the real
      `state.js` gate verdict and the real ESP Web Tools events, built directly to
      the v3 two-column panel layout (pre-flight panel with a status pill, a
