@@ -9,7 +9,7 @@ import path from 'node:path';
 // allowlist; this test asserts the cross-repo importer side specifically.
 //
 // Until `python3 scripts/import-firmware-sources.py` has been run against
-// sense360store/esphome-public v1.0.0 (or the equivalent CI workflow runs),
+// sense360store/esphome-public (or the equivalent CI workflow runs),
 // the Ceiling-POE-VentIQ-RoomIQ entry will be absent from manifest.json and
 // this test will fail with a clear "not yet imported" message. That is the
 // intended signal: the test goes green the moment the importer runs and the
@@ -47,18 +47,36 @@ describe('firmware/sources.json ↔ manifest.json', () => {
         }
     });
 
-    test('Release-One source is the esphome-public v1.0.0 RoomIQ build', () => {
+    test('Release-One source is the esphome-public RoomIQ stable build', () => {
         const releaseOne = sources.sources.find(
             s => s.config_string === 'Ceiling-POE-VentIQ-RoomIQ'
         );
         expect(releaseOne).toBeDefined();
         expect(releaseOne.source_repo).toBe('sense360store/esphome-public');
-        expect(releaseOne.release_tag).toBe('v1.0.0');
-        expect(releaseOne.asset_name).toBe(
-            'Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin'
-        );
-        // Defense-in-depth: Release-One must block FanTRIAC and LED tokens
-        // even though the v1.0.0 release ships neither asset.
+
+        // Version-agnostic: do NOT pin a specific release version here. The
+        // source declaration legitimately moves ahead of manifest.json
+        // whenever upstream cuts a new Release-One build (for example
+        // v1.0.0 -> v1.0.2) and firmware/sources.json is updated before the
+        // importer regenerates the manifest. Pinning a literal version string
+        // re-broke CI on every bump. Assert the entry's internal consistency
+        // and its standing defense-in-depth guarantees instead.
+        expect(typeof releaseOne.release_tag).toBe('string');
+        expect(typeof releaseOne.asset_name).toBe('string');
+
+        // The release_tag version token (e.g. "1.0.2" from "v1.0.2") must
+        // appear in the asset filename so the two can never silently drift.
+        const versionToken = releaseOne.release_tag.replace(/^v/, '').split('-')[0];
+        expect(versionToken).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(releaseOne.asset_name).toContain(`v${versionToken}`);
+
+        // required_assets must carry the asset itself plus the upstream
+        // SHA256 checksum manifest the importer verifies against.
+        expect(Array.isArray(releaseOne.required_assets)).toBe(true);
+        expect(releaseOne.required_assets).toContain(releaseOne.asset_name);
+        expect(releaseOne.required_assets).toContain('checksums-sha256.txt');
+
+        // Defense-in-depth: Release-One must block FanTRIAC and LED tokens.
         expect(releaseOne.block_tokens).toContain('FanTRIAC');
         expect(releaseOne.block_tokens).toContain('LED');
     });
@@ -78,7 +96,10 @@ describe('firmware/sources.json ↔ manifest.json', () => {
             b => b.config_string === 'Ceiling-POE-VentIQ-RoomIQ'
         );
         expect(match).toBeDefined();
-        expect(match.version).toBe('1.0.0');
+        // Version-agnostic: the committed manifest may lag the source
+        // declaration during the import window, so assert a valid semver
+        // rather than a pinned literal. The stable channel is the invariant.
+        expect(match.version).toMatch(/^\d+\.\d+\.\d+$/);
         expect(match.channel).toBe('stable');
     });
 
