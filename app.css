@@ -55,6 +55,15 @@
   --sh-accent: 0 10px 28px rgba(13,148,136,0.28);
 
   --ring: 0 0 0 3px rgba(13,148,136,0.30);
+
+  /* Layout metrics — one source of truth for the sticky chrome heights so the
+     window bar, the pinned table-header offset, and the row scroll-margin stay
+     in lockstep. --ktable-head-h is the rendered .ktable thead height (th
+     padding 13px top/bottom + the ~0.68rem uppercase line box ≈ 43.4px, rounded
+     up for sub-pixel safety); it is overridden in the <=760px block where the th
+     padding shrinks to 11px. */
+  --winbar-h: 60px;
+  --ktable-head-h: 44px;
 }
 
 * { box-sizing: border-box; }
@@ -131,7 +140,7 @@ button { font-family: inherit; }
   gap: 24px;
   padding-left: var(--page-pad);
   padding-right: var(--page-pad);
-  height: 60px;
+  height: var(--winbar-h);
   background: color-mix(in srgb, var(--surface) 85%, transparent);
   backdrop-filter: saturate(150%) blur(14px);
   border-bottom: 1px solid var(--border);
@@ -662,13 +671,14 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   overflow: hidden;
   font-size: 0.92rem;
 }
-/* Sticky header sits just under the full-page sticky top bar (.winbar is 60px
-   tall, so top: 60px pins the header flush beneath it). It keeps an opaque
-   background and a z-index above the rows, and draws its bottom divider with an
-   inset box-shadow rather than a collapsed border so the line stays put (and is
-   never clipped by the table's overflow) while the header is pinned. */
+/* Sticky header sits just under the full-page sticky top bar (.winbar is
+   --winbar-h tall, so top: var(--winbar-h) pins the header flush beneath it).
+   It keeps an opaque background and a z-index above the rows, and draws its
+   bottom divider with an inset box-shadow rather than a collapsed border so the
+   line stays put (and is never clipped by the table's overflow) while the header
+   is pinned. */
 .ktable thead th {
-  position: sticky; top: 60px; z-index: 5;
+  position: sticky; top: var(--winbar-h); z-index: 5;
   text-align: left;
   font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--text-faint);
@@ -680,10 +690,12 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .ktable__row {
   cursor: pointer; transition: background .14s;
   /* Clear the pinned chrome when a row is focus-stepped or scrolled to the top.
-     The page :root already reserves the winbar via scroll-padding-top; this adds
-     the table's own sticky header height so the first row (the recommended one,
-     in particular) is never tucked under the pinned header. */
-  scroll-margin-top: 60px;
+     The offset has to cover BOTH the window bar (--winbar-h) AND the table's own
+     sticky thead (--ktable-head-h, which the header occupies at top: var(--winbar-h)).
+     The previous value was only the winbar height, so a scrolled-to row (the
+     recommended one on landing, or keyboard-stepped rows) landed under the pinned
+     header. */
+  scroll-margin-top: calc(var(--winbar-h) + var(--ktable-head-h));
 }
 .ktable__row > td {
   padding: 14px 16px;
@@ -738,6 +750,10 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .flag--stable { color: var(--green); background: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 28%, transparent); }
 
 @media (max-width: 760px) {
+  /* The th padding shrinks to 11px here, so the rendered thead height drops to
+     ≈39.4px; keep the row scroll-margin (calc(--winbar-h + --ktable-head-h)) in
+     step so a scrolled-to row still clears the pinned header at this breakpoint. */
+  :root { --ktable-head-h: 40px; }
   .C__tools { margin-left: 0; width: 100%; }
   .C__search { min-width: 0; }
   .ktable { font-size: 0.86rem; }
