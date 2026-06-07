@@ -23,10 +23,10 @@ firmware flasher.
 | # | Severity | Area | Status |
 |---|----------|------|--------|
 | 1 | High | `esp-web-tools` loaded from unpkg without SRI + floating `@10` version | Resolved |
-| 2 | Medium | GitHub Actions pinned to tags, not commit SHAs | Open |
+| 2 | Medium | GitHub Actions pinned to tags, not commit SHAs | Resolved |
 | 3 | Medium | Signature binds firmware **bytes only**, not config/version (manifest-mapping gap) | Accepted / documented |
 | 4 | Low | Committed `test_only` dev private key | By design — keep guarded |
-| 5 | Low | `.gitignore` has no `.env` / `*.key` / `*.pem` patterns | Open |
+| 5 | Low | `.gitignore` has no `.env` / `*.key` / `*.pem` patterns | Resolved |
 | 6 | Low | CSP `style-src 'unsafe-inline'`; `frame-ancestors` only in `_headers` (not the meta CSP) | Partly by design |
 
 ---
@@ -87,13 +87,14 @@ GitHub Pages deploy identity and (in the publish job) the firmware signing
 secret. GitHub's own actions are comparatively low risk, but full-SHA pinning
 is the recommended supply-chain control.
 
-**Path to fix:** Pin each action to a full commit SHA with the version in a
-trailing comment, and let Dependabot bump them:
+**Fixed:** Every `uses:` in every workflow under `.github/workflows/` is now
+pinned to a full commit SHA with the version in a trailing comment (landed
+earlier as the SHA-pin change), e.g.:
 ```yaml
-- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+- uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 ```
-Add `.github/dependabot.yml` with the `github-actions` ecosystem so pins stay
-current.
+and `.github/dependabot.yml` now declares the `github-actions` ecosystem
+(weekly) so Dependabot keeps each pin and its trailing version comment current.
 
 **Already good:** workflows use only `push` / `workflow_dispatch` (no
 `pull_request_target`), declare least-privilege `permissions:`
@@ -156,7 +157,7 @@ promoted to `active`.
 files. No such files are produced by the normal workflow today, so impact is
 low.
 
-**Path to fix:** add:
+**Fixed:** `.gitignore` now carries the secret-file patterns:
 ```gitignore
 .env
 .env.*
@@ -166,9 +167,16 @@ low.
 *.pfx
 secrets/
 ```
-(Keep the intentional `firmware-signing/keys/dev-2026-01-*.pem` working —
-either commit it before adding `*.pem`, or add a negation
-`!firmware-signing/keys/dev-2026-01-*.pem`.)
+plus a negation that keeps the intentional `test_only` dev key pair tracked (it
+is already committed, and the negation also makes `git check-ignore` and any
+future re-add treat it as not ignored):
+```gitignore
+!firmware-signing/keys/dev-2026-01-*.pem
+```
+The matching `dev-2026-01-*.raw.b64` files are not caught by any pattern above,
+so they need no negation. Confirmed after the change: `git ls-files` still
+tracks `firmware-signing/keys/dev-2026-01-private.pem` and the signature
+backstop (`__tests__/firmware-signature.test.js`) stays green.
 
 ---
 

@@ -2,3 +2,21 @@ node_modules/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Secrets and credentials. Never commit local secret material (security.md
+# finding #5). Defense in depth: nothing in the normal workflow produces these,
+# but the patterns stop an accidental add.
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+
+# Exception: the test_only firmware-signing dev key pair is intentionally
+# tracked so the Jest signature backstop (__tests__/firmware-signature.test.js)
+# can exercise the real verification path. The *.pem rule above would otherwise
+# ignore it, so re-include it explicitly. The matching dev-2026-01-*.raw.b64
+# files are not caught by any rule above, so they need no negation.
+!firmware-signing/keys/dev-2026-01-*.pem
