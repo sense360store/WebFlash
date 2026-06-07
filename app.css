@@ -668,7 +668,16 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--sh-sm);
-  overflow: hidden;
+  /* overflow: clip, NOT hidden. overflow: hidden makes the table a scroll
+     container, which captures the sticky thead below: the th's `top` offset is
+     then resolved against the table's own top edge instead of the viewport, so
+     the header is pushed `top` px down from the table top at every scroll
+     position and lands on top of the first body row (the recommended row reads
+     as hidden, and the header never actually pins under the .winbar on page
+     scroll). overflow: clip still clips the rounded corners but does NOT
+     establish a scroll container, so the sticky thead resolves against the page
+     viewport and pins flush beneath the .winbar as intended. */
+  overflow: clip;
   font-size: 0.92rem;
 }
 /* Sticky header sits just under the full-page sticky top bar (.winbar is
