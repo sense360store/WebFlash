@@ -89,6 +89,13 @@ def _load_sibling(name: str, filename: str):
 
 gen_manifests = _load_sibling("gen_manifests", "gen-manifests.py")
 sync_releases = _load_sibling("sync_releases", "sync-from-releases.py")
+catalog_refresh = _load_sibling(
+    "refresh_product_catalog_fixture", "refresh-product-catalog-fixture.py"
+)
+
+DEFAULT_CATALOG_FIXTURE_PATH = (
+    REPO_ROOT / "__tests__" / "fixtures" / "esphome-product-catalog.json"
+)
 
 
 # --- Exceptions -----------------------------------------------------------
@@ -496,6 +503,69 @@ def build_provenance_sidecar(
     return base
 
 
+# --- Superseded-version pruning -----------------------------------------
+
+
+def prune_superseded_configurations(
+    target_path: Path,
+    metadata: "gen_manifests.FirmwareMetadata",
+    firmware_dir: Path,
+) -> List[Path]:
+    """Delete strictly-older builds of the same config_string + channel.
+
+    The manifest generator (`gen-manifests.py`) emits a build for **every**
+    ``.bin`` under ``firmware/configurations/`` — it keeps superseded
+    versions on disk and only prints a note. So importing a new version of an
+    existing config (e.g. Release-One v1.0.0 -> v1.0.2) without removing the
+    old binary would leave two builds with the same ``config_string`` in
+    ``manifest.json``. Pruning here, co-located with the import that knows the
+    config_string + channel, keeps a version bump clean and idempotent.
+
+    Only configuration builds are touched (never rescue / legacy), only the
+    same ``config_string`` **and** channel, and only versions strictly older
+    than the one just imported. Each removed ``.bin`` takes its ``.meta.json``
+    sidecar and any ``.md`` release-notes sibling with it. Returns the list of
+    removed paths (newest-version files are never returned).
+    """
+
+    removed: List[Path] = []
+    if not metadata.is_configuration:
+        return removed
+    configurations_dir = firmware_dir / "configurations"
+    if not configurations_dir.exists():
+        return removed
+
+    target_resolved = target_path.resolve()
+    for bin_path in sorted(configurations_dir.glob("*.bin")):
+        if bin_path.resolve() == target_resolved:
+            continue
+        try:
+            other = gen_manifests.parse_firmware_metadata(
+                bin_path, default_channel=metadata.channel, force_configuration=True
+            )
+        except ValueError:
+            continue
+        if not other.is_configuration:
+            continue
+        if other.config_string != metadata.config_string:
+            continue
+        if other.channel != metadata.channel:
+            continue
+        if not gen_manifests.version_is_newer(metadata.version, other.version):
+            # Same or newer than what we imported; leave it alone.
+            continue
+        for sibling in (
+            bin_path,
+            sync_releases.sidecar_target_path(bin_path),
+            bin_path.with_suffix(".md"),
+        ):
+            if sibling.exists():
+                sibling.unlink()
+                removed.append(sibling)
+                print(f"  → removed superseded {sibling}")
+    return removed
+
+
 # --- Main import flow ----------------------------------------------------
 
 
@@ -625,6 +695,7 @@ def import_source_entry(
         sync_releases.write_sidecar(sidecar_path, sidecar)
         print(f"  → wrote {target_path}")
         print(f"  → wrote {sidecar_path}")
+        prune_superseded_configurations(target_path, metadata, firmware_dir)
         return target_path
 
 
@@ -664,6 +735,24 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
             "API. Used for hermetic re-runs and to work around anonymous "
             "rate limits. The file shape mirrors the API response: "
             '{"body": "...", "assets": [{"name": "...", "url": "...", "browser_download_url": "..."}], "html_url": "..."}'
+        ),
+    )
+    parser.add_argument(
+        "--skip-catalog-refresh",
+        action="store_true",
+        help=(
+            "Do not refresh the vendored product-catalog fixture after a "
+            "successful import. The refresh keeps "
+            "__tests__/fixtures/esphome-product-catalog.json in lock-step with "
+            "the regenerated manifest; skip only for offline / hermetic runs."
+        ),
+    )
+    parser.add_argument(
+        "--catalog-payload-file",
+        help=(
+            "Read the upstream product-catalog.json from a local JSON file when "
+            "refreshing the fixture, instead of fetching it from the upstream "
+            "main branch. Used for hermetic re-runs."
         ),
     )
     return parser.parse_args(argv)
@@ -717,6 +806,62 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"  - {failure}", file=sys.stderr)
         return 1
     print(f"\nImported {len(selected)} source(s).")
+
+    # Keep the vendored product-catalog fixture in lock-step with the firmware
+    # we just staged. The manifest regeneration that follows this importer will
+    # pick up the new version; the strict manifest<->catalog version guard
+    # requires the fixture to move with it in the same commit. Refresh is a
+    # hard step on a real (non-dry-run) import so we never produce a manifest
+    # the fixture disagrees with.
+    if args.dry_run:
+        print("[dry-run] Skipping product-catalog fixture refresh.")
+        return 0
+    if args.skip_catalog_refresh:
+        print(
+            "Skipping product-catalog fixture refresh (--skip-catalog-refresh). "
+            "Run scripts/refresh-product-catalog-fixture.py before committing or "
+            "the manifest<->catalog version guard may fail."
+        )
+        return 0
+
+    source_repo = args.source_repo
+    if not source_repo:
+        repos = {entry.get("source_repo") for entry in selected if entry.get("source_repo")}
+        source_repo = next(iter(repos)) if len(repos) == 1 else (
+            catalog_refresh.DEFAULT_SOURCE_REPO
+        )
+    upstream_catalog: Optional[Dict[str, Any]] = None
+    if args.catalog_payload_file:
+        catalog_payload_path = Path(args.catalog_payload_file)
+        try:
+            upstream_catalog = json.loads(
+                catalog_payload_path.read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(
+                f"Failed to load --catalog-payload-file {catalog_payload_path}: {exc}"
+            ) from exc
+    try:
+        summary = catalog_refresh.refresh_catalog_fixture(
+            DEFAULT_CATALOG_FIXTURE_PATH,
+            upstream_catalog=upstream_catalog,
+            source_repo=source_repo,
+            token=token,
+        )
+    except catalog_refresh.CatalogRefreshError as exc:
+        print(
+            f"\nProduct-catalog fixture refresh failed: {exc}", file=sys.stderr
+        )
+        return 1
+    if summary.get("changed"):
+        print("Refreshed product-catalog fixture:")
+        for change in summary.get("changes") or []:
+            print(
+                f"  - {change['identifier']}: {change['field']} "
+                f"{change['from']!r} -> {change['to']!r}"
+            )
+    else:
+        print("Product-catalog fixture already in sync; no changes.")
     return 0
 
 
