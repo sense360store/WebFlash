@@ -22,7 +22,7 @@ firmware flasher.
 
 | # | Severity | Area | Status |
 |---|----------|------|--------|
-| 1 | High | `esp-web-tools` loaded from unpkg without SRI + floating `@10` version | Open |
+| 1 | High | `esp-web-tools` loaded from unpkg without SRI + floating `@10` version | Resolved |
 | 2 | Medium | GitHub Actions pinned to tags, not commit SHAs | Resolved |
 | 3 | Medium | Signature binds firmware **bytes only**, not config/version (manifest-mapping gap) | Accepted / documented |
 | 4 | Low | Committed `test_only` dev private key | By design — keep guarded |
@@ -43,25 +43,37 @@ the page that drives Web Serial and writes firmware to the user's device. SRI
 is the standard mitigation and the CSP already constrains the origin but cannot
 detect tampered-but-same-origin content.
 
-**Path to fix:**
-1. Pin the exact version, e.g. `esp-web-tools@10.0.0`, instead of `@10`.
-2. Compute the hash of the served file and add `integrity` + `crossorigin`:
-   ```bash
-   curl -sL "https://unpkg.com/esp-web-tools@10.0.0/dist/web/install-button.js" \
-     | openssl dgst -sha384 -binary | openssl base64 -A
-   ```
-   ```html
-   <script type="module"
-           src="https://unpkg.com/esp-web-tools@10.0.0/dist/web/install-button.js"
-           integrity="sha384-<HASH>"
-           crossorigin="anonymous"></script>
-   ```
-   Note: esp-web-tools pulls transitive deps (lit, improv-wifi-serial-sdk) at
-   runtime, so SRI covers only the entry module. For full coverage, **vendor**
-   the bundle into the repo (served from `'self'`) and pin it like any other
-   asset, which also lets you drop `unpkg.com` from `script-src`.
-3. Add the chosen file(s) to `sw.js` (`STATIC_ASSETS` / `SCRIPT_MODULES`) if
-   vendored, so offline behavior and the CSP stay consistent.
+**Fixed:** `index.html` now pins the exact version `@10` resolved to and adds
+Subresource Integrity:
+```html
+<script type="module"
+        src="https://unpkg.com/esp-web-tools@10.2.1/dist/web/install-button.js?module"
+        integrity="sha384-2Ea4WL8tjFb0qQKUqBoX45KlPVoUgL+Z3zUqsD0MHmtJ3faDbfNyZulLg/LfYDUZ"
+        crossorigin="anonymous"></script>
+```
+The hash is computed over the exact bytes the browser loads. Note the `?module`
+query: unpkg rewrites that response for native ESM, so it is a **different byte
+stream** from the unqueried path — the hash must be taken from the `?module`
+URL the `src` actually requests:
+```bash
+curl -sL "https://unpkg.com/esp-web-tools@10.2.1/dist/web/install-button.js?module" \
+  | openssl dgst -sha384 -binary | openssl base64 -A
+```
+`crossorigin="anonymous"` is required so the cross-origin response is fetched in
+CORS mode and the integrity check can run (unpkg returns
+`Access-Control-Allow-Origin: *`).
+
+**Coverage / residual risk:** SRI covers the **entry module only**.
+esp-web-tools lazy-loads its own `./*.js` chunks (relative to the pinned
+`@10.2.1` path) and its transitive deps (`lit`, `improv-wifi-serial-sdk`) via
+runtime dynamic imports, which SRI cannot cover. `script-src` is intentionally
+left at the origin level (`https://unpkg.com`) rather than a single path so
+those chunks still resolve, so no `_headers` / meta-CSP change was needed.
+**Recommended follow-up:** vendor the full bundle into the repo (served from
+`'self'`, added to `sw.js` `STATIC_ASSETS` / `SCRIPT_MODULES`), which would give
+full-graph integrity and let `unpkg.com` be dropped from `script-src`. On any
+future esp-web-tools version bump, recompute the hash from the new `?module`
+URL with the command above.
 
 ---
 

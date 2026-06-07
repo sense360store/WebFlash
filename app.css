@@ -645,7 +645,15 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 }
 
 .ktable {
-  width: 100%; border-collapse: collapse;
+  width: 100%;
+  /* border-collapse: separate (not collapse): in the collapsed border model the
+     table, not the cell, paints the shared borders, so a sticky thead loses its
+     bottom edge while pinned and the recommended/selected first row bleeds up
+     into the header (the next row then reads as row one). With separate borders
+     each sticky th owns its own background and the box-shadow divider below, so
+     the header always paints cleanly above the rows. */
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
@@ -653,7 +661,11 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   overflow: hidden;
   font-size: 0.92rem;
 }
-/* sticky header sits just under the full-page sticky top bar (60px) */
+/* Sticky header sits just under the full-page sticky top bar (.winbar is 60px
+   tall, so top: 60px pins the header flush beneath it). It keeps an opaque
+   background and a z-index above the rows, and draws its bottom divider with an
+   inset box-shadow rather than a collapsed border so the line stays put (and is
+   never clipped by the table's overflow) while the header is pinned. */
 .ktable thead th {
   position: sticky; top: 60px; z-index: 5;
   text-align: left;
@@ -661,10 +673,17 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
   color: var(--text-faint);
   padding: 13px 16px;
   background: var(--bg-elev);
-  border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 -1px 0 var(--border);
   white-space: nowrap;
 }
-.ktable__row { cursor: pointer; transition: background .14s; }
+.ktable__row {
+  cursor: pointer; transition: background .14s;
+  /* Clear the pinned chrome when a row is focus-stepped or scrolled to the top.
+     The page :root already reserves the winbar via scroll-padding-top; this adds
+     the table's own sticky header height so the first row (the recommended one,
+     in particular) is never tucked under the pinned header. */
+  scroll-margin-top: 60px;
+}
 .ktable__row > td {
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);

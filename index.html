@@ -47,7 +47,20 @@
     <link rel="stylesheet" href="./css/layout.css?v=202606051">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <!-- ESP Web Tools entry module, pinned to an exact version (@10.2.1) with
+         Subresource Integrity. The SHA-384 below covers THIS entry module only:
+         esp-web-tools lazy-loads its own ./*.js chunks (relative to the pinned
+         @10.2.1 path) and its transitive deps (lit, improv-wifi-serial-sdk) at
+         runtime via dynamic imports that SRI cannot cover. Vendoring the full
+         graph behind 'self' is a recommended follow-up. crossorigin="anonymous"
+         is required for SRI on this cross-origin fetch (unpkg returns
+         Access-Control-Allow-Origin: *); the CSP keeps the origin-level
+         https://unpkg.com source so the relative chunk imports still resolve.
+         Recompute the hash on any version bump (note the ?module query — it
+         returns the native-ESM rewrite, a different byte stream from the path):
+           curl -sL "https://unpkg.com/esp-web-tools@<ver>/dist/web/install-button.js?module" \
+             | openssl dgst -sha384 -binary | openssl base64 -A -->
+    <script type="module" src="https://unpkg.com/esp-web-tools@10.2.1/dist/web/install-button.js?module" integrity="sha384-2Ea4WL8tjFb0qQKUqBoX45KlPVoUgL+Z3zUqsD0MHmtJ3faDbfNyZulLg/LfYDUZ" crossorigin="anonymous"></script>
 </head>
 <body>
     <a class="skip-link" href="#wf2-main-content">Skip to main content</a>

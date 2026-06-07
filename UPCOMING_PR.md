@@ -278,6 +278,26 @@ These gate every item below and must not be regressed by any queue PR:
      for close review (TRIAC-exclusion + gate surfaces). Independent of the
      install/polish stack (#511/#512); built on top of them. Full suite green
      (1122 tests).
+   - Follow-up — **WF2-IDENTIFY-TABLE-STICKY-FIX**: bug fix to slice 2's Browse
+     `.ktable`. The recommended / selected first row (`S360-KIT-BATH-P`, Bathroom
+     Bundle) was clipped under the sticky column header and could not be seen, so
+     "Kitchen Bundle — PoE" read as the first row even though the footer showed
+     Bathroom Bundle selected and the count said 11 of 11. Root cause:
+     `border-collapse: collapse` plus a sticky `thead` mispaints (in the collapsed
+     border model the table, not the cell, paints the shared borders, so a pinned
+     header loses its bottom edge and the first row bleeds up into it), and no
+     scroll offset reserved the pinned-header height (the page
+     `:root scroll-padding-top: 72px` only clears the 60px winbar, not the table's
+     own `top: 60px` sticky header). Fixed in `app.css` only: switched `.ktable`
+     to `border-collapse: separate; border-spacing: 0`, gave the sticky `th` an
+     opaque background plus an inset box-shadow bottom divider that paints above
+     the rows, and added `scroll-margin-top: 60px` on `.ktable__row` so a
+     focus-stepped / scrolled row clears the winbar + table header. View / CSS
+     only: no `scripts/identify.js` structure change, and no engine / gate /
+     catalogue / release-channel / kit-data change. The recommended kit and the
+     TRIAC fail-closed behaviour are exactly as #516 shipped.
+     `wf2-kit-picker.test.js` and the full Jest suite stay green untouched (1122
+     tests). Status: **Done — PR #520 (targets `main`).**
    - Slice 3 — **WF2-INSTALL-RESKIN**: reskinned Install bound to the real
      `state.js` gate verdict and the real ESP Web Tools events, built directly to
      the v3 two-column panel layout (pre-flight panel with a status pill, a
@@ -433,7 +453,27 @@ These gate every item below and must not be regressed by any queue PR:
      `scripts/data/kits.json` / the 2.0 kit picker. Separate UX / product
      decision after operator hardware proof and/or stable promotion.
 
-8. **SEC-WF-HYGIENE-001 — Secret-file `.gitignore` patterns plus the
+8. **SEC-WF-ESPTOOLS-SRI-001 — Pin esp-web-tools to an exact version with
+   Subresource Integrity.** Finding #1 (High) from `security.md`.
+   Status: **Open — awaiting human review (no auto-merge). PR #518.** Pinned
+   the esp-web-tools entry module in `index.html` from the
+   floating `@10` to the exact `@10.2.1` it resolved to and added
+   `integrity="sha384-2Ea4…fYDUZ"` + `crossorigin="anonymous"`. The hash is
+   computed over the `?module` byte stream the `src` actually requests. SRI
+   covers the **entry module only** (the component lazy-loads its own `./*.js`
+   chunks and `lit` / `improv-wifi-serial-sdk` at runtime); `script-src` stays
+   origin-level `https://unpkg.com` so those chunks still resolve, so no
+   `_headers` / meta-CSP change was needed. Flipped `security.md` finding #1 to
+   Resolved.
+   Purpose: remove the floating-version + no-SRI supply-chain exposure on the
+   one third-party script that drives Web Serial.
+   Dependencies: none. Human-review, no auto-merge.
+   Note: Vendoring the full bundle (for full-graph integrity and dropping
+   `unpkg.com` from `script-src`) is a recommended follow-up, deliberately NOT
+   done here. No firmware, `manifest.json`, `firmware/sources.json`,
+   `REQUIRED_CONFIGS`, kit, release-channel, install-gate, or `sw.js` change.
+
+9. **SEC-WF-HYGIENE-001 — Secret-file `.gitignore` patterns plus the
    github-actions Dependabot ecosystem.** Findings #5 and #2 (remainder) from
    `security.md`.
    Status: **Open — awaiting human review (no auto-merge). PR #519.** Added
