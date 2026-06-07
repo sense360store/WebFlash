@@ -433,6 +433,26 @@ These gate every item below and must not be regressed by any queue PR:
      `scripts/data/kits.json` / the 2.0 kit picker. Separate UX / product
      decision after operator hardware proof and/or stable promotion.
 
+8. **SEC-WF-ESPTOOLS-SRI-001 — Pin esp-web-tools to an exact version with
+   Subresource Integrity.** Finding #1 (High) from `security.md`.
+   Status: **Open — awaiting human review (no auto-merge). PR #518.** Pinned
+   the esp-web-tools entry module in `index.html` from the
+   floating `@10` to the exact `@10.2.1` it resolved to and added
+   `integrity="sha384-2Ea4…fYDUZ"` + `crossorigin="anonymous"`. The hash is
+   computed over the `?module` byte stream the `src` actually requests. SRI
+   covers the **entry module only** (the component lazy-loads its own `./*.js`
+   chunks and `lit` / `improv-wifi-serial-sdk` at runtime); `script-src` stays
+   origin-level `https://unpkg.com` so those chunks still resolve, so no
+   `_headers` / meta-CSP change was needed. Flipped `security.md` finding #1 to
+   Resolved.
+   Purpose: remove the floating-version + no-SRI supply-chain exposure on the
+   one third-party script that drives Web Serial.
+   Dependencies: none. Human-review, no auto-merge.
+   Note: Vendoring the full bundle (for full-graph integrity and dropping
+   `unpkg.com` from `script-src`) is a recommended follow-up, deliberately NOT
+   done here. No firmware, `manifest.json`, `firmware/sources.json`,
+   `REQUIRED_CONFIGS`, kit, release-channel, install-gate, or `sw.js` change.
+
 ## Upstream dependencies
 
 These are tracked in `sense360store/esphome-public`'s own `UPCOMING_PR.md` —
