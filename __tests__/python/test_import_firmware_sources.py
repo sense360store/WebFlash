@@ -625,5 +625,118 @@ class ProvenanceTests(unittest.TestCase):
             )
 
 
+class SupersededPruneTests(unittest.TestCase):
+    """The importer prunes strictly-older builds of the same config_string +
+    channel after staging a new version, so a version bump (e.g. Release-One
+    v1.0.0 -> v1.0.2) does not leave two builds for one config in the manifest.
+    """
+
+    def _seed_old_bin(self, configurations: Path, name: str) -> Path:
+        configurations.mkdir(parents=True, exist_ok=True)
+        old_bin = configurations / name
+        old_bin.write_bytes(_make_bin())
+        old_bin.with_suffix(".meta.json").write_text("{}", encoding="utf-8")
+        return old_bin
+
+    def test_import_prunes_older_same_config_build(self):
+        bin_bytes = _make_bin()
+        new_name = "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.2-stable.bin"
+        net = _build_network(bin_bytes, asset_name=new_name)
+        entry = _entry(
+            release_tag="v1.0.2",
+            version="1.0.2",
+            asset_name=new_name,
+            required_assets=[
+                new_name,
+                "checksums-sha256.txt",
+                "checksums-md5.txt",
+                "manifest.json",
+            ],
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            configurations = tmp_root / "firmware" / "configurations"
+            old_bin = self._seed_old_bin(
+                configurations, "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin"
+            )
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(target.exists())
+            self.assertTrue(target.name.endswith("v1.0.2-stable.bin"))
+            # Old version + sidecar pruned.
+            self.assertFalse(old_bin.exists())
+            self.assertFalse(old_bin.with_suffix(".meta.json").exists())
+            # Exactly one stable Release-One bin remains.
+            remaining = sorted(p.name for p in configurations.glob("*.bin"))
+            self.assertEqual(remaining, [new_name])
+
+    def test_import_does_not_prune_different_config(self):
+        bin_bytes = _make_bin()
+        new_name = "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.2-stable.bin"
+        net = _build_network(bin_bytes, asset_name=new_name)
+        entry = _entry(
+            release_tag="v1.0.2",
+            version="1.0.2",
+            asset_name=new_name,
+            required_assets=[
+                new_name,
+                "checksums-sha256.txt",
+                "checksums-md5.txt",
+                "manifest.json",
+            ],
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            configurations = tmp_root / "firmware" / "configurations"
+            # A different config at an older version must NOT be touched.
+            other = self._seed_old_bin(
+                configurations, "Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin"
+            )
+            _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(other.exists())
+            self.assertTrue(other.with_suffix(".meta.json").exists())
+
+    def test_import_does_not_prune_newer_existing_version(self):
+        # Re-importing an OLDER version than what is already on disk must not
+        # delete the newer one (version_is_newer is strict).
+        bin_bytes = _make_bin()
+        old_name = "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin"
+        net = _build_network(bin_bytes, asset_name=old_name)
+        entry = _entry(asset_name=old_name)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            configurations = tmp_root / "firmware" / "configurations"
+            newer = self._seed_old_bin(
+                configurations, "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.2-stable.bin"
+            )
+            _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(newer.exists())
+
+    def test_import_does_not_prune_other_channel(self):
+        bin_bytes = _make_bin()
+        new_name = "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.2-stable.bin"
+        net = _build_network(bin_bytes, asset_name=new_name)
+        entry = _entry(
+            release_tag="v1.0.2",
+            version="1.0.2",
+            asset_name=new_name,
+            required_assets=[
+                new_name,
+                "checksums-sha256.txt",
+                "checksums-md5.txt",
+                "manifest.json",
+            ],
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            configurations = tmp_root / "firmware" / "configurations"
+            # Same config_string but a preview-channel build must survive.
+            preview = self._seed_old_bin(
+                configurations,
+                "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-preview.bin",
+            )
+            _run_import(entry, net, repo_root=tmp_root)
+            self.assertTrue(preview.exists())
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

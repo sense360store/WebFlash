@@ -28,8 +28,31 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const configurationsDir = path.join(repoRoot, 'firmware', 'configurations');
 
-const RELEASE_ONE_BIN = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin';
-const RELEASE_ONE_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.meta.json';
+// Version-agnostic Release-One resolution. The Release-One stable build is
+// bumped in place whenever upstream cuts a new version (e.g. v1.0.0 -> v1.0.2);
+// the importer stages the new .bin and prunes the superseded one, so exactly
+// one Sense360-Ceiling-POE-VentIQ-RoomIQ-v<semver>-stable.bin must be on disk.
+// Pinning a literal version re-broke this guard on every bump; resolving from
+// disk and asserting the singleton keeps the stale-binary protection intact
+// (two versions present => count !== 1 => fail) without the version coupling.
+const RELEASE_ONE_STABLE_RE =
+    /^Sense360-Ceiling-POE-VentIQ-RoomIQ-v\d+\.\d+\.\d+-stable\.bin$/;
+function resolveReleaseOneBin() {
+    const matches = fs
+        .readdirSync(configurationsDir)
+        .filter(name => RELEASE_ONE_STABLE_RE.test(name));
+    if (matches.length !== 1) {
+        throw new Error(
+            'Expected exactly one Release-One stable .bin matching ' +
+                `${RELEASE_ONE_STABLE_RE} in firmware/configurations/, found ` +
+                `${matches.length}: [${matches.join(', ')}]. A superseded ` +
+                'version was likely left on disk; regenerate after import.'
+        );
+    }
+    return matches[0];
+}
+const RELEASE_ONE_BIN = resolveReleaseOneBin();
+const RELEASE_ONE_SIDECAR = RELEASE_ONE_BIN.replace(/\.bin$/, '.meta.json');
 const LED_PREVIEW_BIN = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
 const LED_PREVIEW_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json';
 

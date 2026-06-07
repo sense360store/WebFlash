@@ -1,0 +1,35 @@
+{
+  "changelog": [
+    "First stable release published through the automated build and publish pipeline   - No functional firmware changes from 1.0.0"
+  ],
+  "known_issues": [
+    "FanTRIAC is not included in this firmware. It is a separate compile-only / advanced-preview build (mains-voltage TRIAC dimming), not stable, and remains gated by COMPLIANCE-001 (mains-voltage electrical-safety review).",
+    "Sense360 LED is not included in this firmware: the selected configuration 'Ceiling-POE-VentIQ-RoomIQ' does not include LED. The LED-bearing sibling lives on the preview channel."
+  ],
+  "features": [
+    "PoE-powered Sense360 Core configuration",
+    "VentIQ bathroom air-quality sensing",
+    "RoomIQ room sensing"
+  ],
+  "hardware_requirements": [
+    "Sense360 Core (`S360-100`)",
+    "Sense360 VentIQ (`S360-211`)",
+    "Sense360 RoomIQ (`S360-200`)",
+    "Sense360 PoE PSU (`S360-410`)"
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": true,
+  "source": {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.2",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.2",
+    "source_asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.2-stable.bin",
+    "source_asset_sha256": "bde76bf04b4afc004de6d0baf2e0d1fd2080adb59ef235aa2c276a6539048ccb",
+    "source_manifest_git_sha": "24b8a180e3e72c40912a47f85dfeae712dfb9e85",
+    "source_manifest_esphome_version": "2026.4.5",
+    "imported_at": "2026-06-07T19:33:32+00:00"
+  }
+}

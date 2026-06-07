@@ -128,11 +128,16 @@ jobs:
           # Stage only the files the importer is expected to produce; never
           # `git add -A`. Anything else getting picked up is a bug we want
           # to see fail rather than silently commit.
+          # The importer refreshes the vendored product-catalog fixture in the
+          # same run (see scripts/import-firmware-sources.py main()), so the
+          # fixture and the regenerated manifest move together in one commit and
+          # the strict manifest<->catalog version guard cannot drift.
           git add \
             firmware/configurations \
             manifest.json \
             firmware-*.json \
-            firmware/sources.json
+            firmware/sources.json \
+            __tests__/fixtures/esphome-product-catalog.json
           if git diff --cached --quiet; then
             echo "No changes to commit."
             exit 0

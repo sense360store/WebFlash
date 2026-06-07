@@ -796,11 +796,17 @@ describe('WF-PRODUCT-004 — workflow YAML parsing', () => {
 });
 
 describe('WF-PRODUCT-004 — surface helpers', () => {
+    // Version-agnostic: the Release-One stable build is bumped in place on a
+    // version change (v1.0.0 -> v1.0.2), so match the config + channel shape
+    // rather than a literal version that re-breaks on every upstream bump.
+    const RELEASE_ONE_STABLE_RE =
+        /^Sense360-Ceiling-POE-VentIQ-RoomIQ-v\d+\.\d+\.\d+-stable\.bin$/;
+
     test('listConfigurationBins returns the on-disk Release-One + LED preview .bin pair', () => {
         const bins = listConfigurationBins(CONFIGURATIONS_DIR);
+        expect(bins.some(name => RELEASE_ONE_STABLE_RE.test(name))).toBe(true);
         expect(bins).toEqual(
             expect.arrayContaining([
-                'Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin',
                 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin'
             ])
         );
@@ -808,9 +814,11 @@ describe('WF-PRODUCT-004 — surface helpers', () => {
 
     test('listConfigurationSidecars returns matching .meta.json files', () => {
         const sidecars = listConfigurationSidecars(CONFIGURATIONS_DIR);
+        const releaseOneSidecarRe =
+            /^Sense360-Ceiling-POE-VentIQ-RoomIQ-v\d+\.\d+\.\d+-stable\.meta\.json$/;
+        expect(sidecars.some(name => releaseOneSidecarRe.test(name))).toBe(true);
         expect(sidecars).toEqual(
             expect.arrayContaining([
-                'Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.meta.json',
                 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json'
             ])
         );
