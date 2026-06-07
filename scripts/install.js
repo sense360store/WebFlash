@@ -110,6 +110,18 @@ export function composeInstallEnabled({ gateCanInstall, configString, fanControl
   return true;
 }
 
+// Formats the resolved build's firmware version and channel for display, read
+// live from the loaded manifest entry (never hardcoded). Returns a simple label
+// like "Firmware v1.0.2 (stable)". Fails gracefully when a build entry lacks a
+// version so the UI never crashes: "Firmware version unknown".
+export function formatFirmwareVersion(build) {
+  if (!build || typeof build !== 'object') return '';
+  const version = typeof build.version === 'string' ? build.version.trim() : '';
+  if (!version) return 'Firmware version unknown';
+  const channel = typeof build.channel === 'string' ? build.channel.trim() : '';
+  return channel ? `Firmware v${version} (${channel})` : `Firmware v${version}`;
+}
+
 // Maps the engine's machine-readable check status to the preflight row icon.
 // Read by status (pass/warn/fail/pending), never by parsing the detail copy.
 const READY_ICON = {
@@ -588,6 +600,11 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // also hides the footer — matching the v3 design, where the flash-progress and
   // success states have no footer.
   const shortName = String(device.name || '').split('·')[0].split('—')[0].trim() || device.name || '';
+  // The resolved build's version + channel, read live from the loaded manifest
+  // entry, shown in the Selected device panel so the operator can see exactly
+  // which firmware is about to be flashed. Empty (and so unrendered) when no
+  // build resolved; "Firmware version unknown" when a build lacks a version.
+  const fwVersionLabel = formatFirmwareVersion(build);
   const footEl = h('div', { class: 'winfoot install-step__foot' },
     h('div', { class: 'stepnav' },
       h('button', { class: 'btn btn--ghost', type: 'button', onClick: onBack }, icon('arrowL'), ' Back'),
@@ -630,6 +647,9 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
               h('div', { class: 'devsum__main' },
                 h('div', { class: 'devsum__name' }, device.name),
                 h('div', { class: 'devsum__meta' }, device.target),
+                fwVersionLabel
+                  ? h('div', { class: 'devsum__fw', 'data-firmware-version': '' }, fwVersionLabel)
+                  : null,
               ),
             ),
           ),
