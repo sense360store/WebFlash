@@ -432,12 +432,24 @@ describe('PR 5 — InstallStep bound to the engine', () => {
     const { root, resolved } = await mountInstallStep({
       mount: 'ceiling', power: 'poe', bathroom: true, ventiq: 'ventiq', roomiq: 'roomiq',
     });
-    // The stable Bathroom PoE build resolves to v1.0.2 (stable) in the current
-    // manifest. The label must mirror the resolved build, not a hardcoded value.
+    // The label must mirror the resolved build's version and channel, read
+    // from the manifest — not a hardcoded version string, which would
+    // re-break on every firmware bump (it last broke on the 1.0.2 -> 1.0.4
+    // import). The stable Bathroom PoE selection resolves to the
+    // Ceiling-POE-VentIQ-RoomIQ build.
     const fwEl = root.querySelector('[data-firmware-version]');
     expect(fwEl).not.toBeNull();
     expect(fwEl.textContent).toBe(`Firmware v${resolved.build.version} (${resolved.build.channel})`);
-    expect(fwEl.textContent).toBe('Firmware v1.0.2 (stable)');
+    // Cross-check the resolved build against the manifest fixture so the
+    // assertion stays grounded in real manifest data rather than being
+    // purely self-referential.
+    const manifestBuild = manifestJson.builds.find(
+      (b) => b.config_string === resolved.build.config_string,
+    );
+    expect(manifestBuild).toBeDefined();
+    expect(resolved.build.version).toBe(manifestBuild.version);
+    expect(resolved.build.channel).toBe(manifestBuild.channel);
+    expect(fwEl.textContent).toBe(`Firmware v${manifestBuild.version} (${manifestBuild.channel})`);
   });
 });
 
