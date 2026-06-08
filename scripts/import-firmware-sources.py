@@ -67,22 +67,35 @@ DEFAULT_REQUIRED_SECTIONS: Tuple[str, ...] = (
 DEFAULT_MIN_SIZE_BYTES = 102_400
 
 
+# A Sense360-shaped release tag: optional single leading v/V, semver core, any
+# suffix. Mirrors add-firmware-source._SEMVER_TAG_RE.
+_SEMVER_TAG_RE = re.compile(r"^[vV]?(\d+\.\d+\.\d+.*)$")
+
+
 def normalize_tag(raw: str) -> str:
     """Canonicalize a human-entered release tag to Sense360's form.
 
-    Mirrors ``add-firmware-source.normalize_tag`` (kept as a tiny self-contained
-    copy rather than a cross-script import, matching this directory's stdlib-only
-    convention). Sense360 tags are ``v`` + semver + an optional lowercase channel
-    suffix, all lowercase, so this trims whitespace, lowercases, and ensures
-    exactly one leading ``v``. ``firmware/sources.json`` stores the canonical
-    tag, so normalizing the ``--release-tag`` filter to canonical form before
-    matching is all that is needed for ``V1.0.5`` / ``1.0.5`` to resolve.
+    Behaviour-identical mirror of ``add-firmware-source.normalize_tag`` (kept as
+    a tiny self-contained copy rather than a cross-script import, matching this
+    directory's stdlib-only convention). Canonicalization is **conditional**: a
+    Sense360-shaped tag (optional single leading ``v``/``V``, then a semver core,
+    then any suffix) is trimmed, has its single optional ``v``/``V`` stripped,
+    lowercased, and re-prefixed with one ``v`` (``V1.0.5`` -> ``v1.0.5``,
+    ``1.0.5`` -> ``v1.0.5``, ``v1.0.0-PREVIEW`` -> ``v1.0.0-preview``). Anything
+    that does not look like a semver tag (``release-1.0.0``, ``latest``, a
+    custom-repo tag) is returned trimmed but otherwise unchanged, preserving the
+    pre-normalization verbatim behaviour. ``firmware/sources.json`` stores the
+    canonical tag, so normalizing the ``--release-tag`` filter to canonical form
+    before matching is enough for ``V1.0.5`` / ``1.0.5`` to resolve.
     """
 
-    text = (raw or "").strip().lower()
+    text = (raw or "").strip()
     if not text:
+        return ""
+    match = _SEMVER_TAG_RE.match(text)
+    if not match:
         return text
-    return "v" + text.lstrip("v")
+    return "v" + match.group(1).lower()
 
 
 # --- Shared helper loading -------------------------------------------------

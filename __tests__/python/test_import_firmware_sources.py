@@ -588,6 +588,15 @@ class ReleaseTagFilterNormalizationTests(unittest.TestCase):
         self.assertEqual(importer.normalize_tag("v1.0.0-PREVIEW"), "v1.0.0-preview")
         self.assertEqual(importer.normalize_tag(""), "")
 
+    def test_non_semver_tags_pass_through_unchanged(self):
+        # Mirror of the authoring script: non-semver tags are returned verbatim
+        # (trimmed only), preserving pre-normalization behaviour.
+        self.assertEqual(importer.normalize_tag("release-1.0.0"), "release-1.0.0")
+        self.assertEqual(importer.normalize_tag(" release-1.0.0 "), "release-1.0.0")
+        self.assertEqual(importer.normalize_tag("latest"), "latest")
+        self.assertEqual(importer.normalize_tag("Custom-Repo-Tag"), "Custom-Repo-Tag")
+        self.assertEqual(importer.normalize_tag("vv1.0.5"), "vv1.0.5")
+
     def test_uppercase_filter_resolves_to_canonical_entry(self):
         sources = [_entry(release_tag="v1.0.0")]
         for raw in ("v1.0.0", "V1.0.0", "1.0.0", " 1.0.0 "):

@@ -109,6 +109,11 @@ SCHEMA_VERSION = 1
 _CHECKSUM_LINE_RE = re.compile(r"^([0-9a-fA-F]{64})\s+\*?(.+?)\s*$")
 _HEX64_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _SEMVER_RE = re.compile(r"(\d+\.\d+\.\d+)")
+# A Sense360-shaped release tag: an optional single leading v/V, then a semver
+# core, then any suffix. Group 1 is everything after the optional leading v/V.
+# Used by normalize_tag to canonicalize only genuine release tags and leave
+# non-semver tags (release-1.0.0, latest, custom-repo tags) verbatim.
+_SEMVER_TAG_RE = re.compile(r"^[vV]?(\d+\.\d+\.\d+.*)$")
 
 # Canonical key order for a generated entry. Mirrors the committed preview
 # entries in firmware/sources.json so generated entries read identically.
@@ -142,26 +147,36 @@ def normalize_tag(raw: str) -> str:
 
     Sense360 release tags are ``v`` + semver + an optional lowercase channel
     suffix, all lowercase (e.g. ``v1.0.0``, ``v1.0.0-preview``). Humans type
-    them inconsistently, so this canonicalizes formatting only — it never
-    changes *which* release is meant:
+    those inconsistently, so this canonicalizes formatting only — it never
+    changes *which* release is meant.
 
-    * trim surrounding whitespace,
-    * lowercase the whole string (so an uppercase channel suffix like
-      ``-PREVIEW`` matches, and ``infer_channel`` sees the canonical suffix),
-    * ensure exactly one leading ``v`` (prepend when absent).
+    Canonicalization is **conditional**: it applies only to tags that look like
+    a Sense360 release tag (an optional single leading ``v``/``V``, then a
+    ``\\d+.\\d+.\\d+`` semver core, then any suffix). For those, this:
+
+    * trims surrounding whitespace,
+    * strips exactly one optional leading ``v``/``V`` (never more),
+    * lowercases (so an uppercase channel suffix like ``-PREVIEW`` matches, and
+      ``infer_channel`` sees the canonical suffix),
+    * re-prepends a single ``v``.
 
     So ``"V1.0.5"`` -> ``"v1.0.5"``, ``" 1.0.5 "`` -> ``"v1.0.5"``, and
-    ``"v1.0.0-PREVIEW"`` -> ``"v1.0.0-preview"``. An empty / whitespace-only
+    ``"v1.0.0-PREVIEW"`` -> ``"v1.0.0-preview"``.
+
+    Anything that does **not** look like a semver tag (``"release-1.0.0"``,
+    ``"latest"``, an uppercase custom-repo tag) is returned trimmed but
+    otherwise unchanged — no ``v`` prepend, no lowercasing — preserving the
+    pre-normalization verbatim-fetch behaviour. An empty / whitespace-only
     input normalizes to ``""`` (which still fails closed downstream).
     """
 
-    text = (raw or "").strip().lower()
+    text = (raw or "").strip()
     if not text:
+        return ""
+    match = _SEMVER_TAG_RE.match(text)
+    if not match:
         return text
-    # Collapse any leading run of 'v's down to exactly one. The semver core
-    # always starts with a digit, so stripping leading 'v's never eats part of
-    # the version.
-    return "v" + text.lstrip("v")
+    return "v" + match.group(1).lower()
 
 
 def infer_channel(tag: str) -> str:

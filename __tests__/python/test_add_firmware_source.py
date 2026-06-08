@@ -162,14 +162,24 @@ class NormalizeTagTests(unittest.TestCase):
         self.assertEqual(mod.normalize_tag("v1.0.0"), "v1.0.0")
         self.assertEqual(mod.normalize_tag(mod.normalize_tag("V1.0.0")), "v1.0.0")
 
-    def test_exactly_one_leading_v(self):
-        # Duplicate leading v's collapse to one; the semver core (digit-led) is
-        # never eaten by the leading-v strip.
-        self.assertEqual(mod.normalize_tag("vv1.0.5"), "v1.0.5")
-
     def test_empty_input_stays_empty(self):
         self.assertEqual(mod.normalize_tag(""), "")
         self.assertEqual(mod.normalize_tag("   "), "")
+
+    def test_non_semver_tags_pass_through_unchanged(self):
+        # Tags that don't look like a Sense360 release tag are returned trimmed
+        # but otherwise verbatim: no 'v' prepend, no lowercasing. This preserves
+        # the pre-normalization verbatim-fetch behaviour.
+        self.assertEqual(mod.normalize_tag("release-1.0.0"), "release-1.0.0")
+        self.assertEqual(mod.normalize_tag(" release-1.0.0 "), "release-1.0.0")
+        self.assertEqual(mod.normalize_tag("latest"), "latest")
+        self.assertEqual(mod.normalize_tag("Custom-Repo-Tag"), "Custom-Repo-Tag")
+        self.assertEqual(mod.normalize_tag("RELEASE-2.0"), "RELEASE-2.0")
+
+    def test_only_one_optional_leading_v_is_stripped(self):
+        # The regex strips exactly one optional v/V; a second leading 'v' is
+        # part of a non-semver tag and is left verbatim (no lstrip("v")).
+        self.assertEqual(mod.normalize_tag("vv1.0.5"), "vv1.0.5")
 
     def test_lowercasing_makes_infer_channel_correct_for_any_case(self):
         # The reason normalize_tag lowercases: infer_channel's suffix match.
