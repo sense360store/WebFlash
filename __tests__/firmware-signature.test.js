@@ -297,34 +297,65 @@ describe('verifyFirmwareSignature — production-mode refusal of test_only keys'
         ]).toContain(result.code);
     });
 
-    test('every fixture binary in manifest.json is REFUSED in production mode', async () => {
-        // The single most important regression test: the committed
-        // manifest, signed by the test_only key, must NOT install via
-        // the wizard's production-mode install gate.
+    test('every fixture binary in manifest.json gets the correct production-mode outcome for its signing key', async () => {
+        // The single most important regression test, partitioned by the
+        // status of the key each build is signed with (the committed
+        // manifest is now mixed: before any real release every build was
+        // signed by the test_only dev key, but the flagship 1.0.4 build is
+        // signed by the pinned ACTIVE production key sense360-prod-2026-02).
+        //
+        // Security invariant that must NOT regress: a build signed by a
+        // `test_only` key (its private half is in the public repo) is
+        // REFUSED with KEY_TEST_ONLY_IN_PRODUCTION under the production
+        // default mode. A build signed by an `active` production key is
+        // ACCEPTED. We assert the right outcome for each partition instead
+        // of a blanket refusal so the test reflects the now-mixed manifest
+        // without weakening the test_only refusal. The test_only refusal is
+        // also exercised directly, independent of the manifest, by the
+        // synthetic-payload tests above (signWithDevKey + dev-2026-01).
         const manifest = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'manifest.json'), 'utf8'));
         const signed = manifest.builds.filter(b => b.signature_ed25519);
         expect(signed.length).toBeGreaterThan(0);
         for (const build of signed) {
             const binPath = build.parts[0].path;
             const bytes = fs.readFileSync(path.join(process.cwd(), binPath));
+            const trusted = findTrustedKey(build.signature_key_id);
             const result = await verifyFirmwareSignature(
                 new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength),
                 build.signature_ed25519,
                 { keyId: build.signature_key_id }
                 // Note: no `mode` option ⇒ production default
             );
-            expect(result.ok).toBe(false);
-            expect(result.code).toBe(SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION);
+            if (trusted && trusted.status === 'test_only') {
+                // Refused: a test_only key must never install in production.
+                expect(result.ok).toBe(false);
+                expect(result.code).toBe(SIGNATURE_RESULT_CODES.KEY_TEST_ONLY_IN_PRODUCTION);
+            } else {
+                // Accepted: a build signed by the pinned active production
+                // key verifies under the production default mode. Any other
+                // outcome (including an unexpectedly missing trust entry) is
+                // a real regression, so surface the detail.
+                if (!result.ok) {
+                    throw new Error(
+                        `Manifest build ${binPath} (key=${build.signature_key_id}) was unexpectedly ` +
+                        `REFUSED in production mode: ${result.code} — ${result.message}`
+                    );
+                }
+                expect(result.ok).toBe(true);
+                expect(result.code).toBe(SIGNATURE_RESULT_CODES.VERIFIED);
+            }
         }
     });
 
-    test('production mode refusal is by-design: all current signed fixtures fail', async () => {
-        // Asserts the explicit policy contract: in production mode, NO
-        // currently-shipped fixture verifies, because all of them are
-        // signed by test_only keys. If this test starts passing, it
-        // means a real production key has been added — at which point
-        // the trust-list test_only marker on dev-2026-01 may need to be
-        // re-checked too.
+    test('production mode refusal is by-design: a test_only-key payload is refused', async () => {
+        // Asserts the explicit policy contract: in production mode a payload
+        // signed by the committed test_only dev key (dev-2026-01) NEVER
+        // verifies, regardless of what the manifest ships. (The manifest is
+        // now mixed — the flagship build is signed by the active production
+        // key — but this contract is about the test_only key specifically,
+        // whose private half is in the public repo. If THIS test ever starts
+        // passing the verification, the trust-list test_only marker on
+        // dev-2026-01 has been weakened and that is a security regression.)
         const message = new TextEncoder().encode('outsider firmware');
         const sigB64 = signWithDevKey(message);
         const result = await verifyFirmwareSignature(message, sigB64, { keyId: 'dev-2026-01', mode: 'production' });

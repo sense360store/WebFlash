@@ -17,6 +17,7 @@ import {
     isMutableSourceUrl,
     sourceUrlMatchesCommit
 } from '../scripts/utils/firmware-provenance.js';
+import { findTrustedKey } from '../scripts/utils/firmware-trusted-keys.js';
 
 const VALID_STABLE_BUILD = Object.freeze({
     channel: 'stable',
@@ -531,12 +532,11 @@ describe('manifest.json — provenance integration', () => {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
     test('every stable build in manifest.json passes the provenance gate UNDER TEST MODE', () => {
-        // The committed manifest is signed by the test_only dev key (its
-        // private half is in the public repo for fixture signing). The
-        // deployed wizard runs in PRODUCTION mode and refuses these; the
-        // stricter behaviour is asserted in the next test. Here we just
-        // confirm that, *given* the test_only key is acceptable (i.e.
-        // mode='test'), the rest of the metadata is well-formed.
+        // Test mode accepts both `active` production keys and the committed
+        // `test_only` dev key, so this assertion just confirms the rest of
+        // each stable build's metadata is well-formed regardless of which
+        // key signed it. The production-mode outcome (active accepted,
+        // test_only refused) is partitioned and asserted in the next test.
         const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
         expect(stableBuilds.length).toBeGreaterThan(0);
         for (const build of stableBuilds) {
@@ -550,26 +550,43 @@ describe('manifest.json — provenance integration', () => {
         }
     });
 
-    test('every stable build in manifest.json is REFUSED by the production-mode static gate', () => {
-        // Backstop check: the committed manifest must not be installable
-        // from the deployed wizard while it ships test_only signatures.
-        // If this test starts failing, it means either:
-        //   (a) the trust list now contains an 'active' key whose
-        //       private half is in CI secrets and the publish pipeline
-        //       has been migrated — at which point the manifest may be
-        //       legitimately installable, OR
-        //   (b) something has weakened the production-mode refusal of
-        //       test_only keys, which is a security regression.
-        // Either way, anyone updating this test must understand which
-        // case applies.
+    test('every stable build in manifest.json gets the correct production-mode static-gate outcome for its signing key', () => {
+        // Backstop check, partitioned by the trust-list status of each
+        // build's signing key. Case (a) below has now happened: the trust
+        // list contains an ACTIVE production key (sense360-prod-2026-02)
+        // whose private half lives only in CI secrets, and the flagship
+        // 1.0.4 stable build is signed by it, so it is LEGITIMATELY accepted
+        // by the production-mode static gate. The security invariant that
+        // must NOT regress is case (b): a build signed by a `test_only` key
+        // (its private half is in the public repo) must still be REFUSED
+        // with a test_only blocking reason. We assert the right outcome for
+        // each partition instead of a blanket refusal.
+        //
+        // The test_only static-gate refusal is also exercised directly,
+        // independent of the manifest, with a synthetic dev-2026-01 build in
+        // firmware-signature.test.js ('production mode static gate REFUSES
+        // test_only-signed stable build before runtime check').
         const stableBuilds = manifest.builds.filter(build => build.channel === 'stable');
         expect(stableBuilds.length).toBeGreaterThan(0);
         for (const build of stableBuilds) {
+            const trusted = findTrustedKey(build.signature_key_id);
             const report = validateFirmwareProvenance(build);  // mode defaults to 'production'
-            expect(report.ok).toBe(false);
-            // The blocking reason should mention test_only so support and
-            // operators can quickly identify the cause.
-            expect(report.blockingReasons.join(' ')).toMatch(/test_only/i);
+            if (trusted && trusted.status === 'test_only') {
+                expect(report.ok).toBe(false);
+                // The blocking reason should mention test_only so support and
+                // operators can quickly identify the cause.
+                expect(report.blockingReasons.join(' ')).toMatch(/test_only/i);
+            } else {
+                // Active production key (or any non-test_only trusted key):
+                // the static gate must not block on key status.
+                if (!report.ok) {
+                    throw new Error(
+                        `Stable build ${build?.config_string} (key=${build.signature_key_id}) ` +
+                        `was unexpectedly REFUSED by the production static gate: ${report.summary}`
+                    );
+                }
+                expect(report.ok).toBe(true);
+            }
         }
     });
 
