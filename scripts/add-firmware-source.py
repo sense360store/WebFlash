@@ -109,6 +109,11 @@ SCHEMA_VERSION = 1
 _CHECKSUM_LINE_RE = re.compile(r"^([0-9a-fA-F]{64})\s+\*?(.+?)\s*$")
 _HEX64_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _SEMVER_RE = re.compile(r"(\d+\.\d+\.\d+)")
+# A Sense360-shaped release tag: an optional single leading v/V, then a semver
+# core, then any suffix. Group 1 is everything after the optional leading v/V.
+# Used by normalize_tag to canonicalize only genuine release tags and leave
+# non-semver tags (release-1.0.0, latest, custom-repo tags) verbatim.
+_SEMVER_TAG_RE = re.compile(r"^[vV]?(\d+\.\d+\.\d+.*)$")
 
 # Canonical key order for a generated entry. Mirrors the committed preview
 # entries in firmware/sources.json so generated entries read identically.
@@ -135,6 +140,43 @@ class SourceAuthoringError(RuntimeError):
 # =====================================================================
 # Pure logic (no network) — unit-testable with synthetic data.
 # =====================================================================
+
+
+def normalize_tag(raw: str) -> str:
+    """Canonicalize a human-entered release tag to Sense360's form.
+
+    Sense360 release tags are ``v`` + semver + an optional lowercase channel
+    suffix, all lowercase (e.g. ``v1.0.0``, ``v1.0.0-preview``). Humans type
+    those inconsistently, so this canonicalizes formatting only — it never
+    changes *which* release is meant.
+
+    Canonicalization is **conditional**: it applies only to tags that look like
+    a Sense360 release tag (an optional single leading ``v``/``V``, then a
+    ``\\d+.\\d+.\\d+`` semver core, then any suffix). For those, this:
+
+    * trims surrounding whitespace,
+    * strips exactly one optional leading ``v``/``V`` (never more),
+    * lowercases (so an uppercase channel suffix like ``-PREVIEW`` matches, and
+      ``infer_channel`` sees the canonical suffix),
+    * re-prepends a single ``v``.
+
+    So ``"V1.0.5"`` -> ``"v1.0.5"``, ``" 1.0.5 "`` -> ``"v1.0.5"``, and
+    ``"v1.0.0-PREVIEW"`` -> ``"v1.0.0-preview"``.
+
+    Anything that does **not** look like a semver tag (``"release-1.0.0"``,
+    ``"latest"``, an uppercase custom-repo tag) is returned trimmed but
+    otherwise unchanged — no ``v`` prepend, no lowercasing — preserving the
+    pre-normalization verbatim-fetch behaviour. An empty / whitespace-only
+    input normalizes to ``""`` (which still fails closed downstream).
+    """
+
+    text = (raw or "").strip()
+    if not text:
+        return ""
+    match = _SEMVER_TAG_RE.match(text)
+    if not match:
+        return text
+    return "v" + match.group(1).lower()
 
 
 def infer_channel(tag: str) -> str:
@@ -502,8 +544,45 @@ def load_policy(path: Optional[Path]) -> Dict[str, Any]:
 # =====================================================================
 
 
+def list_release_tags(source_repo: str, token: Optional[str]) -> List[str]:
+    """Return the repo's available release tag names (best-effort).
+
+    Used only to enrich a 404 error message, so this never raises: any failure
+    (network, rate-limit, non-JSON) yields an empty list and the caller falls
+    back to a plain "no release matching" message.
+    """
+
+    url = f"https://api.github.com/repos/{source_repo}/releases?per_page=100"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": USER_AGENT,
+        },
+    )
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request) as response:
+            charset = response.headers.get_content_charset() or "utf-8"
+            data = json.loads(response.read().decode(charset))
+    except Exception:  # pragma: no cover - best-effort enrichment only
+        return []
+    if not isinstance(data, list):
+        return []
+    return [
+        release["tag_name"]
+        for release in data
+        if isinstance(release, dict) and isinstance(release.get("tag_name"), str)
+    ]
+
+
 def fetch_release_metadata(
-    source_repo: str, release_tag: str, token: Optional[str]
+    source_repo: str,
+    release_tag: str,
+    token: Optional[str],
+    *,
+    raw_tag: Optional[str] = None,
 ) -> Dict[str, Any]:
     url = f"https://api.github.com/repos/{source_repo}/releases/tags/{release_tag}"
     request = urllib.request.Request(
@@ -520,6 +599,19 @@ def fetch_release_metadata(
             charset = response.headers.get_content_charset() or "utf-8"
             payload = response.read().decode(charset)
     except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            # A genuinely nonexistent tag still fails closed (SourceAuthoringError);
+            # we just make the message actionable by showing what the operator
+            # typed, the canonical form we resolved it to, and the tags that do
+            # exist upstream.
+            shown_input = raw_tag if raw_tag is not None else release_tag
+            available = list_release_tags(source_repo, token)
+            available_str = ", ".join(available) if available else "(none found)"
+            raise SourceAuthoringError(
+                f"GitHub API found no release matching '{shown_input}' "
+                f"(normalized '{release_tag}') in {source_repo}; "
+                f"available: {available_str}."
+            ) from exc
         raise SourceAuthoringError(
             f"GitHub API request for {source_repo} {release_tag} failed: "
             f"{exc.code} {exc.reason}. The default GITHUB_TOKEN can read public "
@@ -655,11 +747,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     )
 
     try:
+        # Canonicalize the human-entered tag once, up front, so fetch,
+        # derive_version, and infer_channel all see the same canonical form
+        # (e.g. "V1.0.5" / " 1.0.5 " -> "v1.0.5", "-PREVIEW" -> "-preview").
+        # This only normalizes formatting; a nonexistent tag still 404s below.
+        tag = normalize_tag(args.tag)
         policy = load_policy(Path(args.policy) if args.policy else None)
-        channel = (args.channel or "").strip() or infer_channel(args.tag)
-        version = derive_version(args.tag, args.version)
+        channel = (args.channel or "").strip() or infer_channel(tag)
+        version = derive_version(tag, args.version)
 
-        release = fetch_release_metadata(args.repo, args.tag, token)
+        release = fetch_release_metadata(args.repo, tag, token, raw_tag=args.tag)
         asset_index = index_assets_by_name(release)
         asset_names = list(asset_index.keys())
 
@@ -681,7 +778,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         entry = build_entry(
             source_repo=args.repo,
-            release_tag=args.tag,
+            release_tag=tag,
             config_string=args.config,
             version=version,
             channel=channel,

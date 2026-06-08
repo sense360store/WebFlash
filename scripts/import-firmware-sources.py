@@ -67,6 +67,37 @@ DEFAULT_REQUIRED_SECTIONS: Tuple[str, ...] = (
 DEFAULT_MIN_SIZE_BYTES = 102_400
 
 
+# A Sense360-shaped release tag: optional single leading v/V, semver core, any
+# suffix. Mirrors add-firmware-source._SEMVER_TAG_RE.
+_SEMVER_TAG_RE = re.compile(r"^[vV]?(\d+\.\d+\.\d+.*)$")
+
+
+def normalize_tag(raw: str) -> str:
+    """Canonicalize a human-entered release tag to Sense360's form.
+
+    Behaviour-identical mirror of ``add-firmware-source.normalize_tag`` (kept as
+    a tiny self-contained copy rather than a cross-script import, matching this
+    directory's stdlib-only convention). Canonicalization is **conditional**: a
+    Sense360-shaped tag (optional single leading ``v``/``V``, then a semver core,
+    then any suffix) is trimmed, has its single optional ``v``/``V`` stripped,
+    lowercased, and re-prefixed with one ``v`` (``V1.0.5`` -> ``v1.0.5``,
+    ``1.0.5`` -> ``v1.0.5``, ``v1.0.0-PREVIEW`` -> ``v1.0.0-preview``). Anything
+    that does not look like a semver tag (``release-1.0.0``, ``latest``, a
+    custom-repo tag) is returned trimmed but otherwise unchanged, preserving the
+    pre-normalization verbatim behaviour. ``firmware/sources.json`` stores the
+    canonical tag, so normalizing the ``--release-tag`` filter to canonical form
+    before matching is enough for ``V1.0.5`` / ``1.0.5`` to resolve.
+    """
+
+    text = (raw or "").strip()
+    if not text:
+        return ""
+    match = _SEMVER_TAG_RE.match(text)
+    if not match:
+        return text
+    return "v" + match.group(1).lower()
+
+
 # --- Shared helper loading -------------------------------------------------
 #
 # ``sync-from-releases.py`` already factors release-body parsing, sidecar
@@ -761,8 +792,14 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     sources = load_sources(Path(args.sources))
+    # Canonicalize the human-entered --release-tag filter so it resolves whether
+    # it was typed v1.0.5, V1.0.5, or 1.0.5. sources.json stores the canonical
+    # tag, so matching the normalized filter against it is sufficient.
+    release_tag_filter = (
+        normalize_tag(args.release_tag) if args.release_tag else args.release_tag
+    )
     selected = filter_sources(
-        sources, source_repo=args.source_repo, release_tag=args.release_tag
+        sources, source_repo=args.source_repo, release_tag=release_tag_filter
     )
     token = (
         args.token
