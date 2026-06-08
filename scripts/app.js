@@ -48,6 +48,7 @@ const state = {
   recResolved: null, // engine verdict for recKit, resolved once (null = pending)
   sel: { ...DEFAULT_SEL },
   resolved: null, // last engine compatible-firmware verdict (null = pending)
+  kitVersions: new Map(), // config_string -> firmware version, for the Browse table
   theme: 'light',
 };
 
@@ -58,6 +59,37 @@ const state = {
 function recommendedKit(kits) {
   if (!Array.isArray(kits) || kits.length === 0) return null;
   return kits.find((k) => k && k.recommended) || kits[0];
+}
+
+// Resolve each catalogue kit's firmware version from the live manifest, keyed by
+// config_string, so the Browse table can show a per-row version. This reuses the
+// exact engine lookup the Install step uses (resolveCompatibleFirmware), so a
+// row's version always matches the build that kit would flash, and it never
+// hardcodes a version. The lookup is a pure manifest read (no shared-state
+// mutation); a kit whose config has no published build simply gets no entry, and
+// its row renders no version rather than crashing. Re-renders once resolved so
+// the table fills in. Deduped by config_string (Living / Corridor share one).
+async function resolveKitVersions() {
+  if (!engine || !Array.isArray(state.kits) || state.kits.length === 0) return;
+  const configStrings = [...new Set(
+    state.kits.map((kit) => kit && kit.firmware_config_string).filter(Boolean),
+  )];
+  const versions = new Map();
+  await Promise.all(configStrings.map(async (configString) => {
+    const kit = state.kits.find((k) => k && k.firmware_config_string === configString);
+    if (!kit || !kit.wizard_state) return;
+    try {
+      const resolved = await engine.state.resolveCompatibleFirmware(kit.wizard_state);
+      const version = resolved && resolved.build && typeof resolved.build.version === 'string'
+        ? resolved.build.version.trim()
+        : '';
+      if (version) versions.set(configString, version);
+    } catch {
+      /* leave unset — the row renders no version, never crashes */
+    }
+  }));
+  state.kitVersions = versions;
+  render();
 }
 
 // Engine accessibility primitives, injected at mount time. Defaults are no-ops so
@@ -421,6 +453,7 @@ function buildStep() {
       recKit: state.recKit, recResolved: state.recResolved, onInstallKit,
       sel: state.sel, setSel,
       resolved: state.resolved,
+      kitVersions: state.kitVersions,
       sourceUrl: ESPHOME_SOURCE_URL,
       onContinue: () => goTo(1),
     });
@@ -590,6 +623,11 @@ async function initFromEngine() {
     }
     render();
   }
+
+  // Resolve every catalogue kit's manifest version for the Browse table. Fire and
+  // forget: it re-renders once the per-config lookups settle, so the version
+  // column fills in without blocking the recommendation landing or the selection.
+  resolveKitVersions();
 
   syncSelection();
 }

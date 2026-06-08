@@ -245,9 +245,9 @@ describe('WF2-IDENTIFY-RECO — View 2: catalogue table', () => {
     expect(rows(root)).toHaveLength(TOTAL);
     expect(countText(root)).toBe(`${TOTAL} of ${TOTAL}`);
 
-    // Column headers.
+    // Column headers (Version added between Channel and Parts).
     const heads = [...root.querySelectorAll('.ktable thead th')].map((th) => th.textContent);
-    expect(heads).toEqual(['Kit', 'Channel', 'Parts', 'Boards', 'Firmware target']);
+    expect(heads).toEqual(['Kit', 'Channel', 'Version', 'Parts', 'Boards', 'Firmware target']);
   });
 
   it('marks the recommended row (accent dot + Rec pill) and channel pills per kit', async () => {
