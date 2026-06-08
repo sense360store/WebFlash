@@ -1,0 +1,61 @@
+name: "CI: PR Tests"
+
+# Pull-request test gate.
+#
+# This workflow runs the SAME unit-test suites as the deploy gate (the `test`
+# job in firmware-publish.yml) but on `pull_request` instead of push-to-main,
+# so a red test blocks the PR review instead of only surfacing post-merge when
+# the deploy workflow runs. Before this gate existed, test breakage merged to
+# main was caught at deploy time and blocked the Pages deploy of every later
+# merge until the tests were fixed.
+#
+# This workflow is READ-ONLY and never deploys: no manifest generation, no
+# firmware signing, no Pages publish, no commits. It only proves the suites are
+# green. The deploy gate in firmware-publish.yml remains the authority for
+# manifest generation, the REQUIRED_CONFIGS allowlist, signing, and publishing.
+#
+# Trigger choice: `pull_request` only. Push-to-main is already covered by the
+# `test` job in firmware-publish.yml, and adding a `push` trigger here would
+# double-run on every PR-branch synchronize. The concurrency group cancels
+# superseded runs when a PR is updated.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-pr-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    # Identical suite to firmware-publish.yml's `test` job. Keep the action
+    # pins, Node/Python versions, and commands in sync with that job.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run unit tests
+        run: npm test -- --ci
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      - name: Run Python unit tests
+        # Mirrors the deploy gate: the Python suite uses only stdlib, so no pip
+        # install is required for the test step itself.
+        run: python -m unittest discover -s __tests__/python -p 'test_*.py' -v
