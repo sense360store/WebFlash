@@ -1,6 +1,6 @@
 {
   "name": "Sense360 ESP32 Firmware - Core Module",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -10,24 +10,24 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-v1.0.5-stable.bin",
           "offset": 0,
-          "md5": "36e703b6449987aa19b4f434b68c85f7",
-          "sha256": "2c7d691c70a557d8df4ef2ba58a6dc43195b952b6c209c89d5522a392f47b937",
-          "signature": "j0ZE+ylYpmoxIaxwffJDPkEYWcoRo0VjNsPA/ILdjgA=",
-          "signature_ed25519": "lWKDMoTeLEtZTWErr8dpK56P8aHFWy3Yb1Klu0AKgwnGjlwRM/4hXobtZ85i8DEbCDQMtIv5jWiekQq3jIWsCA==",
+          "md5": "cff8be22ba97aaf1e649f31d33c29a03",
+          "sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
+          "signature": "VKuNtYR65Yjt5TNsc0+V2T2i+PFThh4LibxkjyupSrY=",
+          "signature_ed25519": "P581qPt5dsBkeWnjZpVLs1rosq0wWlF2bbc+Vm+vU4OWxHr6cOAZIrP2A2OyMW9o+Ji0vJUnXSwD9IzsT4ITBA==",
           "signature_key_id": "sense360-prod-2026-02"
         }
       ],
       "improv": true,
-      "md5": "36e703b6449987aa19b4f434b68c85f7",
-      "sha256": "2c7d691c70a557d8df4ef2ba58a6dc43195b952b6c209c89d5522a392f47b937",
-      "signature": "j0ZE+ylYpmoxIaxwffJDPkEYWcoRo0VjNsPA/ILdjgA=",
-      "signature_ed25519": "lWKDMoTeLEtZTWErr8dpK56P8aHFWy3Yb1Klu0AKgwnGjlwRM/4hXobtZ85i8DEbCDQMtIv5jWiekQq3jIWsCA==",
+      "md5": "cff8be22ba97aaf1e649f31d33c29a03",
+      "sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
+      "signature": "VKuNtYR65Yjt5TNsc0+V2T2i+PFThh4LibxkjyupSrY=",
+      "signature_ed25519": "P581qPt5dsBkeWnjZpVLs1rosq0wWlF2bbc+Vm+vU4OWxHr6cOAZIrP2A2OyMW9o+Ji0vJUnXSwD9IzsT4ITBA==",
       "signature_key_id": "sense360-prod-2026-02",
-      "file_size": 956976,
-      "source_commit": "eea5f83c9440f38353e5b03b6e5be01b1a2b7c5f",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/eea5f83c9440f38353e5b03b6e5be01b1a2b7c5f",
+      "file_size": 956960,
+      "source_commit": "47dd73b8e9c1faec00d2179c4927b97ebed9ab0c",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/47dd73b8e9c1faec00d2179c4927b97ebed9ab0c",
       "deprecated": false
     }
   ]

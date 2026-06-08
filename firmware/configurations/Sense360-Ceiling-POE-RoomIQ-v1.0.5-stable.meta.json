@@ -1,0 +1,33 @@
+{
+  "changelog": [
+    "First stable release of the Ceiling-POE-RoomIQ kit (RoomIQ-only PoE ceiling stack: Core S360-100 + RoomIQ S360-200 + PoE PSU S360-410)",
+    "promoted from the preview channel to stable at version 1.0.5",
+    "S360-410 PoE PSU released under owner waiver HW-S360-410-WAIVER-2026-06 and remains cataloged_unverified pending bench and isolation evidence",
+    "on-device flash verification not yet performed"
+  ],
+  "known_issues": [],
+  "features": [
+    "PoE-powered Sense360 Core configuration",
+    "RoomIQ room sensing"
+  ],
+  "hardware_requirements": [
+    "Sense360 Core (`S360-100`)",
+    "Sense360 RoomIQ (`S360-200`)",
+    "Sense360 PoE PSU (`S360-410`)"
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": true,
+  "source": {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.5",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.5",
+    "source_asset_name": "Sense360-Ceiling-POE-RoomIQ-v1.0.5-stable.bin",
+    "source_asset_sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
+    "source_manifest_git_sha": "b16738e3b3ece42fef99b65c8a68c1a58e152548",
+    "source_manifest_esphome_version": "2026.4.5",
+    "imported_at": "2026-06-08T20:38:48+00:00"
+  }
+}

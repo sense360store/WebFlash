@@ -26,8 +26,8 @@
       "signature_ed25519": "2xh+NK21RQVZ8lL0FwRt1v/tZFsASH0Ohcrnl8uORI0aQEcTmlJFm3Ac3vLmj6eDjmKw4ZmHaI4v96mjcaV7AQ==",
       "signature_key_id": "sense360-prod-2026-02",
       "file_size": 1090656,
-      "source_commit": "eea5f83c9440f38353e5b03b6e5be01b1a2b7c5f",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/eea5f83c9440f38353e5b03b6e5be01b1a2b7c5f",
+      "source_commit": "47dd73b8e9c1faec00d2179c4927b97ebed9ab0c",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/47dd73b8e9c1faec00d2179c4927b97ebed9ab0c",
       "deprecated": false
     }
   ]
