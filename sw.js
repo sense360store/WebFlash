@@ -106,11 +106,23 @@
  *   index.html / bootstrap `?v=` token (202606043) and the webflash-app-shell marker
  *   (2026-06-04-3). The activate purge and the per-asset-class fetch strategy are
  *   unchanged. See docs/deploy-notes.md.
+ *   `webflash-v18` (Browse table sticky-header CSS fix) bumps again: the
+ *   `.ktable` `overflow: hidden` to `overflow: clip` fix in app.css — which stops
+ *   the sticky table header from being pushed down on top of the first firmware
+ *   row — shipped without a cache bump. app.css is injected tokenless by
+ *   scripts/shell.js (no per-import `?v=` query), so the stale-while-revalidate
+ *   app-shell cache kept serving the OLD `overflow: hidden` stylesheet to
+ *   returning installs: the header still overlapped the top row even though the
+ *   corrected stylesheet was already live on the server. This bump purges v17 so
+ *   the fixed app.css re-primes, in lockstep with the index.html / bootstrap
+ *   `?v=` token (202606081) and the webflash-app-shell marker (2026-06-08-1). The
+ *   activate purge and the per-asset-class fetch strategy are unchanged. See
+ *   docs/deploy-notes.md.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v17';
+const CACHE_NAME = 'webflash-v18';
 const CACHE_VERSION = 5;
 
 /**

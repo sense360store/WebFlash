@@ -154,3 +154,47 @@ The per-asset-class fetch strategy and the `activate` purge of non-current
 GA-cutover token-lockstep test (`__tests__/wf2-ga-cutover.test.js`) was removed
 with the dual-view surfaces it pinned, so the three-point lockstep above is
 maintained by this contract and verified before deploy.
+
+## Browse table sticky-header CSS fix — cache bump (webflash-v18)
+
+### Why this exists
+
+The Browse-table (`.ktable`) sticky-header fix changed `.ktable` from
+`overflow: hidden` to `overflow: clip` in `app.css`. `overflow: hidden` made the
+table its own scroll container, so the `position: sticky` `<thead>` resolved its
+`top` offset against the table instead of the viewport and was pushed down on top
+of the first firmware row (the recommended kit read as hidden and the header line
+sat over the top option). `overflow: clip` clips the rounded corners without
+establishing a scroll container, so the header pins correctly. That CSS change is
+correct and was live on the server.
+
+The bug it left behind is a **deploy/caching** one, exactly the failure mode this
+note documents: `app.css` is injected by `scripts/shell.js`
+(`ensureStylesheet(new URL('../app.css', import.meta.url).href)`) **with no
+`?v=` query**, so it is a tokenless app-shell asset. The CSS fix shipped without
+bumping `CACHE_NAME`, so the service worker's `stale-while-revalidate` app-shell
+cache (which is keyed only by the cache name and is never purged until the name
+changes) kept serving the **old `overflow: hidden` `app.css`** to every returning
+install. Users therefore still saw the header overlapping the top row even though
+the fix was already deployed. `_headers` is ignored by GitHub Pages and its long
+`max-age` covers only `*.bin`, so the SW cache name is the only invalidation
+lever for `app.css`.
+
+### The bump
+
+The lockstep moved under the same contract above; `app.css` carries no token, so
+it re-primes purely by riding the cache-name bump (exactly like `state.js`):
+
+- `index.html` `?v=` on the CSS links and the bootstrap loader, plus the
+  `webflash-app-shell` marker: `202606081` / `2026-06-08-1`.
+- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202606081`.
+- `sw.js` `CACHE_NAME`: `webflash-v17` to `webflash-v18`.
+
+Bumping `sw.js` also changes the service-worker bytes, so returning visitors get
+an SW update on their next load: the freshness banner prompts a reload, the new
+worker activates, the `activate` handler purges `webflash-v17`, and the precache
+re-primes `webflash-v18` with the corrected `app.css`. This is a deploy-layer
+change only. The per-asset-class fetch strategy, the `activate` purge of
+non-current `webflash-*` caches, the install gate, the manifest, firmware,
+`firmware/sources.json`, and `REQUIRED_CONFIGS` are all unchanged — no `app.css`
+rule other than the already-landed `overflow: clip` is touched.
