@@ -14,8 +14,10 @@ import json
 import sys
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 from typing import Any, Dict, List
+from unittest import mock
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -139,6 +141,122 @@ class BlockTokenTests(unittest.TestCase):
             mod.derive_block_tokens("Ceiling-POE-VentIQ-RoomIQ-LED", base),
             ["FanTRIAC"],
         )
+
+
+# ---------------------------------------------------------------------------
+# normalize_tag — human-entered release-tag canonicalization
+# ---------------------------------------------------------------------------
+
+
+class NormalizeTagTests(unittest.TestCase):
+    def test_all_case_and_spacing_variants_resolve_to_canonical(self):
+        for raw in ("v1.0.5", "V1.0.5", "1.0.5", " v1.0.5 ", "  1.0.5", "V1.0.5 "):
+            self.assertEqual(mod.normalize_tag(raw), "v1.0.5", raw)
+
+    def test_channel_suffix_is_lowercased(self):
+        self.assertEqual(mod.normalize_tag("v1.0.0-preview"), "v1.0.0-preview")
+        self.assertEqual(mod.normalize_tag("V1.0.0-PREVIEW"), "v1.0.0-preview")
+        self.assertEqual(mod.normalize_tag(" v1.0.0-Led-Preview "), "v1.0.0-led-preview")
+
+    def test_already_canonical_is_idempotent(self):
+        self.assertEqual(mod.normalize_tag("v1.0.0"), "v1.0.0")
+        self.assertEqual(mod.normalize_tag(mod.normalize_tag("V1.0.0")), "v1.0.0")
+
+    def test_exactly_one_leading_v(self):
+        # Duplicate leading v's collapse to one; the semver core (digit-led) is
+        # never eaten by the leading-v strip.
+        self.assertEqual(mod.normalize_tag("vv1.0.5"), "v1.0.5")
+
+    def test_empty_input_stays_empty(self):
+        self.assertEqual(mod.normalize_tag(""), "")
+        self.assertEqual(mod.normalize_tag("   "), "")
+
+    def test_lowercasing_makes_infer_channel_correct_for_any_case(self):
+        # The reason normalize_tag lowercases: infer_channel's suffix match.
+        self.assertEqual(mod.infer_channel(mod.normalize_tag("V1.0.0-PREVIEW")), "preview")
+        self.assertEqual(mod.infer_channel(mod.normalize_tag("V2.1.3-BETA")), "beta")
+        self.assertEqual(mod.infer_channel(mod.normalize_tag("V9.9.9")), "stable")
+
+
+# ---------------------------------------------------------------------------
+# fetch_release_metadata — 404 fails closed with an actionable message
+# ---------------------------------------------------------------------------
+
+
+class _FakeHeaders:
+    def get_content_charset(self):
+        return "utf-8"
+
+
+class _FakeResponse:
+    def __init__(self, body: bytes):
+        self._body = body
+        self.headers = _FakeHeaders()
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+
+class FetchRelease404Tests(unittest.TestCase):
+    def _urlopen(self, *, available_tags):
+        def fake(request, *_a, **_k):
+            url = request.full_url
+            if "/releases/tags/" in url:
+                raise urllib.error.HTTPError(url, 404, "Not Found", None, None)
+            # The best-effort available-tags listing call.
+            body = json.dumps([{"tag_name": t} for t in available_tags]).encode("utf-8")
+            return _FakeResponse(body)
+
+        return fake
+
+    def test_bogus_tag_still_raises_source_authoring_error(self):
+        with mock.patch(
+            "urllib.request.urlopen",
+            side_effect=self._urlopen(available_tags=["v1.0.0", "v1.0.0-preview"]),
+        ):
+            with self.assertRaises(SourceAuthoringError) as ctx:
+                mod.fetch_release_metadata(
+                    "sense360store/esphome-public",
+                    "v9.9.9",
+                    None,
+                    raw_tag="9.9.9",
+                )
+        message = str(ctx.exception)
+        # Shows what the operator typed, the normalized form, and the real tags.
+        self.assertIn("no release matching '9.9.9'", message)
+        self.assertIn("normalized 'v9.9.9'", message)
+        self.assertIn("v1.0.0", message)
+        self.assertIn("v1.0.0-preview", message)
+
+    def test_404_message_degrades_when_listing_unavailable(self):
+        def fake(request, *_a, **_k):
+            raise urllib.error.HTTPError(request.full_url, 404, "Not Found", None, None)
+
+        with mock.patch("urllib.request.urlopen", side_effect=fake):
+            with self.assertRaises(SourceAuthoringError) as ctx:
+                mod.fetch_release_metadata(
+                    "sense360store/esphome-public", "v9.9.9", None
+                )
+        message = str(ctx.exception)
+        self.assertIn("no release matching", message)
+        self.assertIn("(none found)", message)
+
+    def test_non_404_http_error_keeps_generic_message(self):
+        def fake(request, *_a, **_k):
+            raise urllib.error.HTTPError(request.full_url, 403, "Forbidden", None, None)
+
+        with mock.patch("urllib.request.urlopen", side_effect=fake):
+            with self.assertRaises(SourceAuthoringError) as ctx:
+                mod.fetch_release_metadata(
+                    "sense360store/esphome-public", "v1.0.0", None
+                )
+        self.assertIn("403 Forbidden", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------------

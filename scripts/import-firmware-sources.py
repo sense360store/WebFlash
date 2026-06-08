@@ -67,6 +67,24 @@ DEFAULT_REQUIRED_SECTIONS: Tuple[str, ...] = (
 DEFAULT_MIN_SIZE_BYTES = 102_400
 
 
+def normalize_tag(raw: str) -> str:
+    """Canonicalize a human-entered release tag to Sense360's form.
+
+    Mirrors ``add-firmware-source.normalize_tag`` (kept as a tiny self-contained
+    copy rather than a cross-script import, matching this directory's stdlib-only
+    convention). Sense360 tags are ``v`` + semver + an optional lowercase channel
+    suffix, all lowercase, so this trims whitespace, lowercases, and ensures
+    exactly one leading ``v``. ``firmware/sources.json`` stores the canonical
+    tag, so normalizing the ``--release-tag`` filter to canonical form before
+    matching is all that is needed for ``V1.0.5`` / ``1.0.5`` to resolve.
+    """
+
+    text = (raw or "").strip().lower()
+    if not text:
+        return text
+    return "v" + text.lstrip("v")
+
+
 # --- Shared helper loading -------------------------------------------------
 #
 # ``sync-from-releases.py`` already factors release-body parsing, sidecar
@@ -761,8 +779,14 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     sources = load_sources(Path(args.sources))
+    # Canonicalize the human-entered --release-tag filter so it resolves whether
+    # it was typed v1.0.5, V1.0.5, or 1.0.5. sources.json stores the canonical
+    # tag, so matching the normalized filter against it is sufficient.
+    release_tag_filter = (
+        normalize_tag(args.release_tag) if args.release_tag else args.release_tag
+    )
     selected = filter_sources(
-        sources, source_repo=args.source_repo, release_tag=args.release_tag
+        sources, source_repo=args.source_repo, release_tag=release_tag_filter
     )
     token = (
         args.token

@@ -578,6 +578,48 @@ class SourcesFileTests(unittest.TestCase):
         self.assertIn("LED", release_one.get("block_tokens") or [])
 
 
+class ReleaseTagFilterNormalizationTests(unittest.TestCase):
+    """The --release-tag filter is canonicalized before matching sources.json."""
+
+    def test_normalize_tag_mirrors_add_firmware_source(self):
+        self.assertEqual(importer.normalize_tag("V1.0.5"), "v1.0.5")
+        self.assertEqual(importer.normalize_tag(" 1.0.5 "), "v1.0.5")
+        self.assertEqual(importer.normalize_tag("1.0.5"), "v1.0.5")
+        self.assertEqual(importer.normalize_tag("v1.0.0-PREVIEW"), "v1.0.0-preview")
+        self.assertEqual(importer.normalize_tag(""), "")
+
+    def test_uppercase_filter_resolves_to_canonical_entry(self):
+        sources = [_entry(release_tag="v1.0.0")]
+        for raw in ("v1.0.0", "V1.0.0", "1.0.0", " 1.0.0 "):
+            selected = importer.filter_sources(
+                sources,
+                source_repo=None,
+                release_tag=importer.normalize_tag(raw),
+            )
+            self.assertEqual(len(selected), 1, raw)
+            self.assertEqual(selected[0]["release_tag"], "v1.0.0")
+
+    def test_suffixed_uppercase_filter_resolves(self):
+        sources = [_entry(release_tag="v1.0.0-preview", channel="preview")]
+        selected = importer.filter_sources(
+            sources,
+            source_repo=None,
+            release_tag=importer.normalize_tag("V1.0.0-PREVIEW"),
+        )
+        self.assertEqual(len(selected), 1)
+
+    def test_bogus_normalized_tag_still_fails_closed(self):
+        # Normalization only canonicalizes formatting; a genuinely absent tag
+        # must still raise (no source matched), never silently pick another.
+        sources = [_entry(release_tag="v1.0.0")]
+        with self.assertRaises(ImportValidationError):
+            importer.filter_sources(
+                sources,
+                source_repo=None,
+                release_tag=importer.normalize_tag("v9.9.9"),
+            )
+
+
 class ChecksumParserTests(unittest.TestCase):
     def test_parses_sha256sum_default_format(self):
         text = "deadbeef" * 8 + "  Sense360-foo.bin\n"
