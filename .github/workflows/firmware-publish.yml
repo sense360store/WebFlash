@@ -23,7 +23,9 @@ on:
       # Web interface files
       - 'index.html'
       - '*.js'
+      - '*.css'
       - 'css/**'
+      - 'assets/**'
       - '*.png'
       - '_headers'
   release:
