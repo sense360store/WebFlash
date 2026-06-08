@@ -282,7 +282,7 @@ function RecommendationView(props) {
 }
 
 /* ---------- Browse view (View 2, the full catalogue table) ---------- */
-function KitTableRow(kit, { selected, recommended, onSelect }) {
+function KitTableRow(kit, { selected, recommended, version, onSelect }) {
   const dotKey = kitChannelKey(kit);
   const chanKey = kitFilterChannel(kit);
   const skus = (kit.components || []).map((c) => c.sku).filter(Boolean);
@@ -307,6 +307,10 @@ function KitTableRow(kit, { selected, recommended, onSelect }) {
       ),
     ),
     h('td', null, h('span', { class: 'kt-chan kt-chan--' + chanKey }, channelWord(chanKey))),
+    // Firmware version for this kit's config, read live from the manifest (passed
+    // in via `version`). A kit whose config has no matching build renders an empty
+    // cell rather than a placeholder, so the column never invents a version.
+    h('td', { class: 'kt-ver' }, version ? h('span', { class: 'kt-ver-tag' }, 'v' + version) : null),
     h('td', { class: 'kt-parts' }, String((kit.components || []).length)),
     h('td', { class: 'kt-boards' },
       shown.map((s) => h('span', { class: 'kt-board' }, s)),
@@ -317,9 +321,13 @@ function KitTableRow(kit, { selected, recommended, onSelect }) {
 }
 
 function BrowseView(props) {
-  const { kits, kit, resolved, sourceUrl, setKit, onContinue, onRecommendation, onAdvanced } = props;
+  const { kits, kit, resolved, sourceUrl, setKit, onContinue, onRecommendation, onAdvanced, kitVersions } = props;
   const total = kits.length;
   const selectedSku = kit ? kit.sku : null;
+  // config_string -> firmware version, resolved live from the manifest by the app
+  // (the same engine lookup the Install step uses). Empty Map until it resolves,
+  // so rows simply render no version until the lookup lands, never crash.
+  const versions = kitVersions instanceof Map ? kitVersions : new Map();
 
   // --- toolbar: stable nodes the targeted re-render never rebuilds ---
   const searchInput = h('input', {
@@ -373,6 +381,7 @@ function BrowseView(props) {
       h('tr', null,
         h('th', { class: 'kt-h-kit' }, 'Kit'),
         h('th', null, 'Channel'),
+        h('th', null, 'Version'),
         h('th', null, 'Parts'),
         h('th', null, 'Boards'),
         h('th', null, 'Firmware target'),
@@ -402,7 +411,7 @@ function BrowseView(props) {
     if (filtered.length === 0) {
       mount(tbody,
         h('tr', { class: 'ktable__empty-row' },
-          h('td', { colspan: '5' },
+          h('td', { colspan: '6' },
             h('div', { class: 'ktable__empty' },
               `No kits match “${picker.q}”.`,
               h('button', {
@@ -418,6 +427,7 @@ function BrowseView(props) {
         KitTableRow(k, {
           selected: selectedSku === k.sku,
           recommended: Boolean(k.recommended),
+          version: versions.get(k.firmware_config_string) || '',
           // Selecting a row commits the kit through the engine (setKit), which
           // resolves its verdict and re-renders this view with the footer
           // reflecting the gate verdict.

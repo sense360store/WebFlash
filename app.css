@@ -336,6 +336,31 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .devsum__meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
 .devsum__fw { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
 
+/* Release notes for the resolved firmware, a collapsed-by-default disclosure
+   inside the Selected device panel. Reads the manifest build's changelog /
+   known issues / key features (or the channel notes-fallback when empty). */
+.relnotes { border-top: 1px solid var(--border); }
+.relnotes__summary {
+  display: flex; align-items: baseline; gap: 10px; cursor: pointer;
+  list-style: none; padding: 12px 20px; font-size: 0.86rem; color: var(--text);
+}
+.relnotes__summary::-webkit-details-marker { display: none; }
+.relnotes__summary::after {
+  content: '▸'; margin-left: auto; color: var(--text-faint);
+  font-size: 0.78rem; transition: transform .15s; align-self: center;
+}
+.relnotes[open] .relnotes__summary::after { transform: rotate(90deg); }
+.relnotes__title { font-weight: 650; letter-spacing: -0.01em; }
+.relnotes__hint { font-size: 0.76rem; color: var(--text-muted); }
+.relnotes__body { padding: 2px 20px 16px; display: grid; gap: 14px; }
+.relnotes__group-title {
+  margin: 0 0 6px; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint);
+}
+.relnotes__list { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+.relnotes__list li { font-size: 0.84rem; line-height: 1.5; color: var(--text-body); }
+.relnotes__empty { margin: 0; font-size: 0.84rem; color: var(--text-muted); }
+
 /* acks + callouts inside the side rail sit flush (no outer margins) */
 .install__side .ack { margin-top: 0; padding: 13px 15px; }
 .install__side .ack__text { font-size: 0.88rem; line-height: 1.45; }
@@ -740,6 +765,11 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 }
 .kt-chan--stable { color: var(--green); background: var(--green-soft); border: 1px solid color-mix(in srgb, var(--green) 28%, transparent); }
 .kt-chan--preview { color: var(--warning); background: var(--warning-soft); border: 1px solid var(--warning-line); }
+.kt-ver { white-space: nowrap; }
+.kt-ver-tag {
+  font-family: var(--font-mono); font-size: 0.78rem;
+  color: var(--text-body); font-variant-numeric: tabular-nums;
+}
 .kt-parts { font-variant-numeric: tabular-nums; color: var(--text-body); }
 .kt-boards { display: flex; flex-wrap: wrap; gap: 5px; }
 .kt-board {

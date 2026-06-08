@@ -122,6 +122,70 @@ export function formatFirmwareVersion(build) {
   return channel ? `Firmware v${version} (${channel})` : `Firmware v${version}`;
 }
 
+// The canonical fallback line when a build ships no notes at all. Mirrors the
+// existing release-channel notesFallback copy so the message stays consistent
+// with the 1.0 firmware details surface.
+export const RELEASE_NOTES_FALLBACK = 'No release notes available for this firmware version.';
+
+// The fallback line shown when the resolved build carries no notes. Prefers the
+// engine's per-channel notesFallback copy (the existing source of this message,
+// e.g. "Preview release notes are not yet available…") and degrades to the
+// canonical line when the engine or its channel policy is unavailable.
+function releaseNotesFallback(build, engine) {
+  try {
+    const policy = engine && engine.channels && typeof engine.channels.getChannelPolicy === 'function'
+      ? engine.channels.getChannelPolicy(build && build.channel)
+      : null;
+    if (policy && typeof policy.notesFallback === 'string' && policy.notesFallback.trim() !== '') {
+      return policy.notesFallback;
+    }
+  } catch {
+    /* fall through to the canonical fallback */
+  }
+  return RELEASE_NOTES_FALLBACK;
+}
+
+// Customer-reachable release notes for the resolved build, read live from the
+// manifest entry's own arrays (never hardcoded): the changelog, the known
+// issues, and the key features. They are surfaced in a collapsed-by-default
+// disclosure so they are reachable from the Install step without crowding the
+// device summary. When the build ships no notes at all, the existing channel
+// notes-fallback copy is shown instead of an empty box. Returns null when there
+// is no resolved build to describe, so there is nothing to render.
+export function buildReleaseNotesSection(build, engine = null) {
+  if (!build || typeof build !== 'object') return null;
+
+  const asList = (value) => (Array.isArray(value)
+    ? value.filter((entry) => typeof entry === 'string' && entry.trim() !== '')
+    : []);
+  // Changelog and known issues are the primary release notes; key features are
+  // the customer-relevant extra. The verbose hardware_requirements build
+  // provenance is intentionally left to the technical firmware-details surface.
+  const sections = [
+    { title: 'Changelog', items: asList(build.changelog) },
+    { title: 'Known issues', items: asList(build.known_issues), cls: 'relnotes__group--issues' },
+    { title: 'Key features', items: asList(build.features) },
+  ];
+  const hasNotes = sections.some((section) => section.items.length > 0);
+
+  const body = hasNotes
+    ? sections
+        .filter((section) => section.items.length > 0)
+        .map((section) => h('div', { class: 'relnotes__group' + (section.cls ? ' ' + section.cls : '') },
+          h('h4', { class: 'relnotes__group-title' }, section.title),
+          h('ul', { class: 'relnotes__list' }, section.items.map((entry) => h('li', null, entry))),
+        ))
+    : h('p', { class: 'relnotes__empty' }, releaseNotesFallback(build, engine));
+
+  return h('details', { class: 'relnotes', 'data-release-notes': '' },
+    h('summary', { class: 'relnotes__summary' },
+      h('span', { class: 'relnotes__title' }, 'Release notes'),
+      h('span', { class: 'relnotes__hint' }, hasNotes ? "What's in this firmware" : 'None published'),
+    ),
+    h('div', { class: 'relnotes__body' }, body),
+  );
+}
+
 // Maps the engine's machine-readable check status to the preflight row icon.
 // Read by status (pass/warn/fail/pending), never by parsing the detail copy.
 const READY_ICON = {
@@ -605,6 +669,10 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // which firmware is about to be flashed. Empty (and so unrendered) when no
   // build resolved; "Firmware version unknown" when a build lacks a version.
   const fwVersionLabel = formatFirmwareVersion(build);
+  // The resolved build's release notes (changelog, known issues, key features),
+  // read live from the manifest entry and surfaced in a collapsed expander in the
+  // Selected device panel. Null when no build resolved, so h() skips it.
+  const releaseNotesEl = buildReleaseNotesSection(build, engine);
   const footEl = h('div', { class: 'winfoot install-step__foot' },
     h('div', { class: 'stepnav' },
       h('button', { class: 'btn btn--ghost', type: 'button', onClick: onBack }, icon('arrowL'), ' Back'),
@@ -652,6 +720,7 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
                   : null,
               ),
             ),
+            releaseNotesEl,
           ),
           h('div', { class: 'panel' },
             h('div', { class: 'panel__head' },
