@@ -34,6 +34,9 @@ import {
   configRequiresFanControlAck,
   configRequiresDacAddressAck,
 } from '../scripts/install.js';
+// Stable surface (which configs are stable) is derived from kits.json, not
+// hardcoded here. See __tests__/helpers/stable-surface.js for the contract.
+import { stableConfigs } from './helpers/stable-surface.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -53,11 +56,20 @@ const catalog = buildCatalogFromPayload(readJson('scripts/data/kits.json'));
 const kits = catalog.kits;
 
 describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — default install path', () => {
-  test('exactly two stable manifest builds, the Bathroom PoE build and the RoomIQ build', () => {
+  test('the stable manifest builds match exactly the kits.json stable config set', () => {
+    // Manifest channels (a DIFFERENT artifact) checked against the kits.json-derived
+    // stable config set. If kits.json and the manifest ever disagree on which
+    // configs ship stable, this fails — without comparing kits.json to itself.
     const stable = builds.filter((b) => b.channel === 'stable').map((b) => b.config_string);
-    expect([...stable].sort()).toEqual(['Ceiling-POE-RoomIQ', STABLE_CONFIG].sort());
+    expect([...stable].sort()).toEqual([...stableConfigs]);
   });
 
+  // The next two assertions read kits.json (via `kits`) and pin its recommended /
+  // stable SKU membership. They are intentionally LEFT LITERAL: deriving the
+  // expected SKUs from the kits.json-derived helper would compare kits.json to
+  // itself (a tautology that can never fail). The canonical structural pin lives
+  // in kits-json.test.js; the helper is used for the manifest cross-checks above
+  // and below, which can actually drift.
   test('the only recommended kit is the stable Bathroom PoE bundle', () => {
     const recommended = kits.filter((k) => k.recommended);
     expect(recommended.map((k) => k.sku)).toEqual(['S360-KIT-BATH-P']);
@@ -166,11 +178,14 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — preview stays preview (no silent pro
     });
   });
 
-  test('there are exactly two stable builds and exactly one rescue build; the rest are preview', () => {
+  test('the manifest stable-build count matches kits.json, with one rescue build and the rest preview', () => {
     const byChannel = (ch) => builds.filter((b) => b.channel === ch);
-    expect(byChannel('stable')).toHaveLength(2);
+    // Manifest stable count cross-checked against the kits.json-derived stable set.
+    expect(byChannel('stable')).toHaveLength(stableConfigs.length);
     expect(byChannel('rescue')).toHaveLength(1);
-    expect(byChannel('preview').length).toBe(builds.length - 3);
+    expect(byChannel('preview').length).toBe(
+      builds.length - byChannel('stable').length - byChannel('rescue').length
+    );
   });
 
   test('no preview kit smuggles a buyable / default / stable flag', () => {

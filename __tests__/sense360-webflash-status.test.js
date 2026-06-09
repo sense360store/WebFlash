@@ -1,6 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'node:fs';
 import path from 'node:path';
+// REQUIRED_CONFIGS production surface derived from kits.json, not hardcoded.
+// See __tests__/helpers/stable-surface.js for the anti-tautology contract.
+import { requiredConfigs } from './helpers/stable-surface.js';
 
 // WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — documentation guard.
 //
@@ -114,7 +117,9 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — supported targets match m
 
     test('REQUIRED_CONFIGS is production-only (Release-One + Rescue)', () => {
         const required = parseRequiredConfigsFromWorkflow();
-        expect(required).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue']);
+        // Workflow allowlist (a different artifact) cross-checked against the
+        // kits.json-derived production surface plus the standalone Rescue build.
+        expect(required).toEqual(requiredConfigs);
     });
 });
 

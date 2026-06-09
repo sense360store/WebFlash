@@ -30,6 +30,11 @@ import {
     formatMarkdown,
     formatJson
 } from '../scripts/validate-product-import-readiness.js';
+// The production (REQUIRED_CONFIGS) surface is derived from kits.json, not
+// hardcoded. See __tests__/helpers/stable-surface.js for the anti-tautology
+// contract. Imported as recommendedConfigs to avoid clashing with the local
+// `requiredConfigs` (the value parsed from the workflow file).
+import { recommendedConfigs } from './helpers/stable-surface.js';
 
 // WF-PRODUCT-004 — Product import readiness validator tests.
 //
@@ -787,9 +792,11 @@ describe('WF-PRODUCT-004 — workflow YAML parsing', () => {
     test('the on-disk workflow file parses to the production+Rescue allowlist', () => {
         // Defence-in-depth with __tests__/github-pages-surface.test.js. The
         // validator MUST see the same allowlist the publish workflow gates on.
+        // The production surface is the kits.json-derived recommended config set
+        // (a different artifact from the workflow YAML parsed into `required`).
         const required = parseRequiredConfigsFromWorkflow(WORKFLOW_PATH);
         expect(new Set(required)).toEqual(
-            new Set([RELEASE_ONE_CONFIG, RESCUE_CONFIG_STRING])
+            new Set([...recommendedConfigs, RESCUE_CONFIG_STRING])
         );
     });
 });
