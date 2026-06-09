@@ -1670,6 +1670,49 @@ def write_json_file(path: Path, data: Dict[str, object], *, dry_run: bool) -> No
         handle.write("\n")
 
 
+def prune_stale_individual_manifests(
+    base_dir: Path,
+    prefix_name: str,
+    build_count: int,
+    *,
+    dry_run: bool = False,
+) -> List[Path]:
+    """Delete numbered per-build manifests whose index is >= ``build_count``.
+
+    ``write_individual_manifests`` writes exactly ``<prefix>0.json`` …
+    ``<prefix>(build_count - 1).json`` for the current build set. A release
+    that *shrinks* the build set must also drop the higher-numbered files it no
+    longer writes; otherwise they survive as orphans (for example, going from
+    15 to 14 builds leaves ``firmware-14.json`` behind, which then fails the
+    manifest-health and github-pages-surface guards).
+
+    Enumerate every ``<prefix><int>.json`` in ``base_dir`` and remove any whose
+    index is out of range for the current build count. Files that merely share
+    the prefix but are not a pure ``<prefix><int>.json`` (e.g.
+    ``firmware-14-backup.json``) are left untouched. Returns the paths pruned
+    (the paths that *would* be pruned in ``dry_run`` mode). Idempotent and a
+    no-op when there is nothing to prune.
+    """
+
+    pruned: List[Path] = []
+    if build_count < 0 or not base_dir.exists():
+        return pruned
+    index_pattern = re.compile(rf"^{re.escape(prefix_name)}(\d+)\.json$")
+    for path in sorted(base_dir.glob(f"{prefix_name}[0-9]*.json")):
+        match = index_pattern.match(path.name)
+        if match is None:
+            continue
+        if int(match.group(1)) < build_count:
+            continue
+        pruned.append(path)
+        if dry_run:
+            print(f"[dry-run] Would prune stale per-build manifest {path}")
+        else:
+            path.unlink()
+            print(f"Pruned stale per-build manifest {path}")
+    return pruned
+
+
 def write_individual_manifests(
     artifacts: Sequence[FirmwareArtifact],
     prefix: Path,
@@ -1732,6 +1775,15 @@ def write_individual_manifests(
             with path.open("w", encoding="utf-8") as handle:
                 json.dump(data, handle, indent=2)
                 handle.write("\n")
+    # A release that shrinks the build set must also remove the higher-numbered
+    # per-build manifests it no longer writes. The pre-write cleanup above
+    # clears matched files before a full run, but this explicit index-based
+    # pass pins the on-disk firmware-N.json namespace to the current build
+    # count regardless of how the directory got into its current state, so a
+    # smaller release never leaves an orphan behind.
+    prune_stale_individual_manifests(
+        base_dir, prefix_name, len(artifacts), dry_run=dry_run
+    )
 
 
 def build_summary_table(artifacts: Sequence[FirmwareArtifact]) -> str:
