@@ -417,8 +417,11 @@ describe('PR 5 — InstallStep bound to the engine', () => {
   });
 
   it('surfaces a channel acknowledgement checkbox for a preview build', async () => {
+    // Retargeted from the retired Ceiling-POE-RoomIQ-LED preview (stale
+    // v1.0.0-preview retirement) to the surviving VentIQ LED preview
+    // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview).
     const { root, resolved } = await mountInstallStep({
-      mount: 'ceiling', power: 'poe', bathroom: false, roomiq: 'roomiq', led: 'led',
+      mount: 'ceiling', power: 'poe', bathroom: true, ventiq: 'ventiq', roomiq: 'roomiq', led: 'led',
     });
     expect(resolved.isPreview).toBe(true);
     // Two acknowledgements render for a preview build: the before-you-flash

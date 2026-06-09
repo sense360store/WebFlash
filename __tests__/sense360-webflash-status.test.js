@@ -159,19 +159,19 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays bl
 describe('WEBFLASH-RELAY-001 — FanRelay is an exposed manual-preview, not a customer default', () => {
     const FANRELAY_CONFIG = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
 
-    test('FanRelay IS in manifest.json on the preview channel', () => {
+    test('the retired FanRelay preview is out of manifest.json', () => {
+        // Retired with the stale v1.0.0-preview batch: upstream's regenerated
+        // checksums-sha256.txt no longer lists the VentIQ FanRelay asset, so
+        // the importer fails closed on it and the build left the manifest.
         const build = manifestByConfig.get(FANRELAY_CONFIG);
-        expect(build).toBeDefined();
-        expect(build.channel).toBe('preview');
+        expect(build).toBeUndefined();
     });
 
-    test('FanRelay has a firmware/sources.json source entry that still blocks FanTRIAC + LED', () => {
+    test('the retired FanRelay preview is out of firmware/sources.json', () => {
         const entry = (sources.sources || []).find(
             s => s.config_string === FANRELAY_CONFIG
         );
-        expect(entry).toBeDefined();
-        expect(entry.channel).toBe('preview');
-        expect(entry.block_tokens).toEqual(['FanTRIAC', 'LED']);
+        expect(entry).toBeUndefined();
     });
 
     test('FanRelay is NOT in REQUIRED_CONFIGS (production-only)', () => {
@@ -194,19 +194,19 @@ describe('WEBFLASH-RELAY-001 — FanRelay is an exposed manual-preview, not a cu
 describe('WEBFLASH-PWM-001 — FanPWM is an exposed manual-preview, not a customer default', () => {
     const FANPWM_CONFIG = 'Ceiling-POE-FanPWM';
 
-    test('FanPWM IS in manifest.json on the preview channel', () => {
+    test('the retired standalone FanPWM preview is out of manifest.json', () => {
+        // Retired with the stale v1.0.0-preview batch: upstream's regenerated
+        // checksums-sha256.txt no longer lists the standalone FanPWM asset, so
+        // the importer fails closed on it and the build left the manifest.
         const build = manifestByConfig.get(FANPWM_CONFIG);
-        expect(build).toBeDefined();
-        expect(build.channel).toBe('preview');
+        expect(build).toBeUndefined();
     });
 
-    test('FanPWM has a firmware/sources.json source entry that still blocks FanTRIAC + LED', () => {
+    test('the retired standalone FanPWM preview is out of firmware/sources.json', () => {
         const entry = (sources.sources || []).find(
             s => s.config_string === FANPWM_CONFIG
         );
-        expect(entry).toBeDefined();
-        expect(entry.channel).toBe('preview');
-        expect(entry.block_tokens).toEqual(['FanTRIAC', 'LED']);
+        expect(entry).toBeUndefined();
     });
 
     test('FanPWM is NOT in REQUIRED_CONFIGS (production-only)', () => {

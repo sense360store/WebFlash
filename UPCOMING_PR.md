@@ -92,25 +92,37 @@ installer-flow reskin and the fan-bundle imports):
     `__tests__/manifest-health.test.js`. The importer verifies each `.bin`
     SHA-256 against the upstream `checksums-sha256.txt` **and** the pinned
     `expected_sha256`.
-- **`manifest.json` now carries fourteen builds** and `REQUIRED_CONFIGS` is
+- **`manifest.json` now carries nine builds** and `REQUIRED_CONFIGS` is
   unchanged: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]` (production-only). The
-  fourteen builds are one stable (`Ceiling-POE-VentIQ-RoomIQ`), twelve preview
-  (`Ceiling-POE-VentIQ-RoomIQ-LED`, `Ceiling-POE-AirIQ-RoomIQ`,
-  `Ceiling-POE-RoomIQ`, `Ceiling-POE-RoomIQ-LED`,
-  `Ceiling-POE-VentIQ-FanRelay-RoomIQ`, `Ceiling-POE-VentIQ-FanPWM-RoomIQ`,
-  `Ceiling-POE-VentIQ-FanDAC-RoomIQ`, `Ceiling-POE-AirIQ-FanRelay-RoomIQ`,
-  `Ceiling-POE-AirIQ-FanPWM-RoomIQ`, `Ceiling-POE-AirIQ-FanDAC-RoomIQ`,
-  `Ceiling-POE-FanPWM`, `Ceiling-POE-FanDAC`), and `Rescue`. The five
-  full-composition fan-control room bundles landed via
-  `WF-IMPORT-FAN-BUNDLES-001` (#498); every preview build stays Advanced-only
-  behind the `channel:preview` acknowledgement.
-- **`scripts/data/kits.json` now carries eleven kits.** `S360-KIT-BATH-P` →
+  nine builds are two stable (`Ceiling-POE-VentIQ-RoomIQ` v1.0.4,
+  `Ceiling-POE-RoomIQ` v1.0.5), six preview (`Ceiling-POE-VentIQ-RoomIQ-LED`,
+  `Ceiling-POE-VentIQ-FanPWM-RoomIQ`, `Ceiling-POE-VentIQ-FanDAC-RoomIQ`,
+  `Ceiling-POE-AirIQ-FanRelay-RoomIQ`, `Ceiling-POE-AirIQ-FanPWM-RoomIQ`,
+  `Ceiling-POE-AirIQ-FanDAC-RoomIQ`), and `Rescue`.
+  `CI-RETIRE-STALE-V100-PREVIEW-001` retired the five stale v1.0.0-preview
+  builds (`Ceiling-POE-AirIQ-RoomIQ` preview, `Ceiling-POE-FanDAC`,
+  `Ceiling-POE-FanPWM`, `Ceiling-POE-RoomIQ-LED`,
+  `Ceiling-POE-VentIQ-FanRelay-RoomIQ`): upstream regenerated the
+  v1.0.0-preview `checksums-sha256.txt` on 2026-06-04 to the partial
+  "room-bundle fan" set, so the importer fails closed on those five assets.
+  `Ceiling-POE-AirIQ-RoomIQ` returns as a v1.0.6 STABLE build once the
+  firmware import re-runs on main (#551 added its source entry). Every
+  preview build stays Advanced-only behind the `channel:preview`
+  acknowledgement.
+- **`scripts/data/kits.json` now carries seven kits.** `S360-KIT-BATH-P` →
   `Ceiling-POE-VentIQ-RoomIQ` is the single stable / recommended / default kit
-  and stays `kits[0]`; the other ten are preview room bundles (Kitchen /
-  Bedroom / Living / Corridor base bundles plus the six Bathroom / Kitchen
-  fan-control variants), never recommended / stable / default / buyable. The
-  base room bundles were restored by `WF2-KIT-BUNDLE-PICKER-001` (#496), the
-  Bathroom Relay bundle by `WF2-FAN-CONTROL-GATES-001` (#497), and the five
+  and stays `kits[0]`; Bedroom (`S360-KIT-BEDROOM-P`, stable
+  `Ceiling-POE-RoomIQ`) plus the five preview fan-control variants
+  (`S360-KIT-BATH-P-PWM` / `S360-KIT-BATH-P-DAC`, `S360-KIT-KITCHEN-P-REL` /
+  `S360-KIT-KITCHEN-P-PWM` / `S360-KIT-KITCHEN-P-DAC`) complete the
+  catalogue, never recommended / stable-default / buyable. The Kitchen /
+  Living / Corridor base bundles and the Bathroom Relay bundle were retired
+  by `CI-RETIRE-STALE-V100-PREVIEW-001` together with their stale
+  v1.0.0-preview builds (a kit card may never reference a config without a
+  manifest build); the Kitchen base bundle is expected back as a stable kit
+  after the AirIQ-RoomIQ v1.0.6 import lands. The base room bundles were
+  originally restored by `WF2-KIT-BUNDLE-PICKER-001` (#496), the Bathroom
+  Relay bundle by `WF2-FAN-CONTROL-GATES-001` (#497), and the five
   fan-control variants surfaced by `WF2-FAN-EXPANSION-001` (#500).
 - **The PR 13 Simple-bundle-picker regression is resolved.** PR 13 had deleted
   the Simple bundle picker (`scripts/simple-install.js`,
@@ -262,6 +274,47 @@ These gate every item below and must not be regressed by any queue PR:
   explicit future project, never claimed on any surface.
 
 ### Queue
+
+0. **CI-RETIRE-STALE-V100-PREVIEW-001 — Retire the five stale v1.0.0-preview
+   sources so the firmware import completes and the AirIQ-RoomIQ v1.0.6
+   stable lands.**
+   *(Implemented on branch `ci/retire-stale-v1.0.0-preview-sources` — PR # to
+   fill when verified.)*
+   Status: **Open for review.**
+   Merging #551 re-triggered the full firmware import on main; the import
+   failed closed on five v1.0.0-preview sources whose `.bin` assets are still
+   attached to the upstream release but are NOT listed in its regenerated
+   (2026-06-04, partial "room-bundle fan" set) `checksums-sha256.txt`, so the
+   v1.0.6 stable was never written. This change removes the five source
+   entries (`firmware/sources.json` 14 → 9; the AirIQ-RoomIQ v1.0.6 stable
+   entry survives), deletes the five `.bin` + `.meta.json` pairs, regenerates
+   `manifest.json` (14 → 9 builds) + `firmware-0…8.json` (pruning
+   `firmware-9…13.json`), retires the four kit cards whose configs lost their
+   builds (`scripts/data/kits.json` 11 → 7: Kitchen / Living / Corridor base
+   bundles + Bathroom Relay), and rebaselines the count / set / snapshot
+   guards.
+   Follow-ups once merged and the firmware import re-runs on main:
+   - The import writes `Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.6-stable.bin`
+     + sidecar and refreshes the vendored product-catalog fixture, which heals
+     the one pre-existing red test (`product-catalog-alignment` "source
+     asset_name matches catalog artifact_name base" — red on main since #551
+     because the fixture still carries the preview-era AirIQ-RoomIQ row).
+   - **Restore the Kitchen base kit** (`S360-KIT-KITCHEN-P` →
+     `Ceiling-POE-AirIQ-RoomIQ`, then channel `stable`) in
+     `scripts/data/kits.json` after the v1.0.6 build is in the manifest, and
+     flip back the temporarily fail-closed AirIQ-RoomIQ `installable`
+     assertions in `__tests__/wf2-identify.test.js` and
+     `__tests__/wf2-identify-sensing-fixes.test.js`.
+   - Retired previews may only return via new upstream releases whose
+     checksums file lists their assets (new `firmware/sources.json` entries
+     with pinned `expected_sha256`), per the importer's fail-closed contract.
+   Purpose: unblock the cross-repo firmware import (and with it the v1.0.6
+   stable promotion train).
+   Dependencies: none locally; the v1.0.6 stable landing depends on the
+   firmware-import workflow re-run on main after merge.
+   Note: No gate, channel, signing, workflow, or `REQUIRED_CONFIGS` change.
+   The locally regenerated manifest is dev-signed (no production key outside
+   CI); the import / publish workflows re-sign with the production key.
 
 1. **WF2-INSTALLER-FLOW-REDESIGN — Reskin the installer flow to the design
    handoff (view over engine).**

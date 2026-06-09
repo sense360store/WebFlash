@@ -209,19 +209,21 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
     });
 
     test('summary counts match the fixture today', () => {
-        // 15 entries after WF-IMPORT-FAN-BUNDLES-001: Release-One (production),
-        // FanTRIAC (blocked), 1 legacy-compatible, FOUR preview builds (the
-        // VentIQ LED preview plus the three first-batch previews AirIQ-RoomIQ /
-        // RoomIQ / RoomIQ-LED), the THREE single-driver fan manual-previews
-        // FanRelay / FanPWM / FanDAC, and the FIVE full-composition room-bundle
-        // fan previews (VentIQ-FanPWM / VentIQ-FanDAC / AirIQ-FanRelay /
-        // AirIQ-FanDAC / AirIQ-FanPWM) — all status hardware-pending but
-        // webflash_import_eligibility.eligible=true.
+        // 15 catalog entries (the fixture is unchanged by the stale
+        // v1.0.0-preview retirement): Release-One (production), RoomIQ
+        // (production), FanTRIAC (blocked), 1 legacy-compatible, FOUR preview
+        // rows, the THREE single-driver fan manual-previews, and the FIVE
+        // full-composition room-bundle fan previews. import_eligible stays 13
+        // (catalog-level authorisation is untouched), but manifest / kit
+        // effective eligibility also requires a live firmware/sources.json
+        // entry — the five retired configs (AirIQ-RoomIQ preview, standalone
+        // FanDAC, standalone FanPWM, RoomIQ-LED, VentIQ-FanRelay-RoomIQ) lost
+        // theirs, so 13 -> 8 on both.
         expect(report.summary.total).toBe(15);
         expect(report.summary.import_eligible).toBe(13); // Release-One + 4 previews + 3 single-driver fans + 5 room-bundle fans
-        expect(report.summary.manifest_eligible).toBe(13);
+        expect(report.summary.manifest_eligible).toBe(8);
         expect(report.summary.required_configs_eligible).toBe(2); // Release-One + RoomIQ (both production)
-        expect(report.summary.kit_eligible).toBe(13);
+        expect(report.summary.kit_eligible).toBe(8);
     });
 });
 
@@ -234,15 +236,17 @@ describe('WEBFLASH-RELAY-001 — FanRelay manual-preview import eligibility', ()
         expect(PREVIEW_IMPORT_FIELDS).not.toContain('webflash_wrapper');
     });
 
-    test('FanRelay is import + manifest + kit eligible but NOT REQUIRED_CONFIGS eligible', () => {
+    test('FanRelay stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
         const e = findEntry(report, FANRELAY_CONFIG);
         expect(e).toBeDefined();
         // Status stays hardware-pending; the eligibility flag is what authorises it.
         expect(e.status).toBe('hardware-pending');
         expect(e.shape_issues).toEqual([]);
         expect(e.effective_eligibility.import.eligible).toBe(true);
-        expect(e.effective_eligibility.manifest.eligible).toBe(true);
-        expect(e.effective_eligibility.kit.eligible).toBe(true);
+        // The stale v1.0.0-preview retirement removed the source entry, so
+        // effective manifest / kit eligibility drops with it.
+        expect(e.effective_eligibility.manifest.eligible).toBe(false);
+        expect(e.effective_eligibility.kit.eligible).toBe(false);
         expect(e.effective_eligibility.required_configs.eligible).toBe(false);
         expect(
             e.effective_eligibility.required_configs.reasons.some(r =>
@@ -257,18 +261,19 @@ describe('WEBFLASH-RELAY-001 — FanRelay manual-preview import eligibility', ()
         ).toBe(true);
     });
 
-    test('FanRelay is present in sources + manifest + on disk + kits, absent from REQUIRED_CONFIGS', () => {
-        // WF2-FAN-CONTROL-GATES-001 surfaced FanRelay as the preview Bathroom
-        // Relay kit card (S360-KIT-BATH-P-REL), so it is now present in kits —
-        // which is kit-eligible by the lifecycle model. The production-only
-        // REQUIRED_CONFIGS allowlist is unchanged: FanRelay must never enter it.
+    test('FanRelay is retired from every active surface (sources, manifest, disk, kits, REQUIRED_CONFIGS)', () => {
+        // The stale v1.0.0-preview retirement removed the source entry, the
+        // .bin + sidecar pair, the manifest build, and the Bathroom Relay kit
+        // card (upstream's regenerated checksums-sha256.txt no longer lists
+        // the asset). The production-only REQUIRED_CONFIGS allowlist is
+        // unchanged: FanRelay must never enter it.
         const e = findEntry(report, FANRELAY_CONFIG);
-        expect(e.surface_presence.in_sources).toBe(true);
-        expect(e.surface_presence.in_manifest).toBe(true);
-        expect(e.surface_presence.bin_on_disk).toBe(true);
-        expect(e.surface_presence.sidecar_on_disk).toBe(true);
+        expect(e.surface_presence.in_sources).toBe(false);
+        expect(e.surface_presence.in_manifest).toBe(false);
+        expect(e.surface_presence.bin_on_disk).toBe(false);
+        expect(e.surface_presence.sidecar_on_disk).toBe(false);
         expect(e.surface_presence.in_required_configs).toBe(false);
-        expect(e.surface_presence.in_kits).toBe(true);
+        expect(e.surface_presence.in_kits).toBe(false);
     });
 
     test('isWebflashImportEligible honours the flag but stays strict otherwise', () => {
@@ -333,15 +338,17 @@ describe('WEBFLASH-PWM-001 — FanPWM manual-preview import eligibility', () => 
     const report = runForFixture();
     const FANPWM_CONFIG = 'Ceiling-POE-FanPWM';
 
-    test('FanPWM is import + manifest + kit eligible but NOT REQUIRED_CONFIGS eligible', () => {
+    test('FanPWM stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
         const e = findEntry(report, FANPWM_CONFIG);
         expect(e).toBeDefined();
         // Status stays hardware-pending; the eligibility flag is what authorises it.
         expect(e.status).toBe('hardware-pending');
         expect(e.shape_issues).toEqual([]);
         expect(e.effective_eligibility.import.eligible).toBe(true);
-        expect(e.effective_eligibility.manifest.eligible).toBe(true);
-        expect(e.effective_eligibility.kit.eligible).toBe(true);
+        // The stale v1.0.0-preview retirement removed the source entry, so
+        // effective manifest / kit eligibility drops with it.
+        expect(e.effective_eligibility.manifest.eligible).toBe(false);
+        expect(e.effective_eligibility.kit.eligible).toBe(false);
         expect(e.effective_eligibility.required_configs.eligible).toBe(false);
         expect(
             e.effective_eligibility.required_configs.reasons.some(r =>
@@ -356,12 +363,15 @@ describe('WEBFLASH-PWM-001 — FanPWM manual-preview import eligibility', () => 
         ).toBe(true);
     });
 
-    test('FanPWM is present in sources + manifest + on disk, absent from REQUIRED_CONFIGS + kits', () => {
+    test('FanPWM is retired from every active surface (sources, manifest, disk, kits, REQUIRED_CONFIGS)', () => {
+        // The stale v1.0.0-preview retirement removed the source entry, the
+        // .bin + sidecar pair, and the manifest build (upstream's regenerated
+        // checksums-sha256.txt no longer lists the asset).
         const e = findEntry(report, FANPWM_CONFIG);
-        expect(e.surface_presence.in_sources).toBe(true);
-        expect(e.surface_presence.in_manifest).toBe(true);
-        expect(e.surface_presence.bin_on_disk).toBe(true);
-        expect(e.surface_presence.sidecar_on_disk).toBe(true);
+        expect(e.surface_presence.in_sources).toBe(false);
+        expect(e.surface_presence.in_manifest).toBe(false);
+        expect(e.surface_presence.bin_on_disk).toBe(false);
+        expect(e.surface_presence.sidecar_on_disk).toBe(false);
         expect(e.surface_presence.in_required_configs).toBe(false);
         expect(e.surface_presence.in_kits).toBe(false);
     });
@@ -371,15 +381,17 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview impor
     const report = runForFixture();
     const FANDAC_CONFIG = 'Ceiling-POE-FanDAC';
 
-    test('FanDAC is import + manifest + kit eligible but NOT REQUIRED_CONFIGS eligible', () => {
+    test('FanDAC stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
         const e = findEntry(report, FANDAC_CONFIG);
         expect(e).toBeDefined();
         // Status stays hardware-pending; the eligibility flag is what authorises it.
         expect(e.status).toBe('hardware-pending');
         expect(e.shape_issues).toEqual([]);
         expect(e.effective_eligibility.import.eligible).toBe(true);
-        expect(e.effective_eligibility.manifest.eligible).toBe(true);
-        expect(e.effective_eligibility.kit.eligible).toBe(true);
+        // The stale v1.0.0-preview retirement removed the source entry, so
+        // effective manifest / kit eligibility drops with it.
+        expect(e.effective_eligibility.manifest.eligible).toBe(false);
+        expect(e.effective_eligibility.kit.eligible).toBe(false);
         expect(e.effective_eligibility.required_configs.eligible).toBe(false);
         expect(
             e.effective_eligibility.required_configs.reasons.some(r =>
@@ -394,12 +406,15 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview impor
         ).toBe(true);
     });
 
-    test('FanDAC is present in sources + manifest + on disk, absent from REQUIRED_CONFIGS + kits', () => {
+    test('FanDAC is retired from every active surface (sources, manifest, disk, kits, REQUIRED_CONFIGS)', () => {
+        // The stale v1.0.0-preview retirement removed the source entry, the
+        // .bin + sidecar pair, and the manifest build (upstream's regenerated
+        // checksums-sha256.txt no longer lists the asset).
         const e = findEntry(report, FANDAC_CONFIG);
-        expect(e.surface_presence.in_sources).toBe(true);
-        expect(e.surface_presence.in_manifest).toBe(true);
-        expect(e.surface_presence.bin_on_disk).toBe(true);
-        expect(e.surface_presence.sidecar_on_disk).toBe(true);
+        expect(e.surface_presence.in_sources).toBe(false);
+        expect(e.surface_presence.in_manifest).toBe(false);
+        expect(e.surface_presence.bin_on_disk).toBe(false);
+        expect(e.surface_presence.sidecar_on_disk).toBe(false);
         expect(e.surface_presence.in_required_configs).toBe(false);
         expect(e.surface_presence.in_kits).toBe(false);
     });
@@ -413,15 +428,17 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
     ];
 
     test.each(FIRST_BATCH)(
-        '%s is import + manifest + kit eligible but NOT REQUIRED_CONFIGS eligible',
+        '%s stays import eligible at catalog level but is retired from manifest + kit surfaces',
         (configString) => {
             const e = findEntry(report, configString);
             expect(e).toBeDefined();
             expect(e.status).toBe('preview');
             expect(e.shape_issues).toEqual([]);
             expect(e.effective_eligibility.import.eligible).toBe(true);
-            expect(e.effective_eligibility.manifest.eligible).toBe(true);
-            expect(e.effective_eligibility.kit.eligible).toBe(true);
+            // The stale v1.0.0-preview retirement removed their source
+            // entries, so effective manifest / kit eligibility drops too.
+            expect(e.effective_eligibility.manifest.eligible).toBe(false);
+            expect(e.effective_eligibility.kit.eligible).toBe(false);
             // Preview is never production-only REQUIRED_CONFIGS eligible.
             expect(e.effective_eligibility.required_configs.eligible).toBe(false);
             expect(
@@ -432,20 +449,25 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
         }
     );
 
-    // WF2-KIT-BUNDLE-PICKER-001 — these three preview configs are now surfaced as
-    // customer room-bundle kit cards (Kitchen / Bedroom / Living + Corridor). That
-    // is kit-eligible by the lifecycle model (preview is import + manifest + kit
-    // eligible); they remain absent from the production-only REQUIRED_CONFIGS.
-    test.each(FIRST_BATCH)(
-        '%s is present in sources + manifest + on disk + kits, absent from REQUIRED_CONFIGS',
-        (configString) => {
+    // The stale v1.0.0-preview retirement removed the AirIQ-RoomIQ preview and
+    // RoomIQ-LED source entries, builds, on-disk pairs, and their kit cards
+    // (Kitchen / Living / Corridor): upstream's regenerated v1.0.0-preview
+    // checksums-sha256.txt no longer lists those assets. AirIQ-RoomIQ stays
+    // declared in sources via its v1.0.6 STABLE entry (awaiting import); both
+    // remain absent from the production-only REQUIRED_CONFIGS.
+    test.each([
+        { configString: 'Ceiling-POE-AirIQ-RoomIQ', inSources: true },
+        { configString: 'Ceiling-POE-RoomIQ-LED', inSources: false }
+    ])(
+        '$configString is retired from manifest, disk, kits, and REQUIRED_CONFIGS',
+        ({ configString, inSources }) => {
             const e = findEntry(report, configString);
-            expect(e.surface_presence.in_sources).toBe(true);
-            expect(e.surface_presence.in_manifest).toBe(true);
-            expect(e.surface_presence.bin_on_disk).toBe(true);
-            expect(e.surface_presence.sidecar_on_disk).toBe(true);
+            expect(e.surface_presence.in_sources).toBe(inSources);
+            expect(e.surface_presence.in_manifest).toBe(false);
+            expect(e.surface_presence.bin_on_disk).toBe(false);
+            expect(e.surface_presence.sidecar_on_disk).toBe(false);
             expect(e.surface_presence.in_required_configs).toBe(false);
-            expect(e.surface_presence.in_kits).toBe(true);
+            expect(e.surface_presence.in_kits).toBe(false);
         }
     );
 

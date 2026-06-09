@@ -43,35 +43,6 @@
             "known_limitations": []
         },
         {
-            "sku": "S360-KIT-KITCHEN-P",
-            "display_name": "Kitchen Bundle — PoE",
-            "description": "Sense360 Core with the RoomIQ room sensor and the AirIQ air-quality module, powered over Ethernet. Preview firmware — acknowledge the preview channel before installing.",
-            "recommended": false,
-            "sample": false,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "poe",
-                "bathroom": false,
-                "airiq": "airiq",
-                "ventiq": "none",
-                "roomiq": "roomiq",
-                "fan": "none",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-200", "label": "Sense360 RoomIQ" },
-                { "sku": "S360-210", "label": "Sense360 AirIQ" },
-                { "sku": "S360-410", "label": "Sense360 PoE PSU" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-POE-AirIQ-RoomIQ",
-            "firmware_channel": "preview",
-            "notes": ["Preview firmware. The stable Bathroom Bundle — PoE is the supported default."],
-            "known_limitations": []
-        },
-        {
             "sku": "S360-KIT-BEDROOM-P",
             "display_name": "Bedroom Bundle — PoE",
             "description": "Sense360 Core with the RoomIQ room sensor, powered over Ethernet. Preview firmware — acknowledge the preview channel before installing.",
@@ -97,94 +68,6 @@
             "firmware_config_string": "Ceiling-POE-RoomIQ",
             "firmware_channel": "stable",
             "notes": ["Stable RoomIQ build. The Bathroom Bundle PoE remains the recommended default."],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-LIVING-P",
-            "display_name": "Living Room Bundle — PoE",
-            "description": "Sense360 Core with the RoomIQ room sensor and the LED status ring, powered over Ethernet. Preview firmware — acknowledge the preview channel before installing.",
-            "recommended": false,
-            "sample": false,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "poe",
-                "bathroom": false,
-                "airiq": "none",
-                "ventiq": "none",
-                "roomiq": "roomiq",
-                "fan": "none",
-                "led": "led",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-200", "label": "Sense360 RoomIQ" },
-                { "sku": "S360-300", "label": "Sense360 LED" },
-                { "sku": "S360-410", "label": "Sense360 PoE PSU" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-POE-RoomIQ-LED",
-            "firmware_channel": "preview",
-            "notes": ["Preview firmware. The stable Bathroom Bundle — PoE is the supported default."],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-CORRIDOR-P",
-            "display_name": "Landing / Corridor Bundle — PoE",
-            "description": "Sense360 Core with the RoomIQ room sensor and the LED status ring, powered over Ethernet — tuned for landings and corridors. Preview firmware — acknowledge the preview channel before installing.",
-            "recommended": false,
-            "sample": false,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "poe",
-                "bathroom": false,
-                "airiq": "none",
-                "ventiq": "none",
-                "roomiq": "roomiq",
-                "fan": "none",
-                "led": "led",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-200", "label": "Sense360 RoomIQ" },
-                { "sku": "S360-300", "label": "Sense360 LED" },
-                { "sku": "S360-410", "label": "Sense360 PoE PSU" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-POE-RoomIQ-LED",
-            "firmware_channel": "preview",
-            "notes": ["Preview firmware. The stable Bathroom Bundle — PoE is the supported default."],
-            "known_limitations": []
-        },
-        {
-            "sku": "S360-KIT-BATH-P-REL",
-            "display_name": "Bathroom Bundle — PoE + Relay Fan Control",
-            "description": "The Bathroom PoE bundle plus the Sense360 Relay for on/off bathroom fan control. Preview firmware with an extra fan-control acknowledgement — not the recommended choice for most customers.",
-            "recommended": false,
-            "sample": false,
-            "wizard_state": {
-                "mount": "ceiling",
-                "power": "poe",
-                "bathroom": true,
-                "airiq": "none",
-                "ventiq": "ventiq",
-                "roomiq": "roomiq",
-                "fan": "relay",
-                "led": "none",
-                "voice": "none"
-            },
-            "components": [
-                { "sku": "S360-100", "label": "Sense360 Core" },
-                { "sku": "S360-200", "label": "Sense360 RoomIQ" },
-                { "sku": "S360-211", "label": "Sense360 VentIQ" },
-                { "sku": "S360-310", "label": "Sense360 Relay" },
-                { "sku": "S360-410", "label": "Sense360 PoE PSU" }
-            ],
-            "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
-            "firmware_config_string": "Ceiling-POE-VentIQ-FanRelay-RoomIQ",
-            "firmware_channel": "preview",
-            "notes": ["Preview fan-control firmware. Requires the preview-channel acknowledgement and an extra fan-control acknowledgement before installing. The stable Bathroom Bundle — PoE is the supported default."],
             "known_limitations": []
         },
         {

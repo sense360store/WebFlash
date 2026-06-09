@@ -671,33 +671,28 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to Release-One + twelve preview builds + Rescue', () => {
-        // Snapshot lock updated by WF-IMPORT-FAN-BUNDLES-001: the manifest now
-        // exposes fourteen builds. Release-One stable + Rescue remain unchanged
-        // in content; the twelve preview-channel builds are the LED preview
-        // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview), the three
-        // first-batch previews from upstream v1.0.0-preview (Ceiling-POE-AirIQ-RoomIQ,
-        // Ceiling-POE-RoomIQ, Ceiling-POE-RoomIQ-LED), the three single-driver fan
-        // manual-previews (Ceiling-POE-VentIQ-FanRelay-RoomIQ, Ceiling-POE-FanPWM,
-        // Ceiling-POE-FanDAC), and the five full-composition room-bundle fan
-        // previews (Ceiling-POE-VentIQ-FanPWM-RoomIQ, Ceiling-POE-VentIQ-FanDAC-RoomIQ,
-        // Ceiling-POE-AirIQ-FanRelay-RoomIQ, Ceiling-POE-AirIQ-FanDAC-RoomIQ,
-        // Ceiling-POE-AirIQ-FanPWM-RoomIQ) — all from v1.0.0-preview, authorised by
-        // webflash_import_eligibility.eligible=true.
+    test('manifest.json builds resolve to two stables + six preview builds + Rescue', () => {
+        // Snapshot lock updated by the stale v1.0.0-preview retirement: the
+        // manifest now exposes nine builds. Five stale v1.0.0-preview builds
+        // (Ceiling-POE-AirIQ-RoomIQ, Ceiling-POE-FanDAC, Ceiling-POE-FanPWM,
+        // Ceiling-POE-RoomIQ-LED, Ceiling-POE-VentIQ-FanRelay-RoomIQ) were
+        // retired because upstream regenerated the v1.0.0-preview
+        // checksums-sha256.txt without their assets, so the importer fails
+        // closed on them. What remains: the Release-One + RoomIQ stables,
+        // the LED preview (Ceiling-POE-VentIQ-RoomIQ-LED, from
+        // v1.0.0-led-preview), the five full-composition room-bundle fan
+        // previews (all from v1.0.0-preview, still listed in the regenerated
+        // checksums file and authorised by
+        // webflash_import_eligibility.eligible=true), and Rescue.
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
         expect(configStrings).toEqual(
             [
                 'Ceiling-POE-AirIQ-FanDAC-RoomIQ',
                 'Ceiling-POE-AirIQ-FanPWM-RoomIQ',
                 'Ceiling-POE-AirIQ-FanRelay-RoomIQ',
-                'Ceiling-POE-AirIQ-RoomIQ',
-                'Ceiling-POE-FanDAC',
-                'Ceiling-POE-FanPWM',
                 'Ceiling-POE-RoomIQ',
-                'Ceiling-POE-RoomIQ-LED',
                 'Ceiling-POE-VentIQ-FanDAC-RoomIQ',
                 'Ceiling-POE-VentIQ-FanPWM-RoomIQ',
-                'Ceiling-POE-VentIQ-FanRelay-RoomIQ',
                 'Ceiling-POE-VentIQ-RoomIQ',
                 'Ceiling-POE-VentIQ-RoomIQ-LED',
                 'Rescue'
@@ -706,27 +701,22 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
     });
 
     test('scripts/data/kits.json references the customer room bundles', () => {
-        // WF2-KIT-BUNDLE-PICKER-001 restored the customer room bundle picker:
-        // one stable Release-One bundle plus four preview room bundles.
-        // WF2-FAN-CONTROL-GATES-001 then added the preview Bathroom Relay
-        // fan-control bundle (Ceiling-POE-VentIQ-FanRelay-RoomIQ).
-        // WF2-FAN-EXPANSION-001 then surfaced the remaining five full-composition
-        // fan bundles imported by WF-IMPORT-FAN-BUNDLES-001 as preview kit cards:
-        // two Bathroom fan variants (PWM / DAC) and three Kitchen fan variants
-        // (Relay / PWM / DAC), taking the catalogue from six to eleven kits. Every
-        // config string must be a real manifest build, and only the stable
-        // Release-One config may be the recommended / stable default. The
-        // production-only REQUIRED_CONFIGS allowlist is unaffected (see the
-        // REQUIRED_CONFIGS assertions above).
+        // The catalogue holds seven kits: the stable Bathroom (Release-One)
+        // and Bedroom base bundles plus the five full-composition fan bundles
+        // surfaced by WF2-FAN-EXPANSION-001. The Kitchen / Living / Corridor
+        // base bundles and the Bathroom Relay bundle retired together with
+        // their stale v1.0.0-preview builds (AirIQ-RoomIQ, RoomIQ-LED,
+        // VentIQ-FanRelay-RoomIQ) — a kit card may never reference a config
+        // without a manifest build. Every remaining config string must be a
+        // real manifest build, and only the stable Release-One config may be
+        // the recommended / stable default. The production-only
+        // REQUIRED_CONFIGS allowlist is unaffected (see the REQUIRED_CONFIGS
+        // assertions above).
         const manifestConfigs = new Set((manifest.builds || []).map(b => b.config_string));
         const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
         expect(kitConfigs).toEqual([
             'Ceiling-POE-VentIQ-RoomIQ',
-            'Ceiling-POE-AirIQ-RoomIQ',
             'Ceiling-POE-RoomIQ',
-            'Ceiling-POE-RoomIQ-LED',
-            'Ceiling-POE-RoomIQ-LED',
-            'Ceiling-POE-VentIQ-FanRelay-RoomIQ',
             'Ceiling-POE-VentIQ-FanPWM-RoomIQ',
             'Ceiling-POE-VentIQ-FanDAC-RoomIQ',
             'Ceiling-POE-AirIQ-FanRelay-RoomIQ',
@@ -759,10 +749,13 @@ describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
     // Pins the two-concept eligibility model upstream #711 introduced:
     // FanRelay keeps catalog status=hardware-pending + webflash_build_matrix=false
     // (no committed upstream WebFlash build row) but carries the separate
-    // webflash_import_eligibility.eligible=true authorisation. WebFlash imports it
-    // as an Advanced-install-only, acknowledgement-gated preview build — present in
-    // sources + manifest, absent from REQUIRED_CONFIGS + kits. FanTRIAC stays
-    // eligible=false / blocked.
+    // webflash_import_eligibility.eligible=true authorisation. The WEBFLASH-RELAY-001
+    // import was later RETIRED: upstream's regenerated v1.0.0-preview
+    // checksums-sha256.txt no longer lists the VentIQ-FanRelay asset, so the
+    // importer fails closed on it. Eligibility recognition stands (the fixture
+    // row is unchanged), but the source entry, manifest build, on-disk pair,
+    // and Bathroom Relay kit are gone until a re-verifiable artifact ships.
+    // FanTRIAC stays eligible=false / blocked.
 
     test('fixture FanRelay row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
         const entry = catalogIndex.get(FANRELAY_CONFIG_STRING);
@@ -795,46 +788,27 @@ describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
         expect(isWebflashImportEligible(entry)).toBe(false);
     });
 
-    test('firmware/sources.json carries the FanRelay preview source (block_tokens FanTRIAC + LED)', () => {
+    test('the retired VentIQ FanRelay preview is out of firmware/sources.json', () => {
         const src = (sources.sources || []).find(
             s => s.config_string === FANRELAY_CONFIG_STRING
         );
-        expect(src).toBeDefined();
-        expect(src.channel).toBe('preview');
-        expect(src.version).toBe('1.0.0');
-        expect(src.asset_name).toBe(
-            'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin'
-        );
-        expect(src.expected_sha256).toBe(
-            'f9600a6b7891b520eff28314a001ff3b0d566224d3ab7d82de2e15242d026ca4'
-        );
-        expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+        expect(src).toBeUndefined();
     });
 
-    test('manifest.json carries the FanRelay preview build', () => {
+    test('the retired VentIQ FanRelay preview is out of manifest.json', () => {
         const build = (manifest.builds || []).find(
             b => b.config_string === FANRELAY_CONFIG_STRING
         );
-        expect(build).toBeDefined();
-        expect(build.channel).toBe('preview');
-        expect(build.version).toBe('1.0.0');
-        expect(build.modules).toEqual(
-            expect.arrayContaining(['VentIQ', 'FanRelay', 'RoomIQ'])
-        );
+        expect(build).toBeUndefined();
     });
 
-    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only) but IS a preview kit', () => {
-        // WF2-FAN-CONTROL-GATES-001 surfaced FanRelay as the preview Bathroom Relay
-        // kit (S360-KIT-BATH-P-REL). Preview is kit-eligible by the lifecycle model;
-        // the production-only REQUIRED_CONFIGS allowlist is unchanged.
+    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only) and no longer a kit', () => {
+        // The preview Bathroom Relay kit (S360-KIT-BATH-P-REL) retired with the
+        // build; the production-only REQUIRED_CONFIGS allowlist is unchanged.
         const required = parseRequiredConfigsFromWorkflow();
         expect(required).not.toContain(FANRELAY_CONFIG_STRING);
         const relayKits = (kits.kits || []).filter(k => k.firmware_config_string === FANRELAY_CONFIG_STRING);
-        expect(relayKits.map(k => k.sku)).toEqual(['S360-KIT-BATH-P-REL']);
-        relayKits.forEach(kit => {
-            expect(kit.firmware_channel).toBe('preview');
-            expect(kit.recommended).toBe(false);
-        });
+        expect(relayKits).toEqual([]);
     });
 });
 
@@ -842,10 +816,13 @@ describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
     // Mirrors the FanRelay recognition above for the FanPWM manual-preview build
     // (Ceiling-POE-FanPWM, from the same upstream v1.0.0-preview release). Catalog
     // status stays hardware-pending + webflash_build_matrix=false; the explicit
-    // webflash_import_eligibility.eligible=true flag authorises the Advanced-
-    // install-only, acknowledgement-gated preview import — present in sources +
-    // manifest, absent from REQUIRED_CONFIGS + kits. FanTRIAC stays eligible=false
-    // / blocked; FanDAC stays unimported.
+    // webflash_import_eligibility.eligible=true flag still authorises a preview
+    // import. The WEBFLASH-PWM-001 import was later RETIRED: upstream's
+    // regenerated v1.0.0-preview checksums-sha256.txt no longer lists the
+    // standalone FanPWM asset, so the importer fails closed on it. Eligibility
+    // recognition stands (the fixture row is unchanged), but the source entry,
+    // manifest build, and on-disk pair are gone until a re-verifiable artifact
+    // ships. FanTRIAC stays eligible=false / blocked.
 
     test('fixture FanPWM row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
         const entry = catalogIndex.get(FANPWM_CONFIG_STRING);
@@ -871,30 +848,18 @@ describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
         expect(entry.channel).toBe('preview');
     });
 
-    test('firmware/sources.json carries the FanPWM preview source (block_tokens FanTRIAC + LED)', () => {
+    test('the retired standalone FanPWM preview is out of firmware/sources.json', () => {
         const src = (sources.sources || []).find(
             s => s.config_string === FANPWM_CONFIG_STRING
         );
-        expect(src).toBeDefined();
-        expect(src.channel).toBe('preview');
-        expect(src.version).toBe('1.0.0');
-        expect(src.asset_name).toBe(
-            'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin'
-        );
-        expect(src.expected_sha256).toBe(
-            '4ef9f35346b38be05d270d07b6baa46eae139e7a440af95e80f97c3b91c59926'
-        );
-        expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+        expect(src).toBeUndefined();
     });
 
-    test('manifest.json carries the FanPWM preview build', () => {
+    test('the retired standalone FanPWM preview is out of manifest.json', () => {
         const build = (manifest.builds || []).find(
             b => b.config_string === FANPWM_CONFIG_STRING
         );
-        expect(build).toBeDefined();
-        expect(build.channel).toBe('preview');
-        expect(build.version).toBe('1.0.0');
-        expect(build.modules).toEqual(expect.arrayContaining(['FanPWM']));
+        expect(build).toBeUndefined();
     });
 
     test('FanPWM is NOT in REQUIRED_CONFIGS (production-only) and NOT in kits', () => {
@@ -907,14 +872,17 @@ describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
 });
 
 describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC preview import recognition', () => {
-    // FanDAC is the third (and last currently eligible) fan-driver preview,
-    // imported by the preview-eligible import automation. Same two-concept
-    // eligibility model as FanRelay / FanPWM: catalog status stays
-    // hardware-pending + webflash_build_matrix=false; the explicit
-    // webflash_import_eligibility.eligible=true flag authorises the Advanced-
-    // install-only, acknowledgement-gated preview import — present in sources +
-    // manifest, absent from REQUIRED_CONFIGS + kits. FanTRIAC stays
-    // eligible=false / blocked.
+    // FanDAC was the third fan-driver preview, imported by the preview-eligible
+    // import automation under the same two-concept eligibility model as
+    // FanRelay / FanPWM: catalog status stays hardware-pending +
+    // webflash_build_matrix=false; the explicit
+    // webflash_import_eligibility.eligible=true flag still authorises a preview
+    // import. The import was later RETIRED: upstream's regenerated
+    // v1.0.0-preview checksums-sha256.txt no longer lists the standalone FanDAC
+    // asset, so the importer fails closed on it. Eligibility recognition stands
+    // (the fixture row is unchanged), but the source entry, manifest build, and
+    // on-disk pair are gone until a re-verifiable artifact ships. FanTRIAC
+    // stays eligible=false / blocked.
 
     test('fixture FanDAC row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
         const entry = catalogIndex.get(FANDAC_CONFIG_STRING);
@@ -940,30 +908,18 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC preview import recog
         expect(entry.channel).toBe('preview');
     });
 
-    test('firmware/sources.json carries the FanDAC preview source (block_tokens FanTRIAC + LED)', () => {
+    test('the retired standalone FanDAC preview is out of firmware/sources.json', () => {
         const src = (sources.sources || []).find(
             s => s.config_string === FANDAC_CONFIG_STRING
         );
-        expect(src).toBeDefined();
-        expect(src.channel).toBe('preview');
-        expect(src.version).toBe('1.0.0');
-        expect(src.asset_name).toBe(
-            'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin'
-        );
-        expect(src.expected_sha256).toBe(
-            '151894c1408c5ae9d45f56382e392a82539a87d2882f443fa9bc78cdb6a39b9f'
-        );
-        expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+        expect(src).toBeUndefined();
     });
 
-    test('manifest.json carries the FanDAC preview build', () => {
+    test('the retired standalone FanDAC preview is out of manifest.json', () => {
         const build = (manifest.builds || []).find(
             b => b.config_string === FANDAC_CONFIG_STRING
         );
-        expect(build).toBeDefined();
-        expect(build.channel).toBe('preview');
-        expect(build.version).toBe('1.0.0');
-        expect(build.modules).toEqual(expect.arrayContaining(['FanDAC']));
+        expect(build).toBeUndefined();
     });
 
     test('FanDAC is NOT in REQUIRED_CONFIGS (production-only) and NOT in kits', () => {
@@ -1086,8 +1042,10 @@ describe('WF-IMPORT-FAN-BUNDLES-001 — full-composition fan bundle preview impo
         }
     );
 
-    test('manifest.json holds exactly fourteen builds and no FanTRIAC reappears', () => {
-        expect((manifest.builds || []).length).toBe(14);
+    test('manifest.json holds exactly nine builds and no FanTRIAC reappears', () => {
+        // 14 -> 9 after the stale v1.0.0-preview retirement; the five
+        // full-composition fan bundles in this describe block all survive.
+        expect((manifest.builds || []).length).toBe(9);
         for (const build of manifest.builds || []) {
             expect(containsSegment(build.config_string, 'FanTRIAC')).toBe(false);
         }

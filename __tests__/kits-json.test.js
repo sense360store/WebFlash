@@ -115,19 +115,21 @@ describe('scripts/data/kits.json', () => {
         expect(matching.length).toBeGreaterThanOrEqual(1);
     });
 
-    // WF2-KIT-BUNDLE-PICKER-001 — the five customer room bundles restored into
-    // the 2.0 kit picker. The picker reads kits.json directly, so these pins
-    // double as the kit-card contract.
+    // WF2-KIT-BUNDLE-PICKER-001 — the customer room bundles in the 2.0 kit
+    // picker. The picker reads kits.json directly, so these pins double as the
+    // kit-card contract. The Kitchen / Living / Corridor base bundles were
+    // retired together with their stale v1.0.0-preview builds (AirIQ-RoomIQ,
+    // RoomIQ-LED): upstream's regenerated v1.0.0-preview checksums-sha256.txt
+    // no longer lists those assets, so the builds left the manifest and a kit
+    // card may never reference a config without a manifest build. The Kitchen
+    // bundle returns once the AirIQ-RoomIQ v1.0.6 stable import lands.
     describe('WF2-KIT-BUNDLE-PICKER-001 — room bundle picker', () => {
         const EXPECTED_BUNDLES = [
             { sku: 'S360-KIT-BATH-P', config: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable' },
-            { sku: 'S360-KIT-KITCHEN-P', config: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview' },
-            { sku: 'S360-KIT-BEDROOM-P', config: 'Ceiling-POE-RoomIQ', channel: 'stable' },
-            { sku: 'S360-KIT-LIVING-P', config: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' },
-            { sku: 'S360-KIT-CORRIDOR-P', config: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' }
+            { sku: 'S360-KIT-BEDROOM-P', config: 'Ceiling-POE-RoomIQ', channel: 'stable' }
         ];
 
-        test('all five base room bundles are present with the correct config string and channel', () => {
+        test('both base room bundles are present with the correct config string and channel', () => {
             EXPECTED_BUNDLES.forEach(expected => {
                 const kit = catalog.kits.find(k => k.sku === expected.sku);
                 expect(kit).toBeTruthy();
@@ -150,27 +152,16 @@ describe('scripts/data/kits.json', () => {
             expect(stable.map(k => k.sku).sort()).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P'].sort());
         });
 
-        test('the three preview bundles are never recommended / stable / buyable', () => {
-            const previewSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
-            previewSkus.forEach(sku => {
-                const kit = catalog.kits.find(k => k.sku === sku);
-                expect(kit).toBeTruthy();
-                expect(kit.recommended).toBe(false);
-                expect(kit.firmware_channel).toBe('preview');
-                // The schema carries no "buyable" / "default" flag; preview kits
-                // must never smuggle one in (it would otherwise be dropped, but
-                // pin the intent so a future schema change cannot regress it).
-                expect(kit.buyable).toBeUndefined();
-                expect(kit.isDefault).toBeUndefined();
+        test('the retired Kitchen / Living / Corridor base bundles stay out until their configs are re-imported', () => {
+            const retiredSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
+            retiredSkus.forEach(sku => {
+                expect(catalog.kits.find(k => k.sku === sku)).toBeUndefined();
             });
-        });
-
-        test('Living and Corridor are separate cards sharing the LED preview build', () => {
-            const living = catalog.kits.find(k => k.sku === 'S360-KIT-LIVING-P');
-            const corridor = catalog.kits.find(k => k.sku === 'S360-KIT-CORRIDOR-P');
-            expect(living.sku).not.toBe(corridor.sku);
-            expect(living.firmware_config_string).toBe('Ceiling-POE-RoomIQ-LED');
-            expect(corridor.firmware_config_string).toBe('Ceiling-POE-RoomIQ-LED');
+            // Their stale preview configs left the manifest with them.
+            ['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ-LED'].forEach(config => {
+                expect(manifestConfigStrings.has(config)).toBe(false);
+                expect(catalog.kits.some(k => k.firmware_config_string === config)).toBe(false);
+            });
         });
 
         test('standalone fan-only previews and TRIAC are not kit cards', () => {
@@ -195,24 +186,27 @@ describe('scripts/data/kits.json', () => {
         });
     });
 
-    // WF2-FAN-CONTROL-GATES-001 — the Bathroom Relay fan-control bundle, restored
-    // as a preview-channel kit card behind the additive fan-control acknowledgement
-    // (layered in scripts/install.js on top of the engine's preview-channel gate).
-    describe('WF2-FAN-CONTROL-GATES-001 — Bathroom Relay fan-control bundle', () => {
-        test('the Bathroom Relay bundle is present and maps to the preview FanRelay build', () => {
-            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL');
+    // WF2-FAN-CONTROL-GATES-001 — the relay fan-control bundle behind the
+    // additive fan-control acknowledgement (layered in scripts/install.js on
+    // top of the engine's preview-channel gate). The original Bathroom Relay
+    // bundle (S360-KIT-BATH-P-REL -> Ceiling-POE-VentIQ-FanRelay-RoomIQ) was
+    // retired with its stale v1.0.0-preview build: upstream's regenerated
+    // checksums-sha256.txt no longer lists that asset. The Kitchen Relay
+    // bundle keeps the relay acknowledgement contract live.
+    describe('WF2-FAN-CONTROL-GATES-001 — relay fan-control bundle', () => {
+        test('the Kitchen Relay bundle is present and maps to the preview FanRelay build', () => {
+            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-KITCHEN-P-REL');
             expect(kit).toBeTruthy();
-            expect(kit.firmware_config_string).toBe('Ceiling-POE-VentIQ-FanRelay-RoomIQ');
+            expect(kit.firmware_config_string).toBe('Ceiling-POE-AirIQ-FanRelay-RoomIQ');
             expect(kit.firmware_channel).toBe('preview');
             expect(manifestConfigStrings.has(kit.firmware_config_string)).toBe(true);
         });
 
-        test('it is a full room bundle (RoomIQ + VentIQ + relay fan), never recommended / stable / default / buyable', () => {
-            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL');
+        test('it is a full room bundle (RoomIQ + AirIQ + relay fan), never recommended / stable / default / buyable', () => {
+            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-KITCHEN-P-REL');
             expect(kit.wizard_state.roomiq).toBe('roomiq');
-            expect(kit.wizard_state.ventiq).toBe('ventiq');
+            expect(kit.wizard_state.airiq).toBe('airiq');
             expect(kit.wizard_state.fan).toBe('relay');
-            expect(kit.wizard_state.bathroom).toBe(true);
             expect(kit.recommended).toBe(false);
             // The schema carries no buyable / default flag; preview fan-control
             // kits must never smuggle one in.
@@ -220,10 +214,16 @@ describe('scripts/data/kits.json', () => {
             expect(kit.isDefault).toBeUndefined();
         });
 
-        test('it carries no blocked FanTRIAC token', () => {
-            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL');
-            expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
-            expect(kit.wizard_state.fan).not.toBe('triac');
+        test('the retired Bathroom Relay bundle and its config stay out until re-imported', () => {
+            expect(catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL')).toBeUndefined();
+            expect(manifestConfigStrings.has('Ceiling-POE-VentIQ-FanRelay-RoomIQ')).toBe(false);
+        });
+
+        test('no kit carries a blocked FanTRIAC token', () => {
+            catalog.kits.forEach(kit => {
+                expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
+                expect(kit.wizard_state.fan).not.toBe('triac');
+            });
         });
     });
 
@@ -242,10 +242,13 @@ describe('scripts/data/kits.json', () => {
             { sku: 'S360-KIT-KITCHEN-P-DAC', config: 'Ceiling-POE-AirIQ-FanDAC-RoomIQ', fan: 'analog', air: 'airiq', bathroom: false }
         ];
 
-        test('the catalogue holds exactly eleven kits', () => {
-            // Six pre-existing bundles (five base + Bathroom Relay) plus the five
-            // new fan bundles. The kit-mode picker renders one card per kit.
-            expect(catalog.kits).toHaveLength(11);
+        test('the catalogue holds exactly seven kits', () => {
+            // Two stable base bundles (Bathroom, Bedroom) plus the five
+            // full-composition fan bundles. The Kitchen / Living / Corridor
+            // base bundles and the Bathroom Relay bundle retired together with
+            // their stale v1.0.0-preview builds. The kit-mode picker renders
+            // one card per kit.
+            expect(catalog.kits).toHaveLength(7);
             expect(catalog.skipped).toEqual([]);
         });
 

@@ -211,9 +211,14 @@ class PlanActionTests(unittest.TestCase):
             self.assertEqual(t["action"], auto.ACTION_IDEMPOTENT)
             self.assertTrue(t["on_disk"])
 
-    def test_live_fan_drivers_are_idempotent_on_disk(self):
-        # FanRelay / FanPWM / FanDAC are all on disk in the committed repo with
-        # SHAs matching their pins → a plan against the live tree is a clean no-op.
+    def test_retired_fan_drivers_plan_as_skip_on_live_tree(self):
+        # The VentIQ FanRelay / standalone FanPWM / standalone FanDAC previews
+        # were retired (upstream's regenerated v1.0.0-preview
+        # checksums-sha256.txt no longer lists their assets): their source
+        # entries left firmware/sources.json and their .bin + sidecar pairs
+        # left firmware/configurations/. A plan against the live tree now
+        # reports them as skip (eligible upstream, but not declared in
+        # sources.json), never as an import or overwrite.
         catalog = auto.load_catalog(
             REPO_ROOT / "__tests__" / "fixtures" / "esphome-product-catalog.json"
         )
@@ -225,7 +230,8 @@ class PlanActionTests(unittest.TestCase):
         )
         by = _by_config(targets)
         for cs in (FANRELAY, FANPWM, FANDAC):
-            self.assertEqual(by[cs]["action"], auto.ACTION_IDEMPOTENT, cs)
+            self.assertEqual(by[cs]["action"], auto.ACTION_SKIP, cs)
+            self.assertFalse(by[cs]["on_disk"], cs)
 
     def test_overwrite_blocked_when_sha_differs(self):
         with _TmpConfigDir() as cfg:

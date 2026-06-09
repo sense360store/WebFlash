@@ -93,8 +93,11 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — default install path', () => {
 });
 
 describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — every kit card resolves to a real manifest build', () => {
-  test('there is at least the eleven-bundle picker surface (no empty picker)', () => {
-    expect(kits.length).toBeGreaterThanOrEqual(11);
+  test('there is at least the seven-bundle picker surface (no empty picker)', () => {
+    // 11 -> 7 after the stale v1.0.0-preview retirement removed the Kitchen /
+    // Living / Corridor base bundles and the Bathroom Relay bundle together
+    // with their builds.
+    expect(kits.length).toBeGreaterThanOrEqual(7);
     expect(catalog.skipped).toEqual([]);
   });
 
@@ -120,12 +123,14 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — nothing forbidden appears in the pic
     });
   });
 
-  test('the standalone fan-only previews are published but are never kit cards', () => {
-    // They exist in the manifest (advanced-builder reachable) ...
+  test('the standalone fan-only previews are retired and are never kit cards', () => {
+    // The standalone FanPWM / FanDAC previews were retired with the stale
+    // v1.0.0-preview batch (upstream's regenerated checksums-sha256.txt no
+    // longer lists their assets), so they are out of the manifest entirely ...
     STANDALONE_FAN_ONLY.forEach((cfg) => {
-      expect(buildByConfig.has(cfg)).toBe(true);
+      expect(buildByConfig.has(cfg)).toBe(false);
     });
-    // ... but no customer kit card maps to a fan-only config.
+    // ... and no customer kit card maps to a fan-only config either way.
     kits.forEach((kit) => {
       expect(STANDALONE_FAN_ONLY).not.toContain(kit.firmware_config_string);
     });
