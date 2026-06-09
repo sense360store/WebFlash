@@ -122,7 +122,7 @@ describe('scripts/data/kits.json', () => {
         const EXPECTED_BUNDLES = [
             { sku: 'S360-KIT-BATH-P', config: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable' },
             { sku: 'S360-KIT-KITCHEN-P', config: 'Ceiling-POE-AirIQ-RoomIQ', channel: 'preview' },
-            { sku: 'S360-KIT-BEDROOM-P', config: 'Ceiling-POE-RoomIQ', channel: 'preview' },
+            { sku: 'S360-KIT-BEDROOM-P', config: 'Ceiling-POE-RoomIQ', channel: 'stable' },
             { sku: 'S360-KIT-LIVING-P', config: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' },
             { sku: 'S360-KIT-CORRIDOR-P', config: 'Ceiling-POE-RoomIQ-LED', channel: 'preview' }
         ];
@@ -142,16 +142,16 @@ describe('scripts/data/kits.json', () => {
             });
         });
 
-        test('S360-KIT-BATH-P is the only default / recommended / stable bundle', () => {
+        test('S360-KIT-BATH-P is the only recommended / default bundle; Bedroom joins it on the stable channel', () => {
             const recommended = catalog.kits.filter(k => k.recommended);
             expect(recommended.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
 
             const stable = catalog.kits.filter(k => k.firmware_channel === 'stable');
-            expect(stable.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
+            expect(stable.map(k => k.sku).sort()).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P'].sort());
         });
 
-        test('the four preview bundles are never recommended / stable / buyable', () => {
-            const previewSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-BEDROOM-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
+        test('the three preview bundles are never recommended / stable / buyable', () => {
+            const previewSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
             previewSkus.forEach(sku => {
                 const kit = catalog.kits.find(k => k.sku === sku);
                 expect(kit).toBeTruthy();
@@ -291,11 +291,11 @@ describe('scripts/data/kits.json', () => {
             });
         });
 
-        test('S360-KIT-BATH-P stays the only stable / recommended kit', () => {
+        test('S360-KIT-BATH-P stays the only recommended kit; Bedroom joins it on the stable channel', () => {
             const recommended = catalog.kits.filter(k => k.recommended);
             expect(recommended.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
             const stable = catalog.kits.filter(k => k.firmware_channel === 'stable');
-            expect(stable.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
+            expect(stable.map(k => k.sku).sort()).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P'].sort());
         });
 
         test('the two FanDAC kits combine FanDAC with a VentIQ / AirIQ air sensor', () => {

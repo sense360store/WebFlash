@@ -215,7 +215,7 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
         expect(report.summary.total).toBe(15);
         expect(report.summary.import_eligible).toBe(13); // Release-One + 4 previews + 3 single-driver fans + 5 room-bundle fans
         expect(report.summary.manifest_eligible).toBe(13);
-        expect(report.summary.required_configs_eligible).toBe(1); // Release-One only
+        expect(report.summary.required_configs_eligible).toBe(2); // Release-One + RoomIQ (both production)
         expect(report.summary.kit_eligible).toBe(13);
     });
 });
