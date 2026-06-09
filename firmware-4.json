@@ -1,6 +1,6 @@
 {
   "name": "Sense360 ESP32 Firmware - Core Module",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -10,24 +10,24 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-FanDAC-RoomIQ-v1.0.0-preview.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-v1.0.5-stable.bin",
           "offset": 0,
-          "md5": "bffa8b503a5c451763ff38cd8f106846",
-          "sha256": "a08c82f735aa058614afda71dbec2d220d23a0a4fbb4cb46088adb82a41d8ef8",
-          "signature": "b6pefBc/uZqDOYqRsT2fcFjDgOK1OloK0i1hcXZzo5Q=",
-          "signature_ed25519": "BOaph2yrQmNmZYwgRsz/C19lwMuQC69srE1HBDGVQ0obg9ZqTtlST9iCYmn7TKF9zgjXzbYStHrBunontCeZCA==",
-          "signature_key_id": "dev-2026-01"
+          "md5": "cff8be22ba97aaf1e649f31d33c29a03",
+          "sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
+          "signature": "VKuNtYR65Yjt5TNsc0+V2T2i+PFThh4LibxkjyupSrY=",
+          "signature_ed25519": "P581qPt5dsBkeWnjZpVLs1rosq0wWlF2bbc+Vm+vU4OWxHr6cOAZIrP2A2OyMW9o+Ji0vJUnXSwD9IzsT4ITBA==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
       "improv": true,
-      "md5": "bffa8b503a5c451763ff38cd8f106846",
-      "sha256": "a08c82f735aa058614afda71dbec2d220d23a0a4fbb4cb46088adb82a41d8ef8",
-      "signature": "b6pefBc/uZqDOYqRsT2fcFjDgOK1OloK0i1hcXZzo5Q=",
-      "signature_ed25519": "BOaph2yrQmNmZYwgRsz/C19lwMuQC69srE1HBDGVQ0obg9ZqTtlST9iCYmn7TKF9zgjXzbYStHrBunontCeZCA==",
-      "signature_key_id": "dev-2026-01",
-      "file_size": 990112,
-      "source_commit": "eba4e8b58bb1f013ef640b49b509e799ec448e57",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/eba4e8b58bb1f013ef640b49b509e799ec448e57",
+      "md5": "cff8be22ba97aaf1e649f31d33c29a03",
+      "sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
+      "signature": "VKuNtYR65Yjt5TNsc0+V2T2i+PFThh4LibxkjyupSrY=",
+      "signature_ed25519": "P581qPt5dsBkeWnjZpVLs1rosq0wWlF2bbc+Vm+vU4OWxHr6cOAZIrP2A2OyMW9o+Ji0vJUnXSwD9IzsT4ITBA==",
+      "signature_key_id": "sense360-prod-2026-02",
+      "file_size": 956960,
+      "source_commit": "c8a9bf31c7689faab9eaf8579a5c23b7915afca7",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/c8a9bf31c7689faab9eaf8579a5c23b7915afca7",
       "deprecated": false
     }
   ]
