@@ -214,6 +214,19 @@ function stripArtifactVersion(name) {
     return name.replace(/-v\d+\.\d+\.\d+/i, '');
 }
 
+// Strip the trailing "-<channel>" token from a version-stripped artifact base
+// (e.g. "Sense360-Ceiling-POE-AirIQ-RoomIQ-stable.bin" ->
+// "Sense360-Ceiling-POE-AirIQ-RoomIQ.bin") so the source-vs-catalog identity
+// comparison can separate "different product" (always an error) from
+// "different channel" (legitimate only in the stable-promotion declaration
+// window — see the asset_name test below).
+function stripArtifactChannel(name) {
+    if (typeof name !== 'string') {
+        return name;
+    }
+    return name.replace(/-(stable|preview|beta|dev)(\.bin)$/i, '$2');
+}
+
 const catalog = loadProductCatalog();
 const catalogIndex = buildCatalogIndex(catalog);
 const legacyIds = buildLegacyIdIndex(catalog);
@@ -301,6 +314,27 @@ describe('firmware/sources.json ↔ product catalog', () => {
         }
     });
 
+    test('every source asset_name is the canonical filename for its own fields', () => {
+        // Internal-consistency check: the asset filename must be exactly the
+        // canonical Sense360-<config_string>-v<version>-<channel>.bin derived
+        // from the entry's own declared fields (the same derivation
+        // scripts/add-firmware-source.py uses). This catches a product-identity
+        // or channel drift INSIDE an entry deterministically, without any
+        // dependency on how fresh the vendored catalog fixture is.
+        for (const source of sources.sources || []) {
+            const canonical =
+                `Sense360-${source.config_string}-v${source.version}-${source.channel}.bin`;
+            if (source.asset_name !== canonical) {
+                throw new Error(
+                    `firmware/sources.json asset_name "${source.asset_name}" is not ` +
+                        `the canonical filename "${canonical}" derived from its own ` +
+                        `config_string/version/channel. The entry's identity, ` +
+                        'version, or channel drifted.'
+                );
+            }
+        }
+    });
+
     test('source asset_name matches catalog artifact_name base (version-tolerant)', () => {
         // Version-tolerant identity check. Compare the config_string (the map
         // key) plus the version-stripped artifact base — which still encodes the
@@ -308,9 +342,19 @@ describe('firmware/sources.json ↔ product catalog', () => {
         // filename. firmware/sources.json may carry a freshly declared upstream
         // version (e.g. v1.0.2) before the vendored fixture is refreshed, so an
         // exact filename equality would false-fail on every bump. A genuine
-        // product or channel drift still fails because the stripped bases differ.
-        // The blocked-token and eligibility protections live in their own tests
-        // and are unaffected.
+        // product drift still fails because the channel-stripped identities
+        // differ. The blocked-token and eligibility protections live in their
+        // own tests and are unaffected.
+        //
+        // Channel tolerance is directional and covers only the documented
+        // stable-promotion declaration window: a `channel: stable` source may
+        // be declared (by Release 4 / scripts/add-firmware-source.py) while the
+        // vendored fixture still shows the product's older preview artifact —
+        // the importer + fixture refresh and the promote-to-stable retirement
+        // land in a later commit. The reverse direction (a preview source
+        // lingering after the catalog moved to a stable artifact) stays an
+        // error: promote-to-stable retires the superseded preview source in
+        // the same change that promotes the catalog row.
         for (const source of sources.sources || []) {
             const entry = catalogIndex.get(source.config_string);
             if (!entry) {
@@ -319,16 +363,30 @@ describe('firmware/sources.json ↔ product catalog', () => {
             if (typeof entry.artifact_name === 'string' && entry.artifact_name.length > 0) {
                 const sourceBase = stripArtifactVersion(source.asset_name);
                 const catalogBase = stripArtifactVersion(entry.artifact_name);
-                if (sourceBase !== catalogBase) {
-                    throw new Error(
-                        `firmware/sources.json asset_name "${source.asset_name}" ` +
-                            `does not match upstream catalog artifact_name ` +
-                            `"${entry.artifact_name}" for config_string ` +
-                            `"${source.config_string}" even after stripping the ` +
-                            `version token ("${sourceBase}" vs "${catalogBase}"). ` +
-                            'The product identity or channel drifted, not just the version.'
-                    );
+                if (sourceBase === catalogBase) {
+                    continue;
                 }
+
+                const sourceIdentity = stripArtifactChannel(sourceBase);
+                const catalogIdentity = stripArtifactChannel(catalogBase);
+                const isPromotionWindow =
+                    sourceIdentity === catalogIdentity &&
+                    source.channel === 'stable' &&
+                    /-preview\.bin$/i.test(catalogBase);
+                if (isPromotionWindow) {
+                    continue;
+                }
+
+                throw new Error(
+                    `firmware/sources.json asset_name "${source.asset_name}" ` +
+                        `does not match upstream catalog artifact_name ` +
+                        `"${entry.artifact_name}" for config_string ` +
+                        `"${source.config_string}" even after stripping the ` +
+                        `version token ("${sourceBase}" vs "${catalogBase}"). ` +
+                        'The product identity or channel drifted, not just the ' +
+                        'version (only a stable source declared ahead of a ' +
+                        'still-preview catalog row is tolerated).'
+                );
             }
         }
     });

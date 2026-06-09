@@ -597,6 +597,67 @@ def prune_superseded_configurations(
     return removed
 
 
+# --- Already-staged skip ---------------------------------------------------
+
+
+def find_staged_pinned_asset(
+    entry: Dict[str, Any], *, repo_root: Path
+) -> Optional[Tuple[Path, "gen_manifests.FirmwareMetadata"]]:
+    """Return ``(target_path, metadata)`` when the entry is already staged.
+
+    A source entry counts as already staged when ALL of the following hold:
+
+    * the entry pins ``expected_sha256`` (WebFlash's own per-entry pin),
+    * the canonical target ``.bin`` already exists under
+      ``firmware/configurations/`` and hashes to exactly that pin,
+    * the ``.meta.json`` provenance sidecar exists next to it.
+
+    In that case the bytes the import would produce are already on disk and
+    verified against the strongest check the importer has (the pinned SHA), so
+    the network re-import — including re-verification against the *current*
+    upstream ``checksums-sha256.txt`` — can be skipped. Upstream releases
+    regenerate that checksum manifest over time (for example when superseded
+    assets are pruned from a shared preview release), which would otherwise
+    hard-fail the whole import run for assets that are already correctly
+    imported and pinned (the recorded failure mode of the firmware-import
+    workflow: "checksums-sha256.txt does not list an entry for '<asset>'").
+
+    Entries without a pinned ``expected_sha256`` never skip — they always take
+    the full download + upstream-checksum verification path. A changed pin (a
+    new upstream version or a deliberately replaced asset) also re-takes the
+    full path, because the staged file no longer matches the pin.
+
+    The static policies that need no network — declared-name shape,
+    config-string match, block-token absence, minimum size — are re-enforced
+    by the caller before the skip is honoured.
+    """
+
+    raw_pin = entry.get("expected_sha256")
+    if not isinstance(raw_pin, str) or not _HEX64_PATTERN.match(raw_pin.strip()):
+        return None
+    pin = raw_pin.strip().lower()
+
+    asset_name = entry.get("asset_name")
+    if not isinstance(asset_name, str) or not asset_name:
+        return None
+    try:
+        metadata = gen_manifests.parse_firmware_metadata(
+            Path(asset_name), default_channel=entry.get("channel") or "stable"
+        )
+    except ValueError:
+        # Unparseable names fall through to the full path, which reports the
+        # same parse problem the way it always has.
+        return None
+
+    target_path = metadata.target_path(repo_root / "firmware")
+    sidecar_path = sync_releases.sidecar_target_path(target_path)
+    if not target_path.exists() or not sidecar_path.exists():
+        return None
+    if sha256_of_file(target_path) != pin:
+        return None
+    return target_path, metadata
+
+
 # --- Main import flow ----------------------------------------------------
 
 
@@ -627,6 +688,27 @@ def import_source_entry(
     min_size_bytes = int(entry.get("min_size_bytes") or DEFAULT_MIN_SIZE_BYTES)
 
     print(f"→ Importing {asset_name} from {source_repo}@{release_tag}")
+
+    # Idempotent skip for already-imported, pin-verified assets. The staged
+    # bytes are re-verified against the entry's own expected_sha256 (see
+    # find_staged_pinned_asset), and the static policies below are still
+    # enforced; only the network fetch and the upstream checksums-sha256.txt
+    # re-verification are skipped. This keeps the import run green when an
+    # upstream release later regenerates its checksum manifest without the
+    # already-imported asset's line.
+    staged = find_staged_pinned_asset(entry, repo_root=repo_root)
+    if staged is not None:
+        staged_path, staged_metadata = staged
+        assert_filename_matches_entry(asset_name, entry)
+        assert_config_string_matches(staged_metadata, entry)
+        assert_block_tokens_absent(asset_name, staged_metadata, block_tokens)
+        assert_size_meets_threshold(staged_path, min_size_bytes, asset_name)
+        print(
+            "  ✓ Already imported: staged file matches pinned expected_sha256; "
+            "skipping re-download and upstream re-verification."
+        )
+        return staged_path
+
     if release_override is not None:
         release = release_override
     else:
