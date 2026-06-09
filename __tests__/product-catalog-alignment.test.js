@@ -1,6 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'node:fs';
 import path from 'node:path';
+// Stable surface (stable configs, recommended/production configs) derived from
+// kits.json, not hardcoded. See __tests__/helpers/stable-surface.js.
+import { stableConfigs, recommendedConfigs } from './helpers/stable-surface.js';
 
 // WF-PRODUCT-001 — product-catalog alignment guard.
 //
@@ -734,11 +737,21 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
             expect(manifestConfigs.has(cfg)).toBe(true);
         }
 
-        const stableKits = (kits.kits || []).filter(k => (k.firmware_channel || 'stable') === 'stable');
-        expect(stableKits.map(k => k.firmware_config_string).sort()).toEqual(['Ceiling-POE-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ'].sort());
+        // Cross-check the MANIFEST's stable-channel builds against the kits.json-derived
+        // stable config set (the helper). Comparing a different artifact (the manifest)
+        // to the kits.json-derived set catches drift in either direction without
+        // comparing kits.json to itself.
+        const manifestStableConfigs = (manifest.builds || [])
+            .filter(b => b.channel === 'stable')
+            .map(b => b.config_string)
+            .sort();
+        expect([...new Set(manifestStableConfigs)]).toEqual([...stableConfigs]);
 
+        // The workflow REQUIRED_CONFIGS allowlist (a different artifact) is the
+        // production surface (the kits.json-derived recommended configs) plus the
+        // standalone Rescue build.
         const required = parseRequiredConfigsFromWorkflow();
-        expect(required).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue']);
+        expect(required).toEqual([...recommendedConfigs, RESCUE_CONFIG_STRING]);
     });
 });
 

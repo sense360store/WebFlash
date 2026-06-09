@@ -1,6 +1,9 @@
 import { describe, expect, test } from '@jest/globals';
 import fs from 'node:fs';
 import path from 'node:path';
+// REQUIRED_CONFIGS production surface derived from kits.json, not hardcoded.
+// See __tests__/helpers/stable-surface.js for the anti-tautology contract.
+import { requiredConfigs } from './helpers/stable-surface.js';
 
 // WF-DEPLOY-001 — GitHub Pages surface guard.
 //
@@ -222,9 +225,9 @@ describe('github-pages-surface — REQUIRED_CONFIGS allowlist contract', () => {
         // WF-LED-003 pinned this as production-only; LED preview must
         // not be in REQUIRED_CONFIGS (it's preview, not production).
         const required = parseRequiredConfigsFromWorkflow();
-        expect(new Set(required)).toEqual(
-            new Set(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue'])
-        );
+        // The workflow allowlist (a different artifact) is cross-checked against
+        // the kits.json-derived production surface plus the standalone Rescue build.
+        expect(new Set(required)).toEqual(new Set(requiredConfigs));
     });
 
     test('LED preview is NOT in REQUIRED_CONFIGS (preview, not production)', () => {
