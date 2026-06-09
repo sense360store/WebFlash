@@ -986,7 +986,14 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
 
     if (state === 'finished') {
       setRing(100);
-      appendConsole('✓ Firmware installed successfully');
+      // The phase-transition branch above may already have appended this exact
+      // line (defaultConsoleLine('finished') when the component sent no
+      // message); guard on lastConsoleLine so the success line never doubles.
+      const doneLine = '✓ Firmware installed successfully';
+      if (lastConsoleLine !== doneLine) {
+        appendConsole(doneLine);
+        lastConsoleLine = doneLine;
+      }
       if (a11y && typeof a11y.announce === 'function') {
         a11y.announce('Firmware installed successfully.');
       }

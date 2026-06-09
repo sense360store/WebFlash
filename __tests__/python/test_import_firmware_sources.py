@@ -521,6 +521,135 @@ class ExpectedSha256Tests(unittest.TestCase):
         self.assertIn("expected_sha256", str(ctx.exception))
 
 
+class AlreadyStagedSkipTests(unittest.TestCase):
+    """Idempotent re-runs: an already-imported asset whose staged bytes match
+    the entry's pinned ``expected_sha256`` (and whose sidecar exists) is
+    skipped without any network access. This is the fix for the recorded
+    firmware-import workflow failure where upstream regenerated a shared
+    release's ``checksums-sha256.txt`` and the re-verification of unchanged,
+    already-imported assets hard-failed the whole run ("checksums-sha256.txt
+    does not list an entry for '<asset>'"). Entries without a pin, with a
+    stale pin, or with a missing bin/sidecar always take the full path.
+    """
+
+    ASSET = "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.0-stable.bin"
+
+    def _stage(
+        self,
+        tmp_root: Path,
+        *,
+        name: Optional[str] = None,
+        bin_bytes: Optional[bytes] = None,
+        sidecar: bool = True,
+    ) -> Path:
+        configurations = tmp_root / "firmware" / "configurations"
+        configurations.mkdir(parents=True, exist_ok=True)
+        staged = configurations / (name or self.ASSET)
+        staged.write_bytes(bin_bytes if bin_bytes is not None else _make_bin())
+        if sidecar:
+            staged.with_suffix(".meta.json").write_text("{}", encoding="utf-8")
+        return staged
+
+    def test_staged_pinned_asset_skips_network_even_with_broken_upstream_checksums(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        # Reproduce the failure mode: upstream's checksums-sha256.txt no
+        # longer lists the asset. With the skip, the importer never even
+        # fetches it; without the skip this import would hard-fail.
+        net.asset_bytes["checksums-sha256.txt"] = b""
+        entry = _entry(expected_sha256=hashlib.sha256(bin_bytes).hexdigest())
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            staged = self._stage(tmp_root, bin_bytes=bin_bytes)
+            sidecar_before = staged.with_suffix(".meta.json").read_text(encoding="utf-8")
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertEqual(target, staged)
+            self.assertTrue(staged.exists())
+            # No network call of any kind happened.
+            self.assertEqual(net.calls, [])
+            # The existing sidecar is left untouched (not regenerated).
+            self.assertEqual(
+                staged.with_suffix(".meta.json").read_text(encoding="utf-8"),
+                sidecar_before,
+            )
+
+    def test_staged_skip_applies_in_dry_run_too(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry(expected_sha256=hashlib.sha256(bin_bytes).hexdigest())
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            staged = self._stage(tmp_root, bin_bytes=bin_bytes)
+            target = _run_import(entry, net, repo_root=tmp_root, dry_run=True)
+            self.assertEqual(target, staged)
+            self.assertEqual(net.calls, [])
+
+    def test_stale_pin_takes_full_path_and_replaces_staged_file(self):
+        # The pin points at NEW bytes (a deliberate re-pin); the staged file
+        # holds the old bytes, so the skip must not fire and the full
+        # download + verification path replaces the file.
+        old_bytes = _make_bin()
+        new_bytes = _make_bin() + b"v2"
+        net = _build_network(new_bytes)
+        entry = _entry(expected_sha256=hashlib.sha256(new_bytes).hexdigest())
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            staged = self._stage(tmp_root, bin_bytes=old_bytes)
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertEqual(target, staged)
+            self.assertGreater(len(net.calls), 0)
+            self.assertEqual(staged.read_bytes(), new_bytes)
+
+    def test_unpinned_entry_never_skips(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry()
+        self.assertNotIn("expected_sha256", entry)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            self._stage(tmp_root, bin_bytes=bin_bytes)
+            _run_import(entry, net, repo_root=tmp_root)
+            self.assertGreater(len(net.calls), 0)
+
+    def test_missing_sidecar_takes_full_path(self):
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry(expected_sha256=hashlib.sha256(bin_bytes).hexdigest())
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            staged = self._stage(tmp_root, bin_bytes=bin_bytes, sidecar=False)
+            target = _run_import(entry, net, repo_root=tmp_root)
+            self.assertEqual(target, staged)
+            self.assertGreater(len(net.calls), 0)
+            self.assertTrue(staged.with_suffix(".meta.json").exists())
+
+    def test_staged_skip_still_enforces_block_tokens(self):
+        # A staged, pin-matching asset must still be refused when its tokens
+        # are blocked for this source — the skip never relaxes policy.
+        bin_bytes = _make_bin()
+        triac_name = "Sense360-Ceiling-POE-VentIQ-FanTRIAC-RoomIQ-v1.0.0-stable.bin"
+        net = _build_network(bin_bytes, asset_name=triac_name)
+        entry = _entry(
+            asset_name=triac_name,
+            config_string="Ceiling-POE-VentIQ-FanTRIAC-RoomIQ",
+            expected_sha256=hashlib.sha256(bin_bytes).hexdigest(),
+            required_assets=[
+                triac_name,
+                "checksums-sha256.txt",
+                "checksums-md5.txt",
+                "manifest.json",
+            ],
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            self._stage(tmp_root, name=triac_name, bin_bytes=bin_bytes)
+            with self.assertRaises(ImportValidationError) as ctx:
+                _run_import(entry, net, repo_root=tmp_root)
+            self.assertIn("FanTRIAC", str(ctx.exception))
+            self.assertIn("blocked token", str(ctx.exception))
+            self.assertEqual(net.calls, [])
+
+
 class SourcesFileTests(unittest.TestCase):
     def test_load_sources_rejects_bad_schema_version(self):
         with tempfile.TemporaryDirectory() as tmp:
