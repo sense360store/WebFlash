@@ -38,7 +38,10 @@ const TOTAL = KITS.length;
 const RECOMMENDED = KITS.find((k) => k.recommended);
 const PREVIEW_KITS = KITS.filter((k) => k.firmware_channel === 'preview');
 const STABLE_KITS = KITS.filter((k) => k.firmware_channel !== 'preview');
-const KITCHEN = KITS.find((k) => k.sku === 'S360-KIT-KITCHEN-P');
+// Retargeted from the Kitchen base bundle (S360-KIT-KITCHEN-P) after the
+// stale v1.0.0-preview retirement removed it with its AirIQ-RoomIQ build;
+// the Kitchen Relay bundle is the surviving preview Kitchen kit card.
+const KITCHEN = KITS.find((k) => k.sku === 'S360-KIT-KITCHEN-P-REL');
 const BEDROOM = KITS.find((k) => k.sku === 'S360-KIT-BEDROOM-P');
 const VENTIQ_KITS = KITS.filter((k) => k.components.some((c) => c.sku === 'S360-211'));
 const FIVE_PART_KIT = KITS.find((k) => k.components.length > 4);

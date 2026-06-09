@@ -10,24 +10,24 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin",
           "offset": 0,
-          "md5": "6e57be68d9400bb395dd8377181563df",
-          "sha256": "4ef9f35346b38be05d270d07b6baa46eae139e7a440af95e80f97c3b91c59926",
-          "signature": "mM8A5JizJvadRrczn0PsNOr5Cgn/6iDDnJDDvWtwie8=",
-          "signature_ed25519": "nucGvj62yAFJ06CmbDMu+FiWatfOal6UFi5nmfDRpvSnYCTq4gPs4gtwSD4Z7TYFWSIGFm7q6NYK75GM8JvtBg==",
-          "signature_key_id": "sense360-prod-2026-02"
+          "md5": "720babcfd24277aa4f5f1dec7ef2e945",
+          "sha256": "6d988708558881d653ffbc7429ef8779a574878ac0ee26d745bf645be85befba",
+          "signature": "3szNJ0DVMe3lCpuiSbatn/mHY1dyqhLaKAfoftAGlwI=",
+          "signature_ed25519": "msNbjoyll18h9akwIS08cLt2MAhBHDVp7w4XTmXA/7lKDiKLFN1Rf68Cn1D9MwR7oSKwd70E3HrmrOHHe20pDg==",
+          "signature_key_id": "dev-2026-01"
         }
       ],
       "improv": true,
-      "md5": "6e57be68d9400bb395dd8377181563df",
-      "sha256": "4ef9f35346b38be05d270d07b6baa46eae139e7a440af95e80f97c3b91c59926",
-      "signature": "mM8A5JizJvadRrczn0PsNOr5Cgn/6iDDnJDDvWtwie8=",
-      "signature_ed25519": "nucGvj62yAFJ06CmbDMu+FiWatfOal6UFi5nmfDRpvSnYCTq4gPs4gtwSD4Z7TYFWSIGFm7q6NYK75GM8JvtBg==",
-      "signature_key_id": "sense360-prod-2026-02",
-      "file_size": 950720,
-      "source_commit": "f9c503b166046db8afcf60bb473e469ed699f600",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/f9c503b166046db8afcf60bb473e469ed699f600",
+      "md5": "720babcfd24277aa4f5f1dec7ef2e945",
+      "sha256": "6d988708558881d653ffbc7429ef8779a574878ac0ee26d745bf645be85befba",
+      "signature": "3szNJ0DVMe3lCpuiSbatn/mHY1dyqhLaKAfoftAGlwI=",
+      "signature_ed25519": "msNbjoyll18h9akwIS08cLt2MAhBHDVp7w4XTmXA/7lKDiKLFN1Rf68Cn1D9MwR7oSKwd70E3HrmrOHHe20pDg==",
+      "signature_key_id": "dev-2026-01",
+      "file_size": 1010192,
+      "source_commit": "eba4e8b58bb1f013ef640b49b509e799ec448e57",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/eba4e8b58bb1f013ef640b49b509e799ec448e57",
       "deprecated": false
     }
   ]

@@ -118,12 +118,15 @@ describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
   });
 
   it('resolves an LED selection to the preview build and flags it preview', async () => {
+    // Retargeted from the retired Ceiling-POE-RoomIQ-LED preview (stale
+    // v1.0.0-preview retirement) to the surviving VentIQ LED preview
+    // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview).
     const { engine } = await boot();
     const result = await engine.state.resolveCompatibleFirmware({
-      mount: 'ceiling', power: 'poe', bathroom: false,
-      roomiq: 'roomiq', led: 'led', airiq: 'none', ventiq: 'none', fan: 'none',
+      mount: 'ceiling', power: 'poe', bathroom: true,
+      roomiq: 'roomiq', led: 'led', airiq: 'none', ventiq: 'ventiq', fan: 'none',
     });
-    expect(result.configString).toBe('Ceiling-POE-RoomIQ-LED');
+    expect(result.configString).toBe('Ceiling-POE-VentIQ-RoomIQ-LED');
     expect(result.installable).toBe(true);
     expect(result.isPreview).toBe(true);
     expect(result.channel).toBe('preview');
@@ -288,9 +291,12 @@ describe('PR 4 — Identify view bound to the engine', () => {
     expect(viewState.sel.air).toBe('airiq');
     expect(viewState.sel.roomiq).toBe(true);
     expect(viewState.sel.power).toBe('poe');
-    // AirIQ + RoomIQ over PoE is a published preview build, so it is installable.
+    // The AirIQ-RoomIQ preview build was retired with the stale
+    // v1.0.0-preview batch, so the hydrated config currently has no build and
+    // resolves fail-closed. This flips back to installable (stable) when the
+    // AirIQ-RoomIQ v1.0.6 stable import lands; the hydration assertions above
+    // are this test's real subject.
     expect(viewState.resolved.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
-    expect(viewState.resolved.installable).toBe(true);
-    expect(viewState.resolved.isPreview).toBe(true);
+    expect(viewState.resolved.installable).toBe(false);
   });
 });

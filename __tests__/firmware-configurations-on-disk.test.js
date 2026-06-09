@@ -15,11 +15,14 @@ import path from 'node:path';
 //
 // A stale .bin + matching sidecar landing on disk before manifest
 // regeneration would pass both. This file pins the on-disk file list to
-// exactly the intended application binaries (Release-One stable, the VentIQ
-// LED preview, the three first-batch previews, the three single-driver fan
-// manual-previews, and the five full-composition room-bundle fan previews,
-// all imported from upstream v1.0.0-preview) plus their sidecars, and
-// additionally rejects any FanTRIAC segment in any filename in the directory.
+// exactly the intended application binaries (Release-One stable, the RoomIQ
+// stable, the VentIQ LED preview, and the five full-composition room-bundle
+// fan previews imported from upstream v1.0.0-preview) plus their sidecars,
+// and additionally rejects any FanTRIAC segment in any filename in the
+// directory. The five stale v1.0.0-preview builds (AirIQ-RoomIQ, standalone
+// FanDAC, standalone FanPWM, RoomIQ-LED, VentIQ-FanRelay-RoomIQ) were retired
+// when upstream regenerated the v1.0.0-preview checksums-sha256.txt without
+// their assets, so they could no longer be re-verified by the importer.
 //
 // The Rescue artifact lives under firmware/rescue/ and is intentionally
 // out of scope for this test — it is built in-tree, not imported, and
@@ -58,31 +61,14 @@ const ROOMIQ_STABLE_SIDECAR = ROOMIQ_STABLE_BIN.replace(/\.bin$/, '.meta.json');
 const LED_PREVIEW_BIN = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
 const LED_PREVIEW_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json';
 
-// WF-PREVIEW-IMPORT-FIRST-BATCH-001 — two first-batch preview builds
-// imported from upstream sense360store/esphome-public v1.0.0-preview.
-const FIRST_BATCH_BINS = Object.freeze([
-    'Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin',
-    'Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin'
-]);
-const FIRST_BATCH_SIDECARS = Object.freeze(
-    FIRST_BATCH_BINS.map(name => name.replace(/\.bin$/, '.meta.json'))
-);
-
-// WEBFLASH-RELAY-001 — FanRelay manual-preview build imported from the same
-// upstream v1.0.0-preview release (upstream marked it WebFlash-import eligible).
-const FANRELAY_BIN = 'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin';
-const FANRELAY_SIDECAR = FANRELAY_BIN.replace(/\.bin$/, '.meta.json');
-
-// WEBFLASH-PWM-001 — FanPWM manual-preview build imported from the same upstream
-// v1.0.0-preview release (upstream marked it WebFlash-import eligible).
-const FANPWM_BIN = 'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin';
-const FANPWM_SIDECAR = FANPWM_BIN.replace(/\.bin$/, '.meta.json');
-
-// WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview build imported
-// from the same upstream v1.0.0-preview release (upstream marked it WebFlash-
-// import eligible) by the preview-eligible import automation.
-const FANDAC_BIN = 'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin';
-const FANDAC_SIDECAR = FANDAC_BIN.replace(/\.bin$/, '.meta.json');
+// The WF-PREVIEW-IMPORT-FIRST-BATCH-001 first-batch previews (AirIQ-RoomIQ,
+// RoomIQ-LED), the WEBFLASH-RELAY-001 FanRelay manual-preview, the
+// WEBFLASH-PWM-001 FanPWM manual-preview, and the
+// WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 FanDAC manual-preview were retired:
+// upstream's regenerated v1.0.0-preview checksums-sha256.txt no longer lists
+// their assets, so the importer fails closed on them. Their source entries
+// left firmware/sources.json and their .bin + .meta.json pairs left this
+// directory in the same change set.
 
 // WF-IMPORT-FAN-BUNDLES-001 — the five full-composition Bathroom / Kitchen
 // fan-control room-bundle preview builds imported from the same upstream
@@ -104,20 +90,12 @@ const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
     ROOMIQ_STABLE_BIN,
     LED_PREVIEW_BIN,
-    ...FIRST_BATCH_BINS,
-    FANRELAY_BIN,
-    FANPWM_BIN,
-    FANDAC_BIN,
     ...FAN_BUNDLE_BINS
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
     ROOMIQ_STABLE_SIDECAR,
     LED_PREVIEW_SIDECAR,
-    ...FIRST_BATCH_SIDECARS,
-    FANRELAY_SIDECAR,
-    FANPWM_SIDECAR,
-    FANDAC_SIDECAR,
     ...FAN_BUNDLE_SIDECARS
 ]);
 

@@ -84,9 +84,13 @@ function parseRequiredConfigsFromWorkflow() {
 }
 
 describe('github-pages-surface — manifest shape pins the deploy contract', () => {
-    test('manifest.json holds exactly fourteen builds (Release-One stable + twelve preview + Rescue)', () => {
+    test('manifest.json holds exactly nine builds (two stable + six preview + Rescue)', () => {
+        // 14 -> 9 when the five stale v1.0.0-preview builds (AirIQ-RoomIQ,
+        // standalone FanDAC, standalone FanPWM, RoomIQ-LED,
+        // VentIQ-FanRelay-RoomIQ) were retired after upstream regenerated the
+        // v1.0.0-preview checksums-sha256.txt without their assets.
         expect(Array.isArray(manifest.builds)).toBe(true);
-        expect(manifest.builds.length).toBe(14);
+        expect(manifest.builds.length).toBe(9);
     });
 
     test('manifest.json source_commit is not the May-7 stale deploy SHA', () => {
@@ -202,19 +206,18 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
         }
     });
 
-    test('no firmware-N.json beyond index 13 exists (no stale per-build manifests)', () => {
-        // After WF-IMPORT-FAN-BUNDLES-001 the namespace is firmware-0 …
-        // firmware-13 (three first-batch previews, the FanRelay + FanPWM +
-        // FanDAC manual-previews, the five full-composition room-bundle fan
-        // previews, Release-One, the VentIQ LED preview, and Rescue, in the
-        // generator's deterministic order). Anything past index 13 would
-        // indicate the manifest regenerator inherited a legacy index or a
-        // stale file shipped in the Pages artifact.
+    test('no firmware-N.json beyond index 8 exists (no stale per-build manifests)', () => {
+        // After the stale v1.0.0-preview retirement the namespace is
+        // firmware-0 … firmware-8 (the five full-composition room-bundle fan
+        // previews, the RoomIQ stable, Release-One, the VentIQ LED preview,
+        // and Rescue, in the generator's deterministic order). Anything past
+        // index 8 would indicate the manifest regenerator inherited a legacy
+        // index or a stale file shipped in the Pages artifact.
         const repoFiles = fs.readdirSync(repoRoot);
         const offending = repoFiles.filter(name => {
             const match = name.match(/^firmware-(\d+)\.json$/);
             if (!match) return false;
-            return Number(match[1]) > 13;
+            return Number(match[1]) > 8;
         });
         expect(offending).toEqual([]);
     });

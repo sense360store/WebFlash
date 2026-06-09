@@ -43,8 +43,10 @@ const NEW_FAN_KITS = [
   { sku: 'S360-KIT-KITCHEN-P-DAC', config: 'Ceiling-POE-AirIQ-FanDAC-RoomIQ', dac: true },
 ];
 
-// All six fan kits = the existing Bathroom Relay bundle plus the five new ones.
-const ALL_FAN_KIT_SKUS = ['S360-KIT-BATH-P-REL', ...NEW_FAN_KITS.map((k) => k.sku)];
+// All five fan kits. The Bathroom Relay bundle (S360-KIT-BATH-P-REL) retired
+// together with its stale v1.0.0-preview build (upstream's regenerated
+// checksums-sha256.txt no longer lists the VentIQ FanRelay asset).
+const ALL_FAN_KIT_SKUS = [...NEW_FAN_KITS.map((k) => k.sku)];
 const DAC_KIT_SKUS = ['S360-KIT-BATH-P-DAC', 'S360-KIT-KITCHEN-P-DAC'];
 
 function findKit(sku) {
@@ -111,8 +113,8 @@ describe('WF2-FAN-EXPANSION-001 — new fan kits resolve to real preview builds'
 // B. The additive install gate is config-driven (pure helpers + kits.json)
 // ===========================================================================
 describe('WF2-FAN-EXPANSION-001 — config-driven acknowledgement requirements', () => {
-  it('all six fan kits require the fan-control acknowledgement', () => {
-    expect(ALL_FAN_KIT_SKUS).toHaveLength(6);
+  it('all five fan kits require the fan-control acknowledgement', () => {
+    expect(ALL_FAN_KIT_SKUS).toHaveLength(5);
     ALL_FAN_KIT_SKUS.forEach((sku) => {
       const kit = findKit(sku);
       expect(kit).toBeTruthy();

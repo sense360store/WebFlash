@@ -216,9 +216,12 @@ describe('flipKitChannelsInText — surgical, format-preserving edit', () => {
     });
 
     test('against the real kits.json: flipping a preview config touches only firmware_channel lines', () => {
+        // Retargeted from Ceiling-POE-AirIQ-RoomIQ / S360-KIT-KITCHEN-P after
+        // the stale v1.0.0-preview retirement removed the Kitchen base bundle;
+        // the Bathroom PWM fan bundle is a surviving preview kit card.
         const raw = readFileSync(join(REPO_ROOT, 'scripts/data/kits.json'), 'utf8');
-        const { text, flipped } = flipKitChannelsInText(raw, 'Ceiling-POE-AirIQ-RoomIQ');
-        expect(flipped).toEqual(['S360-KIT-KITCHEN-P']);
+        const { text, flipped } = flipKitChannelsInText(raw, 'Ceiling-POE-VentIQ-FanPWM-RoomIQ');
+        expect(flipped).toEqual(['S360-KIT-BATH-P-PWM']);
         const before = raw.split('\n');
         const after = text.split('\n');
         const changed = before
@@ -232,8 +235,11 @@ describe('flipKitChannelsInText — surgical, format-preserving edit', () => {
 
 describe('removeSourceEntriesInText — minimal-diff entry removal', () => {
     test('removes exactly the named asset entry and round-trips the rest', () => {
+        // Retargeted from the RoomIQ-LED preview entry after the stale
+        // v1.0.0-preview retirement removed it from firmware/sources.json;
+        // the VentIQ FanPWM room-bundle preview is a surviving entry.
         const raw = readFileSync(join(REPO_ROOT, 'firmware/sources.json'), 'utf8');
-        const target = 'Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin';
+        const target = 'Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin';
         const out = removeSourceEntriesInText(raw, [target]);
         const before = JSON.parse(raw);
         const after = JSON.parse(out);
