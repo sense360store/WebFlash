@@ -106,33 +106,6 @@
         },
         {
             "source_repo": "sense360store/esphome-public",
-            "release_tag": "v1.0.0-preview",
-            "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-preview",
-            "version": "1.0.0",
-            "channel": "preview",
-            "config_string": "Ceiling-POE-AirIQ-RoomIQ",
-            "asset_name": "Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin",
-            "expected_sha256": "16565de6cd8b62c51d4fa8041eb5ffdb29fd2b8daddceecd73a6b0df5d722bc7",
-            "min_size_bytes": 102400,
-            "required_assets": [
-                "Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin",
-                "checksums-sha256.txt",
-                "checksums-md5.txt",
-                "manifest.json"
-            ],
-            "required_release_body_sections": [
-                "Changelog",
-                "Known Issues",
-                "Features",
-                "Hardware Requirements"
-            ],
-            "block_tokens": [
-                "FanTRIAC",
-                "LED"
-            ]
-        },
-        {
-            "source_repo": "sense360store/esphome-public",
             "release_tag": "v1.0.6",
             "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.6",
             "version": "1.0.6",
