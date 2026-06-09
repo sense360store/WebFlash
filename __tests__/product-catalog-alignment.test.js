@@ -735,7 +735,7 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
 
         const stableKits = (kits.kits || []).filter(k => (k.firmware_channel || 'stable') === 'stable');
-        expect(stableKits.map(k => k.firmware_config_string)).toEqual(['Ceiling-POE-VentIQ-RoomIQ']);
+        expect(stableKits.map(k => k.firmware_config_string).sort()).toEqual(['Ceiling-POE-RoomIQ', 'Ceiling-POE-VentIQ-RoomIQ'].sort());
 
         const required = parseRequiredConfigsFromWorkflow();
         expect(required).toEqual(['Ceiling-POE-VentIQ-RoomIQ', 'Rescue']);
