@@ -170,7 +170,7 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — preview stays preview (no silent pro
     const byChannel = (ch) => builds.filter((b) => b.channel === ch);
     expect(byChannel('stable')).toHaveLength(2);
     expect(byChannel('rescue')).toHaveLength(1);
-    expect(byChannel('preview').length).toBe(builds.length - 2);
+    expect(byChannel('preview').length).toBe(builds.length - 3);
   });
 
   test('no preview kit smuggles a buyable / default / stable flag', () => {
