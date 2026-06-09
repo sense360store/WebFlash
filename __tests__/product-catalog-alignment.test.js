@@ -2,8 +2,10 @@ import { describe, expect, test } from '@jest/globals';
 import fs from 'node:fs';
 import path from 'node:path';
 // Stable surface (stable configs, recommended/production configs) derived from
-// kits.json, not hardcoded. See __tests__/helpers/stable-surface.js.
-import { stableConfigs, recommendedConfigs } from './helpers/stable-surface.js';
+// kits.json, not hardcoded — plus the sanctioned kit-withheld stable register
+// (stableManifestConfigs = kits.json stables + the kit-withheld AirIQ-RoomIQ
+// stable). See __tests__/helpers/stable-surface.js.
+import { stableManifestConfigs, recommendedConfigs } from './helpers/stable-surface.js';
 
 // WF-PRODUCT-001 — product-catalog alignment guard.
 //
@@ -729,25 +731,29 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to two stables + six preview builds + Rescue', () => {
-        // Snapshot lock updated by the stale v1.0.0-preview retirement: the
-        // manifest now exposes nine builds. Five stale v1.0.0-preview builds
-        // (Ceiling-POE-AirIQ-RoomIQ, Ceiling-POE-FanDAC, Ceiling-POE-FanPWM,
+    test('manifest.json builds resolve to three stables + six preview builds + Rescue', () => {
+        // Snapshot lock updated by the stale v1.0.0-preview retirement and the
+        // AirIQ-RoomIQ v1.0.6 stable import: the manifest now exposes ten
+        // builds. Five stale v1.0.0-preview builds (the Ceiling-POE-AirIQ-RoomIQ
+        // v1.0.0 preview, Ceiling-POE-FanDAC, Ceiling-POE-FanPWM,
         // Ceiling-POE-RoomIQ-LED, Ceiling-POE-VentIQ-FanRelay-RoomIQ) were
         // retired because upstream regenerated the v1.0.0-preview
         // checksums-sha256.txt without their assets, so the importer fails
-        // closed on them. What remains: the Release-One + RoomIQ stables,
-        // the LED preview (Ceiling-POE-VentIQ-RoomIQ-LED, from
-        // v1.0.0-led-preview), the five full-composition room-bundle fan
-        // previews (all from v1.0.0-preview, still listed in the regenerated
-        // checksums file and authorised by
-        // webflash_import_eligibility.eligible=true), and Rescue.
+        // closed on them; AirIQ-RoomIQ then returned as the v1.0.6 STABLE
+        // import after upstream promoted it to production / stable (the
+        // Kitchen kit stays withheld — see the kits.json assertions below).
+        // What ships: the Release-One + RoomIQ + AirIQ-RoomIQ stables, the LED
+        // preview (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview),
+        // the five full-composition room-bundle fan previews (all from
+        // v1.0.0-preview, still listed in the regenerated checksums file and
+        // authorised by webflash_import_eligibility.eligible=true), and Rescue.
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
         expect(configStrings).toEqual(
             [
                 'Ceiling-POE-AirIQ-FanDAC-RoomIQ',
                 'Ceiling-POE-AirIQ-FanPWM-RoomIQ',
                 'Ceiling-POE-AirIQ-FanRelay-RoomIQ',
+                'Ceiling-POE-AirIQ-RoomIQ',
                 'Ceiling-POE-RoomIQ',
                 'Ceiling-POE-VentIQ-FanDAC-RoomIQ',
                 'Ceiling-POE-VentIQ-FanPWM-RoomIQ',
@@ -761,15 +767,19 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
     test('scripts/data/kits.json references the customer room bundles', () => {
         // The catalogue holds seven kits: the stable Bathroom (Release-One)
         // and Bedroom base bundles plus the five full-composition fan bundles
-        // surfaced by WF2-FAN-EXPANSION-001. The Kitchen / Living / Corridor
-        // base bundles and the Bathroom Relay bundle retired together with
-        // their stale v1.0.0-preview builds (AirIQ-RoomIQ, RoomIQ-LED,
-        // VentIQ-FanRelay-RoomIQ) — a kit card may never reference a config
-        // without a manifest build. Every remaining config string must be a
-        // real manifest build, and only the stable Release-One config may be
-        // the recommended / stable default. The production-only
-        // REQUIRED_CONFIGS allowlist is unaffected (see the REQUIRED_CONFIGS
-        // assertions above).
+        // surfaced by WF2-FAN-EXPANSION-001. The Living / Corridor base
+        // bundles and the Bathroom Relay bundle stay retired with their stale
+        // v1.0.0-preview builds (RoomIQ-LED, VentIQ-FanRelay-RoomIQ) — a kit
+        // card may never reference a config without a manifest build. The
+        // Kitchen base bundle stays withheld even though its AirIQ-RoomIQ
+        // config now ships as the v1.0.6 stable: the upstream catalog bundle
+        // gating keeps S360-KIT-KITCHEN-P hidden / not buyable (owner waiver
+        // HW-AIRIQ-WAIVER-2026-06), so the stable build is reachable through
+        // the advanced builder only. Every kit config string must be a real
+        // manifest build, and only the stable Release-One config may be the
+        // recommended / stable default. The production-only REQUIRED_CONFIGS
+        // allowlist is unaffected (see the REQUIRED_CONFIGS assertions
+        // above).
         const manifestConfigs = new Set((manifest.builds || []).map(b => b.config_string));
         const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
         expect(kitConfigs).toEqual([
@@ -785,15 +795,17 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
             expect(manifestConfigs.has(cfg)).toBe(true);
         }
 
-        // Cross-check the MANIFEST's stable-channel builds against the kits.json-derived
-        // stable config set (the helper). Comparing a different artifact (the manifest)
-        // to the kits.json-derived set catches drift in either direction without
+        // Cross-check the MANIFEST's stable-channel builds against the expected
+        // stable surface: the kits.json-derived stable set plus the sanctioned
+        // kit-withheld AirIQ-RoomIQ stable (stableManifestConfigs in the
+        // helper). Comparing a different artifact (the manifest) to the
+        // helper-derived set catches drift in either direction without
         // comparing kits.json to itself.
         const manifestStableConfigs = (manifest.builds || [])
             .filter(b => b.channel === 'stable')
             .map(b => b.config_string)
             .sort();
-        expect([...new Set(manifestStableConfigs)]).toEqual([...stableConfigs]);
+        expect([...new Set(manifestStableConfigs)]).toEqual([...stableManifestConfigs]);
 
         // The workflow REQUIRED_CONFIGS allowlist (a different artifact) is the
         // production surface (the kits.json-derived recommended configs) plus the
@@ -1100,10 +1112,11 @@ describe('WF-IMPORT-FAN-BUNDLES-001 — full-composition fan bundle preview impo
         }
     );
 
-    test('manifest.json holds exactly nine builds and no FanTRIAC reappears', () => {
-        // 14 -> 9 after the stale v1.0.0-preview retirement; the five
-        // full-composition fan bundles in this describe block all survive.
-        expect((manifest.builds || []).length).toBe(9);
+    test('manifest.json holds exactly ten builds and no FanTRIAC reappears', () => {
+        // 14 -> 9 after the stale v1.0.0-preview retirement, 9 -> 10 after the
+        // AirIQ-RoomIQ v1.0.6 stable import; the five full-composition fan
+        // bundles in this describe block all survive.
+        expect((manifest.builds || []).length).toBe(10);
         for (const build of manifest.builds || []) {
             expect(containsSegment(build.config_string, 'FanTRIAC')).toBe(false);
         }

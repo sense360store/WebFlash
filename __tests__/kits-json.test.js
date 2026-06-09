@@ -121,8 +121,12 @@ describe('scripts/data/kits.json', () => {
     // retired together with their stale v1.0.0-preview builds (AirIQ-RoomIQ,
     // RoomIQ-LED): upstream's regenerated v1.0.0-preview checksums-sha256.txt
     // no longer lists those assets, so the builds left the manifest and a kit
-    // card may never reference a config without a manifest build. The Kitchen
-    // bundle returns once the AirIQ-RoomIQ v1.0.6 stable import lands.
+    // card may never reference a config without a manifest build. The
+    // AirIQ-RoomIQ config has since returned as the v1.0.6 STABLE import
+    // (upstream promoted it to production / stable), but the
+    // S360-KIT-KITCHEN-P kit stays withheld per the upstream catalog bundle
+    // gating (owner waiver HW-AIRIQ-WAIVER-2026-06) — the stable build ships
+    // through the advanced builder only until the bundle gating clears.
     describe('WF2-KIT-BUNDLE-PICKER-001 — room bundle picker', () => {
         const EXPECTED_BUNDLES = [
             { sku: 'S360-KIT-BATH-P', config: 'Ceiling-POE-VentIQ-RoomIQ', channel: 'stable' },
@@ -152,16 +156,24 @@ describe('scripts/data/kits.json', () => {
             expect(stable.map(k => k.sku).sort()).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P'].sort());
         });
 
-        test('the retired Kitchen / Living / Corridor base bundles stay out until their configs are re-imported', () => {
-            const retiredSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
-            retiredSkus.forEach(sku => {
+        test('the withheld Kitchen and retired Living / Corridor base bundles stay out of kits.json', () => {
+            // Kitchen: the AirIQ-RoomIQ config is imported and STABLE (v1.0.6),
+            // but the S360-KIT-KITCHEN-P kit stays withheld per the upstream
+            // catalog bundle gating (owner waiver HW-AIRIQ-WAIVER-2026-06).
+            // Living / Corridor: their Ceiling-POE-RoomIQ-LED config is still
+            // retired outright, so those kits stay out until it is re-imported.
+            const withheldOrRetiredSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
+            withheldOrRetiredSkus.forEach(sku => {
                 expect(catalog.kits.find(k => k.sku === sku)).toBeUndefined();
             });
-            // Their stale preview configs left the manifest with them.
-            ['Ceiling-POE-AirIQ-RoomIQ', 'Ceiling-POE-RoomIQ-LED'].forEach(config => {
-                expect(manifestConfigStrings.has(config)).toBe(false);
-                expect(catalog.kits.some(k => k.firmware_config_string === config)).toBe(false);
-            });
+            // The Kitchen config is a real stable manifest build — withheld from
+            // kits.json only, never referenced by any kit card.
+            expect(manifestConfigStrings.has('Ceiling-POE-AirIQ-RoomIQ')).toBe(true);
+            expect(catalog.kits.some(k => k.firmware_config_string === 'Ceiling-POE-AirIQ-RoomIQ')).toBe(false);
+            // The Living / Corridor config left the manifest with its stale
+            // v1.0.0-preview retirement and has not returned.
+            expect(manifestConfigStrings.has('Ceiling-POE-RoomIQ-LED')).toBe(false);
+            expect(catalog.kits.some(k => k.firmware_config_string === 'Ceiling-POE-RoomIQ-LED')).toBe(false);
         });
 
         test('standalone fan-only previews and TRIAC are not kit cards', () => {

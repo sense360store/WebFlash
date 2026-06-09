@@ -61,6 +61,29 @@ export const stableConfigs = sortedUnique(stableKits.map((kit) => kit.firmware_c
 export const previewConfigs = sortedUnique(previewKits.map((kit) => kit.firmware_config_string));
 
 /**
+ * Stable manifest builds that deliberately ship WITHOUT a kit card. The
+ * AirIQ-RoomIQ config was promoted to production / stable upstream and
+ * imported as v1.0.6 stable, but the S360-KIT-KITCHEN-P kit stays withheld
+ * per the upstream catalog bundle gating (owner waiver HW-AIRIQ-WAIVER-2026-06),
+ * so kits.json deliberately carries no kit for it. This literal is the ONLY
+ * sanctioned divergence between the manifest's stable channel and the
+ * kits.json-derived stable set; removing a config from this list (when its kit
+ * lands) or adding one (when another stable ships kit-less) is a deliberate
+ * contract change. Asserted against the manifest (a different artifact), so
+ * the anti-tautology contract above still holds.
+ */
+export const kitWithheldStableConfigs = ['Ceiling-POE-AirIQ-RoomIQ'];
+
+/**
+ * The full expected stable-channel config set in manifest.json: every
+ * kits.json stable kit config plus the kit-withheld stables above.
+ */
+export const stableManifestConfigs = sortedUnique([
+    ...stableConfigs,
+    ...kitWithheldStableConfigs
+]);
+
+/**
  * Rescue is the standalone unbricking build, not a customer kit, so it is never
  * derived from kits.json. The publish workflow's REQUIRED_CONFIGS allowlist is
  * the production (recommended) config surface plus Rescue, in that order.

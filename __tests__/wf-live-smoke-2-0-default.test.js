@@ -35,8 +35,15 @@ import {
   configRequiresDacAddressAck,
 } from '../scripts/install.js';
 // Stable surface (which configs are stable) is derived from kits.json, not
-// hardcoded here. See __tests__/helpers/stable-surface.js for the contract.
-import { stableConfigs } from './helpers/stable-surface.js';
+// hardcoded here — plus the sanctioned kit-withheld stable register
+// (kitWithheldStableConfigs: the AirIQ-RoomIQ stable ships without a Kitchen
+// kit card per the upstream catalog bundle gating, owner waiver
+// HW-AIRIQ-WAIVER-2026-06). See __tests__/helpers/stable-surface.js.
+import {
+  stableConfigs,
+  kitWithheldStableConfigs,
+  stableManifestConfigs,
+} from './helpers/stable-surface.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -56,12 +63,22 @@ const catalog = buildCatalogFromPayload(readJson('scripts/data/kits.json'));
 const kits = catalog.kits;
 
 describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — default install path', () => {
-  test('the stable manifest builds match exactly the kits.json stable config set', () => {
-    // Manifest channels (a DIFFERENT artifact) checked against the kits.json-derived
-    // stable config set. If kits.json and the manifest ever disagree on which
-    // configs ship stable, this fails — without comparing kits.json to itself.
+  test('the stable manifest builds are the kits.json stable set plus the kit-withheld AirIQ-RoomIQ stable', () => {
+    // Manifest channels (a DIFFERENT artifact) checked against the expected
+    // stable surface: every kits.json stable kit config plus the sanctioned
+    // kit-withheld stables (today exactly the AirIQ-RoomIQ v1.0.6 stable,
+    // whose Kitchen kit stays withheld per the upstream catalog bundle
+    // gating). If kits.json and the manifest disagree on which configs ship
+    // stable — in either direction — this fails without comparing kits.json
+    // to itself.
     const stable = builds.filter((b) => b.channel === 'stable').map((b) => b.config_string);
-    expect([...stable].sort()).toEqual([...stableConfigs]);
+    expect([...stable].sort()).toEqual([...stableManifestConfigs]);
+    // Every kit-backed stable config really is a stable manifest build…
+    stableConfigs.forEach((cfg) => expect(stable).toContain(cfg));
+    // …and the ONLY stable builds without a kit card are the sanctioned
+    // kit-withheld ones.
+    const kitless = stable.filter((cfg) => !stableConfigs.includes(cfg));
+    expect(kitless.sort()).toEqual([...kitWithheldStableConfigs].sort());
   });
 
   // The next two assertions read kits.json (via `kits`) and pin its recommended /
@@ -183,10 +200,11 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — preview stays preview (no silent pro
     });
   });
 
-  test('the manifest stable-build count matches kits.json, with one rescue build and the rest preview', () => {
+  test('the manifest stable-build count matches the expected stable surface, with one rescue build and the rest preview', () => {
     const byChannel = (ch) => builds.filter((b) => b.channel === ch);
-    // Manifest stable count cross-checked against the kits.json-derived stable set.
-    expect(byChannel('stable')).toHaveLength(stableConfigs.length);
+    // Manifest stable count cross-checked against the helper-derived stable
+    // surface (kits.json stables + the kit-withheld AirIQ-RoomIQ stable).
+    expect(byChannel('stable')).toHaveLength(stableManifestConfigs.length);
     expect(byChannel('rescue')).toHaveLength(1);
     expect(byChannel('preview').length).toBe(
       builds.length - byChannel('stable').length - byChannel('rescue').length
