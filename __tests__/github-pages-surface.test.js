@@ -4,6 +4,18 @@ import path from 'node:path';
 // REQUIRED_CONFIGS production surface derived from kits.json, not hardcoded.
 // See __tests__/helpers/stable-surface.js for the anti-tautology contract.
 import { requiredConfigs } from './helpers/stable-surface.js';
+// WF-SURFACE-SSOT-001: build count, per-build channel/version expectations,
+// and the firmware-N index bound all derive from the reviewed
+// expected-surface fixture. A surface change edits
+// __tests__/fixtures/expected-surface.json in the same PR.
+import {
+    expectedBuilds,
+    rescueBuild,
+    expectedTotalBuildCount,
+    expectedMaxFirmwareIndex,
+    expectedChannelCounts,
+    expectedPreviewConfigs
+} from './helpers/expected-surface.js';
 
 // WF-DEPLOY-001 — GitHub Pages surface guard.
 //
@@ -84,15 +96,21 @@ function parseRequiredConfigsFromWorkflow() {
 }
 
 describe('github-pages-surface — manifest shape pins the deploy contract', () => {
-    test('manifest.json holds exactly ten builds (three stable + six preview + Rescue)', () => {
-        // 14 -> 9 when the five stale v1.0.0-preview builds (the AirIQ-RoomIQ
-        // v1.0.0 preview, standalone FanDAC, standalone FanPWM, RoomIQ-LED,
-        // VentIQ-FanRelay-RoomIQ) were retired after upstream regenerated the
-        // v1.0.0-preview checksums-sha256.txt without their assets; 9 -> 10
-        // when the AirIQ-RoomIQ config returned as the v1.0.6 STABLE import
-        // after upstream promoted it to production / stable.
+    test('manifest.json holds exactly the fixture-declared build count', () => {
+        // Derived from the expected-surface fixture (currently three stable +
+        // six preview + Rescue). An import/retirement edits the fixture in the
+        // same PR; an unreviewed manifest change fails here in either
+        // direction.
         expect(Array.isArray(manifest.builds)).toBe(true);
-        expect(manifest.builds.length).toBe(10);
+        expect(manifest.builds.length).toBe(expectedTotalBuildCount);
+    });
+
+    test('per-channel build counts match the fixture', () => {
+        const byChannel = (ch) =>
+            manifest.builds.filter(b => b.channel === ch).length;
+        expect(byChannel('stable')).toBe(expectedChannelCounts.stable);
+        expect(byChannel('preview')).toBe(expectedChannelCounts.preview);
+        expect(byChannel('rescue')).toBe(expectedChannelCounts.rescue);
     });
 
     test('manifest.json source_commit is not the May-7 stale deploy SHA', () => {
@@ -109,41 +127,32 @@ describe('github-pages-surface — manifest shape pins the deploy contract', () 
 });
 
 describe('github-pages-surface — expected builds present with correct channel', () => {
-    test('Release-One Ceiling-POE-VentIQ-RoomIQ is present as stable, non-deprecated', () => {
-        const matches = manifest.builds.filter(
-            b => b.config_string === 'Ceiling-POE-VentIQ-RoomIQ'
-        );
-        expect(matches).toHaveLength(1);
-        const build = matches[0];
-        expect(build.channel).toBe('stable');
-        expect(build.deprecated).toBe(false);
-        // Version-agnostic: Release-One moves to a new stable version whenever
-        // the upstream build is re-imported (for example v1.0.0 -> v1.0.2).
-        // Assert a valid semver shape rather than a pinned literal so the
-        // import does not re-break this surface; the stable, non-deprecated
-        // channel invariants above are what actually matter here.
-        expect(build.version).toMatch(/^\d+\.\d+\.\d+$/);
-    });
-
-    test('LED preview Ceiling-POE-VentIQ-RoomIQ-LED is present as preview, non-deprecated', () => {
-        // WF-LED-002 imported this build; WF-LED-003 pinned its channel
-        // as preview (not stable). It must not regress to stable.
-        const matches = manifest.builds.filter(
-            b => b.config_string === 'Ceiling-POE-VentIQ-RoomIQ-LED'
-        );
-        expect(matches).toHaveLength(1);
-        const build = matches[0];
-        expect(build.channel).toBe('preview');
-        expect(build.deprecated).toBe(false);
-        expect(build.version).toBe('1.0.0');
-    });
+    // One assertion per fixture build (replacing the per-config literals that
+    // re-broke on every import/promotion/version bump): each expected build is
+    // present exactly once, on its declared channel and version,
+    // non-deprecated. A channel regression (e.g. the LED preview silently
+    // turning stable) is a fixture mismatch and fails here; making it stable
+    // for real requires the reviewed fixture edit.
+    test.each(expectedBuilds.map(b => [b.config_string, b]))(
+        '%s is present once with the fixture channel and version, non-deprecated',
+        (configString, expected) => {
+            const matches = manifest.builds.filter(
+                b => b.config_string === configString
+            );
+            expect(matches).toHaveLength(1);
+            const build = matches[0];
+            expect(build.channel).toBe(expected.channel);
+            expect(build.version).toBe(expected.version);
+            expect(build.deprecated).toBe(false);
+        }
+    );
 
     test('Rescue firmware is present on the rescue channel', () => {
         const matches = manifest.builds.filter(
-            b => b.config_string === 'Rescue'
+            b => b.config_string === rescueBuild.config_string
         );
         expect(matches).toHaveLength(1);
-        expect(matches[0].channel).toBe('rescue');
+        expect(matches[0].channel).toBe(rescueBuild.channel);
     });
 });
 
@@ -192,9 +201,10 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
             .readdirSync(repoRoot)
             .filter(name => /^firmware-\d+\.json$/.test(name))
             .sort((a, b) => Number(a.match(/(\d+)/)[1]) - Number(b.match(/(\d+)/)[1]));
-        // One per-build manifest per manifest.json build (6 after the first
-        // preview batch import).
+        // One per-build manifest per manifest.json build, and the namespace
+        // size itself is pinned to the fixture-declared build count.
         expect(perBuild.length).toBe(manifest.builds.length);
+        expect(perBuild.length).toBe(expectedTotalBuildCount);
         for (const name of perBuild) {
             const filePath = path.join(repoRoot, name);
             expect(fs.existsSync(filePath)).toBe(true);
@@ -208,19 +218,17 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
         }
     });
 
-    test('no firmware-N.json beyond index 9 exists (no stale per-build manifests)', () => {
-        // After the AirIQ-RoomIQ v1.0.6 stable import the namespace is
-        // firmware-0 … firmware-9 (the five full-composition room-bundle fan
-        // previews, the AirIQ-RoomIQ stable, the RoomIQ stable, Release-One,
-        // the VentIQ LED preview, and Rescue, in the generator's deterministic
-        // order). Anything past index 9 would indicate the manifest
-        // regenerator inherited a legacy index or a stale file shipped in the
-        // Pages artifact.
+    test('no firmware-N.json beyond the fixture-derived max index exists (no stale per-build manifests)', () => {
+        // The namespace is firmware-0 … firmware-(count - 1), one per build in
+        // the generator's deterministic order, with the max index derived from
+        // the expected-surface fixture. Anything past it would indicate the
+        // manifest regenerator inherited a legacy index or a stale file
+        // shipped in the Pages artifact.
         const repoFiles = fs.readdirSync(repoRoot);
         const offending = repoFiles.filter(name => {
             const match = name.match(/^firmware-(\d+)\.json$/);
             if (!match) return false;
-            return Number(match[1]) > 9;
+            return Number(match[1]) > expectedMaxFirmwareIndex;
         });
         expect(offending).toEqual([]);
     });
@@ -236,8 +244,12 @@ describe('github-pages-surface — REQUIRED_CONFIGS allowlist contract', () => {
         expect(new Set(required)).toEqual(new Set(requiredConfigs));
     });
 
-    test('LED preview is NOT in REQUIRED_CONFIGS (preview, not production)', () => {
+    test('no preview build is in REQUIRED_CONFIGS (preview, not production)', () => {
+        // Generalised from the original LED-only literal: every fixture
+        // preview config must stay out of the production-only allowlist.
         const required = parseRequiredConfigsFromWorkflow();
-        expect(required).not.toContain('Ceiling-POE-VentIQ-RoomIQ-LED');
+        for (const cs of expectedPreviewConfigs) {
+            expect(required).not.toContain(cs);
+        }
     });
 });

@@ -35,6 +35,19 @@ import {
 // contract. Imported as recommendedConfigs to avoid clashing with the local
 // `requiredConfigs` (the value parsed from the workflow file).
 import { recommendedConfigs } from './helpers/stable-surface.js';
+// WF-SURFACE-SSOT-001: surface-coupled expectations (live build count, the
+// retired-artifact register, per-config channel/version) derive from the
+// reviewed expected-surface fixture.
+import {
+    expectedBuilds,
+    expectedChannelOf,
+    expectedVersionOf,
+    expectedConfigurationBins,
+    expectedConfigurationSidecars,
+    retiredBuilds,
+    retiredArtifacts as fixtureRetiredArtifacts,
+    retiredConfigsStillAbsent
+} from './helpers/expected-surface.js';
 
 // WF-PRODUCT-004 — Product import readiness validator tests.
 //
@@ -208,30 +221,34 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
         expect(report.ok).toBe(true);
     });
 
-    test('summary counts match the fixture today', () => {
-        // 15 catalog entries: Release-One (production), RoomIQ (production),
-        // AirIQ-RoomIQ (production after upstream promoted it to stable
-        // v1.0.6), FanTRIAC (blocked), 1 legacy-compatible, TWO remaining
-        // preview rows (VentIQ-RoomIQ-LED, RoomIQ-LED), the THREE fan
-        // manual-previews (VentIQ-FanRelay-RoomIQ, standalone FanPWM,
-        // standalone FanDAC), and the FIVE full-composition room-bundle fan
-        // previews. import_eligible
-        // stays 13 (catalog-level authorisation is untouched), but manifest /
-        // kit effective eligibility also requires a live
-        // firmware/sources.json entry — the five configs retired with the
-        // stale v1.0.0-preview batch (the AirIQ-RoomIQ v1.0.0 preview,
-        // standalone FanDAC, standalone FanPWM, RoomIQ-LED,
-        // VentIQ-FanRelay-RoomIQ) lost theirs (13 -> 8), and the AirIQ-RoomIQ
-        // v1.0.6 STABLE import then restored its live source entry (8 -> 9).
-        // required_configs_eligible counts production+stable catalog rows
-        // (2 -> 3 with the AirIQ-RoomIQ promotion); eligibility is permission,
-        // not presence — the live REQUIRED_CONFIGS allowlist keeps only
-        // Release-One + Rescue.
-        expect(report.summary.total).toBe(15);
-        expect(report.summary.import_eligible).toBe(13); // Release-One + RoomIQ + AirIQ-RoomIQ + 2 previews + 3 single-driver fans + 5 room-bundle fans
-        expect(report.summary.manifest_eligible).toBe(9);
-        expect(report.summary.required_configs_eligible).toBe(3); // Release-One + RoomIQ + AirIQ-RoomIQ (all production)
-        expect(report.summary.kit_eligible).toBe(9);
+    test('summary counts derive from the catalog fixture and the expected surface', () => {
+        // WF-SURFACE-SSOT-001 — derived, not hardcoded:
+        //   - total: one report entry per catalog product (the validator must
+        //     not silently drop rows).
+        //   - manifest_eligible / kit_eligible: effective manifest / kit
+        //     eligibility requires catalog authorisation PLUS a live
+        //     firmware/sources.json entry, and every live source backs exactly
+        //     one shipping non-Rescue build — so both counts equal the
+        //     expected-surface application-build count. A source declared
+        //     without its same-PR fixture edit (or vice versa) fails here.
+        //   - required_configs_eligible: production-status catalog rows
+        //     (eligibility is permission, not presence — the live
+        //     REQUIRED_CONFIGS allowlist still keeps only Release-One +
+        //     Rescue, asserted separately below).
+        // import_eligible stays a HARDCODED reviewed count: deriving it
+        // through isWebflashImportEligible would re-run the validator's own
+        // authorisation logic over the same catalog (a tautology that could
+        // never catch an unreviewed eligibility flip in a row no other test
+        // pins individually). Today: Release-One + RoomIQ + AirIQ-RoomIQ
+        // (production), VentIQ-RoomIQ-LED + RoomIQ-LED (preview), 3
+        // single-driver fan manual-previews, 5 room-bundle fan previews.
+        expect(report.summary.total).toBe(catalog.products.length);
+        expect(report.summary.import_eligible).toBe(13);
+        expect(report.summary.manifest_eligible).toBe(expectedBuilds.length);
+        expect(report.summary.kit_eligible).toBe(expectedBuilds.length);
+        expect(report.summary.required_configs_eligible).toBe(
+            catalog.products.filter(p => p.status === 'production').length
+        );
     });
 });
 
@@ -494,54 +511,40 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
         expect(e.surface_presence.in_kits).toBe(false);
     });
 
-    test('the five v1.0.0-preview artifacts retired in the stale-source cleanup stay retired', () => {
-        // The cleanup retired five v1.0.0-preview artifacts whose assets left
-        // upstream's regenerated checksums-sha256.txt: the AirIQ-RoomIQ
-        // v1.0.0 PREVIEW (the config itself returned as v1.0.6 STABLE — the
-        // retired preview artifact must not), standalone FanDAC, standalone
-        // FanPWM, RoomIQ-LED, and VentIQ-FanRelay-RoomIQ. None of their
-        // retired preview artifacts may reappear on disk, and none of their
-        // configs may resolve to a v1.0.0 preview build in the manifest.
-        const RETIRED_PREVIEW_ARTIFACTS = [
-            'Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin',
-            'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin',
-            'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin',
-            'Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin',
-            'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin'
-        ];
-        for (const artifact of RETIRED_PREVIEW_ARTIFACTS) {
+    test('the v1.0.0-preview artifacts retired in the stale-source cleanup stay retired', () => {
+        // WF-SURFACE-SSOT-001: the retired register is the expected-surface
+        // fixture's `retired` list (the five v1.0.0-preview artifacts whose
+        // assets left upstream's regenerated checksums-sha256.txt in #553).
+        // None of the retired artifacts may reappear on disk, and none of
+        // their configs may resolve to a build on the retired channel.
+        expect(retiredBuilds.length).toBeGreaterThan(0);
+        for (const artifact of fixtureRetiredArtifacts) {
             expect(configurationsBins).not.toContain(artifact);
             expect(configurationsSidecars).not.toContain(
                 artifact.replace(/\.bin$/, '.meta.json')
             );
         }
-        const retiredPreviewBuilds = (manifest.builds || []).filter(b =>
-            [
-                'Ceiling-POE-AirIQ-RoomIQ',
-                'Ceiling-POE-FanDAC',
-                'Ceiling-POE-FanPWM',
-                'Ceiling-POE-RoomIQ-LED',
-                'Ceiling-POE-VentIQ-FanRelay-RoomIQ'
-            ].includes(b.config_string) && b.channel === 'preview'
+        const retiredConfigChannelPairs = new Set(
+            retiredBuilds.map(r => `${r.config_string}@${r.channel}`)
         );
-        expect(retiredPreviewBuilds).toEqual([]);
-        // The four fully retired configs are absent outright; AirIQ-RoomIQ is
-        // present ONLY as the promoted v1.0.6 stable.
+        const retiredChannelBuilds = (manifest.builds || []).filter(b =>
+            retiredConfigChannelPairs.has(`${b.config_string}@${b.channel}`)
+        );
+        expect(retiredChannelBuilds).toEqual([]);
+        // Configs that have not returned are absent outright; a config that
+        // returned at a new version/channel (AirIQ-RoomIQ: retired as the
+        // v1.0.0 preview, shipping as the promoted stable) is present ONLY in
+        // its fixture-declared form.
         const byConfig = new Map(
             (manifest.builds || []).map(b => [b.config_string, b])
         );
-        for (const cfg of [
-            'Ceiling-POE-FanDAC',
-            'Ceiling-POE-FanPWM',
-            'Ceiling-POE-RoomIQ-LED',
-            'Ceiling-POE-VentIQ-FanRelay-RoomIQ'
-        ]) {
+        for (const cfg of retiredConfigsStillAbsent) {
             expect(byConfig.has(cfg)).toBe(false);
         }
         const airiqRoomiq = byConfig.get('Ceiling-POE-AirIQ-RoomIQ');
         expect(airiqRoomiq).toBeDefined();
-        expect(airiqRoomiq.channel).toBe('stable');
-        expect(airiqRoomiq.version).toBe('1.0.6');
+        expect(airiqRoomiq.channel).toBe(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ'));
+        expect(airiqRoomiq.version).toBe(expectedVersionOf('Ceiling-POE-AirIQ-RoomIQ'));
     });
 
     test('the promoted stable and the retired previews introduce no cross-surface violations', () => {
@@ -897,32 +900,17 @@ describe('WF-PRODUCT-004 — workflow YAML parsing', () => {
 });
 
 describe('WF-PRODUCT-004 — surface helpers', () => {
-    // Version-agnostic: the Release-One stable build is bumped in place on a
-    // version change (v1.0.0 -> v1.0.2), so match the config + channel shape
-    // rather than a literal version that re-breaks on every upstream bump.
-    const RELEASE_ONE_STABLE_RE =
-        /^Sense360-Ceiling-POE-VentIQ-RoomIQ-v\d+\.\d+\.\d+-stable\.bin$/;
-
-    test('listConfigurationBins returns the on-disk Release-One + LED preview .bin pair', () => {
+    // WF-SURFACE-SSOT-001: the helper listings are pinned to the full
+    // fixture-derived file sets (stronger than the old contains-style spot
+    // checks, and a version bump is now a single fixture edit).
+    test('listConfigurationBins returns exactly the fixture-declared .bin set', () => {
         const bins = listConfigurationBins(CONFIGURATIONS_DIR);
-        expect(bins.some(name => RELEASE_ONE_STABLE_RE.test(name))).toBe(true);
-        expect(bins).toEqual(
-            expect.arrayContaining([
-                'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin'
-            ])
-        );
+        expect([...bins].sort()).toEqual([...expectedConfigurationBins]);
     });
 
-    test('listConfigurationSidecars returns matching .meta.json files', () => {
+    test('listConfigurationSidecars returns exactly the fixture-declared .meta.json set', () => {
         const sidecars = listConfigurationSidecars(CONFIGURATIONS_DIR);
-        const releaseOneSidecarRe =
-            /^Sense360-Ceiling-POE-VentIQ-RoomIQ-v\d+\.\d+\.\d+-stable\.meta\.json$/;
-        expect(sidecars.some(name => releaseOneSidecarRe.test(name))).toBe(true);
-        expect(sidecars).toEqual(
-            expect.arrayContaining([
-                'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json'
-            ])
-        );
+        expect([...sidecars].sort()).toEqual([...expectedConfigurationSidecars]);
     });
 });
 

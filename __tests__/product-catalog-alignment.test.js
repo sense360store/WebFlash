@@ -6,6 +6,16 @@ import path from 'node:path';
 // (stableManifestConfigs = kits.json stables + the kit-withheld AirIQ-RoomIQ
 // stable). See __tests__/helpers/stable-surface.js.
 import { stableManifestConfigs, recommendedConfigs } from './helpers/stable-surface.js';
+// WF-SURFACE-SSOT-001: the full expected manifest config set, the build
+// count, and the per-config version expectations derive from the reviewed
+// expected-surface fixture (__tests__/fixtures/expected-surface.json).
+import {
+    expectedConfigStrings,
+    expectedTotalBuildCount,
+    expectedVersionOf,
+    expectedBuildFor,
+    binNameFor
+} from './helpers/expected-surface.js';
 
 // WF-PRODUCT-001 — product-catalog alignment guard.
 //
@@ -99,8 +109,13 @@ const FANTRIAC_CONFIG_STRING = 'Ceiling-POE-VentIQ-FanTRIAC-RoomIQ';
 // would be eligible for manifests/kits if explicitly added later, but it
 // must not appear in any active WebFlash surface today.
 const LED_PREVIEW_CONFIG_STRING = 'Ceiling-POE-VentIQ-RoomIQ-LED';
-const LED_PREVIEW_ARTIFACT_NAME =
-    'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
+// Version and artifact name derive from the expected-surface fixture so an
+// LED version bump is a single fixture edit (the preview-channel semantics of
+// this block stay literal — promoting LED to stable is a deliberate rewrite).
+const LED_PREVIEW_ARTIFACT_NAME = binNameFor(
+    expectedBuildFor(LED_PREVIEW_CONFIG_STRING)
+);
+const LED_PREVIEW_VERSION = expectedVersionOf(LED_PREVIEW_CONFIG_STRING);
 
 function loadJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -656,7 +671,7 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         const entry = catalogIndex.get(LED_PREVIEW_CONFIG_STRING);
         expect(entry).toBeDefined();
         expect(entry.artifact_name).toBe(LED_PREVIEW_ARTIFACT_NAME);
-        expect(entry.version).toBe('1.0.0');
+        expect(entry.version).toBe(LED_PREVIEW_VERSION);
         expect(entry.channel).toBe('preview');
     });
 
@@ -680,7 +695,7 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         expect(ledSource).toBeDefined();
         expect(ledSource.asset_name).toBe(LED_PREVIEW_ARTIFACT_NAME);
         expect(ledSource.channel).toBe('preview');
-        expect(ledSource.version).toBe('1.0.0');
+        expect(ledSource.version).toBe(LED_PREVIEW_VERSION);
         // LED preview source must block FanTRIAC only — blocking LED here
         // would make the importer reject the LED preview's own asset.
         expect(ledSource.block_tokens).toEqual(['FanTRIAC']);
@@ -695,7 +710,7 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         );
         expect(ledBuild).toBeDefined();
         expect(ledBuild.channel).toBe('preview');
-        expect(ledBuild.version).toBe('1.0.0');
+        expect(ledBuild.version).toBe(LED_PREVIEW_VERSION);
         expect(ledBuild.chipFamily).toBe('ESP32-S3');
         expect(ledBuild.improv).toBe(true);
         // Sense360 LED ring belongs in the modules list for this build.
@@ -731,37 +746,17 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         }
     });
 
-    test('manifest.json builds resolve to three stables + six preview builds + Rescue', () => {
-        // Snapshot lock updated by the stale v1.0.0-preview retirement and the
-        // AirIQ-RoomIQ v1.0.6 stable import: the manifest now exposes ten
-        // builds. Five stale v1.0.0-preview builds (the Ceiling-POE-AirIQ-RoomIQ
-        // v1.0.0 preview, Ceiling-POE-FanDAC, Ceiling-POE-FanPWM,
-        // Ceiling-POE-RoomIQ-LED, Ceiling-POE-VentIQ-FanRelay-RoomIQ) were
-        // retired because upstream regenerated the v1.0.0-preview
-        // checksums-sha256.txt without their assets, so the importer fails
-        // closed on them; AirIQ-RoomIQ then returned as the v1.0.6 STABLE
-        // import after upstream promoted it to production / stable (the
-        // Kitchen kit stays withheld — see the kits.json assertions below).
-        // What ships: the Release-One + RoomIQ + AirIQ-RoomIQ stables, the LED
-        // preview (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview),
-        // the five full-composition room-bundle fan previews (all from
-        // v1.0.0-preview, still listed in the regenerated checksums file and
-        // authorised by webflash_import_eligibility.eligible=true), and Rescue.
+    test('manifest.json builds resolve to exactly the expected-surface config set', () => {
+        // Snapshot lock derived from the reviewed expected-surface fixture
+        // (WF-SURFACE-SSOT-001): currently the Release-One + RoomIQ +
+        // AirIQ-RoomIQ stables, the VentIQ LED preview, the five
+        // full-composition room-bundle fan previews, and Rescue. The
+        // comparison is exact in both directions — a manifest build the
+        // fixture does not declare fails just like a fixture build the
+        // manifest does not carry, so a retirement, import, or promotion is
+        // always a same-PR fixture edit.
         const configStrings = (manifest.builds || []).map(b => b.config_string).sort();
-        expect(configStrings).toEqual(
-            [
-                'Ceiling-POE-AirIQ-FanDAC-RoomIQ',
-                'Ceiling-POE-AirIQ-FanPWM-RoomIQ',
-                'Ceiling-POE-AirIQ-FanRelay-RoomIQ',
-                'Ceiling-POE-AirIQ-RoomIQ',
-                'Ceiling-POE-RoomIQ',
-                'Ceiling-POE-VentIQ-FanDAC-RoomIQ',
-                'Ceiling-POE-VentIQ-FanPWM-RoomIQ',
-                'Ceiling-POE-VentIQ-RoomIQ',
-                'Ceiling-POE-VentIQ-RoomIQ-LED',
-                'Rescue'
-            ].sort()
-        );
+        expect(configStrings).toEqual([...expectedConfigStrings]);
     });
 
     test('scripts/data/kits.json references the customer room bundles', () => {
@@ -1112,11 +1107,12 @@ describe('WF-IMPORT-FAN-BUNDLES-001 — full-composition fan bundle preview impo
         }
     );
 
-    test('manifest.json holds exactly ten builds and no FanTRIAC reappears', () => {
-        // 14 -> 9 after the stale v1.0.0-preview retirement, 9 -> 10 after the
-        // AirIQ-RoomIQ v1.0.6 stable import; the five full-composition fan
-        // bundles in this describe block all survive.
-        expect((manifest.builds || []).length).toBe(10);
+    test('manifest.json holds exactly the fixture-declared build count and no FanTRIAC reappears', () => {
+        // Count derived from the expected-surface fixture; the FanTRIAC
+        // absence check stays an explicit reality-side assertion (the fixture
+        // itself also refuses to declare a FanTRIAC build, but that intent-side
+        // block never substitutes for checking the real manifest).
+        expect((manifest.builds || []).length).toBe(expectedTotalBuildCount);
         for (const build of manifest.builds || []) {
             expect(containsSegment(build.config_string, 'FanTRIAC')).toBe(false);
         }
