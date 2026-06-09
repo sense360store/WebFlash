@@ -53,14 +53,15 @@ function resolveReleaseOneBin() {
 }
 const RELEASE_ONE_BIN = resolveReleaseOneBin();
 const RELEASE_ONE_SIDECAR = RELEASE_ONE_BIN.replace(/\.bin$/, '.meta.json');
+const ROOMIQ_STABLE_BIN = 'Sense360-Ceiling-POE-RoomIQ-v1.0.5-stable.bin';
+const ROOMIQ_STABLE_SIDECAR = ROOMIQ_STABLE_BIN.replace(/\.bin$/, '.meta.json');
 const LED_PREVIEW_BIN = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
 const LED_PREVIEW_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json';
 
-// WF-PREVIEW-IMPORT-FIRST-BATCH-001 — three first-batch preview builds
+// WF-PREVIEW-IMPORT-FIRST-BATCH-001 — two first-batch preview builds
 // imported from upstream sense360store/esphome-public v1.0.0-preview.
 const FIRST_BATCH_BINS = Object.freeze([
     'Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.0-preview.bin',
-    'Sense360-Ceiling-POE-RoomIQ-v1.0.0-preview.bin',
     'Sense360-Ceiling-POE-RoomIQ-LED-v1.0.0-preview.bin'
 ]);
 const FIRST_BATCH_SIDECARS = Object.freeze(
@@ -101,6 +102,7 @@ const FAN_BUNDLE_SIDECARS = Object.freeze(
 
 const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
+    ROOMIQ_STABLE_BIN,
     LED_PREVIEW_BIN,
     ...FIRST_BATCH_BINS,
     FANRELAY_BIN,
@@ -110,6 +112,7 @@ const EXPECTED_BINS = Object.freeze([
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
+    ROOMIQ_STABLE_SIDECAR,
     LED_PREVIEW_SIDECAR,
     ...FIRST_BATCH_SIDECARS,
     FANRELAY_SIDECAR,

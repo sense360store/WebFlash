@@ -95,7 +95,7 @@
             ],
             "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
             "firmware_config_string": "Ceiling-POE-RoomIQ",
-            "firmware_channel": "preview",
+            "firmware_channel": "stable",
             "notes": ["Preview firmware. The stable Bathroom Bundle — PoE is the supported default."],
             "known_limitations": []
         },

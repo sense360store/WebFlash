@@ -404,7 +404,6 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
     const report = runForFixture();
     const FIRST_BATCH = [
         'Ceiling-POE-AirIQ-RoomIQ',
-        'Ceiling-POE-RoomIQ',
         'Ceiling-POE-RoomIQ-LED'
     ];
 
