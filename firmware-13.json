@@ -10,24 +10,24 @@
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
+          "path": "firmware/rescue/Sense360-Rescue-v1.0.0-rescue.bin",
           "offset": 0,
-          "md5": "c754586f6a809fe94e0dc724c07546dd",
-          "sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
-          "signature": "BWpXtSgDJrSo1OvGy6X/VWJpvXOX92p2J1MS/S2Bo1I=",
-          "signature_ed25519": "aWsOuGa+a7Vxvo8DwsnzqnQGPXVftQlJyBjfqpeDuhqyWUc3SqTNRDOmHFxvgHpk12u7UFfc5AsrbO5KgwlbAg==",
+          "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+          "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+          "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
+          "signature_ed25519": "bSWV2Osg2KyDWLl0erTKHdSbGUHCbvmZTiE/bx/Zg5nJ/3MWMhE7uTcqdHavj4EU0gGlinh2mAI6yY25cR7pDQ==",
           "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "improv": true,
-      "md5": "c754586f6a809fe94e0dc724c07546dd",
-      "sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
-      "signature": "BWpXtSgDJrSo1OvGy6X/VWJpvXOX92p2J1MS/S2Bo1I=",
-      "signature_ed25519": "aWsOuGa+a7Vxvo8DwsnzqnQGPXVftQlJyBjfqpeDuhqyWUc3SqTNRDOmHFxvgHpk12u7UFfc5AsrbO5KgwlbAg==",
+      "improv": false,
+      "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
+      "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
+      "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
+      "signature_ed25519": "bSWV2Osg2KyDWLl0erTKHdSbGUHCbvmZTiE/bx/Zg5nJ/3MWMhE7uTcqdHavj4EU0gGlinh2mAI6yY25cR7pDQ==",
       "signature_key_id": "sense360-prod-2026-02",
-      "file_size": 1135904,
-      "source_commit": "47dd73b8e9c1faec00d2179c4927b97ebed9ab0c",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/47dd73b8e9c1faec00d2179c4927b97ebed9ab0c",
+      "file_size": 524288,
+      "source_commit": "f9c503b166046db8afcf60bb473e469ed699f600",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/f9c503b166046db8afcf60bb473e469ed699f600",
       "deprecated": false
     }
   ]
