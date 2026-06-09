@@ -84,13 +84,15 @@ function parseRequiredConfigsFromWorkflow() {
 }
 
 describe('github-pages-surface — manifest shape pins the deploy contract', () => {
-    test('manifest.json holds exactly nine builds (two stable + six preview + Rescue)', () => {
-        // 14 -> 9 when the five stale v1.0.0-preview builds (AirIQ-RoomIQ,
-        // standalone FanDAC, standalone FanPWM, RoomIQ-LED,
+    test('manifest.json holds exactly ten builds (three stable + six preview + Rescue)', () => {
+        // 14 -> 9 when the five stale v1.0.0-preview builds (the AirIQ-RoomIQ
+        // v1.0.0 preview, standalone FanDAC, standalone FanPWM, RoomIQ-LED,
         // VentIQ-FanRelay-RoomIQ) were retired after upstream regenerated the
-        // v1.0.0-preview checksums-sha256.txt without their assets.
+        // v1.0.0-preview checksums-sha256.txt without their assets; 9 -> 10
+        // when the AirIQ-RoomIQ config returned as the v1.0.6 STABLE import
+        // after upstream promoted it to production / stable.
         expect(Array.isArray(manifest.builds)).toBe(true);
-        expect(manifest.builds.length).toBe(9);
+        expect(manifest.builds.length).toBe(10);
     });
 
     test('manifest.json source_commit is not the May-7 stale deploy SHA', () => {
@@ -206,18 +208,19 @@ describe('github-pages-surface — firmware-N.json namespace matches manifest', 
         }
     });
 
-    test('no firmware-N.json beyond index 8 exists (no stale per-build manifests)', () => {
-        // After the stale v1.0.0-preview retirement the namespace is
-        // firmware-0 … firmware-8 (the five full-composition room-bundle fan
-        // previews, the RoomIQ stable, Release-One, the VentIQ LED preview,
-        // and Rescue, in the generator's deterministic order). Anything past
-        // index 8 would indicate the manifest regenerator inherited a legacy
-        // index or a stale file shipped in the Pages artifact.
+    test('no firmware-N.json beyond index 9 exists (no stale per-build manifests)', () => {
+        // After the AirIQ-RoomIQ v1.0.6 stable import the namespace is
+        // firmware-0 … firmware-9 (the five full-composition room-bundle fan
+        // previews, the AirIQ-RoomIQ stable, the RoomIQ stable, Release-One,
+        // the VentIQ LED preview, and Rescue, in the generator's deterministic
+        // order). Anything past index 9 would indicate the manifest
+        // regenerator inherited a legacy index or a stale file shipped in the
+        // Pages artifact.
         const repoFiles = fs.readdirSync(repoRoot);
         const offending = repoFiles.filter(name => {
             const match = name.match(/^firmware-(\d+)\.json$/);
             if (!match) return false;
-            return Number(match[1]) > 8;
+            return Number(match[1]) > 9;
         });
         expect(offending).toEqual([]);
     });

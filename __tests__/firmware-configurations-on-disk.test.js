@@ -16,13 +16,17 @@ import path from 'node:path';
 // A stale .bin + matching sidecar landing on disk before manifest
 // regeneration would pass both. This file pins the on-disk file list to
 // exactly the intended application binaries (Release-One stable, the RoomIQ
-// stable, the VentIQ LED preview, and the five full-composition room-bundle
-// fan previews imported from upstream v1.0.0-preview) plus their sidecars,
-// and additionally rejects any FanTRIAC segment in any filename in the
-// directory. The five stale v1.0.0-preview builds (AirIQ-RoomIQ, standalone
-// FanDAC, standalone FanPWM, RoomIQ-LED, VentIQ-FanRelay-RoomIQ) were retired
-// when upstream regenerated the v1.0.0-preview checksums-sha256.txt without
-// their assets, so they could no longer be re-verified by the importer.
+// stable, the AirIQ-RoomIQ stable imported from upstream v1.0.6, the VentIQ
+// LED preview, and the five full-composition room-bundle fan previews
+// imported from upstream v1.0.0-preview) plus their sidecars, and
+// additionally rejects any FanTRIAC segment in any filename in the
+// directory. The five stale v1.0.0-preview artifacts (the AirIQ-RoomIQ
+// v1.0.0 preview, standalone FanDAC, standalone FanPWM, RoomIQ-LED,
+// VentIQ-FanRelay-RoomIQ) were retired when upstream regenerated the
+// v1.0.0-preview checksums-sha256.txt without their assets, so they could no
+// longer be re-verified by the importer; the AirIQ-RoomIQ CONFIG later
+// returned as the v1.0.6 stable import, but its retired v1.0.0-preview
+// artifact must never reappear (the exact-file-list pin below enforces it).
 //
 // The Rescue artifact lives under firmware/rescue/ and is intentionally
 // out of scope for this test — it is built in-tree, not imported, and
@@ -58,17 +62,25 @@ const RELEASE_ONE_BIN = resolveReleaseOneBin();
 const RELEASE_ONE_SIDECAR = RELEASE_ONE_BIN.replace(/\.bin$/, '.meta.json');
 const ROOMIQ_STABLE_BIN = 'Sense360-Ceiling-POE-RoomIQ-v1.0.5-stable.bin';
 const ROOMIQ_STABLE_SIDECAR = ROOMIQ_STABLE_BIN.replace(/\.bin$/, '.meta.json');
+// The Kitchen-config stable imported from upstream v1.0.6 after upstream
+// promoted Ceiling-POE-AirIQ-RoomIQ to production / stable. The stable BUILD
+// ships; the S360-KIT-KITCHEN-P kit card stays withheld per the upstream
+// catalog bundle gating (owner waiver HW-AIRIQ-WAIVER-2026-06) — see
+// kits-json.test.js.
+const AIRIQ_ROOMIQ_STABLE_BIN = 'Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.6-stable.bin';
+const AIRIQ_ROOMIQ_STABLE_SIDECAR = AIRIQ_ROOMIQ_STABLE_BIN.replace(/\.bin$/, '.meta.json');
 const LED_PREVIEW_BIN = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
 const LED_PREVIEW_SIDECAR = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.meta.json';
 
-// The WF-PREVIEW-IMPORT-FIRST-BATCH-001 first-batch previews (AirIQ-RoomIQ,
-// RoomIQ-LED), the WEBFLASH-RELAY-001 FanRelay manual-preview, the
-// WEBFLASH-PWM-001 FanPWM manual-preview, and the
+// The WF-PREVIEW-IMPORT-FIRST-BATCH-001 first-batch previews (the AirIQ-RoomIQ
+// v1.0.0 preview, RoomIQ-LED), the WEBFLASH-RELAY-001 FanRelay manual-preview,
+// the WEBFLASH-PWM-001 FanPWM manual-preview, and the
 // WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 FanDAC manual-preview were retired:
 // upstream's regenerated v1.0.0-preview checksums-sha256.txt no longer lists
 // their assets, so the importer fails closed on them. Their source entries
 // left firmware/sources.json and their .bin + .meta.json pairs left this
-// directory in the same change set.
+// directory in the same change set. The AirIQ-RoomIQ config alone has since
+// returned — as the v1.0.6 STABLE pair above, never as the retired preview.
 
 // WF-IMPORT-FAN-BUNDLES-001 — the five full-composition Bathroom / Kitchen
 // fan-control room-bundle preview builds imported from the same upstream
@@ -89,12 +101,14 @@ const FAN_BUNDLE_SIDECARS = Object.freeze(
 const EXPECTED_BINS = Object.freeze([
     RELEASE_ONE_BIN,
     ROOMIQ_STABLE_BIN,
+    AIRIQ_ROOMIQ_STABLE_BIN,
     LED_PREVIEW_BIN,
     ...FAN_BUNDLE_BINS
 ]);
 const EXPECTED_SIDECARS = Object.freeze([
     RELEASE_ONE_SIDECAR,
     ROOMIQ_STABLE_SIDECAR,
+    AIRIQ_ROOMIQ_STABLE_SIDECAR,
     LED_PREVIEW_SIDECAR,
     ...FAN_BUNDLE_SIDECARS
 ]);

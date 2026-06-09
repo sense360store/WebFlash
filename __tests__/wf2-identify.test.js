@@ -291,12 +291,12 @@ describe('PR 4 — Identify view bound to the engine', () => {
     expect(viewState.sel.air).toBe('airiq');
     expect(viewState.sel.roomiq).toBe(true);
     expect(viewState.sel.power).toBe('poe');
-    // The AirIQ-RoomIQ preview build was retired with the stale
-    // v1.0.0-preview batch, so the hydrated config currently has no build and
-    // resolves fail-closed. This flips back to installable (stable) when the
-    // AirIQ-RoomIQ v1.0.6 stable import lands; the hydration assertions above
-    // are this test's real subject.
+    // The AirIQ-RoomIQ v1.0.6 stable import landed (upstream promoted the
+    // config to production / stable), so the hydrated config resolves
+    // installable on the stable channel; the hydration assertions above are
+    // this test's real subject.
     expect(viewState.resolved.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
-    expect(viewState.resolved.installable).toBe(false);
+    expect(viewState.resolved.installable).toBe(true);
+    expect(viewState.resolved.channel).toBe('stable');
   });
 });

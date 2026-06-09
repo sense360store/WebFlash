@@ -190,11 +190,12 @@ describe('Bug 1 — RoomIQ is an independent axis from the air-quality choice', 
     const airiq = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'airiq' }));
     expect(airiq.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
-    // The AirIQ-RoomIQ preview build was retired with the stale
-    // v1.0.0-preview batch, so this config currently resolves fail-closed.
-    // Flips back to installable when the v1.0.6 stable import lands; the
-    // config-string formation is this test's real subject (Bug 1).
-    expect(airiq.installable).toBe(false);
+    // The AirIQ-RoomIQ v1.0.6 stable import landed (upstream promoted the
+    // config to production / stable), so this resolves installable on the
+    // stable channel; the config-string formation is this test's real
+    // subject (Bug 1).
+    expect(airiq.installable).toBe(true);
+    expect(airiq.channel).toBe('stable');
 
     const ventiq = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'ventiq' }));
@@ -278,12 +279,12 @@ describe('Bug 1 — advanced builder renders RoomIQ and air-quality as separate 
     expect(state.sel.air).toBe('airiq');
     expect(state.sel.roomiq).toBe(true);
     expect(state.resolved.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
-    // The AirIQ-RoomIQ preview build was retired with the stale
-    // v1.0.0-preview batch, so the config currently resolves fail-closed.
-    // Flips back to installable (stable) when the v1.0.6 stable import
-    // lands; RoomIQ staying on through the air-board switch is this test's
-    // real subject (Bug 1).
-    expect(state.resolved.installable).toBe(false);
+    // The AirIQ-RoomIQ v1.0.6 stable import landed (upstream promoted the
+    // config to production / stable), so the config resolves installable on
+    // the stable channel; RoomIQ staying on through the air-board switch is
+    // this test's real subject (Bug 1).
+    expect(state.resolved.installable).toBe(true);
+    expect(state.resolved.channel).toBe('stable');
   });
 
   it('the summary panel shows Presence and Air quality as separate rows', async () => {
