@@ -53,9 +53,9 @@ const catalog = buildCatalogFromPayload(readJson('scripts/data/kits.json'));
 const kits = catalog.kits;
 
 describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — default install path', () => {
-  test('exactly one stable manifest build, and it is the Bathroom PoE Release-One build', () => {
+  test('exactly two stable manifest builds, the Bathroom PoE build and the RoomIQ build', () => {
     const stable = builds.filter((b) => b.channel === 'stable').map((b) => b.config_string);
-    expect(stable).toEqual([STABLE_CONFIG]);
+    expect([...stable].sort()).toEqual(['Ceiling-POE-RoomIQ', STABLE_CONFIG].sort());
   });
 
   test('the only recommended kit is the stable Bathroom PoE bundle', () => {
@@ -65,9 +65,9 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — default install path', () => {
     expect(recommended[0].firmware_channel).toBe('stable');
   });
 
-  test('only the Bathroom PoE bundle declares the stable channel', () => {
+  test('the Bathroom PoE and Bedroom PoE bundles declare the stable channel', () => {
     const stableKits = kits.filter((k) => k.firmware_channel === 'stable');
-    expect(stableKits.map((k) => k.sku)).toEqual(['S360-KIT-BATH-P']);
+    expect(stableKits.map((k) => k.sku).sort()).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P'].sort());
   });
 
   test('the stable default install path requires no additive fan / analog-fan acknowledgement', () => {
@@ -166,9 +166,9 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — preview stays preview (no silent pro
     });
   });
 
-  test('there is exactly one stable build and exactly one rescue build; the rest are preview', () => {
+  test('there are exactly two stable builds and exactly one rescue build; the rest are preview', () => {
     const byChannel = (ch) => builds.filter((b) => b.channel === ch);
-    expect(byChannel('stable')).toHaveLength(1);
+    expect(byChannel('stable')).toHaveLength(2);
     expect(byChannel('rescue')).toHaveLength(1);
     expect(byChannel('preview').length).toBe(builds.length - 2);
   });
