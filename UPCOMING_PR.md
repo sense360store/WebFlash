@@ -288,8 +288,7 @@ These gate every item below and must not be regressed by any queue PR:
 
 0. **WF-SURFACE-SSOT-001 — Single reviewed expected-surface fixture; every
    count/set guard derives from it.**
-   *(Implemented on branch `ci/expected-surface-ssot` — PR # to fill when
-   verified.)*
+   *(Implemented on branch `ci/expected-surface-ssot` — PR #555.)*
    Status: **Open for review.**
    The last three surface changes (#551 import, #553 retirement, #554
    promotion contract) each needed a dedicated multi-suite test-fix PR. This
