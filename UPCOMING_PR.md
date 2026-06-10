@@ -243,6 +243,8 @@ installer-flow reskin and the fan-bundle imports):
 | CI-IMPORT-IDEMPOTENCY-001 | #552 | Merged | Unblocked the stuck `Ceiling-POE-AirIQ-RoomIQ` v1.0.6 stable promotion: (1) made `scripts/import-firmware-sources.py` idempotent — an already-staged asset whose on-disk bytes match the entry's pinned `expected_sha256` (with its sidecar present) skips the network re-import, fixing the recorded "Release 5: Import Firmware" failure where upstream regenerated `v1.0.0-preview`'s `checksums-sha256.txt` without lines for five already-imported assets (static filename / config-string / block-token / size policies still enforced on the skip path; six new tests in `__tests__/python/test_import_firmware_sources.py`); (2) taught `__tests__/product-catalog-alignment.test.js` the directional stable-promotion declaration window (a `channel: stable` source declared ahead of a still-preview catalog row is tolerated; the reverse stays an error) and added a stricter per-entry canonical `asset_name` consistency test — this was the single red test on `main` after #551; (3) deduplicated the "✓ Firmware installed successfully" console line in `scripts/install.js`. | No firmware imported, no `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / kit / release-channel / install-gate / signing / `sw.js` / workflow-YAML change. The pinned-SHA skip never weakens verification — unpinned or pin-mismatched entries always take the full download + upstream-checksum path. | `main`'s deploy gate goes green again and the Release 5 import workflow can be re-dispatched to complete the Kitchen (AirIQ-RoomIQ) stable promotion (promote-to-stable retirement + import + fixture refresh + pin updates). |
 | CI-RETIRE-STALE-V100-PREVIEW-001 | #553 | Merged | Retired the five stale v1.0.0-preview sources whose assets left upstream's regenerated (2026-06-04) `checksums-sha256.txt` (the AirIQ-RoomIQ v1.0.0 preview, standalone `Ceiling-POE-FanDAC`, standalone `Ceiling-POE-FanPWM`, `Ceiling-POE-RoomIQ-LED`, `Ceiling-POE-VentIQ-FanRelay-RoomIQ`): `firmware/sources.json` 14 → 9 (the AirIQ-RoomIQ v1.0.6 stable entry survives), five `.bin` + `.meta.json` pairs deleted, `manifest.json` regenerated 14 → 9 builds, `firmware-9…13.json` pruned, `scripts/data/kits.json` 11 → 7 (Kitchen / Living / Corridor base bundles + Bathroom Relay retired), count / set / snapshot guards rebaselined to the nine-build world. | No gate, channel, signing, workflow, or `REQUIRED_CONFIGS` change. | Unblocked the import: the re-dispatched "Release 5: Import Firmware" run 27235080974 then committed the AirIQ-RoomIQ v1.0.6 stable to main (3fc218b — `.bin` + sidecar, manifest 9 → 10 builds, `firmware-9.json`, fixture refreshed to production / stable / v1.0.6), which made the #553-rebaselined guards red again; the ten-build test-contract rebaseline is the follow-up PR below (CI-PROMOTE-AIRIQ-ROOMIQ-TEST-CONTRACT-001). |
 | CI-PROMOTE-AIRIQ-ROOMIQ-TEST-CONTRACT-001 | #554 | Merged | Rebaselined the test contract to the ten-build stable-AirIQ-RoomIQ world after import run 27235080974 committed the v1.0.6 stable to main (3fc218b): count / set guards moved to ten builds, three stables (VentIQ-RoomIQ 1.0.4, RoomIQ 1.0.5, AirIQ-RoomIQ 1.0.6), six previews, Rescue, `firmware-N` max index 9, on-disk files + the v1.0.6 pair; the WF-PREVIEW-IMPORT-FIRST-BATCH-001 retirement assertions repointed to the five #553-retired v1.0.0-preview artifacts; the new `kitWithheldStableConfigs` register in `__tests__/helpers/stable-surface.js` pins AirIQ-RoomIQ as the only sanctioned kit-less stable manifest build (Kitchen kit stays withheld under owner waiver HW-AIRIQ-WAIVER-2026-06); the three fail-closed AirIQ-RoomIQ `installable` assertions flipped to installable-stable. Tests + tracker only; full suite green (67 suites, 1163 tests). | No file under `firmware/`, no `manifest.json` / `firmware-*.json` / `firmware/sources.json`, no gate, channel, signing, workflow, kit, or `REQUIRED_CONFIGS` change. | Deploy gate green on main in the ten-build world. Third consecutive surface change (#551 import, #553 retirement, #554 promotion contract) to need a dedicated multi-suite test-fix PR — the churn WF-SURFACE-SSOT-001 (queue slot 0) removes by moving every count/set guard onto one reviewed expected-surface fixture. |
+| WF-SURFACE-SSOT-001 | #555 | Merged | Moved the reviewed deploy surface into one fixture: `__tests__/fixtures/expected-surface.json` (per build `config_string` / `version` / `channel`, the Rescue entry, and the retired register of the five #553-retired v1.0.0-preview artifacts), with `__tests__/helpers/expected-surface.js` deriving total / per-channel counts, the stable + preview sets, the canonical `.bin` / `.meta.json` filenames, and the `firmware-N` max index. New anchor suite `__tests__/expected-surface.test.js` compares `manifest.json` + the `firmware-N` namespace against the fixture both directions; eight suites now import their expectations from the fixture. Procedure doc `docs/expected-surface-fixture.md`. | No file under `firmware/`, no `manifest.json` / `firmware-*.json` / `firmware/sources.json`, `scripts/data/kits.json`, gate, channel, signing, workflow, `sw.js`, or `REQUIRED_CONFIGS` change. | A surface change is now one reviewed-file edit instead of churning eight suites. Sits in front of WF-SOURCE-CHECKSUM-GUARD-001 (the PR-time add-source checksum guard). |
+| WF-SOURCE-CHECKSUM-GUARD-001 | PR # to fill when verified | Open for review | PR-time guard `scripts/validate-source-checksums.py` + a `source-checksum-guard` job in `.github/workflows/ci.yml` (on `pull_request`). For every `firmware/sources.json` entry ADDED or MODIFIED vs. the base branch, fetches the referenced release's `checksums-sha256.txt` and fails — naming the entry and the missing asset — when no checksum line exists for the source's binary. Unchanged entries are not re-validated (full-surface verification stays with the dispatch import). Refactored the importer to expose `assert_checksum_line_present`, reused by both `verify_sha256` and the guard so they cannot drift. Python tests at `__tests__/python/test_validate_source_checksums.py` (missing line fails, present passes, unchanged skipped, network failure errors not passes, diff selection). | No change to `firmware/sources.json` or any file under `firmware/`, no `manifest.json` / `firmware-*.json`, no `REQUIRED_CONFIGS`, no kit, no gate / channel / signing change, no change to the import dispatch behaviour or the deploy workflow (`firmware-publish.yml` / `firmware-import.yml`). | Stale or unverifiable sources are rejected before merge instead of blocking the deploy gate after merge (the June 10 failure mode). |
 
 ## Active / upcoming WebFlash queue
 
@@ -286,45 +288,38 @@ These gate every item below and must not be regressed by any queue PR:
 
 ### Queue
 
-0. **WF-SURFACE-SSOT-001 — Single reviewed expected-surface fixture; every
-   count/set guard derives from it.**
-   *(Implemented on branch `ci/expected-surface-ssot` — PR #555.)*
+0. **WF-SOURCE-CHECKSUM-GUARD-001 — Fail the add-source path at PR time when
+   a source's binary has no upstream checksum line.**
+   *(Implemented on branch `claude/source-checksum-pr-guard-c4v466`.)*
    Status: **Open for review.**
-   The last three surface changes (#551 import, #553 retirement, #554
-   promotion contract) each needed a dedicated multi-suite test-fix PR. This
-   PR makes a surface change a ONE-file edit instead: the reviewed deploy
-   surface now lives in `__tests__/fixtures/expected-surface.json` (per
-   build: `config_string`, `version`, `channel`; plus the Rescue entry and
-   the retired register holding the five #553-retired v1.0.0-preview
-   artifacts), with `__tests__/helpers/expected-surface.js` deriving the
-   total / per-channel counts, stable + preview sets, canonical
-   `.bin` / `.meta.json` filenames, and the `firmware-N` max index
-   (count − 1). The new anchor suite `__tests__/expected-surface.test.js`
-   compares `manifest.json` and the `firmware-N` namespace against the
-   fixture exactly (both directions — a drifted fixture cannot auto-pass;
-   verified by mutation) and cross-checks the fixture stable set against the
-   kits.json-derived `stableManifestConfigs`. Eight suites now import their
-   expectations from the fixture instead of hardcoding them
-   (`firmware-configurations-on-disk`, `github-pages-surface`, `kits-json`,
-   `product-catalog-alignment`, `product-import-readiness`,
-   `wf-live-smoke-2-0-default`, `wf2-identify`,
-   `wf2-identify-sensing-fixes`, plus the `sense360-webflash-status`
-   retired-config guards). Intentionally still independent: the kits.json
-   structural / withheld-kit pins (`S360-KIT-KITCHEN-P` stays out),
-   naming-policy checks, every reality-side FanTRIAC guard (the fixture
-   additionally refuses to declare a FanTRIAC build at load time), and the
-   `import_eligible` catalog count. Procedure doc:
-   `docs/expected-surface-fixture.md` — a surface change = import/retire PR
-   + one expected-surface.json edit in the same PR, reviewed together.
-   Full suite green: 68 suites, 1188 Jest tests; 173 Python tests.
-   Purpose: a promotion or import changes one reviewed file instead of
-   churning eight test suites, with the guards' intent fully enforced.
-   Dependencies: none (tests + fixture + docs + this tracker only).
-   Note: ZERO changes to the actual surface — no file under `firmware/`, no
-   `manifest.json` / `firmware-*.json` / `firmware/sources.json`,
-   `scripts/data/kits.json`, gate, channel, signing, workflow, `sw.js`, or
-   `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`)
-   change.
+   The June 10 failure mode: five `v1.0.0-preview` source entries had their
+   assets' checksum lines narrowed away upstream, and because nothing
+   re-checked the sources at PR time the breakage only surfaced *after merge*,
+   when the dispatch import / deploy gate ran and hard-failed on the whole
+   batch — blocking every later import until the stale sources were retired
+   (#553). This PR moves that check to PR time. The new guard
+   `scripts/validate-source-checksums.py` runs as a `source-checksum-guard`
+   job in `.github/workflows/ci.yml` (on `pull_request`): for every
+   `firmware/sources.json` entry ADDED or MODIFIED vs. the base branch it
+   fetches the referenced release's `checksums-sha256.txt` and fails — naming
+   the entry and the missing asset — when no checksum line exists for the
+   source's binary. Unchanged entries are not re-validated here (full-surface
+   verification stays with the dispatch importer
+   `scripts/import-firmware-sources.py`, which downloads and SHA-verifies every
+   declared binary). The importer was refactored to expose
+   `assert_checksum_line_present`, reused by both `verify_sha256` and the guard
+   so the two can never drift in how they parse and look up a checksum line.
+   Python tests at `__tests__/python/test_validate_source_checksums.py`:
+   missing line fails, present passes, unchanged entries are never fetched,
+   network failure reports as an error not a pass, plus the added/modified diff
+   selection. Full suite green (Jest + Python).
+   Dependencies: none (script + CI job + tests + this tracker only). Sits in
+   front of the import mechanism and the deploy gate; changes neither.
+   Note: ZERO changes to the actual surface — no file under `firmware/`,
+   no `manifest.json` / `firmware-*.json` / `firmware/sources.json`,
+   `scripts/data/kits.json`, the install gate, channel, signing, `sw.js`, the
+   import dispatch behaviour, the deploy workflow, or `REQUIRED_CONFIGS`
+   (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`).
 
 1. **WF2-INSTALLER-FLOW-REDESIGN — Reskin the installer flow to the design
    handoff (view over engine).**

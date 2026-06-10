@@ -319,17 +319,33 @@ def sha256_of_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def verify_sha256(
-    bin_path: Path,
-    asset_name: str,
-    checksum_text: str,
-) -> str:
+def assert_checksum_line_present(checksum_text: str, asset_name: str) -> str:
+    """Return the upstream-declared SHA256 for ``asset_name`` or raise.
+
+    Shared by the full importer SHA verification (``verify_sha256``) and the
+    PR-time add-source guard (``scripts/validate-source-checksums.py``). The
+    guard only needs to confirm that a checksum *line* exists for the asset —
+    the recorded June 10 failure mode where an upstream release narrowed or
+    regenerated its ``checksums-sha256.txt`` and dropped a source's asset line,
+    which then hard-fails the whole import at the deploy gate. The importer
+    additionally hashes the downloaded ``.bin`` against the returned digest.
+    """
+
     checksums = parse_sha256_manifest(checksum_text)
     expected = checksums.get(asset_name)
     if not expected:
         raise ImportValidationError(
             f"checksums-sha256.txt does not list an entry for '{asset_name}'."
         )
+    return expected
+
+
+def verify_sha256(
+    bin_path: Path,
+    asset_name: str,
+    checksum_text: str,
+) -> str:
+    expected = assert_checksum_line_present(checksum_text, asset_name)
     actual = sha256_of_file(bin_path)
     if actual.lower() != expected.lower():
         raise ImportValidationError(

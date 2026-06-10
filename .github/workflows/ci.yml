@@ -59,3 +59,34 @@ jobs:
         # Mirrors the deploy gate: the Python suite uses only stdlib, so no pip
         # install is required for the test step itself.
         run: python -m unittest discover -s __tests__/python -p 'test_*.py' -v
+
+  source-checksum-guard:
+    # WF-SOURCE-CHECKSUM-GUARD-001 — fail the PR when an ADDED or MODIFIED
+    # firmware/sources.json entry's binary no longer has a checksum line on its
+    # upstream release. This catches the June 10 failure mode (upstream narrowed
+    # checksums-sha256.txt out from under committed sources) BEFORE merge, instead
+    # of letting it block the deploy gate after merge. Unchanged entries are not
+    # re-validated here; full-surface verification stays with the dispatch import.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          # Full history so the guard can diff the PR branch against the base.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      - name: Validate added/modified firmware sources resolve upstream
+        env:
+          # Default token reads public cross-repo releases (no PAT needed for
+          # public sense360store/esphome-public). It is rate-limit friendly.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          python scripts/validate-source-checksums.py \
+            --base-ref "origin/${BASE_REF}"
