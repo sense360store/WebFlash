@@ -19,6 +19,10 @@ Boundaries enforced here (each is a hard failure that aborts the import):
 * The upstream release must expose every entry in ``required_assets``.
 * The downloaded ``.bin`` filename must exactly match ``asset_name``.
 * The ``.bin`` SHA256 must match the entry in ``checksums-sha256.txt``.
+* The ``.bin`` bytes must not contain any known default/placeholder
+  credential (W-H1 import gate; denylist in
+  ``scripts/check-firmware-default-credentials.py``). Checksum-valid but
+  credential-dirty assets are refused.
 * The ``.bin`` size must be at least ``min_size_bytes`` (default 102_400).
 * The parsed filename's config_string must equal the source entry's
   declared ``config_string``.
@@ -122,6 +126,9 @@ gen_manifests = _load_sibling("gen_manifests", "gen-manifests.py")
 sync_releases = _load_sibling("sync_releases", "sync-from-releases.py")
 catalog_refresh = _load_sibling(
     "refresh_product_catalog_fixture", "refresh-product-catalog-fixture.py"
+)
+credential_gate = _load_sibling(
+    "check_firmware_default_credentials", "check-firmware-default-credentials.py"
 )
 
 DEFAULT_CATALOG_FIXTURE_PATH = (
@@ -391,6 +398,46 @@ def assert_expected_sha256_matches(
             "Either the upstream asset was replaced after the source entry "
             "was pinned, or expected_sha256 in firmware/sources.json is stale."
         )
+
+
+# --- Default-credential scan (W-H1 import gate) ---------------------------
+
+
+def assert_no_default_credentials(
+    bin_path: Path, asset_name: str, *, source_repo: str, release_tag: str
+) -> None:
+    """Refuse a checksum-valid asset whose bytes carry default credentials.
+
+    Downstream half of SECURITY-AUDIT-2026-06 W-H1 (the upstream half is the
+    esphome-public#779 release gate): a binary built with the known
+    default/placeholder credential set must never be staged for the
+    installer, no matter how it got onto the upstream release. Runs
+    alongside the checksum verification — both must pass; a valid SHA256
+    only proves the bytes arrived intact, not that they are safe to serve.
+
+    This scan governs what may be NEWLY imported. The already-staged skip
+    path (``find_staged_pinned_asset``) deliberately does not re-scan: the
+    previously published binaries predate the upstream fix and stay
+    published until the tracked rebuild + clean re-import lands (see
+    UPCOMING_PR.md WF-H1-REIMPORT-CLEAN-001). Any genuine re-import of those
+    assets (changed pin, removed staged file) takes this full path and is
+    refused here.
+    """
+
+    matches = credential_gate.scan_blob(bin_path.read_bytes())
+    if not matches:
+        return
+    detail = "; ".join(
+        f"[{cred_class}] ({label})" for cred_class, label in matches
+    )
+    raise ImportValidationError(
+        f"Asset '{asset_name}' from {source_repo}@{release_tag} contains "
+        f"known default/placeholder credential material: {detail}. "
+        "Checksum-valid but credential-dirty assets are refused and nothing "
+        "is staged. The upstream build must carry the post-#779 release "
+        "secret posture (no shared default credentials) before it can be "
+        "imported."
+    )
 
 
 # --- Filename / token policy --------------------------------------------
@@ -708,10 +755,14 @@ def import_source_entry(
     # Idempotent skip for already-imported, pin-verified assets. The staged
     # bytes are re-verified against the entry's own expected_sha256 (see
     # find_staged_pinned_asset), and the static policies below are still
-    # enforced; only the network fetch and the upstream checksums-sha256.txt
-    # re-verification are skipped. This keeps the import run green when an
-    # upstream release later regenerates its checksum manifest without the
-    # already-imported asset's line.
+    # enforced; the network fetch, the upstream checksums-sha256.txt
+    # re-verification, and the W-H1 default-credential scan (which governs
+    # what may be NEWLY imported — see assert_no_default_credentials) are
+    # skipped. This keeps the import run green when an upstream release
+    # later regenerates its checksum manifest without the already-imported
+    # asset's line, and keeps the pre-#779 binaries that are already
+    # published from being torn out by a routine re-run before their tracked
+    # clean rebuild lands.
     staged = find_staged_pinned_asset(entry, repo_root=repo_root)
     if staged is not None:
         staged_path, staged_metadata = staged
@@ -769,6 +820,11 @@ def import_source_entry(
 
         asset_sha = verify_sha256(bin_tmp, asset_name, sha_tmp.read_text(encoding="utf-8"))
         assert_expected_sha256_matches(entry, asset_sha, asset_name)
+        # W-H1 import gate: checksum integrity alone is not enough — the
+        # verified bytes must also be free of known default credentials.
+        assert_no_default_credentials(
+            bin_tmp, asset_name, source_repo=source_repo, release_tag=release_tag
+        )
         assert_filename_matches_entry(asset_name, entry)
         assert_size_meets_threshold(bin_tmp, min_size_bytes, asset_name)
 

@@ -245,6 +245,7 @@ installer-flow reskin and the fan-bundle imports):
 | CI-PROMOTE-AIRIQ-ROOMIQ-TEST-CONTRACT-001 | #554 | Merged | Rebaselined the test contract to the ten-build stable-AirIQ-RoomIQ world after import run 27235080974 committed the v1.0.6 stable to main (3fc218b): count / set guards moved to ten builds, three stables (VentIQ-RoomIQ 1.0.4, RoomIQ 1.0.5, AirIQ-RoomIQ 1.0.6), six previews, Rescue, `firmware-N` max index 9, on-disk files + the v1.0.6 pair; the WF-PREVIEW-IMPORT-FIRST-BATCH-001 retirement assertions repointed to the five #553-retired v1.0.0-preview artifacts; the new `kitWithheldStableConfigs` register in `__tests__/helpers/stable-surface.js` pins AirIQ-RoomIQ as the only sanctioned kit-less stable manifest build (Kitchen kit stays withheld under owner waiver HW-AIRIQ-WAIVER-2026-06); the three fail-closed AirIQ-RoomIQ `installable` assertions flipped to installable-stable. Tests + tracker only; full suite green (67 suites, 1163 tests). | No file under `firmware/`, no `manifest.json` / `firmware-*.json` / `firmware/sources.json`, no gate, channel, signing, workflow, kit, or `REQUIRED_CONFIGS` change. | Deploy gate green on main in the ten-build world. Third consecutive surface change (#551 import, #553 retirement, #554 promotion contract) to need a dedicated multi-suite test-fix PR — the churn WF-SURFACE-SSOT-001 (queue slot 0) removes by moving every count/set guard onto one reviewed expected-surface fixture. |
 | WF-SURFACE-SSOT-001 | #555 | Merged | Moved the reviewed deploy surface into one fixture: `__tests__/fixtures/expected-surface.json` (per build `config_string` / `version` / `channel`, the Rescue entry, and the retired register of the five #553-retired v1.0.0-preview artifacts), with `__tests__/helpers/expected-surface.js` deriving total / per-channel counts, the stable + preview sets, the canonical `.bin` / `.meta.json` filenames, and the `firmware-N` max index. New anchor suite `__tests__/expected-surface.test.js` compares `manifest.json` + the `firmware-N` namespace against the fixture both directions; eight suites now import their expectations from the fixture. Procedure doc `docs/expected-surface-fixture.md`. | No file under `firmware/`, no `manifest.json` / `firmware-*.json` / `firmware/sources.json`, `scripts/data/kits.json`, gate, channel, signing, workflow, `sw.js`, or `REQUIRED_CONFIGS` change. | A surface change is now one reviewed-file edit instead of churning eight suites. Sits in front of WF-SOURCE-CHECKSUM-GUARD-001 (the PR-time add-source checksum guard). |
 | WF-SOURCE-CHECKSUM-GUARD-001 | PR # to fill when verified | Open for review | PR-time guard `scripts/validate-source-checksums.py` + a `source-checksum-guard` job in `.github/workflows/ci.yml` (on `pull_request`). For every `firmware/sources.json` entry ADDED or MODIFIED vs. the base branch, fetches the referenced release's `checksums-sha256.txt` and fails — naming the entry and the missing asset — when no checksum line exists for the source's binary. Unchanged entries are not re-validated (full-surface verification stays with the dispatch import). Refactored the importer to expose `assert_checksum_line_present`, reused by both `verify_sha256` and the guard so they cannot drift. Python tests at `__tests__/python/test_validate_source_checksums.py` (missing line fails, present passes, unchanged skipped, network failure errors not passes, diff selection). | No change to `firmware/sources.json` or any file under `firmware/`, no `manifest.json` / `firmware-*.json`, no `REQUIRED_CONFIGS`, no kit, no gate / channel / signing change, no change to the import dispatch behaviour or the deploy workflow (`firmware-publish.yml` / `firmware-import.yml`). | Stale or unverifiable sources are rejected before merge instead of blocking the deploy gate after merge (the June 10 failure mode). |
+| WF-H1-IMPORT-GATE | PR # to fill when verified | Open for review | Default-credential import gate, the downstream half of SECURITY-AUDIT-2026-06 W-H1 (upstream half: `sense360store/esphome-public#779`, SEC-ESP-BUILD-GATES-001): new denylist scanner `scripts/check-firmware-default-credentials.py` (placeholder API encryption key as base64 literal AND decoded 32-byte material, OTA / web / fallback-AP defaults plus burned literals, CI test-lane values; default web username flagged only in combination with a default web password; the intentionally-public setup-network pair is the sole exclusion), wired into `scripts/import-firmware-sources.py` immediately after checksum verification — a checksum-valid but credential-dirty asset fails the import for that source, naming the source and the matched credential class, with neither the `.bin` nor the `.meta.json` staged. Python tests at `__tests__/python/test_check_firmware_default_credentials.py` (run in CI on PRs by the existing discover step); W-H1 status recorded in `docs/security/SECURITY-AUDIT-2026-06.md`; import contract updated in `docs/firmware-import.md`. | Every live binary, `manifest.json`, every `firmware-*.json`, `firmware/sources.json`, `scripts/data/kits.json`, `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), the install gate, channels, signing, `sw.js`, every workflow — the scan gates NEW imports only; the nine published pre-#779 binaries are untouched (the already-staged pin-verified skip path does not re-scan; the in-tree Rescue build scans clean). | Opens WF-H1-REIMPORT-CLEAN-001 — rebuild + clean re-import of the published builds, blocked on upstream #779's unprovisioned release artifacts. |
 
 ## Active / upcoming WebFlash queue
 
@@ -321,7 +322,68 @@ These gate every item below and must not be regressed by any queue PR:
    import dispatch behaviour, the deploy workflow, or `REQUIRED_CONFIGS`
    (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`).
 
-1. **WF2-INSTALLER-FLOW-REDESIGN — Reskin the installer flow to the design
+1. **WF-H1-IMPORT-GATE — Refuse to import any firmware carrying a known
+   default/placeholder credential.**
+   *(Implemented on branch `security/wf-default-credential-import-gate`.)*
+   Status: **Open for review.**
+   Closes SECURITY-AUDIT-2026-06 W-H1 from the downstream side, the symmetric
+   backstop to upstream `sense360store/esphome-public#779`
+   (SEC-ESP-BUILD-GATES-001): the cross-repo importer now scans every newly
+   downloaded `.bin` AFTER checksum verification against the denylist in
+   `scripts/check-firmware-default-credentials.py` (kept in lock-step with the
+   upstream release gate) and fails the import for that source — naming the
+   source and the matched credential class — without staging the `.bin` or
+   its `.meta.json`. Checksum-valid but credential-dirty is rejected, so a
+   defaulted upstream artifact can never be published to the installer even
+   if the upstream gate were bypassed or the asset predates it. Denylisted by
+   class: the placeholder API encryption key (base64 literal AND its decoded
+   32-byte material — the form flash actually stores), the default OTA
+   password, the default web password (the default web username flags only in
+   combination with a default web password), the default plus burned
+   fallback-AP passwords, and the CI test-lane WiFi values. The
+   intentionally-public setup-network pair is the only exclusion (setup-only,
+   no device control). Python tests at
+   `__tests__/python/test_check_firmware_default_credentials.py` (denylist
+   contract, dirty-rejected / clean-accepted / decoded-key-caught /
+   setup-pair-allowed, importer wiring with nothing staged on refusal,
+   staged-skip vs. full-path re-import semantics, standalone CLI exit codes);
+   they run in CI on PRs via the existing `__tests__/python` discover step in
+   `ci.yml`. The scan applies to NEW imports only: the already-staged
+   pin-verified skip path (CI-IMPORT-IDEMPOTENCY-001) does not re-scan, so
+   the nine imported binaries currently published — which predate the
+   upstream fix and DO match the denylist — are not deleted, altered, or torn
+   out by a routine import re-run (the in-tree Rescue build scans clean).
+   Re-importing them is blocked until they are rebuilt clean
+   (WF-H1-REIMPORT-CLEAN-001, next item).
+   Dependencies: none (scanner + importer wiring + tests + docs + this
+   tracker).
+   Note: ZERO changes to the live surface — no file under `firmware/`, no
+   `manifest.json` / `firmware-*.json` / `firmware/sources.json`,
+   `scripts/data/kits.json`, the install gate, channel, signing, `sw.js`, any
+   workflow, or `REQUIRED_CONFIGS` (still
+   `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`).
+
+2. **WF-H1-REIMPORT-CLEAN-001 — Rebuild + re-import the published builds
+   clean once upstream ships unprovisioned binaries.**
+   Status: **Blocked — upstream rebuild required.**
+   The nine imported stable/preview binaries currently on the installer were
+   built before upstream #779 and carry the shared default credential set
+   (the in-tree Rescue build scans clean); the WF-H1-IMPORT-GATE scanner now
+   refuses them on any genuine re-import. Once upstream cuts rebuilt releases
+   under the post-#779 secret posture (unprovisioned binaries, no shared
+   defaults — upstream `scripts/apply_release_secret_posture.py`), this item
+   re-points each `firmware/sources.json` entry at the rebuilt release/tag,
+   re-pins `expected_sha256` per asset, runs the importer (every asset must
+   now pass the credential gate), regenerates the manifests, and rebaselines
+   `__tests__/fixtures/expected-surface.json` in the same PR. Until then the
+   live binaries stay published as-is: removing them without replacements
+   would take down the installer's whole catalog, a separate product decision
+   this queue item does not make.
+   Dependencies: upstream `sense360store/esphome-public#779` secrets path
+   producing rebuilt, credential-clean release artifacts for the nine
+   imported configs (see Upstream dependencies).
+
+3. **WF2-INSTALLER-FLOW-REDESIGN — Reskin the installer flow to the design
    handoff (view over engine).**
    The v3 installer-flow redesign (full-page app shell, recommendation-first
    Identify, dense Browse table, two-column Install) is a VIEW reskin over the
@@ -346,7 +408,7 @@ These gate every item below and must not be regressed by any queue PR:
    Note: View + test only. No firmware, manifest, sources, `REQUIRED_CONFIGS`,
    release-channel, service-worker, or gate change.
 
-2. **WF-LIVE-SMOKE-2-0-DEFAULT-001 — Live smoke on the deployed 2.0 default.**
+4. **WF-LIVE-SMOKE-2-0-DEFAULT-001 — Live smoke on the deployed 2.0 default.**
    *(Implemented on a development branch — pending PR.)*
    Status: **Done (docs + test) on branch — PR # to fill when verified.**
    Recorded the live-origin smoke of the deployed GitHub Pages 2.0 default at
@@ -368,7 +430,7 @@ These gate every item below and must not be regressed by any queue PR:
    deployed (all merged).
    Note: Docs + test only.
 
-3. **Still-blocked upstream import items (carried forward unchanged).**
+5. **Still-blocked upstream import items (carried forward unchanged).**
    These remain blocked on their upstream `RELEASE-…` artifacts; any eventual
    exposure lands in the **2.0 kit picker**:
    - **WF-IMPORT-TRIAC-001** — import the S360-320 FanTRIAC advanced/manual
@@ -417,6 +479,14 @@ are pointers, not status:
   (queue item 7) and, downstream, the `REQUIRED_CONFIGS` decision
   (WF-REQUIRED-001, queue item 7) and any LED-bearing kit
   (WF-KIT-LED-001, queue item 7).
+- **`SEC-ESP-BUILD-GATES-001` (#779) rebuilt release artifacts /
+  `SEC-ESP-PROVISIONING-001`** — upstream now strips the shared default
+  credential set from release builds (unprovisioned posture via
+  `scripts/apply_release_secret_posture.py`) and gates every release on its
+  default-credential scan. Rebuilt, credential-clean release artifacts for
+  the nine imported configs gate WF-H1-REIMPORT-CLEAN-001 (queue item 2);
+  the per-device provisioning follow-up `SEC-ESP-PROVISIONING-001` is
+  tracked upstream.
 - **`WEBFLASH-RELEASE-MATRIX-ALIGNMENT-001`** — upstream docs-only
   reconciliation at
   [`docs/release-matrix-webflash-alignment.md`](https://github.com/sense360store/esphome-public/blob/main/docs/release-matrix-webflash-alignment.md)
