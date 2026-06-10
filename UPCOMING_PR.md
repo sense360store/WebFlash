@@ -242,6 +242,7 @@ installer-flow reskin and the fan-bundle imports):
 | WF2-IDENTIFY-TABLE-STICKY-FIX | #520 | Merged | CSS-only bug fix to the #516 Browse `.ktable` — the recommended / selected first row (`S360-KIT-BATH-P`) was clipped under the sticky column header. Switched `.ktable` to `border-collapse: separate; border-spacing: 0`, gave the sticky `th` an opaque background + an inset box-shadow bottom divider, and added `scroll-margin-top: 60px` on `.ktable__row` so a scrolled / focus-stepped row clears the winbar + table header. `app.css` only. | No `scripts/identify.js` structure change; no engine, install gate, catalogue, release-channel, kit-data, `manifest.json`, `firmware-*.json`, `firmware/sources.json`, or `REQUIRED_CONFIGS` change. Recommended kit + TRIAC fail-closed exactly as #516 shipped; full Jest suite green untouched (1122 tests). | The recommended first row is visible in the Browse table. |
 | CI-IMPORT-IDEMPOTENCY-001 | #552 | Merged | Unblocked the stuck `Ceiling-POE-AirIQ-RoomIQ` v1.0.6 stable promotion: (1) made `scripts/import-firmware-sources.py` idempotent — an already-staged asset whose on-disk bytes match the entry's pinned `expected_sha256` (with its sidecar present) skips the network re-import, fixing the recorded "Release 5: Import Firmware" failure where upstream regenerated `v1.0.0-preview`'s `checksums-sha256.txt` without lines for five already-imported assets (static filename / config-string / block-token / size policies still enforced on the skip path; six new tests in `__tests__/python/test_import_firmware_sources.py`); (2) taught `__tests__/product-catalog-alignment.test.js` the directional stable-promotion declaration window (a `channel: stable` source declared ahead of a still-preview catalog row is tolerated; the reverse stays an error) and added a stricter per-entry canonical `asset_name` consistency test — this was the single red test on `main` after #551; (3) deduplicated the "✓ Firmware installed successfully" console line in `scripts/install.js`. | No firmware imported, no `manifest.json` / `firmware-*.json` / `firmware/sources.json` / `REQUIRED_CONFIGS` / kit / release-channel / install-gate / signing / `sw.js` / workflow-YAML change. The pinned-SHA skip never weakens verification — unpinned or pin-mismatched entries always take the full download + upstream-checksum path. | `main`'s deploy gate goes green again and the Release 5 import workflow can be re-dispatched to complete the Kitchen (AirIQ-RoomIQ) stable promotion (promote-to-stable retirement + import + fixture refresh + pin updates). |
 | CI-RETIRE-STALE-V100-PREVIEW-001 | #553 | Merged | Retired the five stale v1.0.0-preview sources whose assets left upstream's regenerated (2026-06-04) `checksums-sha256.txt` (the AirIQ-RoomIQ v1.0.0 preview, standalone `Ceiling-POE-FanDAC`, standalone `Ceiling-POE-FanPWM`, `Ceiling-POE-RoomIQ-LED`, `Ceiling-POE-VentIQ-FanRelay-RoomIQ`): `firmware/sources.json` 14 → 9 (the AirIQ-RoomIQ v1.0.6 stable entry survives), five `.bin` + `.meta.json` pairs deleted, `manifest.json` regenerated 14 → 9 builds, `firmware-9…13.json` pruned, `scripts/data/kits.json` 11 → 7 (Kitchen / Living / Corridor base bundles + Bathroom Relay retired), count / set / snapshot guards rebaselined to the nine-build world. | No gate, channel, signing, workflow, or `REQUIRED_CONFIGS` change. | Unblocked the import: the re-dispatched "Release 5: Import Firmware" run 27235080974 then committed the AirIQ-RoomIQ v1.0.6 stable to main (3fc218b — `.bin` + sidecar, manifest 9 → 10 builds, `firmware-9.json`, fixture refreshed to production / stable / v1.0.6), which made the #553-rebaselined guards red again; the ten-build test-contract rebaseline is the follow-up PR below (CI-PROMOTE-AIRIQ-ROOMIQ-TEST-CONTRACT-001). |
+| CI-PROMOTE-AIRIQ-ROOMIQ-TEST-CONTRACT-001 | #554 | Merged | Rebaselined the test contract to the ten-build stable-AirIQ-RoomIQ world after import run 27235080974 committed the v1.0.6 stable to main (3fc218b): count / set guards moved to ten builds, three stables (VentIQ-RoomIQ 1.0.4, RoomIQ 1.0.5, AirIQ-RoomIQ 1.0.6), six previews, Rescue, `firmware-N` max index 9, on-disk files + the v1.0.6 pair; the WF-PREVIEW-IMPORT-FIRST-BATCH-001 retirement assertions repointed to the five #553-retired v1.0.0-preview artifacts; the new `kitWithheldStableConfigs` register in `__tests__/helpers/stable-surface.js` pins AirIQ-RoomIQ as the only sanctioned kit-less stable manifest build (Kitchen kit stays withheld under owner waiver HW-AIRIQ-WAIVER-2026-06); the three fail-closed AirIQ-RoomIQ `installable` assertions flipped to installable-stable. Tests + tracker only; full suite green (67 suites, 1163 tests). | No file under `firmware/`, no `manifest.json` / `firmware-*.json` / `firmware/sources.json`, no gate, channel, signing, workflow, kit, or `REQUIRED_CONFIGS` change. | Deploy gate green on main in the ten-build world. Third consecutive surface change (#551 import, #553 retirement, #554 promotion contract) to need a dedicated multi-suite test-fix PR — the churn WF-SURFACE-SSOT-001 (queue slot 0) removes by moving every count/set guard onto one reviewed expected-surface fixture. |
 
 ## Active / upcoming WebFlash queue
 
@@ -285,53 +286,45 @@ These gate every item below and must not be regressed by any queue PR:
 
 ### Queue
 
-0. **CI-PROMOTE-AIRIQ-ROOMIQ-TEST-CONTRACT-001 — Move the test contract to
-   the ten-build stable-Kitchen-config world so firmware-publish deploys.**
-   *(Implemented on branch `ci/promote-airiq-roomiq-test-contract` — PR # to
-   fill when verified.)*
+0. **WF-SURFACE-SSOT-001 — Single reviewed expected-surface fixture; every
+   count/set guard derives from it.**
+   *(Implemented on branch `ci/expected-surface-ssot` — PR #555.)*
    Status: **Open for review.**
-   The re-dispatched "Release 5: Import Firmware" run 27235080974 committed
-   the AirIQ-RoomIQ v1.0.6 stable to main (3fc218b): `.bin` + `.meta.json` on
-   disk, `manifest.json` 9 → 10 builds, new `firmware-9.json`, and the
-   vendored product-catalog fixture refreshed to the post-upstream-#769 state
-   (`Ceiling-POE-AirIQ-RoomIQ` `production` / `stable` / `1.0.6`;
-   `scripts/refresh-product-catalog-fixture.py` confirms in-sync with
-   upstream main, no further change). That flipped 17 tests across 8 suites
-   that still encoded the #553 nine-build / AirIQ-RoomIQ-retired contract.
-   This PR rebaselines tests only (no file under `firmware/`, no
-   `manifest.json` / `firmware-*.json` / `firmware/sources.json` change):
-   - Count / set guards → ten builds, three stables (VentIQ-RoomIQ 1.0.4,
-     RoomIQ 1.0.5, AirIQ-RoomIQ 1.0.6), six previews, Rescue; `firmware-N`
-     max index 9; on-disk expected files gain the v1.0.6 stable pair
-     (`github-pages-surface`, `firmware-configurations-on-disk`,
-     `product-catalog-alignment`, `product-import-readiness` summary counts).
-   - The WF-PREVIEW-IMPORT-FIRST-BATCH-001 retirement assertions repointed:
-     AirIQ-RoomIQ is a promoted stable shipping config (sources + manifest +
-     disk), and the stays-retired guard now pins the five v1.0.0-preview
-     artifacts retired by #553 (the AirIQ-RoomIQ v1.0.0 PREVIEW specifically,
-     standalone FanDAC, standalone FanPWM, RoomIQ-LED,
-     VentIQ-FanRelay-RoomIQ) so it keeps teeth.
-   - **The Kitchen base kit stays withheld** — supersedes the #553 follow-up
-     note that expected `S360-KIT-KITCHEN-P` back: upstream #769 reconciled
-     its catalog with AirIQ-RoomIQ published-stable but keeps the
-     S360-KIT-KITCHEN-P bundle hidden / not buyable (owner waiver
-     HW-AIRIQ-WAIVER-2026-06). `scripts/data/kits.json` is untouched; the
-     new `kitWithheldStableConfigs` register in
-     `__tests__/helpers/stable-surface.js` pins AirIQ-RoomIQ as the only
-     sanctioned kit-less stable manifest build.
-   - The three temporarily fail-closed AirIQ-RoomIQ `installable` assertions
-     (`wf2-identify.test.js`, `wf2-identify-sensing-fixes.test.js` Bug 1 ×2)
-     flipped to installable-stable as their comments predicted.
-   Full suite green: 67 suites, 1163 tests.
-   Purpose: land the ten-build test contract so the firmware-publish deploy
-   gate goes green on main.
-   Dependencies: 3fc218b on main (already landed); upstream #769 (already
-   merged).
-   Note: Tests + vendored-fixture verification + this tracker only. No gate,
-   channel, signing, workflow, kit, `REQUIRED_CONFIGS` (still
-   `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`), or firmware-surface change.
-   Adding `S360-KIT-KITCHEN-P` later is a separate deliberate PR once the
-   upstream bundle gating clears.
+   The last three surface changes (#551 import, #553 retirement, #554
+   promotion contract) each needed a dedicated multi-suite test-fix PR. This
+   PR makes a surface change a ONE-file edit instead: the reviewed deploy
+   surface now lives in `__tests__/fixtures/expected-surface.json` (per
+   build: `config_string`, `version`, `channel`; plus the Rescue entry and
+   the retired register holding the five #553-retired v1.0.0-preview
+   artifacts), with `__tests__/helpers/expected-surface.js` deriving the
+   total / per-channel counts, stable + preview sets, canonical
+   `.bin` / `.meta.json` filenames, and the `firmware-N` max index
+   (count − 1). The new anchor suite `__tests__/expected-surface.test.js`
+   compares `manifest.json` and the `firmware-N` namespace against the
+   fixture exactly (both directions — a drifted fixture cannot auto-pass;
+   verified by mutation) and cross-checks the fixture stable set against the
+   kits.json-derived `stableManifestConfigs`. Eight suites now import their
+   expectations from the fixture instead of hardcoding them
+   (`firmware-configurations-on-disk`, `github-pages-surface`, `kits-json`,
+   `product-catalog-alignment`, `product-import-readiness`,
+   `wf-live-smoke-2-0-default`, `wf2-identify`,
+   `wf2-identify-sensing-fixes`, plus the `sense360-webflash-status`
+   retired-config guards). Intentionally still independent: the kits.json
+   structural / withheld-kit pins (`S360-KIT-KITCHEN-P` stays out),
+   naming-policy checks, every reality-side FanTRIAC guard (the fixture
+   additionally refuses to declare a FanTRIAC build at load time), and the
+   `import_eligible` catalog count. Procedure doc:
+   `docs/expected-surface-fixture.md` — a surface change = import/retire PR
+   + one expected-surface.json edit in the same PR, reviewed together.
+   Full suite green: 68 suites, 1188 Jest tests; 173 Python tests.
+   Purpose: a promotion or import changes one reviewed file instead of
+   churning eight test suites, with the guards' intent fully enforced.
+   Dependencies: none (tests + fixture + docs + this tracker only).
+   Note: ZERO changes to the actual surface — no file under `firmware/`, no
+   `manifest.json` / `firmware-*.json` / `firmware/sources.json`,
+   `scripts/data/kits.json`, gate, channel, signing, workflow, `sw.js`, or
+   `REQUIRED_CONFIGS` (still `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`)
+   change.
 
 1. **WF2-INSTALLER-FLOW-REDESIGN — Reskin the installer flow to the design
    handoff (view over engine).**

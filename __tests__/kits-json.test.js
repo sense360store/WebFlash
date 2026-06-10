@@ -10,6 +10,18 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { buildCatalogFromPayload } from '../scripts/utils/kit-config.js';
+// WF-SURFACE-SSOT-001: the build-surface expectations (which configs ship,
+// which retired configs stay absent) derive from the reviewed
+// expected-surface fixture. The kits.json STRUCTURAL pins below (which kit
+// SKUs exist, which stay withheld, recommended/stable membership) are
+// intentionally NOT derived from it — they are deliberate catalogue
+// decisions and stay explicit literals (see the anti-tautology contract in
+// __tests__/helpers/stable-surface.js).
+import {
+    isExpectedConfig,
+    expectedChannelOf,
+    retiredConfigsStillAbsent
+} from './helpers/expected-surface.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -157,23 +169,42 @@ describe('scripts/data/kits.json', () => {
         });
 
         test('the withheld Kitchen and retired Living / Corridor base bundles stay out of kits.json', () => {
-            // Kitchen: the AirIQ-RoomIQ config is imported and STABLE (v1.0.6),
-            // but the S360-KIT-KITCHEN-P kit stays withheld per the upstream
-            // catalog bundle gating (owner waiver HW-AIRIQ-WAIVER-2026-06).
+            // Kitchen: the AirIQ-RoomIQ config is imported and STABLE (per the
+            // expected-surface fixture), but the S360-KIT-KITCHEN-P kit stays
+            // withheld per the upstream catalog bundle gating (owner waiver
+            // HW-AIRIQ-WAIVER-2026-06). This kit-membership rule is a
+            // deliberate decision and stays an explicit literal.
             // Living / Corridor: their Ceiling-POE-RoomIQ-LED config is still
             // retired outright, so those kits stay out until it is re-imported.
             const withheldOrRetiredSkus = ['S360-KIT-KITCHEN-P', 'S360-KIT-LIVING-P', 'S360-KIT-CORRIDOR-P'];
             withheldOrRetiredSkus.forEach(sku => {
                 expect(catalog.kits.find(k => k.sku === sku)).toBeUndefined();
             });
-            // The Kitchen config is a real stable manifest build — withheld from
-            // kits.json only, never referenced by any kit card.
+            // The Kitchen config is a shipping stable build per the fixture —
+            // withheld from kits.json only, never referenced by any kit card.
+            // (If the config is ever retired again, the fixture loses it and
+            // this fails loud so the withheld-kit rule gets revisited.)
+            expect(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ')).toBe('stable');
             expect(manifestConfigStrings.has('Ceiling-POE-AirIQ-RoomIQ')).toBe(true);
             expect(catalog.kits.some(k => k.firmware_config_string === 'Ceiling-POE-AirIQ-RoomIQ')).toBe(false);
             // The Living / Corridor config left the manifest with its stale
-            // v1.0.0-preview retirement and has not returned.
+            // v1.0.0-preview retirement and has not returned (fixture intent
+            // plus manifest reality).
+            expect(isExpectedConfig('Ceiling-POE-RoomIQ-LED')).toBe(false);
             expect(manifestConfigStrings.has('Ceiling-POE-RoomIQ-LED')).toBe(false);
             expect(catalog.kits.some(k => k.firmware_config_string === 'Ceiling-POE-RoomIQ-LED')).toBe(false);
+        });
+
+        test('every still-retired fixture config is absent from the manifest and from every kit card', () => {
+            // Derived stays-retired guard: the expected-surface fixture's
+            // retired register (minus any config that legitimately returned at
+            // a new version/channel) must stay out of the manifest and out of
+            // kits.json entirely. Re-importing one of these is a deliberate
+            // surface change that edits the fixture in the same PR.
+            for (const cs of retiredConfigsStillAbsent) {
+                expect(manifestConfigStrings.has(cs)).toBe(false);
+                expect(catalog.kits.some(k => k.firmware_config_string === cs)).toBe(false);
+            }
         });
 
         test('standalone fan-only previews and TRIAC are not kit cards', () => {
@@ -227,7 +258,10 @@ describe('scripts/data/kits.json', () => {
         });
 
         test('the retired Bathroom Relay bundle and its config stay out until re-imported', () => {
+            // Kit-membership rule stays literal; the config's retirement is
+            // fixture intent (retired register) checked against the manifest.
             expect(catalog.kits.find(k => k.sku === 'S360-KIT-BATH-P-REL')).toBeUndefined();
+            expect(isExpectedConfig('Ceiling-POE-VentIQ-FanRelay-RoomIQ')).toBe(false);
             expect(manifestConfigStrings.has('Ceiling-POE-VentIQ-FanRelay-RoomIQ')).toBe(false);
         });
 

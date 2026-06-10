@@ -20,6 +20,12 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+// WF-SURFACE-SSOT-001: per-config channel expectations derive from the
+// reviewed expected-surface fixture, so a promotion (e.g. a preview config
+// going stable) is a single fixture edit instead of a hand-flip of the
+// channel literals here. The config-string FORMATION assertions stay literal
+// — they are this suite's real subject.
+import { expectedChannelOf } from './helpers/expected-surface.js';
 
 const ROOT = process.cwd();
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
@@ -104,7 +110,11 @@ beforeEach(() => {
 });
 
 describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
-  it('resolves the Bathroom PoE selection to the stable Release-One build', async () => {
+  it('resolves the Bathroom PoE selection to the Release-One build on its fixture channel', async () => {
+    // The default Bathroom PoE selection must stay STABLE — that policy is
+    // pinned by kits-json.test.js (S360-KIT-BATH-P channel) and the
+    // expected-surface anchor suite; here the channel derives from the fixture.
+    const channel = expectedChannelOf('Ceiling-POE-VentIQ-RoomIQ');
     const { engine } = await boot();
     const result = await engine.state.resolveCompatibleFirmware({
       mount: 'ceiling', power: 'poe', bathroom: true,
@@ -112,15 +122,18 @@ describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
     });
     expect(result.configString).toBe('Ceiling-POE-VentIQ-RoomIQ');
     expect(result.installable).toBe(true);
-    expect(result.isPreview).toBe(false);
-    expect(result.channel).toBe('stable');
+    expect(result.isPreview).toBe(channel === 'preview');
+    expect(result.channel).toBe(channel);
     expect(result.reason).toBe('installable');
   });
 
-  it('resolves an LED selection to the preview build and flags it preview', async () => {
+  it('resolves an LED selection to the LED build and reports its fixture channel', async () => {
     // Retargeted from the retired Ceiling-POE-RoomIQ-LED preview (stale
     // v1.0.0-preview retirement) to the surviving VentIQ LED preview
-    // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview).
+    // (Ceiling-POE-VentIQ-RoomIQ-LED, from v1.0.0-led-preview). The channel
+    // derives from the fixture (currently preview), so a future LED stable
+    // promotion is a fixture edit, not a churn of these literals.
+    const channel = expectedChannelOf('Ceiling-POE-VentIQ-RoomIQ-LED');
     const { engine } = await boot();
     const result = await engine.state.resolveCompatibleFirmware({
       mount: 'ceiling', power: 'poe', bathroom: true,
@@ -128,8 +141,8 @@ describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
     });
     expect(result.configString).toBe('Ceiling-POE-VentIQ-RoomIQ-LED');
     expect(result.installable).toBe(true);
-    expect(result.isPreview).toBe(true);
-    expect(result.channel).toBe('preview');
+    expect(result.isPreview).toBe(channel === 'preview');
+    expect(result.channel).toBe(channel);
   });
 
   it('blocks a TRIAC selection — no signed build, routed to source', async () => {
@@ -153,13 +166,14 @@ describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
     // Install still gates on the preview-channel + fan-control + FanDAC-address
     // acknowledgements; nothing here weakens that.
     const { engine } = await boot();
+    const channel = expectedChannelOf('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
     const result = await engine.state.resolveCompatibleFirmware({
       mount: 'ceiling', power: 'poe', airiq: 'airiq', roomiq: 'roomiq', fan: 'analog',
     });
     expect(result.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
     expect(result.installable).toBe(true);
-    expect(result.isPreview).toBe(true);
-    expect(result.channel).toBe('preview');
+    expect(result.isPreview).toBe(channel === 'preview');
+    expect(result.channel).toBe(channel);
   });
 
   it('blocks a USB power selection that has no published build', async () => {
@@ -291,12 +305,11 @@ describe('PR 4 — Identify view bound to the engine', () => {
     expect(viewState.sel.air).toBe('airiq');
     expect(viewState.sel.roomiq).toBe(true);
     expect(viewState.sel.power).toBe('poe');
-    // The AirIQ-RoomIQ v1.0.6 stable import landed (upstream promoted the
-    // config to production / stable), so the hydrated config resolves
-    // installable on the stable channel; the hydration assertions above are
-    // this test's real subject.
+    // The hydrated config resolves installable on its fixture-declared
+    // channel (currently stable after the AirIQ-RoomIQ promotion); the
+    // hydration assertions above are this test's real subject.
     expect(viewState.resolved.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
     expect(viewState.resolved.installable).toBe(true);
-    expect(viewState.resolved.channel).toBe('stable');
+    expect(viewState.resolved.channel).toBe(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ'));
   });
 });

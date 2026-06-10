@@ -4,6 +4,13 @@ import path from 'node:path';
 // REQUIRED_CONFIGS production surface derived from kits.json, not hardcoded.
 // See __tests__/helpers/stable-surface.js for the anti-tautology contract.
 import { requiredConfigs } from './helpers/stable-surface.js';
+// WF-SURFACE-SSOT-001: the stays-retired register derives from the reviewed
+// expected-surface fixture (configs that left the surface and have not
+// returned, plus the retired artifact filenames that may never reappear).
+import {
+    retiredConfigsStillAbsent,
+    retiredArtifacts
+} from './helpers/expected-surface.js';
 
 // WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — documentation guard.
 //
@@ -156,29 +163,46 @@ describe('WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001 — blocked hardware stays bl
     });
 });
 
-describe('WEBFLASH-RELAY-001 — FanRelay is an exposed manual-preview, not a customer default', () => {
-    const FANRELAY_CONFIG = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
-
-    test('the retired FanRelay preview is out of manifest.json', () => {
-        // Retired with the stale v1.0.0-preview batch: upstream's regenerated
-        // checksums-sha256.txt no longer lists the VentIQ FanRelay asset, so
-        // the importer fails closed on it and the build left the manifest.
-        const build = manifestByConfig.get(FANRELAY_CONFIG);
-        expect(build).toBeUndefined();
+describe('WF-SURFACE-SSOT-001 — still-retired configs stay out of every shipping surface', () => {
+    // Derived from the expected-surface fixture's retired register (the
+    // stale v1.0.0-preview batch retired in #553, minus any config that has
+    // legitimately returned at a new version/channel). Re-importing one is a
+    // deliberate surface change that edits the fixture in the same PR.
+    test('every still-retired config is out of manifest.json', () => {
+        expect(retiredConfigsStillAbsent.length).toBeGreaterThan(0);
+        for (const cs of retiredConfigsStillAbsent) {
+            expect(manifestByConfig.get(cs)).toBeUndefined();
+        }
     });
 
-    test('the retired FanRelay preview is out of firmware/sources.json', () => {
-        const entry = (sources.sources || []).find(
-            s => s.config_string === FANRELAY_CONFIG
-        );
-        expect(entry).toBeUndefined();
+    test('every still-retired config is out of firmware/sources.json', () => {
+        for (const cs of retiredConfigsStillAbsent) {
+            const entry = (sources.sources || []).find(
+                s => s.config_string === cs
+            );
+            expect(entry).toBeUndefined();
+        }
     });
 
-    test('FanRelay is NOT in REQUIRED_CONFIGS (production-only)', () => {
+    test('no source entry redeclares a retired artifact filename', () => {
+        // Artifact-level teeth on top of the config-level check: even a
+        // config that returned at a new version (AirIQ-RoomIQ) must never
+        // redeclare its retired v1.0.0-preview asset, which upstream's
+        // regenerated checksums-sha256.txt can no longer verify.
+        for (const entry of sources.sources || []) {
+            expect(retiredArtifacts).not.toContain(entry.asset_name);
+        }
+    });
+
+    test('no still-retired config is in REQUIRED_CONFIGS (production-only)', () => {
         const required = parseRequiredConfigsFromWorkflow();
-        expect(required).not.toContain(FANRELAY_CONFIG);
+        for (const cs of retiredConfigsStillAbsent) {
+            expect(required).not.toContain(cs);
+        }
     });
+});
 
+describe('WEBFLASH-RELAY-001 — FanRelay is a retired manual-preview, not a customer default', () => {
     test('the doc records FanRelay as a preview / manual-preview, Advanced-install-only target', () => {
         expect(canonicalDoc).toMatch(/FanRelay|S360-310/);
         // The doc must frame FanRelay as preview / manual-preview, not stable.
@@ -191,29 +215,9 @@ describe('WEBFLASH-RELAY-001 — FanRelay is an exposed manual-preview, not a cu
     });
 });
 
-describe('WEBFLASH-PWM-001 — FanPWM is an exposed manual-preview, not a customer default', () => {
-    const FANPWM_CONFIG = 'Ceiling-POE-FanPWM';
-
-    test('the retired standalone FanPWM preview is out of manifest.json', () => {
-        // Retired with the stale v1.0.0-preview batch: upstream's regenerated
-        // checksums-sha256.txt no longer lists the standalone FanPWM asset, so
-        // the importer fails closed on it and the build left the manifest.
-        const build = manifestByConfig.get(FANPWM_CONFIG);
-        expect(build).toBeUndefined();
-    });
-
-    test('the retired standalone FanPWM preview is out of firmware/sources.json', () => {
-        const entry = (sources.sources || []).find(
-            s => s.config_string === FANPWM_CONFIG
-        );
-        expect(entry).toBeUndefined();
-    });
-
-    test('FanPWM is NOT in REQUIRED_CONFIGS (production-only)', () => {
-        const required = parseRequiredConfigsFromWorkflow();
-        expect(required).not.toContain(FANPWM_CONFIG);
-    });
-
+describe('WEBFLASH-PWM-001 — FanPWM is a retired manual-preview, not a customer default', () => {
+    // Surface absence is covered by the fixture-derived
+    // still-retired-configs describe above; the doc-copy pin stays explicit.
     test('the doc records FanPWM as a preview / manual-preview, Advanced-install-only target', () => {
         expect(canonicalDoc).toMatch(/FanPWM|S360-311/);
         // The doc must frame FanPWM as preview / manual-preview, not stable.

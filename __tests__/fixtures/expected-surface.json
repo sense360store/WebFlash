@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "description": "WF-SURFACE-SSOT-001 — the reviewed, single-source-of-truth declaration of the WebFlash deploy surface. Every count/set guard in the test suites derives its expectations from this file via __tests__/helpers/expected-surface.js: total build count, per-channel counts, the stable and preview config sets, the expected .bin/.meta.json filenames (from the canonical Sense360-<config_string>-v<version>-<channel>.bin convention), and the firmware-N.json index bound (count - 1). The tests compare REALITY (manifest.json, firmware/configurations/ on disk, firmware-N.json, kits.json cross-checks) against this fixture exactly — missing AND unexpected entries both fail — so a drifted fixture cannot auto-pass.",
+  "review_rule": "A surface change (import, retirement, promotion, version bump) must edit this file in the SAME PR that changes the surface, and the two are reviewed together. See docs/expected-surface-fixture.md.",
+  "filename_convention": "Sense360-<config_string>-v<version>-<channel>.bin with a sibling <name>.meta.json sidecar. Application builds live under firmware/configurations/; the Rescue artifact lives under firmware/rescue/ and has no sidecar requirement.",
+  "builds": [
+    {
+      "config_string": "Ceiling-POE-AirIQ-FanDAC-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview"
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-FanPWM-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview"
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-FanRelay-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview"
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-RoomIQ",
+      "version": "1.0.6",
+      "channel": "stable"
+    },
+    {
+      "config_string": "Ceiling-POE-RoomIQ",
+      "version": "1.0.5",
+      "channel": "stable"
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-FanDAC-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview"
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-FanPWM-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview"
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-RoomIQ",
+      "version": "1.0.4",
+      "channel": "stable"
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-RoomIQ-LED",
+      "version": "1.0.0",
+      "channel": "preview"
+    }
+  ],
+  "rescue": {
+    "config_string": "Rescue",
+    "version": "1.0.0",
+    "channel": "rescue"
+  },
+  "retired": [
+    {
+      "config_string": "Ceiling-POE-AirIQ-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "#553",
+      "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it.",
+      "note": "The CONFIG returned as the v1.0.6 STABLE import (see builds above) after upstream promoted it to production / stable. This retired v1.0.0-preview ARTIFACT must never reappear."
+    },
+    {
+      "config_string": "Ceiling-POE-FanDAC",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "#553",
+      "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it."
+    },
+    {
+      "config_string": "Ceiling-POE-FanPWM",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "#553",
+      "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it."
+    },
+    {
+      "config_string": "Ceiling-POE-RoomIQ-LED",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "#553",
+      "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it.",
+      "note": "The Living / Corridor base bundle kits retired with this build and stay out of kits.json until the config is re-imported."
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-FanRelay-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "#553",
+      "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it.",
+      "note": "The Bathroom Relay bundle kit (S360-KIT-BATH-P-REL) retired with this build and stays out of kits.json until the config is re-imported."
+    }
+  ]
+}

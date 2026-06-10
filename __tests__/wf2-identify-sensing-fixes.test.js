@@ -35,6 +35,11 @@ import {
   selToWizardState,
   wizardStateToSel,
 } from '../scripts/data.js';
+// WF-SURFACE-SSOT-001: per-config channel expectations derive from the
+// reviewed expected-surface fixture so a promotion is a single fixture edit.
+// The axis-mapping and config-string-formation assertions (this suite's real
+// subject) stay literal.
+import { expectedChannelOf } from './helpers/expected-surface.js';
 
 const ROOT = process.cwd();
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
@@ -176,13 +181,16 @@ describe('Bug 1 — RoomIQ is an independent axis from the air-quality choice', 
     }
   });
 
-  it('DEFAULT_SEL is RoomIQ-on + VentIQ and resolves to the stable Release-One build', async () => {
+  it('DEFAULT_SEL is RoomIQ-on + VentIQ and resolves to the Release-One build', async () => {
+    // The default selection must stay STABLE — pinned by kits-json.test.js
+    // and the expected-surface anchor suite; the channel derives from the
+    // fixture here.
     expect(DEFAULT_SEL).toMatchObject({ roomiq: true, air: 'ventiq', power: 'poe' });
     const { engine } = await boot();
     const resolved = await engine.state.resolveCompatibleFirmware(selToWizardState(DEFAULT_SEL));
     expect(resolved.configString).toBe('Ceiling-POE-VentIQ-RoomIQ');
     expect(resolved.installable).toBe(true);
-    expect(resolved.channel).toBe('stable');
+    expect(resolved.channel).toBe(expectedChannelOf('Ceiling-POE-VentIQ-RoomIQ'));
   });
 
   it('RoomIQ + AirIQ -> Ceiling-POE-AirIQ-RoomIQ; RoomIQ + VentIQ -> Ceiling-POE-VentIQ-RoomIQ', async () => {
@@ -190,12 +198,11 @@ describe('Bug 1 — RoomIQ is an independent axis from the air-quality choice', 
     const airiq = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'airiq' }));
     expect(airiq.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
-    // The AirIQ-RoomIQ v1.0.6 stable import landed (upstream promoted the
-    // config to production / stable), so this resolves installable on the
-    // stable channel; the config-string formation is this test's real
-    // subject (Bug 1).
+    // Resolves installable on its fixture-declared channel (currently stable
+    // after the AirIQ-RoomIQ promotion); the config-string formation is this
+    // test's real subject (Bug 1).
     expect(airiq.installable).toBe(true);
-    expect(airiq.channel).toBe('stable');
+    expect(airiq.channel).toBe(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ'));
 
     const ventiq = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'ventiq' }));
@@ -213,12 +220,13 @@ describe('Bug 1 — RoomIQ is an independent axis from the air-quality choice', 
     // still gates on the preview-channel + fan-control + FanDAC-address
     // acknowledgements.
     const { engine } = await boot();
+    const channel = expectedChannelOf('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
     const resolved = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'airiq', fan: 'dac' }));
     expect(resolved.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
     expect(resolved.installable).toBe(true);
-    expect(resolved.isPreview).toBe(true);
-    expect(resolved.channel).toBe('preview');
+    expect(resolved.isPreview).toBe(channel === 'preview');
+    expect(resolved.channel).toBe(channel);
   });
 });
 
@@ -279,12 +287,11 @@ describe('Bug 1 — advanced builder renders RoomIQ and air-quality as separate 
     expect(state.sel.air).toBe('airiq');
     expect(state.sel.roomiq).toBe(true);
     expect(state.resolved.configString).toBe('Ceiling-POE-AirIQ-RoomIQ');
-    // The AirIQ-RoomIQ v1.0.6 stable import landed (upstream promoted the
-    // config to production / stable), so the config resolves installable on
-    // the stable channel; RoomIQ staying on through the air-board switch is
-    // this test's real subject (Bug 1).
+    // The config resolves installable on its fixture-declared channel
+    // (currently stable after the AirIQ-RoomIQ promotion); RoomIQ staying on
+    // through the air-board switch is this test's real subject (Bug 1).
     expect(state.resolved.installable).toBe(true);
-    expect(state.resolved.channel).toBe('stable');
+    expect(state.resolved.channel).toBe(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ'));
   });
 
   it('the summary panel shows Presence and Air quality as separate rows', async () => {

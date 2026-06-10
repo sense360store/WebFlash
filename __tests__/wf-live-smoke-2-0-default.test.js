@@ -44,6 +44,10 @@ import {
   kitWithheldStableConfigs,
   stableManifestConfigs,
 } from './helpers/stable-surface.js';
+// WF-SURFACE-SSOT-001: the stays-retired register (which configs left the
+// surface and have not returned) derives from the reviewed expected-surface
+// fixture instead of a hand-maintained literal list.
+import { retiredConfigsStillAbsent } from './helpers/expected-surface.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..');
@@ -53,7 +57,6 @@ function readJson(relativePath) {
 }
 
 const STABLE_CONFIG = 'Ceiling-POE-VentIQ-RoomIQ';
-const STANDALONE_FAN_ONLY = ['Ceiling-POE-FanPWM', 'Ceiling-POE-FanDAC'];
 
 const manifest = readJson('manifest.json');
 const builds = manifest.builds || [];
@@ -140,16 +143,19 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — nothing forbidden appears in the pic
     });
   });
 
-  test('the standalone fan-only previews are retired and are never kit cards', () => {
-    // The standalone FanPWM / FanDAC previews were retired with the stale
-    // v1.0.0-preview batch (upstream's regenerated checksums-sha256.txt no
-    // longer lists their assets), so they are out of the manifest entirely ...
-    STANDALONE_FAN_ONLY.forEach((cfg) => {
+  test('every still-retired config is out of the manifest and never a kit card', () => {
+    // Derived from the expected-surface fixture's retired register
+    // (WF-SURFACE-SSOT-001): the standalone FanPWM / FanDAC previews, the
+    // RoomIQ-LED preview, and the VentIQ FanRelay preview retired with the
+    // stale v1.0.0-preview batch (upstream's regenerated checksums-sha256.txt
+    // no longer lists their assets) and stay out of the manifest entirely ...
+    expect(retiredConfigsStillAbsent.length).toBeGreaterThan(0);
+    retiredConfigsStillAbsent.forEach((cfg) => {
       expect(buildByConfig.has(cfg)).toBe(false);
     });
-    // ... and no customer kit card maps to a fan-only config either way.
+    // ... and no customer kit card maps to any of them either way.
     kits.forEach((kit) => {
-      expect(STANDALONE_FAN_ONLY).not.toContain(kit.firmware_config_string);
+      expect(retiredConfigsStillAbsent).not.toContain(kit.firmware_config_string);
     });
   });
 });
