@@ -35,16 +35,24 @@ For each entry in `firmware/sources.json`, the importer:
    upstream `manifest.json` to a temp directory.
 4. Verifies the `.bin` SHA256 against the upstream `checksums-sha256.txt`.
    Mismatch aborts the import.
-5. Verifies size `>= min_size_bytes` (default 102_400). Smaller binaries are
+5. Scans the verified `.bin` bytes for known default/placeholder credential
+   material (the W-H1 import gate,
+   `scripts/check-firmware-default-credentials.py`: OTA / web / fallback-AP
+   defaults plus the placeholder API encryption key in both its base64-literal
+   and decoded 32-byte forms; the intentionally-public setup-network pair is
+   the only exclusion). Any match aborts the import for that source, naming
+   the credential class — checksum-valid but credential-dirty assets are
+   refused.
+6. Verifies size `>= min_size_bytes` (default 102_400). Smaller binaries are
    rejected as placeholders or truncated downloads.
-6. Asserts the filename's parsed `config_string` matches the entry's declared
+7. Asserts the filename's parsed `config_string` matches the entry's declared
    `config_string`.
-7. Asserts none of the entry's `block_tokens` (default `["FanTRIAC", "LED"]`)
+8. Asserts none of the entry's `block_tokens` (default `["FanTRIAC", "LED"]`)
    appear in the filename or parsed module list.
-8. Parses the release body and refuses if any of `Changelog`, `Known Issues`,
+9. Parses the release body and refuses if any of `Changelog`, `Known Issues`,
    `Features`, `Hardware Requirements` is missing.
-9. Writes the `.bin` to `firmware/configurations/<asset_name>` and a
-   `<asset_name>.meta.json` sidecar.
+10. Writes the `.bin` to `firmware/configurations/<asset_name>` and a
+    `<asset_name>.meta.json` sidecar.
 
 ## Sidecar layout
 
@@ -192,6 +200,16 @@ npm test -- manifest-required-configs
 * Release-One blocks `FanTRIAC` and `LED` token firmware via
   `block_tokens`. Both must remain in the default list for the v1.0.0 source
   entry until hardware verification clears them.
+* A `.bin` whose bytes carry a known default/placeholder credential is never
+  staged, regardless of checksum validity (SECURITY-AUDIT-2026-06 W-H1,
+  downstream half of upstream `esphome-public#779`). The denylist lives in
+  `scripts/check-firmware-default-credentials.py` and is kept in lock-step
+  with upstream's release gate; the four device-control credential classes
+  (API encryption key, OTA password, web password, fallback-AP password) are
+  never excluded from it. The scan gates **new** imports — the already-staged
+  pin-verified skip path does not re-scan, so previously published pre-fix
+  binaries are not torn out by a routine re-run; their clean rebuild +
+  re-import is tracked separately (WF-H1-REIMPORT-CLEAN-001).
 
 ## Post-import safety net
 
