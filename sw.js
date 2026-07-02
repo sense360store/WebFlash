@@ -274,8 +274,13 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Skip cross-origin requests except for ESP Web Tools
-    if (url.origin !== self.location.origin && !url.href.includes('unpkg.com/esp-web-tools')) {
+    // Skip cross-origin requests except for ESP Web Tools. The exemption is
+    // an exact origin + path-prefix check — a substring match on the href
+    // would let any origin smuggle itself into the cache surface via a URL
+    // that merely contains "unpkg.com/esp-web-tools".
+    const isEspWebTools =
+        url.origin === 'https://unpkg.com' && url.pathname.startsWith('/esp-web-tools');
+    if (url.origin !== self.location.origin && !isEspWebTools) {
         return;
     }
 

@@ -61,9 +61,14 @@
 export const FIRMWARE_TRUST_SCHEMA_VERSION = 1;
 export const FIRMWARE_SIGNATURE_ALGORITHM = 'ed25519';
 
-// Domain-separation label prepended to every signed message. Lets us evolve
-// the signature scheme later (e.g. to a manifest-binding signature) without
-// the new verifier accidentally accepting old firmware-only signatures.
+// Domain-separation label RESERVED for a future v2 signature scheme. NOT YET
+// APPLIED: the current v1 signer (scripts/gen-manifests.py) and verifier
+// (scripts/utils/firmware-signature.js) both operate over the raw firmware
+// bytes, so this label is not prepended to any signed message today. A v2
+// migration that binds the manifest metadata must start actually prepending
+// this label on BOTH sides in the same change (and rotate the key), otherwise
+// revving the label alone is a silent no-op. See firmware-signing/README.md
+// → "Manifest-mapping authenticity gap".
 export const FIRMWARE_SIGNATURE_CONTEXT_LABEL = 'sense360-firmware-v1';
 
 export const FIRMWARE_TRUSTED_KEYS = Object.freeze([

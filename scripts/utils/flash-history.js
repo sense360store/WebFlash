@@ -70,7 +70,17 @@ const storage = (() => {
             try {
                 const data = localStorage.getItem(STORAGE_KEY);
                 const parsed = data ? JSON.parse(data) : [];
-                return Array.isArray(parsed) ? parsed.map(sanitizeHistoryEntry) : [];
+                if (!Array.isArray(parsed)) {
+                    return [];
+                }
+                // localStorage is same-origin-writable, so a corrupted or
+                // legacy write can seed non-object entries. Drop anything that
+                // is not a plain object before it reaches downstream readers
+                // (getFlashStats, exportFlashHistoryText, the support bundle),
+                // several of which deref entry fields without guards.
+                return parsed
+                    .filter((entry) => entry && typeof entry === 'object' && !Array.isArray(entry))
+                    .map(sanitizeHistoryEntry);
             } catch (error) {
                 console.warn('[flash-history] Failed to read from storage', error);
                 return [];

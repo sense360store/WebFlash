@@ -732,6 +732,7 @@ def import_source_entry(
     dry_run: bool,
     imported_at: str,
     release_override: Optional[Dict[str, Any]] = None,
+    require_pin: bool = True,
 ) -> Path:
     source_repo = entry.get("source_repo")
     release_tag = entry.get("release_tag")
@@ -739,6 +740,23 @@ def import_source_entry(
     if not source_repo or not release_tag or not asset_name:
         raise ImportValidationError(
             "Source entry must declare source_repo, release_tag, and asset_name."
+        )
+
+    # Fail closed on a missing WebFlash-owned SHA256 pin. Without it the only
+    # cryptographic binding is the upstream release's own checksums-sha256.txt,
+    # which a compromised or accidentally-replaced release controls in lock
+    # step with the .bin — so an unpinned entry has no WebFlash-side trust
+    # anchor. This matches the mandatory-pin posture of the batch wrapper
+    # (import-preview-eligible-sources.py). Legacy pinless imports can still be
+    # run explicitly with --allow-unpinned.
+    pin_raw = entry.get("expected_sha256")
+    has_pin = isinstance(pin_raw, str) and pin_raw.strip() != ""
+    if require_pin and not has_pin:
+        raise ImportValidationError(
+            f"Source entry for '{asset_name}' has no 'expected_sha256' pin. "
+            "WebFlash requires a pinned SHA256 so the import does not trust the "
+            "upstream release's checksums-sha256.txt alone. Add expected_sha256 "
+            "to firmware/sources.json, or pass --allow-unpinned to override."
         )
 
     required_assets = list(entry.get("required_assets") or [asset_name])
@@ -914,6 +932,16 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Validate everything but skip writing files into firmware/.",
     )
     parser.add_argument(
+        "--allow-unpinned",
+        action="store_true",
+        help=(
+            "Permit importing a source entry that has no expected_sha256 pin. "
+            "By default the importer fails closed on unpinned entries because "
+            "the upstream checksums-sha256.txt is the only remaining trust "
+            "anchor. Use only for legacy pinless imports you have vetted."
+        ),
+    )
+    parser.add_argument(
         "--release-payload-file",
         help=(
             "Read GitHub release metadata from a local JSON file instead of the "
@@ -985,6 +1013,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 dry_run=args.dry_run,
                 imported_at=imported_at,
                 release_override=release_override,
+                require_pin=not args.allow_unpinned,
             )
         except ImportValidationError as exc:
             failures.append(f"{entry.get('asset_name')}: {exc}")

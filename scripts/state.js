@@ -7112,7 +7112,8 @@ function attachInstallButtonListeners() {
                 setHomeAssistantIntegrationsButtonEnabled(false);
 
                 // Record flash start in history
-                const firmware = selectedFirmware || firmwareList.find(f => f.firmwareId === firmwareId);
+                const firmware = window.currentFirmware
+                    || (firmwareId ? firmwareOptionsMap.get(firmwareId) : null);
                 if (firmware) {
                     flashStartTime = Date.now();
                     currentFlashEntryId = recordFlashStart({
@@ -7236,7 +7237,7 @@ async function findCompatibleFirmware() {
             entries.sort((a, b) => {
                 const labelA = formatVariantHeadingLabel(a).toLowerCase();
                 const labelB = formatVariantHeadingLabel(b).toLowerCase();
-                return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'airiq' });
+                return labelA.localeCompare(labelB, undefined, { numeric: true, sensitivity: 'base' });
             });
 
             bucketMap.set(model, entries);
@@ -7791,6 +7792,22 @@ function initializeFromUrl() {
         sanitizedConfig.ventiq = allowedOptions.ventiq.includes(ventiqRaw) ? ventiqRaw : 'none';
     }
 
+    // Legacy VentIQ / BathroomAirIQ share links encode the bathroom sensor via
+    // the `bathroomairiq` alias group rather than the current ventiq+bathroom
+    // pair (mapToWizardConfiguration emits a `bathroomairiq` key that nothing
+    // downstream reads). Fold it back so old links resolve to the same
+    // firmware (Release-One VentIQ) instead of silently dropping to the
+    // RoomIQ-only preview build.
+    if (sanitizedConfig.bathroomairiq === 'ventiq' && sanitizedConfig.ventiq !== 'ventiq') {
+        sanitizedConfig.ventiq = 'ventiq';
+    }
+    // VentIQ on ceiling always implies the bathroom toggle (AirIQ and VentIQ
+    // are mutually exclusive and gated by it), so default bathroom on when a
+    // link selects VentIQ without stating the toggle explicitly.
+    if (sanitizedConfig.ventiq === 'ventiq' && !searchParams.has('bathroom')) {
+        sanitizedConfig.bathroom = true;
+    }
+
     // Ceiling is currently the only supported mounting (see CLAUDE.md), so
     // pre-select it on first load when no URL value was provided. This lets
     // Step 1 act as a "Get started / quick-start preset" landing screen
@@ -7845,7 +7862,19 @@ function initializeFromUrl() {
 }
 
 function applyConfiguration(initialConfig) {
-    Object.assign(configuration, defaultConfiguration, enforceAirIQVentIQExclusivity({ ...initialConfig }));
+    // Only copy known configuration keys. This drops junk keys that upstream
+    // mappers may emit (e.g. the legacy `bathroomairiq`) so they cannot leak
+    // into state/diagnostics, and it refuses non-whitelisted own-keys such as
+    // `__proto__` from URL- or preset-derived objects before the assign.
+    const filteredConfig = {};
+    if (initialConfig && typeof initialConfig === 'object') {
+        SUPPORTED_CONFIG_KEYS.forEach(key => {
+            if (Object.prototype.hasOwnProperty.call(initialConfig, key)) {
+                filteredConfig[key] = initialConfig[key];
+            }
+        });
+    }
+    Object.assign(configuration, defaultConfiguration, enforceAirIQVentIQExclusivity(filteredConfig));
 
     if (configuration.mounting !== 'ceiling') {
         configuration.ventiq = 'none';

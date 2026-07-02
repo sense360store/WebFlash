@@ -156,4 +156,31 @@ describe('flash-history', () => {
             expect(history).toHaveLength(0);
         });
     });
+
+    describe('malformed localStorage tolerance', () => {
+        const STORAGE_KEY = 'webflash-flash-history';
+
+        test('drops non-object entries instead of throwing across all readers', () => {
+            // localStorage is same-origin-writable; a corrupted or legacy
+            // write can seed nulls/strings/numbers. None of the readers should
+            // throw, and the junk entries must be filtered out.
+            localStorage.setItem(STORAGE_KEY, '[null,"garbage",42,{"id":"a","status":"success","duration":10,"timestamp":"2026-01-01T00:00:00.000Z"}]');
+
+            expect(() => getFlashHistory()).not.toThrow();
+            const history = getFlashHistory();
+            expect(history).toHaveLength(1);
+            expect(history[0].id).toBe('a');
+
+            expect(() => getFlashStats()).not.toThrow();
+            expect(() => exportFlashHistoryText()).not.toThrow();
+            // Recording must survive a poisoned store (it runs inside the live
+            // ESP Web Tools state-changed handler).
+            expect(() => recordFlashSuccess('a')).not.toThrow();
+        });
+
+        test('returns empty array when stored value is not an array', () => {
+            localStorage.setItem(STORAGE_KEY, '{"not":"an-array"}');
+            expect(getFlashHistory()).toEqual([]);
+        });
+    });
 });

@@ -6,10 +6,13 @@
 
 /* Build an HTML element.
    props supports: class/className, style (object), dataset (object),
-   on<Event> handlers (onClick, onChange, onInput…), boolean props
-   (disabled/checked/hidden/autofocus), html (innerHTML), and any other
+   on<Event> handlers (onClick, onChange, onInput… — functions only),
+   boolean props (disabled/checked/hidden/autofocus), and any other
    attribute name. Children may be nodes, strings/numbers, arrays, or
-   null/false/undefined (skipped). */
+   null/false/undefined (skipped). There is intentionally no raw-innerHTML
+   prop: this helper only ever builds text nodes and attributes, so no
+   caller can smuggle markup through it. Use fromHTML() for the handful of
+   static SVG strings that need parsing. */
 export function h(tag, props, ...kids) {
   const el = document.createElement(tag);
   applyProps(el, props);
@@ -24,10 +27,12 @@ function applyProps(el, props) {
     if (k === 'class' || k === 'className') el.setAttribute('class', v);
     else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
     else if (k === 'dataset' && typeof v === 'object') Object.assign(el.dataset, v);
-    else if (k === 'html') el.innerHTML = v;
     else if (k === 'ref' && typeof v === 'function') v(el);
-    else if (k.startsWith('on') && typeof v === 'function') {
-      el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k.startsWith('on')) {
+      // Only function handlers are honoured. A string here would otherwise
+      // fall through to setAttribute('onclick', str) and become an inline
+      // event handler — an injection footgun. Ignore non-function on* props.
+      if (typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
     } else if (k === 'disabled' || k === 'checked' || k === 'hidden' || k === 'autofocus') {
       el[k] = !!v;
       if (v) el.setAttribute(k, '');
