@@ -456,7 +456,7 @@ These gate every item below and must not be regressed by any queue PR:
 
 6. **CLAUDE-MD-LEAN-001 — Make `CLAUDE.md` lean, clear, and current; add
    `.github/CODEOWNERS`.**
-   Status: **Open for review.** PR # to fill when verified.
+   Status: **Open for review** as #562.
    Docs plus one additive governance file, human-review. Restructured
    `CLAUDE.md`: kept the project overview, platform constraints, the
    canonical SKU table, commands, the architecture section (with its
