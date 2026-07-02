@@ -69,24 +69,24 @@ jobs:
           # repositories under the same org (no PAT required for public
           # sense360store/esphome-public).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Inputs are passed through env (never interpolated into the shell
+          # body) to avoid shell injection, mirroring add-firmware-source.yml.
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          DRY_RUN_FLAG=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            DRY_RUN_FLAG="--dry-run"
+          ARGS=()
+          if [ "${DRY_RUN}" = "true" ]; then
+            ARGS+=("--dry-run")
           fi
-          REPO_FLAG=""
-          if [ -n "${{ inputs.source_repo }}" ]; then
-            REPO_FLAG="--source-repo ${{ inputs.source_repo }}"
+          if [ -n "${SOURCE_REPO}" ]; then
+            ARGS+=("--source-repo" "${SOURCE_REPO}")
           fi
-          TAG_FLAG=""
-          if [ -n "${{ inputs.release_tag }}" ]; then
-            TAG_FLAG="--release-tag ${{ inputs.release_tag }}"
+          if [ -n "${RELEASE_TAG}" ]; then
+            ARGS+=("--release-tag" "${RELEASE_TAG}")
           fi
-          python scripts/import-firmware-sources.py \
-            ${REPO_FLAG} \
-            ${TAG_FLAG} \
-            ${DRY_RUN_FLAG}
+          python scripts/import-firmware-sources.py "${ARGS[@]}"
 
       - name: Validate firmware naming policy
         if: inputs.dry_run != 'true'
@@ -121,6 +121,8 @@ jobs:
         if: inputs.dry_run != 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -145,7 +147,7 @@ jobs:
           BRANCH="${GITHUB_REF_NAME}"
           SUMMARY="Import firmware assets from upstream releases"
           DETAIL=$(printf "Triggered by workflow_dispatch.\n\nsource_repo: %s\nrelease_tag: %s" \
-            "${{ inputs.source_repo }}" "${{ inputs.release_tag }}")
+            "${SOURCE_REPO}" "${RELEASE_TAG}")
           git commit -m "${SUMMARY}" -m "${DETAIL}"
           # Push with the simple retry the repo conventions call for. Real
           # network failures bubble up after four attempts.

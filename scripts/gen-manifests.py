@@ -1247,6 +1247,42 @@ def validate_no_deprecated_modules(artifacts: Sequence[FirmwareArtifact]) -> Non
 
 
 
+def validate_no_duplicate_config_strings(artifacts: Sequence[FirmwareArtifact]) -> None:
+    """Refuse to emit a manifest with two builds sharing config_string+channel.
+
+    The frontend resolves a wizard selection by matching ``build.config_string``
+    (within a channel), so two builds carrying the same key produce an
+    ambiguous, non-deterministic match. The importer's prune step keeps the
+    tree clean during a normal import, but a standalone regen over a dirty
+    ``firmware/configurations/`` (e.g. an old and a new version of the same
+    config both present) would otherwise silently emit both. Fail loudly here
+    instead.
+    """
+
+    seen: Dict[Tuple[str, str], str] = {}
+    duplicates: List[str] = []
+    for artifact in artifacts:
+        meta = artifact.metadata
+        if not meta.is_configuration or not meta.config_string:
+            continue
+        key = (meta.config_string, meta.channel or "")
+        if key in seen:
+            duplicates.append(
+                f"{meta.config_string} ({meta.channel}): "
+                f"{seen[key]} and {artifact.path.name}"
+            )
+        else:
+            seen[key] = artifact.path.name
+    if duplicates:
+        raise SystemExit(
+            "Duplicate config_string+channel builds would be written to the "
+            "manifest (the frontend cannot disambiguate them):\n  - "
+            + "\n  - ".join(duplicates)
+            + "\nRemove the superseded .bin(s) from firmware/configurations/ "
+            "before regenerating."
+        )
+
+
 def validate_structured_config_consistency(artifacts: Sequence[FirmwareArtifact]) -> None:
     mismatches: List[str] = []
     for artifact in artifacts:
@@ -2045,6 +2081,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             )
     ordered = sort_artifacts(selected)
     validate_no_deprecated_modules(ordered)
+    validate_no_duplicate_config_strings(ordered)
     validate_structured_config_consistency(ordered)
     # validation_mode was already resolved above (so it could gate the
     # signing key load). Reuse it here for the metadata findings sweep.

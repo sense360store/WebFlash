@@ -211,6 +211,10 @@ def _run_import(
             token=None,
             dry_run=dry_run,
             imported_at="2026-06-10T00:00:00+00:00",
+            # These tests exercise the default-credential gate with a pinless
+            # _entry(); opt out of the fail-closed pin requirement so they hit
+            # the credential gate rather than the missing-pin gate.
+            require_pin=False,
         )
 
 

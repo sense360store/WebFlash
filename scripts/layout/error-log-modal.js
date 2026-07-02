@@ -278,10 +278,13 @@ function renderLogEntries() {
  */
 function renderLogEntry(entry) {
     const hasDetails = entry.stack || entry.context;
-    const typeIcon = getTypeIcon(entry.type);
+    // entry.type feeds a class attribute unescaped — pin it to the known set
+    // so a future caller of addLogEntry cannot inject markup through it.
+    const entryType = ['error', 'warning', 'info'].includes(entry.type) ? entry.type : 'info';
+    const typeIcon = getTypeIcon(entryType);
 
     return `
-        <li class="error-log-item error-log-item--${entry.type}">
+        <li class="error-log-item error-log-item--${entryType}">
             <div class="error-log-item__main">
                 <span class="error-log-item__icon">${typeIcon}</span>
                 <div class="error-log-item__content">

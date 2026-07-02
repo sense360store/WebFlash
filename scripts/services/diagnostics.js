@@ -599,7 +599,7 @@ function buildFlashSection() {
             recovery_attempt: false
         };
     }
-    const latest = history[0];
+    const latest = history.find((entry) => entry && typeof entry === 'object') || {};
     const startedAt = latest.timestamp || null;
     let finishedAt = null;
     if (latest.status === 'success' || latest.status === 'error') {

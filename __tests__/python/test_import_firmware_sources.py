@@ -206,7 +206,12 @@ def _run_import(
     *,
     dry_run: bool = False,
     repo_root: Optional[Path] = None,
+    require_pin: bool = False,
 ) -> Path:
+    # require_pin defaults to False here so the single-gate negative tests can
+    # keep exercising one validation gate at a time with a pinless _entry().
+    # The production default (main) is require_pin=True; the fail-closed
+    # behaviour is pinned by ExpectedSha256Tests explicitly.
     with mock.patch.object(
         importer, "fetch_release_metadata", side_effect=network.fetch_release_metadata
     ), mock.patch.object(
@@ -218,6 +223,7 @@ def _run_import(
             token=None,
             dry_run=dry_run,
             imported_at="2026-05-13T00:00:00+00:00",
+            require_pin=require_pin,
         )
 
 
@@ -499,9 +505,10 @@ class ExpectedSha256Tests(unittest.TestCase):
         self.assertIn("f" * 64, msg)
         self.assertIn(hashlib.sha256(bin_bytes).hexdigest(), msg)
 
-    def test_expected_sha256_absent_preserves_existing_behavior(self):
-        # Regression guard for Release-One: with no expected_sha256 key the
-        # importer must still validate via checksums-sha256.txt only.
+    def test_expected_sha256_absent_fails_closed(self):
+        # An entry with no expected_sha256 pin must be refused by default: the
+        # upstream checksums-sha256.txt is then the only trust anchor, and a
+        # compromised release controls it in lock step with the .bin.
         bin_bytes = _make_bin()
         net = _build_network(bin_bytes)
         entry = _entry()
@@ -509,7 +516,34 @@ class ExpectedSha256Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_root = Path(tmp)
             (tmp_root / "firmware").mkdir()
-            target = _run_import(entry, net, repo_root=tmp_root)
+            with self.assertRaises(ImportValidationError) as ctx:
+                _run_import(entry, net, repo_root=tmp_root, require_pin=True)
+            self.assertIn("expected_sha256", str(ctx.exception))
+
+    def test_expected_sha256_absent_allowed_with_override(self):
+        # The --allow-unpinned escape hatch (require_pin=False) restores the
+        # legacy pinless behaviour for vetted imports.
+        bin_bytes = _make_bin()
+        net = _build_network(bin_bytes)
+        entry = _entry()
+        self.assertNotIn("expected_sha256", entry)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / "firmware").mkdir()
+            with mock.patch.object(
+                importer, "fetch_release_metadata",
+                side_effect=net.fetch_release_metadata,
+            ), mock.patch.object(
+                importer, "download_to_path", side_effect=net.download_to_path
+            ):
+                target = importer.import_source_entry(
+                    entry,
+                    repo_root=tmp_root,
+                    token=None,
+                    dry_run=False,
+                    imported_at="2026-05-13T00:00:00+00:00",
+                    require_pin=False,
+                )
             self.assertTrue(target.exists())
 
     def test_expected_sha256_malformed_fails_clearly(self):

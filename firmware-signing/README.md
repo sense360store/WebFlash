@@ -450,7 +450,10 @@ A future PR that closes this gap should:
 
 - Rev `FIRMWARE_SIGNATURE_CONTEXT_LABEL` from `sense360-firmware-v1`
   to `sense360-firmware-v2` so the new verifier does not accidentally
-  accept old firmware-only signatures.
+  accept old firmware-only signatures. Note that v1 does **not** currently
+  prepend this label to the signed bytes (it signs the raw `.bin`), so the
+  v2 change must start actually prepending the label in both the signer and
+  the verifier at the same time — revving the constant alone is a no-op.
 - Define a canonical envelope (e.g. `context_label || H(config_string
   || channel || version || artifact_type || file_size || sha256) ||
   firmware_bytes`) and update both `sign_firmware_bytes` in
