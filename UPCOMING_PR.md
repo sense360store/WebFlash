@@ -454,6 +454,30 @@ These gate every item below and must not be regressed by any queue PR:
      `scripts/data/kits.json` / the 2.0 kit picker. Separate UX / product
      decision after operator hardware proof and/or stable promotion.
 
+6. **CLAUDE-MD-LEAN-001 — Make `CLAUDE.md` lean, clear, and current; add
+   `.github/CODEOWNERS`.**
+   Status: **Open for review** as #562.
+   Docs plus one additive governance file, human-review. Restructured
+   `CLAUDE.md`: kept the project overview, platform constraints, the
+   canonical SKU table, commands, the architecture section (with its
+   `docs/architecture.md` link), the trust-model rules verbatim, the
+   self-verify ritual, and the PR-body style rules; refreshed stale facts to
+   the post-PR-13 reality (single 2.0 view, existing engine modules only,
+   `state.js` ~8000 lines, `CACHE_NAME` `webflash-v18`); moved the
+   changelog-style per-slice bullets (WF-WIZARD-AVAIL-001 through
+   WF-FAN-BUNDLE-IMPORT-READINESS-001, the WF-UX series, the preview import
+   records, the archived migration standing instructions) verbatim into the
+   new `docs/conventions-history.md`, leaving only the still-operative rules
+   (no internal IDs in customer copy, fan-token guardrail, preview gating,
+   import readiness) in 1–3 lines each; compressed the completed 2.0
+   migration section to a history note plus the evergreen conventions and
+   dropped the historical flag-discipline block. Added `.github/CODEOWNERS`
+   assigning `/CLAUDE.md`, `/UPCOMING_PR.md`, and `/.github/` to
+   `@sense360store`.
+   Note: No code, engine, gate, manifest, firmware, or workflow-logic change.
+   `__tests__/architecture-doc.test.js` (SKU-table + architecture-link pins)
+   stays green and untouched, as does the full Jest suite.
+
 ## Upstream dependencies
 
 These are tracked in `sense360store/esphome-public`'s own `UPCOMING_PR.md` —
