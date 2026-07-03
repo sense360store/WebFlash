@@ -199,7 +199,7 @@ non-current `webflash-*` caches, the install gate, the manifest, firmware,
 `firmware/sources.json`, and `REQUIRED_CONFIGS` are all unchanged — no `app.css`
 rule other than the already-landed `overflow: clip` is touched.
 
-## Ed25519 signature enforcement — cache bump (webflash-v19)
+## Ed25519 signature enforcement — cache bump (webflash-v20)
 
 ### Why this exists
 
@@ -216,13 +216,14 @@ gate change must not ride on incidental revalidation.
 ### The bump
 
 - `index.html` `?v=` on the CSS links and the bootstrap loader, plus the
-  `webflash-app-shell` marker: `202607031` / `2026-07-03-1`.
-- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202607031`.
-- `sw.js` `CACHE_NAME`: `webflash-v18` to `webflash-v19`.
+  `webflash-app-shell` marker: `202607032` / `2026-07-03-2`.
+- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202607032`.
+- `sw.js` `CACHE_NAME`: `webflash-v19` (the #565 self-hosted-fonts bump) to
+  `webflash-v20`.
 
 Bumping `sw.js` changes the service-worker bytes, so returning visitors get an
 SW update on their next load: the new worker activates, the `activate` handler
-purges `webflash-v18`, and the precache re-primes `webflash-v19` with the
+purges `webflash-v19`, and the precache re-primes `webflash-v20` with the
 enforced-gate modules. The per-asset-class fetch strategy, the `activate` purge
 of non-current `webflash-*` caches, the manifest, firmware,
 `firmware/sources.json`, and `REQUIRED_CONFIGS` are all unchanged.

@@ -44,8 +44,7 @@ function ensureStylesheet(href) {
 /**
  * Prepares the shared production shell for the 2.0 view:
  *   - hides the 1.0 markup (the .container) without removing it,
- *   - injects the 2.0 stylesheet and the extra font weights it needs (allowed by
- *     the existing CSP font-src; the page already preconnects to Google Fonts),
+ *   - injects the 2.0 stylesheet (which self-hosts its fonts from assets/fonts/),
  *   - repoints the existing skip link at the 2.0 main landmark,
  *   - returns a clean root node for the view to mount into.
  * @returns {HTMLElement} the 2.0 root mount node.
@@ -60,12 +59,10 @@ function prepareShell() {
 
   // 2.0 stylesheet, resolved relative to this module so it works at the repo root
   // and under the GitHub Pages /WebFlash/ subpath.
+  // app.css also carries the @font-face rules for the self-hosted fonts
+  // (Inter, JetBrains Mono under assets/fonts/), so no cross-origin
+  // stylesheet or font is ever requested and the CSP stays 'self' for both.
   ensureStylesheet(new URL('../app.css', import.meta.url).href);
-  // Extra font weights the 2.0 design uses (Inter 650, JetBrains Mono). The
-  // production CSP already allows fonts.googleapis.com and fonts.gstatic.com.
-  ensureStylesheet(
-    'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap'
-  );
 
   // The 2.0 view renders its own <main id="wf2-main-content">. Point the shared
   // skip link at it instead of the now-hidden 1.0 #main-content.

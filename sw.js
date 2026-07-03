@@ -118,19 +118,22 @@
  *   `?v=` token (202606081) and the webflash-app-shell marker (2026-06-08-1). The
  *   activate purge and the per-asset-class fetch strategy are unchanged. See
  *   docs/deploy-notes.md.
- *   `webflash-v19` (Ed25519 signature enforcement) bumps again: the install
+ *   `webflash-v19` (SEC-WF-AUDIT-HOUSEKEEPING-001, #565) bumped so returning
+ *   installs pick up the self-hosted Inter / JetBrains Mono fonts and the
+ *   tightened CSP after the Google Fonts origins were dropped.
+ *   `webflash-v20` (Ed25519 signature enforcement) bumps again: the install
  *   gate now enforces Ed25519 signature verification of the downloaded
  *   firmware bytes alongside the SHA-256 check (scripts/state.js,
  *   scripts/engine.js, scripts/install.js, scripts/data.js). Returning
- *   installs must purge v18 so the enforced gate ships instead of the cached
+ *   installs must purge v19 so the enforced gate ships instead of the cached
  *   pre-enforcement modules, in lockstep with the index.html / bootstrap
- *   `?v=` token (202607031) and the webflash-app-shell marker (2026-07-03-1).
+ *   `?v=` token (202607032) and the webflash-app-shell marker (2026-07-03-2).
  *   The activate purge and the per-asset-class fetch strategy are unchanged.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v19';
+const CACHE_NAME = 'webflash-v20';
 const CACHE_VERSION = 5;
 
 /**

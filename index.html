@@ -12,7 +12,7 @@
       a known limitation documented in README.md → "Deployment & security
       headers". Run `npm run check:headers -- <URL>` to audit a deployment.
     -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' blob:; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self'; font-src 'self'; connect-src 'self' blob:; img-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
     <!-- Support-only app-shell build marker. These meta tags are read verbatim by
          scripts/services/diagnostics.js (buildAppSection) so the support bundle
          reports which app shell the live GitHub Pages page is running. Because
@@ -22,15 +22,12 @@
          together with the `?v=` asset query below and the sw.js CACHE_NAME on every
          JS/CSS deploy. No secrets/PII here — it is copied into diagnostics. -->
     <meta name="webflash-app-version" content="1.0.1">
-    <meta name="webflash-app-shell" content="2026-07-03-1">
+    <meta name="webflash-app-shell" content="2026-07-03-2">
     <title>Sense360 Firmware Installer</title>
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- The 2.0 view's font set (Inter incl. 650, plus JetBrains Mono). The href
-         matches the one scripts/shell.js would otherwise inject, so the shell's
-         idempotent ensureStylesheet() finds it and skips a duplicate load. -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- The 2.0 view's fonts (Inter, JetBrains Mono) are self-hosted under
+         assets/fonts/ via @font-face rules in app.css, so no cross-origin
+         stylesheet or font is loaded and the CSP needs no Google Fonts origins. -->
     <!-- The `?v=` asset query is the cache-bust token. Keep it in lockstep with
          APP_SHELL_BUILD in scripts/bootstrap.js, the sw.js CACHE_NAME, and the
          `webflash-app-shell` marker above so a stale Pages/CDN/service-worker copy
@@ -41,10 +38,10 @@
          and error-log-modal.js, reused by the 2.0 view) render with its styles.
          The remaining sheets and the 2.0 app stylesheet (app.css, injected by
          scripts/shell.js) provide the rest of the presentation. -->
-    <link rel="stylesheet" href="./css/wizard-style.css?v=202607031">
+    <link rel="stylesheet" href="./css/wizard-style.css?v=202607032">
     <link rel="stylesheet" href="./css/capability-bar.css">
     <link rel="stylesheet" href="./css/theme.css">
-    <link rel="stylesheet" href="./css/layout.css?v=202607031">
+    <link rel="stylesheet" href="./css/layout.css?v=202607032">
     <link rel="stylesheet" href="./css/device-qr.css">
     <link rel="stylesheet" href="./css/features.css">
     <!-- ESP Web Tools entry module, pinned to an exact version (@10.2.1) with
@@ -83,6 +80,6 @@
          cache-bust token rides on this always-revalidated HTML so the bootstrap
          loader (and the ESM module graph it pulls in) is fetched fresh on the
          first load after a deploy, never a stale CDN/SW copy. -->
-    <script type="module" src="./scripts/bootstrap.js?v=202607031"></script>
+    <script type="module" src="./scripts/bootstrap.js?v=202607032"></script>
 </body>
 </html>

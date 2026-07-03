@@ -96,19 +96,47 @@ describe('firmware-trusted-keys — pinned trust list shape', () => {
     });
 
     test('CRITICAL: no committed test_only key has status active in the trust list', () => {
-        // Backstop check: the dev/CI key under firmware-signing/keys/ has its
+        // Backstop check: any key under firmware-signing/keys/ has its
         // PRIVATE half committed to the public repo. Promoting any such key
         // to status='active' would let any reader of the repo sign forged
         // firmware that the wizard would happily install. The trust list
         // MUST mark these keys as 'test_only' so production-mode
         // verification refuses them.
-        const fixturePublicB64 = fs.readFileSync(
-            path.join(process.cwd(), 'firmware-signing/keys/dev-2026-01-public.raw.b64'),
-            'utf8'
-        ).trim();
-        const matched = FIRMWARE_TRUSTED_KEYS.find(e => e.public_key_b64 === fixturePublicB64);
-        expect(matched).not.toBeUndefined();
-        expect(matched.status).toBe('test_only');
+        //
+        // The check enumerates the keys directory instead of naming
+        // dev-2026-01, so a future committed fixture key (dev-2027-*, ...)
+        // is guarded the moment it lands, and it asserts against BOTH trust
+        // list copies (the JS module the wizard reads and the JSON file the
+        // Python pipeline reads) so the guard does not depend on the
+        // separate mirror-alignment test below.
+        const keysDir = path.join(process.cwd(), 'firmware-signing/keys');
+        const files = fs.readdirSync(keysDir);
+        const privatePrefixes = files
+            .filter(f => /-private\./.test(f))
+            .map(f => f.slice(0, f.indexOf('-private.')));
+        expect(privatePrefixes.length).toBeGreaterThan(0);
+
+        const jsonKeys = JSON.parse(fs.readFileSync(
+            path.join(process.cwd(), 'firmware-signing/trusted-keys.json'), 'utf8'
+        )).keys;
+
+        for (const prefix of new Set(privatePrefixes)) {
+            // Every committed private half must ship its public half so this
+            // guard can match it against the trust lists.
+            const publicFile = `${prefix}-public.raw.b64`;
+            expect(files).toContain(publicFile);
+            const publicB64 = fs.readFileSync(path.join(keysDir, publicFile), 'utf8').trim();
+
+            for (const [label, list] of [['js', FIRMWARE_TRUSTED_KEYS], ['json', jsonKeys]]) {
+                const matched = list.filter(e => e.public_key_b64 === publicB64);
+                expect({ label, prefix, count: matched.length }).toEqual(
+                    { label, prefix, count: 1 }
+                );
+                expect({ label, prefix, status: matched[0].status }).toEqual(
+                    { label, prefix, status: 'test_only' }
+                );
+            }
+        }
     });
 
     test('JSON mirror at firmware-signing/trusted-keys.json matches the JS source of truth', () => {

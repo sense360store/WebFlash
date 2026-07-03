@@ -14,3 +14,14 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "ci"
+  # npm ecosystem (CTF-AUDIT-2026-07-03 FLAG-DEP-VULN): the repo ships zero
+  # runtime npm packages ("private": true, devDependencies only — Jest and
+  # jest-environment-jsdom), but their transitive advisories were previously
+  # untracked. This block keeps the dev tooling patched; it must never be
+  # used to introduce a runtime dependency.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
