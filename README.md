@@ -756,8 +756,9 @@ for machine-readable output suitable for CI.
 
 The only third-party runtime dependency is
 `https://unpkg.com/esp-web-tools@10/dist/web/install-button.js`, allowed
-by the CSP `script-src`. Fonts come from `fonts.googleapis.com` and
-`fonts.gstatic.com`. There are no analytics, no other CDNs, and no
+by the CSP `script-src`. Fonts (Inter, JetBrains Mono) are self-hosted
+under `assets/fonts/` via `@font-face` rules in `app.css`, so `style-src`
+and `font-src` stay `'self'`. There are no analytics, no other CDNs, and no
 inline scripts — the bootstrap loader was externalized to
 `scripts/bootstrap.js` so the CSP `script-src` can remain `'self'` plus
 the documented unpkg origin without `'unsafe-inline'`.
