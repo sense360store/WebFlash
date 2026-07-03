@@ -239,7 +239,10 @@ class BuildSidecarTests(unittest.TestCase):
         self.assertEqual(sidecar["deprecated"], False)
         self.assertIsNone(sidecar["deprecation_reason"])
         self.assertEqual(sidecar["artifact_type"], "application")
-        self.assertTrue(sidecar["improv"])
+        # Applications default to improv=False: shipped upstream binaries
+        # implement no Improv Serial. Opt-in is per firmware/sources.json
+        # entry once an improv-bearing release ships.
+        self.assertFalse(sidecar["improv"])
         # Section payloads round-trip from the parsed body.
         self.assertEqual(sidecar["changelog"], parsed["changelog"])
         self.assertEqual(sidecar["known_issues"], [])
@@ -323,7 +326,7 @@ class FixtureAssetTests(unittest.TestCase):
             self.assertEqual(payload["deprecated"], False)
             self.assertIsNone(payload["deprecation_reason"])
             self.assertEqual(payload["artifact_type"], "application")
-            self.assertTrue(payload["improv"])
+            self.assertFalse(payload["improv"])
             self.assertEqual(payload["known_issues"], [])
             self.assertGreater(len(payload["changelog"]), 0)
             self.assertGreater(len(payload["features"]), 0)
@@ -500,27 +503,30 @@ class ApplySidecarMetadataTests(unittest.TestCase):
         sidecar = {
             "features": ["Feature A", "Feature B"],
             "hardware_requirements": ["Sense360 Core R4 or newer"],
-            "improv": False,
+            # improv=True in a sidecar is the explicit opt-in path for an
+            # improv-bearing release; it must override the False default.
+            "improv": True,
             "changelog": ["Real change."],
         }
         gen_manifests._apply_sidecar_metadata(metadata, sidecar)
         self.assertEqual(metadata.features, ["Feature A", "Feature B"])
         self.assertEqual(metadata.hardware_requirements, ["Sense360 Core R4 or newer"])
-        self.assertFalse(metadata.improv)
+        self.assertTrue(metadata.improv)
 
     def test_missing_keys_preserve_metadata_defaults(self) -> None:
         metadata = gen_manifests.parse_firmware_metadata(
             Path("Sense360-Ceiling-POE-AirIQ-v1.0.0-stable.bin"),
             default_channel="stable",
         )
-        # Pre-condition: parser-level default for non-rescue is improv=True.
-        self.assertTrue(metadata.improv)
+        # Pre-condition: parser-level default is improv=False — shipped
+        # binaries implement no Improv Serial unless a sidecar opts in.
+        self.assertFalse(metadata.improv)
         gen_manifests._apply_sidecar_metadata(
             metadata,
             {"changelog": ["Real change."]},
         )
         # No improv key in sidecar → parser default preserved.
-        self.assertTrue(metadata.improv)
+        self.assertFalse(metadata.improv)
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI entrypoint

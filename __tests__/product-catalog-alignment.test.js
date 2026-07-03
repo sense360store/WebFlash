@@ -712,7 +712,10 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         expect(ledBuild.channel).toBe('preview');
         expect(ledBuild.version).toBe(LED_PREVIEW_VERSION);
         expect(ledBuild.chipFamily).toBe('ESP32-S3');
-        expect(ledBuild.improv).toBe(true);
+        // The imported LED preview binary implements no Improv Serial
+        // (no upstream release carries the improv_serial component yet),
+        // so its build must not advertise improv support.
+        expect(ledBuild.improv).toBe(false);
         // Sense360 LED ring belongs in the modules list for this build.
         expect(ledBuild.modules).toEqual(
             expect.arrayContaining(['VentIQ', 'RoomIQ', 'LED'])

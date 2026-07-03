@@ -31,7 +31,7 @@
   "deprecated": false,
   "deprecation_reason": null,
   "artifact_type": "application",
-  "improv": true,
+  "improv": false,
   "source": {
     "source_repo": "sense360store/esphome-public",
     "release_tag": "v1.0.0-preview",

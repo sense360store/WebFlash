@@ -571,6 +571,13 @@ def build_provenance_sidecar(
     base = sync_releases.build_sidecar_from_release_body(
         metadata=metadata, parsed_body=parsed_body
     )
+    # Improv Serial opt-in: sidecars default to improv=False because shipped
+    # upstream binaries implement no Improv Serial (see the improv default in
+    # sync-from-releases.py). A source entry declares ``"improv": true`` only
+    # once the upstream release it pins actually carries the improv_serial
+    # component; rescue builds never opt in.
+    if entry.get("improv") is True and base.get("artifact_type") != "rescue":
+        base["improv"] = True
     source_block: Dict[str, Any] = {
         "source_repo": entry.get("source_repo"),
         "release_tag": entry.get("release_tag"),

@@ -70,7 +70,7 @@ flow into the WebFlash production manifest's per-build description) **and** a
   "deprecated": false,
   "deprecation_reason": null,
   "artifact_type": "application",
-  "improv": true,
+  "improv": false,
   "source": {
     "source_repo": "sense360store/esphome-public",
     "release_tag": "v1.0.0",
@@ -83,6 +83,22 @@ flow into the WebFlash production manifest's per-build description) **and** a
   }
 }
 ```
+
+### Improv Serial is opt-in per source
+
+`improv` defaults to `false` in every generated sidecar: no currently shipped
+upstream binary implements Improv Serial (verified empirically against
+`sense360store/esphome-public`, which had no `improv_serial` component — the
+firmware-side change is tracked there in `docs/improv-serial-finding.md`).
+Advertising improv on a build that cannot answer makes ESP Web Tools stall
+15 seconds after every install waiting for a handshake that never arrives,
+and makes device identification impossible anyway. Once an upstream release
+actually carries `improv_serial`, the matching `firmware/sources.json` entry
+declares `"improv": true` and the importer carries that into the sidecar;
+`gen-manifests.py` then emits `improv: true` for that build and restores the
+`new_install_improv_wait_time` of 15 on its per-build manifest (manifests
+whose builds have no improv get a wait time of 0). Rescue builds never opt
+in.
 
 ## Where signed firmware lives
 
