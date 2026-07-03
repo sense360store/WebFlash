@@ -4,7 +4,7 @@
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
-  "new_install_improv_wait_time": 15,
+  "new_install_improv_wait_time": 0,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
@@ -15,19 +15,19 @@
           "md5": "272bf3679eb66c44074f288c496dd83c",
           "sha256": "97e54930f26074e38326fbeaff7a222c828df38a33be509327e77a0b0f24a83f",
           "signature": "rkR2JgONbFteBKs6udQYu1WJLjGaNrJm3XzYhy8vBoU=",
-          "signature_ed25519": "2xh+NK21RQVZ8lL0FwRt1v/tZFsASH0Ohcrnl8uORI0aQEcTmlJFm3Ac3vLmj6eDjmKw4ZmHaI4v96mjcaV7AQ==",
-          "signature_key_id": "sense360-prod-2026-02"
+          "signature_ed25519": "EDXm9h3IJ01pOymwRksNkY5uagx9WTVGWzmNbebkxQy0XlCGiyQq3Cu9VSClsgkLWvIRSp76iKfbJul9U7JPAA==",
+          "signature_key_id": "dev-2026-01"
         }
       ],
-      "improv": true,
+      "improv": false,
       "md5": "272bf3679eb66c44074f288c496dd83c",
       "sha256": "97e54930f26074e38326fbeaff7a222c828df38a33be509327e77a0b0f24a83f",
       "signature": "rkR2JgONbFteBKs6udQYu1WJLjGaNrJm3XzYhy8vBoU=",
-      "signature_ed25519": "2xh+NK21RQVZ8lL0FwRt1v/tZFsASH0Ohcrnl8uORI0aQEcTmlJFm3Ac3vLmj6eDjmKw4ZmHaI4v96mjcaV7AQ==",
-      "signature_key_id": "sense360-prod-2026-02",
+      "signature_ed25519": "EDXm9h3IJ01pOymwRksNkY5uagx9WTVGWzmNbebkxQy0XlCGiyQq3Cu9VSClsgkLWvIRSp76iKfbJul9U7JPAA==",
+      "signature_key_id": "dev-2026-01",
       "file_size": 1090656,
-      "source_commit": "c8a9bf31c7689faab9eaf8579a5c23b7915afca7",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/c8a9bf31c7689faab9eaf8579a5c23b7915afca7",
+      "source_commit": "5389615ca6495869ef9fa9c3666f4b932f5b160e",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/5389615ca6495869ef9fa9c3666f4b932f5b160e",
       "deprecated": false
     }
   ]

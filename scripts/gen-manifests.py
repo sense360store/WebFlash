@@ -254,7 +254,15 @@ class FirmwareMetadata:
     description: Optional[str] = None
     features: List[str] = field(default_factory=list)
     hardware_requirements: List[str] = field(default_factory=list)
-    improv: bool = True
+    # Improv Serial support is a property of the firmware source, not of
+    # WebFlash: no currently shipped upstream binary implements improv_serial
+    # (empirically verified against sense360store/esphome-public; see the
+    # improv_serial finding recorded there in docs/improv-serial-finding.md),
+    # so the default is False. A build gets improv=True only when its
+    # .meta.json sidecar says so, which the importer writes only from an
+    # explicit `improv: true` opt-in on the matching firmware/sources.json
+    # entry once an improv-bearing release actually ships.
+    improv: bool = False
     custom_directory: Optional[str] = None
     changelog: List[str] = field(default_factory=list)
     known_issues: List[str] = field(default_factory=list)
@@ -1198,6 +1206,12 @@ def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
 # change to read the new shape.
 MANIFEST_SCHEMA_VERSION = 1
 
+# Seconds ESP Web Tools waits for an Improv Serial handshake after a new
+# install. Emitted only for improv-capable builds; manifests whose builds
+# implement no Improv get 0 so the flasher does not stall on a handshake
+# the firmware cannot send.
+IMPROV_WAIT_TIME_SECONDS = 15
+
 
 def build_manifest(
     artifacts: Sequence[FirmwareArtifact],
@@ -1214,7 +1228,14 @@ def build_manifest(
         "home_assistant_domain": "esphome",
         "funding_url": "https://sense360store.com/support",
         "new_install_prompt_erase": True,
-        "new_install_improv_wait_time": 15,
+        # Only advertise an improv wait when at least one build actually
+        # implements Improv Serial; otherwise the flasher stalls 15 seconds
+        # after every install waiting for a handshake that never arrives.
+        "new_install_improv_wait_time": (
+            IMPROV_WAIT_TIME_SECONDS
+            if any(artifact.metadata.improv for artifact in artifacts)
+            else 0
+        ),
         "builds": [artifact.manifest_entry() for artifact in artifacts],
     }
 
@@ -1785,7 +1806,9 @@ def write_individual_manifests(
             "home_assistant_domain": "esphome",
             "funding_url": "https://sense360store.com/support",
             "new_install_prompt_erase": True,
-            "new_install_improv_wait_time": 15,
+            "new_install_improv_wait_time": (
+                IMPROV_WAIT_TIME_SECONDS if artifact.metadata.improv else 0
+            ),
             "builds": [
                 {
                     "chipFamily": artifact.chip_family,

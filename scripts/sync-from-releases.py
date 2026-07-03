@@ -226,12 +226,22 @@ def validate_stable_changelog(
 
 # Defaults applied to every generated sidecar. Rescue builds override
 # ``artifact_type`` and ``improv`` further down.
+#
+# ``improv`` defaults to False: no currently shipped upstream binary
+# implements Improv Serial (empirically verified against
+# sense360store/esphome-public — the firmware had no improv_serial component;
+# see docs/improv-serial-finding.md in that repo). Advertising improv on a
+# build that cannot answer makes the flasher stall 15 seconds after every
+# install and breaks device identification expectations. Once an
+# improv-bearing release ships, the matching firmware/sources.json entry
+# opts in with ``"improv": true`` and the importer carries that into the
+# sidecar (see build_provenance_sidecar in import-firmware-sources.py).
 _APPLICATION_DEFAULTS: Dict[str, Any] = {
     "signed_by": "Sense360 release pipeline",
     "deprecated": False,
     "deprecation_reason": None,
     "artifact_type": "application",
-    "improv": True,
+    "improv": False,
 }
 
 _RESCUE_OVERRIDES: Dict[str, Any] = {
