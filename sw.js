@@ -122,7 +122,7 @@
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v18';
+const CACHE_NAME = 'webflash-v19';
 const CACHE_VERSION = 5;
 
 /**
