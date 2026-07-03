@@ -264,7 +264,7 @@ describe('PR 10 — provenance gate parity (2.0 view bound to the engine)', () =
   it('renders all four real preflight rows by stable label, not a timer simulation', async () => {
     const engine = makeTestEngine(baseEngine, {
       validateFirmwareProvenance: () => ({ ok: true, blocking: false, failures: [], summary: 'ok' }),
-      verifyFirmwareIntegrity: async () => ({ status: 'verified', parts: [] }),
+      verifyFirmwareIntegrity: async () => ({ status: 'verified', signature: { ok: true, code: 'verified' }, parts: [] }),
       checkManifestFreshness: async () => ({ verdict: 'current' }),
     });
     const { root } = await mountInstall(engine, makeBuild('stable'));
@@ -274,10 +274,10 @@ describe('PR 10 — provenance gate parity (2.0 view bound to the engine)', () =
     );
   });
 
-  it('renders the verification pass copy as a non-claim — never asserts signature verification', async () => {
+  it('claims Ed25519 verification on the pass copy only when the engine verdict passed', async () => {
     const engine = makeTestEngine(baseEngine, {
       validateFirmwareProvenance: () => ({ ok: true, blocking: false, failures: [], summary: 'ok' }),
-      verifyFirmwareIntegrity: async () => ({ status: 'verified', parts: [] }),
+      verifyFirmwareIntegrity: async () => ({ status: 'verified', signature: { ok: true, code: 'verified' }, parts: [] }),
       checkManifestFreshness: async () => ({ verdict: 'current' }),
     });
     const { root } = await mountInstall(engine, makeBuild('stable'));
@@ -285,9 +285,39 @@ describe('PR 10 — provenance gate parity (2.0 view bound to the engine)', () =
     const verifyRow = readyRow(root, 'Firmware verification');
     const sub = verifyRow.querySelector('.ready__sub').textContent;
     expect(sub).toMatch(/SHA-256 integrity/i);
-    expect(sub).toMatch(/signature metadata present/i);
-    // The trust non-claim must hold over the WHOLE rendered step, not just one row.
-    expect(root.textContent).not.toMatch(/signature (valid|verified)/i);
+    expect(sub).toMatch(/Ed25519 signature verified/i);
+  });
+
+  it('fails the verification row when the integrity result carries no Ed25519 verdict', async () => {
+    // The pre-enforcement composition shape (SHA-256 only, no signature
+    // verdict) must fail closed — the gate never assumes an unrun signature
+    // check passed.
+    const engine = makeTestEngine(baseEngine, {
+      validateFirmwareProvenance: () => ({ ok: true, blocking: false, failures: [], summary: 'ok' }),
+      verifyFirmwareIntegrity: async () => ({ status: 'verified', parts: [] }),
+      checkManifestFreshness: async () => ({ verdict: 'current' }),
+    });
+    const { root, installBtn } = await mountInstall(engine, makeBuild('stable'));
+    expect(readyStatus(root, 'Firmware verification')).toBe('fail');
+    expect(installBtn.disabled).toBe(true);
+  });
+
+  it('fails the verification row when the Ed25519 verdict failed despite matching bytes', async () => {
+    const engine = makeTestEngine(baseEngine, {
+      validateFirmwareProvenance: () => ({ ok: true, blocking: false, failures: [], summary: 'ok' }),
+      verifyFirmwareIntegrity: async () => ({
+        status: 'failed',
+        message: 'Firmware authenticity verification failed.',
+        signature: { ok: false, code: 'signature_invalid', message: 'Firmware authenticity verification failed.' },
+        parts: [],
+      }),
+      checkManifestFreshness: async () => ({ verdict: 'current' }),
+    });
+    const { root, installBtn } = await mountInstall(engine, makeBuild('stable'));
+    expect(readyStatus(root, 'Firmware verification')).toBe('fail');
+    const verifyRow = readyRow(root, 'Firmware verification');
+    expect(verifyRow.querySelector('.ready__sub').textContent).toMatch(/authenticity verification failed/i);
+    expect(installBtn.disabled).toBe(true);
   });
 
   it('drives the gate in production trust mode (the view never relaxes provenance)', () => {
@@ -317,7 +347,7 @@ describe('PR 10 — channel acknowledgement prune-on-mismatch (2.0 view)', () =>
   function passingEngine() {
     return makeTestEngine(baseEngine, {
       validateFirmwareProvenance: () => ({ ok: true, blocking: false, failures: [], summary: 'ok' }),
-      verifyFirmwareIntegrity: async () => ({ status: 'verified', parts: [] }),
+      verifyFirmwareIntegrity: async () => ({ status: 'verified', signature: { ok: true, code: 'verified' }, parts: [] }),
       checkManifestFreshness: async () => ({ verdict: 'current' }),
     });
   }
@@ -393,7 +423,7 @@ describe('PR 10 — manifest freshness matrix (2.0 view rendering)', () => {
   function freshnessEngine(verdict) {
     return makeTestEngine(baseEngine, {
       validateFirmwareProvenance: () => ({ ok: true, blocking: false, failures: [], summary: 'ok' }),
-      verifyFirmwareIntegrity: async () => ({ status: 'verified', parts: [] }),
+      verifyFirmwareIntegrity: async () => ({ status: 'verified', signature: { ok: true, code: 'verified' }, parts: [] }),
       checkManifestFreshness: async () => ({ verdict }),
     });
   }

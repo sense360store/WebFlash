@@ -21,7 +21,7 @@
  * integrity verifier.
  */
 import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
-import { webcrypto, createHash } from 'node:crypto';
+import { webcrypto, createHash, createPrivateKey, sign as nodeSign } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -47,6 +47,21 @@ beforeAll(() => {
 });
 
 const OK_CAPS = Object.freeze({ webSerial: true, secureContext: true, isMobile: false, browserName: 'Chrome' });
+
+// Sign fixture bytes with the committed dev-2026-01 test_only key (its private
+// half is in the repo precisely so tests can exercise the REAL verification
+// path end to end). Development mode accepts it; production mode refuses it.
+function loadDevPrivateKey() {
+  const raw = readFileSync(join(process.cwd(), 'firmware-signing/keys/dev-2026-01-private.raw.b64'), 'utf8').trim();
+  const seed = Buffer.from(raw, 'base64');
+  // Ed25519 PKCS#8 wrapper for a raw 32-byte private key seed.
+  const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
+  return createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' });
+}
+
+function signWithDevKey(messageBytes) {
+  return nodeSign(null, Buffer.from(messageBytes), loadDevPrivateKey()).toString('base64');
+}
 
 // A provenance-complete build. Production mode rejects the committed dev
 // (test_only) signing key for stable/rescue, so the gate-composition tests use
@@ -76,7 +91,10 @@ function gateInputs(overrides = {}) {
     build: makeBuild('preview'),
     capabilities: OK_CAPS,
     provenance: { ok: true, blocking: false, failures: [], summary: 'ok' },
-    integrity: { status: 'verified', message: 'ok' },
+    // The Ed25519 verdict is now enforced: a 'verified' integrity result must
+    // carry a passing signature verdict (verifyFirmwareIntegrity produces
+    // one), or the gate fails closed.
+    integrity: { status: 'verified', message: 'ok', signature: { ok: true, code: 'verified' } },
     freshness: { verdict: 'current', acknowledged: false },
     serviceWorker: { updateAvailable: false, updateDismissed: false },
     acknowledgements: { required: [], signature: null, accepted: {} },
@@ -141,7 +159,7 @@ describe('PR 5 — evaluateInstallGate (engine-owned composition)', () => {
     });
   });
 
-  describe('firmware verification row reflects the SHA-256 integrity result', () => {
+  describe('firmware verification row enforces SHA-256 integrity AND Ed25519 authenticity', () => {
     it('is pending (blocking) while integrity has not resolved', () => {
       const gate = evaluateInstallGate(gateInputs({ integrity: null }));
       const verifyRow = gate.checks.find((c) => c.id === INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION);
@@ -156,13 +174,40 @@ describe('PR 5 — evaluateInstallGate (engine-owned composition)', () => {
       expect(gate.canInstall).toBe(false);
     });
 
-    it('never claims cryptographic signature verification on the pass copy', () => {
+    it('passes and claims Ed25519 verification only when the signature verdict passed', () => {
       const gate = evaluateInstallGate(gateInputs());
       const verifyRow = gate.checks.find((c) => c.id === INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION);
       expect(verifyRow.status).toBe('pass');
       expect(verifyRow.detail).toMatch(/SHA-256 integrity/i);
-      expect(verifyRow.detail).toMatch(/signature metadata present/i);
-      expect(verifyRow.detail).not.toMatch(/signature (valid|verified)/i);
+      expect(verifyRow.detail).toMatch(/Ed25519 signature verified/i);
+      expect(gate.canInstall).toBe(true);
+    });
+
+    it('fails closed when the bytes verified but the Ed25519 verdict failed', () => {
+      const gate = evaluateInstallGate(gateInputs({
+        integrity: {
+          status: 'verified',
+          message: 'ok',
+          signature: { ok: false, code: 'signature_invalid', message: 'Firmware authenticity verification failed.' },
+        },
+      }));
+      const verifyRow = gate.checks.find((c) => c.id === INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION);
+      expect(verifyRow.status).toBe('fail');
+      expect(verifyRow.blocking).toBe(true);
+      expect(verifyRow.detail).toMatch(/authenticity verification failed/i);
+      expect(gate.canInstall).toBe(false);
+      expect(gate.blockingReason).toMatch(/authenticity verification failed/i);
+    });
+
+    it('fails closed when a verified integrity result carries NO Ed25519 verdict at all', () => {
+      // A composition that skipped signature verification (the pre-enforcement
+      // shape) must not arm install: an unverified signature is not a passed
+      // signature.
+      const gate = evaluateInstallGate(gateInputs({ integrity: { status: 'verified', message: 'ok' } }));
+      const verifyRow = gate.checks.find((c) => c.id === INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION);
+      expect(verifyRow.status).toBe('fail');
+      expect(verifyRow.detail).toMatch(/authenticity has not been verified/i);
+      expect(gate.canInstall).toBe(false);
     });
   });
 
@@ -279,7 +324,7 @@ describe('PR 5 — evaluateInstallGate (engine-owned composition)', () => {
   });
 });
 
-describe('PR 5 — verifyFirmwareIntegrity (SHA-256 of the downloaded bytes)', () => {
+describe('verifyFirmwareIntegrity (SHA-256 + Ed25519 of the downloaded bytes)', () => {
   function bytesAndHash(text) {
     const buf = Buffer.from(text, 'utf8');
     const hash = createHash('sha256').update(buf).digest('hex');
@@ -287,28 +332,110 @@ describe('PR 5 — verifyFirmwareIntegrity (SHA-256 of the downloaded bytes)', (
     return { arrayBuffer, hash };
   }
 
-  it('verifies when the downloaded bytes match the manifest SHA-256', async () => {
-    const { arrayBuffer, hash } = bytesAndHash('firmware-bytes-A');
-    const build = makeBuild('preview', { sha256: hash, parts: [{ path: 'firmware/test.bin', offset: 0, sha256: hash }] });
-    const fetchImpl = jest.fn(() => Promise.resolve({ ok: true, status: 200, arrayBuffer: () => Promise.resolve(arrayBuffer) }));
+  // A build whose bytes, SHA-256, and Ed25519 signature are all mutually
+  // consistent, signed by the committed dev-2026-01 (test_only) key.
+  function signedBuild(channel, text, overrides = {}) {
+    const { arrayBuffer, hash } = bytesAndHash(text);
+    const sigB64 = signWithDevKey(new Uint8Array(arrayBuffer));
+    const build = makeBuild(channel, {
+      sha256: hash,
+      signature_ed25519: sigB64,
+      signature_key_id: 'dev-2026-01',
+      parts: [{ path: 'firmware/test.bin', offset: 0, sha256: hash }],
+      ...overrides,
+    });
+    return { build, arrayBuffer };
+  }
+
+  function fetchServing(arrayBuffer) {
+    return jest.fn(() => Promise.resolve({ ok: true, status: 200, arrayBuffer: () => Promise.resolve(arrayBuffer) }));
+  }
+
+  it('verifies when the bytes match the SHA-256 AND the Ed25519 signature verifies', async () => {
+    const { build, arrayBuffer } = signedBuild('preview', 'firmware-bytes-A');
+    const fetchImpl = fetchServing(arrayBuffer);
 
     const result = await verifyFirmwareIntegrity(build, { mode: 'development', fetchImpl });
     expect(result.status).toBe('verified');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(result.parts[0].sha256Match).toBe(true);
+    expect(result.parts[0].ed25519.ok).toBe(true);
+    expect(result.signature.ok).toBe(true);
+    expect(result.signature.code).toBe('verified');
+    // The merged provenance report reflects the enforced runtime verdict.
+    const sigCheck = result.provenance.checks.find((c) => c.id === 'signature_verified');
+    expect(sigCheck.status).toBe('pass');
   });
 
   it('fails when the downloaded bytes do not match the manifest SHA-256', async () => {
+    // The signature covers different bytes than the manifest hash claims —
+    // the SHA-256 gate fails first and independently of the signature gate.
     const { arrayBuffer } = bytesAndHash('firmware-bytes-A');
     const build = makeBuild('preview', {
       sha256: 'd'.repeat(64),
+      signature_ed25519: signWithDevKey(new Uint8Array(arrayBuffer)),
+      signature_key_id: 'dev-2026-01',
       parts: [{ path: 'firmware/test.bin', offset: 0, sha256: 'd'.repeat(64) }],
     });
-    const fetchImpl = jest.fn(() => Promise.resolve({ ok: true, status: 200, arrayBuffer: () => Promise.resolve(arrayBuffer) }));
+    const fetchImpl = fetchServing(arrayBuffer);
 
     const result = await verifyFirmwareIntegrity(build, { mode: 'development', fetchImpl });
     expect(result.status).toBe('failed');
     expect(result.parts[0].sha256Match).toBe(false);
+    expect(result.message).toMatch(/SHA-256 mismatch/i);
+  });
+
+  it('fails when the signature is tampered even though the SHA-256 matches', async () => {
+    // A manifest-only attacker can keep sha256 consistent with tampered
+    // bytes, but cannot produce a verifying Ed25519 signature. Simulate by
+    // corrupting the signature: hash gate passes, signature gate blocks.
+    const { build, arrayBuffer } = signedBuild('preview', 'firmware-bytes-A');
+    const sigBytes = Buffer.from(build.signature_ed25519, 'base64');
+    sigBytes[0] ^= 0xff;
+    build.signature_ed25519 = sigBytes.toString('base64');
+    const fetchImpl = fetchServing(arrayBuffer);
+
+    const result = await verifyFirmwareIntegrity(build, { mode: 'development', fetchImpl });
+    expect(result.status).toBe('failed');
+    expect(result.parts[0].sha256Match).toBe(true);
+    expect(result.parts[0].ed25519.ok).toBe(false);
+    expect(result.signature.ok).toBe(false);
+    expect(result.message).toMatch(/authenticity verification failed/i);
+    const sigCheck = result.provenance.checks.find((c) => c.id === 'signature_verified');
+    expect(sigCheck.status).toBe('fail');
+  });
+
+  it('blocks a test_only-key-signed build in production mode', async () => {
+    // The committed dev-2026-01 key is test_only: anyone with read access to
+    // the repo could sign with it, so production mode must refuse it even
+    // though the signature mathematically verifies. Preview channel is used
+    // so the static gate passes and the REFUSAL comes from the runtime
+    // signature check (stable/rescue are already refused statically).
+    const { build, arrayBuffer } = signedBuild('preview', 'firmware-bytes-A');
+    const fetchImpl = fetchServing(arrayBuffer);
+
+    const result = await verifyFirmwareIntegrity(build, { mode: 'production', fetchImpl });
+    expect(result.status).toBe('failed');
+    expect(result.parts[0].sha256Match).toBe(true);
+    expect(result.signature.ok).toBe(false);
+    expect(result.signature.code).toBe('key_test_only_in_production');
+    expect(result.message).toMatch(/test-only key/i);
+  });
+
+  it('fails when the build carries no Ed25519 signature at all', async () => {
+    const { arrayBuffer, hash } = bytesAndHash('firmware-bytes-A');
+    const build = makeBuild('preview', {
+      sha256: hash,
+      parts: [{ path: 'firmware/test.bin', offset: 0, sha256: hash }],
+    });
+    delete build.signature_ed25519;
+    delete build.signature_key_id;
+    // An unsigned build already blocks at the static provenance gate, so no
+    // download even starts — enforcement fails closed before the network.
+    const fetchImpl = fetchServing(arrayBuffer);
+    const result = await verifyFirmwareIntegrity(build, { mode: 'development', fetchImpl });
+    expect(result.status).toBe('failed');
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it('refuses to download when the static provenance gate blocks', async () => {

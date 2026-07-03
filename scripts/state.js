@@ -5238,9 +5238,10 @@ async function verifyCurrentFirmwareIntegrity() {
 // ---------------------------------------------------------------------------
 
 /**
- * View-agnostic SHA-256 integrity verification for a single resolved manifest
- * build. This is the WebFlash 2.0 binding for the "SHA-256 verification of the
- * downloaded bytes via SubtleCrypto in state.js" gate component (PR 5).
+ * View-agnostic integrity + authenticity verification for a single resolved
+ * manifest build. This is the WebFlash 2.0 binding for the firmware
+ * verification gate component (PR 5, hardened by the Ed25519 enforcement
+ * change).
  *
  * Unlike verifyCurrentFirmwareIntegrity(), it:
  *   - takes the build as an argument instead of reading window.currentFirmware,
@@ -5250,21 +5251,35 @@ async function verifyCurrentFirmwareIntegrity() {
  *
  * It runs the static provenance gate first, so a build with missing or blocked
  * metadata never triggers a network download, then downloads each firmware part
- * with `cache: 'no-store'` and compares the SHA-256 of the bytes to the
- * manifest's declared `sha256`. It does NOT run Ed25519 signature
- * verification: WebFlash makes no cryptographic-signature-verification claim
- * (the signature_verified provenance check stays a non-claim), so the 2.0 gate
- * verifies integrity (the bytes match the manifest hash) and relies on the
- * static provenance gate for signature-metadata presence. Real signature
- * verification is a separate, explicit project.
+ * with `cache: 'no-store'` and runs TWO independent checks on the bytes:
+ *
+ *   1. SHA-256 integrity — the digest of the downloaded bytes must equal the
+ *      manifest's declared `sha256`. This gate is unchanged from PR 5.
+ *   2. Ed25519 authenticity — the bytes must verify against the build's
+ *      `signature_ed25519` using a key from the pinned trust list that is
+ *      acceptable in the supplied mode (`verifyFirmwareSignature`; in
+ *      'production' mode only `status: 'active'` keys verify, so
+ *      test_only / superseded / revoked keys are refused even when the
+ *      math checks out).
+ *
+ * `status` is 'verified' ONLY when every part passes BOTH checks. The
+ * signature check is enforced alongside the SHA-256 gate, not in place of
+ * it: a signature failure and a hash failure each independently fail the
+ * result. The aggregated Ed25519 verdict is returned on `signature` and is
+ * also merged into `provenance` via applySignatureVerificationResult, so the
+ * signature_verified check and the authenticity tier reflect what actually
+ * happened.
  *
  * @param {object} build A resolved manifest `builds[]` entry.
  * @param {object} [options]
- * @param {'production'|'development'|'test'} [options.mode] Provenance trust
- *   mode. Defaults to 'production' to match the 1.0 install-trust mode.
+ * @param {'production'|'development'|'test'} [options.mode] Trust mode for
+ *   both the provenance gate and Ed25519 key acceptance. Defaults to
+ *   'production' to match the 1.0 install-trust mode.
  * @param {typeof fetch} [options.fetchImpl] Injectable fetch (tests).
  * @param {AbortSignal} [options.signal] Abort in-flight downloads.
- * @returns {Promise<{status:'verified'|'failed'|'unsupported', message:string, provenance:object, parts:Array}>}
+ * @returns {Promise<{status:'verified'|'failed'|'unsupported', message:string,
+ *   provenance:object, signature:{ok:boolean, code:string, message:string,
+ *   keyId?:string, keyStatus?:string}, parts:Array}>}
  */
 async function verifyFirmwareIntegrity(build, options = {}) {
     const mode = options.mode || 'production';
@@ -5310,17 +5325,19 @@ async function verifyFirmwareIntegrity(build, options = {}) {
         };
     }
 
+    const stableBuild = isStableChannel(normaliseReleaseChannel(build?.channel));
     const results = [];
-    for (const part of parts) {
+    for (let partIndex = 0; partIndex < parts.length; partIndex += 1) {
+        const part = parts[partIndex];
         if (!part.sha256) {
-            results.push({ fileName: part.fileName, sha256Match: false, status: 'failed', message: `Missing checksum for ${part.fileName}.` });
+            results.push({ fileName: part.fileName, sha256Match: false, ed25519: null, status: 'failed', message: `Missing checksum for ${part.fileName}.` });
             continue;
         }
         try {
             // eslint-disable-next-line no-await-in-loop
             const response = await fetchImpl(part.resolvedUrl, { cache: 'no-store', signal: options.signal });
             if (!response || !response.ok) {
-                results.push({ fileName: part.fileName, sha256Match: false, status: 'failed', message: `Unable to download ${part.fileName}${response ? ` (HTTP ${response.status})` : ''}.` });
+                results.push({ fileName: part.fileName, sha256Match: false, ed25519: null, status: 'failed', message: `Unable to download ${part.fileName}${response ? ` (HTTP ${response.status})` : ''}.` });
                 continue;
             }
             // eslint-disable-next-line no-await-in-loop
@@ -5328,37 +5345,98 @@ async function verifyFirmwareIntegrity(build, options = {}) {
             // eslint-disable-next-line no-await-in-loop
             const computed = arrayBufferToHex(await subtle.digest('SHA-256', buffer));
             const match = computed === part.sha256.toLowerCase();
+
+            // Ed25519 authenticity of the SAME bytes. Per-part signature
+            // fields win over the top-level build fields (multi-part builds
+            // may sign each partition separately); a part with no signature
+            // anywhere yields a MISSING_SIGNATURE failure, never a pass.
+            const sigInfo = extractSignatureFromBuild(build, partIndex);
+            // eslint-disable-next-line no-await-in-loop
+            const sigResult = await verifyFirmwareSignature(buffer, sigInfo?.signatureB64 || '', {
+                keyId: sigInfo?.keyId || '',
+                mode
+            });
+            const authCopy = userFacingAuthenticityCopy(sigResult.code, { stable: stableBuild });
+
             results.push({
                 fileName: part.fileName,
                 sha256Match: match,
-                status: match ? 'verified' : 'failed',
-                message: match ? '' : `SHA-256 mismatch for ${part.fileName}.`
+                ed25519: {
+                    ok: sigResult.ok === true,
+                    code: sigResult.code,
+                    message: sigResult.message,
+                    keyId: sigResult.keyId || sigInfo?.keyId || '',
+                    keyStatus: sigResult.keyStatus
+                },
+                status: (match && sigResult.ok === true) ? 'verified' : 'failed',
+                message: !match
+                    ? `SHA-256 mismatch for ${part.fileName}.`
+                    : (sigResult.ok === true ? '' : authCopy.message)
             });
         } catch (error) {
             results.push({
                 fileName: part.fileName,
                 sha256Match: false,
+                ed25519: null,
                 status: 'failed',
                 message: error instanceof Error ? error.message : `Verification failed for ${part.fileName}.`
             });
         }
     }
 
+    // SHA-256 gate — unchanged from PR 5. Every part's bytes must digest to
+    // the manifest's declared hash.
     const allMatch = results.length > 0 && results.every(result => result.sha256Match);
-    const firstFailure = results.find(result => !result.sha256Match);
-    const mergedProvenance = applyHashVerificationResult(provenance, {
+    const firstHashFailure = results.find(result => !result.sha256Match);
+
+    // Ed25519 gate — enforced alongside SHA-256. The worst per-part verdict
+    // is the aggregate: a single unverified part fails the whole build. A
+    // part whose download errored (ed25519 === null) also fails the
+    // aggregate — authenticity that was never checked is not authenticity.
+    const firstSigFailure = results.find(result => !result.ed25519 || result.ed25519.ok !== true);
+    const aggregatedSignature = firstSigFailure
+        ? {
+            ok: false,
+            code: firstSigFailure.ed25519?.code || SIGNATURE_RESULT_CODES.MISSING_SIGNATURE,
+            message: firstSigFailure.ed25519?.message
+                || firstSigFailure.message
+                || 'Firmware authenticity could not be verified.',
+            keyId: firstSigFailure.ed25519?.keyId,
+            keyStatus: firstSigFailure.ed25519?.keyStatus
+        }
+        : {
+            ok: true,
+            code: SIGNATURE_RESULT_CODES.VERIFIED,
+            message: 'Firmware authenticity verified with pinned Sense360 production key.',
+            keyId: results[0]?.ed25519?.keyId,
+            keyStatus: results[0]?.ed25519?.keyStatus
+        };
+    // Merge the signature verdict FIRST (it recomputes the tier rollup from
+    // the checks, which resets the integrity tier to pending), then patch the
+    // integrity tier with the hash result — the same order the 1.0 path uses.
+    let mergedProvenance = applySignatureVerificationResult(provenance, aggregatedSignature);
+    mergedProvenance = applyHashVerificationResult(mergedProvenance, {
         matches: allMatch,
         message: allMatch
             ? 'Downloaded firmware bytes match the SHA-256 declared in the manifest.'
-            : (firstFailure?.message || 'Downloaded firmware bytes do not match the manifest SHA-256.')
+            : (firstHashFailure?.message || 'Downloaded firmware bytes do not match the manifest SHA-256.')
     });
 
+    const verified = allMatch && aggregatedSignature.ok;
+    let message;
+    if (verified) {
+        message = `SHA-256 integrity and Ed25519 authenticity verified (key '${aggregatedSignature.keyId || 'unknown'}').`;
+    } else if (!allMatch) {
+        message = firstHashFailure?.message || 'Firmware verification failed.';
+    } else {
+        message = userFacingAuthenticityCopy(aggregatedSignature.code, { stable: stableBuild }).message;
+    }
+
     return {
-        status: allMatch ? 'verified' : 'failed',
-        message: allMatch
-            ? 'SHA-256 integrity verified against the manifest.'
-            : (firstFailure?.message || 'Firmware verification failed.'),
+        status: verified ? 'verified' : 'failed',
+        message,
         provenance: mergedProvenance,
+        signature: aggregatedSignature,
         parts: results
     };
 }
@@ -5382,7 +5460,9 @@ const INSTALL_GATE_CHECK_IDS = Object.freeze({
  *
  *   - capabilities:            detectCapabilities() (desktop / Web Serial / secure context)
  *   - provenance:              validateFirmwareProvenance(build, { mode })
- *   - integrity:               verifyFirmwareIntegrity(build) (SHA-256 of the bytes)
+ *   - integrity:               verifyFirmwareIntegrity(build) (SHA-256 of the
+ *                              bytes AND the Ed25519 authenticity verdict on
+ *                              integrity.signature — both are enforced)
  *   - freshness:               checkManifestFreshness(...).verdict
  *   - serviceWorker:           getServiceWorkerState()
  *   - acknowledgements:        getRequiredAcknowledgements(build) +
@@ -5474,10 +5554,17 @@ function evaluateInstallGate(input = {}) {
     }
 
     // 4. Firmware verification: static provenance (blocks on missing/blocked
-    //    metadata) plus SHA-256 integrity of the downloaded bytes. The signature
-    //    stays a non-claim — this row never asserts cryptographic signature
-    //    verification.
+    //    metadata), SHA-256 integrity of the downloaded bytes, AND Ed25519
+    //    authenticity of the same bytes against the pinned trust list. The
+    //    signature check is ENFORCED: a 'verified' integrity result must carry
+    //    a passing Ed25519 verdict (verifyFirmwareIntegrity produces one), or
+    //    the row fails closed. The SHA-256 gate is unchanged — the signature
+    //    gate sits alongside it, not in place of it.
     const integrityStatus = integrity ? integrity.status : null;
+    const signatureVerdict = (integrity && typeof integrity === 'object' && integrity.signature
+        && typeof integrity.signature === 'object')
+        ? integrity.signature
+        : null;
     if (!build) {
         checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pending', true,
             'Select firmware to verify.'));
@@ -5491,11 +5578,26 @@ function evaluateInstallGate(input = {}) {
         checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'fail', true,
             (integrity && integrity.message) || 'Firmware verification failed.'));
     } else if (integrityStatus === 'verified') {
-        checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pass', false,
-            'SHA-256 integrity verified against the manifest. Signature metadata present.'));
+        if (signatureVerdict && signatureVerdict.ok === true) {
+            checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pass', false,
+                'SHA-256 integrity and Ed25519 signature verified against the pinned Sense360 trust list.'));
+        } else if (signatureVerdict) {
+            // Defense in depth: a composition that reports verified bytes but a
+            // failed signature verdict must not pass. verifyFirmwareIntegrity
+            // never produces this combination, but the gate does not trust the
+            // caller to have composed it correctly.
+            checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'fail', true,
+                signatureVerdict.message || 'Firmware authenticity verification failed.'));
+        } else {
+            // No Ed25519 verdict at all: the integrity result was produced by
+            // something other than verifyFirmwareIntegrity. Fail closed — an
+            // unverified signature is not a passed signature.
+            checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'fail', true,
+                'Firmware authenticity has not been verified. The Ed25519 signature check must run before install.'));
+        }
     } else {
         checks.push(makeCheckRow(INSTALL_GATE_CHECK_IDS.FIRMWARE_VERIFICATION, 'Firmware verification', 'pending', true,
-            'Verifying firmware integrity…'));
+            'Verifying firmware integrity and authenticity…'));
     }
 
     // Channel acknowledgements (seven-tier, firmware-identity bound).

@@ -102,8 +102,9 @@ export const LED = { id: 'led', name: 'Sense360 LED ring', sku: 'S360-300', code
 // panel from the machine-readable results keyed by
 // engine.state.INSTALL_GATE_CHECK_IDS. There is no simulated readiness data
 // left here; the panel rows and their statuses come from
-// engine.state.evaluateInstallGate(). The signature stays a non-claim: the
-// firmware-verification row never asserts cryptographic signature verification.
+// engine.state.evaluateInstallGate(). The firmware-verification row enforces
+// real Ed25519 signature verification alongside the SHA-256 integrity check;
+// it asserts verification only when the engine's runtime verdict passed.
 
 // ---- Builder selection <-> engine wizard-state mapping ----
 // The advanced builder tracks a small UI selection shape with two independent

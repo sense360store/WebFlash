@@ -132,7 +132,7 @@ Otherwise the frontend will fail to find a build that the manifest claims exists
 - **Disabled options live in the matrix, not in markup.** The canonical SKU table above documents the products; runtime gating comes from `module-requirements.js` (e.g. `ceilingOnly`, `requiresBathroom`) and the visibility logic in `getVisibleModuleGroupKeys` in `state.js`. AirIQ ↔ VentIQ is mutually exclusive and driven by the Bathroom toggle on Ceiling mounts.
 - **No Model/Variant axis.** The product taxonomy is flat (one SKU per product). When extending the wizard, do not add Base/Pro variants or model/variant fields; add a new SKU entry to `module-requirements.js` and a new module key to `MODULE_KEYS` in `state.js` instead.
 - **Sensitive-value redaction.** `Copy diagnostics` and flash history both pass through redaction (`SENSITIVE_KEY_PATTERN` in `state.js`, `stripDeprecatedConfigurationFields` in `flash-history.js`). When adding new fields to diagnostics or history, audit whether they should be redacted before they ship.
-- **Service worker cache versioning.** The cache name lives in `CACHE_NAME` in `sw.js` (currently `webflash-v18`); bumping it is how forced refreshes are landed. The `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
+- **Service worker cache versioning.** The cache name lives in `CACHE_NAME` in `sw.js` (currently `webflash-v19`); bumping it is how forced refreshes are landed. The `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
 - **Generated files are committed.** `manifest.json`, every `firmware-*.json`, and every `firmware/configurations/*.bin` are tracked in git. Regenerate with `gen-manifests.py` and commit the diff together with the firmware change in the same commit.
 - **Branch policy.** All AI-assisted development on this repo runs on a dedicated `claude/...` branch (see workflow instructions). Never push to `main` directly.
 - **Upcoming PR queue.** [`UPCOMING_PR.md`](UPCOMING_PR.md) is the working queue tracker for completed, blocked, deferred, and upcoming WebFlash PRs. Every WebFlash PR that changes queue state must update it; upstream `sense360store/esphome-public` rows appear only as dependencies.
@@ -157,7 +157,7 @@ Repo conventions:
 Trust model is non-negotiable:
 
 - Never weaken a blocking gate: provenance, channel acknowledgement, manifest freshness, service-worker update.
-- Never claim cryptographic signature verification on any surface. The `signature_verified` check stays skip until real verification is a separate, explicit project.
+- Never claim cryptographic signature verification the engine has not actually performed. Real Ed25519 verification is implemented and ENFORCED at the install gate: `verifyFirmwareIntegrity` (state.js) verifies the downloaded bytes against the pinned trust list (`scripts/utils/firmware-trusted-keys.js`) alongside the SHA-256 check, and `evaluateInstallGate` refuses install unless both verdicts pass. Never weaken this gate; UI copy may claim verification only from the engine's runtime verdict (README → "Signature verification — enforced install gate").
 - Never expose any kit, module, or channel that 1.0 does not already expose. The release gates are the source of truth for what installs.
 
 Implementation discipline:

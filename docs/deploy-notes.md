@@ -198,3 +198,31 @@ change only. The per-asset-class fetch strategy, the `activate` purge of
 non-current `webflash-*` caches, the install gate, the manifest, firmware,
 `firmware/sources.json`, and `REQUIRED_CONFIGS` are all unchanged — no `app.css`
 rule other than the already-landed `overflow: clip` is touched.
+
+## Ed25519 signature enforcement — cache bump (webflash-v19)
+
+### Why this exists
+
+SEC-ED25519-ENFORCE-001 turned the Ed25519 firmware signature check into an
+enforced install gate: `verifyFirmwareIntegrity` in `scripts/state.js` now
+verifies the downloaded bytes against the pinned trust list alongside the
+unchanged SHA-256 check, and `evaluateInstallGate` refuses install unless both
+verdicts pass. The changed modules (`scripts/state.js`, `scripts/engine.js`,
+`scripts/install.js`, `scripts/data.js`) are app-shell assets served
+stale-while-revalidate, so without a bump returning installs would keep running
+the pre-enforcement gate until their cache happened to revalidate. A security
+gate change must not ride on incidental revalidation.
+
+### The bump
+
+- `index.html` `?v=` on the CSS links and the bootstrap loader, plus the
+  `webflash-app-shell` marker: `202607031` / `2026-07-03-1`.
+- `scripts/bootstrap.js` `APP_SHELL_BUILD`: `202607031`.
+- `sw.js` `CACHE_NAME`: `webflash-v18` to `webflash-v19`.
+
+Bumping `sw.js` changes the service-worker bytes, so returning visitors get an
+SW update on their next load: the new worker activates, the `activate` handler
+purges `webflash-v18`, and the precache re-primes `webflash-v19` with the
+enforced-gate modules. The per-asset-class fetch strategy, the `activate` purge
+of non-current `webflash-*` caches, the manifest, firmware,
+`firmware/sources.json`, and `REQUIRED_CONFIGS` are all unchanged.
