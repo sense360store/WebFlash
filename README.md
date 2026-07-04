@@ -401,22 +401,29 @@ channel, not just stable. A beta build missing `sha256` cannot be flashed.
   18-byte stubs already shipped in the repo do not trip the gate; surfaces
   as a warning if `allowPlaceholderSize: false` is set.
 
-### Signature verification — explicit non-claim
+### Signature verification — enforced install gate
 
-WebFlash deliberately does NOT use the words "signature verified",
-"cryptographically verified firmware", "signed firmware verified", or
-"verified signature" in any user-facing surface. The acceptable phrasings
-across UI and docs are:
+Browser-side Ed25519 signature verification is implemented and ENFORCED at
+install time. After the firmware download, the wizard verifies the bytes
+against the build's `signature_ed25519` using a public key pinned in
+`scripts/utils/firmware-trusted-keys.js` (`verifyFirmwareSignature`, invoked
+by `verifyFirmwareIntegrity` in `scripts/state.js`). The install gate
+(`evaluateInstallGate`) arms install only when BOTH the SHA-256 integrity
+check and the Ed25519 authenticity check pass; the `signature_verified`
+provenance check flips from `pending` to `pass`/`fail` based on the runtime
+result.
 
-- "Signature metadata present."
-- "Firmware includes signing metadata."
-- "SHA-256 metadata is present."
-- "Firmware integrity is checked separately after download."
-- "Browser-side signature verification is not yet implemented."
+In production mode only keys with `status: 'active'` may authorise an
+install. Signatures from `test_only` keys (such as the committed
+`dev-2026-01` fixture key), `superseded`, `revoked`, or unknown keys are
+refused with a specific machine-readable reason code even when the signature
+mathematically verifies. A missing, malformed, or tampered signature blocks
+install with a clear reason in the preflight panel.
 
-If browser-side signature verification is added later, flip the
-`signature_verified` check from `skip` to `pass`/`fail` and update this
-section.
+UI copy may claim verification ONLY when the engine's runtime verdict
+passed. Pre-verification states must use non-claim phrasings such as
+"Signature metadata present; authenticity will be verified before
+flashing." Never present metadata presence as a completed verification.
 
 ### Required manifest fields
 

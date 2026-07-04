@@ -28,11 +28,15 @@
  *   3. The view never owns a gate. If a check is blocking in 1.0, it is blocking in
  *      2.0.
  *
- * Trust non-claims carried by this seam:
- *   - No surface may claim cryptographic signature verification. The engine reports
- *     signature metadata only; the signature_verified check stays skip until real
- *     verification ships as a separate, explicit project. This seam exposes the
- *     same non-claim and adds none of its own.
+ * Trust claims carried by this seam:
+ *   - Cryptographic signature verification is ENFORCED. state.verifyFirmwareIntegrity
+ *     runs real Ed25519 verification of the downloaded bytes against the pinned
+ *     trust list (scripts/utils/firmware-trusted-keys.js) alongside the SHA-256
+ *     integrity check, and state.evaluateInstallGate refuses to arm install
+ *     unless BOTH verdicts pass. The signature_verified provenance check flips
+ *     from 'pending' to 'pass'/'fail' based on that runtime result; a missing,
+ *     tampered, or test_only-key signature blocks install in production mode.
+ *     No surface may claim verification the engine has not actually performed.
  *   - This seam exposes only what 1.0 already exposes. It does not surface any kit,
  *     module, or channel the 1.0 engine does not already expose.
  *
@@ -49,9 +53,10 @@
  * real manifest builds by config_string without touching the 1.0 DOM or the shared
  * `configuration` object. PR 5 (Install gate on the real engine) added two more
  * view-agnostic bindings on the same principle: `state.verifyFirmwareIntegrity`
- * (SHA-256 verification of the downloaded bytes via SubtleCrypto, owned by
- * state.js) and `state.evaluateInstallGate` (the pure composite gate over
- * provenance, integrity, freshness, service-worker, the seven-tier channel
+ * (SHA-256 integrity AND Ed25519 authenticity verification of the downloaded
+ * bytes via SubtleCrypto, owned by state.js) and `state.evaluateInstallGate`
+ * (the pure composite gate over provenance, integrity + authenticity,
+ * freshness, service-worker, the seven-tier channel
  * acknowledgement, and the before-you-flash acknowledgement), plus the
  * `capabilities` namespace for the desktop / Web Serial / secure-context decision.
  * This module remains a facade only; every export is a live reference to the real
@@ -235,10 +240,13 @@ export const state = Object.freeze({
     getManifestMetadataForAbout,
     resolveCompatibleFirmware,
     // PR 5 — view-agnostic install-gate bindings. verifyFirmwareIntegrity runs
-    // SHA-256 verification of the downloaded bytes against the manifest;
-    // evaluateInstallGate folds every engine verdict (provenance, integrity,
-    // freshness, service-worker, channel acknowledgement, before-you-flash) into
-    // a single machine-readable gate result keyed by INSTALL_GATE_CHECK_IDS.
+    // SHA-256 verification of the downloaded bytes against the manifest AND
+    // Ed25519 signature verification of the same bytes against the pinned
+    // trust list; evaluateInstallGate folds every engine verdict (provenance,
+    // integrity, authenticity, freshness, service-worker, channel
+    // acknowledgement, before-you-flash) into a single machine-readable gate
+    // result keyed by INSTALL_GATE_CHECK_IDS and refuses install unless the
+    // hash and signature verdicts BOTH pass.
     verifyFirmwareIntegrity,
     evaluateInstallGate,
     INSTALL_GATE_CHECK_IDS,

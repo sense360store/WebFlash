@@ -5,8 +5,9 @@
    install gate, composed from the engine:
      - capability detection (Web Serial, secure context) via engine.capabilities,
      - static provenance via engine.provenance.validateFirmwareProvenance,
-     - SHA-256 verification of the downloaded bytes via
-       engine.state.verifyFirmwareIntegrity (SubtleCrypto in state.js),
+     - SHA-256 integrity AND Ed25519 authenticity verification of the
+       downloaded bytes via engine.state.verifyFirmwareIntegrity
+       (SubtleCrypto in state.js; both verdicts must pass),
      - manifest freshness via engine.freshness.checkManifestFreshness,
      - service-worker update via engine.swUpdate.getServiceWorkerState,
      - the seven-tier channel acknowledgement, bound to the firmware-identity
@@ -792,8 +793,9 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
       recompute();
     })();
 
-    // SHA-256 integrity of the downloaded bytes (skipped when no build, in
-    // which case the verify row stays a blocking pending state).
+    // SHA-256 integrity + Ed25519 authenticity of the downloaded bytes
+    // (skipped when no build, in which case the verify row stays a blocking
+    // pending state).
     if (build) {
       (async () => {
         try {
