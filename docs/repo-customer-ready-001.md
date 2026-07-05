@@ -53,7 +53,7 @@ repository. The esphome-public counterpart lives at
 
 | Step | Status | PR | Notes |
 |---|---|---|---|
-| S2 | EXECUTED | #TBD | LICENSE (D1), NOTICE + README §License notice (D2), SUPPORT.md (D3), CONTRIBUTING.md, flash failure and firmware request issue templates, PULL_REQUEST_TEMPLATE.md, this file. |
+| S2 | EXECUTED | [#576](https://github.com/sense360store/WebFlash/pull/576) | LICENSE (D1), NOTICE + README §License notice (D2), SUPPORT.md (D3), CONTRIBUTING.md, flash failure and firmware request issue templates, PULL_REQUEST_TEMPLATE.md, this file. |
 | S4 | PENDING | — | WebFlash README front door per D5. |
 | S6 | PENDING | — | WebFlash link checker CI workflow. |
 | S7 | PENDING | — | Advisory DRAFT per D4. |
