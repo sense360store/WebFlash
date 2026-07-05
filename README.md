@@ -974,8 +974,8 @@ WebFlash provides pre-compiled firmware binaries for plug-and-play browser-based
 - **DEVELOPER.md**: Maintainer guide for publishing firmware
 - **TROUBLESHOOTING.md**: Detailed troubleshooting steps
 - **docs/sense360-webflash-status.md**: Canonical WebFlash Sense360 product & release status (what installs today, what is preview-only, what is blocked)
-- **docs/release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md**: WebFlash mirror of the upstream `sense360store/esphome-public` first-release gate checklist (`docs/first-release-gates.md`) — installable stable path, preview product, blocked room bundles, blocked fan-control variants, and the no-new-exposure statement
-- **docs/release-gates/WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001.md**: WebFlash-side no-publish operator handoff mirroring the upstream first-release dry-run checklist (`docs/first-release-dryrun-checklist.md`) — current stable config string, expected artifact name pattern, upstream release-note source, checksum/source-update handoff, WebFlash import expectations, and the no-publish/no-exposure + post-import verification checklists
+- **docs/release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md**: WebFlash mirror of the upstream `sense360store/esphome-public` first-release gate checklist (formerly `docs/first-release-gates.md`, archived upstream — see the upstream `docs/archive-index.md`) — installable stable path, preview product, blocked room bundles, blocked fan-control variants, and the no-new-exposure statement
+- **docs/release-gates/WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001.md**: WebFlash-side no-publish operator handoff mirroring the upstream first-release dry-run checklist (formerly `docs/first-release-dryrun-checklist.md`, archived upstream — see the upstream `docs/archive-index.md`) — current stable config string, expected artifact name pattern, upstream release-note source, checksum/source-update handoff, WebFlash import expectations, and the no-publish/no-exposure + post-import verification checklists
 - **FEATURES.md**: Deprecated — redirects to the canonical status doc above
 
 ## Project Structure
