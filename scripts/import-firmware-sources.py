@@ -418,8 +418,9 @@ def assert_no_default_credentials(
     This scan governs what may be NEWLY imported. The already-staged skip
     path (``find_staged_pinned_asset``) deliberately does not re-scan: the
     previously published binaries predate the upstream fix and stay
-    published until the tracked rebuild + clean re-import lands (see
-    UPCOMING_PR.md WF-H1-REIMPORT-CLEAN-001). Any genuine re-import of those
+    published until the tracked rebuild + clean re-import lands (tracked as
+    WF-H1-REIMPORT-CLEAN-001; the UPCOMING_PR.md queue tracker was retired,
+    see docs/archive-index.md). Any genuine re-import of those
     assets (changed pin, removed staged file) takes this full path and is
     refused here.
     """

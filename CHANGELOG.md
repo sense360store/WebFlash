@@ -100,7 +100,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   TRIAC is absent everywhere; the stable build has no channel-ack / freshness
   false-blocker; preview bundles stay `channel:preview`-gated. Added the
   smoke-record section to `docs/sense360-webflash-status.md` and the queue rows in
-  `UPCOMING_PR.md`. **No firmware imported, no runtime surface changed** —
+  `UPCOMING_PR.md` (since retired; see `docs/archive-index.md`). **No firmware imported, no runtime surface changed** —
   `manifest.json` (9 builds), `firmware/sources.json`, `REQUIRED_CONFIGS`,
   `scripts/data/kits.json`, `scripts/data/simple-bundles.js`,
   `scripts/simple-install.js`, `index.html`, `sw.js`, and every workflow are
@@ -134,7 +134,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and `docs/live-smoke-easy-bundle-picker-fan-expansion.md` (since archived; see `docs/archive-index.md`);
   updated `docs/live-smoke-easy-bundle-picker.md`,
   `docs/webflash-import-readiness-matrix.md`, `docs/sense360-webflash-status.md`,
-  and `UPCOMING_PR.md`. **No firmware imported** — upstream #713 published no
+  and `UPCOMING_PR.md` (since retired; see `docs/archive-index.md`). **No firmware imported** — upstream #713 published no
   artifact (compile-pending), so today the gate returns nothing and the picker
   shows exactly the six base bundles. `manifest.json` (9 builds),
   `firmware/sources.json`, `REQUIRED_CONFIGS`, `scripts/data/kits.json`, and the

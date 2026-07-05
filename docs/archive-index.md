@@ -47,3 +47,5 @@ deleted as-is — never rewritten before deletion.
 | `docs/ux-roadmap.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
 | `docs/wf-manifest-freshness-race-diagnosis.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
 | `docs/expected-surface-fixture.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `UPCOMING_PR.md` | `eda21971ada67c570ecfc15ab795c0d62e215e91` | REMOVE (queue snapshot in the Step P2.3 PR description; standing invariants moved verbatim to `docs/standing-invariants.md`) | 2026-07-05 |
+| `docs/pr-comment.md` | `eda21971ada67c570ecfc15ab795c0d62e215e91` | REMOVE | 2026-07-05 |
