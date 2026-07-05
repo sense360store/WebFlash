@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - **WF-IMPORT-PWM-001 closure note (docs-only, record-only).** Added
-  [`docs/wf-import-pwm-001-closure.md`](docs/wf-import-pwm-001-closure.md)
+  `docs/wf-import-pwm-001-closure.md` (since archived; see `docs/archive-index.md`)
   recording the SELV FanPWM publish-and-host rehearsal as CLOSED: the FanPWM SELV
   room bundle `Ceiling-POE-VentIQ-FanPWM-RoomIQ` is published upstream as a real
   preview artifact (`Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin`,
@@ -37,7 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   five rows into `__tests__/fixtures/esphome-product-catalog.json` (status
   `hardware-pending` + the eligibility block) and rebaselined the build-count /
   source-list / readiness test pins from 9 to 14 builds. Import-proof at
-  [`docs/fan-bundle-preview-import-proof.md`](docs/fan-bundle-preview-import-proof.md).
+  `docs/fan-bundle-preview-import-proof.md` (since archived; see `docs/archive-index.md`).
   **Import-only:** no kit card added (`scripts/data/kits.json` stays at six;
   surfacing is the follow-up `WF2-FAN-EXPANSION-001`), no install gate / engine /
   view / `scripts/install.js` change, `REQUIRED_CONFIGS` unchanged
@@ -83,7 +83,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   fan-control expansion (`WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001`) landed, and
   after the standalone FanRelay / FanPWM / FanDAC manual-previews were imported.
   Added the consolidated current-state checklist at
-  [`docs/live-smoke-easy-bundle-picker-current.md`](docs/live-smoke-easy-bundle-picker-current.md)
+  `docs/live-smoke-easy-bundle-picker-current.md` (since archived; see `docs/archive-index.md`)
   and the deterministic guard
   [`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](__tests__/wf-easy-bundle-picker-live-smoke.test.js),
   pinned against the live `manifest.json` (9 builds): all six base bundles resolve
@@ -131,7 +131,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   [`scripts/state.js`](scripts/state.js). Bumped `CACHE_NAME` (`webflash-v13`), the
   cache-bust token (`202606016`), and the app-shell marker (`2026-06-01-6`). Added
   [`__tests__/wf-easy-bundle-picker-fan-expansion.test.js`](__tests__/wf-easy-bundle-picker-fan-expansion.test.js)
-  and [`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](docs/live-smoke-easy-bundle-picker-fan-expansion.md);
+  and `docs/live-smoke-easy-bundle-picker-fan-expansion.md` (since archived; see `docs/archive-index.md`);
   updated `docs/live-smoke-easy-bundle-picker.md`,
   `docs/webflash-import-readiness-matrix.md`, `docs/sense360-webflash-status.md`,
   and `UPCOMING_PR.md`. **No firmware imported** — upstream #713 published no
@@ -177,7 +177,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   cache-bust token + `CACHE_NAME` (`webflash-v12`). Added
   [`__tests__/wf-easy-bundle-picker.test.js`](__tests__/wf-easy-bundle-picker.test.js)
   and the live-smoke checklist
-  [`docs/live-smoke-easy-bundle-picker.md`](docs/live-smoke-easy-bundle-picker.md).
+  `docs/live-smoke-easy-bundle-picker.md` (since archived; see `docs/archive-index.md`).
   **Unchanged:** every firmware binary, `manifest.json` (still 9 builds),
   `firmware/sources.json`, `REQUIRED_CONFIGS`
   (`["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`, production-only),

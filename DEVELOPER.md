@@ -6,7 +6,7 @@ This guide covers firmware publishing, manifest generation, and deployment workf
 
 WebFlash uses automated manifest generation to maintain firmware catalogs. All manifests are generated from firmware files - manual editing is not required.
 
-See [`docs/wizard-ux-roadmap.md`](docs/wizard-ux-roadmap.md) for the live-wizard UX audit (WF-UX-001) and the PR sequence (`WF-UX-QUICK-001` through `WF-UX-007`, plus the operator-only `WF-HW-TEST-001` / `WF-HW-TEST-002` chain) tracking wizard-facing improvements. The roadmap is docs-only and does not change runtime UI behaviour, manifest generation, or any of the publishing steps documented below. The operator-validation container for the LED preview flash path lives at [`docs/led-preview-webflash-proof.md`](docs/led-preview-webflash-proof.md) (status: **pending — operator hardware test required**). WF-HW-TEST-001 captured the pre-flight live-deployment evidence and operator procedure; WF-HW-TEST-002 was the planned operator-evidence-collection follow-up but **no operator evidence was supplied**, so proof rows stay pending — LED preview channel, FanTRIAC blocked status, `REQUIRED_CONFIGS`, kits, manifest, firmware, and workflow surfaces are unchanged by WF-HW-TEST-002, and `S360-300-BENCH-001` / RELEASE-007 remain separate gates.
+See [`docs/wizard-ux-roadmap.md`](docs/wizard-ux-roadmap.md) for the live-wizard UX audit (WF-UX-001) and the PR sequence (`WF-UX-QUICK-001` through `WF-UX-007`, plus the operator-only `WF-HW-TEST-001` / `WF-HW-TEST-002` chain) tracking wizard-facing improvements. The roadmap is docs-only and does not change runtime UI behaviour, manifest generation, or any of the publishing steps documented below. The operator-validation container for the LED preview flash path (`docs/led-preview-webflash-proof.md`, archived — see [`docs/archive-index.md`](docs/archive-index.md)) recorded no operator evidence before archiving (status: **pending — operator hardware test required**). WF-HW-TEST-001 captured the pre-flight live-deployment evidence and operator procedure; WF-HW-TEST-002 was the planned operator-evidence-collection follow-up but **no operator evidence was supplied**, so proof rows stay pending — LED preview channel, FanTRIAC blocked status, `REQUIRED_CONFIGS`, kits, manifest, firmware, and workflow surfaces are unchanged by WF-HW-TEST-002, and `S360-300-BENCH-001` / RELEASE-007 remain separate gates.
 
 ## Prerequisites
 
@@ -75,9 +75,10 @@ Or run [`firmware-import.yml`](.github/workflows/firmware-import.yml) via
 `workflow_dispatch` to do the same in CI; it auto-commits the result to the
 branch you dispatch from and never auto-merges or deploys directly.
 
-See [`docs/firmware-import.md`](docs/firmware-import.md) for the full
-contract: required release-body sections, blocked tokens, sidecar provenance
-fields, and the smoke-check pipeline.
+The full contract record (required release-body sections, blocked tokens,
+sidecar provenance fields, and the smoke-check pipeline) lived in
+`docs/firmware-import.md`, archived — see
+[`docs/archive-index.md`](docs/archive-index.md).
 
 ### Remove Firmware
 ```bash
@@ -148,8 +149,8 @@ The naming-policy validator (`scripts/validate-naming-policy.js`) actively rejec
 ### Examples
 
 These are the application firmware artifacts WebFlash currently ships. Both
-are produced by the cross-repo importer (see
-[`docs/firmware-import.md`](docs/firmware-import.md)) from
+are produced by the cross-repo importer (contract record archived; see
+[`docs/archive-index.md`](docs/archive-index.md)) from
 `sense360store/esphome-public` and live under `firmware/configurations/`
 with matching `.meta.json` sidecars.
 
@@ -351,8 +352,9 @@ open http://localhost:5000
 **For new shipping firmware, prefer the importer.** Declare the upstream
 source in [`firmware/sources.json`](firmware/sources.json) and run
 [`scripts/import-firmware-sources.py`](scripts/import-firmware-sources.py)
-(or dispatch `.github/workflows/firmware-import.yml`); see
-[`docs/firmware-import.md`](docs/firmware-import.md) for the full contract.
+(or dispatch `.github/workflows/firmware-import.yml`); the full contract
+record (`docs/firmware-import.md`) is archived — see
+[`docs/archive-index.md`](docs/archive-index.md).
 The importer fetches the upstream `.bin`, verifies its SHA256 against the
 upstream `checksums-sha256.txt`, enforces the per-source `block_tokens`
 allowlist, and writes the `<asset>.meta.json` sidecar that
@@ -620,7 +622,8 @@ preview recognition` describe block that pins both halves of the
 contract: the fixture exposes the LED preview as `status: preview`,
 and every active WebFlash surface explicitly asserts it does not
 reference the LED preview today. WF-LED-001
-added [`docs/led-preview-import-plan.md`](docs/led-preview-import-plan.md)
+added `docs/led-preview-import-plan.md` (archived — see
+[`docs/archive-index.md`](docs/archive-index.md))
 — a docs-only forward-looking plan that records the upstream proof
 fields required before WebFlash may import, the future
 `firmware/sources.json` source entry shape (with
@@ -686,8 +689,8 @@ landed as of WF-LED-003.
 
 WF-PRODUCT-004 then adds an advisory readiness validator at
 [`scripts/validate-product-import-readiness.js`](scripts/validate-product-import-readiness.js)
-with the contract doc at
-[`docs/product-import-readiness.md`](docs/product-import-readiness.md)
+with the contract doc `docs/product-import-readiness.md` (archived — see
+[`docs/archive-index.md`](docs/archive-index.md))
 and the Jest pin at
 [`__tests__/product-import-readiness.test.js`](__tests__/product-import-readiness.test.js).
 The validator classifies every upstream catalog entry against four

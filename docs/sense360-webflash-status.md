@@ -24,7 +24,7 @@ repository state**, not aspiration.
 |---|---|---|
 | **Sense360 product roadmap / lifecycle status** | `docs/sense360-roadmap-status.md` in [`sense360store/esphome-public`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md) | Upstream firmware repo |
 | **What WebFlash can actually install** | `manifest.json` + `firmware/sources.json` + `REQUIRED_CONFIGS` in this repo | WebFlash |
-| **Catalog → WebFlash eligibility rules** | [`docs/product-import-readiness.md`](product-import-readiness.md) + [`scripts/validate-product-import-readiness.js`](../scripts/validate-product-import-readiness.js) | WebFlash |
+| **Catalog → WebFlash eligibility rules** | [`scripts/validate-product-import-readiness.js`](../scripts/validate-product-import-readiness.js) (contract doc `docs/product-import-readiness.md` archived — see [`docs/archive-index.md`](archive-index.md)) | WebFlash |
 | **Per-family import readiness + follow-up PR slots** | [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) | WebFlash |
 
 WebFlash is **downstream** of the upstream roadmap. The upstream
@@ -217,7 +217,8 @@ bench, compliance, safety, or commercial-availability proof is claimed. The
 FanDAC ↔ AirIQ DAC-bus mutex is unchanged. Normal customers should use the stable
 Bathroom PoE build `Ceiling-POE-VentIQ-RoomIQ`. **FanTRIAC was not imported**
 (it stays build-blocked and excluded). Full import-proof at
-[`docs/preview-import-automation-proof.md`](preview-import-automation-proof.md).
+`docs/preview-import-automation-proof.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)).
 
 ## Full-composition fan-bundle previews (WF-IMPORT-FAN-BUNDLES-001)
 
@@ -260,7 +261,8 @@ verified. The `fandac_conflicts_with_airiq` mutex (`scripts/data.js` +
 wizard. **FanTRIAC was not imported** (build-blocked, excluded). No hardware /
 bench / compliance / safety / commercial-availability proof claimed. Full
 import-proof at
-[`docs/fan-bundle-preview-import-proof.md`](fan-bundle-preview-import-proof.md).
+`docs/fan-bundle-preview-import-proof.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)).
 
 ## Simple-install bundle picker (WF-EASY-BUNDLE-PICKER-001)
 
@@ -295,7 +297,8 @@ raw/custom module combination — all of which remain reachable only through
 **Advanced install**. `REQUIRED_CONFIGS`, `manifest.json` (9 builds),
 `firmware/sources.json`, and `scripts/data/kits.json` are unchanged; no firmware
 was imported. Live checklist:
-[`docs/live-smoke-easy-bundle-picker.md`](live-smoke-easy-bundle-picker.md).
+`docs/live-smoke-easy-bundle-picker.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)).
 
 ## Fan-control room bundles — declared + import-gated, not yet exposed (WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001)
 
@@ -324,7 +327,8 @@ upstream bench gate `FANDAC-I2C-ADDR-001` is PENDING and the address switch is
 **not** claimed physically verified. The definitions + gate + acknowledgement
 plumbing are staged so a future firmware-import PR lights up the matching card with
 no further wizard code change. TRIAC stays excluded. Live checklist:
-[`docs/live-smoke-easy-bundle-picker-fan-expansion.md`](live-smoke-easy-bundle-picker-fan-expansion.md).
+`docs/live-smoke-easy-bundle-picker-fan-expansion.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)).
 
 **Import readiness prepared (WF-FAN-BUNDLE-IMPORT-READINESS-001).** Upstream then
 recorded compile proof for the five bundles (upstream #716) and planned publication
@@ -384,15 +388,17 @@ true and visible:
    `REQUIRED_CONFIGS`, and **not** in `scripts/data/kits.json`. LED stable is
    blocked behind upstream `RELEASE-007` + bench proof `S360-300-BENCH-001` and
    the reserved `WF-LED-STABLE-001` import / `WF-REQUIRED-001` allowlist /
-   `WF-KIT-LED-001` kit decisions, plus the operator flash proof in
-   [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md)
-   (status: **pending**).
+   `WF-KIT-LED-001` kit decisions, plus the operator flash proof formerly
+   containered in `docs/led-preview-webflash-proof.md` (archived with no
+   operator evidence recorded — see [`docs/archive-index.md`](archive-index.md);
+   status: **pending**).
 3. **S360-410 PoE PSU blocker stays visible for broader bundle expansion.** PoE
    power is covered *transitively* today via the `power=poe` segment of
    Release-One and the LED preview — there is **no** standalone PoE-PSU build,
    and there is **no** importable firmware behind the additional room bundles
    (`S360-KIT-KITCHEN-P`, `S360-KIT-LIVING-P`, `S360-KIT-BEDROOM-P`,
-   `S360-KIT-CORRIDOR-P` in [`docs/webflash-bundle-sku-matrix.md`](webflash-bundle-sku-matrix.md)),
+   `S360-KIT-CORRIDOR-P` in `docs/webflash-bundle-sku-matrix.md`, archived —
+   see [`docs/archive-index.md`](archive-index.md)),
    which are naming-reference only. Broader PoE bundle expansion is therefore
    **blocked** until upstream ships the corresponding `RELEASE-…` artifacts; the
    reserved `WF-IMPORT-POE-410-001` slot is an expected no-op unless a distinct
@@ -443,7 +449,8 @@ All nine are at version **1.0.0**:
 
 Customer-facing Sense360 PoE **room bundle** SKUs (upstream
 `BUNDLE-SKU-MATRIX-001`) are mirrored for naming consistency in
-[`docs/webflash-bundle-sku-matrix.md`](webflash-bundle-sku-matrix.md). A bundle
+`docs/webflash-bundle-sku-matrix.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)). A bundle
 SKU is **not** a firmware identifier — only `S360-KIT-BATH-P` resolves to a
 **stable** installable WebFlash build; the other room bundles now resolve to
 imported **preview** builds (Advanced-install / preview-acknowledgement-gated)
@@ -564,8 +571,8 @@ do-not-change confirmation for the full surface statement.
 
 After the first preview firmware batch landed
 (`WF-PREVIEW-IMPORT-FIRST-BATCH-001`), the live / manual smoke checklist for the
-deployed page is recorded at
-[`docs/live-smoke-preview-import.md`](live-smoke-preview-import.md). It verifies
+deployed page is recorded at `docs/live-smoke-preview-import.md` (archived —
+see [`docs/archive-index.md`](archive-index.md)). It verifies
 on the live GitHub Pages deployment that **Simple install stays clean and
 stable-only** while **Advanced install can reach the new preview builds** behind
 the `channel:preview` acknowledgement with working release notes:
@@ -602,7 +609,8 @@ import-gated **fan-control expansion** (`WF-EASY-BUNDLE-PICKER-FAN-EXPANSION-001
 landed — and after the standalone FanRelay / FanPWM / FanDAC manual-previews were
 imported — the consolidated current-state live / manual smoke checklist for the
 deployed picker is recorded at
-[`docs/live-smoke-easy-bundle-picker-current.md`](live-smoke-easy-bundle-picker-current.md).
+`docs/live-smoke-easy-bundle-picker-current.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)).
 It verifies on the live GitHub Pages deployment that Simple install shows exactly
 the **six base bundle cards** with the stable Bathroom PoE bundle as the default,
 while every other surface stays honest:
@@ -744,14 +752,15 @@ remain the source of truth in their own lanes and are *not* replaced here:
   sequence (WF-UX-*). [`docs/ux-roadmap.md`](ux-roadmap.md) is its source review.
 - [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
   — per-family import classes + reserved follow-up PR identifiers.
-- [`docs/product-import-readiness.md`](product-import-readiness.md) — catalog
-  eligibility classifier contract.
-- [`docs/firmware-import.md`](firmware-import.md) — the importer mechanism.
-- [`docs/led-preview-import-plan.md`](led-preview-import-plan.md) /
-  [`docs/led-preview-webflash-proof.md`](led-preview-webflash-proof.md) — LED
-  preview import shape + operator proof container.
-- [`docs/webflash-bundle-sku-matrix.md`](webflash-bundle-sku-matrix.md) — room
-  bundle SKU naming mirror.
+- `docs/product-import-readiness.md` — catalog eligibility classifier
+  contract (archived — see [`docs/archive-index.md`](archive-index.md)).
+- `docs/firmware-import.md` — the importer mechanism record (archived — see
+  [`docs/archive-index.md`](archive-index.md)).
+- `docs/led-preview-import-plan.md` / `docs/led-preview-webflash-proof.md` —
+  LED preview import shape + operator proof container (both archived — see
+  [`docs/archive-index.md`](archive-index.md)).
+- `docs/webflash-bundle-sku-matrix.md` — room bundle SKU naming mirror
+  (archived — see [`docs/archive-index.md`](archive-index.md)).
 
 ## Do-not-change list (this PR)
 

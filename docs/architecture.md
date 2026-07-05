@@ -36,8 +36,9 @@ The pipeline turns firmware binaries into the catalog the browser reads:
   dispatched by [`.github/workflows/firmware-import.yml`](../.github/workflows/firmware-import.yml)),
   which fetches each upstream `.bin` from `sense360store/esphome-public`,
   verifies its SHA-256 against the upstream checksums, enforces the per-source
-  `block_tokens` allowlist, and writes a `<asset>.meta.json` sidecar. See
-  [`docs/firmware-import.md`](firmware-import.md) for the full contract.
+  `block_tokens` allowlist, and writes a `<asset>.meta.json` sidecar. The
+  full contract record (`docs/firmware-import.md`) is archived — see
+  [`docs/archive-index.md`](archive-index.md).
 - [`scripts/gen-manifests.py`](../scripts/gen-manifests.py) then scans
   `firmware/`, parses each filename via the canonical naming pattern, and
   **generates** a single `manifest.json` (with per-build metadata, hashes, and a
@@ -145,8 +146,8 @@ section, and the per-token naming rules in
 [`docs/webflash-contract.md`](https://github.com/sense360store/esphome-public/blob/main/docs/webflash-contract.md).
 Because config strings and artifact names were held byte-identical throughout
 that refactor, the WebFlash import surface was unaffected — re-audited and
-recorded under `WEBFLASH-ARCH-SYNC-001` in
-[`docs/product-import-readiness.md`](product-import-readiness.md).
+recorded under `WEBFLASH-ARCH-SYNC-001` in `docs/product-import-readiness.md`
+(archived — see [`docs/archive-index.md`](archive-index.md)).
 
 For which upstream products WebFlash actually mirrors today (and which are
 preview-only, blocked, or unimported), see the canonical
@@ -207,10 +208,11 @@ operator-facing mirror.
   per-module deep dive.
 - [`docs/sense360-webflash-status.md`](sense360-webflash-status.md) — canonical
   product / release status (what installs today).
-- [`docs/firmware-import.md`](firmware-import.md) — the cross-repo importer
-  mechanism.
+- `docs/firmware-import.md` — the cross-repo importer mechanism record
+  (archived — see [`docs/archive-index.md`](archive-index.md)).
 - [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
-  / [`docs/product-import-readiness.md`](product-import-readiness.md) — import
+  / `docs/product-import-readiness.md` (archived — see
+  [`docs/archive-index.md`](archive-index.md)) — import
   eligibility classes and the catalog eligibility validator.
 - [`README.md`](../README.md) — user-facing guide for flashing devices.
 - [`sense360store/esphome-public` → `docs/system-architecture.md`](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md)
