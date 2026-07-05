@@ -477,8 +477,10 @@ the preview exposure above never implies stability, default, or buyability.
 ## First-release gate sync (WEBFLASH-FIRST-RELEASE-GATES-SYNC-001)
 
 Upstream `sense360store/esphome-public` merged the canonical first-release gate
-checklist `PRE-HW-PREP-FIRST-RELEASE-GATES-001` (PR #679) and now carries it at
-[`docs/first-release-gates.md`](https://github.com/sense360store/esphome-public/blob/main/docs/first-release-gates.md).
+checklist `PRE-HW-PREP-FIRST-RELEASE-GATES-001` (PR #679), formerly carried at
+`docs/first-release-gates.md` — archived under `DOCS-DISPOSITION-001`; the
+archive record and recovery SHA live in the upstream
+[`docs/archive-index.md`](https://github.com/sense360store/esphome-public/blob/main/docs/archive-index.md).
 The WebFlash-side mirror, stated against this repo's live install surface, is
 [`docs/release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md`](release-gates/WEBFLASH-FIRST-RELEASE-GATES-SYNC-001.md).
 It re-states, in WebFlash terms, what the tables above already encode:
@@ -504,8 +506,10 @@ no-new-exposure statement and no-drift table for the full surface confirmation.
 ## First-release dry-run handoff (WEBFLASH-FIRST-RELEASE-DRYRUN-HANDOFF-001)
 
 Upstream `sense360store/esphome-public` merged the first-release **dry-run
-checklist** `FIRST-RELEASE-DRYRUN-CHECKLIST-001` (PR #680) at
-[`docs/first-release-dryrun-checklist.md`](https://github.com/sense360store/esphome-public/blob/main/docs/first-release-dryrun-checklist.md)
+checklist** `FIRST-RELEASE-DRYRUN-CHECKLIST-001` (PR #680), formerly at
+`docs/first-release-dryrun-checklist.md` (archived under `DOCS-DISPOSITION-001`
+— see the upstream
+[`docs/archive-index.md`](https://github.com/sense360store/esphome-public/blob/main/docs/archive-index.md))
 — an operator checklist that rehearses the publish side of the first-release
 path (release notes → build → artifact naming → checksums) with non-publishing
 lanes and only *describes* the WebFlash import / sign / manifest / deploy steps
@@ -686,8 +690,10 @@ and the WebFlash manifest wins for *what flashes today*.
 - [`docs/sense360-roadmap-status.md`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md)
   — single canonical upstream roadmap / status / blocker / upcoming-PR doc
   (`DOCS-CONSOLIDATION-ROADMAP-001`, verified by `DOCS-CONSOLIDATION-VERIFY-001`).
-- [`docs/sense360-room-bundles.md`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-room-bundles.md)
-  — canonical room bundle SKU definitions (`BUNDLE-SKU-MATRIX-001`).
+- `docs/sense360-room-bundles.md` — the former canonical room bundle SKU
+  definitions (`BUNDLE-SKU-MATRIX-001`), archived under `DOCS-DISPOSITION-001`;
+  archive record and recovery SHA via the upstream
+  [`docs/archive-index.md`](https://github.com/sense360store/esphome-public/blob/main/docs/archive-index.md).
 - _There is no `docs/sense360-webflash-status.md` upstream_ — **this file** is
   the canonical WebFlash-side status doc, downstream of the upstream roadmap.
 
