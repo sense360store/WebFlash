@@ -85,7 +85,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Added the consolidated current-state checklist at
   `docs/live-smoke-easy-bundle-picker-current.md` (since archived; see `docs/archive-index.md`)
   and the deterministic guard
-  [`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](__tests__/wf-easy-bundle-picker-live-smoke.test.js),
+  `__tests__/wf-easy-bundle-picker-live-smoke.test.js`,
   pinned against the live `manifest.json` (9 builds): all six base bundles resolve
   to a live build with the stable `S360-KIT-BATH-P` (`Ceiling-POE-VentIQ-RoomIQ`)
   as the default / recommended / only default-selectable choice; the Bathroom
@@ -118,10 +118,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   import-readiness gate (`isFanControlBundleImportReady` /
   `getExposableFanControlBundles` / `isFullRoomBundle` / `validateFanControlBundle`
   / `bundleRequiresDacAddressAcknowledgement`) to
-  [`scripts/data/simple-bundles.js`](scripts/data/simple-bundles.js); a
+  `scripts/data/simple-bundles.js`; a
   fan-control card is exposed **only** when its exact firmware `config_string` is
   present in the live `manifest.json`. Extended
-  [`scripts/simple-install.js`](scripts/simple-install.js) to inject import-ready
+  `scripts/simple-install.js` to inject import-ready
   fan-control cards into the picker and to AND a third **analog-fan
   address-switch** acknowledgement (GP8403 IC1 `0x58` / IC2 `0x5A`; `0x59`
   forbidden) into the authoritative pre-flash gate alongside the fan-control
@@ -130,7 +130,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   additive `window.webflashManifestConfigStrings` global from
   [`scripts/state.js`](scripts/state.js). Bumped `CACHE_NAME` (`webflash-v13`), the
   cache-bust token (`202606016`), and the app-shell marker (`2026-06-01-6`). Added
-  [`__tests__/wf-easy-bundle-picker-fan-expansion.test.js`](__tests__/wf-easy-bundle-picker-fan-expansion.test.js)
+  `__tests__/wf-easy-bundle-picker-fan-expansion.test.js`
   and `docs/live-smoke-easy-bundle-picker-fan-expansion.md` (since archived; see `docs/archive-index.md`);
   updated `docs/live-smoke-easy-bundle-picker.md`,
   `docs/webflash-import-readiness-matrix.md`, `docs/sense360-webflash-status.md`,
@@ -150,7 +150,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   recommended choice; the imported preview room bundles now appear behind clear
   **Preview** labels and the existing acknowledgement gates. Added a presentation-
   only bundle data source
-  ([`scripts/data/simple-bundles.js`](scripts/data/simple-bundles.js)) describing
+  (`scripts/data/simple-bundles.js`) describing
   six customer bundle choices — `S360-KIT-BATH-P` (Bathroom — PoE, **stable /
   default**), `S360-KIT-KITCHEN-P` (`Ceiling-POE-AirIQ-RoomIQ`),
   `S360-KIT-BEDROOM-P` (`Ceiling-POE-RoomIQ`), `S360-KIT-LIVING-P` and
@@ -170,12 +170,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   [`index.html`](index.html) Simple-install section to lead with "Choose your
   Sense360 kit" + the six bundle cards (technical metadata stays collapsed in the
   Technical details disclosure), extended
-  [`scripts/simple-install.js`](scripts/simple-install.js) with the picker
+  `scripts/simple-install.js` with the picker
   controller, added bundle-picker styles to
   [`css/wizard-style.css`](css/wizard-style.css), registered
   `scripts/data/simple-bundles.js` in `sw.js` `SCRIPT_MODULES`, and bumped the
   cache-bust token + `CACHE_NAME` (`webflash-v12`). Added
-  [`__tests__/wf-easy-bundle-picker.test.js`](__tests__/wf-easy-bundle-picker.test.js)
+  `__tests__/wf-easy-bundle-picker.test.js`
   and the live-smoke checklist
   `docs/live-smoke-easy-bundle-picker.md` (since archived; see `docs/archive-index.md`).
   **Unchanged:** every firmware binary, `manifest.json` (still 9 builds),

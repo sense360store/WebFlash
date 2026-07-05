@@ -94,8 +94,10 @@ available on iOS, Android Chrome, any mobile browser, Firefox, or Safari — so 
 those platforms the install path simply cannot work.
 
 WebFlash therefore explicitly targets desktop Chromium. Capability detection
-lives in [`scripts/capabilities.js`](../scripts/capabilities.js) and surfaces an
-unsupported-browser banner via [`scripts/init-review.js`](../scripts/init-review.js).
+lives in [`scripts/capabilities.js`](../scripts/capabilities.js) (reached through
+the `engine.capabilities` facade), and the install view
+([`scripts/install.js`](../scripts/install.js)) surfaces the unsupported-browser
+banner.
 Do not add mobile-first layout assumptions or features that imply mobile is a
 supported runtime.
 
@@ -106,9 +108,10 @@ devices rather than implementing its own flash protocol. The wizard renders the
 upstream `<esp-web-install-button>` component (loaded from unpkg) and consumes
 the standard ESP Web Tools manifest schema (`name`, `version`,
 `builds[].chipFamily`, `builds[].parts[].path`/`offset`, `improv`, …). Connect /
-erase / write / verify is owned by the upstream component; WebFlash extends
-behaviour only through the documented overrides surface (e.g. `checkSameFirmware`
-in [`scripts/utils/esp-web-tools-overrides.js`](../scripts/utils/esp-web-tools-overrides.js)).
+erase / write / verify is owned by the upstream component; the install view
+([`scripts/install.js`](../scripts/install.js)) only renders the button, its
+unsupported / not-allowed fallback slots, and the surrounding gate UI, and
+observes the component's `state-changed` events for the flash lifecycle.
 
 ## Cross-repo contract: downstream of `sense360store/esphome-public`
 

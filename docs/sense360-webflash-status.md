@@ -268,8 +268,8 @@ import-proof at
 
 The default **Simple install** view is now an easy **bundle picker** over the
 supported customer bundle products (presentation-only data source
-[`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js), wired by
-[`scripts/simple-install.js`](../scripts/simple-install.js)). It leads with
+`scripts/data/simple-bundles.js`, wired by
+`scripts/simple-install.js`). It leads with
 "Choose your Sense360 kit" and surfaces six bundle cards:
 
 | Bundle SKU | Card | `config_string` | Channel | Gate |
@@ -306,7 +306,7 @@ The Simple-install picker now **declares** five full-composition fan-control roo
 bundles and **import-gates** them on the live manifest. A fan-control card only
 ever appears once its exact firmware `config_string` is present in `manifest.json`
 (via `getExposableFanControlBundles` in
-[`scripts/data/simple-bundles.js`](../scripts/data/simple-bundles.js)).
+`scripts/data/simple-bundles.js`).
 
 | Bundle SKU | Card name | Firmware `config_string` | Acknowledgements | Exposed today? |
 |---|---|---|---|:---:|
@@ -335,7 +335,7 @@ recorded compile proof for the five bundles (upstream #716) and planned publicat
 (upstream #717) — still **no artifact**, so nothing is imported and all five cards
 stay hidden. WebFlash now stages the **expected import shape** for each future
 artifact in the non-runtime readiness descriptor
-[`scripts/data/fan-bundle-import-readiness.js`](../scripts/data/fan-bundle-import-readiness.js)
+`scripts/data/fan-bundle-import-readiness.js`
 (pinned by `__tests__/wf-fan-bundle-import-readiness.test.js`): the expected
 `config_string`, the expected canonical artifact filename
 (`Sense360-<config>-v1.0.0-preview.bin`) + `.meta.json` sidecar, the expected
@@ -596,7 +596,7 @@ the `channel:preview` acknowledgement with working release notes:
   still works, and **Rescue / recovery** stays available.
 
 The deterministic half of the checklist is locked by
-[`__tests__/live-smoke-preview-import.test.js`](../__tests__/live-smoke-preview-import.test.js)
+`__tests__/live-smoke-preview-import.test.js`
 (exactly nine builds, preview builds Advanced-only / acknowledgement-gated, Simple
 install resolves only to stable Bathroom PoE, preview release notes present, no
 TRIAC import (FanRelay / FanPWM / FanDAC are the deliberate manual-preview
@@ -638,7 +638,7 @@ while every other surface stays honest:
   notes open, and install-button gating stays authoritative.
 
 The deterministic half of the checklist is locked by
-[`__tests__/wf-easy-bundle-picker-live-smoke.test.js`](../__tests__/wf-easy-bundle-picker-live-smoke.test.js)
+`__tests__/wf-easy-bundle-picker-live-smoke.test.js`
 (exactly nine builds; six base bundles backed by live builds; the five
 fan-control expansion configs absent so no card is exposable; the import gate
 lights a card only on its exact full-composition config; standalone FanPWM /
