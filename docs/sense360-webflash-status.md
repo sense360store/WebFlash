@@ -25,7 +25,7 @@ repository state**, not aspiration.
 | **Sense360 product roadmap / lifecycle status** | `docs/sense360-roadmap-status.md` in [`sense360store/esphome-public`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md) | Upstream firmware repo |
 | **What WebFlash can actually install** | `manifest.json` + `firmware/sources.json` + `REQUIRED_CONFIGS` in this repo | WebFlash |
 | **Catalog → WebFlash eligibility rules** | [`scripts/validate-product-import-readiness.js`](../scripts/validate-product-import-readiness.js) (contract doc `docs/product-import-readiness.md` archived — see [`docs/archive-index.md`](archive-index.md)) | WebFlash |
-| **Per-family import readiness + follow-up PR slots** | [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) | WebFlash |
+| **Per-family import readiness + follow-up PR slots** | `docs/webflash-import-readiness-matrix.md` (archived — see [`docs/archive-index.md`](archive-index.md)) | WebFlash |
 
 WebFlash is **downstream** of the upstream roadmap. The upstream
 `docs/sense360-roadmap-status.md` is authoritative for product lifecycle
@@ -347,7 +347,8 @@ with everything **except** the human-pinned `expected_sha256`. This makes the fu
 per-config import PR small and mechanical. It imports no firmware, edits no
 `manifest.json` / `firmware/sources.json`, changes no `REQUIRED_CONFIGS`, adds no
 kit, and exposes no card. See
-[`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md) →
+`docs/webflash-import-readiness-matrix.md` (archived — see
+[`docs/archive-index.md`](archive-index.md)) →
 *Full-composition fan-control room bundles import posture*.
 
 ## Module availability snapshot
@@ -651,7 +652,8 @@ WebFlash is **downstream** of the upstream firmware roadmap. The authoritative
 near-term lane order lives upstream in
 [`docs/sense360-roadmap-status.md` §8](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md);
 the WebFlash-side import sequencing and per-family follow-up PR slots live in
-[`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
+`docs/webflash-import-readiness-matrix.md` (archived — see
+[`docs/archive-index.md`](archive-index.md))
 and the live queue in [`UPCOMING_PR.md`](../UPCOMING_PR.md). Each WebFlash import
 follow-up is **blocked behind** its upstream release artifact — none is started,
 unblocked, or reprioritised by this doc:
@@ -748,10 +750,12 @@ remain the source of truth in their own lanes and are *not* replaced here:
 
 - [`UPCOMING_PR.md`](../UPCOMING_PR.md) — live WebFlash PR queue (completed /
   active / blocked). Every queue-state-changing PR still updates it.
-- [`docs/wizard-ux-roadmap.md`](wizard-ux-roadmap.md) — wizard UX audit + PR
-  sequence (WF-UX-*). [`docs/ux-roadmap.md`](ux-roadmap.md) is its source review.
-- [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
-  — per-family import classes + reserved follow-up PR identifiers.
+- `docs/wizard-ux-roadmap.md` — wizard UX audit + PR sequence (WF-UX-*), with
+  `docs/ux-roadmap.md` as its source review (both archived — see
+  [`docs/archive-index.md`](archive-index.md)).
+- `docs/webflash-import-readiness-matrix.md` — per-family import classes +
+  reserved follow-up PR identifiers (archived — see
+  [`docs/archive-index.md`](archive-index.md)).
 - `docs/product-import-readiness.md` — catalog eligibility classifier
   contract (archived — see [`docs/archive-index.md`](archive-index.md)).
 - `docs/firmware-import.md` — the importer mechanism record (archived — see

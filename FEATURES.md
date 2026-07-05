@@ -22,9 +22,11 @@ list, that content has been removed in favour of the canonical sources below.
 - **Live WebFlash PR queue (completed / active / blocked):**
   [`UPCOMING_PR.md`](UPCOMING_PR.md).
 - **Wizard UX audit and PR sequence (WF-UX-\*):**
-  [`docs/wizard-ux-roadmap.md`](docs/wizard-ux-roadmap.md).
+  `docs/wizard-ux-roadmap.md` (archived — see
+  [`docs/archive-index.md`](docs/archive-index.md)).
 - **Per-family firmware import readiness + reserved follow-up PR slots:**
-  [`docs/webflash-import-readiness-matrix.md`](docs/webflash-import-readiness-matrix.md).
+  `docs/webflash-import-readiness-matrix.md` (archived — see
+  [`docs/archive-index.md`](docs/archive-index.md)).
 - **Catalog → WebFlash eligibility rules:** enforced by
   [`scripts/validate-product-import-readiness.js`](scripts/validate-product-import-readiness.js)
   and `__tests__/product-import-readiness.test.js`; the contract doc

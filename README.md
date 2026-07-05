@@ -22,7 +22,8 @@ acknowledgement, SHA-256 verification of the downloaded bytes, manifest
 freshness, service worker update, installability per the release gates, and the
 desktop only capability check) is owned by the engine (`scripts/state.js`,
 `scripts/utils/*`, `scripts/services/*`), which the migration left unchanged. See
-[`docs/webflash-2-migration.md`](docs/webflash-2-migration.md) and the decision
+`docs/webflash-2-migration.md` (archived — see
+[`docs/archive-index.md`](docs/archive-index.md)) and the decision
 record [`docs/adr/0001-webflash-2-view-over-engine.md`](docs/adr/0001-webflash-2-view-over-engine.md).
 
 ## Requirements

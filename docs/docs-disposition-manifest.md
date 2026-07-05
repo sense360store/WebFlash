@@ -542,7 +542,7 @@ Batch A (25 rows with zero hits): the remaining WebFlash ARCHIVE rows —
 | Step | Scope | PR | Date | Status |
 |---|---|---|---|---|
 | P2.1 | Refresh this copy from canonical; determine batch membership empirically; archive batch A (25 files deleted with `docs/archive-index.md` rows; inbound links from kept docs fixed) | #571 | 2026-07-05 | EXECUTED |
-| P2.2 | Archive batch B (8 rows above; referencing test/script/workflow lines updated in the same PR) | — | — | PENDING |
+| P2.2 | Archive batch B (8 rows above; referencing test/script/workflow lines updated in the same PR; no behavioural assertion pinned archived prose, so the assertion-retirement set was empty) | #572 | 2026-07-05 | EXECUTED |
 | P2.3 | `CLAUDE.md` KEEP-SANITISE; `docs/standing-invariants.md` created; REMOVE rows executed (`UPCOMING_PR.md`, `docs/pr-comment.md`) | — | — | PENDING |
 | P2.4 | Cross-repo relink per the Phase 2 handoff map above | — | — | PENDING |
 | P2.5 | Final link sweep and Phase 2 closure | — | — | PENDING |
