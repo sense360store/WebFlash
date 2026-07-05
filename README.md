@@ -996,7 +996,15 @@ WebFlash/
 
 ## License
 
-This project is for Sense360 device owners and authorized distributors.
+This project is licensed under the [MIT License](LICENSE), Copyright (c) 2026 Sense360.
+
+### Notice
+
+The firmware binaries under `firmware/` are build artifacts of
+[sense360store/esphome-public](https://github.com/sense360store/esphome-public)
+and are distributed under that repository's MIT terms. Their integrity is
+assured by ed25519 signing. They are not relicensed by this repository's
+licence. See [NOTICE](NOTICE).
 
 ## Support
 

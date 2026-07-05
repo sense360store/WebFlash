@@ -1,0 +1,87 @@
+name: Flash failure
+description: Report a problem flashing a Sense360 device with WebFlash.
+title: "[Flash failure] "
+labels:
+  - bug
+  - webflash
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, please check [TROUBLESHOOTING.md](https://github.com/sense360store/WebFlash/blob/main/TROUBLESHOOTING.md).
+        WebFlash only works in desktop Chromium based browsers (Chrome, Edge, Opera) on Windows, macOS, or Linux.
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      description: Which browser were you using?
+      options:
+        - Google Chrome
+        - Microsoft Edge
+        - Opera
+        - Other Chromium based browser
+        - Firefox (unsupported)
+        - Safari (unsupported)
+    validations:
+      required: true
+  - type: input
+    id: browser_version
+    attributes:
+      label: Browser version
+      description: Find this under the browser menu, Help, About.
+      placeholder: e.g. Chrome 138.0.7204.100
+    validations:
+      required: true
+  - type: dropdown
+    id: operating_system
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os_version
+    attributes:
+      label: Operating system version
+      placeholder: e.g. Windows 11 24H2, macOS 15.5, Ubuntu 24.04
+    validations:
+      required: false
+  - type: input
+    id: device_configuration
+    attributes:
+      label: Device configuration
+      description: The configuration you selected in the wizard, or the sharable config URL.
+      placeholder: e.g. Ceiling, PoE, VentIQ, RoomIQ
+    validations:
+      required: true
+  - type: input
+    id: firmware_version_channel
+    attributes:
+      label: Firmware version and channel
+      description: The version and release channel shown in the installer.
+      placeholder: e.g. v1.2.3 stable
+    validations:
+      required: false
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened
+      description: Describe the failure and where in the flow it occurred (connect, erase, write, verify).
+      placeholder: |
+        1. Selected the configuration
+        2. Connected the device
+        3. Install failed at ...
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Paste the output of the "Copy diagnostics" button if available. Sensitive values are redacted before copying.
+      render: text
+    validations:
+      required: false
