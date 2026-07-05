@@ -1,0 +1,46 @@
+name: Firmware request
+description: Request a firmware build for a hardware configuration the installer does not currently offer.
+title: "[Firmware request] "
+labels:
+  - enhancement
+  - firmware-request
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request a firmware build for a combination of Sense360 modules that WebFlash does not currently offer.
+        Note that preview channel builds are never auto selected and require an explicit acknowledgement in the installer, and that a request does not guarantee a build will ship.
+  - type: textarea
+    id: requested_configuration
+    attributes:
+      label: Requested configuration
+      description: List the Sense360 modules the build should support.
+      placeholder: |
+        e.g. Sense360 Core, Sense360 RoomIQ, Sense360 AirIQ, Sense360 LED, PoE PSU
+    validations:
+      required: true
+  - type: textarea
+    id: hardware_owned
+    attributes:
+      label: Hardware you own
+      description: Which Sense360 modules do you physically have? This helps prioritise builds that real devices can use.
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you trying to achieve with this configuration?
+    validations:
+      required: true
+  - type: dropdown
+    id: channel_expectation
+    attributes:
+      label: Acceptable release channel
+      description: Preview builds require an explicit acknowledgement in the installer and carry no hardware verification claim.
+      options:
+        - Stable only
+        - Preview is fine
+        - No preference
+    validations:
+      required: false
