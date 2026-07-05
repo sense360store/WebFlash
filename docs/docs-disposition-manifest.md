@@ -11,7 +11,7 @@ programme — it supersedes the copy of this manifest on WebFlash main (added
 there by WebFlash PR #569), whose guard-test execution notes are folded into
 the execution constraints below. Each disposition step is executed in its own
 follow-up PR (queued as `DOCS-DISPOSITION-001` in
-[`UPCOMING_PR.md`](../UPCOMING_PR.md)) and recorded in the
+[`UPCOMING_PR.md` (retired at Step 7)](archive-index.md)) and recorded in the
 [Execution log](#execution-log). No file was moved, merged, slimmed, or
 removed by the ratification PR itself.
 
@@ -143,20 +143,20 @@ Folded verbatim-in-substance from the copy of this manifest on WebFlash main
 
 | File | KB | Rationale |
 |---|---:|---|
-| `docs/hardware/s360-311-r4-pwm.md` | 225 | Duplicate pair with s360-311-r4-fanpwm.md (naming drift). Merge into one clean S360-311 reference per official naming, archive the audit trail. |
-| `docs/hardware/s360-312-r4-fandac.md` | 155 | See s360-312-r4-dac.md. |
-| `docs/hardware/s360-312-r4-dac.md` | 87 | Duplicate pair with s360-312-r4-fandac.md. Same treatment. |
-| `docs/hardware/s360-311-r4-fanpwm.md` | 35 | See s360-311-r4-pwm.md. |
+| `docs/hardware/s360-311-r4-pwm.md` | 225 | Duplicate pair with s360-311-r4-fanpwm.md (naming drift). Merge into one clean S360-311 reference per official naming, archive the audit trail. **Executed at Step 4**: current-state facts (TACH-GPIO allocation table, BOM cross-check, Drive/tracker provenance, SX1509/`pulse_counter` compile-proof, blocker reclassification, bench checklists) and the operator attestation blocks (moved verbatim) were folded into the survivor; the historical audit trail departed with the deletion (index row in `docs/archive-index.md`). |
+| `docs/hardware/s360-312-r4-fandac.md` | 155 | See s360-312-r4-dac.md. **Survivor** — carries the merged HW-PINMAP-312 audit after Step 4. |
+| `docs/hardware/s360-312-r4-dac.md` | 87 | Duplicate pair with s360-312-r4-fandac.md. Same treatment. **Executed at Step 4**: the voltage-rail discrepancy analysis, the carried open documentation questions, and the follow-up naming crosswalk moved into the survivor; historical audit narrative departed with the deletion (index row in `docs/archive-index.md`). |
+| `docs/hardware/s360-311-r4-fanpwm.md` | 35 | See s360-311-r4-pwm.md. **Survivor** — carries the merged HW-PINMAP-311 audit record and operator bench attestations after Step 4. |
 
 ### KEEP-SLIM (5 files, 742 KB)
 
 | File | KB | Rationale |
 |---|---:|---|
-| `docs/hardware/s360-310-r4-relay.md` | 205 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. |
-| `docs/hardware/s360-410-r4-poe.md` | 192 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. |
-| `docs/hardware/s360-400-r4-power.md` | 171 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. |
-| `docs/hardware/s360-320-r4-triac.md` | 110 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. |
-| `docs/hardware/s360-100-r4-core.md` | 65 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. |
+| `docs/hardware/s360-310-r4-relay.md` | 205 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. **Executed at Step 5**: the HW-PINMAP-310-FOLLOWUP dated audit log, the follow-up PR planning table, the per-PR guardrail list, and the BLOCKER-BURNDOWN-001 consolidation note were removed (headings kept as anchor stubs; index row in `docs/archive-index.md`); the S360-310-BENCH-001 and S360-310-SAFETY-EVIDENCE-REQUEST-001 attestation records, the RELAY-BLOCKER-RECLASSIFY-001 decision record, and all pinout / package-mapping / status / open-question content stay in place. |
+| `docs/hardware/s360-410-r4-poe.md` | 192 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. **Executed at Step 5**: the HW-PINMAP-410-FOLLOWUP dated audit log (incl. the 2026-05-20 / 2026-05-28 passes, whose current-state outcomes stay summarised on anchor stubs), the follow-up PR planning table, and the per-PR guardrail list were removed (index row in `docs/archive-index.md`); all findings / part-identity / status / open-question content stays in place. |
+| `docs/hardware/s360-400-r4-power.md` | 171 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. **Executed at Step 5**: the HW-PINMAP-400-FOLLOWUP dated audit log (incl. the three 2026-05-19/20 passes, whose current-state outcomes stay summarised on anchor stubs), the follow-up PR planning table, and the per-PR guardrail list were removed (index row in `docs/archive-index.md`); all findings / part-identity / status / open-question content stays in place. |
+| `docs/hardware/s360-320-r4-triac.md` | 110 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. **Executed at Step 5**: the HW-PINMAP-320-FOLLOWUP dated audit log, the follow-up PR planning table (TRIAC-QUEUE-001 downstream queue state kept verbatim), and the per-PR guardrail list were removed (headings kept as anchor stubs — the compliance record links to the audit-log anchor; index row in `docs/archive-index.md`); the FanTRIAC posture sections are untouched. |
+| `docs/hardware/s360-100-r4-core.md` | 65 | Board reference with embedded audit trail. Keep a clean reference, move the trail to archive. **Executed at Step 5**: the S360-100-BENCH-001 dated audit-log table was removed (index row in `docs/archive-index.md`); the bench-evidence scaffold, pin / connector / allocation tables, and open questions stay in place. |
 
 ### ARCHIVE (68 files, 4090 KB)
 
@@ -408,10 +408,141 @@ that performs it.
 | Step | Scope | PR | Date | Status |
 |---|---|---|---|---|
 | 1 | Ratify the manifest (owner decisions + amendments applied; WebFlash guard-test notes folded in; this log added) | #786 | 2026-07-04 | EXECUTED |
-| 2 | Archive batch A (ARCHIVE rows without [code-ref]) | — | — | PENDING |
-| 3 | Archive batch B (ARCHIVE rows with [code-ref], reference updates in-PR) | — | — | PENDING |
-| 4 | Merge the duplicate pairs (S360-311, S360-312) | — | — | PENDING |
-| 5 | Slim the five KEEP-SLIM board docs | — | — | PENDING |
-| 6 | Execute MOVE-PRIVATE (`docs/shop-commercial-source-of-truth.md`) | — | — | PENDING |
-| 7 | `CLAUDE.md` sanitise + `UPCOMING_PR.md` retirement (+ `docs/standing-invariants.md`) | — | — | PENDING |
-| 8 | Link sweep + Phase 2 handoff section | — | — | PENDING |
+| 2 | Archive batch A (ARCHIVE rows without [code-ref]) | #787 | 2026-07-04 | EXECUTED |
+| 3 | Archive batch B (ARCHIVE rows with [code-ref], reference updates in-PR) | #788 | 2026-07-04 | EXECUTED |
+| 4 | Merge the duplicate pairs (S360-311 → `s360-311-r4-fanpwm.md`, S360-312 → `s360-312-r4-fandac.md`; attestations moved verbatim; inbound doc/test references retargeted) | #789 | 2026-07-05 | EXECUTED |
+| 5 | Slim the five KEEP-SLIM board docs (process trail removed with archive-index rows; attestation records stay in place) | #790 | 2026-07-05 | EXECUTED |
+| 6 | Execute MOVE-PRIVATE (`docs/shop-commercial-source-of-truth.md` deleted with index row; guard test `tests/test_shop_commercial_source_of_truth.py` retired; inbound roadmap links retargeted at the config JSON) | #791 | 2026-07-05 | EXECUTED |
+| 7 | `CLAUDE.md` sanitise + `UPCOMING_PR.md` retirement (queue snapshot in the PR description; standing invariants moved verbatim to `docs/standing-invariants.md`; inbound doc/test references retargeted) | #792 | 2026-07-05 | EXECUTED |
+| 8 | Link sweep + Phase 2 handoff section (kept-doc links verified by scripted sweep, sweep output in the PR; editable anchor/file-target breaks fixed; governance-record and `packages/` residuals reported, not rewritten; Phase 2 handoff map appended below) | #793 | 2026-07-05 | EXECUTED |
+
+## Phase 2 handoff
+
+Input to the Phase 2 WebFlash loop, executed in `sense360store/WebFlash`
+(execution constraint 4). Phase 1 changed the esphome-public paths below;
+Phase 2 must find every inbound WebFlash reference to them (grep WebFlash
+for `esphome-public` blob/raw/tree URLs and bare `docs/…` path strings) and
+retarget each hit per this map. Any esphome-public doc path that 404s at
+main and is not listed here resolves via
+[`docs/archive-index.md`](archive-index.md) (deleted with an index row;
+content recoverable from the indexed SHA).
+
+### Stubbed paths — old URL still resolves, content gone (retarget required)
+
+The five paths WebFlash is known to link (cross-repo stub rule) were
+archived with a three-line stub left at the old path, so existing WebFlash
+links do not 404. Each stub points at the archive index; Phase 2 should
+retarget WebFlash's links the same way.
+
+| Old path | New path or stub |
+|---|---|
+| `docs/first-release-dryrun-checklist.md` | Stub in place → `docs/archive-index.md` |
+| `docs/first-release-gates.md` | Stub in place → `docs/archive-index.md` |
+| `docs/release-matrix-webflash-alignment.md` | Stub in place → `docs/archive-index.md` |
+| `docs/kit-intent-matrix.md` | Stub in place → `docs/archive-index.md` |
+| `docs/sense360-room-bundles.md` | Stub in place → `docs/archive-index.md` |
+
+### Merged / replaced paths — old URL 404s, a live successor exists
+
+| Old path | New path |
+|---|---|
+| `docs/hardware/s360-311-r4-pwm.md` | `docs/hardware/s360-311-r4-fanpwm.md` (MERGE survivor, Step 4) |
+| `docs/hardware/s360-312-r4-dac.md` | `docs/hardware/s360-312-r4-fandac.md` (MERGE survivor, Step 4) |
+| `UPCOMING_PR.md` | `docs/standing-invariants.md` for the standing gates; queue history via `docs/archive-index.md` (Step 7) |
+| `docs/shop-commercial-source-of-truth.md` | `config/product-catalog.json` for lifecycle / status declarations; record via `docs/archive-index.md` (Step 6, owner decision 3) |
+| `docs/release-channel-policy.md` | `config/release-channel-policy.json` (declaration source of truth); record via `docs/archive-index.md` |
+| `docs/preview-release-targets.md` | `config/preview-release-targets.json` (declaration source of truth); record via `docs/archive-index.md` |
+
+### Deleted paths — old URL 404s, relink to `docs/archive-index.md`
+
+Every other ARCHIVE row in the esphome-public table above (61 files,
+Steps 2–3) was deleted with an index row and no stub. If WebFlash links
+any of them, retarget to `docs/archive-index.md`. The full path list is
+the ARCHIVE table above minus the five stubbed paths and minus the two
+rows moved to the merged/replaced table (`docs/release-channel-policy.md`,
+`docs/preview-release-targets.md`).
+
+### Kept paths with removed anchors — file resolves, deep links may not
+
+The five KEEP-SLIM board docs (`docs/hardware/s360-100-r4-core.md`,
+`s360-310-r4-relay.md`, `s360-320-r4-triac.md`, `s360-400-r4-power.md`,
+`s360-410-r4-poe.md`) kept their paths but lost their embedded audit-trail
+sections at Step 5. A WebFlash deep link to a removed `#…-audit-log` /
+follow-up-table anchor lands at the top of the doc; retarget such deep
+links at the doc itself or at `docs/archive-index.md` (pre-slim content
+recoverable from the indexed SHA).
+
+### Unchanged stable surfaces — no relink needed
+
+- `docs/webflash-contract.md` (KEEP by ratified amendment).
+- `docs/firmware-combination-matrix.md` and
+  `docs/firmware-build-gap-report.md` (KEEP, CI-generated with freshness
+  gates).
+- `docs/sense360-roadmap-status.md` (KEEP, owner decision 1).
+- `docs/hardware-catalog.md` and `config/hardware-catalog.json`.
+- `config/webflash-builds.json` and `config/webflash-compatibility.json`.
+- `docs/standing-invariants.md` (new at Step 7 — the standing-gate text
+  WebFlash-side docs may now cite).
+- The three cross-repo contract surfaces (release tags, config strings,
+  artifact names) were untouched by the whole programme.
+
+## Phase 2 execution log (WebFlash local)
+
+Appended by the DOCS-DISPOSITION-001 Phase 2 loop running in
+`sense360store/WebFlash`. This section is the only permitted divergence from
+the canonical manifest on `sense360store/esphome-public` main, which remains
+the sole disposition authority. One step per session, one PR per step,
+lowest-numbered non-EXECUTED step first; a step is marked EXECUTED (with its
+PR number) inside the same PR that performs it.
+
+### Batch membership (determined empirically at Step P2.1)
+
+For every WebFlash ARCHIVE row, `grep -rn "<basename>" __tests__ scripts
+.github` was run at Step P2.1 against main @ `92a240e8`. Rows with zero hits
+form batch A (executed at Step P2.1); rows with hits form batch B (executed
+at Step P2.2).
+
+Batch B (8 rows with code-reference hits):
+
+| File | Hits at P2.1 |
+|---|---|
+| `docs/wizard-ux-roadmap.md` | `scripts/data/module-requirements.js:220` |
+| `docs/webflash-import-readiness-matrix.md` | `scripts/data/module-requirements.js:219`, `scripts/utils/module-availability.js:70` |
+| `docs/webflash-cleanup-audit.md` | `__tests__/manifest-health.test.js:144`, `__tests__/manifest-health.test.js:225` |
+| `docs/webflash-2-migration.md` | `scripts/engine.js:6` |
+| `docs/webflash-2-migration-prompts.md` | `__tests__/wf2-engine-seam.test.js:6` |
+| `docs/ux-roadmap.md` | Substring-only hit: `scripts/data/module-requirements.js:220` references `docs/wizard-ux-roadmap.md`, whose name contains this basename. No true inbound code reference exists; the row stays in batch B per the literal zero-hit rule and its P2.2 reference-update set is expected to be empty. |
+| `docs/wf-manifest-freshness-race-diagnosis.md` | `scripts/services/manifest-freshness.js:48` |
+| `docs/expected-surface-fixture.md` | `__tests__/helpers/expected-surface.js:24`, `__tests__/expected-surface.test.js:26`, `__tests__/fixtures/expected-surface.json:4` |
+
+Batch A (25 rows with zero hits): the remaining WebFlash ARCHIVE rows —
+`docs/conventions-history.md`, `docs/webflash-required-configs-cleanup.md`,
+`docs/github-pages-surface-audit.md`,
+`docs/dual-channel-coexistence-design.md`, `docs/firmware-import.md`,
+`docs/led-preview-webflash-proof.md`, `docs/led-preview-import-plan.md`,
+`docs/product-import-readiness.md`, `FIRMWARE-DISTRIBUTION-REVIEW.md`,
+`docs/fan-bundle-preview-import-proof.md`,
+`docs/preview-import-automation-proof.md`,
+`docs/webflash-2-beta-default-s360-410-evidence.md`,
+`docs/workflow-audit.md`, `docs/fanpwm-preview-import-proof.md`,
+`docs/webflash-bundle-sku-matrix.md`,
+`docs/fanrelay-preview-import-proof.md`,
+`docs/live-smoke-easy-bundle-picker-current.md`,
+`docs/live-smoke-preview-import.md`,
+`docs/wf-ux-017-freshness-diagnosis.md`,
+`docs/wf-import-pwm-001-closure.md`,
+`docs/preview-import-first-batch-proof.md`,
+`docs/webflash-2-migration-delivery.md`,
+`docs/live-smoke-easy-bundle-picker-fan-expansion.md`,
+`docs/live-smoke-easy-bundle-picker.md`,
+`docs/docs-consolidation-verify-001.md`.
+
+### Log
+
+| Step | Scope | PR | Date | Status |
+|---|---|---|---|---|
+| P2.1 | Refresh this copy from canonical; determine batch membership empirically; archive batch A (25 files deleted with `docs/archive-index.md` rows; inbound links from kept docs fixed) | #TBD | 2026-07-05 | EXECUTED |
+| P2.2 | Archive batch B (8 rows above; referencing test/script/workflow lines updated in the same PR) | — | — | PENDING |
+| P2.3 | `CLAUDE.md` KEEP-SANITISE; `docs/standing-invariants.md` created; REMOVE rows executed (`UPCOMING_PR.md`, `docs/pr-comment.md`) | — | — | PENDING |
+| P2.4 | Cross-repo relink per the Phase 2 handoff map above | — | — | PENDING |
+| P2.5 | Final link sweep and Phase 2 closure | — | — | PENDING |

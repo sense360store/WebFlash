@@ -116,7 +116,8 @@ When you add a new firmware configuration to `manifest.json`, also add the
 New shipping firmware should arrive through the cross-repo importer —
 declare it in [`firmware/sources.json`](firmware/sources.json) and run
 [`scripts/import-firmware-sources.py`](scripts/import-firmware-sources.py)
-(see [`docs/firmware-import.md`](docs/firmware-import.md)). Manual
+(the importer contract record `docs/firmware-import.md` is archived; see
+[`docs/archive-index.md`](docs/archive-index.md)). Manual
 placement of a `.bin` into `firmware/configurations/` is reserved for
 hand-curated builds that already satisfy the `.meta.json` sidecar,
 manifest-health, and `REQUIRED_CONFIGS` expectations.

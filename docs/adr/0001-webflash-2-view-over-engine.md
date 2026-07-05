@@ -4,7 +4,7 @@
 - Date: 2026-06-04
 - Owner: Neil
 - Deciders: WebFlash maintainers
-- Related: [strategy](../webflash-2-migration.md), [delivery plan](../webflash-2-migration-delivery.md), [per-PR runbook](../webflash-2-migration-prompts.md)
+- Related: [strategy](../webflash-2-migration.md), delivery plan (`docs/webflash-2-migration-delivery.md`, archived — see [`docs/archive-index.md`](../archive-index.md)), [per-PR runbook](../webflash-2-migration-prompts.md)
 
 ## Context
 
@@ -106,13 +106,15 @@ Costs:
 
 The delivery method (many small trunk-based PRs, each gated behind `?ui=2`, with
 the default held at `ui=1` until PR 12) is recorded in full in the
-[delivery plan](../webflash-2-migration-delivery.md).
+delivery plan (`docs/webflash-2-migration-delivery.md`, archived — see
+[`docs/archive-index.md`](../archive-index.md)).
 
 ## References
 
 - Strategy: [`docs/webflash-2-migration.md`](../webflash-2-migration.md), in
   particular Section 2 (decision), Section 3 (simulation-to-real mapping), and
   Section 7 (GA acceptance gates).
-- Delivery plan: [`docs/webflash-2-migration-delivery.md`](../webflash-2-migration-delivery.md).
+- Delivery plan: `docs/webflash-2-migration-delivery.md` (archived — see
+  [`docs/archive-index.md`](../archive-index.md)).
 - Per-PR runbook: [`docs/webflash-2-migration-prompts.md`](../webflash-2-migration-prompts.md).
 - Origin preview: PR #477 (`/webflash-2/`).

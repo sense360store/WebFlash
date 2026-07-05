@@ -25,5 +25,8 @@ list, that content has been removed in favour of the canonical sources below.
   [`docs/wizard-ux-roadmap.md`](docs/wizard-ux-roadmap.md).
 - **Per-family firmware import readiness + reserved follow-up PR slots:**
   [`docs/webflash-import-readiness-matrix.md`](docs/webflash-import-readiness-matrix.md).
-- **Catalog → WebFlash eligibility rules:**
-  [`docs/product-import-readiness.md`](docs/product-import-readiness.md).
+- **Catalog → WebFlash eligibility rules:** enforced by
+  [`scripts/validate-product-import-readiness.js`](scripts/validate-product-import-readiness.js)
+  and `__tests__/product-import-readiness.test.js`; the contract doc
+  (`docs/product-import-readiness.md`) is archived — see
+  [`docs/archive-index.md`](docs/archive-index.md).
