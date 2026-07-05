@@ -644,12 +644,12 @@ this; all three are visible in the **About this installer** panel and in the
 
 ### App build / version metadata
 
-- Source of truth: [`scripts/build-info.js`](scripts/build-info.js), which
-  exports `BUILD_INFO = { appVersion, buildCommit, buildTimestamp }`.
-- A future build pipeline may overwrite this file at release time, but the
-  app must tolerate any field being missing or set to `'unknown'` /
-  `'0.0.0-dev'` without crashing. Diagnostics renders missing fields as
-  `unknown` rather than redacting or omitting them.
+- Source of truth: the `webflash-app-version` `<meta>` tag in
+  [`index.html`](index.html), read by
+  [`scripts/services/diagnostics.js`](scripts/services/diagnostics.js).
+- The app must tolerate the tag being missing without crashing: diagnostics
+  falls back to its `APP_VERSION_FALLBACK` constant and renders missing
+  fields as `unknown` rather than redacting or omitting them.
 
 ### Manifest version / generated metadata
 
