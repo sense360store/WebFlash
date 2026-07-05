@@ -4,7 +4,7 @@
 - Date: 2026-06-04
 - Owner: Neil
 - Deciders: WebFlash maintainers
-- Related: [strategy](../webflash-2-migration.md), delivery plan (`docs/webflash-2-migration-delivery.md`, archived — see [`docs/archive-index.md`](../archive-index.md)), [per-PR runbook](../webflash-2-migration-prompts.md)
+- Related: strategy (`docs/webflash-2-migration.md`), delivery plan (`docs/webflash-2-migration-delivery.md`), per-PR runbook (`docs/webflash-2-migration-prompts.md`) — all archived, see [`docs/archive-index.md`](../archive-index.md)
 
 ## Context
 
@@ -111,10 +111,12 @@ delivery plan (`docs/webflash-2-migration-delivery.md`, archived — see
 
 ## References
 
-- Strategy: [`docs/webflash-2-migration.md`](../webflash-2-migration.md), in
+- Strategy: `docs/webflash-2-migration.md` (archived — see
+  [`docs/archive-index.md`](../archive-index.md)), in
   particular Section 2 (decision), Section 3 (simulation-to-real mapping), and
   Section 7 (GA acceptance gates).
 - Delivery plan: `docs/webflash-2-migration-delivery.md` (archived — see
   [`docs/archive-index.md`](../archive-index.md)).
-- Per-PR runbook: [`docs/webflash-2-migration-prompts.md`](../webflash-2-migration-prompts.md).
+- Per-PR runbook: `docs/webflash-2-migration-prompts.md` (archived — see
+  [`docs/archive-index.md`](../archive-index.md)).
 - Origin preview: PR #477 (`/webflash-2/`).

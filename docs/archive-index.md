@@ -39,3 +39,11 @@ deleted as-is — never rewritten before deletion.
 | `docs/live-smoke-easy-bundle-picker-fan-expansion.md` | `92a240e86fa84348a3d21403181550ac486b1ff7` | ARCHIVE | 2026-07-05 |
 | `docs/live-smoke-easy-bundle-picker.md` | `92a240e86fa84348a3d21403181550ac486b1ff7` | ARCHIVE | 2026-07-05 |
 | `docs/docs-consolidation-verify-001.md` | `92a240e86fa84348a3d21403181550ac486b1ff7` | ARCHIVE | 2026-07-05 |
+| `docs/wizard-ux-roadmap.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/webflash-import-readiness-matrix.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/webflash-cleanup-audit.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/webflash-2-migration.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/webflash-2-migration-prompts.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/ux-roadmap.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/wf-manifest-freshness-race-diagnosis.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |
+| `docs/expected-surface-fixture.md` | `67d4f3e4e012ee29a3275281b8265b6718ccfe27` | ARCHIVE | 2026-07-05 |

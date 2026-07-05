@@ -23,7 +23,7 @@
  *
  * Promotion procedure: a surface change = the import/retire PR + one
  * expected-surface.json edit in the same PR, reviewed together. See
- * docs/expected-surface-fixture.md.
+ * docs/expected-surface-fixture.md (archived; see docs/archive-index.md).
  */
 import { describe, expect, test } from '@jest/globals';
 import fs from 'node:fs';

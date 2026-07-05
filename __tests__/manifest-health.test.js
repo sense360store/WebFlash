@@ -141,7 +141,8 @@ describe('manifest health — sidecars exist for normal firmware', () => {
     test('every firmware/configurations/*.bin has a sibling .meta.json', () => {
         // Rescue firmware under firmware/rescue/ is exempt: it ships its own
         // per-product firmware/rescue/manifest.json instead of a
-        // <asset>.meta.json sidecar. See docs/webflash-cleanup-audit.md.
+        // <asset>.meta.json sidecar. See docs/webflash-cleanup-audit.md
+        // (archived; see docs/archive-index.md).
         const bins = fs
             .readdirSync(configurationsDir)
             .filter(name => name.endsWith('.bin'));
@@ -222,7 +223,7 @@ describe('manifest health — blocked/excluded tokens stay out of generated mani
     test('no manifest build config_string contains FanTRIAC', () => {
         // FanTRIAC is globally blocked while S360-320 hardware verification
         // is pending. See firmware/sources.json block_tokens and
-        // docs/webflash-cleanup-audit.md.
+        // docs/webflash-cleanup-audit.md (archived; see docs/archive-index.md).
         const offenders = manifest.builds
             .map(b => b.config_string)
             .filter(cs => typeof cs === 'string' && containsBlockToken(cs, 'FanTRIAC'));

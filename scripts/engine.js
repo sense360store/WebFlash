@@ -3,7 +3,8 @@
  *
  * This is the single, view-agnostic import surface the WebFlash 2.0 view uses to
  * reach the WebFlash 1.0 engine. It is the pivot established by PR 2 of the
- * WebFlash 2.0 migration (see docs/webflash-2-migration.md Section 2 and
+ * WebFlash 2.0 migration (see docs/webflash-2-migration.md Section 2,
+ * archived — see docs/archive-index.md, and
  * docs/adr/0001-webflash-2-view-over-engine.md).
  *
  * The 1.0 codebase is the logic and trust layer (the engine). The 2.0 components

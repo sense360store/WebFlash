@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "description": "WF-SURFACE-SSOT-001 — the reviewed, single-source-of-truth declaration of the WebFlash deploy surface. Every count/set guard in the test suites derives its expectations from this file via __tests__/helpers/expected-surface.js: total build count, per-channel counts, the stable and preview config sets, the expected .bin/.meta.json filenames (from the canonical Sense360-<config_string>-v<version>-<channel>.bin convention), and the firmware-N.json index bound (count - 1). The tests compare REALITY (manifest.json, firmware/configurations/ on disk, firmware-N.json, kits.json cross-checks) against this fixture exactly — missing AND unexpected entries both fail — so a drifted fixture cannot auto-pass.",
-  "review_rule": "A surface change (import, retirement, promotion, version bump) must edit this file in the SAME PR that changes the surface, and the two are reviewed together. See docs/expected-surface-fixture.md.",
+  "review_rule": "A surface change (import, retirement, promotion, version bump) must edit this file in the SAME PR that changes the surface, and the two are reviewed together. See docs/expected-surface-fixture.md (archived; see docs/archive-index.md).",
   "filename_convention": "Sense360-<config_string>-v<version>-<channel>.bin with a sibling <name>.meta.json sidecar. Application builds live under firmware/configurations/; the Rescue artifact lives under firmware/rescue/ and has no sidecar requirement.",
   "builds": [
     {

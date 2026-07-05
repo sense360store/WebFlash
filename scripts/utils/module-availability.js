@@ -67,8 +67,8 @@
  * advanced/manual-warning acknowledgement that is orthogonal to the
  * release-channel preview acknowledgement (which is unchanged).
  * Advanced/manual-warning is **not** a compliance certification claim;
- * see docs/webflash-import-readiness-matrix.md for the import-side
- * counterpart.
+ * see docs/webflash-import-readiness-matrix.md (archived; see
+ * docs/archive-index.md) for the import-side counterpart.
  */
 
 export const AVAILABILITY_STATES = Object.freeze({

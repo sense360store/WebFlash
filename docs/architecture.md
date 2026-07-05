@@ -210,9 +210,8 @@ operator-facing mirror.
   product / release status (what installs today).
 - `docs/firmware-import.md` — the cross-repo importer mechanism record
   (archived — see [`docs/archive-index.md`](archive-index.md)).
-- [`docs/webflash-import-readiness-matrix.md`](webflash-import-readiness-matrix.md)
-  / `docs/product-import-readiness.md` (archived — see
-  [`docs/archive-index.md`](archive-index.md)) — import
+- `docs/webflash-import-readiness-matrix.md` / `docs/product-import-readiness.md`
+  (both archived — see [`docs/archive-index.md`](archive-index.md)) — import
   eligibility classes and the catalog eligibility validator.
 - [`README.md`](../README.md) — user-facing guide for flashing devices.
 - [`sense360store/esphome-public` → `docs/system-architecture.md`](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md)

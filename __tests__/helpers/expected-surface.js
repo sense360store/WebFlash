@@ -21,7 +21,8 @@
  *   A fixture edit alone (without the matching surface change) therefore
  *   cannot auto-pass; it turns the comparing suites red, which is the point:
  *   a surface change is one import/retire PR plus one expected-surface.json
- *   edit, reviewed together. See docs/expected-surface-fixture.md.
+ *   edit, reviewed together. See docs/expected-surface-fixture.md
+ *   (archived; see docs/archive-index.md).
  *
  * ANTI-TAUTOLOGY NOTE: this helper never reads manifest.json, the firmware
  * directory, kits.json, or any other live surface. It reads only the

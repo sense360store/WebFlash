@@ -45,7 +45,8 @@
  * pre-marks the check as run). This module adds the `manifest-load-pending`
  * reason and an `options.manifestLoadPending` guard so a still-loading state is
  * reported distinctly and never misattributed to `missing-loaded-generated-at`.
- * See docs/wf-manifest-freshness-race-diagnosis.md.
+ * See docs/wf-manifest-freshness-race-diagnosis.md (archived; see
+ * docs/archive-index.md).
  *
  * Two failure modes produced a false missing-`generated_at` against a root
  * manifest that DOES carry `generated_at`:

@@ -217,7 +217,8 @@ const MODULE_REQUIREMENT_MATRIX = {
                 // recommended, and not compliance-certified. HW-005 and
                 // COMPLIANCE-001 stay open upstream. See
                 // docs/webflash-import-readiness-matrix.md (WF-IMPORT-GAP-001)
-                // and the WF-TRIAC-001 entry in docs/wizard-ux-roadmap.md.
+                // and the WF-TRIAC-001 entry in docs/wizard-ux-roadmap.md
+                // (both archived; see docs/archive-index.md).
                 availability: {
                     state: 'advanced-manual-warning',
                     reasonCode: 'hw-005-advanced-manual'
