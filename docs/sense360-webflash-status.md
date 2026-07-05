@@ -654,7 +654,9 @@ near-term lane order lives upstream in
 the WebFlash-side import sequencing and per-family follow-up PR slots live in
 `docs/webflash-import-readiness-matrix.md` (archived — see
 [`docs/archive-index.md`](archive-index.md))
-and the live queue in [`UPCOMING_PR.md`](../UPCOMING_PR.md). Each WebFlash import
+and the standing gates in [`docs/standing-invariants.md`](standing-invariants.md)
+(the former `UPCOMING_PR.md` live queue tracker was retired — see
+[`docs/archive-index.md`](archive-index.md)). Each WebFlash import
 follow-up is **blocked behind** its upstream release artifact — none is started,
 unblocked, or reprioritised by this doc:
 
@@ -748,8 +750,11 @@ signed `.bin` for; upstream re-verification is owned by
 This consolidation is scoped to **product / release status**. The following docs
 remain the source of truth in their own lanes and are *not* replaced here:
 
-- [`UPCOMING_PR.md`](../UPCOMING_PR.md) — live WebFlash PR queue (completed /
-  active / blocked). Every queue-state-changing PR still updates it.
+- [`docs/standing-invariants.md`](standing-invariants.md) — the standing
+  blockers / invariants that gate every WebFlash PR. (The former
+  `UPCOMING_PR.md` live queue tracker was retired — see
+  [`docs/archive-index.md`](archive-index.md); queue state now lives in
+  GitHub.)
 - `docs/wizard-ux-roadmap.md` — wizard UX audit + PR sequence (WF-UX-*), with
   `docs/ux-roadmap.md` as its source review (both archived — see
   [`docs/archive-index.md`](archive-index.md)).

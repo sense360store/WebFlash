@@ -19,8 +19,10 @@ list, that content has been removed in favour of the canonical sources below.
 - **Upstream Sense360 product roadmap / lifecycle status (source of record):**
   `docs/sense360-roadmap-status.md` in
   [`sense360store/esphome-public`](https://github.com/sense360store/esphome-public/blob/main/docs/sense360-roadmap-status.md).
-- **Live WebFlash PR queue (completed / active / blocked):**
-  [`UPCOMING_PR.md`](UPCOMING_PR.md).
+- **Standing blockers / invariants that gate every WebFlash PR:**
+  [`docs/standing-invariants.md`](docs/standing-invariants.md). (The former
+  `UPCOMING_PR.md` live queue tracker was retired — see
+  [`docs/archive-index.md`](docs/archive-index.md).)
 - **Wizard UX audit and PR sequence (WF-UX-\*):**
   `docs/wizard-ux-roadmap.md` (archived — see
   [`docs/archive-index.md`](docs/archive-index.md)).

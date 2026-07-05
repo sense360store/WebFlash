@@ -543,6 +543,6 @@ Batch A (25 rows with zero hits): the remaining WebFlash ARCHIVE rows —
 |---|---|---|---|---|
 | P2.1 | Refresh this copy from canonical; determine batch membership empirically; archive batch A (25 files deleted with `docs/archive-index.md` rows; inbound links from kept docs fixed) | #571 | 2026-07-05 | EXECUTED |
 | P2.2 | Archive batch B (8 rows above; referencing test/script/workflow lines updated in the same PR; no behavioural assertion pinned archived prose, so the assertion-retirement set was empty) | #572 | 2026-07-05 | EXECUTED |
-| P2.3 | `CLAUDE.md` KEEP-SANITISE; `docs/standing-invariants.md` created; REMOVE rows executed (`UPCOMING_PR.md`, `docs/pr-comment.md`) | — | — | PENDING |
+| P2.3 | `CLAUDE.md` KEEP-SANITISE (queue convention retired, standing rules pointed at `docs/standing-invariants.md`); `docs/standing-invariants.md` created (invariant content carried verbatim from `UPCOMING_PR.md`); REMOVE rows executed (`UPCOMING_PR.md`, `docs/pr-comment.md`) with index rows; live queue snapshot in the PR description; inbound references updated in `FEATURES.md`, `CHANGELOG.md`, `docs/sense360-webflash-status.md`, `scripts/import-firmware-sources.py` (comment only), `.github/CODEOWNERS`; governance records under `docs/release-gates/` and `docs/security/` left untouched per guardrail 8 | #573 | 2026-07-05 | EXECUTED |
 | P2.4 | Cross-repo relink per the Phase 2 handoff map above | — | — | PENDING |
 | P2.5 | Final link sweep and Phase 2 closure | — | — | PENDING |
