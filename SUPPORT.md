@@ -2,6 +2,8 @@
 
 This page explains where to get help with Sense360 WebFlash and Sense360 devices.
 
+The canonical WebFlash flasher URL is <https://sense360store.github.io/WebFlash/>. Always flash from that address, never from mirrors or third party copies.
+
 ## Before you file anything
 
 - Read [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common flashing problems (browser support, serial permissions, driver issues, recovery steps).

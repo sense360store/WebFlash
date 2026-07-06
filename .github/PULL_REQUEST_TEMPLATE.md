@@ -23,4 +23,4 @@ Paste the gate output here.
 
 # What stays gated
 
-State explicitly that the blocking gates are unchanged: provenance, release channel acknowledgement, signature and checksum verification at the install gate, manifest freshness, the service worker update gate, the TRIAC block, and the REQUIRED_CONFIGS allowlist. If the PR touches provenance, the manifest, or the install gate, also fill the reviewer checklist from the README here.
+State explicitly that the blocking gates are unchanged: provenance, release channel acknowledgement, signature and checksum verification at the install gate, manifest freshness, the service worker update gate, the TRIAC block, and the REQUIRED_CONFIGS allowlist. If the PR touches provenance, the manifest, or the install gate, also fill the reviewer checklist from docs/firmware-provenance.md here.
