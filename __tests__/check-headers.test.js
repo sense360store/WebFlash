@@ -10,7 +10,7 @@ import {
 
 const FULL_HEADERS = {
   'content-security-policy':
-    "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self'; font-src 'self'; frame-ancestors 'none'; object-src 'none'",
+    "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; frame-ancestors 'none'; object-src 'none'",
   'permissions-policy': 'serial=(self), usb=(self), camera=(), microphone=(), geolocation=()',
   'cross-origin-opener-policy': 'same-origin',
   'cross-origin-resource-policy': 'cross-origin',
@@ -41,10 +41,10 @@ describe('check-headers helpers', () => {
 
   test('parseCspDirectives splits on semicolons and lowercases names', () => {
     const directives = parseCspDirectives(
-      "default-src 'self'; script-src 'self' https://unpkg.com; FRAME-ancestors 'none'"
+      "default-src 'self'; script-src 'self' https://cdn.example.com; FRAME-ancestors 'none'"
     );
     expect(directives['default-src']).toEqual(["'self'"]);
-    expect(directives['script-src']).toEqual(["'self'", 'https://unpkg.com']);
+    expect(directives['script-src']).toEqual(["'self'", 'https://cdn.example.com']);
     expect(directives['frame-ancestors']).toEqual(["'none'"]);
   });
 
@@ -180,7 +180,7 @@ describe('evaluateHeaders', () => {
   test('missing both X-Frame-Options and CSP frame-ancestors warns', () => {
     const headers = {
       ...FULL_HEADERS,
-      'content-security-policy': "default-src 'self'; script-src 'self' https://unpkg.com"
+      'content-security-policy': "default-src 'self'; script-src 'self'"
     };
     delete headers['x-frame-options'];
     const findings = evaluateHeaders('https://example.com/', headers);

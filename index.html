@@ -31,7 +31,15 @@
     <meta name="webflash-app-version" content="1.0.1">
     <meta name="webflash-app-shell" content="2026-07-06-1">
     <title>Sense360 Firmware Installer</title>
+    <!-- REPO-CUSTOMER-READY-001 S11 — brand and link-preview metadata. theme-color
+         is the Sense360 brand green (the --brand token in app.css); the OpenGraph
+         tags shape the link preview when the canonical flasher URL is shared; the
+         apple touch icon is derived from the 32px favicon (180x180, white field). -->
+    <meta name="theme-color" content="#00bf63">
+    <meta property="og:title" content="Sense360 Firmware Installer">
+    <meta property="og:description" content="Install Sense360 firmware on your hub straight from a desktop Chromium browser over USB. No software to download; firmware integrity is verified before every install.">
     <link rel="icon" type="image/png" sizes="32x32" href="./sense360-favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
     <!-- The 2.0 view's fonts (Inter, JetBrains Mono) are self-hosted under
          assets/fonts/ via @font-face rules in app.css, so no cross-origin
          stylesheet or font is loaded and the CSP needs no Google Fonts origins. -->

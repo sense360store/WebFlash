@@ -605,3 +605,14 @@
         touch-action: none;
     }
 }
+
+/* REPO-CUSTOMER-READY-001 S10 — this sheet's own reduced-motion handling, so
+   its control transitions and the mobile summary drawer slide stay still even
+   if the sheet is ever loaded without the project-wide safety net in
+   theme.css. The drawer still opens and closes; it just snaps instead of
+   sliding. */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        transition-duration: 0.001ms !important;
+    }
+}
