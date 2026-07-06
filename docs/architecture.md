@@ -202,8 +202,8 @@ The **authoritative Sense360 SKU list** (Friendly name, SKU, revision, and what
 each board does) lives in [`CLAUDE.md`](../CLAUDE.md) under *Sense360 hardware
 reference (canonical SKUs)*. It is intentionally **not** duplicated here so the
 two cannot drift; consult `CLAUDE.md` for the canonical table and the
-[`README.md`](../README.md) *Canonical Option Inventory Table* for the
-operator-facing mirror.
+[`docs/hardware-options.md`](hardware-options.md) *Canonical Option Inventory
+Table* for the operator-facing mirror.
 
 ## Related documentation
 
@@ -216,6 +216,7 @@ operator-facing mirror.
 - `docs/webflash-import-readiness-matrix.md` / `docs/product-import-readiness.md`
   (both archived — see [`docs/archive-index.md`](archive-index.md)) — import
   eligibility classes and the catalog eligibility validator.
-- [`README.md`](../README.md) — user-facing guide for flashing devices.
+- [`README.md`](../README.md) — the repository front door; the full
+  user-facing flashing guide lives in [`docs/user-guide.md`](user-guide.md).
 - [`sense360store/esphome-public` → `docs/system-architecture.md`](https://github.com/sense360store/esphome-public/blob/main/docs/system-architecture.md)
   — the whole-system view spanning both repositories.

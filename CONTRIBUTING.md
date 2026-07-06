@@ -31,7 +31,7 @@ python3 scripts/gen-manifests.py --strict-validate --dry-run
 npm run check:headers -- https://sense360store.github.io/WebFlash/
 ```
 
-If the PR touches provenance, the manifest, or the install gate, also fill the reviewer checklist from the README into the PR body.
+If the PR touches provenance, the manifest, or the install gate, also fill the reviewer checklist from [docs/firmware-provenance.md](docs/firmware-provenance.md) into the PR body.
 
 ## Documentation conventions
 

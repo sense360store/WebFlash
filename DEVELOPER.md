@@ -965,7 +965,9 @@ For development questions:
 
 ## Related Documentation
 
-- [README.md](README.md): User guide
+- [README.md](README.md): Repository front door
+- [docs/user-guide.md](docs/user-guide.md): User guide for flashing devices
+- [docs/README.md](docs/README.md): Documentation index
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): Common issues
 - [docs/sense360-webflash-status.md](docs/sense360-webflash-status.md): Canonical WebFlash Sense360 product & release status (consolidates the legacy `FEATURES.md` roadmap; references the upstream `sense360store/esphome-public` `docs/sense360-roadmap-status.md`)
 - [FEATURES.md](FEATURES.md): Deprecated — redirects to the canonical status doc above

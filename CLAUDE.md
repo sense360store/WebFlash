@@ -84,7 +84,7 @@ It exports a small surface (`getState`, `setState`, `replaceState`, `getStep`, `
 
 Other notable engine pieces:
 
-- `scripts/data/module-requirements.js` — hardware compatibility matrix (SKUs, headers, conflicts, `recommended`/`ceilingOnly`/`requiresBathroom` flags). **Constraint enforcement reads from this file**; keep it consistent with the canonical SKU table above and with the README option tables.
+- `scripts/data/module-requirements.js` — hardware compatibility matrix (SKUs, headers, conflicts, `recommended`/`ceilingOnly`/`requiresBathroom` flags). **Constraint enforcement reads from this file**; keep it consistent with the canonical SKU table above and with the option tables in [`docs/hardware-options.md`](docs/hardware-options.md).
 - `scripts/utils/url-config.js` — bidirectional parser for sharable config URLs. Maintains legacy aliases (e.g. `pwr` → `ac`, `BathroomAirIQ*` → `VentIQ`, fan `pwm` ↔ `base`) so old links still resolve. The wizard URL key `voice` historically maps to `core` in the URL alias set.
 - `scripts/utils/release-channels.js` — release-channel policy (per-channel `defaultSelectable`, `requiresAcknowledgement`, `hiddenByDefault`). Preview builds are never auto-selected and gate install on a channel acknowledgement.
 - `scripts/utils/module-availability.js` — presentation-only availability classifier for module variants (states such as `available-stable`, `available-preview`, `no-firmware`, `advanced-manual-warning`). Static overrides take precedence over manifest-derived states; the classifier is **not** the install gate.
@@ -157,7 +157,7 @@ Repo conventions:
 Trust model is non-negotiable:
 
 - Never weaken a blocking gate: provenance, channel acknowledgement, manifest freshness, service-worker update.
-- Never claim cryptographic signature verification the engine has not actually performed. Real Ed25519 verification is implemented and ENFORCED at the install gate: `verifyFirmwareIntegrity` (state.js) verifies the downloaded bytes against the pinned trust list (`scripts/utils/firmware-trusted-keys.js`) alongside the SHA-256 check, and `evaluateInstallGate` refuses install unless both verdicts pass. Never weaken this gate; UI copy may claim verification only from the engine's runtime verdict (README → "Signature verification — enforced install gate").
+- Never claim cryptographic signature verification the engine has not actually performed. Real Ed25519 verification is implemented and ENFORCED at the install gate: `verifyFirmwareIntegrity` (state.js) verifies the downloaded bytes against the pinned trust list (`scripts/utils/firmware-trusted-keys.js`) alongside the SHA-256 check, and `evaluateInstallGate` refuses install unless both verdicts pass. Never weaken this gate; UI copy may claim verification only from the engine's runtime verdict (`docs/firmware-provenance.md` → "Signature verification — enforced install gate").
 - Never expose any kit, module, or channel that 1.0 does not already expose. The release gates are the source of truth for what installs.
 
 Implementation discipline:
@@ -170,6 +170,6 @@ Self-verify before opening the PR, and paste the output into the PR body:
 - `npm test`
 - `python3 scripts/gen-manifests.py --strict-validate --dry-run`
 - `npm run check:headers -- https://sense360store.github.io/WebFlash/`
-- If the PR touches provenance, the manifest, or the install gate, fill the Reviewer checklist from the README "Reviewer checklist" section into the PR body.
+- If the PR touches provenance, the manifest, or the install gate, fill the Reviewer checklist from the `docs/firmware-provenance.md` "Reviewer checklist" section into the PR body.
 
 PR body: a summary, the key changes, the verify output, and an explicit statement of what stays gated. Plain prose. Do not use hyphens as sentence breakers. No emojis.
