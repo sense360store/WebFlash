@@ -1,0 +1,119 @@
+# REPO-CUSTOMER-READY-001 S6: markdown link checker over kept docs.
+#
+# Verifies that every relative markdown link in the kept documentation
+# resolves to a real file or directory in the tree. External URLs
+# (http/https/mailto) are out of scope so the check stays deterministic and
+# network free.
+#
+# Ignore list rationale:
+# - docs/release-gates/ holds the release gate records. They are byte stable
+#   evidence documents that must never be rewritten, so links inside them are
+#   not fixable and are not checked.
+# - docs/archive-index.md and docs/docs-disposition-manifest.md are the
+#   archive index paths: their rows intentionally reference files deleted
+#   from the tree (recoverable via the recorded git SHAs).
+# - firmware/ markdown files are published release note artifacts, not docs;
+#   published artifacts are never edited in place.
+
+name: Docs link check
+
+on:
+  push:
+    branches: [main]
+    paths: ['**.md']
+  pull_request:
+    paths: ['**.md']
+
+jobs:
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '20'
+
+      - name: Check relative markdown links in kept docs
+        run: |
+          node --input-type=module <<'EOF'
+          import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
+          import { join, dirname, resolve, relative, sep } from 'node:path';
+
+          const ROOT = process.cwd();
+
+          const IGNORED_DIRS = new Set(['.git', 'node_modules', 'firmware', 'vendor']);
+
+          // Byte stable evidence documents whose content must not be
+          // rewritten, so broken links inside them are not fixable.
+          const IGNORED_FILES = [
+            'docs/release-gates/', // release gate records (byte stable evidence)
+            'docs/archive-index.md', // archive index (rows reference deleted paths)
+            'docs/docs-disposition-manifest.md', // disposition manifest + execution log
+          ];
+
+          function collectMarkdownFiles(dir, out) {
+            for (const entry of readdirSync(dir)) {
+              const full = join(dir, entry);
+              const rel = relative(ROOT, full).split(sep).join('/');
+              const st = statSync(full);
+              if (st.isDirectory()) {
+                if (IGNORED_DIRS.has(entry)) continue;
+                collectMarkdownFiles(full, out);
+              } else if (entry.endsWith('.md')) {
+                if (IGNORED_FILES.some((p) => rel === p || rel.startsWith(p))) continue;
+                out.push(rel);
+              }
+            }
+            return out;
+          }
+
+          // Blank out fenced code blocks and inline code spans so link
+          // syntax inside code examples is not treated as a real link.
+          function stripCode(text) {
+            return text
+              .replace(/```[\s\S]*?```/g, (m) => m.replace(/[^\n]/g, ' '))
+              .replace(/`[^`\n]*`/g, (m) => ' '.repeat(m.length));
+          }
+
+          const LINK_RE = /\[[^\]]*\]\(([^()\s]+(?:\([^()]*\))?[^()\s]*)\)/g;
+          const REF_DEF_RE = /^[ ]{0,3}\[[^\]]+\]:\s+(\S+)/gm;
+
+          function extractTargets(text) {
+            const targets = [];
+            for (const re of [LINK_RE, REF_DEF_RE]) {
+              re.lastIndex = 0;
+              let m;
+              while ((m = re.exec(text)) !== null) targets.push(m[1]);
+            }
+            return targets;
+          }
+
+          const files = collectMarkdownFiles(ROOT, []).sort();
+          const broken = [];
+          let checked = 0;
+
+          for (const file of files) {
+            const text = stripCode(readFileSync(join(ROOT, file), 'utf8'));
+            for (let target of extractTargets(text)) {
+              target = target.replace(/^<|>$/g, '');
+              if (/^[a-z][a-z0-9+.-]*:/i.test(target)) continue; // external scheme
+              if (target.startsWith('#')) continue; // same-file anchor
+              const path = target.split('#')[0].split('?')[0];
+              if (path === '') continue;
+              checked += 1;
+              const resolved = path.startsWith('/')
+                ? join(ROOT, path)
+                : resolve(ROOT, dirname(file), path);
+              if (!existsSync(resolved)) broken.push(`${file}: ${target}`);
+            }
+          }
+
+          console.log(`Scanned ${files.length} markdown files, ${checked} relative links.`);
+          if (broken.length > 0) {
+            console.error(`\n${broken.length} broken relative link(s):`);
+            for (const b of broken) console.error(`  ${b}`);
+            process.exit(1);
+          }
+          console.log('All relative markdown links resolve.');
+          EOF
