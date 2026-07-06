@@ -230,8 +230,8 @@ const WRITE_RING_BASE = 25;
 const WRITE_RING_SPAN = 73;
 
 // True when the ESP Web Tools custom element is registered. The production
-// index.html loads it from the unpkg origin allowed by the CSP, so it is present
-// there. In a unit test (or any host that loads no third-party script) the
+// index.html loads it same-origin from vendor/esp-web-tools/ under the CSP's
+// script-src 'self', so it is present there. In a unit test (or any host that loads no third-party script) the
 // component is absent; this flag lets the view show an honest notice instead of
 // an inert button.
 function espWebToolsRegistered() {
@@ -585,6 +585,13 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
   // Desktop-only / mobile fallback message. Derived from the engine's browser
   // readiness evaluation over the detected capabilities; surfaced only when the
   // page genuinely cannot flash (mobile, no Web Serial, insecure context).
+  //
+  // REPO-CUSTOMER-READY-001 S9 — the blocked states carry designed handoff
+  // copy: the specific blocker first, then what Web Serial is and why a
+  // desktop Chromium browser is needed, then a copy-link button so the user
+  // can carry this page (the URL encodes the selection as a share link) to a
+  // desktop and continue there. Presentation only: the real install block is
+  // the engine gate's browser-support check, unchanged.
   function renderUnsupportedBanner() {
     if (!engine || !capabilities) { unsupportedBannerEl.hidden = true; return; }
     const readiness = engine.capabilities.evaluateBrowserReadiness(capabilities);
@@ -592,10 +599,55 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
     if (readiness.level === 'block' && blocker) {
       unsupportedBannerEl.hidden = false;
       mount(unsupportedBannerEl, icon('alert'),
-        h('span', null, h('b', null, blocker.title + '. '), blocker.message));
+        h('div', { class: 'handoff' },
+          h('p', { class: 'handoff__lead' }, h('b', null, blocker.title + '. '), blocker.message),
+          h('p', { class: 'handoff__why' },
+            'Web Serial is the browser capability that lets this page talk to your hub over a USB cable. ',
+            'Only desktop Chromium browsers provide it — Chrome, Edge, or Opera on Windows, macOS, or Linux — ',
+            'which is why flashing needs a laptop or desktop computer.'),
+          h('div', { class: 'handoff__actions' },
+            copyDesktopLinkButton(),
+            h('span', { class: 'handoff__hint' },
+              'Copy this page’s link, then open it on your computer to pick up where you left off.'),
+          ),
+        ));
     } else {
       unsupportedBannerEl.hidden = true;
     }
+  }
+
+  // S9 — the handoff "copy link" affordance. Copies the current page URL (the
+  // selection travels in it as a share link) so the user can continue on a
+  // desktop. Clipboard access can be denied or unavailable; the button then
+  // says so honestly instead of pretending it copied. Session-only UI state;
+  // nothing is recorded.
+  function copyDesktopLinkButton() {
+    const labelEl = h('span', null, ' Copy link for desktop');
+    const btn = h('button',
+      { class: 'btn btn--ghost btn--sm', type: 'button', 'data-copy-desktop-link': '' },
+      icon('copy'), labelEl);
+    let resetTimer = 0;
+    const setLabel = (text) => {
+      labelEl.textContent = ' ' + text;
+      if (resetTimer) clearTimeout(resetTimer);
+      resetTimer = setTimeout(() => { labelEl.textContent = ' Copy link for desktop'; }, 2500);
+    };
+    btn.addEventListener('click', () => {
+      const url = String(window.location.href);
+      const clipboard = (typeof navigator !== 'undefined' && navigator.clipboard
+        && typeof navigator.clipboard.writeText === 'function') ? navigator.clipboard : null;
+      if (!clipboard) {
+        setLabel('Copy the address bar URL instead');
+        return;
+      }
+      clipboard.writeText(url).then(() => {
+        setLabel('Link copied');
+        if (a11y && typeof a11y.announce === 'function') a11y.announce('Page link copied to the clipboard.');
+      }).catch(() => {
+        setLabel('Copy the address bar URL instead');
+      });
+    });
+    return btn;
   }
 
   // Standalone-preview honesty: when ESP Web Tools is not registered there is no
@@ -609,8 +661,8 @@ export function InstallStep({ device, build = null, engine = null, a11y = null, 
           'This design preview cannot open a USB connection. Use the live WebFlash installer to flash a hub.'));
     }
   }
-  // If the component registers after this step mounts (a late unpkg load under
-  // ?ui=2), drop the notice once it defines.
+  // If the component registers after this step mounts (a late module load in
+  // a standalone preview), drop the notice once it defines.
   if (manifestIndex != null && !espWebToolsRegistered()
     && typeof customElements !== 'undefined' && typeof customElements.whenDefined === 'function') {
     customElements.whenDefined('esp-web-install-button').then(() => {

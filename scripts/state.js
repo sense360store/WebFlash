@@ -6402,7 +6402,7 @@ function createFirmwareCardHtml(firmware, { configString = '', contextKey = 'pri
     // real external link); otherwise the shipped changelog embedded in the
     // manifest drives an in-card disclosure via a real <button> wired through the
     // delegated [data-release-notes-trigger] listener. (The effective GitHub
-    // Pages CSP — script-src 'self' https://unpkg.com, no 'unsafe-inline' — blocks
+    // Pages CSP — script-src 'self', no 'unsafe-inline' — blocks
     // inline onclick handlers, which is why the old href="#" + onclick link did
     // nothing on the live site.) With neither a URL nor embedded notes, no trigger
     // and no empty section are rendered.
@@ -7819,7 +7819,7 @@ document.addEventListener('click', async event => {
 });
 
 // WF-UX-016 — "View Release Notes" toggle via event delegation. The effective
-// GitHub Pages CSP (script-src 'self' https://unpkg.com — no 'unsafe-inline')
+// GitHub Pages CSP (script-src 'self' — no 'unsafe-inline')
 // blocks inline onclick handlers, so the old inline-onclick link did nothing on
 // the live site. Delegation is CSP-safe and survives the firmware card being
 // re-rendered. The external-URL variant ([data-release-notes-external]) is a

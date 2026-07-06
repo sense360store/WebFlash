@@ -666,6 +666,21 @@
     }
 }
 
+/* REPO-CUSTOMER-READY-001 S10 — this sheet's own reduced-motion handling, so
+   its spinners and hover transitions stay still even if the sheet is ever
+   loaded without the project-wide safety net in theme.css. The stopped spinner
+   ring remains visible as a static loading indicator. */
+@media (prefers-reduced-motion: reduce) {
+    .changelog-modal__spinner,
+    .sensor-health-panel__spinner {
+        animation: none;
+    }
+
+    * {
+        transition-duration: 0.001ms !important;
+    }
+}
+
 /* ============================================
    Dark Theme Overrides
    ============================================ */

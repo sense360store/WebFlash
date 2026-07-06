@@ -24,6 +24,9 @@ const STROKE = {
   sliders: '<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
   box: '<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.3 7 12 12 20.7 7"/><line x1="12" y1="22" x2="12" y2="12"/>',
   plug: '<path d="M12 22v-5"/><path d="M9 8V2M15 8V2"/><path d="M7 8h10v3a5 5 0 0 1-10 0z"/>',
+  // REPO-CUSTOMER-READY-001 S9 — the mobile / unsupported handoff "copy link"
+  // affordance (two overlapping sheets, the conventional copy glyph).
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   // WF2-SHELL-FULLPAGE-001 — the v3 theme toggle uses a stroked crescent moon
   // (the design's ui.jsx Ic.moon), replacing the previous filled-glyph moon.
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>',

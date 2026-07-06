@@ -285,6 +285,20 @@ performed it. If any blocking check fails, the panel turns red, the install
 button stays disabled, and the helper banner reproduces the blocking
 reason.
 
+### No analytics
+
+WebFlash runs no analytics and no tracking of any kind. The page loads no
+third party script, stylesheet, font, or pixel, and it makes no third party
+network request: firmware, manifests, fonts, and the ESP Web Tools component
+are all served from the site's own origin. This is not just policy but is
+enforced by the Content-Security-Policy in `index.html` (mirrored in
+`_headers`), whose `connect-src` allows only `'self'` and `blob:` — the page
+cannot phone home to any other host even if a bug tried to. A guard test
+(`__tests__/no-analytics-guard.test.js`) pins the `connect-src` directive so a
+regression fails CI. The only data that ever leaves the browser is the support
+bundle the user explicitly copies or downloads, which is redacted before it is
+assembled (see `docs/user-guide.md`).
+
 ### Tooling for maintainers
 
 - `python3 scripts/gen-manifests.py --strict-validate` (alias for

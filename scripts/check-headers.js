@@ -21,9 +21,10 @@ const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
 const PERMISSIONS_POLICY_DIRECTIVES = ['serial', 'usb'];
 
-const KNOWN_BROAD_SCRIPT_HOSTS = new Set([
-  'https://unpkg.com'
-]);
+// REPO-CUSTOMER-READY-001 S12 — the expected script-src is 'self' only: ESP Web
+// Tools is vendored under vendor/esp-web-tools/ (S8), so no remote script host
+// is documented as allowed and any third-party script source now warns.
+const KNOWN_BROAD_SCRIPT_HOSTS = new Set([]);
 
 function isLocalhostHost(hostname) {
   if (!hostname) return false;

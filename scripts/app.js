@@ -213,11 +213,32 @@ function onSelectionChanged() {
 }
 
 // ----- state transitions -----
+// REPO-CUSTOMER-READY-001 S10 — on a step change, move keyboard / assistive
+// technology focus to the new step's heading, using the same programmatic
+// tabindex="-1" + focus() pattern the modal surfaces use (modal.js /
+// a11y.trapFocus). Called only from the real step transitions (goTo / reset),
+// never from a plain re-render, so a selection change can never steal focus
+// from the control the user is operating. Falls back to the stable main
+// landmark (which already carries tabindex="-1") when a step renders no
+// heading.
+function focusStepHeading() {
+  if (!mainRegion) return;
+  const heading = mainRegion.querySelector('h1');
+  const target = heading || mainRegion;
+  if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+  try {
+    target.focus({ preventScroll: true });
+  } catch {
+    target.focus();
+  }
+}
+
 function goTo(n) {
   state.step = n;
   state.maxReached = Math.max(state.maxReached, n);
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   render();
+  focusStepHeading();
   announceStep();
 }
 
@@ -235,6 +256,7 @@ function reset() {
   resetIdentifyPickerState();
   window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   onSelectionChanged();
+  focusStepHeading();
   announceStep();
 }
 
@@ -285,6 +307,11 @@ function openRescue(event) {
 // ----- help modal -----
 // Wires the topbar Help button to an accessible dialog so the focus-trap and
 // focus-restoration accessibility pattern is real and exercised in this view.
+// REPO-CUSTOMER-READY-001 S9 — the help copy also points at the two recovery
+// surfaces so they are discoverable before a device is ever connected: the
+// topbar Rescue button (the real rescue/recovery modal) and the
+// troubleshooting guide.
+const TROUBLESHOOTING_URL = 'https://github.com/sense360store/WebFlash/blob/main/TROUBLESHOOTING.md';
 function openHelp() {
   openModal({
     title: 'WebFlash help',
@@ -296,6 +323,12 @@ function openHelp() {
       h('p', null,
         'Step through Identify, Install, and Connect. Each step unlocks the next once ',
         'its selections are valid. Press Escape to close this dialog.'),
+      h('p', null,
+        'Need to recover a hub that no longer boots or connects? Use the ',
+        h('b', null, 'Rescue'), ' button in the top bar — it works before any device is set up here. ',
+        'For connection, driver, and browser problems, see the ',
+        h('a', { href: TROUBLESHOOTING_URL, target: '_blank', rel: 'noopener noreferrer' }, 'troubleshooting guide'),
+        '.'),
     ],
   });
 }
