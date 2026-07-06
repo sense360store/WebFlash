@@ -156,24 +156,22 @@ describe('PR 4 — resolveCompatibleFirmware (pure engine lookup)', () => {
     expect(result.build).toBeNull();
   });
 
-  it('resolves an AirIQ + DAC selection to the imported room-bundle preview build', async () => {
+  it('blocks an AirIQ + DAC selection — its build was delisted, routed to source', async () => {
     // WF-IMPORT-FAN-BUNDLES-001 imported the five full-composition room-bundle
-    // fan previews, so Ceiling-POE-AirIQ-FanDAC-RoomIQ now ships a signed preview
-    // build and this pure manifest lookup finds it (previously "no-build" only
-    // because the build was absent). The AirIQ/DAC conflict that keeps this combo
-    // unselectable lives in the view layer (scripts/data.js airiq.conflicts=['dac']
-    // + scripts/identify.js hard-disables the conflicting option) and is unchanged.
-    // Install still gates on the preview-channel + fan-control + FanDAC-address
-    // acknowledgements; nothing here weakens that.
+    // fan previews, but WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1) delisted
+    // them all: the v1.0.0-preview binaries predate the upstream credential
+    // gate and cannot be rebuilt on the sanctioned pipeline. The pure manifest
+    // lookup is back to "no-build" — the same fail-closed path as TRIAC — and
+    // resolves again only when a clean post-gate rebuild is re-imported under
+    // a fresh source entry.
     const { engine } = await boot();
-    const channel = expectedChannelOf('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
     const result = await engine.state.resolveCompatibleFirmware({
       mount: 'ceiling', power: 'poe', airiq: 'airiq', roomiq: 'roomiq', fan: 'analog',
     });
     expect(result.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
-    expect(result.installable).toBe(true);
-    expect(result.isPreview).toBe(channel === 'preview');
-    expect(result.channel).toBe(channel);
+    expect(result.installable).toBe(false);
+    expect(result.reason).toBe('no-build');
+    expect(result.build).toBeNull();
   });
 
   it('blocks a USB power selection that has no published build', async () => {

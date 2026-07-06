@@ -229,32 +229,40 @@ describe('scripts/data/kits.json', () => {
         });
     });
 
-    // WF2-FAN-CONTROL-GATES-001 — the relay fan-control bundle behind the
-    // additive fan-control acknowledgement (layered in scripts/install.js on
-    // top of the engine's preview-channel gate). The original Bathroom Relay
-    // bundle (S360-KIT-BATH-P-REL -> Ceiling-POE-VentIQ-FanRelay-RoomIQ) was
-    // retired with its stale v1.0.0-preview build: upstream's regenerated
-    // checksums-sha256.txt no longer lists that asset. The Kitchen Relay
-    // bundle keeps the relay acknowledgement contract live.
-    describe('WF2-FAN-CONTROL-GATES-001 — relay fan-control bundle', () => {
-        test('the Kitchen Relay bundle is present and maps to the preview FanRelay build', () => {
-            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-KITCHEN-P-REL');
-            expect(kit).toBeTruthy();
-            expect(kit.firmware_config_string).toBe('Ceiling-POE-AirIQ-FanRelay-RoomIQ');
-            expect(kit.firmware_channel).toBe('preview');
-            expect(manifestConfigStrings.has(kit.firmware_config_string)).toBe(true);
+    // WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1) — the five full-composition
+    // fan bundle kit cards surfaced by WF2-FAN-EXPANSION-001 retired with
+    // their delisted pre-credential-gate v1.0.0-preview builds (see the
+    // delisted_sources register in firmware/sources.json and
+    // docs/rebuild-clean-credentials-001.md). The Bathroom Relay bundle
+    // (S360-KIT-BATH-P-REL -> Ceiling-POE-VentIQ-FanRelay-RoomIQ) had already
+    // retired with its stale v1.0.0-preview build. The fan-control and FanDAC
+    // address acknowledgement gates (scripts/install.js) remain in force for
+    // any future fan config; only the kit cards and builds are gone.
+    describe('WF-H1-REIMPORT-CLEAN-001 W1 — fan bundle kit cards stay retired', () => {
+        const RETIRED_FAN_KITS = [
+            { sku: 'S360-KIT-BATH-P-PWM', config: 'Ceiling-POE-VentIQ-FanPWM-RoomIQ' },
+            { sku: 'S360-KIT-BATH-P-DAC', config: 'Ceiling-POE-VentIQ-FanDAC-RoomIQ' },
+            { sku: 'S360-KIT-KITCHEN-P-REL', config: 'Ceiling-POE-AirIQ-FanRelay-RoomIQ' },
+            { sku: 'S360-KIT-KITCHEN-P-PWM', config: 'Ceiling-POE-AirIQ-FanPWM-RoomIQ' },
+            { sku: 'S360-KIT-KITCHEN-P-DAC', config: 'Ceiling-POE-AirIQ-FanDAC-RoomIQ' }
+        ];
+
+        test('the catalogue holds exactly the two stable base bundles', () => {
+            // The Bathroom (Release-One, recommended) and Bedroom base
+            // bundles. Every fan bundle kit card retired with its delisted
+            // build; the Kitchen / Living / Corridor base bundles stay
+            // retired with their stale v1.0.0-preview builds.
+            expect(catalog.kits).toHaveLength(2);
+            expect(catalog.kits.map(k => k.sku)).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P']);
+            expect(catalog.skipped).toEqual([]);
         });
 
-        test('it is a full room bundle (RoomIQ + AirIQ + relay fan), never recommended / stable / default / buyable', () => {
-            const kit = catalog.kits.find(k => k.sku === 'S360-KIT-KITCHEN-P-REL');
-            expect(kit.wizard_state.roomiq).toBe('roomiq');
-            expect(kit.wizard_state.airiq).toBe('airiq');
-            expect(kit.wizard_state.fan).toBe('relay');
-            expect(kit.recommended).toBe(false);
-            // The schema carries no buyable / default flag; preview fan-control
-            // kits must never smuggle one in.
-            expect(kit.buyable).toBeUndefined();
-            expect(kit.isDefault).toBeUndefined();
+        test('the five retired fan kit SKUs and their configs stay out until re-imported clean', () => {
+            RETIRED_FAN_KITS.forEach(expected => {
+                expect(catalog.kits.find(k => k.sku === expected.sku)).toBeUndefined();
+                expect(isExpectedConfig(expected.config)).toBe(false);
+                expect(manifestConfigStrings.has(expected.config)).toBe(false);
+            });
         });
 
         test('the retired Bathroom Relay bundle and its config stay out until re-imported', () => {
@@ -265,101 +273,11 @@ describe('scripts/data/kits.json', () => {
             expect(manifestConfigStrings.has('Ceiling-POE-VentIQ-FanRelay-RoomIQ')).toBe(false);
         });
 
-        test('no kit carries a blocked FanTRIAC token', () => {
-            catalog.kits.forEach(kit => {
-                expect(kit.firmware_config_string.toLowerCase()).not.toContain('triac');
-                expect(kit.wizard_state.fan).not.toBe('triac');
-            });
-        });
-    });
-
-    // WF2-FAN-EXPANSION-001 — the five full-composition fan bundles imported into
-    // the manifest by WF-IMPORT-FAN-BUNDLES-001, surfaced as preview kit cards.
-    // Two Bathroom fan variants (PWM / DAC) and three Kitchen fan variants
-    // (Relay / PWM / DAC) join the existing six bundles, taking the catalogue to
-    // eleven. The install acknowledgements are config-driven (scripts/install.js)
-    // so they apply automatically; this block pins the kit-data contract.
-    describe('WF2-FAN-EXPANSION-001 — five fan bundle kit cards', () => {
-        const NEW_FAN_KITS = [
-            { sku: 'S360-KIT-BATH-P-PWM', config: 'Ceiling-POE-VentIQ-FanPWM-RoomIQ', fan: 'pwm', air: 'ventiq', bathroom: true },
-            { sku: 'S360-KIT-BATH-P-DAC', config: 'Ceiling-POE-VentIQ-FanDAC-RoomIQ', fan: 'analog', air: 'ventiq', bathroom: true },
-            { sku: 'S360-KIT-KITCHEN-P-REL', config: 'Ceiling-POE-AirIQ-FanRelay-RoomIQ', fan: 'relay', air: 'airiq', bathroom: false },
-            { sku: 'S360-KIT-KITCHEN-P-PWM', config: 'Ceiling-POE-AirIQ-FanPWM-RoomIQ', fan: 'pwm', air: 'airiq', bathroom: false },
-            { sku: 'S360-KIT-KITCHEN-P-DAC', config: 'Ceiling-POE-AirIQ-FanDAC-RoomIQ', fan: 'analog', air: 'airiq', bathroom: false }
-        ];
-
-        test('the catalogue holds exactly seven kits', () => {
-            // Two stable base bundles (Bathroom, Bedroom) plus the five
-            // full-composition fan bundles. The Kitchen / Living / Corridor
-            // base bundles and the Bathroom Relay bundle retired together with
-            // their stale v1.0.0-preview builds. The kit-mode picker renders
-            // one card per kit.
-            expect(catalog.kits).toHaveLength(7);
-            expect(catalog.skipped).toEqual([]);
-        });
-
-        test('all five new fan SKUs are present with the correct config string and preview channel', () => {
-            NEW_FAN_KITS.forEach(expected => {
-                const kit = catalog.kits.find(k => k.sku === expected.sku);
-                expect(kit).toBeTruthy();
-                expect(kit.firmware_config_string).toBe(expected.config);
-                expect(kit.firmware_channel).toBe('preview');
-            });
-        });
-
-        test('every new fan kit config resolves to a real manifest build', () => {
-            NEW_FAN_KITS.forEach(expected => {
-                expect(manifestConfigStrings.has(expected.config)).toBe(true);
-            });
-        });
-
-        test('every new fan kit is a full room bundle (RoomIQ + air sensor + fan driver)', () => {
-            NEW_FAN_KITS.forEach(expected => {
-                const kit = catalog.kits.find(k => k.sku === expected.sku);
-                const state = kit.wizard_state;
-                expect(state.roomiq).toBe('roomiq');
-                expect(state.fan).toBe(expected.fan);
-                expect(state[expected.air]).toBe(expected.air);
-                expect(state.bathroom).toBe(expected.bathroom);
-                // VentIQ and AirIQ stay mutually exclusive.
-                const hasAir = state.airiq && state.airiq !== 'none';
-                const hasVent = state.ventiq && state.ventiq !== 'none';
-                expect(hasAir && hasVent).toBe(false);
-            });
-        });
-
-        test('no new fan kit is recommended / stable / default / buyable', () => {
-            NEW_FAN_KITS.forEach(expected => {
-                const kit = catalog.kits.find(k => k.sku === expected.sku);
-                expect(kit.recommended).toBe(false);
-                expect(kit.firmware_channel).toBe('preview');
-                // The schema carries no buyable / default flag; preview fan-control
-                // kits must never smuggle one in.
-                expect(kit.buyable).toBeUndefined();
-                expect(kit.isDefault).toBeUndefined();
-            });
-        });
-
         test('S360-KIT-BATH-P stays the only recommended kit; Bedroom joins it on the stable channel', () => {
             const recommended = catalog.kits.filter(k => k.recommended);
             expect(recommended.map(k => k.sku)).toEqual(['S360-KIT-BATH-P']);
             const stable = catalog.kits.filter(k => k.firmware_channel === 'stable');
             expect(stable.map(k => k.sku).sort()).toEqual(['S360-KIT-BATH-P', 'S360-KIT-BEDROOM-P'].sort());
-        });
-
-        test('the two FanDAC kits combine FanDAC with a VentIQ / AirIQ air sensor', () => {
-            // This is exactly the SGP41 analog-address conflict the FanDAC address
-            // acknowledgement (scripts/install.js) covers, so it must be a real,
-            // resolvable combination here.
-            const dacKits = ['S360-KIT-BATH-P-DAC', 'S360-KIT-KITCHEN-P-DAC'];
-            dacKits.forEach(sku => {
-                const kit = catalog.kits.find(k => k.sku === sku);
-                expect(kit.wizard_state.fan).toBe('analog');
-                expect(kit.firmware_config_string).toContain('FanDAC');
-                const hasAirSensor = (kit.wizard_state.ventiq && kit.wizard_state.ventiq !== 'none')
-                    || (kit.wizard_state.airiq && kit.wizard_state.airiq !== 'none');
-                expect(hasAirSensor).toBe(true);
-            });
         });
 
         test('the standalone fan-only previews and TRIAC are never kit cards', () => {

@@ -276,20 +276,47 @@ describe('WF2-FAN-CONTROL-GATES-001 — additive gate in the InstallStep (fake e
 });
 
 // ===========================================================================
-// C. DOM integration with the REAL engine over the live manifest + kits.json
+// C. DOM integration with the REAL engine. After WF-H1-REIMPORT-CLEAN-001 W1
+//    delisted every fan preview build, the live manifest carries no fan
+//    config — so the delisted state is asserted against the REAL files, and
+//    the acknowledgement rendering is exercised over a SYNTHETIC manifest
+//    (real manifest + grafted FanRelay / FanDAC preview builds modelled on
+//    the surviving LED preview build). The gates are config-driven and must
+//    keep working for any future clean fan re-import.
 // ===========================================================================
-describe('WF2-FAN-CONTROL-GATES-001 — Bathroom Relay kit + real engine', () => {
+describe('WF2-FAN-CONTROL-GATES-001 — fan configs + real engine', () => {
   const ROOT = process.cwd();
   const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
   const kitsJson = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'kits.json'), 'utf8'));
 
   const a11yStub = { announce: jest.fn(), trapFocus: () => () => {}, restoreFocus: () => {}, getFocusableElements: () => [] };
 
+  const KITCHEN_RELAY_CONFIG = 'Ceiling-POE-AirIQ-FanRelay-RoomIQ';
+  const VENTIQ_DAC_CONFIG = 'Ceiling-POE-VentIQ-FanDAC-RoomIQ';
+
+  // Test input only — the served manifest carries no fan build.
+  function makeSyntheticManifest() {
+    const synthetic = JSON.parse(JSON.stringify(manifestJson));
+    const template = synthetic.builds.find((b) => b.config_string === 'Ceiling-POE-VentIQ-RoomIQ-LED');
+    for (const [config, modules] of [
+      [KITCHEN_RELAY_CONFIG, ['AirIQ', 'FanRelay', 'RoomIQ']],
+      [VENTIQ_DAC_CONFIG, ['VentIQ', 'FanDAC', 'RoomIQ']],
+    ]) {
+      const build = JSON.parse(JSON.stringify(template));
+      build.config_string = config;
+      build.modules = modules;
+      build.description = 'Synthetic fan preview build (test only).';
+      synthetic.builds.push(build);
+    }
+    return synthetic;
+  }
+  const syntheticManifest = makeSyntheticManifest();
+
   function makeFetch() {
     return jest.fn((url) => {
       const u = String(url);
       if (u.includes('kits.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(kitsJson) });
-      if (u.includes('manifest.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(manifestJson) });
+      if (u.includes('manifest.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(syntheticManifest) });
       if (u.includes('.bin')) return Promise.resolve({ ok: true, status: 200, arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
       return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
     });
@@ -325,32 +352,24 @@ describe('WF2-FAN-CONTROL-GATES-001 — Bathroom Relay kit + real engine', () =>
     return { root, resolved };
   }
 
-  // The Bathroom Relay kit (S360-KIT-BATH-P-REL -> Ceiling-POE-VentIQ-FanRelay-
-  // RoomIQ) was retired with its stale v1.0.0-preview build; the Kitchen Relay
-  // kit keeps the relay acknowledgement contract live against the real engine.
-  const KITCHEN_RELAY_CONFIG = 'Ceiling-POE-AirIQ-FanRelay-RoomIQ';
-
-  it('the Kitchen Relay kit resolves to the preview FanRelay build', () => {
-    const kit = (kitsJson.kits || []).find((k) => k.sku === 'S360-KIT-KITCHEN-P-REL');
-    expect(kit).toBeTruthy();
-    expect(kit.firmware_config_string).toBe(KITCHEN_RELAY_CONFIG);
-    expect(kit.firmware_channel).toBe('preview');
-    expect(kit.recommended).toBe(false);
-    // The declared config must be a real manifest build on the preview channel.
-    const build = (manifestJson.builds || []).find((b) => b.config_string === KITCHEN_RELAY_CONFIG);
-    expect(build).toBeTruthy();
-    expect(build.channel).toBe('preview');
-  });
-
-  it('the retired Bathroom Relay kit and its config stay out until re-imported', () => {
+  it('every relay kit card and fan build is delisted from the REAL kits.json and manifest.json', () => {
+    // The Bathroom Relay kit (S360-KIT-BATH-P-REL) retired with its stale
+    // v1.0.0-preview build; the Kitchen Relay kit (S360-KIT-KITCHEN-P-REL)
+    // and every other fan bundle delisted at WF-H1-REIMPORT-CLEAN-001 W1
+    // (pre-credential-gate binaries, decision R-D1).
     expect((kitsJson.kits || []).find((k) => k.sku === 'S360-KIT-BATH-P-REL')).toBeUndefined();
+    expect((kitsJson.kits || []).find((k) => k.sku === 'S360-KIT-KITCHEN-P-REL')).toBeUndefined();
     expect((manifestJson.builds || []).find((b) => b.config_string === RELAY_CONFIG)).toBeUndefined();
+    expect((manifestJson.builds || []).find((b) => b.config_string === KITCHEN_RELAY_CONFIG)).toBeUndefined();
+    expect((manifestJson.builds || []).some((b) => /Fan(Relay|PWM|DAC|TRIAC)/.test(b.config_string))).toBe(false);
   });
 
-  it('renders the fan-control acknowledgement (not the address one) for the Relay kit, alongside the preview channel ack', async () => {
-    const kit = (kitsJson.kits || []).find((k) => k.sku === 'S360-KIT-KITCHEN-P-REL');
-    const { root, resolved } = await mountForState(kit.wizard_state);
-    // The kit's own wizard_state must resolve to the FanRelay preview build.
+  it('renders the fan-control acknowledgement (not the address one) for a FanRelay config, alongside the preview channel ack', async () => {
+    // The wizard_state the retired Kitchen Relay kit card used to carry,
+    // resolved over the synthetic manifest.
+    const { root, resolved } = await mountForState({
+      mount: 'ceiling', power: 'poe', bathroom: false, roomiq: 'roomiq', airiq: 'airiq', ventiq: 'none', fan: 'relay', led: 'none', voice: 'none',
+    });
     expect(resolved.configString).toBe(KITCHEN_RELAY_CONFIG);
     expect(resolved.isPreview).toBe(true);
     expect(resolved.installable).toBe(true);
@@ -370,9 +389,11 @@ describe('WF2-FAN-CONTROL-GATES-001 — Bathroom Relay kit + real engine', () =>
 
   it('a real Advanced-builder FanDAC config surfaces both the fan-control and address acknowledgements', async () => {
     // Reached through the Advanced builder (fan = analog), proving the gate is
-    // config-driven rather than kit-driven. Retargeted from the standalone
-    // Ceiling-POE-FanDAC manual preview (retired with the stale
-    // v1.0.0-preview batch) to the surviving VentIQ FanDAC room bundle.
+    // config-driven rather than kit-driven. Retargeted twice: from the
+    // standalone Ceiling-POE-FanDAC manual preview (retired with the stale
+    // v1.0.0-preview batch) to the VentIQ FanDAC room bundle, now grafted
+    // into the synthetic manifest after WF-H1-REIMPORT-CLEAN-001 W1 delisted
+    // the real fan builds.
     const { root, resolved } = await mountForState({
       mount: 'ceiling', power: 'poe', bathroom: true, roomiq: 'roomiq', airiq: 'none', ventiq: 'ventiq', fan: 'analog', led: 'none', voice: 'none',
     });

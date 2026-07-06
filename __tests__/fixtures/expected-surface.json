@@ -5,21 +5,6 @@
   "filename_convention": "Sense360-<config_string>-v<version>-<channel>.bin with a sibling <name>.meta.json sidecar. Application builds live under firmware/configurations/; the Rescue artifact lives under firmware/rescue/ and has no sidecar requirement.",
   "builds": [
     {
-      "config_string": "Ceiling-POE-AirIQ-FanDAC-RoomIQ",
-      "version": "1.0.0",
-      "channel": "preview"
-    },
-    {
-      "config_string": "Ceiling-POE-AirIQ-FanPWM-RoomIQ",
-      "version": "1.0.0",
-      "channel": "preview"
-    },
-    {
-      "config_string": "Ceiling-POE-AirIQ-FanRelay-RoomIQ",
-      "version": "1.0.0",
-      "channel": "preview"
-    },
-    {
       "config_string": "Ceiling-POE-AirIQ-RoomIQ",
       "version": "1.0.6",
       "channel": "stable"
@@ -28,16 +13,6 @@
       "config_string": "Ceiling-POE-RoomIQ",
       "version": "1.0.5",
       "channel": "stable"
-    },
-    {
-      "config_string": "Ceiling-POE-VentIQ-FanDAC-RoomIQ",
-      "version": "1.0.0",
-      "channel": "preview"
-    },
-    {
-      "config_string": "Ceiling-POE-VentIQ-FanPWM-RoomIQ",
-      "version": "1.0.0",
-      "channel": "preview"
     },
     {
       "config_string": "Ceiling-POE-VentIQ-RoomIQ",
@@ -93,6 +68,46 @@
       "retired_in": "#553",
       "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it.",
       "note": "The Bathroom Relay bundle kit (S360-KIT-BATH-P-REL) retired with this build and stays out of kits.json until the config is re-imported."
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-FanDAC-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "WF-H1-REIMPORT-CLEAN-001-W1",
+      "reason": "Delisted by WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1): built before the upstream credential gate (SEC-ESP-BUILD-GATES-001) and carries shared default credentials; the config cannot be rebuilt on the sanctioned upstream pipeline (fan rows stay out of upstream config/webflash-builds.json), so it is delisted instead of re-imported. See firmware/sources.json delisted_sources and docs/rebuild-clean-credentials-001.md.",
+      "note": "The S360-KIT-KITCHEN-P-DAC kit card retired with this build and stays out of kits.json until a post-gate rebuild of the config is re-imported. This retired v1.0.0-preview ARTIFACT must never reappear."
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-FanPWM-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "WF-H1-REIMPORT-CLEAN-001-W1",
+      "reason": "Delisted by WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1): built before the upstream credential gate (SEC-ESP-BUILD-GATES-001) and carries shared default credentials; the config cannot be rebuilt on the sanctioned upstream pipeline (fan rows stay out of upstream config/webflash-builds.json), so it is delisted instead of re-imported. See firmware/sources.json delisted_sources and docs/rebuild-clean-credentials-001.md.",
+      "note": "The S360-KIT-KITCHEN-P-PWM kit card retired with this build and stays out of kits.json until a post-gate rebuild of the config is re-imported. This retired v1.0.0-preview ARTIFACT must never reappear."
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-FanRelay-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "WF-H1-REIMPORT-CLEAN-001-W1",
+      "reason": "Delisted by WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1): built before the upstream credential gate (SEC-ESP-BUILD-GATES-001) and carries shared default credentials; the config cannot be rebuilt on the sanctioned upstream pipeline (fan rows stay out of upstream config/webflash-builds.json), so it is delisted instead of re-imported. See firmware/sources.json delisted_sources and docs/rebuild-clean-credentials-001.md.",
+      "note": "The S360-KIT-KITCHEN-P-REL kit card retired with this build and stays out of kits.json until a post-gate rebuild of the config is re-imported. This retired v1.0.0-preview ARTIFACT must never reappear."
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-FanDAC-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "WF-H1-REIMPORT-CLEAN-001-W1",
+      "reason": "Delisted by WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1): built before the upstream credential gate (SEC-ESP-BUILD-GATES-001) and carries shared default credentials; the config cannot be rebuilt on the sanctioned upstream pipeline (fan rows stay out of upstream config/webflash-builds.json), so it is delisted instead of re-imported. See firmware/sources.json delisted_sources and docs/rebuild-clean-credentials-001.md.",
+      "note": "The S360-KIT-BATH-P-DAC kit card retired with this build and stays out of kits.json until a post-gate rebuild of the config is re-imported. This retired v1.0.0-preview ARTIFACT must never reappear."
+    },
+    {
+      "config_string": "Ceiling-POE-VentIQ-FanPWM-RoomIQ",
+      "version": "1.0.0",
+      "channel": "preview",
+      "retired_in": "WF-H1-REIMPORT-CLEAN-001-W1",
+      "reason": "Delisted by WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1): built before the upstream credential gate (SEC-ESP-BUILD-GATES-001) and carries shared default credentials; the config cannot be rebuilt on the sanctioned upstream pipeline (fan rows stay out of upstream config/webflash-builds.json), so it is delisted instead of re-imported. See firmware/sources.json delisted_sources and docs/rebuild-clean-credentials-001.md.",
+      "note": "The S360-KIT-BATH-P-PWM kit card retired with this build and stays out of kits.json until a post-gate rebuild of the config is re-imported. This retired v1.0.0-preview ARTIFACT must never reappear."
     }
   ]
 }
