@@ -12,7 +12,7 @@ import { icon } from './icons.js';
    is a non-interactive node marked aria-current="step", and not-yet-reached
    steps are inert. The nav keeps aria-label="Progress" so it is announced as the
    progress landmark exactly as the old rail was. */
-export function WinBar({ steps, step, maxReached, onJump, logoUrl, theme, onRescue, onHelp, onToggleTheme }) {
+export function WinBar({ steps, step, maxReached, onJump, logoUrl, theme, guidesUrl, onRescue, onHelp, onToggleTheme }) {
   const stepper = h('nav', { class: 'istep', 'aria-label': 'Progress' });
   steps.forEach((s, i) => {
     const done = i < step;
@@ -54,6 +54,14 @@ export function WinBar({ steps, step, maxReached, onJump, logoUrl, theme, onResc
     ),
     stepper,
     h('div', { class: 'winbar__right' },
+      // PRODUCT-GUIDES-001 G3 — the shell's docs link: the customer
+      // product-guides site. Rendered only when the mounting view supplies the
+      // URL (scripts/app.js), so bare scaffold mounts stay unchanged.
+      guidesUrl
+        ? h('a',
+          { class: 'iconbtn', href: guidesUrl, target: '_blank', rel: 'noopener noreferrer', 'data-guides-link': '' },
+          icon('info'), ' Guides')
+        : null,
       h('button',
         { class: 'iconbtn', type: 'button', 'data-rescue-open': '', 'aria-haspopup': 'dialog', onClick: onRescue },
         icon('life'), ' Rescue'),

@@ -6,6 +6,7 @@ The canonical WebFlash flasher URL is <https://sense360store.github.io/WebFlash/
 
 ## Before you file anything
 
+- The [Sense360 product guides](https://sense360store.github.io/esphome-public/) cover setup for each product: placement, Home Assistant adoption, the entities each product exposes, updating, and factory reset / recovery.
 - Read [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common flashing problems (browser support, serial permissions, driver issues, recovery steps).
 - WebFlash requires a desktop Chromium based browser (Chrome, Edge, or Opera) on Windows, macOS, or Linux. Mobile browsers, Firefox, and Safari cannot flash devices because they do not implement Web Serial.
 

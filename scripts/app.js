@@ -16,7 +16,7 @@ import { h, mount } from './h.js';
 import { WinBar } from './ui.js';
 import { IdentifyStep, resetIdentifyPickerState, setIdentifyInitialView } from './identify.js';
 import { InstallStep } from './install.js';
-import { ConnectStep } from './connect.js';
+import { ConnectStep, PRODUCT_GUIDES_URL } from './connect.js';
 import { AIR, POWER, DEFAULT_SEL, selToWizardState, wizardStateToSel } from './data.js';
 import { openModal } from './modal.js';
 
@@ -466,6 +466,7 @@ function buildWinBar() {
     onJump: goTo,
     logoUrl: LOGO_URL,
     theme: state.theme,
+    guidesUrl: PRODUCT_GUIDES_URL,
     onRescue: openRescue,
     onHelp: openHelp,
     onToggleTheme: toggleTheme,
