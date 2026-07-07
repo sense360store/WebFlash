@@ -763,15 +763,19 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
     });
 
     test('scripts/data/kits.json references the customer room bundles', () => {
-        // The catalogue holds seven kits: the stable Bathroom (Release-One)
-        // and Bedroom base bundles plus the five full-composition fan bundles
-        // surfaced by WF2-FAN-EXPANSION-001. The Living / Corridor base
-        // bundles and the Bathroom Relay bundle stay retired with their stale
-        // v1.0.0-preview builds (RoomIQ-LED, VentIQ-FanRelay-RoomIQ) — a kit
-        // card may never reference a config without a manifest build. The
-        // Kitchen base bundle stays withheld even though its AirIQ-RoomIQ
-        // config now ships as the v1.0.6 stable: the upstream catalog bundle
-        // gating keeps S360-KIT-KITCHEN-P hidden / not buyable (owner waiver
+        // The catalogue holds two kits: the stable Bathroom (Release-One)
+        // and Bedroom base bundles. The five full-composition fan bundle kit
+        // cards surfaced by WF2-FAN-EXPANSION-001 retired at
+        // WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1) with their delisted
+        // pre-credential-gate v1.0.0-preview builds — see the
+        // delisted_sources register in firmware/sources.json. The Living /
+        // Corridor base bundles and the Bathroom Relay bundle stay retired
+        // with their stale v1.0.0-preview builds (RoomIQ-LED,
+        // VentIQ-FanRelay-RoomIQ) — a kit card may never reference a config
+        // without a manifest build. The Kitchen base bundle stays withheld
+        // even though its AirIQ-RoomIQ config now ships as the v1.0.6
+        // stable: the upstream catalog bundle gating keeps
+        // S360-KIT-KITCHEN-P hidden / not buyable (owner waiver
         // HW-AIRIQ-WAIVER-2026-06), so the stable build is reachable through
         // the advanced builder only. Every kit config string must be a real
         // manifest build, and only the stable Release-One config may be the
@@ -782,12 +786,7 @@ describe('WF-PRODUCT-003 — upstream LED preview recognition', () => {
         const kitConfigs = (kits.kits || []).map(k => k.firmware_config_string);
         expect(kitConfigs).toEqual([
             'Ceiling-POE-VentIQ-RoomIQ',
-            'Ceiling-POE-RoomIQ',
-            'Ceiling-POE-VentIQ-FanPWM-RoomIQ',
-            'Ceiling-POE-VentIQ-FanDAC-RoomIQ',
-            'Ceiling-POE-AirIQ-FanRelay-RoomIQ',
-            'Ceiling-POE-AirIQ-FanPWM-RoomIQ',
-            'Ceiling-POE-AirIQ-FanDAC-RoomIQ'
+            'Ceiling-POE-RoomIQ'
         ]);
         for (const cfg of kitConfigs) {
             expect(manifestConfigs.has(cfg)).toBe(true);
@@ -999,17 +998,21 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC preview import recog
     });
 });
 
-describe('WF-IMPORT-FAN-BUNDLES-001 — full-composition fan bundle preview import recognition', () => {
-    // The five published full-composition Bathroom / Kitchen fan-control
-    // room-bundle preview artifacts (upstream esphome-public #720, shared
-    // v1.0.0-preview release). Same two-concept eligibility model as the
-    // single-driver fan previews: catalog status stays hardware-pending +
-    // webflash_build_matrix=false, but webflash_import_eligibility.eligible=true
-    // (ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001) authorises the Advanced-install-only,
-    // acknowledgement-gated preview import — present in sources + manifest.
-    // WF2-FAN-EXPANSION-001 then surfaced all five as preview kit cards (kit
-    // eligible by the lifecycle model), so they are now present in kits.json too;
-    // they stay absent from the production-only REQUIRED_CONFIGS. FanTRIAC stays
+describe('WF-H1-REIMPORT-CLEAN-001 W1 — full-composition fan bundle previews stay delisted', () => {
+    // The five full-composition Bathroom / Kitchen fan-control room-bundle
+    // preview artifacts (upstream esphome-public #720, shared v1.0.0-preview
+    // release) were imported under ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001
+    // and surfaced as preview kit cards by WF2-FAN-EXPANSION-001. All five
+    // were built before the upstream credential gate
+    // (SEC-ESP-BUILD-GATES-001) and were DELISTED at WF-H1-REIMPORT-CLEAN-001
+    // W1 (decision R-D1): the fan-token guardrail keeps fan rows out of the
+    // upstream build matrix, so they cannot be rebuilt clean and are removed
+    // from the served surface instead. This block pins the delisted state:
+    // recorded in the delisted_sources register of firmware/sources.json,
+    // absent from active sources, manifest.json, kits.json, and
+    // REQUIRED_CONFIGS. The upstream catalog fixture still carries their
+    // eligibility flags — eligibility is not exposure, and re-listing
+    // requires a fresh post-gate source entry. FanTRIAC stays
     // eligible=false / blocked.
     const FAN_BUNDLES = [
         {
@@ -1057,56 +1060,48 @@ describe('WF-IMPORT-FAN-BUNDLES-001 — full-composition fan bundle preview impo
     );
 
     test.each(FAN_BUNDLES)(
-        'firmware/sources.json carries $config (channel preview, pinned SHA, block_tokens FanTRIAC + LED)',
+        'firmware/sources.json no longer serves $config and records its de-list reason',
         ({ config, sha256 }) => {
+            // The active sources array must not carry the delisted config.
             const src = (sources.sources || []).find(s => s.config_string === config);
-            expect(src).toBeDefined();
-            expect(src.channel).toBe('preview');
-            expect(src.version).toBe('1.0.0');
-            expect(src.release_tag).toBe('v1.0.0-preview');
-            expect(src.asset_name).toBe(`Sense360-${config}-v1.0.0-preview.bin`);
-            expect(src.expected_sha256).toBe(sha256);
-            expect(src.block_tokens).toEqual(['FanTRIAC', 'LED']);
+            expect(src).toBeUndefined();
+
+            // R-D1: the de-list is recorded, with a reason, in the sources
+            // data itself. The register pins the exact artifact that was
+            // delisted so a re-list is always a deliberate new entry.
+            const delisted = (sources.delisted_sources || []).find(
+                d => d.config_string === config
+            );
+            expect(delisted).toBeDefined();
+            expect(delisted.channel).toBe('preview');
+            expect(delisted.version).toBe('1.0.0');
+            expect(delisted.release_tag).toBe('v1.0.0-preview');
+            expect(delisted.asset_name).toBe(`Sense360-${config}-v1.0.0-preview.bin`);
+            expect(typeof delisted.delisted_reason).toBe('string');
+            expect(delisted.delisted_reason.length).toBeGreaterThan(0);
         }
     );
 
     test.each(FAN_BUNDLES)(
-        'manifest.json carries the $config preview build with the pinned SHA',
-        ({ config, sha256, modules }) => {
-            const build = (manifest.builds || []).find(b => b.config_string === config);
-            expect(build).toBeDefined();
-            expect(build.channel).toBe('preview');
-            expect(build.version).toBe('1.0.0');
-            expect(build.sha256).toBe(sha256);
-            expect(build.modules).toEqual(expect.arrayContaining(modules));
-        }
-    );
-
-    // WF2-FAN-EXPANSION-001 — each fan-bundle config is now surfaced by exactly
-    // one preview kit card. Map config -> the kit SKU that carries it.
-    const FAN_BUNDLE_KIT_SKU = {
-        'Ceiling-POE-VentIQ-FanPWM-RoomIQ': 'S360-KIT-BATH-P-PWM',
-        'Ceiling-POE-VentIQ-FanDAC-RoomIQ': 'S360-KIT-BATH-P-DAC',
-        'Ceiling-POE-AirIQ-FanRelay-RoomIQ': 'S360-KIT-KITCHEN-P-REL',
-        'Ceiling-POE-AirIQ-FanDAC-RoomIQ': 'S360-KIT-KITCHEN-P-DAC',
-        'Ceiling-POE-AirIQ-FanPWM-RoomIQ': 'S360-KIT-KITCHEN-P-PWM'
-    };
-
-    test.each(FAN_BUNDLES)(
-        '$config is NOT in REQUIRED_CONFIGS (production-only) but IS a preview kit card after WF2-FAN-EXPANSION-001',
+        'manifest.json no longer carries the $config preview build',
         ({ config }) => {
-            // Production-only allowlist is unchanged: the preview fan bundles must
-            // never enter REQUIRED_CONFIGS.
+            const build = (manifest.builds || []).find(b => b.config_string === config);
+            expect(build).toBeUndefined();
+        }
+    );
+
+    test.each(FAN_BUNDLES)(
+        '$config is NOT in REQUIRED_CONFIGS (production-only) and its kit card retired with it',
+        ({ config }) => {
+            // Production-only allowlist is unchanged: the delisted fan bundles
+            // must never enter REQUIRED_CONFIGS.
             const required = parseRequiredConfigsFromWorkflow();
             expect(required).not.toContain(config);
 
-            // WF2-FAN-EXPANSION-001 surfaced each config as exactly one preview
-            // kit card, never recommended and always on the preview channel.
+            // The WF2-FAN-EXPANSION-001 kit cards retired with their builds —
+            // a kit card may never reference a config without a manifest build.
             const matching = (kits.kits || []).filter(k => k.firmware_config_string === config);
-            expect(matching).toHaveLength(1);
-            expect(matching[0].sku).toBe(FAN_BUNDLE_KIT_SKU[config]);
-            expect(matching[0].firmware_channel).toBe('preview');
-            expect(matching[0].recommended).toBe(false);
+            expect(matching).toHaveLength(0);
         }
     );
 

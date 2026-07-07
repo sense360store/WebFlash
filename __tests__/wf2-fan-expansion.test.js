@@ -1,22 +1,29 @@
 /**
- * WF2-FAN-EXPANSION-001 — surface the five imported fan bundles as kit cards.
+ * WF2-FAN-EXPANSION-001 (history) / WF-H1-REIMPORT-CLEAN-001 W1 — the fan
+ * bundle surface is delisted; the fan-control gates stay in force.
  *
  * WF-IMPORT-FAN-BUNDLES-001 (#498) imported the five full-composition fan
- * bundles into manifest.json as preview builds. WF2-FAN-CONTROL-GATES-001 (#497)
- * already added the config-driven fan-control and FanDAC address acknowledgements
- * to the 2.0 install gate (scripts/install.js). This PR only adds the kit cards
- * (scripts/data/kits.json) — the gates fire automatically because they key off
- * the resolved build's config_string, not off the kit.
+ * bundles as preview builds and WF2-FAN-EXPANSION-001 surfaced them as kit
+ * cards. WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1) DELISTED all five: they
+ * were built before the upstream credential gate (SEC-ESP-BUILD-GATES-001)
+ * and cannot be rebuilt on the sanctioned pipeline, so the builds, sources,
+ * and kit cards are gone (see the delisted_sources register in
+ * firmware/sources.json). The config-driven fan-control and FanDAC address
+ * acknowledgements (WF2-FAN-CONTROL-GATES-001, scripts/install.js) key off
+ * the resolved build's config_string, not off kit or manifest data, so they
+ * remain live code and MUST stay covered for any future fan re-import.
  *
- * This suite proves, against the REAL engine + the REAL manifest + the REAL
- * kits.json:
- *   A. each new fan kit's wizard_state resolves to its declared preview build;
- *   B. the additive install gate (config-driven) requires the fan-control
- *      acknowledgement for every fan kit and the FanDAC address acknowledgement
- *      for the two analog kits, and install stays blocked until the required
- *      acknowledgements are confirmed — the engine verdict always dominates;
- *   C. the advanced-builder AirIQ/DAC mutex does NOT block the kit-card path
- *      (the kit applies its config directly through the engine resolve).
+ * This suite proves:
+ *   A. the delisted state against the REAL kits.json + manifest.json: no fan
+ *      kit card, no fan build, nothing for the engine to resolve;
+ *   B. the additive install gate (config-driven) still requires the
+ *      fan-control acknowledgement for every fan config and the FanDAC
+ *      address acknowledgement for the analog configs — the engine verdict
+ *      always dominates;
+ *   C. the InstallStep still renders the acknowledgement regions per config;
+ *   D. end-to-end with the real engine over a SYNTHETIC manifest carrying a
+ *      FanDAC preview build: all four acknowledgements surface and install
+ *      stays blocked.
  */
 import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
 import { webcrypto } from 'node:crypto';
@@ -34,8 +41,9 @@ const ROOT = process.cwd();
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const kitsJson = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'kits.json'), 'utf8'));
 
-// The five fan bundles this PR surfaces, mapped to their declared config string.
-const NEW_FAN_KITS = [
+// The five delisted fan bundle configs with the kit SKUs that retired with
+// them (historical labels; neither exists in the served data any more).
+const FAN_CONFIGS = [
   { sku: 'S360-KIT-BATH-P-PWM', config: 'Ceiling-POE-VentIQ-FanPWM-RoomIQ', dac: false },
   { sku: 'S360-KIT-BATH-P-DAC', config: 'Ceiling-POE-VentIQ-FanDAC-RoomIQ', dac: true },
   { sku: 'S360-KIT-KITCHEN-P-REL', config: 'Ceiling-POE-AirIQ-FanRelay-RoomIQ', dac: false },
@@ -43,104 +51,45 @@ const NEW_FAN_KITS = [
   { sku: 'S360-KIT-KITCHEN-P-DAC', config: 'Ceiling-POE-AirIQ-FanDAC-RoomIQ', dac: true },
 ];
 
-// All five fan kits. The Bathroom Relay bundle (S360-KIT-BATH-P-REL) retired
-// together with its stale v1.0.0-preview build (upstream's regenerated
-// checksums-sha256.txt no longer lists the VentIQ FanRelay asset).
-const ALL_FAN_KIT_SKUS = [...NEW_FAN_KITS.map((k) => k.sku)];
-const DAC_KIT_SKUS = ['S360-KIT-BATH-P-DAC', 'S360-KIT-KITCHEN-P-DAC'];
-
-function findKit(sku) {
-  return (kitsJson.kits || []).find((k) => k.sku === sku);
-}
-
 beforeAll(() => {
   Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true, writable: true });
 });
 
 // ===========================================================================
-// A. Real-engine resolution for every new fan kit
+// A. The delisted state against the real served data
 // ===========================================================================
-describe('WF2-FAN-EXPANSION-001 — new fan kits resolve to real preview builds', () => {
-  function makeFetch() {
-    return jest.fn((url) => {
-      const u = String(url);
-      if (u.includes('kits.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(kitsJson) });
-      if (u.includes('manifest.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(manifestJson) });
-      return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
-    });
-  }
-
-  beforeEach(() => {
-    jest.resetModules();
-    global.fetch = makeFetch();
-    window.history.replaceState({}, '', '/');
-  });
-
-  it.each(NEW_FAN_KITS)('$sku resolves via the engine to $config (preview, installable)', async ({ sku, config }) => {
-    const kit = findKit(sku);
-    expect(kit).toBeTruthy();
-    expect(kit.firmware_config_string).toBe(config);
-    expect(kit.firmware_channel).toBe('preview');
-
-    const engine = (await import('../scripts/engine.js')).default;
-    const resolved = await engine.state.resolveCompatibleFirmware(kit.wizard_state);
-    expect(resolved.configString).toBe(config);
-    expect(resolved.installable).toBe(true);
-    expect(resolved.isPreview).toBe(true);
-    expect(resolved.channel).toBe('preview');
-    expect(resolved.build).toBeTruthy();
-  });
-
-  it('the two FanDAC kits resolve even though they combine FanDAC with an air sensor (mutex bypass)', async () => {
-    // The advanced-builder AirIQ/DAC mutex (scripts/data.js airiq.conflicts=['dac']
-    // + the hard-disable in scripts/identify.js) is a VIEW-only affordance for the
-    // module builder. The kit-card path feeds the kit's wizard_state straight
-    // through the engine resolve, which never applies that mutex — so the address
-    // acknowledgement, not a UI lockout, is the gate. Both DAC kits must resolve.
-    const engine = (await import('../scripts/engine.js')).default;
-    for (const sku of DAC_KIT_SKUS) {
-      const kit = findKit(sku);
-      // eslint-disable-next-line no-await-in-loop
-      const resolved = await engine.state.resolveCompatibleFirmware(kit.wizard_state);
-      expect(resolved.configString).toContain('FanDAC');
-      expect(resolved.installable).toBe(true);
-      expect(resolved.isPreview).toBe(true);
-    }
+describe('WF-H1-REIMPORT-CLEAN-001 W1 — the fan bundle surface is fully delisted', () => {
+  it.each(FAN_CONFIGS)('$sku and its $config build are gone from kits.json and manifest.json', ({ sku, config }) => {
+    expect((kitsJson.kits || []).find((k) => k.sku === sku)).toBeUndefined();
+    expect((kitsJson.kits || []).some((k) => k.firmware_config_string === config)).toBe(false);
+    expect((manifestJson.builds || []).some((b) => b.config_string === config)).toBe(false);
   });
 });
 
 // ===========================================================================
-// B. The additive install gate is config-driven (pure helpers + kits.json)
+// B. The additive install gate is config-driven (pure helpers)
 // ===========================================================================
-describe('WF2-FAN-EXPANSION-001 — config-driven acknowledgement requirements', () => {
-  it('all five fan kits require the fan-control acknowledgement', () => {
-    expect(ALL_FAN_KIT_SKUS).toHaveLength(5);
-    ALL_FAN_KIT_SKUS.forEach((sku) => {
-      const kit = findKit(sku);
-      expect(kit).toBeTruthy();
-      expect(configRequiresFanControlAck(kit.firmware_config_string)).toBe(true);
+describe('WF2-FAN-CONTROL-GATES-001 — config-driven acknowledgement requirements stay in force', () => {
+  it('every fan config requires the fan-control acknowledgement', () => {
+    expect(FAN_CONFIGS).toHaveLength(5);
+    FAN_CONFIGS.forEach(({ config }) => {
+      expect(configRequiresFanControlAck(config)).toBe(true);
     });
   });
 
-  it('only the two FanDAC kits additionally require the address acknowledgement', () => {
-    ALL_FAN_KIT_SKUS.forEach((sku) => {
-      const kit = findKit(sku);
-      const expectDac = DAC_KIT_SKUS.includes(sku);
-      expect(configRequiresDacAddressAck(kit.firmware_config_string)).toBe(expectDac);
+  it('only the FanDAC configs additionally require the address acknowledgement', () => {
+    FAN_CONFIGS.forEach(({ config, dac }) => {
+      expect(configRequiresDacAddressAck(config)).toBe(dac);
     });
   });
 
   it('install stays blocked until the required acknowledgements are confirmed (engine dominates)', () => {
-    ALL_FAN_KIT_SKUS.forEach((sku) => {
-      const kit = findKit(sku);
-      const cfg = kit.firmware_config_string;
-      const isDac = DAC_KIT_SKUS.includes(sku);
-
+    FAN_CONFIGS.forEach(({ config: cfg, dac: isDac }) => {
       // Engine blocking can never be overridden by the additive acknowledgements.
       expect(composeInstallEnabled({ gateCanInstall: false, configString: cfg, fanControlAck: true, dacAddressAck: true })).toBe(false);
 
       // With the engine passing, the fan-control ack alone is required (and, for
-      // the analog kits, the address ack on top of it).
+      // the analog configs, the address ack on top of it).
       expect(composeInstallEnabled({ gateCanInstall: true, configString: cfg, fanControlAck: false, dacAddressAck: false })).toBe(false);
       expect(composeInstallEnabled({ gateCanInstall: true, configString: cfg, fanControlAck: true, dacAddressAck: false })).toBe(!isDac);
       expect(composeInstallEnabled({ gateCanInstall: true, configString: cfg, fanControlAck: true, dacAddressAck: true })).toBe(true);
@@ -209,7 +158,7 @@ describe('WF2-FAN-EXPANSION-001 — InstallStep gate regions per fan kit (fake e
 
   const installBtnOf = (root) => root.querySelector('.stepnav .btn--lg');
 
-  it.each(NEW_FAN_KITS.filter((k) => !k.dac))('$sku (non-analog) blocks install until the fan-control ack is checked', async ({ config }) => {
+  it.each(FAN_CONFIGS.filter((k) => !k.dac))('$sku (non-analog) blocks install until the fan-control ack is checked', async ({ config }) => {
     const root = mountStep(fakeBuild(config), makeFakeEngine({ canInstall: true }));
     await flush();
     const fanAck = root.querySelector('[data-fan-control-ack]');
@@ -220,7 +169,7 @@ describe('WF2-FAN-EXPANSION-001 — InstallStep gate regions per fan kit (fake e
     expect(installBtnOf(root).disabled).toBe(false);
   });
 
-  it.each(NEW_FAN_KITS.filter((k) => k.dac))('$sku (analog) blocks install until BOTH the fan-control and address acks are checked', async ({ config }) => {
+  it.each(FAN_CONFIGS.filter((k) => k.dac))('$sku (analog) blocks install until BOTH the fan-control and address acks are checked', async ({ config }) => {
     const root = mountStep(fakeBuild(config), makeFakeEngine({ canInstall: true }));
     await flush();
     const fanAck = root.querySelector('[data-fan-control-ack]');
@@ -234,7 +183,7 @@ describe('WF2-FAN-EXPANSION-001 — InstallStep gate regions per fan kit (fake e
     expect(installBtnOf(root).disabled).toBe(false);
   });
 
-  it.each(NEW_FAN_KITS)('$sku never bypasses a blocking engine verdict even with every ack checked', async ({ config }) => {
+  it.each(FAN_CONFIGS)('$sku never bypasses a blocking engine verdict even with every ack checked', async ({ config }) => {
     const root = mountStep(fakeBuild(config), makeFakeEngine({ canInstall: false }));
     await flush();
     check(root.querySelector('[data-fan-control-ack]'));
@@ -245,16 +194,43 @@ describe('WF2-FAN-EXPANSION-001 — InstallStep gate regions per fan kit (fake e
 });
 
 // ===========================================================================
-// D. Real engine + DOM: the AirIQ FanDAC kit end-to-end
+// D. Real engine + DOM: an AirIQ FanDAC config end-to-end over a SYNTHETIC
+//    manifest (the real manifest no longer carries any fan build after the
+//    WF-H1-REIMPORT-CLEAN-001 W1 delisting; the acknowledgement composition
+//    must keep working for any future clean fan re-import).
 // ===========================================================================
-describe('WF2-FAN-EXPANSION-001 — Kitchen FanDAC kit + real engine', () => {
+describe('WF2-FAN-CONTROL-GATES-001 — AirIQ FanDAC config + real engine over a synthetic manifest', () => {
   const a11yStub = { announce: jest.fn(), trapFocus: () => () => {}, restoreFocus: () => {}, getFocusableElements: () => [] };
+
+  const DAC_CONFIG = 'Ceiling-POE-AirIQ-FanDAC-RoomIQ';
+  // The wizard_state the retired S360-KIT-KITCHEN-P-DAC kit card used to carry.
+  const DAC_WIZARD_STATE = {
+    mount: 'ceiling', power: 'poe', bathroom: false,
+    airiq: 'airiq', ventiq: 'none', roomiq: 'roomiq',
+    fan: 'analog', led: 'none', voice: 'none',
+  };
+
+  // Clone the real manifest and graft a synthetic FanDAC preview build onto
+  // it, modelled on the real (surviving) LED preview build so the shape stays
+  // realistic. This is test input only — the served manifest carries no fan
+  // build.
+  function makeSyntheticManifest() {
+    const synthetic = JSON.parse(JSON.stringify(manifestJson));
+    const template = synthetic.builds.find((b) => b.config_string === 'Ceiling-POE-VentIQ-RoomIQ-LED');
+    const dacBuild = JSON.parse(JSON.stringify(template));
+    dacBuild.config_string = DAC_CONFIG;
+    dacBuild.modules = ['AirIQ', 'FanDAC', 'RoomIQ'];
+    dacBuild.description = 'Synthetic FanDAC preview build (test only).';
+    synthetic.builds.push(dacBuild);
+    return synthetic;
+  }
+  const syntheticManifest = makeSyntheticManifest();
 
   function makeFetch() {
     return jest.fn((url) => {
       const u = String(url);
       if (u.includes('kits.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(kitsJson) });
-      if (u.includes('manifest.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(manifestJson) });
+      if (u.includes('manifest.json')) return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(syntheticManifest) });
       if (u.includes('.bin')) return Promise.resolve({ ok: true, status: 200, arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)) });
       return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) });
     });
@@ -275,12 +251,11 @@ describe('WF2-FAN-EXPANSION-001 — Kitchen FanDAC kit + real engine', () => {
     window.history.replaceState({}, '', '/');
   });
 
-  it('the Kitchen FanDAC kit surfaces both the fan-control and address acks alongside the preview-channel ack', async () => {
-    const kit = findKit('S360-KIT-KITCHEN-P-DAC');
+  it('a FanDAC config surfaces both the fan-control and address acks alongside the preview-channel ack', async () => {
     const engine = (await import('../scripts/engine.js')).default;
     const { InstallStep: FreshInstallStep } = await import('../scripts/install.js');
-    const resolved = await engine.state.resolveCompatibleFirmware(kit.wizard_state);
-    expect(resolved.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
+    const resolved = await engine.state.resolveCompatibleFirmware(DAC_WIZARD_STATE);
+    expect(resolved.configString).toBe(DAC_CONFIG);
     expect(resolved.isPreview).toBe(true);
     expect(resolved.installable).toBe(true);
 
@@ -302,5 +277,9 @@ describe('WF2-FAN-EXPANSION-001 — Kitchen FanDAC kit + real engine', () => {
     // The real gate still blocks (served bytes never match the SHA-256), so the
     // additive acknowledgements can only ever make install stricter, never arm it.
     expect(root.querySelector('.stepnav .btn--lg').disabled).toBe(true);
+
+    // Dispose the step so its in-flight integrity verification cannot fire a
+    // recompute after jsdom tears down.
+    root.firstChild.__dispose();
   });
 });

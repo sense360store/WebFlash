@@ -113,11 +113,13 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — default install path', () => {
 });
 
 describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — every kit card resolves to a real manifest build', () => {
-  test('there is at least the seven-bundle picker surface (no empty picker)', () => {
+  test('there is at least the two-bundle picker surface (no empty picker)', () => {
     // 11 -> 7 after the stale v1.0.0-preview retirement removed the Kitchen /
     // Living / Corridor base bundles and the Bathroom Relay bundle together
-    // with their builds.
-    expect(kits.length).toBeGreaterThanOrEqual(7);
+    // with their builds; 7 -> 2 after WF-H1-REIMPORT-CLEAN-001 W1 (decision
+    // R-D1) delisted the five fan preview bundles (pre-credential-gate
+    // binaries). The stable Bathroom + Bedroom bundles remain.
+    expect(kits.length).toBeGreaterThanOrEqual(2);
     expect(catalog.skipped).toEqual([]);
   });
 
@@ -192,10 +194,12 @@ describe('WF-LIVE-SMOKE-2-0-DEFAULT-001 — fan kits are correctly gated', () =>
     });
   });
 
-  test('exactly two FanDAC kits require the analog-fan address-switch acknowledgement', () => {
+  test('no surviving kit requires the analog-fan address-switch acknowledgement (fan kits delisted)', () => {
+    // The two FanDAC kits retired with the WF-H1-REIMPORT-CLEAN-001 W1
+    // delisting; the config-driven helper itself stays covered by
+    // wf2-fan-control-gates.test.js / wf2-fan-expansion.test.js.
     const dacKits = kits.filter((k) => configRequiresDacAddressAck(k.firmware_config_string));
-    expect(dacKits.map((k) => k.sku).sort()).toEqual(['S360-KIT-BATH-P-DAC', 'S360-KIT-KITCHEN-P-DAC']);
-    dacKits.forEach((k) => expect(k.wizard_state.fan).toBe('analog'));
+    expect(dacKits).toEqual([]);
   });
 });
 

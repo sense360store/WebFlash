@@ -210,23 +210,22 @@ describe('Bug 1 — RoomIQ is an independent axis from the air-quality choice', 
     expect(ventiq.installable).toBe(true);
   });
 
-  it('AirIQ + DAC resolves to the imported room-bundle preview build; the mutex stays the UI gate', async () => {
+  it('AirIQ + DAC is back to no-build after the W1 delisting; the mutex stays the UI gate', async () => {
     // WF-IMPORT-FAN-BUNDLES-001 imported Ceiling-POE-AirIQ-FanDAC-RoomIQ as a
-    // preview build, so the pure resolver now finds it (previously "no-build"
-    // only because the build was absent). The AirIQ/DAC conflict asserted above
-    // (airiq.conflicts=['dac'], dac.conflicts=['airiq']) is unchanged and remains
-    // the selection gate: the advanced builder hard-disables the conflicting
-    // option, so a user can never construct this combo in the wizard. Install
-    // still gates on the preview-channel + fan-control + FanDAC-address
-    // acknowledgements.
+    // preview build; WF-H1-REIMPORT-CLEAN-001 W1 (decision R-D1) delisted it
+    // (pre-credential-gate binary, not rebuildable on the sanctioned
+    // pipeline), so the pure resolver fails closed with "no-build" again. The
+    // AirIQ/DAC conflict asserted above (airiq.conflicts=['dac'],
+    // dac.conflicts=['airiq']) is unchanged and remains the selection gate:
+    // the advanced builder hard-disables the conflicting option, so a user
+    // can never construct this combo in the wizard.
     const { engine } = await boot();
-    const channel = expectedChannelOf('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
     const resolved = await engine.state.resolveCompatibleFirmware(
       selToWizardState({ power: 'poe', roomiq: true, air: 'airiq', fan: 'dac' }));
     expect(resolved.configString).toBe('Ceiling-POE-AirIQ-FanDAC-RoomIQ');
-    expect(resolved.installable).toBe(true);
-    expect(resolved.isPreview).toBe(channel === 'preview');
-    expect(resolved.channel).toBe(channel);
+    expect(resolved.installable).toBe(false);
+    expect(resolved.reason).toBe('no-build');
+    expect(resolved.build).toBeNull();
   });
 });
 

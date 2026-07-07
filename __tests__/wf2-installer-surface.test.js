@@ -26,7 +26,9 @@ const ROOT = process.cwd();
 const manifestJson = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
 const kitsJson = JSON.parse(readFileSync(join(ROOT, 'scripts', 'data', 'kits.json'), 'utf8'));
 const RELEASE_ONE = kitsJson.kits.find((k) => k.recommended) || kitsJson.kits[0];
-const PREVIEW_KIT = kitsJson.kits.find((k) => k.firmware_channel === 'preview');
+// No preview kit card survives the WF-H1-REIMPORT-CLEAN-001 W1 delisting;
+// the Bedroom stable bundle is the second live row.
+const SECOND_KIT = kitsJson.kits.find((k) => k.sku === 'S360-KIT-BEDROOM-P');
 
 // Expected firmware version for a config_string, derived from the real manifest
 // the way the engine resolves it (a stable build wins, else the first match).
@@ -148,10 +150,10 @@ describe('Version in the Browse table (scripts/identify.js)', () => {
     expect(rowByName(root, RELEASE_ONE.display_name).querySelector('.kt-ver-tag').textContent)
       .toBe('v' + recExpected);
 
-    const prevExpected = manifestVersionFor(PREVIEW_KIT.firmware_config_string);
-    expect(prevExpected).not.toBe('');
-    expect(rowByName(root, PREVIEW_KIT.display_name).querySelector('.kt-ver-tag').textContent)
-      .toBe('v' + prevExpected);
+    const secondExpected = manifestVersionFor(SECOND_KIT.firmware_config_string);
+    expect(secondExpected).not.toBe('');
+    expect(rowByName(root, SECOND_KIT.display_name).querySelector('.kt-ver-tag').textContent)
+      .toBe('v' + secondExpected);
   });
 
   it('every rendered version matches the manifest build for that kit', async () => {

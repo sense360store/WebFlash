@@ -215,31 +215,33 @@ describe('flipKitChannelsInText — surgical, format-preserving edit', () => {
         expect(text).toBe(sample);
     });
 
-    test('against the real kits.json: flipping a preview config touches only firmware_channel lines', () => {
-        // Retargeted from Ceiling-POE-AirIQ-RoomIQ / S360-KIT-KITCHEN-P after
-        // the stale v1.0.0-preview retirement removed the Kitchen base bundle;
-        // the Bathroom PWM fan bundle is a surviving preview kit card.
+    test('against the real kits.json: no preview kit card remains, so every flip is a byte-identical no-op', () => {
+        // Retargeted twice: first from Ceiling-POE-AirIQ-RoomIQ /
+        // S360-KIT-KITCHEN-P after the stale v1.0.0-preview retirement, then
+        // from the Bathroom PWM fan bundle after WF-H1-REIMPORT-CLEAN-001 W1
+        // delisted all five fan preview kit cards. The surviving catalogue is
+        // stable-only (Bathroom + Bedroom), so the helper must be a strict
+        // no-op against the real file for both a stable config and a config
+        // with no kit card at all.
         const raw = readFileSync(join(REPO_ROOT, 'scripts/data/kits.json'), 'utf8');
-        const { text, flipped } = flipKitChannelsInText(raw, 'Ceiling-POE-VentIQ-FanPWM-RoomIQ');
-        expect(flipped).toEqual(['S360-KIT-BATH-P-PWM']);
-        const before = raw.split('\n');
-        const after = text.split('\n');
-        const changed = before
-            .map((line, i) => ({ line, after: after[i] }))
-            .filter((p) => p.line !== p.after);
-        expect(changed).toHaveLength(1);
-        expect(changed[0].line.trim()).toBe('"firmware_channel": "preview",');
-        expect(changed[0].after.trim()).toBe('"firmware_channel": "stable",');
+        const stableFlip = flipKitChannelsInText(raw, 'Ceiling-POE-RoomIQ');
+        expect(stableFlip.flipped).toEqual([]);
+        expect(stableFlip.text).toBe(raw);
+        const delistedFlip = flipKitChannelsInText(raw, 'Ceiling-POE-VentIQ-FanPWM-RoomIQ');
+        expect(delistedFlip.flipped).toEqual([]);
+        expect(delistedFlip.text).toBe(raw);
     });
 });
 
 describe('removeSourceEntriesInText — minimal-diff entry removal', () => {
     test('removes exactly the named asset entry and round-trips the rest', () => {
-        // Retargeted from the RoomIQ-LED preview entry after the stale
-        // v1.0.0-preview retirement removed it from firmware/sources.json;
-        // the VentIQ FanPWM room-bundle preview is a surviving entry.
+        // Retargeted twice: first from the RoomIQ-LED preview entry after the
+        // stale v1.0.0-preview retirement, then from the VentIQ FanPWM
+        // room-bundle preview after WF-H1-REIMPORT-CLEAN-001 W1 delisted the
+        // five fan previews. The VentIQ LED preview is a surviving entry
+        // (in-memory removal only; nothing is written back).
         const raw = readFileSync(join(REPO_ROOT, 'firmware/sources.json'), 'utf8');
-        const target = 'Sense360-Ceiling-POE-VentIQ-FanPWM-RoomIQ-v1.0.0-preview.bin';
+        const target = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
         const out = removeSourceEntriesInText(raw, [target]);
         const before = JSON.parse(raw);
         const after = JSON.parse(out);

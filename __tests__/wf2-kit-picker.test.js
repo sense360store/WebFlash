@@ -38,13 +38,8 @@ const TOTAL = KITS.length;
 const RECOMMENDED = KITS.find((k) => k.recommended);
 const PREVIEW_KITS = KITS.filter((k) => k.firmware_channel === 'preview');
 const STABLE_KITS = KITS.filter((k) => k.firmware_channel !== 'preview');
-// Retargeted from the Kitchen base bundle (S360-KIT-KITCHEN-P) after the
-// stale v1.0.0-preview retirement removed it with its AirIQ-RoomIQ build;
-// the Kitchen Relay bundle is the surviving preview Kitchen kit card.
-const KITCHEN = KITS.find((k) => k.sku === 'S360-KIT-KITCHEN-P-REL');
 const BEDROOM = KITS.find((k) => k.sku === 'S360-KIT-BEDROOM-P');
 const VENTIQ_KITS = KITS.filter((k) => k.components.some((c) => c.sku === 'S360-211'));
-const FIVE_PART_KIT = KITS.find((k) => k.components.length > 4);
 
 // A fetch stub that serves the real on-disk JSON, optionally overriding kits.json
 // with a synthetic catalogue (used for the blocked-recommendation path).
@@ -253,26 +248,60 @@ describe('WF2-IDENTIFY-RECO — View 2: catalogue table', () => {
     expect(heads).toEqual(['Kit', 'Channel', 'Version', 'Parts', 'Boards', 'Firmware target']);
   });
 
+  // WF-H1-REIMPORT-CLEAN-001 W1 delisted every preview kit card, so the real
+  // catalogue is stable-only (Bathroom + Bedroom) and no real kit carries
+  // more than four boards. The preview-pill and board-overflow renderings are
+  // still live code paths, so they stay covered through a synthetic catalogue
+  // (the real kits plus one preview card mapped to the real LED preview
+  // build) served via the existing kitsOverride harness.
+  const SYNTH_LED_PREVIEW_KIT = {
+    sku: 'S360-KIT-SYNTH-LED-P',
+    display_name: 'Synthetic LED Preview Bundle',
+    recommended: false,
+    wizard_state: { mount: 'ceiling', power: 'poe', bathroom: true, ventiq: 'ventiq', roomiq: 'roomiq', led: 'led' },
+    components: [
+      { sku: 'S360-100', label: 'Sense360 Core' },
+      { sku: 'S360-200', label: 'Sense360 RoomIQ' },
+      { sku: 'S360-211', label: 'Sense360 VentIQ' },
+      { sku: 'S360-300', label: 'Sense360 LED' },
+      { sku: 'S360-410', label: 'Sense360 PoE PSU' },
+    ],
+    firmware_config_string: 'Ceiling-POE-VentIQ-RoomIQ-LED',
+    firmware_channel: 'preview',
+  };
+  const SYNTH_CATALOGUE = { ...kitsJson, kits: [...KITS, SYNTH_LED_PREVIEW_KIT] };
+
+  async function mountBrowseSynth() {
+    const ctx = await mountFlow('', SYNTH_CATALOGUE);
+    seeDetailsBtn(ctx.root).click();
+    return ctx;
+  }
+
   it('marks the recommended row (accent dot + Rec pill) and channel pills per kit', async () => {
-    const { root } = await mountBrowse();
+    const { root } = await mountBrowseSynth();
     const recRow = rowByName(root, RECOMMENDED.display_name);
     expect(recRow.querySelector('.kt-dot--recommended')).not.toBeNull();
     expect(recRow.querySelector('.kt-rec').textContent).toMatch(/rec/i);
     expect(recRow.querySelector('.kt-chan--stable')).not.toBeNull();
 
-    const previewRow = rowByName(root, PREVIEW_KITS[0].display_name);
+    const previewRow = rowByName(root, SYNTH_LED_PREVIEW_KIT.display_name);
     expect(previewRow.querySelector('.kt-chan--preview')).not.toBeNull();
     expect(previewRow.querySelector('.kt-dot--preview')).not.toBeNull();
   });
 
   it('shows board SKU tags (first 4 + overflow) and the mono firmware target', async () => {
-    const { root } = await mountBrowse();
-    const row = rowByName(root, FIVE_PART_KIT.display_name);
+    const { root } = await mountBrowseSynth();
+    const row = rowByName(root, SYNTH_LED_PREVIEW_KIT.display_name);
     // A kit with more than four boards collapses the rest into a "+N" tag.
     const tags = [...row.querySelectorAll('.kt-board')];
     expect(tags.length).toBe(5); // 4 SKUs + the overflow tag
-    expect(row.querySelector('.kt-board--more').textContent).toBe(`+${FIVE_PART_KIT.components.length - 4}`);
-    expect(row.querySelector('.kt-target').textContent).toBe(FIVE_PART_KIT.firmware_config_string);
+    expect(row.querySelector('.kt-board--more').textContent).toBe(`+${SYNTH_LED_PREVIEW_KIT.components.length - 4}`);
+    expect(row.querySelector('.kt-target').textContent).toBe(SYNTH_LED_PREVIEW_KIT.firmware_config_string);
+
+    // The real four-board recommended kit renders all four tags, no overflow.
+    const realRow = rowByName(root, RECOMMENDED.display_name);
+    expect([...realRow.querySelectorAll('.kt-board')].length).toBe(RECOMMENDED.components.length);
+    expect(realRow.querySelector('.kt-board--more')).toBeNull();
   });
 
   it('live-filters by name / SKU and keeps the search input node stable', async () => {
@@ -328,17 +357,19 @@ describe('WF2-IDENTIFY-RECO — View 2: catalogue table', () => {
     expect(continueBtn(root).disabled).toBe(true);
     expect(root.querySelector('.winfoot__sel')).toBeNull();
 
-    rowByName(root, KITCHEN.display_name).click();
+    // Retargeted from the Kitchen Relay preview kit after
+    // WF-H1-REIMPORT-CLEAN-001 W1 delisted the fan preview kit cards; the
+    // Bedroom stable bundle is a surviving non-recommended kit card.
+    rowByName(root, BEDROOM.display_name).click();
     await flush();
 
-    // The committed preview kit resolves to an installable preview build, so the
-    // footer Continue is armed (the preview acknowledgement is enforced later, at
-    // the Install step) and the selected-kit indicator names it.
+    // The committed kit resolves to an installable stable build, so the
+    // footer Continue is armed and the selected-kit indicator names it.
     const viewState = app.__testHooks.getState();
-    expect(viewState.kit.sku).toBe(KITCHEN.sku);
-    expect(viewState.resolved.isPreview).toBe(true);
+    expect(viewState.kit.sku).toBe(BEDROOM.sku);
+    expect(viewState.resolved.isPreview).toBe(false);
     expect(continueBtn(root).disabled).toBe(false);
-    expect(root.querySelector('.winfoot__sel').textContent).toMatch(/Kitchen/);
+    expect(root.querySelector('.winfoot__sel').textContent).toMatch(/Bedroom/);
 
     continueBtn(root).click();
     await flush();
