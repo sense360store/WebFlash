@@ -22,6 +22,43 @@ import { StepHead, DeviceChip } from './ui.js';
 
 const HOME_ASSISTANT_URL = 'https://my.home-assistant.io/redirect/integrations/';
 
+// PRODUCT-GUIDES-001 G3 — the customer product-guides site, published from
+// sense360store/esphome-public via GitHub Pages. The post-flash "next steps"
+// handoff links the guide for the flashed configuration so placement, the
+// Home Assistant entities, updating, and recovery help are one click from the
+// success state. The shell's Guides link (scripts/app.js -> ui.js WinBar)
+// reuses this constant so both surfaces point at one site.
+export const PRODUCT_GUIDES_URL = 'https://sense360store.github.io/esphome-public/';
+
+// The served configurations with a dedicated product guide, keyed by the
+// build's config_string (the same identity the manifest and the post-flash
+// snapshot carry). Guide slugs mirror the site's nav
+// (site/mkdocs.yml in sense360store/esphome-public). Any other configuration
+// (for example Rescue) falls back to the guides overview page so the link is
+// always honest — it never claims a per-product guide that does not exist.
+export const PRODUCT_GUIDE_PATHS = Object.freeze({
+  'Ceiling-POE-RoomIQ': 'products/ceiling-poe-roomiq/',
+  'Ceiling-POE-AirIQ-RoomIQ': 'products/ceiling-poe-airiq-roomiq/',
+  'Ceiling-POE-VentIQ-RoomIQ': 'products/ceiling-poe-ventiq-roomiq/',
+  'Ceiling-POE-VentIQ-RoomIQ-LED': 'products/ceiling-poe-ventiq-roomiq-led/',
+});
+
+/**
+ * Resolves the product-guide link for a flashed configuration.
+ *
+ * @param {string} configString  The build's config_string.
+ * @returns {{url: string, exact: boolean}}  The guide URL, and whether it is
+ *   the configuration's own guide (true) or the guides overview fallback.
+ */
+export function productGuideLink(configString) {
+  const cfg = typeof configString === 'string' ? configString.trim() : '';
+  const path = PRODUCT_GUIDE_PATHS[cfg];
+  if (path) {
+    return { url: PRODUCT_GUIDES_URL + path, exact: true };
+  }
+  return { url: PRODUCT_GUIDES_URL + 'products/', exact: false };
+}
+
 // Copy + tone per post-flash result state. Mirrors the 1.0 post-flash panel so
 // the two views speak the same honest language about what actually happened.
 const STATE_COPY = Object.freeze({
@@ -224,6 +261,28 @@ export function ConnectStep({ device, build = null, engine = null, a11y = null, 
       h('p', { 'data-post-flash-wifi-status': '', 'data-wifi-status': status }, label));
   }
 
+  // PRODUCT-GUIDES-001 G3 — post-install "next steps": link the flashed
+  // product's guide. Shown in the same completed states as the other handoffs.
+  // The configuration comes from the post-flash snapshot (what was actually
+  // flashed), falling back to the resolved build; a configuration without a
+  // dedicated guide gets the guides overview instead of a broken link.
+  function guideHandoff(snapshot) {
+    if (!SHOW_HANDOFF_STATES.has(snapshot.status)) {
+      return null;
+    }
+    const config = snapshot.selected_config || (build && build.config_string) || '';
+    const guide = productGuideLink(config);
+    const lead = guide.exact
+      ? 'Your product guide covers where to mount the hub, the entities it adds to Home Assistant, how to update it, and how to recover it.'
+      : 'The product guides cover mounting, the entities each product adds to Home Assistant, updating, and recovery.';
+    return h('section', { class: 'pf-handoff', 'data-post-flash-handoff': 'product-guide' },
+      h('h3', null, 'Next steps'),
+      h('p', null, lead),
+      h('a', { class: 'btn', href: guide.url, target: '_blank', rel: 'noopener noreferrer',
+        'data-post-flash-guide-open': '', 'data-guide-match': guide.exact ? 'exact' : 'overview' },
+        icon('info'), guide.exact ? ' Open the product guide' : ' Browse the product guides'));
+  }
+
   // Recovery handoff on a failed / cancelled flash. The rescue modal itself is
   // wired by PR 8; here we surface the recovery affordance with the same
   // [data-rescue-open] hook the 1.0 rescue handler delegates on.
@@ -273,6 +332,7 @@ export function ConnectStep({ device, build = null, engine = null, a11y = null, 
         validationList(snapshot),
         homeAssistantHandoff(snapshot),
         wifiHandoff(snapshot),
+        guideHandoff(snapshot),
         recoveryHandoff(snapshot));
 
       mount(mainEl,

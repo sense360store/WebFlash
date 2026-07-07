@@ -32,6 +32,9 @@ validation steps are in the [user guide](docs/user-guide.md).
 
 ## Where to get help
 
+- [Sense360 product guides](https://sense360store.github.io/esphome-public/) —
+  customer guides for each Sense360 product: where to mount it, the entities
+  it adds to Home Assistant, updating, and factory reset / recovery.
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — start here for connection,
   browser, and flashing problems.
 - [SUPPORT.md](SUPPORT.md) — where to file defects, where to ask questions,
