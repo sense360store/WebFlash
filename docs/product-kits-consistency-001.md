@@ -7,7 +7,7 @@ Repo scope for this file: `sense360store/WebFlash`.
 
 | Step | Title | Status |
 |---|---|---|
-| N1 | Fix kit display bugs + single-source derivation | EXECUTED — PR <PENDING> |
+| N1 | Fix kit display bugs + single-source derivation | EXECUTED — PR #590 (held for owner) |
 | N2 | Kit visibility audit (only if N1 left it open) | PENDING |
 
 > N3 (guide-title alignment) lives in the `sense360store/esphome-public`
