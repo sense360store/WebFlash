@@ -41,7 +41,7 @@ README into the WebFlash README/CONTRIBUTING (docs-only, esphome-public-driven).
 
 | Step | Status | PR | Notes |
 |---|---|---|---|
-| P4b | EXECUTED | _pending — held PR_ | Removed `Ceiling-POE-RoomIQ-LED` from the `add-firmware-source.yml` `config_string` dropdown. De-listed it in the vendored catalog fixture (`status: preview` → `hardware-pending`, `webflash_build_matrix` → `false`, notes/`stable_blocker`/`hardware_status` rewritten to record the not-built/404 state and preserve the catalog entry for a proper future build). Updated `__tests__/product-import-readiness.test.js`: the config is now asserted NOT import / manifest / kit / REQUIRED_CONFIGS eligible, and the hardcoded import-eligible summary count dropped 13 → 12. No firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, `kits.json`, or install-gate logic changed. |
+| P4b | EXECUTED | #589 (held for owner) | Removed `Ceiling-POE-RoomIQ-LED` from the `add-firmware-source.yml` `config_string` dropdown. De-listed it in the vendored catalog fixture (`status: preview` → `hardware-pending`, `webflash_build_matrix` → `false`, notes/`stable_blocker`/`hardware_status` rewritten to record the not-built/404 state and preserve the catalog entry for a proper future build). Updated `__tests__/product-import-readiness.test.js`: the config is now asserted NOT import / manifest / kit / REQUIRED_CONFIGS eligible, and the hardcoded import-eligible summary count dropped 13 → 12. No firmware, `manifest.json`, `firmware/sources.json`, `REQUIRED_CONFIGS`, `kits.json`, or install-gate logic changed. |
 
 Lowest non-EXECUTED WebFlash step after this session: none (P4b is WebFlash's
 only step). Remaining programme work is esphome-public-owned.
