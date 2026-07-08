@@ -240,10 +240,13 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
         // authorisation logic over the same catalog (a tautology that could
         // never catch an unreviewed eligibility flip in a row no other test
         // pins individually). Today: Release-One + RoomIQ + AirIQ-RoomIQ
-        // (production), VentIQ-RoomIQ-LED + RoomIQ-LED (preview), 3
-        // single-driver fan manual-previews, 5 room-bundle fan previews.
+        // (production), VentIQ-RoomIQ-LED (preview), 3 single-driver fan
+        // manual-previews, 5 room-bundle fan previews. CI-PIPELINE-CLARITY-001
+        // P4 de-listed Ceiling-POE-RoomIQ-LED (never built / served, no
+        // upstream artifact) from preview to hardware-pending, dropping the
+        // import-eligible count from 13 to 12.
         expect(report.summary.total).toBe(catalog.products.length);
-        expect(report.summary.import_eligible).toBe(13);
+        expect(report.summary.import_eligible).toBe(12);
         expect(report.summary.manifest_eligible).toBe(expectedBuilds.length);
         expect(report.summary.kit_eligible).toBe(expectedBuilds.length);
         expect(report.summary.required_configs_eligible).toBe(
@@ -482,23 +485,24 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
         expect(e.surface_presence.in_kits).toBe(false);
     });
 
-    test('Ceiling-POE-RoomIQ-LED stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
+    test('Ceiling-POE-RoomIQ-LED is de-listed: not import / manifest / kit / REQUIRED_CONFIGS eligible', () => {
+        // CI-PIPELINE-CLARITY-001 P4 (matches esphome-public P4a): this config
+        // was never built or served (no upstream artifact), so it is de-listed
+        // from release-eligibility — catalog status moved preview ->
+        // hardware-pending, webflash_build_matrix=false, and it was removed from
+        // the WebFlash Add-Source picker. The catalog entry is preserved so the
+        // config can be built and re-listed later.
         const e = findEntry(report, 'Ceiling-POE-RoomIQ-LED');
         expect(e).toBeDefined();
-        expect(e.status).toBe('preview');
+        expect(e.status).toBe('hardware-pending');
         expect(e.shape_issues).toEqual([]);
-        expect(e.effective_eligibility.import.eligible).toBe(true);
-        // The stale v1.0.0-preview retirement removed its source entry, so
-        // effective manifest / kit eligibility drops too.
+        // hardware-pending without an explicit webflash_import_eligibility flag
+        // is not import-eligible; manifest / kit eligibility drop with it.
+        expect(e.effective_eligibility.import.eligible).toBe(false);
         expect(e.effective_eligibility.manifest.eligible).toBe(false);
         expect(e.effective_eligibility.kit.eligible).toBe(false);
-        // Preview is never production-only REQUIRED_CONFIGS eligible.
+        // Non-production status is never production-only REQUIRED_CONFIGS eligible.
         expect(e.effective_eligibility.required_configs.eligible).toBe(false);
-        expect(
-            e.effective_eligibility.required_configs.reasons.some(r =>
-                /production-only/i.test(r)
-            )
-        ).toBe(true);
     });
 
     test('Ceiling-POE-RoomIQ-LED is retired from sources, manifest, disk, kits, and REQUIRED_CONFIGS', () => {
