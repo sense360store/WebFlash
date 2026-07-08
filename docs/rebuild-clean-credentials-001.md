@@ -84,8 +84,8 @@ repo's copy of this file.
 | Dispatch | esphome-public | Owner runs the dispatch runbook (4 rebuilds); credential gates must pass | OWNER ACTION — pending | — |
 | Bench | hardware | Owner bench-flashes one rebuilt stable; R-D4 checklist; owner-authored attestation | OWNER ACTION — pending | — |
 | W1 | WebFlash | De-list the five fan previews (R-D1) | **EXECUTED** | [#582](https://github.com/sense360store/WebFlash/pull/582) |
-| W2 | WebFlash | Clean re-import of the four rebuilt releases; backstop assertions; merge gated on owner attestation (R-D4) | pending | — |
-| W3 | WebFlash | Scanner verification of every served binary; resolve advisory DRAFT markers; mark programme COMPLETE | pending | — |
+| W2 | WebFlash | Clean re-import of the four rebuilt releases; backstop assertions; merge gated on owner attestation (R-D4) | **EXECUTED** (assets imported and live; see the W3 change record and the R-D4 caveat below) | importer PRs [#584](https://github.com/sense360store/WebFlash/pull/584), [#585](https://github.com/sense360store/WebFlash/pull/585), [#586](https://github.com/sense360store/WebFlash/pull/586), [#587](https://github.com/sense360store/WebFlash/pull/587) |
+| W3 | WebFlash | Scanner verification of every served binary; resolve advisory DRAFT markers; mark programme COMPLETE | **EXECUTED** | this PR |
 | Publish | WebFlash | Owner publishes the GitHub Security Advisory + user notice | OWNER ACTION — pending | — |
 | Annotate | esphome-public | Owner annotates superseded release notes with the advisory link (R-D3) | OWNER ACTION — pending | — |
 
@@ -117,3 +117,91 @@ Executed 2026-07-06 on branch `claude/rebuild-clean-credentials-001-9utxyo`.
 
 No stable source entry, no workflow file, no release-channel or
 install-gate logic, and no upstream release data were touched.
+
+### W3 change record
+
+Executed 2026-07-08 on branch `claude/rebuild-clean-credentials-w3-z5ruri`.
+
+**Scanner verification (every binary now under `firmware/`).** Ran
+`scripts/check-firmware-default-credentials.py` (the same denylist the import
+gate enforces, 12 credential needles) against every `.bin` served by the
+installer. All five PASS — no default or placeholder credential material:
+
+| Asset | Result |
+|---|---|
+| `Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.7-stable.bin` | PASS |
+| `Sense360-Ceiling-POE-RoomIQ-v1.0.8-stable.bin` | PASS |
+| `Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.9-stable.bin` | PASS |
+| `Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.1-preview.bin` | PASS |
+| `Sense360-Rescue-v1.0.0-rescue.bin` | PASS |
+
+The four rebuilt Group A releases (W2 deliverable) are imported and live on
+the installer; W3 confirms they scan clean. The in-tree Rescue build stays
+clean (R-D5). No credential-dirty binary remains on the installer.
+
+**Advisory DRAFT markers resolved.** Both
+`[TO RESOLVE BEFORE PUBLICATION]` editor notes in
+`docs/security/advisory-default-credentials-DRAFT.md` were resolved and the
+file keeps its DRAFT marking:
+
+- Affected-versions table restated as affected-and-earlier / fixed-and-later
+  per configuration using the shipped fixed versions: `Ceiling-POE-VentIQ-RoomIQ`
+  fixed at v1.0.7, `Ceiling-POE-RoomIQ` at v1.0.8, `Ceiling-POE-AirIQ-RoomIQ`
+  at v1.0.9, and the VentIQ LED preview at v1.0.1-led-preview. The five
+  de-listed v1.0.0-preview fan configurations each get one line in the
+  affected section noting removal with no fixed version to reflash to (R-D1).
+- The reflash-flow note was resolved against the confirmed per-device
+  provisioning flow: per-device credential handling is defined upstream by
+  SEC-ESP-PROVISIONING-001, the fixed builds embed no shared defaults, and
+  each fixed device establishes its own unique API encryption key, OTA
+  password, web password, and fallback hotspot password. The claim is scoped
+  to what W3 can confirm (the four fixed builds scan clean) plus the upstream
+  provisioning design; no bench or hardware verification is claimed here.
+
+**Test-surface reconciliation.** The W2 asset re-import landed the rebuilt
+binaries, `manifest.json`, the `firmware-*.json` set, the sidecars, and the
+vendored product-catalog fixture, but it did not rebaseline the
+surface-pinning test fixtures off the old pre-rebuild versions, and it
+regressed one invariant in the vendored catalog. W3 completed that
+bookkeeping so the full suite is green against the shipped reality:
+
+- `__tests__/fixtures/expected-surface.json` (WF-SURFACE-SSOT-001): bumped the
+  four `builds` versions to the shipped values (v1.0.7 / v1.0.8 / v1.0.9
+  stable and v1.0.1 preview). Every count / filename / version guard derives
+  from this single source of truth. Version supersession within the same
+  config and channel is represented by `builds` carrying the current version
+  and the superseded `.bin` no longer existing on disk; it is not recorded in
+  the `retired` register, which pins config-and-channel combinations that are
+  gone, not older versions of a still-served config.
+- `__tests__/fixtures/esphome-product-catalog.json`: restored the
+  `Ceiling-POE-VentIQ-FanTRIAC-RoomIQ` entry `status` from `preview` back to
+  `blocked`. The import commit flipped it; the entry's own `blocker` (HW-005),
+  `webflash_build_matrix: false`, and `notes` all say blocked, and the
+  FanTRIAC-blocked invariant requires it. This restores a gate, it does not
+  weaken one.
+- `__tests__/promote-to-stable.test.js`: retargeted the in-memory
+  source-removal fixture from the retired `...-LED-v1.0.0-preview.bin` asset
+  name to the shipped `...-LED-v1.0.1-preview.bin` name (test-only; nothing is
+  written back to `firmware/sources.json`).
+
+No firmware bytes, no source entry, no `manifest.json`, no `firmware-*.json`,
+no `REQUIRED_CONFIGS`, no kit, and no release-channel or install-gate logic
+were touched by W3; the reconciliation above is limited to test fixtures /
+expected-surface pins and the advisory DRAFT.
+
+---
+
+## Programme status: COMPLETE (WebFlash execution)
+
+All WebFlash execution steps are executed: **W1** (de-list the five fan
+previews), **W2** (clean re-import of the four rebuilt releases; live on the
+installer), and **W3** (scanner verification of every served binary; advisory
+DRAFT markers resolved). Every binary the installer serves scans clean
+against the credential denylist.
+
+The remaining programme steps are owner-only actions, tracked pending in the
+execution log and outside WebFlash's automated execution: the R-D4 bench
+attestation (owner-authored only), the GitHub Security Advisory publication,
+and the upstream superseded-release-note annotation (R-D3). "COMPLETE" here
+means the WebFlash agent-side execution is finished, not that those owner
+actions have been performed.

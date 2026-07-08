@@ -6,22 +6,22 @@
   "builds": [
     {
       "config_string": "Ceiling-POE-AirIQ-RoomIQ",
-      "version": "1.0.6",
+      "version": "1.0.9",
       "channel": "stable"
     },
     {
       "config_string": "Ceiling-POE-RoomIQ",
-      "version": "1.0.5",
+      "version": "1.0.8",
       "channel": "stable"
     },
     {
       "config_string": "Ceiling-POE-VentIQ-RoomIQ",
-      "version": "1.0.4",
+      "version": "1.0.7",
       "channel": "stable"
     },
     {
       "config_string": "Ceiling-POE-VentIQ-RoomIQ-LED",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "channel": "preview"
     }
   ],
