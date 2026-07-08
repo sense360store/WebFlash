@@ -58,16 +58,16 @@
         },
         {
             "source_repo": "sense360store/esphome-public",
-            "release_tag": "v1.0.4",
-            "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.4",
-            "version": "1.0.4",
+            "release_tag": "v1.0.7",
+            "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.7",
+            "version": "1.0.7",
             "channel": "stable",
             "config_string": "Ceiling-POE-VentIQ-RoomIQ",
-            "asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.4-stable.bin",
-            "expected_sha256": "029baa23a92f7e2849ce7161b7a0a45ac647e77c48a7f4b0a4f09193c85a9f42",
+            "asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.7-stable.bin",
+            "expected_sha256": "4d10f8a9038e8316d25f24299cbee0bd72e81d039d032126f43f89da0010906c",
             "min_size_bytes": 102400,
             "required_assets": [
-                "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.4-stable.bin",
+                "Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.7-stable.bin",
                 "checksums-sha256.txt",
                 "checksums-md5.txt",
                 "manifest.json"
