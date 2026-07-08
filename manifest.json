@@ -1,9 +1,9 @@
 {
   "name": "Sense360 Modular Platform Firmware",
-  "version": "1.0.6",
+  "version": "1.0.9",
   "manifest_version": 1,
-  "generated_at": "2026-07-06T20:43:48.948954+00:00",
-  "source_commit": "1e4ab3624de8f777484cd90f43b2dbcb6014addb",
+  "generated_at": "2026-07-08T08:22:45.879679+00:00",
+  "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -11,29 +11,29 @@
   "builds": [
     {
       "device_type": "Core Module",
-      "version": "1.0.6",
+      "version": "1.0.9",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Ceiling-POE-AirIQ-RoomIQ configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.6-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.9-stable.bin",
           "offset": 0,
-          "md5": "94894d82259335018c2d06fac642406e",
-          "sha256": "800f481516198624248c9acb10d585f9b3807967cdd28a82948f51054cf85430",
-          "signature": "mMce5fEF/Rupym2zPp3p/sReH51k/tALLFpQFRyVRHA=",
-          "signature_ed25519": "WWCnlrka1tc+MtMAZx0gwp1p2OhL6D7kJRgvPfWKEl/BhLwpMhcdyBpqq9ocZv8otp/J4aPPh6/34xsS9eYpCg==",
-          "signature_key_id": "dev-2026-01"
+          "md5": "da0325f4f4282b449211eb8654c4dc31",
+          "sha256": "d2e67410a19caf6a7c361c0fb8912b9f63057efb5eb953d6ffe674d638c5359c",
+          "signature": "H3Gf3yT9AgH4w59oT3ki8XIZKryGMCVb+IOUjPsW07I=",
+          "signature_ed25519": "2uVpF91rv1jJUnFx9NWcK6N0w9QCltN2nb3y9HNoVkPCi37ZxWR06otRv+8l7q5Pfhi6ZFg9XFUUy/WneNgkCA==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-01T23:02:42.257369+00:00",
-      "file_size": 1089280,
+      "build_date": "2026-07-08T08:22:39.979923+00:00",
+      "file_size": 1019040,
       "improv": false,
-      "md5": "94894d82259335018c2d06fac642406e",
-      "sha256": "800f481516198624248c9acb10d585f9b3807967cdd28a82948f51054cf85430",
-      "signature": "mMce5fEF/Rupym2zPp3p/sReH51k/tALLFpQFRyVRHA=",
-      "signature_ed25519": "WWCnlrka1tc+MtMAZx0gwp1p2OhL6D7kJRgvPfWKEl/BhLwpMhcdyBpqq9ocZv8otp/J4aPPh6/34xsS9eYpCg==",
-      "signature_key_id": "dev-2026-01",
+      "md5": "da0325f4f4282b449211eb8654c4dc31",
+      "sha256": "d2e67410a19caf6a7c361c0fb8912b9f63057efb5eb953d6ffe674d638c5359c",
+      "signature": "H3Gf3yT9AgH4w59oT3ki8XIZKryGMCVb+IOUjPsW07I=",
+      "signature_ed25519": "2uVpF91rv1jJUnFx9NWcK6N0w9QCltN2nb3y9HNoVkPCi37ZxWR06otRv+8l7q5Pfhi6ZFg9XFUUy/WneNgkCA==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "AirIQ air-quality sensing",
@@ -47,12 +47,11 @@
       ],
       "known_issues": [],
       "changelog": [
-        "Promote the PoE AirIQ plus RoomIQ ceiling configuration to the stable channel",
-        "Built from the same validated source as the preview build, rebuilt and signed at the stable version",
-        "Existing preview installs need only reflash the stable build, with no configuration changes"
+        "Security rebuild: device credentials are now provisioned uniquely per device",
+        "shared factory defaults removed. Supersedes v1.0.6. No functional changes. A security advisory will follow."
       ],
-      "source_commit": "1e4ab3624de8f777484cd90f43b2dbcb6014addb",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/1e4ab3624de8f777484cd90f43b2dbcb6014addb",
+      "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -69,29 +68,29 @@
     },
     {
       "device_type": "Core Module",
-      "version": "1.0.5",
+      "version": "1.0.8",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Ceiling-POE-RoomIQ configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-v1.0.5-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-RoomIQ-v1.0.8-stable.bin",
           "offset": 0,
-          "md5": "cff8be22ba97aaf1e649f31d33c29a03",
-          "sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
-          "signature": "VKuNtYR65Yjt5TNsc0+V2T2i+PFThh4LibxkjyupSrY=",
-          "signature_ed25519": "fEp3FUgTiSca5IxYOR8FFY1g1ZW+HEkOiAW7AZQUmmuEb2EZP4ZXRx76DXbve12h1deSq8FffX+vKNbplZwCAA==",
-          "signature_key_id": "dev-2026-01"
+          "md5": "d3725a20c1ba62d634012d178634117c",
+          "sha256": "3a733c65288a5e6745b939e333c1529e3c01034ca3dadbd227a033b63b0a88a7",
+          "signature": "gTry7mqjQZTIAkukCIw1N1iO9sj25D4XHuPzRZnodBc=",
+          "signature_ed25519": "Hk2+1T0CkxFaSY/SIOA3DR3Yk+nG8iXkK/kMZRlus070DZUBd3ehJAWloZ++rKfUw6AcGgYBmQTQuIpxlGSQDw==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-01T23:02:42.277369+00:00",
-      "file_size": 956960,
+      "build_date": "2026-07-08T08:22:41.519933+00:00",
+      "file_size": 886320,
       "improv": false,
-      "md5": "cff8be22ba97aaf1e649f31d33c29a03",
-      "sha256": "ac08a12a5381ae63f06080115b5c46c88f2a7406a4991830edc6ea64a1c03028",
-      "signature": "VKuNtYR65Yjt5TNsc0+V2T2i+PFThh4LibxkjyupSrY=",
-      "signature_ed25519": "fEp3FUgTiSca5IxYOR8FFY1g1ZW+HEkOiAW7AZQUmmuEb2EZP4ZXRx76DXbve12h1deSq8FffX+vKNbplZwCAA==",
-      "signature_key_id": "dev-2026-01",
+      "md5": "d3725a20c1ba62d634012d178634117c",
+      "sha256": "3a733c65288a5e6745b939e333c1529e3c01034ca3dadbd227a033b63b0a88a7",
+      "signature": "gTry7mqjQZTIAkukCIw1N1iO9sj25D4XHuPzRZnodBc=",
+      "signature_ed25519": "Hk2+1T0CkxFaSY/SIOA3DR3Yk+nG8iXkK/kMZRlus070DZUBd3ehJAWloZ++rKfUw6AcGgYBmQTQuIpxlGSQDw==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "RoomIQ room sensing"
@@ -103,13 +102,11 @@
       ],
       "known_issues": [],
       "changelog": [
-        "First stable release of the Ceiling-POE-RoomIQ kit (RoomIQ-only PoE ceiling stack: Core S360-100 + RoomIQ S360-200 + PoE PSU S360-410)",
-        "promoted from the preview channel to stable at version 1.0.5",
-        "S360-410 PoE PSU released under owner waiver HW-S360-410-WAIVER-2026-06 and remains cataloged_unverified pending bench and isolation evidence",
-        "on-device flash verification not yet performed"
+        "Security rebuild: device credentials are now provisioned uniquely per device",
+        "shared factory defaults removed. Supersedes v1.0.5. No functional changes. A security advisory will follow."
       ],
-      "source_commit": "1e4ab3624de8f777484cd90f43b2dbcb6014addb",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/1e4ab3624de8f777484cd90f43b2dbcb6014addb",
+      "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -125,29 +122,29 @@
     },
     {
       "device_type": "Core Module",
-      "version": "1.0.4",
+      "version": "1.0.7",
       "channel": "stable",
       "description": "Stable firmware for Sense360 Ceiling-POE-VentIQ-RoomIQ configuration. Recommended for production deployments.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.4-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-v1.0.7-stable.bin",
           "offset": 0,
-          "md5": "78c22b8b49d0a599bad109f2d8c233bf",
-          "sha256": "029baa23a92f7e2849ce7161b7a0a45ac647e77c48a7f4b0a4f09193c85a9f42",
-          "signature": "8RRoQEfsxhQ1CGcGl0SuTjY2h+JEbItFpc4a++7av+s=",
-          "signature_ed25519": "ZCkZ8K2aQSaY/VBbUzxZ/m/BE41tmRP+D4tjnGOUWY7ie3FF1FuZ0f6XIoiZuksLrxiIUBAQA7BwWHJtMEf3Cg==",
-          "signature_key_id": "dev-2026-01"
+          "md5": "5024a4758efcae525d424bdd03ab1e48",
+          "sha256": "4d10f8a9038e8316d25f24299cbee0bd72e81d039d032126f43f89da0010906c",
+          "signature": "QJyE6MMsCn5VlgOln74531yXVC+dGwqExX14HMNL7po=",
+          "signature_ed25519": "vKO0yBdO811mUVNeaSIY+hEp7E645/CulIUp4v0I1EHADj0CLtsqMExCfQzAqvbHKDZ6c+LvTkVM41wM0uHxBw==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-01T23:02:42.341369+00:00",
-      "file_size": 988448,
+      "build_date": "2026-07-08T08:22:43.036942+00:00",
+      "file_size": 918016,
       "improv": false,
-      "md5": "78c22b8b49d0a599bad109f2d8c233bf",
-      "sha256": "029baa23a92f7e2849ce7161b7a0a45ac647e77c48a7f4b0a4f09193c85a9f42",
-      "signature": "8RRoQEfsxhQ1CGcGl0SuTjY2h+JEbItFpc4a++7av+s=",
-      "signature_ed25519": "ZCkZ8K2aQSaY/VBbUzxZ/m/BE41tmRP+D4tjnGOUWY7ie3FF1FuZ0f6XIoiZuksLrxiIUBAQA7BwWHJtMEf3Cg==",
-      "signature_key_id": "dev-2026-01",
+      "md5": "5024a4758efcae525d424bdd03ab1e48",
+      "sha256": "4d10f8a9038e8316d25f24299cbee0bd72e81d039d032126f43f89da0010906c",
+      "signature": "QJyE6MMsCn5VlgOln74531yXVC+dGwqExX14HMNL7po=",
+      "signature_ed25519": "vKO0yBdO811mUVNeaSIY+hEp7E645/CulIUp4v0I1EHADj0CLtsqMExCfQzAqvbHKDZ6c+LvTkVM41wM0uHxBw==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "VentIQ bathroom air-quality sensing",
@@ -160,14 +157,15 @@
         "Sense360 PoE PSU (`S360-410`)"
       ],
       "known_issues": [
-        "FanTRIAC is not included in this firmware. It is a separate compile-only / advanced-preview build (mains-voltage TRIAC dimming), not stable, and remains gated by COMPLIANCE-001 (mains-voltage electrical-safety review).",
+        "FanTRIAC is not included in this firmware. It is a separate compile-only / advanced-preview build (mains-voltage TRIAC dimming), not stable, and remains gated by PACKAGE-TRIAC-001 plus the COMPLIANCE-001-RESOLUTION-001 experimental-lane preconditions (COMPLIANCE-001 closed by market posture: the S360-320 board is never placed on the market; self-build open-source only).",
         "Sense360 LED is not included in this firmware: the selected configuration 'Ceiling-POE-VentIQ-RoomIQ' does not include LED. The LED-bearing sibling lives on the preview channel."
       ],
       "changelog": [
-        "First stable release published through the automated build and publish pipeline - No functional firmware changes from 1.0.0"
+        "Security rebuild: device credentials are now provisioned uniquely per device",
+        "shared factory defaults removed. Supersedes v1.0.4. No functional changes. A security advisory will follow."
       ],
-      "source_commit": "1e4ab3624de8f777484cd90f43b2dbcb6014addb",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/1e4ab3624de8f777484cd90f43b2dbcb6014addb",
+      "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -184,54 +182,51 @@
     },
     {
       "device_type": "Core Module",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "channel": "preview",
       "description": "Preview firmware for Sense360 Ceiling-POE-VentIQ-RoomIQ-LED configuration. Early-access build intended for limited validation of upcoming updates.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.1-preview.bin",
           "offset": 0,
-          "md5": "c754586f6a809fe94e0dc724c07546dd",
-          "sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
-          "signature": "BWpXtSgDJrSo1OvGy6X/VWJpvXOX92p2J1MS/S2Bo1I=",
-          "signature_ed25519": "hnseAuyizhqrJtGQilxYIsj3sUg/MOC5YCJDa9rFQ1E4gbktJqtCdkJOwjJqfYhhrgGtnupVdYjDGTCNdN7PDg==",
-          "signature_key_id": "dev-2026-01"
+          "md5": "01d966d60ef52d87cab12b1c28b913de",
+          "sha256": "c4596b204cfb1ec159d3e10dfb3e2262050464d18cd1b3860387b74499babff6",
+          "signature": "mayc/vLYxkfuaC4zJSakAjbKIi/0TzMx54Pm4RzCq5A=",
+          "signature_ed25519": "/SSxCgnoyAbbmOhua84WBoGt236T2FX0uwwnQw7cwuhQmRs1nCIbXd9zQ0HcOLMIpv+4Pg4ZndJdd4Cs0b9jBA==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-01T23:02:42.329369+00:00",
-      "file_size": 1135904,
+      "build_date": "2026-07-08T08:22:44.439950+00:00",
+      "file_size": 957168,
       "improv": false,
-      "md5": "c754586f6a809fe94e0dc724c07546dd",
-      "sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
-      "signature": "BWpXtSgDJrSo1OvGy6X/VWJpvXOX92p2J1MS/S2Bo1I=",
-      "signature_ed25519": "hnseAuyizhqrJtGQilxYIsj3sUg/MOC5YCJDa9rFQ1E4gbktJqtCdkJOwjJqfYhhrgGtnupVdYjDGTCNdN7PDg==",
-      "signature_key_id": "dev-2026-01",
+      "md5": "01d966d60ef52d87cab12b1c28b913de",
+      "sha256": "c4596b204cfb1ec159d3e10dfb3e2262050464d18cd1b3860387b74499babff6",
+      "signature": "mayc/vLYxkfuaC4zJSakAjbKIi/0TzMx54Pm4RzCq5A=",
+      "signature_ed25519": "/SSxCgnoyAbbmOhua84WBoGt236T2FX0uwwnQw7cwuhQmRs1nCIbXd9zQ0HcOLMIpv+4Pg4ZndJdd4Cs0b9jBA==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "VentIQ bathroom air-quality sensing",
         "RoomIQ room sensing",
-        "Sense360 LED ring preview support"
+        "Sense360 LED ring (preview)"
       ],
       "hardware_requirements": [
-        "Sense360 Core R4 or newer",
-        "Sense360 PoE PSU",
-        "Sense360 VentIQ module",
-        "Sense360 RoomIQ module",
-        "Sense360 LED ring (S360-300)"
+        "Sense360 Core (`S360-100`)",
+        "Sense360 VentIQ (`S360-211`)",
+        "Sense360 RoomIQ (`S360-200`)",
+        "Sense360 PoE PSU (`S360-410`)",
+        "Sense360 LED (`S360-300`)"
       ],
       "known_issues": [
-        "FanTRIAC is not included in this firmware and remains blocked pending HW-005.",
-        "This is a preview release. Do not treat it as the stable Release-One firmware.",
-        "LED bench-verification items remain open, including harness identity, LED count, and final install verification."
+        "FanTRIAC is not included in this firmware. It is a separate compile-only / advanced-preview build (mains-voltage TRIAC dimming), not stable, and remains gated by PACKAGE-TRIAC-001 plus the COMPLIANCE-001-RESOLUTION-001 experimental-lane preconditions (COMPLIANCE-001 closed by market posture: the S360-320 board is never placed on the market; self-build open-source only)."
       ],
       "changelog": [
-        "Added the first preview firmware build for `Ceiling-POE-VentIQ-RoomIQ-LED`.",
-        "This preview extends the Release-One ceiling PoE VentIQ + RoomIQ configuration with the Sense360 LED ring.",
-        "This is a preview-channel build for validation and testing. The stable Release-One firmware remains `Ceiling-POE-VentIQ-RoomIQ`."
+        "device credentials are now provisioned uniquely per device",
+        "shared factory defaults removed. Supersedes v1.0.0-led-preview. Preview channel: not hardware verified. A security advisory will follow."
       ],
-      "source_commit": "1e4ab3624de8f777484cd90f43b2dbcb6014addb",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/1e4ab3624de8f777484cd90f43b2dbcb6014addb",
+      "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -260,26 +255,26 @@
           "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
           "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
           "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
-          "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
-          "signature_key_id": "dev-2026-01"
+          "signature_ed25519": "bSWV2Osg2KyDWLl0erTKHdSbGUHCbvmZTiE/bx/Zg5nJ/3MWMhE7uTcqdHavj4EU0gGlinh2mAI6yY25cR7pDQ==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-01T23:02:42.345369+00:00",
+      "build_date": "2026-07-08T08:22:33.832284+00:00",
       "file_size": 524288,
       "improv": false,
       "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
       "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
       "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
-      "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
-      "signature_key_id": "dev-2026-01",
+      "signature_ed25519": "bSWV2Osg2KyDWLl0erTKHdSbGUHCbvmZTiE/bx/Zg5nJ/3MWMhE7uTcqdHavj4EU0gGlinh2mAI6yY25cR7pDQ==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "rescue"
       ],
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "1e4ab3624de8f777484cd90f43b2dbcb6014addb",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/1e4ab3624de8f777484cd90f43b2dbcb6014addb",
+      "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,

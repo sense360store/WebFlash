@@ -1,0 +1,33 @@
+{
+  "changelog": [
+    "Security rebuild: device credentials are now provisioned uniquely per device",
+    "shared factory defaults removed. Supersedes v1.0.6. No functional changes. A security advisory will follow."
+  ],
+  "known_issues": [],
+  "features": [
+    "PoE-powered Sense360 Core configuration",
+    "AirIQ air-quality sensing",
+    "RoomIQ room sensing"
+  ],
+  "hardware_requirements": [
+    "Sense360 Core (`S360-100`)",
+    "Sense360 AirIQ (`S360-210`)",
+    "Sense360 RoomIQ (`S360-200`)",
+    "Sense360 PoE PSU (`S360-410`)"
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": false,
+  "source": {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.9",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.9",
+    "source_asset_name": "Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.9-stable.bin",
+    "source_asset_sha256": "d2e67410a19caf6a7c361c0fb8912b9f63057efb5eb953d6ffe674d638c5359c",
+    "source_manifest_git_sha": "ab79d564c1a2d0c7613f79a11038a334f4af2180",
+    "source_manifest_esphome_version": "2026.4.5",
+    "imported_at": "2026-07-08T08:22:39+00:00"
+  }
+}
