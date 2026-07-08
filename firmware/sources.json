@@ -85,16 +85,16 @@
         },
         {
             "source_repo": "sense360store/esphome-public",
-            "release_tag": "v1.0.0-led-preview",
-            "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.0-led-preview",
-            "version": "1.0.0",
+            "release_tag": "v1.0.1-led-preview",
+            "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.1-led-preview",
+            "version": "1.0.1",
             "channel": "preview",
             "config_string": "Ceiling-POE-VentIQ-RoomIQ-LED",
-            "asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
-            "expected_sha256": "93310d2cbc27355e399f36a232336b6b9075dacfc178d603c7a92aa1089182d3",
+            "asset_name": "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.1-preview.bin",
+            "expected_sha256": "c4596b204cfb1ec159d3e10dfb3e2262050464d18cd1b3860387b74499babff6",
             "min_size_bytes": 102400,
             "required_assets": [
-                "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin",
+                "Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.1-preview.bin",
                 "checksums-sha256.txt",
                 "checksums-md5.txt",
                 "manifest.json"
