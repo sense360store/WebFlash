@@ -34,7 +34,6 @@ on:
           - Ceiling-POE-VentIQ-RoomIQ-LED
           - Ceiling-POE-AirIQ-RoomIQ
           - Ceiling-POE-RoomIQ
-          - Ceiling-POE-RoomIQ-LED
       channel:
         description: 'Release channel.'
         required: false
