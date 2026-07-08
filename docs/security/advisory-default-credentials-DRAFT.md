@@ -8,8 +8,10 @@
 > every affected build imported and live on the installer). Until that gate
 > is met there is no fixed firmware to direct customers to, so this document
 > must not be linked from any user facing surface, announced, or filed as a
-> GHSA. Editor notes marked `[TO RESOLVE BEFORE PUBLICATION]` must be
-> resolved before the owner publishes.
+> GHSA. The editor notes that previously marked unresolved detail were
+> resolved at WF-H1-REIMPORT-CLEAN-001 step W3 (fixed versions and the per
+> device provisioning flow); this document nonetheless remains a DRAFT until
+> the owner publishes it.
 
 ## Summary
 
@@ -30,26 +32,40 @@ to by credential class.
 
 ## Affected versions
 
-All stable firmware builds published on the WebFlash installer up to and
-including the versions below are affected:
+Each stable configuration is affected at the version shown in the "Affected"
+column and earlier, and is fixed at the version shown in the "Fixed" column
+and later. Reflash to the fixed version using WebFlash:
 
-| Configuration | Affected stable versions |
-|---|---|
-| Ceiling-POE-VentIQ-RoomIQ | v1.0.4 and earlier |
-| Ceiling-POE-RoomIQ | v1.0.5 and earlier |
-| Ceiling-POE-AirIQ-RoomIQ | v1.0.6 and earlier |
+| Configuration | Affected (this version and earlier) | Fixed (this version and later) |
+|---|---|---|
+| Ceiling-POE-VentIQ-RoomIQ | v1.0.4 | v1.0.7 |
+| Ceiling-POE-RoomIQ | v1.0.5 | v1.0.8 |
+| Ceiling-POE-AirIQ-RoomIQ | v1.0.6 | v1.0.9 |
 
-The preview channel builds published alongside them (the v1.0.0 preview
-builds of the AirIQ and VentIQ fan configurations and the VentIQ LED
-configuration) are affected in the same way, carrying test lane and
-historical default values instead of the stable release defaults. The
-in tree Rescue build is not affected; it scans clean against the credential
-denylist.
+The preview channel builds published alongside the stable releases are
+affected in the same way, carrying test lane and historical default values
+instead of the stable release defaults:
 
-`[TO RESOLVE BEFORE PUBLICATION]` Insert the first fixed version for each
-configuration once WF-H1-REIMPORT-CLEAN-001 has landed, and restate the
-table as "affected: versions before X.Y.Z, fixed: X.Y.Z and later" for each
-row.
+- **Ceiling-POE-VentIQ-RoomIQ-LED** (VentIQ LED preview): affected at
+  v1.0.0-led-preview and earlier; fixed at v1.0.1-led-preview and later. This
+  is an Advanced-install-only, acknowledgement-gated preview.
+- The five v1.0.0-preview fan configurations were affected in the same way
+  and have been removed from the installer rather than rebuilt, so there is
+  no fixed version to reflash to for these configurations:
+  - **Ceiling-POE-VentIQ-FanPWM-RoomIQ** (v1.0.0-preview): removed.
+  - **Ceiling-POE-VentIQ-FanDAC-RoomIQ** (v1.0.0-preview): removed.
+  - **Ceiling-POE-AirIQ-FanRelay-RoomIQ** (v1.0.0-preview): removed.
+  - **Ceiling-POE-AirIQ-FanPWM-RoomIQ** (v1.0.0-preview): removed.
+  - **Ceiling-POE-AirIQ-FanDAC-RoomIQ** (v1.0.0-preview): removed.
+
+  These five were Advanced-install-only, acknowledgement-gated previews,
+  never stable, recommended, default, or buyable, so removing them from the
+  installer has no effect on the customer baseline. A device still running
+  one of these fan previews should be reflashed to a fixed stable
+  configuration that matches its installed modules.
+
+The in tree Rescue build is not affected; it scans clean against the
+credential denylist.
 
 ## What is the risk, in plain language
 
@@ -85,9 +101,18 @@ API, update, or web surfaces.
 
 ## What to do: reflash with WebFlash
 
-`[TO RESOLVE BEFORE PUBLICATION]` Confirm each step below against the fixed
-builds' actual provisioning flow (per device credential handling is defined
-upstream by SEC-ESP-PROVISIONING-001) before publishing.
+The steps below have been confirmed against the fixed builds and the
+installer's actual flow. Per device credential handling is defined upstream
+by SEC-ESP-PROVISIONING-001: the fixed builds no longer embed the shared
+default credentials, and each fixed device establishes its own unique local
+API encryption key, over the air update password, web interface password, and
+fallback hotspot password in place of the shared release defaults, so
+reflashing to a fixed version re-keys the device away from the publicly known
+values. The WebFlash installer flow the steps describe (SHA-256 and Ed25519
+verification before write, then Improv Wi-Fi setup) is unchanged by this fix.
+The four fixed builds now served on the installer (v1.0.7, v1.0.8, and v1.0.9
+stable, plus v1.0.1-led-preview) each scan clean against the credential
+denylist.
 
 1. On a desktop or laptop running a Chromium based browser (Chrome, Edge,
    or Opera), open https://sense360store.github.io/WebFlash/. Mobile
@@ -128,6 +153,8 @@ upstream by SEC-ESP-PROVISIONING-001) before publishing.
   surface. The import gate already blocks re importing any credential dirty
   binary, and the upstream release gate (esphome-public #779) blocks
   producing new ones.
-- At publication, resolve the `[TO RESOLVE BEFORE PUBLICATION]` notes,
-  remove internal tracking identifiers from the customer visible GHSA text,
-  and route support questions per `SUPPORT.md`.
+- The publication editor notes (the fixed version for each configuration and
+  the per device provisioning flow) were resolved at
+  WF-H1-REIMPORT-CLEAN-001 step W3 and are filled in above. At publication
+  the owner still removes internal tracking identifiers from the customer
+  visible GHSA text and routes support questions per `SUPPORT.md`.

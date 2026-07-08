@@ -235,13 +235,15 @@ describe('flipKitChannelsInText — surgical, format-preserving edit', () => {
 
 describe('removeSourceEntriesInText — minimal-diff entry removal', () => {
     test('removes exactly the named asset entry and round-trips the rest', () => {
-        // Retargeted twice: first from the RoomIQ-LED preview entry after the
-        // stale v1.0.0-preview retirement, then from the VentIQ FanPWM
-        // room-bundle preview after WF-H1-REIMPORT-CLEAN-001 W1 delisted the
-        // five fan previews. The VentIQ LED preview is a surviving entry
-        // (in-memory removal only; nothing is written back).
+        // Retargeted three times: first from the RoomIQ-LED preview entry
+        // after the stale v1.0.0-preview retirement, then from the VentIQ
+        // FanPWM room-bundle preview after WF-H1-REIMPORT-CLEAN-001 W1
+        // delisted the five fan previews, then to the clean v1.0.1 LED preview
+        // after the W2 rebuild re-import bumped the surviving LED preview
+        // entry from v1.0.0 to v1.0.1. The VentIQ LED preview is a surviving
+        // entry (in-memory removal only; nothing is written back).
         const raw = readFileSync(join(REPO_ROOT, 'firmware/sources.json'), 'utf8');
-        const target = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.0-preview.bin';
+        const target = 'Sense360-Ceiling-POE-VentIQ-RoomIQ-LED-v1.0.1-preview.bin';
         const out = removeSourceEntriesInText(raw, [target]);
         const before = JSON.parse(raw);
         const after = JSON.parse(out);
