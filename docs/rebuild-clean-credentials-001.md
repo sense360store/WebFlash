@@ -86,6 +86,7 @@ repo's copy of this file.
 | W1 | WebFlash | De-list the five fan previews (R-D1) | **EXECUTED** | [#582](https://github.com/sense360store/WebFlash/pull/582) |
 | W2 | WebFlash | Clean re-import of the four rebuilt releases; backstop assertions; merge gated on owner attestation (R-D4) | **EXECUTED** (assets imported and live; see the W3 change record and the R-D4 caveat below) | importer PRs [#584](https://github.com/sense360store/WebFlash/pull/584), [#585](https://github.com/sense360store/WebFlash/pull/585), [#586](https://github.com/sense360store/WebFlash/pull/586), [#587](https://github.com/sense360store/WebFlash/pull/587) |
 | W3 | WebFlash | Scanner verification of every served binary; resolve advisory DRAFT markers; mark programme COMPLETE | **EXECUTED** | this PR |
+| PR-WF-A | WebFlash | Correct the false per-device provisioning claims introduced at W2/W3 across the advisory DRAFT, sidecars, manifest, and this record | **EXECUTED** | PR-WF-A (see change record below) |
 | Publish | WebFlash | Owner publishes the GitHub Security Advisory + user notice | OWNER ACTION — pending | — |
 | Annotate | esphome-public | Owner annotates superseded release notes with the advisory link (R-D3) | OWNER ACTION — pending | — |
 
@@ -150,13 +151,17 @@ file keeps its DRAFT marking:
   at v1.0.9, and the VentIQ LED preview at v1.0.1-led-preview. The five
   de-listed v1.0.0-preview fan configurations each get one line in the
   affected section noting removal with no fixed version to reflash to (R-D1).
-- The reflash-flow note was resolved against the confirmed per-device
-  provisioning flow: per-device credential handling is defined upstream by
-  SEC-ESP-PROVISIONING-001, the fixed builds embed no shared defaults, and
-  each fixed device establishes its own unique API encryption key, OTA
-  password, web password, and fallback hotspot password. The claim is scoped
-  to what W3 can confirm (the four fixed builds scan clean) plus the upstream
-  provisioning design; no bench or hardware verification is claimed here.
+- The reflash-flow note was resolved with a claim of a confirmed per-device
+  provisioning flow (each fixed device establishing its own unique API
+  encryption key, OTA password, web password, and fallback hotspot
+  password). **That claim was false and was corrected by PR-WF-A (see the
+  correction change record below).** What W3 actually confirmed is only that
+  the four fixed builds scan clean against the credential denylist — the
+  shared defaults are gone. The rebuilt binaries ship unprovisioned:
+  SEC-ESP-PROVISIONING-001 (per-device credential provisioning) is a planned
+  upstream follow-up that is not implemented, the native API is unencrypted,
+  OTA and the web interface are unauthenticated, and the fallback AP is
+  open. Users requiring authentication must self-build with unique secrets.
 
 **Test-surface reconciliation.** The W2 asset re-import landed the rebuilt
 binaries, `manifest.json`, the `firmware-*.json` set, the sidecars, and the
@@ -189,6 +194,59 @@ no `REQUIRED_CONFIGS`, no kit, and no release-channel or install-gate logic
 were touched by W3; the reconciliation above is limited to test fixtures /
 expected-surface pins and the advisory DRAFT.
 
+### PR-WF-A change record (correction of false provisioning claims)
+
+Executed 2026-07-10 on branch
+`claude/webflash-provisioning-metadata-xtryr0`. Docs-and-metadata only: no
+firmware bytes, no `.bin` path, no hash, no signature, no source entry, no
+`REQUIRED_CONFIGS`, no kit, and no release-channel or install-gate logic
+changed.
+
+The W2 import and the W3 advisory resolution recorded a false claim: that
+the rebuilt builds are provisioned with unique per-device credentials
+(unique API encryption key, OTA password, web password, and fallback
+hotspot password) and that reflashing re-keys the device. The accurate
+state, now stated everywhere the false claim appeared:
+
+- The shared default credentials were removed from the rebuilt builds (this
+  part was and remains true; every served binary scans clean against the
+  denylist).
+- The current prebuilt firmware ships **unprovisioned** — no credentials
+  are configured at all.
+- The native API is unencrypted; OTA and the web interface are
+  unauthenticated; the fallback AP is open.
+- Users requiring authentication must currently self-build with unique
+  secrets.
+- SEC-ESP-PROVISIONING-001 (per-device credential provisioning) is a
+  planned upstream follow-up and is **not implemented** in any served
+  build.
+
+Files corrected: the four `firmware/configurations/*.meta.json` sidecar
+changelogs, the four matching `manifest.json` changelog arrays (changelog
+text only; binary paths, sizes, SHA-256/MD5 hashes, Ed25519 signatures,
+build dates, and source commits are untouched),
+`docs/security/advisory-default-credentials-DRAFT.md` (reflash-flow claim
+replaced, a "Residual security posture after reflashing" section added,
+post-reflash verify steps rewritten, publication-gate editor note
+corrected), and this tracking record (W3 change record annotated, this
+change record added).
+
+**Residual owner items surfaced by this correction:**
+
+- The upstream release bodies for `v1.0.7`, `v1.0.8`, `v1.0.9`, and
+  `v1.0.1-led-preview` on `sense360store/esphome-public` carry the same
+  false changelog line ("device credentials are now provisioned uniquely
+  per device"); the importer regenerates sidecar changelogs from those
+  bodies, so a future re-import would reintroduce the false text until the
+  owner corrects the upstream release notes.
+- The R-D4 bench checklist ("unique AP fallback password, unique API key
+  present") cannot pass against unprovisioned builds; the owner needs to
+  revise the checklist to the actual posture (defaults absent; surfaces
+  unauthenticated) before the pending bench attestation.
+- Whether to publish the GHSA with the residual unauthenticated posture
+  stated, or hold publication until SEC-ESP-PROVISIONING-001 ships, is an
+  owner decision.
+
 ---
 
 ## Programme status: COMPLETE (WebFlash execution)
@@ -196,8 +254,12 @@ expected-surface pins and the advisory DRAFT.
 All WebFlash execution steps are executed: **W1** (de-list the five fan
 previews), **W2** (clean re-import of the four rebuilt releases; live on the
 installer), and **W3** (scanner verification of every served binary; advisory
-DRAFT markers resolved). Every binary the installer serves scans clean
-against the credential denylist.
+DRAFT markers resolved, with the provisioning claim later corrected by
+**PR-WF-A**). Every binary the installer serves scans clean against the
+credential denylist. The served builds are unprovisioned: removing the
+shared defaults closed the shared-credential exposure, but the native API,
+OTA, web interface, and fallback AP remain unauthenticated until
+SEC-ESP-PROVISIONING-001 ships upstream.
 
 The remaining programme steps are owner-only actions, tracked pending in the
 execution log and outside WebFlash's automated execution: the R-D4 bench

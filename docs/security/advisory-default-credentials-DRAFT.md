@@ -4,14 +4,16 @@
 > live advisory.** This is an in tree draft authored under
 > REPO-CUSTOMER-READY-001 decision D4. Publication is an owner action, taken
 > as a GitHub Security Advisory (GHSA), and is gated on
-> WF-H1-REIMPORT-CLEAN-001 landing (clean, per device provisioned rebuilds of
-> every affected build imported and live on the installer). Until that gate
-> is met there is no fixed firmware to direct customers to, so this document
-> must not be linked from any user facing surface, announced, or filed as a
-> GHSA. The editor notes that previously marked unresolved detail were
-> resolved at WF-H1-REIMPORT-CLEAN-001 step W3 (fixed versions and the per
-> device provisioning flow); this document nonetheless remains a DRAFT until
-> the owner publishes it.
+> WF-H1-REIMPORT-CLEAN-001 landing (clean rebuilds, with the shared default
+> credentials removed, of every affected build imported and live on the
+> installer). Until that gate is met there is no fixed firmware to direct
+> customers to, so this document must not be linked from any user facing
+> surface, announced, or filed as a GHSA. The editor notes that previously
+> marked unresolved detail were resolved at WF-H1-REIMPORT-CLEAN-001 step W3
+> (fixed versions) and corrected under PR-WF-A (the post reflash security
+> posture: the fixed builds ship unprovisioned, they do not perform per
+> device credential provisioning); this document nonetheless remains a DRAFT
+> until the owner publishes it.
 
 ## Summary
 
@@ -22,7 +24,9 @@ defaults, which are publicly recoverable, can access and control an affected
 device over the local network, and in some cases from radio range during
 setup. Owners of affected devices should reflash to a fixed version using
 WebFlash at https://sense360store.github.io/WebFlash/ as soon as fixed
-versions are available.
+versions are available. The fixed builds remove the shared defaults but ship
+without credentials configured at all — see *Residual security posture after
+reflashing* below for what remains unauthenticated after the fix.
 
 This finding was identified by the June 2026 defensive security audit of
 this repository (finding W-H1, `docs/security/SECURITY-AUDIT-2026-06.md`)
@@ -91,8 +95,8 @@ credentials for the surfaces that control the device:
 
 Because the same values ship in every affected build, knowing them once is
 enough to affect any reachable affected device. Reflashing through WebFlash
-writes the downloaded build as is, so an affected device cannot be re keyed
-by its owner without a fixed build to flash.
+writes the downloaded build as is, so the only way off the shared defaults
+with prebuilt firmware is to flash a fixed build that does not contain them.
 
 The intentionally public first boot setup network name and password are not
 part of this advisory. They exist only so a brand new device can be brought
@@ -102,17 +106,18 @@ API, update, or web surfaces.
 ## What to do: reflash with WebFlash
 
 The steps below have been confirmed against the fixed builds and the
-installer's actual flow. Per device credential handling is defined upstream
-by SEC-ESP-PROVISIONING-001: the fixed builds no longer embed the shared
-default credentials, and each fixed device establishes its own unique local
-API encryption key, over the air update password, web interface password, and
-fallback hotspot password in place of the shared release defaults, so
-reflashing to a fixed version re-keys the device away from the publicly known
-values. The WebFlash installer flow the steps describe (SHA-256 and Ed25519
-verification before write, then Improv Wi-Fi setup) is unchanged by this fix.
-The four fixed builds now served on the installer (v1.0.7, v1.0.8, and v1.0.9
-stable, plus v1.0.1-led-preview) each scan clean against the credential
-denylist.
+installer's actual flow. The fixed builds no longer embed the shared default
+credentials — that is the whole fix. They ship **unprovisioned**: no local
+API encryption key, no over the air update password, no web interface
+password, and no fallback hotspot password is configured. Reflashing to a
+fixed version removes the publicly known shared values; it does not install
+new per device credentials. Per device credential provisioning is a planned
+upstream follow up (tracked as SEC-ESP-PROVISIONING-001) and is **not
+implemented** in any build the installer serves today. The WebFlash
+installer flow the steps describe (SHA-256 and Ed25519 verification before
+write, then Improv Wi-Fi setup) is unchanged by this fix. The four fixed
+builds now served on the installer (v1.0.7, v1.0.8, and v1.0.9 stable, plus
+v1.0.1-led-preview) each scan clean against the credential denylist.
 
 1. On a desktop or laptop running a Chromium based browser (Chrome, Edge,
    or Opera), open https://sense360store.github.io/WebFlash/. Mobile
@@ -128,18 +133,43 @@ denylist.
    installer's recovery path and see `TROUBLESHOOTING.md` in this
    repository.
 
+## Residual security posture after reflashing
+
+Reflashing to a fixed build removes the publicly known shared credentials,
+which closes the specific exposure this advisory describes: an attacker can
+no longer walk up with values recovered from a published binary. It does
+**not** add authentication. On a fixed build:
+
+- the local control API is **unencrypted** — any computer on the same
+  network can connect to it without a key;
+- over the air updates are **unauthenticated** — a network reachable device
+  accepts firmware replacement without a password;
+- the built in web interface is **unauthenticated** — no login is required;
+- the fallback recovery hotspot is **open** — no password is required to
+  join it while it is active.
+
+Treat a fixed device as an unauthenticated device on your network: run it
+only on a trusted, isolated network segment. Users who require
+authenticated or encrypted access must build their own firmware from the
+published configurations with unique secrets of their own; the prebuilt
+binaries the installer serves cannot be given credentials after the fact.
+Automatic per device credential provisioning is planned upstream but not
+yet implemented, and no build served by the installer performs it.
+
 ## After reflashing: verify the fix
 
 1. In the installer, confirm the reported installed version matches the
    fixed version for the configuration, per the table above.
-2. Open the device's web interface and confirm it no longer accepts the old
+2. Open the device's web interface: a fixed build presents it without a
+   login prompt (it is unauthenticated) and no longer carries the old
    shared default credentials.
-3. When re adopting the device in a home automation system, confirm the
-   local API requires the device's own encryption key rather than accepting
-   the previous placeholder.
-4. If any of these checks fail, the device is still on an affected build.
-   Repeat the reflash, and if it persists file a flash failure issue on
-   this repository.
+3. When re adopting the device in a home automation system, note that a
+   fixed build's local API connects without an encryption key. If the
+   device still accepts the previous shared placeholder key as an
+   encryption key, it is still on an affected build.
+4. If the version check fails or the device still behaves like an affected
+   build, repeat the reflash, and if it persists file a flash failure issue
+   on this repository.
 
 ## Publication gate
 
@@ -153,8 +183,12 @@ denylist.
   surface. The import gate already blocks re importing any credential dirty
   binary, and the upstream release gate (esphome-public #779) blocks
   producing new ones.
-- The publication editor notes (the fixed version for each configuration and
-  the per device provisioning flow) were resolved at
-  WF-H1-REIMPORT-CLEAN-001 step W3 and are filled in above. At publication
-  the owner still removes internal tracking identifiers from the customer
-  visible GHSA text and routes support questions per `SUPPORT.md`.
+- The publication editor notes (the fixed version for each configuration)
+  were resolved at WF-H1-REIMPORT-CLEAN-001 step W3. The W3 description of
+  the post reflash posture wrongly claimed per device credential
+  provisioning; PR-WF-A corrected it to the accurate residual posture
+  described above (fixed builds ship unprovisioned; API unencrypted; OTA
+  and web unauthenticated; fallback hotspot open; per device provisioning
+  planned upstream, not implemented). At publication the owner still
+  removes internal tracking identifiers from the customer visible GHSA text
+  and routes support questions per `SUPPORT.md`.

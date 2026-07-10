@@ -47,8 +47,9 @@
       ],
       "known_issues": [],
       "changelog": [
-        "Security rebuild: device credentials are now provisioned uniquely per device",
-        "shared factory defaults removed. Supersedes v1.0.6. No functional changes. A security advisory will follow."
+        "Security rebuild: the shared factory-default credentials were removed; this build ships unprovisioned, with no device credentials configured",
+        "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
+        "Supersedes v1.0.6. No functional changes. A security advisory will follow."
       ],
       "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
@@ -102,8 +103,9 @@
       ],
       "known_issues": [],
       "changelog": [
-        "Security rebuild: device credentials are now provisioned uniquely per device",
-        "shared factory defaults removed. Supersedes v1.0.5. No functional changes. A security advisory will follow."
+        "Security rebuild: the shared factory-default credentials were removed; this build ships unprovisioned, with no device credentials configured",
+        "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
+        "Supersedes v1.0.5. No functional changes. A security advisory will follow."
       ],
       "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
@@ -161,8 +163,9 @@
         "Sense360 LED is not included in this firmware: the selected configuration 'Ceiling-POE-VentIQ-RoomIQ' does not include LED. The LED-bearing sibling lives on the preview channel."
       ],
       "changelog": [
-        "Security rebuild: device credentials are now provisioned uniquely per device",
-        "shared factory defaults removed. Supersedes v1.0.4. No functional changes. A security advisory will follow."
+        "Security rebuild: the shared factory-default credentials were removed; this build ships unprovisioned, with no device credentials configured",
+        "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
+        "Supersedes v1.0.4. No functional changes. A security advisory will follow."
       ],
       "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
@@ -222,8 +225,9 @@
         "FanTRIAC is not included in this firmware. It is a separate compile-only / advanced-preview build (mains-voltage TRIAC dimming), not stable, and remains gated by PACKAGE-TRIAC-001 plus the COMPLIANCE-001-RESOLUTION-001 experimental-lane preconditions (COMPLIANCE-001 closed by market posture: the S360-320 board is never placed on the market; self-build open-source only)."
       ],
       "changelog": [
-        "device credentials are now provisioned uniquely per device",
-        "shared factory defaults removed. Supersedes v1.0.0-led-preview. Preview channel: not hardware verified. A security advisory will follow."
+        "the shared factory-default credentials were removed; this build ships unprovisioned, with no device credentials configured",
+        "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
+        "Supersedes v1.0.0-led-preview. Preview channel: not hardware verified. A security advisory will follow."
       ],
       "source_commit": "ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
       "source_url": "https://github.com/sense360store/WebFlash/commit/ae0e1e9353462a85e53a0cdb052ed32e4e5e3304",
