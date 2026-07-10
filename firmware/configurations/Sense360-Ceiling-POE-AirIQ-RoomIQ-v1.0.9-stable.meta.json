@@ -1,7 +1,8 @@
 {
   "changelog": [
-    "Security rebuild: device credentials are now provisioned uniquely per device",
-    "shared factory defaults removed. Supersedes v1.0.6. No functional changes. A security advisory will follow."
+    "Security rebuild: the shared factory-default credentials were removed; this build ships unprovisioned, with no device credentials configured",
+    "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
+    "Supersedes v1.0.6. No functional changes. A security advisory will follow."
   ],
   "known_issues": [],
   "features": [
