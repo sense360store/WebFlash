@@ -15,6 +15,17 @@ WebFlash is **downstream** of `sense360store/esphome-public`, which publishes **
 - **Follows the ESP Web Tools / esptool.js standard** for flashing ESP32 devices. The install view renders the upstream `<esp-web-install-button>` component (loaded from unpkg) and consumes the standard ESP Web Tools manifest schema (`name`, `version`, `builds[].chipFamily`, `builds[].parts[].path`/`offset`, `improv`, etc.). Do not invent custom flash flows — the upstream component drives connect/erase/write/verify.
 - **Laptop / desktop only.** Web Serial is not available on iOS, Android Chrome, or any mobile browser, so WebFlash explicitly targets desktop Chromium-based browsers (Chrome, Edge, Opera) on Windows / macOS / Linux. Firefox and Safari are unsupported. Capability detection lives in `scripts/capabilities.js` (reached through the `engine.capabilities` facade) and the install view (`scripts/install.js`) surfaces the unsupported-browser banner. Do not add mobile-first layout assumptions or features that imply mobile is a supported runtime — the install path will not work there.
 
+## Cross-repository operating model
+
+Before starting any cross-repository work, Claude Code must read the SOT operating model: <https://github.com/sense360store/SOT/blob/main/CLAUDE-OPERATING-MODEL.md>. In brief:
+
+- **SOT owns programme-level truth**: accepted cross-repository decisions, programme IDs, cross-repository status, and owner actions.
+- **WebFlash owns distribution**: browser flashing, firmware distribution, manifests, binary metadata, checksums, signatures, install gates, release channels, installer copy, and distribution execution records.
+- WebFlash must not claim firmware behaviour that is not proven by `sense360store/esphome-public`.
+- Distribution completion never independently redefines a programme as verified or complete.
+- When WebFlash evidence materially changes programme state, the SOT update is made in a separate PR, never bundled into the WebFlash change.
+- This repository-local `CLAUDE.md` and [`docs/standing-invariants.md`](docs/standing-invariants.md) remain authoritative for repository-internal distribution and installer rules.
+
 ## Sense360 hardware reference (canonical SKUs)
 
 This is the **authoritative SKU list** for the supported hardware. The **Friendly name** column is the canonical user-facing label — use it verbatim in wizard markup, manifest descriptions, and module metadata. There is no Model/Variant axis: each SKU is its own product, and "Base / Pro" or model/variant terminology must be dropped when touching this code. The **Old name** column lists deprecated internal/historical names and exists only to help recognise legacy references; do not use these in new code.
