@@ -646,6 +646,11 @@ button.istep__node:hover .istep__lbl { color: var(--text); }
 .B__body { min-width: 0; display: grid; gap: 6px; align-content: center; }
 .B__body h2 { margin: 8px 0 4px; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; }
 .B__desc { margin: 0 0 6px; color: var(--text-body); font-size: 0.98rem; line-height: 1.5; max-width: 52ch; }
+/* WEBFLASH-TAXONOMY-RECONCILE-001 — room-led hero card: the room label is the
+   h2; the preset's formal name and the also-suitable-rooms line sit under it
+   as quieter technical / positioning detail. */
+.B__preset-name { margin: -2px 0 4px; color: var(--text-muted); font-size: 0.86rem; font-weight: 600; letter-spacing: 0.01em; }
+.B__rooms { margin: 0 0 6px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.45; max-width: 52ch; }
 .B__cta { display: flex; flex-direction: column; gap: 10px; min-width: 232px; }
 .B__cta .btn { width: 100%; }
 .B__reassure {

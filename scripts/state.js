@@ -161,8 +161,8 @@ const MOUNT_LABELS = Object.freeze({
 
 const POWER_LABELS = Object.freeze({
     usb: 'USB power',
-    poe: 'PoE module',
-    pwr: 'PWR module'
+    poe: 'Sense360 PoE PSU',
+    pwr: 'Sense360 240v PSU'
 });
 
 const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_LABELS', [
@@ -185,7 +185,7 @@ const MODULE_VARIANT_LABELS = Object.freeze(createValidatedMap('MODULE_VARIANT_L
         none: 'Sense360 Core'
     })],
     ['led', Object.freeze({
-        none: 'No LED ring',
+        none: 'No LED',
         led: 'Sense360 LED'
     })]
 ], { allowedKeys: MODULE_KEYS }));
@@ -196,7 +196,7 @@ const MODULE_LABELS = createValidatedMap('MODULE_LABELS', [
     ['ventiq', 'VentIQ'],
     ['fan', 'Fan / Switching'],
     ['voice', 'Core Type'],
-    ['led', 'LED Ring']
+    ['led', 'Sense360 LED']
 ], { allowedKeys: MODULE_KEYS });
 
 // Fan variants are preserved as variant-specific tokens so the firmware-selection
@@ -6524,7 +6524,9 @@ function formatVariantHeadingLabel(bucket) {
         return sensorAddonLabel;
     }
 
-    return 'Base Firmware';
+    // Legacy model/variant bucket fallback. "Standard firmware" (never a
+    // Base/Pro tier): no Base/Pro product axis exists in the Sense360 taxonomy.
+    return 'Standard firmware';
 }
 
 function renderModelBucketSections(buckets) {

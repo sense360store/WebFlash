@@ -43,27 +43,31 @@ has no imported artifact.
 
 | Product (`config_string`) | Channel | Version | WebFlash exposure | In `REQUIRED_CONFIGS`? |
 |---|---|---|---|---|
-| **Release-One** — `Ceiling-POE-VentIQ-RoomIQ` | `stable` | 1.0.0 | Release-selectable. Default stable install path (Simple install). Backs the `S360-KIT-BATH-POE` kit and the `S360-KIT-CEILING-VENTIQ-ROOMIQ-POE` entry in `scripts/data/kits.json`. | **Yes** |
-| **LED preview** — `Ceiling-POE-VentIQ-RoomIQ-LED` | `preview` | 1.0.0 | **Preview-only.** Visible in normal mode but never auto-selected; install gates on the `channel:preview` acknowledgement (WF-LED-003 Option A). Not a kit, not recommended. | No |
-| **AirIQ preview** — `Ceiling-POE-AirIQ-RoomIQ` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001). Never auto-selected; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default. | No |
-| **RoomIQ preview** — `Ceiling-POE-RoomIQ` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Same preview gate + posture. | No |
-| **RoomIQ + LED preview** — `Ceiling-POE-RoomIQ-LED` | `preview` | 1.0.0 | **Preview-only (Advanced install).** First preview batch. Distinct from the VentIQ LED preview. Same preview gate + posture. | No |
-| **FanRelay preview** — `Ceiling-POE-VentIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-RELAY-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Fan relay control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
-| **FanPWM preview** — `Ceiling-POE-FanPWM` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-PWM-001 after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. PWM fan control (low-voltage / DC fans) is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
-| **FanDAC preview** — `Ceiling-POE-FanDAC` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Imported by WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 (the preview-eligible import automation) after upstream marked it WebFlash-import eligible (`webflash_import_eligibility.eligible=true`); the upstream catalog status stays `hardware-pending`. Analog (0–10V) fan control is an installer / developer preview — **not for normal customers**; `channel:preview` acknowledgement required. Not stable, not a kit, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety / commercial-availability proof claimed. Use the stable Bathroom PoE build for normal installs. | No |
-| **Bathroom + PWM bundle** — `Ceiling-POE-VentIQ-FanPWM-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview imported by WF-IMPORT-FAN-BUNDLES-001 (upstream `ROOM-BUNDLE-FAN-WEBFLASH-ELIGIBILITY-001`, catalog status `hardware-pending`). `channel:preview` + fan-control acknowledgements required. Not stable, not a kit yet, not recommended, not a customer default, not buyable. No hardware / bench / compliance / safety proof claimed. | No |
-| **Bathroom + DAC bundle** — `Ceiling-POE-VentIQ-FanDAC-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). `channel:preview` + fan-control + FanDAC analog address-switch acknowledgements required (S360-312 IC2 `0x5A`; `0x59` forbidden). `FANDAC-I2C-ADDR-001` bench verification stays pending. Not stable / kit / recommended / default / buyable. | No |
-| **Kitchen + Relay bundle** — `Ceiling-POE-AirIQ-FanRelay-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). `channel:preview` + fan-control acknowledgements required. Not stable / kit / recommended / default / buyable. No hardware / bench / compliance / safety proof claimed. | No |
-| **Kitchen + DAC bundle** — `Ceiling-POE-AirIQ-FanDAC-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). The `fandac_conflicts_with_airiq` mutex keeps AirIQ + FanDAC out of the one-click grammar; this is the address-overridden advanced exception. `channel:preview` + fan-control + FanDAC address-switch acknowledgements required; `FANDAC-I2C-ADDR-001` pending. Not stable / kit / recommended / default / buyable. | No |
-| **Kitchen + PWM bundle** — `Ceiling-POE-AirIQ-FanPWM-RoomIQ` | `preview` | 1.0.0 | **Preview / manual-preview (Advanced install only).** Full-composition room-bundle fan preview (WF-IMPORT-FAN-BUNDLES-001). `channel:preview` + fan-control acknowledgements required. Not stable / kit / recommended / default / buyable. No hardware / bench / compliance / safety proof claimed. | No |
+| **Release-One** — `Ceiling-POE-VentIQ-RoomIQ` | `stable` | 1.0.7 | Release-selectable. Default stable install path; backs the Bathroom room preset (`S360-KIT-BATH-P`, the only recommended/default preset in `scripts/data/kits.json`). | **Yes** |
+| **Bedroom / general-room** — `Ceiling-POE-RoomIQ` | `stable` | 1.0.8 | Release-selectable. Backs the Bedroom room preset (`S360-KIT-BEDROOM-P`, one preset covering bedroom / living room / home office / nursery). Promoted under owner waiver HW-S360-410-WAIVER-2026-06; its candidate commercial bundle stays hidden / not buyable / never the customer default. | No |
+| **Kitchen candidate** — `Ceiling-POE-AirIQ-RoomIQ` | `stable` | 1.0.9 | Served stable, **advanced module builder only** — deliberately NOT a room preset card. The upstream standing invariants and SOT (kitchen-poe, gated on OD-SOT-009) keep the candidate Kitchen bundle hidden / not buyable / never the customer default; firmware existence is not permission to expose it. Promoted under owner waiver HW-AIRIQ-WAIVER-2026-06. | No |
+| **LED preview** — `Ceiling-POE-VentIQ-RoomIQ-LED` | `preview` | 1.0.1 | **Preview-only (Advanced install).** Never auto-selected; install gates on the `channel:preview` acknowledgement. Not a preset card, not recommended, no hardware / bench / compliance claim. | No |
 | **Rescue** — `Rescue` | `rescue` | 1.0.0 | Recovery / unbricking build, reached via the recovery path + rescue modal. WebFlash-owned. | **Yes** |
 
 `REQUIRED_CONFIGS` is **production-only**: `["Ceiling-POE-VentIQ-RoomIQ", "Rescue"]`.
-None of the twelve preview builds is on the allowlist — a `preview` catalog status
-is import / manifest / kit eligible but never `REQUIRED_CONFIGS` eligible. The
-default **Simple install** path resolves only to the stable Bathroom PoE build
-(`Ceiling-POE-VentIQ-RoomIQ`); the preview builds appear only in the Advanced /
+The preview build is never on the allowlist — a `preview` catalog status is
+import / manifest / preset eligible but never `REQUIRED_CONFIGS` eligible. The
+default install path resolves only to the stable Bathroom PoE build
+(`Ceiling-POE-VentIQ-RoomIQ`); the LED preview appears only in the Advanced /
 custom path behind the preview-channel acknowledgement.
+
+Historical note: the fan previews (FanRelay / FanPWM / FanDAC, standalone and
+full-composition room-bundle variants) and the `Ceiling-POE-RoomIQ-LED`
+preview that earlier revisions of this table listed were retired / delisted
+(#553, #582 — stale or pre-credential-gate v1.0.0-preview artifacts; see the
+retired register in `__tests__/fixtures/expected-surface.json` and
+`docs/rebuild-clean-credentials-001.md`). Every fan config remains
+preview/experimental-channel metadata upstream, **not for normal customers**,
+never stable / a preset / recommended / a customer default / buyable, and any
+future FanRelay / FanPWM / FanDAC (manual-preview, Advanced-install-only)
+re-import still requires the `channel:preview` acknowledgement plus the
+fan-control acknowledgement (and the FanDAC address-switch acknowledgement,
+`FANDAC-I2C-ADDR-001` pending). FanTRIAC stays import-blocked outright.
 
 ## Preview firmware first batch (WF-PREVIEW-IMPORT-FIRST-BATCH-001)
 
@@ -790,3 +794,52 @@ pre-`WEBFLASH-DOCS-CONSOLIDATION-SENSE360-001`. No firmware imported. No
 FanPWM install card. No LED-stable claim. No artifact published. The FanTRIAC
 HW-005 block, the WF-LED-003 preview-channel acknowledgement model, and the
 WF-TRIAC-001 advanced/manual-warning gate all stand unchanged.
+
+## WEBFLASH-TAXONOMY-RECONCILE-001 — room-preset taxonomy reconciliation
+
+Programme: `WEBFLASH-TAXONOMY-RECONCILE-001` (follows
+`PRODUCT-TAXONOMY-AUDIT-001` in `sense360store/esphome-public` at
+`74b20be65739bc468c3c5d30f15b3fcd17a678d8` and `SOT-BUNDLE-TAXONOMY-001` in
+`sense360store/SOT`, merged as
+`8df6ad69cb1dc76119843eecddcbd4fa2df4c33d`).
+
+What this slice changed (accurately scoped):
+
+- **WebFlash customer presentation reconciled to room/use-case presets.**
+  Step 1 leads with "Choose your room"; the visible entries are the Bathroom
+  preset (`Ceiling-POE-VentIQ-RoomIQ`, stable, the installer's recommended
+  default per the standing invariants) and the Bedroom / general-room preset
+  (`Ceiling-POE-RoomIQ`, stable, one preset with several recommended rooms).
+  Board names and SKUs stay visible as technical contents beneath the room
+  label; the firmware config string stays visible as the secondary technical
+  identifier. Technical config strings are preserved unchanged — no token was
+  renamed.
+- **Commercial state is mirrored from SOT, never inferred.**
+  `scripts/data/sot-commercial-mirror.json` is a synchronized snapshot of the
+  SOT bundle surface (provenance: SOT SHA above; regenerate with
+  `scripts/refresh-sot-mirror.py`). As mirrored, SOT lists **no** bundle as
+  available or buyable, so no customer copy shows on-sale / buy-now /
+  available-bundle language. Commercial status is not an install gate.
+- **Hardware wording corrected to verified evidence**: RoomIQ radar modules
+  (LD2450 / SEN0609) are connector-attached options; SPS30 and the VentIQ IR
+  temperature sensor are external connector options, not included; the AirIQ
+  formaldehyde sensor fitment is unresolved and not exposed (all definitive
+  SFA30 claims removed, no definitive SFA40 claim added); no voice /
+  microphone SKU is implied; stale `PoE module` / `PWR module` / `LED Ring`
+  / Base-tier labels replaced with canonical names.
+- **Firmware/build state remains owned by `sense360store/esphome-public` and
+  the WebFlash distribution records.** No firmware was imported, promoted or
+  removed; `manifest.json`, every `firmware-*.json`, `firmware/sources.json`,
+  all binaries and `REQUIRED_CONFIGS` are unchanged; all install, signature,
+  provenance, release-channel, preview and acknowledgement gates are
+  unchanged.
+- **No product was launched, published or made buyable. No hardware
+  validation was performed. No commercial owner decision was resolved** —
+  OD-SOT-001 (public fan naming), OD-SOT-004 (radar attachment inclusion),
+  OD-SOT-008 (SFA40 fitment) and OD-SOT-009 (Kitchen / Bedroom commercial
+  go/no-go) remain open with their owners.
+
+The programme is **not complete**: follow-up customer exposure decisions
+(Kitchen / Hallway / fan presets, commercial launch surfaces) remain owner
+decisions in SOT, and this repository only executes them after SOT records
+them.

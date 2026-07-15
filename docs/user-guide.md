@@ -48,9 +48,9 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 
 ### Expansion Modules
 
-- **Sense360 RoomIQ** (`S360-200`): Room sensor board with PIR, mmWave presence (LD2450), light (LTR-303ALS), temperature/humidity (SHT4x), and pressure (BMP581).
-- **Sense360 AirIQ** (`S360-210`): Air-quality board with CO₂ (SCD41), VOC (SGP41), and gas (MICS-4514). Optional connectors for SPS30 (PM) and SFA30 (HCHO).
-- **Sense360 VentIQ** (`S360-211`): Bathroom-focused air-quality board (SGP41 onboard, IR-temp + SPS30 connectors). Only appears when Bathroom mode is on; mutually exclusive with AirIQ.
+- **Sense360 RoomIQ** (`S360-200`): Room sensor board with PIR presence, light (LTR-303ALS), temperature/humidity (SHT4x), and pressure (BMP581) on board, plus connectors for optional LD2450 (J2) and SEN0609/C4001 (J3) radar modules (connector-attached, not included by default).
+- **Sense360 AirIQ** (`S360-210`): Air-quality board with CO₂ (SCD41), VOC/NOx indices (SGP41), and an uncalibrated gas sensor (MiCS-4514). External connector for the optional SPS30 particulate module (not included). Formaldehyde sensor fitment unresolved; not currently exposed as a supported customer function.
+- **Sense360 VentIQ** (`S360-211`): Bathroom-focused air-quality board. SGP41 (VOC/NOx indices) is the only on-board sensor; external connectors for optional IR surface-temp and SPS30 modules (not included). Only appears when Bathroom mode is on; mutually exclusive with AirIQ. In combined setups RoomIQ supplies the temperature and humidity readings.
 - **Sense360 LED** (`S360-300`): WS2812B addressable LED ring.
 - **Sense360 Relay** (`S360-310`): On/off relay for bathroom fans.
 - **Sense360 PWM** (`S360-311`): 12V PWM driver, up to 4 fans with tach feedback.
@@ -58,9 +58,11 @@ Note: Firefox and Safari have limited Web Serial support and may not work.
 - **Sense360 TRIAC** (`S360-320`): Phase dimmer for mains fan or lamp.
 
 The full operator-facing option inventory and the compatibility matrix the
-wizard enforces live in [`hardware-options.md`](hardware-options.md). The kit
-/ SKU picker (choosing a bundle by name instead of per-module selection) is
-documented in [`kit-configuration.md`](kit-configuration.md). The release
+wizard enforces live in [`hardware-options.md`](hardware-options.md). The room
+preset picker (choosing a room / firmware preset instead of per-module
+selection) is documented in [`kit-configuration.md`](kit-configuration.md).
+A room preset is an installer firmware preset, never a statement that a
+commercial bundle is available or buyable. The release
 channel policy (stable, beta, preview, development, recovery) is documented
 in [`release-channel-policy.md`](release-channel-policy.md).
 

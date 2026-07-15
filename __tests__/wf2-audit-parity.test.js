@@ -580,7 +580,7 @@ describe('PR 10 — kit-config rejection paths (2.0 view)', () => {
     expect(app.__testHooks.getState().kits).toHaveLength(0);
     const callout = root.querySelector('.callout--warn');
     expect(callout).not.toBeNull();
-    expect(callout.textContent).toMatch(/No kits are available/i);
+    expect(callout.textContent).toMatch(/No room presets are available/i);
     // The escape hatch to the advanced builder is always offered.
     expect([...root.querySelectorAll('.linkbtn')].some((b) => /module by module/i.test(b.textContent))).toBe(true);
   });

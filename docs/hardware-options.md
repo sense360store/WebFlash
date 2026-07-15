@@ -14,8 +14,8 @@ The table below is the **documentation source for operator-facing names**, mirro
 | Group | Friendly name | SKU | Notes |
 |---|---|---|---|
 | Hub | Sense360 Core | S360-100 | The main board; every flashable device is a Core. |
-| Sensor | Sense360 RoomIQ | S360-200 | Room sensor board (PIR, mmWave, light, temp/humidity, pressure). |
-| Sensor | Sense360 AirIQ | S360-210 | Air-quality sensor board. |
+| Sensor | Sense360 RoomIQ | S360-200 | Room sensor board (PIR presence, light, temp/humidity, pressure on board; LD2450 / SEN0609 radar modules are connector-attached options, not included by default). |
+| Sensor | Sense360 AirIQ | S360-210 | Air-quality sensor board (CO₂ plus VOC/NOx indices; SPS30 particulate is an external connector option; formaldehyde sensor fitment unresolved and not exposed). |
 | Sensor | Sense360 VentIQ | S360-211 | Bathroom-focused air-quality board; only on Ceiling + Bathroom mode and mutually exclusive with AirIQ. |
 | Indicator | Sense360 LED | S360-300 | Addressable WS2812B LED ring. |
 | Driver | Sense360 Relay | S360-310 | On/off relay for bathroom fans. |
@@ -27,7 +27,7 @@ The table below is the **documentation source for operator-facing names**, mirro
 | Power | Sense360 PoE PSU | S360-410 | Selected via `power=poe`. |
 | Power | Sense360 240v PSU | S360-400 | Selected via `power=pwr`. |
 
-Each SKU is its own product. Modules are selected individually — nothing is bundled.
+Each SKU is its own product. Modules are selected individually — nothing is bundled. This page mirrors the canonical hardware catalog owned by `sense360store/esphome-public`; physical board identity is owned upstream, and the room-preset customer surface (room / firmware presets, never commercial listings) is documented in [`kit-configuration.md`](kit-configuration.md).
 
 ## Compatibility Matrix
 

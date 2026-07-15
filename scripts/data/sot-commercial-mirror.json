@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "role": "Synchronized SOT commercial-surface MIRROR for offline WebFlash validation (WEBFLASH-TAXONOMY-RECONCILE-001). This file is not commercial authority: commercial bundle names, physical contents, lifecycle status, visibility and buyability are owned by sense360store/SOT (bundles.yaml). Board identity and firmware lifecycle are owned by sense360store/esphome-public. What WebFlash serves is owned by manifest.json. Refresh with scripts/refresh-sot-mirror.py from a clean SOT checkout; never hand-author it as independent truth.",
+  "provenance": {
+    "source_repo": "sense360store/SOT",
+    "source_sha": "8df6ad69cb1dc76119843eecddcbd4fa2df4c33d",
+    "source_commit_date": "2026-07-15",
+    "source_files": [
+      "bundles.yaml"
+    ],
+    "generator": "scripts/refresh-sot-mirror.py"
+  },
+  "commercial_posture": {
+    "any_bundle_available": false,
+    "any_bundle_buyable": false,
+    "note": "Commercial posture is derived from the synchronized SOT bundle rows (status == 'available' is SOT's definition of a buyable commercial state). WebFlash room presets are not commercial listings. Customer availability or buyability wording is permitted only when the matching SOT record is in the available commercial state."
+  },
+  "bundles": [
+    {
+      "id": "bathroom-poe",
+      "name": "Sense360 Bathroom Bundle — PoE",
+      "status": "planned",
+      "visibility": "internal",
+      "tier": "launch",
+      "physical_bundle_sku": "S360-KIT-BATH-P",
+      "recommended_rooms": [
+        "bathroom",
+        "shower room",
+        "laundry room",
+        "utility room"
+      ],
+      "contents": [
+        "S360-100",
+        "S360-200",
+        "S360-211",
+        "S360-410"
+      ],
+      "contents_friendly": "Core, RoomIQ, VentIQ, PoE PSU",
+      "webflash_config": "Ceiling-POE-VentIQ-RoomIQ",
+      "firmware_lifecycle": "production (stable channel, v1.0.7 published)",
+      "webflash_exposure": "served (stable channel in the WebFlash manifest)",
+      "shop_status": "not listed; final product page and commercial launch require owner approval (roadmap task bathroom-bundle-launch)",
+      "commercially_available": false,
+      "buyable": false,
+      "renderable": false
+    },
+    {
+      "id": "air-quality-starter",
+      "name": "Air Quality Starter Bundle",
+      "status": "paused",
+      "visibility": "internal",
+      "buyable": false,
+      "tier": "starter",
+      "physical_bundle_sku": "S360-KIT-AQS-LEGACY",
+      "recommended_rooms": [
+        "kitchen",
+        "living room",
+        "home office",
+        "nursery",
+        "workshop",
+        "bedroom"
+      ],
+      "contents": [
+        "S360-100",
+        "S360-210"
+      ],
+      "contents_friendly": "Core, AirIQ",
+      "webflash_config": null,
+      "firmware_lifecycle": "none — no firmware configuration matches these contents. The previously declared Ceiling-POE-AirIQ exists in no build matrix, product catalog or WebFlash manifest; per OD-SOT-002 no standalone AirIQ firmware will be commissioned solely to preserve this legacy bundle. The only existing AirIQ firmware, Ceiling-POE-AirIQ-RoomIQ, requires RoomIQ (S360-200), which this bundle does not contain, and must never be assigned to it.",
+      "webflash_exposure": "not served (no matching config exists)",
+      "shop_status": "paused legacy listing — must not render as currently buyable; the commercial successor is kitchen-poe (gated on OD-SOT-009)",
+      "commercially_available": false,
+      "renderable": false
+    },
+    {
+      "id": "bedroom-poe",
+      "name": "Sense360 Bedroom Bundle — PoE",
+      "status": "planned",
+      "visibility": "internal",
+      "tier": "core-range",
+      "physical_bundle_sku": "S360-KIT-BEDROOM-P",
+      "recommended_rooms": [
+        "bedroom",
+        "living room",
+        "home office",
+        "nursery"
+      ],
+      "contents": [
+        "S360-100",
+        "S360-200",
+        "S360-410"
+      ],
+      "contents_friendly": "Core, RoomIQ, PoE PSU",
+      "webflash_config": "Ceiling-POE-RoomIQ",
+      "firmware_lifecycle": "production (stable channel, v1.0.8 published)",
+      "webflash_exposure": "served in the WebFlash manifest (stable channel), but the candidate bundle stays hidden / not buyable / never the customer default per upstream standing invariants (owner waiver HW-S360-410-WAIVER-2026-06)",
+      "shop_status": "not listed; commercial go/no-go is OD-SOT-009",
+      "commercially_available": false,
+      "buyable": false,
+      "renderable": false
+    },
+    {
+      "id": "kitchen-poe",
+      "name": "Sense360 Kitchen Bundle — PoE",
+      "status": "planned",
+      "visibility": "internal",
+      "buyable": false,
+      "tier": "core-range",
+      "physical_bundle_sku": "S360-KIT-KITCHEN-P",
+      "recommended_rooms": [
+        "kitchen",
+        "living room",
+        "home office",
+        "nursery",
+        "workshop"
+      ],
+      "contents": [
+        "S360-100",
+        "S360-200",
+        "S360-210",
+        "S360-410"
+      ],
+      "contents_friendly": "Core, RoomIQ, AirIQ, PoE PSU",
+      "webflash_config": "Ceiling-POE-AirIQ-RoomIQ",
+      "firmware_lifecycle": "production (stable channel, v1.0.9 published, owner waiver HW-AIRIQ-WAIVER-2026-06)",
+      "webflash_exposure": "served in the WebFlash manifest (stable channel), but the candidate Kitchen bundle stays hidden / not buyable / never the customer default per upstream standing invariants",
+      "shop_status": "not listed; commercial go/no-go is OD-SOT-009",
+      "succeeds": "air-quality-starter",
+      "commercially_available": false,
+      "renderable": false
+    },
+    {
+      "id": "hallway-landing-poe",
+      "name": "Sense360 Hallway / Landing Bundle — PoE",
+      "status": "concept",
+      "visibility": "internal",
+      "tier": "core-range",
+      "physical_bundle_sku": "S360-KIT-CORRIDOR-P",
+      "recommended_rooms": [
+        "hallway",
+        "landing",
+        "stairs",
+        "entrance",
+        "corridor",
+        "living room"
+      ],
+      "contents": [
+        "S360-100",
+        "S360-200",
+        "S360-300",
+        "S360-410"
+      ],
+      "contents_friendly": "Core, RoomIQ, LED, PoE PSU",
+      "webflash_config": "Ceiling-POE-RoomIQ-LED",
+      "firmware_lifecycle": "preview; build-matrix row is release-eligibility metadata only (metadata-ready-unpublished — no published binary at any tag)",
+      "webflash_exposure": "not served (no artifact exists; preview channel metadata only)",
+      "shop_status": "not listed",
+      "commercially_available": false,
+      "buyable": false,
+      "renderable": false
+    },
+    {
+      "id": "pure-smart",
+      "name": "Pure Smart Bundle",
+      "status": "planned",
+      "visibility": "internal",
+      "tier": "pure-range",
+      "physical_bundle_sku": "S360-KIT-PURE-SMART",
+      "recommended_rooms": [
+        "living room",
+        "bedroom",
+        "home office",
+        "workshop"
+      ],
+      "contents": [
+        "PURE-001",
+        "S360-100",
+        "S360-210",
+        "S360-311"
+      ],
+      "contents_friendly": "Pure frame, Core, AirIQ, Fan PWM",
+      "webflash_config": null,
+      "firmware_lifecycle": "none — no firmware configuration matches these contents",
+      "webflash_exposure": "not served",
+      "shop_status": "not listed",
+      "commercially_available": false,
+      "buyable": false,
+      "renderable": false
+    },
+    {
+      "id": "bathroom-fan-relay-poe",
+      "name": "Sense360 Bathroom Fan Bundle — PoE",
+      "status": "planned",
+      "visibility": "internal",
+      "tier": "expansion",
+      "physical_bundle_sku": "S360-KIT-BATH-RELAY-P",
+      "recommended_rooms": [
+        "bathroom",
+        "shower room",
+        "laundry room",
+        "utility room"
+      ],
+      "contents": [
+        "S360-100",
+        "S360-200",
+        "S360-211",
+        "S360-310",
+        "S360-410"
+      ],
+      "contents_friendly": "Core, RoomIQ, VentIQ, Fan Relay, PoE PSU",
+      "webflash_config": "Ceiling-POE-VentIQ-FanRelay-RoomIQ",
+      "firmware_lifecycle": "preview; experimental-channel build-matrix row is release-eligibility metadata only (metadata-ready-unpublished — no published binary), and fan configs never ship on the stable channel (HW-RELEASE-001)",
+      "webflash_exposure": "not served (experimental channel metadata; WebFlash imports none of it)",
+      "shop_status": "not listed",
+      "commercially_available": false,
+      "buyable": false,
+      "renderable": false
+    }
+  ]
+}

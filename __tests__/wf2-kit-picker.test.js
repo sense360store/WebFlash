@@ -146,14 +146,16 @@ describe('WF2-IDENTIFY-RECO — View 1: recommendation landing', () => {
     // The full catalogue table is View 2; it is not rendered on the landing.
     expect(table(root)).toBeNull();
 
-    expect(root.querySelector('.idlede h1').textContent).toBe('Recommended for your setup');
+    expect(root.querySelector('.idlede h1').textContent).toBe('Choose your room');
     expect(root.querySelector('.idlede .eyebrow').textContent).toMatch(/step 1/i);
   });
 
   it('renders the catalogue recommended kit with its pill, parts and CTAs', async () => {
     const { root } = await mountFlow();
 
-    expect(recCard(root).querySelector('h2').textContent).toBe(RECOMMENDED.display_name);
+    expect(recCard(root).querySelector('h2').textContent).toBe(RECOMMENDED.room_label);
+    // The preset's formal name stays visible as technical detail under the room label.
+    expect(recCard(root).textContent).toContain(RECOMMENDED.display_name);
     // The recommendation pill is the accent "Recommended" flag for the rec-flagged kit.
     const pill = recCard(root).querySelector('.flag');
     expect(pill.classList.contains('flag--rec')).toBe(true);
@@ -165,7 +167,7 @@ describe('WF2-IDENTIFY-RECO — View 1: recommendation landing', () => {
     expect(chips[0].querySelector('.part__sku').textContent).toBe(RECOMMENDED.components[0].sku);
 
     // Primary CTA + ghost "See full details".
-    expect(installBtn(root).textContent).toMatch(/install this kit/i);
+    expect(installBtn(root).textContent).toMatch(/install this preset/i);
     expect(seeDetailsBtn(root).textContent).toMatch(/see full details/i);
   });
 
@@ -180,7 +182,7 @@ describe('WF2-IDENTIFY-RECO — View 1: recommendation landing', () => {
   it('renders the More strip: "Browse all N kits" + a minikit per non-recommended kit', async () => {
     const { root } = await mountFlow();
 
-    expect(browseAllLink(root).textContent).toMatch(new RegExp(`Browse all ${TOTAL} kits`));
+    expect(browseAllLink(root).textContent).toMatch(new RegExp(`Browse all ${TOTAL} presets`));
     // One minikit per other catalogue kit (the recommended kit is the hero card).
     expect(minikits(root)).toHaveLength(TOTAL - 1);
     const firstMini = minikits(root)[0];
@@ -245,7 +247,7 @@ describe('WF2-IDENTIFY-RECO — View 2: catalogue table', () => {
 
     // Column headers (Version added between Channel and Parts).
     const heads = [...root.querySelectorAll('.ktable thead th')].map((th) => th.textContent);
-    expect(heads).toEqual(['Kit', 'Channel', 'Version', 'Parts', 'Boards', 'Firmware target']);
+    expect(heads).toEqual(['Preset', 'Channel', 'Version', 'Parts', 'Boards', 'Firmware target']);
   });
 
   // WF-H1-REIMPORT-CLEAN-001 W1 delisted every preview kit card, so the real
@@ -327,7 +329,7 @@ describe('WF2-IDENTIFY-RECO — View 2: catalogue table', () => {
     expect(rows(root)).toHaveLength(0);
     const empty = root.querySelector('.ktable__empty');
     expect(empty).not.toBeNull();
-    expect(empty.textContent).toMatch(/No kits match/);
+    expect(empty.textContent).toMatch(/No presets match/);
 
     empty.querySelector('.linkbtn').click();
     expect(searchInput(root).value).toBe('');

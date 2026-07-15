@@ -115,9 +115,9 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 **PowerType**: `USB`, `POE`, or `PWR`. These map to USB Power, Sense360 PoE PSU (`S360-410`), and Sense360 240v PSU (`S360-400`) respectively.
 
 **Modules** (optional): Combination of canonical SKU tokens:
-- `RoomIQ` — Sense360 RoomIQ (`S360-200`). Room sensor board: PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure).
-- `AirIQ` — Sense360 AirIQ (`S360-210`). Air-quality stack: SCD41 (CO₂), SGP41 (VOC), MICS-4514 (gas), with optional SPS30 (PM) / SFA30 (HCHO) connectors.
-- `VentIQ` — Sense360 VentIQ (`S360-211`). Bathroom-focused air-quality stack with onboard SGP41; IR-temp and SPS30 connectors. Ceiling + Bathroom mode only.
+- `RoomIQ` — Sense360 RoomIQ (`S360-200`). Room sensor board: on board EKMC1601111 PIR, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure); connector-attached options LD2450 (J2) and SEN0609/C4001 (J3) radar modules (connector capability, not included by default).
+- `AirIQ` — Sense360 AirIQ (`S360-210`). Air-quality stack: SCD41 (CO₂), SGP41 (VOC/NOx indices), MiCS-4514 (gas, uncalibrated), with an external connector for the optional SPS30 (PM) module. Formaldehyde sensor fitment is unresolved upstream and is not exposed as a supported customer function.
+- `VentIQ` — Sense360 VentIQ (`S360-211`). Bathroom-focused air-quality board; SGP41 (VOC/NOx indices) is the only on-board sensor, with external connectors for optional IR surface-temp and SPS30 modules (not included by default). Ceiling + Bathroom mode only.
 - `Fan` — Sense360 driver (`S360-310` Relay, `S360-311` PWM, or `S360-312` DAC). The specific driver is selected at runtime via the wizard.
 - `LED` — Sense360 LED (`S360-300`), addressable WS2812B ring. Selectable via the LED module toggle in the wizard; when paired with Ceiling + PoE + VentIQ + RoomIQ it resolves to the current LED preview build (`Ceiling-POE-VentIQ-RoomIQ-LED`, `channel: preview`, gated by the existing `channel:preview` acknowledgement).
 
@@ -128,9 +128,9 @@ Sense360-[CoreType]-[MountType]-[PowerType]-[Modules]-v[Version]-[Channel].bin
 - `DAC` (`S360-312`) conflicts with `AirIQ` because both contend for the shared DAC bus.
 
 **Module Sensors:**
-- Sense360 RoomIQ (`S360-200`): PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure).
-- Sense360 AirIQ (`S360-210`): SCD41 (CO₂), SGP41 (VOC), MICS-4514 + STM8 (gas), optional SPS30 (PM), optional SFA30 (HCHO).
-- Sense360 VentIQ (`S360-211`): SGP41 (VOC) onboard, optional MLX90614 (IR surface temp), optional SPS30 (PM).
+- Sense360 RoomIQ (`S360-200`): on board — EKMC1601111 PIR, LTR-303ALS (light), SHT4x (temp/humidity), BMP581 (pressure); connector-attached (optional, not included by default) — LD2450 (J2), SEN0609/C4001 (J3).
+- Sense360 AirIQ (`S360-210`): SCD41 (CO₂), SGP41 (VOC/NOx indices), MiCS-4514 + STM8 (gas, uncalibrated), optional external SPS30 (PM). Formaldehyde sensor fitment unresolved; no on-board or connector-only claim is made.
+- Sense360 VentIQ (`S360-211`): SGP41 (VOC/NOx indices) on board, optional external IR surface-temp sensor, optional external SPS30 (PM).
 - Sense360 LED (`S360-300`): WS2812B addressable LED ring.
 
 **Version**: Semantic version (e.g., `1.0.0`, `1.2.3`)
@@ -145,6 +145,29 @@ Use these module tokens in firmware filenames and manifest metadata: `AirIQ`, `V
 Fan variants are encoded as variant-specific tokens because each driver SKU (S360-310 / S360-311 / S360-312 / S360-320) needs a different binary — the legacy generic `Fan` token is no longer accepted in new filenames.
 
 The naming-policy validator (`scripts/validate-naming-policy.js`) actively rejects deprecated variant tokens — `AirIQBase`, `AirIQPro`, `AirIQProv`, `BathroomAirIQ` (and its `Base`/`Pro` suffixes), and `FanAnalog` (renamed to `FanDAC` to match the current SKU). These are still recognised as read-time aliases by tooling and URL parsing for backwards compatibility, but they must not be used in new filenames or metadata.
+
+### Legacy token and alias audit (WEBFLASH-TAXONOMY-RECONCILE-001)
+
+This table is built from the actual implementations (`scripts/validate-naming-policy.js` `DISALLOWED_TOKEN_MIGRATIONS`, `scripts/utils/url-config.js` `legacyValues`, `parseConfigStringState` in `scripts/state.js`) and is pinned by `__tests__/webflash-taxonomy-reconcile.test.js`. When this table and the code disagree, the code wins and this table is the thing to fix. "Read-time" means old URLs / filenames still resolve; "write-time" means newly generated names / configs. Canonical output never contains a generic `Fan`, any `Base`/`Pro` token, or a module-led commercial name.
+
+| Legacy token / value | Where it is accepted (read-time) | Canonical result | Allowed in new output? | Customer-visible? |
+|---|---|---|---|---|
+| `AirIQProv`, `AirIQPro`, `AirIQBase` (filename) | naming-policy validator recognises and rejects with guidance | `AirIQ` | No | No — historical filenames only |
+| `BathroomAirIQ`, `BathroomAirIQBase`, `BathroomAirIQPro` (filename) | naming-policy validator recognises and rejects with guidance | `VentIQ` | No | No |
+| `FanAnalog` (filename) | naming-policy validator recognises and rejects with guidance | `FanDAC` | No | No |
+| generic `Fan` (filename/config segment) | `parseConfigStringState` reads a bare `Fan` segment and collapses it to fan `none` (user must pick a driver) | none — variant tokens `FanRelay`/`FanPWM`/`FanDAC`/`FanTRIAC` only | No — banned | No |
+| URL `mount=wall` | `url-config.js` legacy value | `ceiling` | No (`ceiling` only) | No — coerced silently |
+| URL `power=pwr` | `url-config.js` legacy value | canonical `ac` option (wizard `pwr`, segment `PWR`) | Yes (as `PWR` segment) | No |
+| URL `core=base` / `core=voice` | `url-config.js` legacy values | `corevoice` (wizard `voice: none` — Voice is not customer-selectable) | No | No |
+| URL `airiq=base` / `airiqbase` | `url-config.js` legacy values | `airiq` | No | No |
+| URL `airiq=pro` / `prov` / `airiqpro` / `airiqprov` | `url-config.js` legacy values | `ventiq` | No | No |
+| URL `bathroomairiq=*` (incl. `base`/`pro` suffixes) | `url-config.js` legacy alias group | `ventiq` | No | No |
+| URL `roomiq=base` | `url-config.js` legacy value | `roomiq` | No | No |
+| URL `led=base` / `led=airiq` | `url-config.js` legacy values | `led` | No | No |
+| URL `fan=base` | `url-config.js` legacy value | `pwm` (`FanPWM`) | No | No |
+| `Voice` filename token / URL key | validator + URL parser keep it parseable | wizard `voice: none` (internal Core placeholder) | No new Voice-bearing names | No — never surfaced as a module |
+
+Do not change any read-time alias without tests proving old URLs and configs still resolve (`__tests__/url-config.test.js` and the alias table test in `__tests__/webflash-taxonomy-reconcile.test.js`).
 
 ### Examples
 
@@ -205,10 +228,9 @@ node scripts/validate-naming-policy.js firmware/configurations
 The validator enforces:
 
 - **Allowed canonical token forms**: use `AirIQ`, `VentIQ`, `FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`, `LED`, and `Voice` naming.
-- **Disallowed/deprecated tokens**:
-  - `AirIQProv` → migrate to `AirIQPro`
-  - `AirIQBase` → migrate to `AirIQ`
-  - `BathroomAirIQ` → migrate to `Bathroom`
+- **Disallowed/deprecated tokens** (the table below mirrors `DISALLOWED_TOKEN_MIGRATIONS` in `scripts/validate-naming-policy.js`, which is the source of truth):
+  - `AirIQProv` / `AirIQPro` / `AirIQBase` → migrate to `AirIQ` (there is no Base/Pro product axis)
+  - `BathroomAirIQ` / `BathroomAirIQBase` / `BathroomAirIQPro` → migrate to `VentIQ`
   - `FanAnalog` → migrate to `FanDAC` (matches the renamed Sense360 DAC SKU)
 - **Channel artifact placement**: only `stable` release notes (`*.md`) are allowed under `firmware/configurations/`. Preview/beta notes should not be stored in the production firmware directory.
 - **Canonical filename shape**: `Sense360-...-vX.Y.Z-(stable|preview|beta).(bin|md)`
@@ -872,10 +894,9 @@ node scripts/validate-naming-policy.js firmware/configurations
 The validator enforces:
 
 - **Allowed canonical token forms**: use `AirIQ`, `VentIQ`, `FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`, `LED`, and `Voice` naming.
-- **Disallowed/deprecated tokens**:
-  - `AirIQProv` → migrate to `AirIQPro`
-  - `AirIQBase` → migrate to `AirIQ`
-  - `BathroomAirIQ` → migrate to `Bathroom`
+- **Disallowed/deprecated tokens** (the table below mirrors `DISALLOWED_TOKEN_MIGRATIONS` in `scripts/validate-naming-policy.js`, which is the source of truth):
+  - `AirIQProv` / `AirIQPro` / `AirIQBase` → migrate to `AirIQ` (there is no Base/Pro product axis)
+  - `BathroomAirIQ` / `BathroomAirIQBase` / `BathroomAirIQPro` → migrate to `VentIQ`
   - `FanAnalog` → migrate to `FanDAC` (matches the renamed Sense360 DAC SKU)
 - **Channel artifact placement**: only `stable` release notes (`*.md`) are allowed under `firmware/configurations/`. Preview/beta notes should not be stored in the production firmware directory.
 - **Canonical filename shape**: `Sense360-...-vX.Y.Z-(stable|preview|beta).(bin|md)`

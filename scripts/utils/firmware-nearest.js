@@ -311,7 +311,7 @@ export function getMismatchHighlights(targetConfigString, nearbyConfigStrings) {
     if (target.led) {
         const matched = nearbyDescriptors.some(desc => desc.led === target.led);
         if (!matched) {
-            addHighlight('led', 'LED ring');
+            addHighlight('led', 'LED');
         }
     }
 

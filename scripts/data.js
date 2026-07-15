@@ -17,16 +17,11 @@
    only place the two identifier sets meet, so the view cannot drift from the
    engine. */
 
-// Planned (not-yet-installable) kit families surfaced under the advanced
-// builder's "different hardware" hatch. Presentation only — none of these has a
-// signed WebFlash build, so none is installable. The authoritative blocked
-// verdict for any concrete selection still comes from the engine lookup.
-export const PLANNED = [
-  { name: 'Bathroom Kit — Relay Fan Control', reason: 'Firmware still in development' },
-  { name: 'Bathroom Kit — TRIAC Fan Control', reason: 'Mains-load safety review in progress' },
-  { name: 'Duct Fan Kit — PWM Fan Control', reason: 'Firmware still in development' },
-  { name: 'Duct Fan Kit — 0–10V Fan Control', reason: 'Firmware still in development' },
-];
+// WEBFLASH-TAXONOMY-RECONCILE-001 removed the dead `PLANNED` array (planned
+// kit families, including a TRIAC teaser) that nothing imported: WebFlash
+// never advertises future commercial bundles, and fan/TRIAC exposure is
+// decided by the engine gates plus SOT commercial decisions, never by
+// presentation data here.
 
 // ---- Advanced builder sections ----
 // `id` is the builder selection identifier; selToWizardState() maps it to the
@@ -55,12 +50,12 @@ export const AIR = [
   },
   {
     id: 'airiq', name: 'Sense360 AirIQ', sku: 'S360-210', code: 'AirIQ',
-    desc: 'Balanced air quality: VOC, CO₂ and particulate coverage.',
+    desc: 'CO₂ plus VOC and NOx indices (relative indices, not concentrations). Particulate needs the external SPS30 connector module, not included.',
     req: ['Core Rev B+', 'J4 bus', 'J7 aux power'], conflicts: ['dac'],
   },
   {
     id: 'ventiq', name: 'Sense360 VentIQ', sku: 'S360-211', code: 'VentIQ',
-    desc: 'Humidity, temperature and air quality tuned for bathrooms.',
+    desc: 'Bathroom air-quality board: VOC and NOx indices on board (SGP41); RoomIQ supplies the room climate readings.',
     req: ['Core Rev B+', 'J4 bus', 'J7 aux power'], conflicts: [],
     bathroom: true,
   },
@@ -75,7 +70,7 @@ export const AIR = [
 // all pair it with an independent air-quality choice.
 export const ROOMIQ = {
   id: 'roomiq', name: 'Sense360 RoomIQ', sku: 'S360-200', code: 'RoomIQ',
-  desc: 'Presence, light, temperature, humidity and pressure on one board.',
+  desc: 'PIR presence, light, temperature, humidity and pressure on board; connectors for optional LD2450 and SEN0609 radar modules (not included).',
   req: ['Core R4', 'J3 sensor bus'],
 };
 
@@ -93,7 +88,7 @@ export const FAN = [
   { id: 'triac', name: 'Sense360 TRIAC', sku: 'S360-320', code: 'FanTRIAC', desc: 'Phase dimmer for a mains fan or lamp.', req: ['Core R4', 'TRIAC_Board'], conflicts: [], advancedWarn: true, installable: false },
 ];
 
-export const LED = { id: 'led', name: 'Sense360 LED ring', sku: 'S360-300', code: 'LED', desc: 'Visual feedback ring with optional microphone for voice-enabled cores.', req: ['Core R4', 'J11 data', 'J12 power'] };
+export const LED = { id: 'led', name: 'Sense360 LED', sku: 'S360-300', code: 'LED', desc: 'Ring of WS2812B LEDs for status indication.', req: ['Core R4', 'J11 data', 'J12 power'] };
 
 // ---- Readiness checks (preflight) ----
 // PR 5 of the WebFlash 2.0 migration removed the simulated `CHECKS` array (the

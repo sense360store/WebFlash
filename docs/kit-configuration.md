@@ -1,21 +1,45 @@
-# Kit / SKU configuration mode
+# Room preset (kit) configuration mode
 
-This page documents the kit picker in Step 1 of the wizard and how kit
-metadata maps to manual configuration. It was relocated from the repository
-README when it became a short front door (REPO-CUSTOMER-READY-001 S4).
+This page documents the room-preset picker in Step 1 of the wizard and how
+preset metadata maps to manual configuration. It was relocated from the
+repository README when it became a short front door (REPO-CUSTOMER-READY-001
+S4) and reconciled to the room-led taxonomy by
+WEBFLASH-TAXONOMY-RECONCILE-001.
+
+## Room presets are firmware presets, not commercial listings
+
+A WebFlash **room preset** (an entry in
+[`../scripts/data/kits.json`](../scripts/data/kits.json) — the file keeps its
+historical name to avoid compatibility churn) selects a known hardware
+composition and resolves to a real firmware config in `manifest.json`. It is
+an **installer preset**, never a commercial availability declaration:
+
+- Firmware being stable or present in the manifest does not mean the
+  corresponding commercial bundle is available or buyable.
+- Commercial bundle names and status may only come from `sense360store/SOT`;
+  WebFlash mirrors the slice it needs into
+  [`../scripts/data/sot-commercial-mirror.json`](../scripts/data/sot-commercial-mirror.json)
+  (synchronized evidence with provenance — refresh with
+  `python3 scripts/refresh-sot-mirror.py --sot-path <local SOT checkout>`;
+  never hand-edit it). As mirrored today, SOT has **no** bundle in the
+  `available` state, so no customer copy may show "buy now", "on sale",
+  prices, shop links, or equivalent.
+- Identical supplied hardware is **one** preset with several
+  `recommended_rooms` (e.g. the Bedroom preset also covers living rooms,
+  home offices and nurseries) — never duplicate cards per room.
+- Commercial status is not an install gate; the mirror only constrains copy.
 
 Step 1 of the wizard offers two paths:
 
-1. **I know my kit or SKU** — for customers who bought a Sense360 bundle and
-   want to pick it by name without thinking about cores, modules, or power
-   options. The Step 1 picker loads kit metadata from
-   [`../scripts/data/kits.json`](../scripts/data/kits.json) and offers both a
-   searchable input (keyboard-friendly, autocompletes against the kit list)
-   and a fallback dropdown.
-2. **Choose hardware manually** — the original per-module flow (Mount → Power
-   → Modules → Review). All compatibility checks, conflict warnings, release
-   channel rules, provenance gating, and shareable-link behaviour remain
-   unchanged in manual mode.
+1. **Choose your room** — the primary path. The Step 1 picker loads room
+   presets from [`../scripts/data/kits.json`](../scripts/data/kits.json):
+   the room label leads the card, the preset's formal name, board contents
+   (with SKUs) and the firmware config string stay visible as technical
+   detail underneath.
+2. **Build it module by module** — the advanced per-module flow (Mount →
+   Power → Modules → Review). All compatibility checks, conflict warnings,
+   release channel rules, provenance gating, and shareable-link behaviour
+   remain unchanged in manual mode. This stays the secondary route.
 
 Selecting a kit is shorthand for the manual selections that match it: the
 kit's `wizard_state` is fed through the same `setState()` that manual
@@ -32,10 +56,14 @@ entry. Each kit is an object with the following fields:
 
 | Field | Required | Description |
 |---|---|---|
-| `sku` | ✅ | Customer-facing kit identifier. We use the `S360-KIT-…` prefix to keep kit SKUs distinct from per-module SKUs (`S360-100`, `S360-200`, …). Match is case-insensitive. |
-| `display_name` | ✅ | Friendly product name shown in the picker and the explanation panel. |
-| `description` | optional | One-sentence description shown under the title. |
-| `recommended` | optional | Hint flag (defaults to `false`); reserved for future "recommended kit" UI. |
+| `sku` | ✅ | Customer-facing preset identifier. We use the `S360-KIT-…` prefix to keep preset SKUs distinct from per-module SKUs (`S360-100`, `S360-200`, …). Match is case-insensitive. |
+| `display_name` | ✅ | The preset's formal name, pinned to the canonical bundle name mirror (`__tests__/fixtures/room-bundle-skus.json`). Shown as technical detail under the room label — it is a naming-parity surface, not an availability claim. |
+| `room_label` | ✅ (visible presets) | The customer room label that leads the card (e.g. `Bathroom`, `Bedroom`). |
+| `recommended_rooms` | ✅ (visible presets) | All rooms the same physical preset covers, mirrored from the SOT bundle record. Rendered as "Also suitable for …". |
+| `presentation` | ✅ (visible presets) | Always `firmware-preset` — marks the entry as an installer preset, never a commercial listing. |
+| `commercial_bundle_id` | ✅ (visible presets) | Join key to the bundle record in `scripts/data/sot-commercial-mirror.json` (e.g. `bathroom-poe`). Drift-guarded by `__tests__/webflash-taxonomy-reconcile.test.js`. |
+| `description` | optional | One-sentence, outcome-led description shown under the room label. Must never contain commerce language, Base/Pro tiers, or internal programme IDs. |
+| `recommended` | optional | Installer firmware recommendation flag (defaults to `false`) — never a commercial claim. |
 | `sample` | optional | Set to `true` for example/demo entries that integrators should replace with real SKUs. The diagnostics bundle records the `sample` flag so support can tell a real customer order from a placeholder selection. |
 | `wizard_state` | ✅ | The exact wizard state the kit maps to. Must contain `mount: "ceiling"` and a `power` value (`usb`, `poe`, or `pwr`). All module slots default to `"none"` if omitted. Keys: `mount`, `power`, `bathroom`, `airiq`, `ventiq`, `roomiq`, `fan`, `led`, `voice`. |
 | `components` | optional | Display-only list of `{sku, label}` pairs (e.g. `S360-100 — Sense360 Core`). |
@@ -105,7 +133,7 @@ manual-mode params (`mount`, `power`, `airiq`, …):
   when neither `configmode=` nor manual params are present).
 - `sku=<SKU>` — the kit SKU. Match is case-insensitive.
 
-Example: `https://sense360store.github.io/WebFlash/?configmode=kit&sku=S360-KIT-CEILING-AIRIQ-POE`.
+Example: `https://sense360store.github.io/WebFlash/?configmode=kit&sku=S360-KIT-BATH-P`.
 
 If the SKU is unknown the page falls back to the manual flow and shows a
 "No kit found for SKU …" error. Existing manual share links continue to
@@ -126,11 +154,11 @@ The diagnostics bundle (`Copy diagnostics` in Step 5) carries a top-level
 {
   "configuration": {
     "mode": "kit",
-    "sku": "S360-KIT-CEILING-AIRIQ-POE",
-    "kit_display_name": "Sense360 Ceiling AirIQ Kit (PoE)",
-    "kit_sample": true,
+    "sku": "S360-KIT-BATH-P",
+    "kit_display_name": "Sense360 Bathroom Bundle — PoE",
+    "kit_sample": false,
     "resolved_core": "core",
-    "resolved_modules": ["airiq"],
+    "resolved_modules": ["ventiq", "roomiq"],
     "resolved_power": "poe",
     "resolved_firmware_config": "Ceiling-POE-VentIQ-RoomIQ"
   }

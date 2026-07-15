@@ -254,7 +254,7 @@ describe('PR 4 — Identify view bound to the engine', () => {
     expect(app.__testHooks.getState().mode).toBe('kit');
     const warn = root.querySelector('.callout--warn');
     expect(warn).not.toBeNull();
-    expect(warn.textContent).toMatch(/couldn't find a kit/i);
+    expect(warn.textContent).toMatch(/couldn't find a preset/i);
 
     // The "Build it module by module" hatch is the one-click switch to advanced.
     const hatchLink = root.querySelector('.hatch .linkbtn');

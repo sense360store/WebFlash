@@ -22,15 +22,21 @@ const MODULE_REQUIREMENT_MATRIX = {
                 sku: 'S360-200',
                 coreRevision: 'R4',
                 headers: ['J3 sensor bus'],
-                description: 'Room sensor board. PIR, LD2450 (mmWave presence), SEN0609, LTR-303ALS (light), SHT4x (temperature/humidity), BMP581 (pressure).',
+                // WEBFLASH-TAXONOMY-RECONCILE-001: the radar modules are
+                // connector-attached options (LD2450 on J2, SEN0609/C4001 on
+                // J3), never PCB-mounted, and whether they are supplied in
+                // shipped boxes is an open owner question upstream — copy
+                // must not imply inclusion. Presence claims rest on the
+                // PCB-mounted PIR.
+                description: 'Room sensor board. On board: EKMC1601111 PIR (presence), LTR-303ALS (light), SHT4x (temperature/humidity), BMP581 (pressure). Connectors for optional LD2450 (J2) and SEN0609/C4001 (J3) radar modules — connector-attached, not included by default.',
                 recommended: true,
                 sensors: [
-                    'PIR motion',
-                    'LD2450 (mmWave presence)',
-                    'SEN0609',
-                    'LTR-303ALS (light)',
-                    'SHT4x (temperature/humidity)',
-                    'BMP581 (pressure)'
+                    'EKMC1601111 PIR (presence, on board)',
+                    'LTR-303ALS (light, on board)',
+                    'SHT4x (temperature/humidity, on board)',
+                    'BMP581 (pressure, on board)',
+                    'LD2450 radar connector (J2, optional attachment)',
+                    'SEN0609/C4001 radar connector (J3, optional attachment)'
                 ],
                 conflicts: []
                 // availability: derived from manifest. RoomIQ ships in
@@ -53,23 +59,35 @@ const MODULE_REQUIREMENT_MATRIX = {
                 sku: 'S360-210',
                 coreRevision: 'R4',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
-                description: 'Ceiling air-quality board with CO₂ (SCD41), VOC (SGP41), and gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30).',
+                // WEBFLASH-TAXONOMY-RECONCILE-001: SPS30 is an external
+                // connector-supported attachment (PM entities only when it is
+                // explicitly included). The formaldehyde sensor fitment is unresolved
+                // upstream, is not exposed as a supported customer function,
+                // and no on-board or connector-only sensor claim is made
+                // either way. VOC and NOx are relative indices; the
+                // MiCS-4514 is uncalibrated (indices only, never calibrated
+                // gas readings).
+                description: 'Ceiling air-quality board with CO₂ (SCD41), VOC and NOx indices (SGP41), and an uncalibrated gas sensor (MiCS-4514 with STM8). External connector for the optional SPS30 particulate module (not included). Formaldehyde sensor fitment unresolved; not currently exposed as a supported customer function.',
                 recommended: true,
-                // WF-WIZARD-AVAIL-001: documented hardware, no WebFlash build
-                // ships for a Core + AirIQ configuration today. Static override
-                // so the customer sees an honest pill in Step 4 instead of
-                // discovering it at Step 5. See scripts/utils/module-availability.js
-                // for the override resolution rules.
+                // WF-WIZARD-AVAIL-001 static override, retained deliberately by
+                // WEBFLASH-TAXONOMY-RECONCILE-001. This feeds only the legacy
+                // presentation classifier (scripts/utils/module-availability.js)
+                // — the 2.0 view resolves installability from the live engine
+                // manifest verdict, which already serves the stable
+                // Ceiling-POE-AirIQ-RoomIQ build through the advanced builder.
+                // Relaxing this override is an exposure decision that follows
+                // the SOT Kitchen go/no-go (the candidate bundle stays hidden /
+                // not buyable / never the customer default), so it stays as-is
+                // rather than being silently "fixed" here.
                 availability: {
                     state: 'no-firmware',
                     reasonCode: 'no-manifest-build'
                 },
                 sensors: [
-                    'SCD41 (CO₂)',
-                    'SGP41 (VOC)',
-                    'MICS-4514 with STM8 (gas)',
-                    'SPS30 connector (particulate matter, optional)',
-                    'SFA30 connector (formaldehyde, optional)'
+                    'SCD41 (CO₂, on board)',
+                    'SGP41 (VOC / NOx indices, on board)',
+                    'MiCS-4514 with STM8 (gas, uncalibrated, on board)',
+                    'SPS30 connector (particulate matter, external, optional)'
                 ],
                 conflicts: [
                     {
@@ -106,7 +124,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 sku: 'S360-211',
                 coreRevision: 'R4',
                 headers: ['J4 sensor bus', 'J7 auxiliary power'],
-                description: 'Smaller air-quality board for bathrooms. SGP41 on board, with connectors for IR temperature and SPS30 particulate sensors.',
+                description: 'Smaller air-quality board for bathrooms. SGP41 (VOC / NOx indices) is the only on-board sensor; external connectors for optional IR surface-temperature and SPS30 particulate sensors (not included). In combined presets RoomIQ supplies the canonical temperature and humidity.',
                 recommended: true,
                 conflicts: [
                     {
@@ -117,9 +135,9 @@ const MODULE_REQUIREMENT_MATRIX = {
                     }
                 ],
                 sensors: [
-                    'SGP41 (VOC / NOx, onboard)',
-                    'IR temperature connector (optional)',
-                    'SPS30 connector (particulate matter, optional)'
+                    'SGP41 (VOC / NOx indices, on board)',
+                    'IR surface-temperature connector (external, optional)',
+                    'SPS30 connector (particulate matter, external, optional)'
                 ]
             }
         }
@@ -250,7 +268,7 @@ const MODULE_REQUIREMENT_MATRIX = {
     },
     led: {
         label: 'Sense360 LED',
-        summary: 'Ring of WS2812B LEDs for visual feedback, with optional microphone for voice-enabled cores.',
+        summary: 'Ring of WS2812B LEDs for visual feedback and status indication.',
         variants: {
             none: {
                 label: 'None',
@@ -267,8 +285,7 @@ const MODULE_REQUIREMENT_MATRIX = {
                 description: 'Ring of WS2812B LEDs.',
                 conflicts: [],
                 sensors: [
-                    'WS2812B addressable LED ring',
-                    'Integrated I2S microphone (voice models)'
+                    'WS2812B addressable LEDs'
                 ]
                 // availability: derived from manifest. LED currently ships only
                 // in the preview build (`Ceiling-POE-VentIQ-RoomIQ-LED`); the
