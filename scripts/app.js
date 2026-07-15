@@ -636,7 +636,7 @@ async function initFromEngine() {
       // Unknown SKU: fall back to the recommendation view with a clear message
       // and the always-present "Build it module by module" escape hatch.
       state.mode = 'kit';
-      state.kitError = `We couldn't find a kit matching "${requested.sku}". Pick a kit below, or switch to advanced setup to choose your boards.`;
+      state.kitError = `We couldn't find a preset matching "${requested.sku}". Pick a room preset below, or switch to advanced setup to choose your boards.`;
     }
   } else {
     state.mode = 'kit';

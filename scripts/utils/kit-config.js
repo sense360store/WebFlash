@@ -100,6 +100,19 @@ function freezeKit(entry) {
     return Object.freeze({
         sku: normaliseSku(entry.sku),
         display_name: String(entry.display_name || ''),
+        // WEBFLASH-TAXONOMY-RECONCILE-001 — room/firmware-preset presentation
+        // fields. room_label + recommended_rooms lead the customer experience
+        // (room/use-case first); presentation marks the entry as an installer
+        // firmware preset (never a commercial listing); commercial_bundle_id
+        // joins the preset to its SOT bundle record in
+        // scripts/data/sot-commercial-mirror.json for offline drift guards.
+        // All presentation-only: none of these fields feeds any install gate.
+        room_label: entry.room_label ? String(entry.room_label) : '',
+        recommended_rooms: Array.isArray(entry.recommended_rooms)
+            ? Object.freeze(entry.recommended_rooms.map(item => String(item)))
+            : Object.freeze([]),
+        presentation: entry.presentation ? String(entry.presentation) : 'firmware-preset',
+        commercial_bundle_id: entry.commercial_bundle_id ? String(entry.commercial_bundle_id) : '',
         description: entry.description ? String(entry.description) : '',
         recommended: Boolean(entry.recommended),
         sample: Boolean(entry.sample),

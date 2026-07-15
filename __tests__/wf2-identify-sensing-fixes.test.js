@@ -236,7 +236,7 @@ describe('Bug 1 — advanced builder renders RoomIQ and air-quality as separate 
     await flush();
 
     const heads = [...root.querySelectorAll('.bsection__head h3')].map((h3) => h3.textContent);
-    expect(heads).toContain('Presence');
+    expect(heads).toContain('Room sensing');
     expect(heads).toContain('Air quality');
     expect(heads).not.toContain('Sensing');
 
@@ -303,10 +303,10 @@ describe('Bug 1 — advanced builder renders RoomIQ and air-quality as separate 
       v: r.querySelector('.sum-row__v').textContent,
     }));
     const byKey = (k) => rows.find((r) => r.k === k);
-    expect(byKey('Presence')).toBeTruthy();
+    expect(byKey('Room sensing')).toBeTruthy();
     expect(byKey('Air quality')).toBeTruthy();
     expect(byKey('Sensing')).toBeUndefined();
-    expect(byKey('Presence').v).toBe('Sense360 RoomIQ');
+    expect(byKey('Room sensing').v).toBe('Sense360 RoomIQ');
     expect(byKey('Air quality').v).toBe('Sense360 VentIQ');
   });
 });

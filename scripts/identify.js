@@ -98,8 +98,9 @@ function kitTagline(kit) {
     ? 'Preview firmware · acknowledge before install'
     : 'Stable firmware · ready to install';
 }
-// Case-insensitive match over name + tagline + description + each part's label,
-// SKU, and the firmware target, gated by the active channel chip.
+// Case-insensitive match over room label + recommended rooms + name + tagline
+// + description + each part's label, SKU, and the firmware target, gated by
+// the active channel chip — so "nursery" finds the Bedroom preset.
 function kitMatches(kit, q, chan) {
   if (chan !== 'all' && kitFilterChannel(kit) !== chan) return false;
   const query = (q || '').trim().toLowerCase();
@@ -107,7 +108,8 @@ function kitMatches(kit, q, chan) {
   const partsText = (kit.components || [])
     .map((p) => `${p.label || p.name || ''} ${p.sku || ''}`)
     .join(' ');
-  const hay = `${kit.display_name || kit.sku} ${kit.sku} ${kitTagline(kit)} ${kit.description || ''} ${partsText} ${kit.firmware_config_string || ''}`.toLowerCase();
+  const roomsText = `${kit.room_label || ''} ${(kit.recommended_rooms || []).join(' ')}`;
+  const hay = `${roomsText} ${kit.display_name || kit.sku} ${kit.sku} ${kitTagline(kit)} ${kit.description || ''} ${partsText} ${kit.firmware_config_string || ''}`.toLowerCase();
   return hay.includes(query);
 }
 
@@ -148,28 +150,53 @@ export function setIdentifyInitialView(view) {
   }
 }
 
-// The reassurance line under the recommendation CTA. A stable kit reads as the
-// safe default (green check); a preview kit carries the acknowledge-first
-// warning variant. The acknowledgement itself is still enforced by the engine
-// at the Install step — this is reassurance copy, not a gate.
+// The reassurance line under the recommendation CTA. A stable preset reads as
+// the safe default (green check); a preview preset carries the
+// acknowledge-first warning variant. The acknowledgement itself is still
+// enforced by the engine at the Install step — this is reassurance copy, not a
+// gate. "Firmware preset" is deliberate taxonomy (WEBFLASH-TAXONOMY-
+// RECONCILE-001): a preset selects firmware for hardware the customer already
+// has; it never states or implies commercial availability of any bundle.
 function Reassurance(isPreview) {
   if (isPreview) {
     return h('div', { class: 'B__reassure B__reassure--preview' },
       icon('alert', { size: 15 }),
-      h('span', null, 'Preview firmware · acknowledge before install'));
+      h('span', null, 'Preview firmware preset · acknowledge before install'));
   }
   return h('div', { class: 'B__reassure B__reassure--ok' },
     icon('check', { size: 15 }),
-    h('span', null, 'Stable firmware · right for most people'));
+    h('span', null, 'Stable firmware preset · right for most people'));
 }
 
-// The escape hatch to the advanced module builder. Kept on every kit view so
-// "I have different hardware" is always one click away (this is also where
+// "Also suitable for shower rooms, laundry rooms and utility rooms." —
+// identical hardware is ONE preset with several recommended rooms (never
+// duplicate cards), so the card names the other rooms the same physical
+// preset covers. Rooms come from the preset's recommended_rooms, minus the
+// room that already leads the card.
+function alsoSuitableLine(kit) {
+  const label = (kit.room_label || '').toLowerCase();
+  const pluralise = (room) => {
+    if (room.endsWith('s')) return room;
+    if (/[^aeiou]y$/.test(room)) return `${room.slice(0, -1)}ies`;
+    return `${room}s`;
+  };
+  const others = (kit.recommended_rooms || [])
+    .filter((room) => room.toLowerCase() !== label)
+    .map(pluralise);
+  if (others.length === 0) return null;
+  const listed = others.length === 1
+    ? others[0]
+    : `${others.slice(0, -1).join(', ')} and ${others[others.length - 1]}`;
+  return h('p', { class: 'B__rooms' }, `Also suitable for ${listed}.`);
+}
+
+// The escape hatch to the advanced module builder. Kept on every preset view
+// so "I have different hardware" is always one click away (this is also where
 // FanTRIAC and the fan-only previews are reached — the catalogue never lists
-// them).
+// them). The manual builder stays the secondary route: room presets lead.
 function Hatch(onAdvanced) {
   return h('div', { class: 'hatch' },
-    h('span', null, 'Different hardware, or no kit?'),
+    h('span', null, 'Different hardware, or no matching room preset?'),
     h('button', { class: 'linkbtn', type: 'button', onClick: onAdvanced },
       'Build it module by module →'),
   );
@@ -181,7 +208,7 @@ function Minikit(kit, onBrowse) {
   return h('button', { class: 'minikit', type: 'button', onClick: onBrowse },
     h('span', { class: 'minikit__dot minikit__dot--' + key }),
     h('span', { class: 'minikit__main' },
-      h('span', { class: 'minikit__name' }, kit.display_name || kit.sku),
+      h('span', { class: 'minikit__name' }, kit.room_label || kit.display_name || kit.sku),
       h('span', { class: 'minikit__meta' },
         `${(kit.components || []).length} parts · ${channelWord(kitFilterChannel(kit))}`),
     ),
@@ -192,9 +219,9 @@ function MoreStrip({ kits, recKit, onBrowse }) {
   const others = kits.filter((k) => !recKit || k.sku !== recKit.sku);
   return h('div', { class: 'B__more' },
     h('div', { class: 'B__more-head' },
-      h('span', { class: 'B__more-lbl' }, 'More configurations'),
+      h('span', { class: 'B__more-lbl' }, 'More rooms and setups'),
       h('button', { class: 'linkbtn', type: 'button', onClick: onBrowse },
-        `Browse all ${kits.length} kits →`),
+        `Browse all ${kits.length} presets →`),
     ),
     h('div', { class: 'minikit-row' },
       others.map((k) => Minikit(k, onBrowse)),
@@ -205,12 +232,16 @@ function MoreStrip({ kits, recKit, onBrowse }) {
 function RecommendationView(props) {
   const { kits, recKit, recResolved, kitError, sourceUrl, onInstallKit, onBrowse, onAdvanced } = props;
 
+  // Room-led landing (WEBFLASH-TAXONOMY-RECONCILE-001): the first customer
+  // decision is the room / use case, never a module composition. Board names
+  // and the firmware config string stay visible as technical detail further
+  // down the card.
   const lede = h('header', { class: 'idlede fadein' },
     h('div', { class: 'eyebrow' }, icon('chip', { size: 13 }), 'Step 1 · Identify'),
-    h('h1', null, 'Recommended for your setup'),
+    h('h1', null, 'Choose your room'),
     h('p', null,
-      'Most Sense360 hubs ship as the Bathroom PoE kit. Install it in one click — ',
-      'or browse the full catalogue to match your exact hardware.'),
+      'Pick the room this hub is going into and install the matching firmware preset in one click — ',
+      'or browse every preset to match your exact hardware.'),
   );
 
   // No catalogue at all: there is nothing to recommend, so point the user
@@ -220,7 +251,7 @@ function RecommendationView(props) {
       h('div', { class: 'callout callout--warn' },
         icon('alert'),
         h('span', null,
-          h('b', null, 'No kits are available right now. '),
+          h('b', null, 'No room presets are available right now. '),
           'Build your hub module by module instead.'),
       ),
       Hatch(onAdvanced),
@@ -244,6 +275,10 @@ function RecommendationView(props) {
     : h('span', { class: 'flag ' + (isPreview ? 'flag--preview' : 'flag--stable') },
         isPreview ? 'Preview' : 'Stable');
 
+  // The hero card leads with the ROOM. The preset's formal name, its board
+  // contents (with SKUs) and the firmware config string remain visible as the
+  // technical layer underneath — technical truth stays one glance away, it
+  // just never leads.
   const card = h('div', { class: 'B__rec' + (isPreview ? ' B__rec--preview' : '') },
     h('div', { class: 'B__render' },
       h('div', { class: 'devicebox devicebox--rec' },
@@ -251,8 +286,11 @@ function RecommendationView(props) {
     ),
     h('div', { class: 'B__body' },
       pill,
-      h('h2', null, recKit.display_name || recKit.sku),
+      h('h2', null, recKit.room_label || recKit.display_name || recKit.sku),
+      recKit.room_label
+        && h('p', { class: 'B__preset-name' }, recKit.display_name || recKit.sku),
       recKit.description && h('p', { class: 'B__desc' }, recKit.description),
+      alsoSuitableLine(recKit),
       KitParts(recKit.components || []),
     ),
     h('div', { class: 'B__cta' },
@@ -261,18 +299,18 @@ function RecommendationView(props) {
         type: 'button',
         disabled: !installable,
         onClick: () => onInstallKit(recKit, recResolved),
-      }, 'Install this kit ', icon('arrowR')),
+      }, 'Install this preset ', icon('arrowR')),
       h('button', { class: 'btn btn--ghost btn--block', type: 'button', onClick: onBrowse },
         'See full details'),
       Reassurance(isPreview),
-      h('span', { class: 'B__target' }, channelLabel, ' · ', h('b', null, target)),
+      h('span', { class: 'B__target' }, channelLabel, ' · Firmware: ', h('b', null, target)),
     ),
   );
 
   return h('div', { class: 'main' }, lede,
     kitError && h('div', { class: 'callout callout--warn' },
       icon('alert'),
-      h('span', null, h('b', null, 'Unknown kit. '), kitError),
+      h('span', null, h('b', null, 'Unknown preset. '), kitError),
     ),
     card,
     blocked && SourceCallout(sourceUrl, target),
@@ -334,8 +372,8 @@ function BrowseView(props) {
     class: 'C__search-input',
     type: 'text',
     autocomplete: 'off',
-    placeholder: 'Search by name, board or SKU…',
-    'aria-label': 'Search kits by name, board or SKU',
+    placeholder: 'Search by room, name, board or SKU…',
+    'aria-label': 'Search presets by room, name, board or SKU',
     value: picker.q,
     onInput: (e) => { picker.q = e.target.value; syncToolbar(); syncTable(); },
   });
@@ -355,7 +393,7 @@ function BrowseView(props) {
     { id: 'preview', label: 'Preview' },
   ];
   const chipEls = new Map();
-  const chipsEl = h('div', { class: 'C__chips', role: 'group', 'aria-label': 'Filter kits by channel' },
+  const chipsEl = h('div', { class: 'C__chips', role: 'group', 'aria-label': 'Filter presets by channel' },
     FILTERS.map((f) => {
       const el = h('button', {
         class: 'kit-chip', type: 'button',
@@ -370,7 +408,7 @@ function BrowseView(props) {
   const bar = h('div', { class: 'C__bar' },
     h('button', { class: 'linkbtn C__back', type: 'button', onClick: onRecommendation },
       '← Recommendation'),
-    h('span', { class: 'C__title' }, 'All firmware kits'),
+    h('span', { class: 'C__title' }, 'All firmware presets'),
     countEl,
     h('div', { class: 'C__tools' }, searchEl, chipsEl),
   );
@@ -379,7 +417,7 @@ function BrowseView(props) {
   const table = h('table', { class: 'ktable' },
     h('thead', null,
       h('tr', null,
-        h('th', { class: 'kt-h-kit' }, 'Kit'),
+        h('th', { class: 'kt-h-kit' }, 'Preset'),
         h('th', null, 'Channel'),
         h('th', null, 'Version'),
         h('th', null, 'Parts'),
@@ -413,7 +451,7 @@ function BrowseView(props) {
         h('tr', { class: 'ktable__empty-row' },
           h('td', { colspan: '6' },
             h('div', { class: 'ktable__empty' },
-              `No kits match “${picker.q}”.`,
+              `No presets match “${picker.q}”.`,
               h('button', {
                 class: 'linkbtn', type: 'button',
                 onClick: () => { picker.q = ''; picker.chan = 'all'; searchInput.value = ''; syncToolbar(); syncTable(); },
@@ -549,7 +587,7 @@ function AdvancedBuilder(sel, setSel) {
           Opt({ ...p, on: sel.power === p.id, onClick: () => setSel({ ...sel, power: p.id }) })),
       ),
     ),
-    Section('Presence', 'Optional — Sense360 RoomIQ presence board',
+    Section('Room sensing', 'Optional — Sense360 RoomIQ room sensor board',
       Opt({ ...ROOMIQ, on: sel.roomiq, onClick: () => setSel({ ...sel, roomiq: !sel.roomiq }) }),
     ),
     Section('Air quality', 'Choose one air-quality board',
@@ -627,16 +665,16 @@ export function IdentifyStep(props) {
         AdvancedBuilder(sel, setSel),
         advBlocked && SourceCallout(sourceUrl, targetString),
         h('div', { class: 'hatch' },
-          h('span', null, 'Have the standard kit after all?'),
+          h('span', null, 'Have one of the standard setups after all?'),
           h('button', { class: 'linkbtn', onClick: () => setMode('kit') },
-            '← Back to kit picker'),
+            '← Back to room presets'),
         ),
       ),
       h('aside', { class: 'aside' },
         h('div', { class: 'summary-card' },
           h('h4', null, 'Your configuration'),
           sumRow('Power', label(POWER, sel.power)),
-          sumRow('Presence', sel.roomiq ? ROOMIQ.name : '—'),
+          sumRow('Room sensing', sel.roomiq ? ROOMIQ.name : '—'),
           sumRow('Air quality', sel.air && sel.air !== 'none' ? label(AIR, sel.air) : '—'),
           sumRow('Fan', label(FAN, sel.fan) || 'None'),
           sumRow('Status ring', sel.led ? 'Included' : '—'),

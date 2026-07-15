@@ -28,14 +28,14 @@ Before starting any cross-repository work, Claude Code must read the SOT operati
 
 ## Sense360 hardware reference (canonical SKUs)
 
-This is the **authoritative SKU list** for the supported hardware. The **Friendly name** column is the canonical user-facing label — use it verbatim in wizard markup, manifest descriptions, and module metadata. There is no Model/Variant axis: each SKU is its own product, and "Base / Pro" or model/variant terminology must be dropped when touching this code. The **Old name** column lists deprecated internal/historical names and exists only to help recognise legacy references; do not use these in new code.
+This table is a **synchronized local selection/display mirror** of the canonical hardware catalog owned by `sense360store/esphome-public` (`config/hardware-catalog.json` and `docs/product-taxonomy.md`) — physical board identity is owned upstream, never here; when the two disagree, upstream wins and this table is the thing to fix. The **Friendly name** column is the canonical user-facing label — use it verbatim in wizard markup, manifest descriptions, and module metadata. There is no Model/Variant axis: each SKU is its own product, and "Base / Pro" or model/variant terminology must be dropped when touching this code. The **Old name** column lists deprecated internal/historical names and exists only to help recognise legacy references; do not use these in new code.
 
 | Group | Type | Friendly name | SKU | Rev | Old name | What it does |
 |---|---|---|---|---|---|---|
 | Ceiling | Hub | Sense360 Core | S360-100 | R4 | `360Core_Ceiling_V3_R` | Main board. Has the ESP32-S3 and connectors for all other modules. |
-| Ceiling | Sensor | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board. PIR, LD2450, SEN0609, LTR-303ALS (light), SHT4x (temp and humidity), BMP581 (pressure). |
-| Ceiling | Sensor | Sense360 AirIQ | S360-210 | R4 | `AirlQ Ceiling` (typo in old name) | Air quality board. CO2 (SCD41), VOC (SGP41), gas (MICS-4514 with STM8). Connectors for PM (SPS30) and HCHO (SFA30). |
-| Ceiling | Sensor | Sense360 VentIQ | S360-211 | R4 | Bathroom Pro | Smaller air quality board for bathrooms. SGP41 on board. Connectors for IR temp and SPS30. |
+| Ceiling | Sensor | Sense360 RoomIQ | S360-200 | R4 | Presence + Comfort (two boards) | Merged board. On board: EKMC1601111 PIR, LTR-303ALS (light), SHT4x (temp and humidity), BMP581 (pressure). Connector-attached options (capability, not inclusion): LD2450 radar (J2 connector), SEN0609/C4001 radar (J3 connector). |
+| Ceiling | Sensor | Sense360 AirIQ | S360-210 | R4 | `AirlQ Ceiling` (typo in old name) | Air quality board. CO2 (SCD41), VOC/NOx indices (SGP41), gas (MiCS-4514 with STM8, uncalibrated). External connector for PM (SPS30, optional, not included). Formaldehyde sensor fitment unresolved; not exposed as a supported customer function. |
+| Ceiling | Sensor | Sense360 VentIQ | S360-211 | R4 | Bathroom Pro | Smaller air quality board for bathrooms. SGP41 (VOC/NOx indices) is the only on-board sensor. External connectors for optional IR surface-temp and SPS30 (not included). |
 | Ceiling | Indicator | Sense360 LED | S360-300 | R4 | LED Ring | Ring of WS2812B LEDs. |
 | Inline | Driver | Sense360 Relay | S360-310 | R4 | `S360-Relay-C`, `Sense360 Fan Relay` | On / off relay for bathroom fans. |
 | Inline | Driver | Sense360 PWM | S360-311 | R4 | `12vFan_PWM_PulseCounter`, `Sense360 Fan PWM` | 12V PWM fan driver, up to 4 fans with tach feedback. |
@@ -48,6 +48,19 @@ Notes:
 
 - The current wizard exposes Ceiling mount only; a "Wall" branch lingers in legacy aliases but is not a supported product.
 - The sensor/driver/indicator SKUs are *separately selectable* via `scripts/data/module-requirements.js`. Nothing is bundled — each SKU is its own product, and the user picks every module they have. The Core (S360-100) is the one exception: it is implicit because every flashable device is a Core. The 240v PSU (S360-400) and PoE PSU (S360-410) are surfaced through the `power` selection (`pwr` / `poe`) rather than as their own module entries. When introducing a new *selectable* SKU, add it to `module-requirements.js` and update the wizard SKU labels in `state.js` (`MODULE_LABELS`, `MODULE_VARIANT_LABELS`, `MODULE_SEGMENT_FORMATTERS`) — do not regress to model/variant nomenclature, and do not describe any SKU as "bundled".
+- `scripts/data/module-requirements.js` is authoritative only for WebFlash's **local selection and compatibility behaviour** — never for physical board identity (owned by `sense360store/esphome-public`) or commercial bundle contents (owned by `sense360store/SOT`).
+
+## Room presets vs commercial bundles (WEBFLASH-TAXONOMY-RECONCILE-001)
+
+The customer-facing Step 1 experience is **room/use-case led**: the first customer decision is the room ("Choose your room"), never a module composition, a Base/Pro tier, or a raw config string. Board names stay visible as technical contents beneath the room choice, and the config string stays visible as the secondary technical identifier. The manual module builder remains available as the advanced route, never the primary path.
+
+A `scripts/data/kits.json` entry is an **installer firmware preset** (`presentation: "firmware-preset"`), not a commercial listing:
+
+- A preset selects a known hardware composition and resolves to a real `manifest.json` config. Stable/served firmware **never** implies the corresponding commercial bundle is available or buyable.
+- Commercial bundle names, status, visibility and buyability come **only from SOT** (`sense360store/SOT` `bundles.yaml`). WebFlash mirrors the slice it needs into `scripts/data/sot-commercial-mirror.json` — a synchronized evidence snapshot with provenance (regenerated by `scripts/refresh-sot-mirror.py --sot-path <local SOT checkout>`), never commercial authority, never hand-authored. As mirrored today NO bundle is available or buyable, so customer copy must never show "buy now", "on sale", prices, shop links, or any equivalent.
+- Each preset carries `room_label` + `recommended_rooms` (identical hardware = one preset with several recommended rooms, never duplicate cards) and `commercial_bundle_id` (the join key to the SOT mirror). Drift guards: `__tests__/webflash-taxonomy-reconcile.test.js`, `__tests__/wf2-room-preset-copy.test.js`, `__tests__/kit-served-consistency.test.js`.
+- Commercial status is **not** an install gate — the mirror only constrains copy. Firmware existence is never permission to expose a new room card (the served stable `Ceiling-POE-AirIQ-RoomIQ` Kitchen candidate stays withheld from the picker), and `recommended` on a preset is an installer firmware recommendation, never a commercial claim.
+- The internal filename `kits.json` and `kit`-named code identifiers remain for compatibility; rendered customer copy says room preset / firmware preset / setup.
 
 ## Commands
 
@@ -113,7 +126,7 @@ New firmware that is meant to ship enters the tree through the cross-repo import
 `scripts/validate-naming-policy.js` enforces:
 
 - Canonical filename shape `Sense360-...-vX.Y.Z-(stable|preview|beta).(bin|md)`.
-- Disallowed token migrations: `AirIQProv` → `AirIQPro`, `AirIQBase` → `AirIQ`, `BathroomAirIQ` → `Bathroom`, `FanAnalog` → `FanDAC`. Fan variants are preserved as variant-specific tokens (`FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`) so each driver SKU lands on a different firmware binary; the legacy generic `Fan` token must not be used in new firmware.
+- Disallowed token migrations (mirroring `DISALLOWED_TOKEN_MIGRATIONS` in the validator, which is the source of truth): `AirIQProv` / `AirIQPro` / `AirIQBase` → `AirIQ`, `BathroomAirIQ` (and its `Base`/`Pro` suffixes) → `VentIQ`, `FanAnalog` → `FanDAC`. Fan variants are preserved as variant-specific tokens (`FanRelay`, `FanPWM`, `FanDAC`, `FanTRIAC`) so each driver SKU lands on a different firmware binary; the legacy generic `Fan` token must not be used in new firmware.
 - Channel placement: only `*-stable.md` is allowed under `firmware/configurations/`. Preview/beta/dev release notes belong in `firmware/previews/`.
 
 `.github/workflows/firmware-publish.yml` runs unit tests, the naming-policy validator, the manifest generator, and a `REQUIRED_CONFIGS` allowlist that fails the build if any of the expected `config_string` values are missing from `manifest.json`. The live array in the workflow file is the source of truth; it holds exactly the configs WebFlash must be able to ship (currently `Ceiling-POE-VentIQ-RoomIQ` and `Rescue`), each backed by a real signed `.bin` on disk. `REQUIRED_CONFIGS` is **production-only**: preview builds never enter it. Do not add a `config_string` until its source entry exists in `firmware/sources.json`, the `.bin` + `.meta.json` sidecar have been imported, and the regenerated manifest contains the build.

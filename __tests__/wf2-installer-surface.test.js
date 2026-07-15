@@ -139,7 +139,7 @@ describe('Version in the Browse table (scripts/identify.js)', () => {
   it('adds a Version column header between Channel and Parts', async () => {
     const { root } = await mountBrowse();
     const heads = [...root.querySelectorAll('.ktable thead th')].map((th) => th.textContent);
-    expect(heads).toEqual(['Kit', 'Channel', 'Version', 'Parts', 'Boards', 'Firmware target']);
+    expect(heads).toEqual(['Preset', 'Channel', 'Version', 'Parts', 'Boards', 'Firmware target']);
   });
 
   it('shows each kit row its manifest version (read live, not hardcoded)', async () => {

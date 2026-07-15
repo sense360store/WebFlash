@@ -129,11 +129,21 @@
  *   pre-enforcement modules, in lockstep with the index.html / bootstrap
  *   `?v=` token (202607032) and the webflash-app-shell marker (2026-07-03-2).
  *   The activate purge and the per-asset-class fetch strategy are unchanged.
+ *   `webflash-v21` (WEBFLASH-TAXONOMY-RECONCILE-001) bumps again: the Step 1
+ *   customer surface is now room/use-case led (room presets), the board
+ *   descriptions were corrected to the verified hardware evidence
+ *   (connector-attached RoomIQ radar modules, external SPS30, unresolved
+ *   formaldehyde fitment, no voice/microphone claim), and kits.json gained
+ *   the room-preset presentation fields. Returning installs must purge v20
+ *   so the corrected customer copy ships instead of cached stale wording,
+ *   in lockstep with the index.html / bootstrap `?v=` token (202607151) and
+ *   the webflash-app-shell marker (2026-07-15-1). No gate, channel policy,
+ *   or fetch-strategy change.
  *
  * @module sw
  */
 
-const CACHE_NAME = 'webflash-v20';
+const CACHE_NAME = 'webflash-v21';
 const CACHE_VERSION = 5;
 
 /**

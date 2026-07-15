@@ -19,8 +19,10 @@ mirrors or third party copies.
 
 ## Flash in three steps
 
-1. Open <https://sense360store.github.io/WebFlash/> and pick your hardware:
-   choose your kit by SKU, or select your power option and modules manually.
+1. Open <https://sense360store.github.io/WebFlash/> and choose your room:
+   pick the room preset that matches the hardware you have (the board list
+   and firmware config are shown on each card), or build it module by module
+   in the advanced path.
 2. Review the recommended firmware, wait for the integrity and signature
    checks to pass, and acknowledge the pre flash checklist.
 3. Click **Install Firmware**, choose the serial port when the browser asks,

@@ -1,6 +1,6 @@
 {
     "schema_version": 1,
-    "_comment": "Kit/SKU metadata for the customer-friendly configuration mode. Each entry maps deterministically to wizard state keys (mount, power, bathroom, airiq, ventiq, roomiq, fan, led, voice) and a firmware config_string that already exists in manifest.json. Do not add a kit without a matching config_string in manifest.json — the wizard will surface a 'no compatible firmware' error if the mapping is missing. This file is the DISPLAY layer only: it must never carry its own copy of a firmware version. The per-kit version shown in the picker is resolved live from the served manifest (config_string -> build.version, see scripts/app.js resolveKitVersions); the firmware_channel and the display_name below are pinned to the served source and to the canonical bundle names by the drift-guard in __tests__/kit-served-consistency.test.js so they can never silently drift from reality again (PRODUCT-KITS-CONSISTENCY-001).",
+    "_comment": "Room / firmware PRESET metadata for the customer-friendly configuration mode (the file keeps its historical kits.json name to avoid compatibility churn — entries are INSTALLER PRESETS, never commercial availability declarations). Each entry maps deterministically to wizard state keys (mount, power, bathroom, airiq, ventiq, roomiq, fan, led, voice) and a firmware config_string that already exists in manifest.json. Do not add a preset without a matching config_string in manifest.json — the wizard will surface a 'no compatible firmware' error if the mapping is missing. This file is the DISPLAY layer only: it must never carry its own copy of a firmware version. The per-preset version shown in the picker is resolved live from the served manifest (config_string -> build.version, see scripts/app.js resolveKitVersions); the firmware_channel and the display_name below are pinned to the served source and to the canonical bundle names by the drift-guard in __tests__/kit-served-consistency.test.js so they can never silently drift from reality again (PRODUCT-KITS-CONSISTENCY-001). WEBFLASH-TAXONOMY-RECONCILE-001: presets are room/use-case led (room_label + recommended_rooms lead the customer experience; board names and the config string stay visible as technical detail). commercial_bundle_id joins each preset to its SOT bundle record in scripts/data/sot-commercial-mirror.json — SOT owns commercial names/status/buyability, and as mirrored today NO bundle is available or buyable, so no preset copy may ever say or imply on sale / buy now / commercially available. 'recommended' is an INSTALLER firmware recommendation only, never a commercial claim.",
     "_authoring_notes": [
         "sku: stable, customer-facing kit identifier. Use the 'S360-KIT-...' prefix to keep these distinct from the per-module SKUs (S360-100, S360-200, ...) listed in CLAUDE.md.",
         "wizard_state: state keys consumed by setState() in scripts/state.js. mount=ceiling is required (the wizard does not support wall mounts). power must be one of usb/poe/pwr. Module slots follow scripts/data/module-requirements.js.",
@@ -18,7 +18,11 @@
         {
             "sku": "S360-KIT-BATH-P",
             "display_name": "Sense360 Bathroom Bundle — PoE",
-            "description": "Sense360 Core with the RoomIQ room sensor and the VentIQ bathroom air-quality module, powered over Ethernet. This is the stable, recommended Sense360 kit.",
+            "room_label": "Bathroom",
+            "recommended_rooms": ["bathroom", "shower room", "laundry room", "utility room"],
+            "description": "Humidity, presence and ventilation-focused sensing.",
+            "presentation": "firmware-preset",
+            "commercial_bundle_id": "bathroom-poe",
             "recommended": true,
             "sample": false,
             "wizard_state": {
@@ -47,7 +51,11 @@
         {
             "sku": "S360-KIT-BEDROOM-P",
             "display_name": "Sense360 Bedroom Bundle — PoE",
-            "description": "Sense360 Core with the RoomIQ room sensor, powered over Ethernet. Stable firmware — ready to install.",
+            "room_label": "Bedroom",
+            "recommended_rooms": ["bedroom", "living room", "home office", "nursery"],
+            "description": "Presence, temperature, humidity and light sensing.",
+            "presentation": "firmware-preset",
+            "commercial_bundle_id": "bedroom-poe",
             "recommended": false,
             "sample": false,
             "wizard_state": {
@@ -69,7 +77,7 @@
             "headers_required": ["J4 sensor bus", "J7 auxiliary power"],
             "firmware_config_string": "Ceiling-POE-RoomIQ",
             "firmware_channel": "stable",
-            "notes": ["Stable RoomIQ build. The Bathroom Bundle PoE remains the recommended default."],
+            "notes": ["Stable RoomIQ firmware. The Bathroom preset remains the installer's recommended default."],
             "known_limitations": []
         }
     ]
