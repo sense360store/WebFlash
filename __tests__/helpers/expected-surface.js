@@ -141,9 +141,17 @@ fixture.retired.forEach((entry, i) => {
     }
 }
 
-/** Canonical artifact filename for a fixture entry. */
+/**
+ * Canonical artifact filename for a fixture entry. `file_channel` names the
+ * immutable channel baked into the published filename when it differs from
+ * the SERVED channel — a presentation demotion (owner decision of 2026-07-28,
+ * SENSE360-CANONICALISATION-001: Ceiling-POE-AirIQ-RoomIQ presents preview
+ * while its published v1.0.9 stable-named binary stays exactly where it is).
+ * Promotion the other way is impossible: gen-manifests.py rejects any
+ * channel_presentation that is not a demotion.
+ */
 export function binNameFor(entry) {
-    return `Sense360-${entry.config_string}-v${entry.version}-${entry.channel}.bin`;
+    return `Sense360-${entry.config_string}-v${entry.version}-${entry.file_channel || entry.channel}.bin`;
 }
 
 /** Canonical sidecar filename for a fixture entry. */

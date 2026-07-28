@@ -1,13 +1,15 @@
 {
   "schema_version": 1,
-  "description": "WF-SURFACE-SSOT-001 — the reviewed, single-source-of-truth declaration of the WebFlash deploy surface. Every count/set guard in the test suites derives its expectations from this file via __tests__/helpers/expected-surface.js: total build count, per-channel counts, the stable and preview config sets, the expected .bin/.meta.json filenames (from the canonical Sense360-<config_string>-v<version>-<channel>.bin convention), and the firmware-N.json index bound (count - 1). The tests compare REALITY (manifest.json, firmware/configurations/ on disk, firmware-N.json, kits.json cross-checks) against this fixture exactly — missing AND unexpected entries both fail — so a drifted fixture cannot auto-pass.",
+  "description": "WF-SURFACE-SSOT-001 \u2014 the reviewed, single-source-of-truth declaration of the WebFlash deploy surface. Every count/set guard in the test suites derives its expectations from this file via __tests__/helpers/expected-surface.js: total build count, per-channel counts, the stable and preview config sets, the expected .bin/.meta.json filenames (from the canonical Sense360-<config_string>-v<version>-<channel>.bin convention), and the firmware-N.json index bound (count - 1). The tests compare REALITY (manifest.json, firmware/configurations/ on disk, firmware-N.json, kits.json cross-checks) against this fixture exactly \u2014 missing AND unexpected entries both fail \u2014 so a drifted fixture cannot auto-pass.",
   "review_rule": "A surface change (import, retirement, promotion, version bump) must edit this file in the SAME PR that changes the surface, and the two are reviewed together. See docs/expected-surface-fixture.md (archived; see docs/archive-index.md).",
   "filename_convention": "Sense360-<config_string>-v<version>-<channel>.bin with a sibling <name>.meta.json sidecar. Application builds live under firmware/configurations/; the Rescue artifact lives under firmware/rescue/ and has no sidecar requirement.",
   "builds": [
     {
       "config_string": "Ceiling-POE-AirIQ-RoomIQ",
       "version": "1.0.9",
-      "channel": "stable"
+      "channel": "preview",
+      "file_channel": "stable",
+      "presentation_note": "Presentation demotion (owner decision of 2026-07-28, SENSE360-CANONICALISATION-001): served channel preview, immutable published filename channel stable (file_channel). gen-manifests.py rejects any non-demoting channel_presentation."
     },
     {
       "config_string": "Ceiling-POE-RoomIQ",
@@ -37,7 +39,7 @@
       "channel": "preview",
       "retired_in": "#553",
       "reason": "Upstream regenerated the v1.0.0-preview checksums-sha256.txt without this asset, so the importer fails closed on it.",
-      "note": "The CONFIG returned as the v1.0.6 STABLE import (see builds above) after upstream promoted it to production / stable. This retired v1.0.0-preview ARTIFACT must never reappear."
+      "note": "The CONFIG returned as the v1.0.6 STABLE import, rebuilt as v1.0.9; the owner decision of 2026-07-28 (SENSE360-CANONICALISATION-001, upholding upstream PR #834) then demoted the v1.0.9 build's SERVED channel to preview while its stable-named binary stays published. This retired v1.0.0-preview ARTIFACT must never reappear."
     },
     {
       "config_string": "Ceiling-POE-FanDAC",
