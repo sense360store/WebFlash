@@ -528,11 +528,16 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
                 artifact.replace(/\.bin$/, '.meta.json')
             );
         }
+        // Keyed on config@version@channel: a retirement is version-specific,
+        // so the live v1.0.9 build presenting on the preview channel (the
+        // 2026-07-28 presentation demotion) never collides with the retired
+        // v1.0.0-preview artifact — while that artifact returning at its own
+        // version still fails loud.
         const retiredConfigChannelPairs = new Set(
-            retiredBuilds.map(r => `${r.config_string}@${r.channel}`)
+            retiredBuilds.map(r => `${r.config_string}@${r.version}@${r.channel}`)
         );
         const retiredChannelBuilds = (manifest.builds || []).filter(b =>
-            retiredConfigChannelPairs.has(`${b.config_string}@${b.channel}`)
+            retiredConfigChannelPairs.has(`${b.config_string}@${b.version}@${b.channel}`)
         );
         expect(retiredChannelBuilds).toEqual([]);
         // Configs that have not returned are absent outright; a config that

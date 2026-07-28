@@ -180,11 +180,14 @@ describe('scripts/data/kits.json', () => {
             withheldOrRetiredSkus.forEach(sku => {
                 expect(catalog.kits.find(k => k.sku === sku)).toBeUndefined();
             });
-            // The Kitchen config is a shipping stable build per the fixture —
-            // withheld from kits.json only, never referenced by any kit card.
-            // (If the config is ever retired again, the fixture loses it and
-            // this fails loud so the withheld-kit rule gets revisited.)
-            expect(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ')).toBe('stable');
+            // The Kitchen config serves on the PREVIEW channel per the fixture:
+            // the owner decision of 2026-07-28 (SENSE360-CANONICALISATION-001,
+            // upholding upstream PR #834) demoted the served presentation of
+            // the v1.0.9 build to match its recorded preview channel. It stays
+            // withheld from kits.json either way, never referenced by any kit
+            // card. (If the config is ever retired again, the fixture loses it
+            // and this fails loud so the withheld-kit rule gets revisited.)
+            expect(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ')).toBe('preview');
             expect(manifestConfigStrings.has('Ceiling-POE-AirIQ-RoomIQ')).toBe(true);
             expect(catalog.kits.some(k => k.firmware_config_string === 'Ceiling-POE-AirIQ-RoomIQ')).toBe(false);
             // The Living / Corridor config left the manifest with its stale

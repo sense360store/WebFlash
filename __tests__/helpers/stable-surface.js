@@ -72,7 +72,12 @@ export const previewConfigs = sortedUnique(previewKits.map((kit) => kit.firmware
  * contract change. Asserted against the manifest (a different artifact), so
  * the anti-tautology contract above still holds.
  */
-export const kitWithheldStableConfigs = ['Ceiling-POE-AirIQ-RoomIQ'];
+// Emptied by the owner decision of 2026-07-28 (SENSE360-CANONICALISATION-001):
+// upstream PR #834 is upheld, Ceiling-POE-AirIQ-RoomIQ's recorded channel is
+// preview, and its served presentation was demoted to match, so no stable
+// manifest build ships kit-less today. The mechanism stays: a future stable
+// that deliberately ships without a kit card is added here on purpose.
+export const kitWithheldStableConfigs = [];
 
 /**
  * The full expected stable-channel config set in manifest.json: every

@@ -272,6 +272,19 @@ class FirmwareMetadata:
     artifact_type: str = "application"
     local_only: bool = False
 
+    # Presentation-only channel demotion (see _apply_channel_presentation):
+    # `channel` stays the immutable file channel the published filename
+    # declares and keeps governing the filename, path normalisation, dedupe
+    # keys and per-file channel policy; `presented_channel` governs only what
+    # the manifest serves (entry channel, description, ordering, defaulting),
+    # so the wizard gates the build on the presented channel while the
+    # published .bin never moves or renames.
+    presented_channel: Optional[str] = None
+
+    @property
+    def effective_channel(self) -> str:
+        return self.presented_channel or self.channel
+
     def normalized_filename(self) -> str:
         return f"Sense360-{self.name_part}-v{self.version}-{self.channel}.bin"
 
@@ -500,7 +513,7 @@ class FirmwareArtifact:
         entry: Dict[str, object] = {
             "device_type": self.metadata.device_type,
             "version": self.metadata.version,
-            "channel": self.metadata.channel,
+            "channel": self.metadata.effective_channel,
             "description": self.metadata.description or "",
             "chipFamily": self.chip_family,
             "parts": [part_entry],
@@ -1035,6 +1048,50 @@ def _apply_sidecar_metadata(metadata: FirmwareMetadata, sidecar: Dict[str, Any])
             metadata.artifact_type = candidate
     if "local_only" in sidecar:
         metadata.local_only = bool(sidecar.get("local_only"))
+    if "channel_presentation" in sidecar:
+        _apply_channel_presentation(metadata, sidecar)
+
+
+# Presentation demotions only: a sidecar may present a build on a LESS
+# prominent channel than its immutable filename declares (stable -> preview,
+# so the preview acknowledgement gate applies), never a more prominent one.
+# A promotion via sidecar would let an unpublished or preview binary present
+# as stable, weakening the trust model, so it is a hard error, as is any
+# attempt to touch the rescue channel. Introduced for the owner decision of
+# 2026-07-28 (SENSE360-CANONICALISATION-001): esphome-public PR #834 is
+# upheld, Ceiling-POE-AirIQ-RoomIQ's recorded channel stays preview, and the
+# served presentation of its immutable v1.0.9 stable-named binary follows
+# the recorded channel.
+CHANNEL_PROMINENCE = {"stable": 3, "beta": 2, "preview": 1, "dev": 0}
+
+
+def _apply_channel_presentation(metadata: "FirmwareMetadata", sidecar: Dict[str, object]) -> None:
+    requested = str(sidecar.get("channel_presentation") or "").strip().lower()
+    reason = str(sidecar.get("channel_presentation_reason") or "").strip()
+    current = metadata.channel
+    if requested not in CHANNEL_PROMINENCE or current not in CHANNEL_PROMINENCE:
+        raise SystemExit(
+            f"channel_presentation {requested!r} on a {current!r} build is not "
+            "supported: only the non-rescue channels "
+            f"{sorted(CHANNEL_PROMINENCE)} participate in presentation demotion"
+        )
+    if CHANNEL_PROMINENCE[requested] >= CHANNEL_PROMINENCE[current]:
+        raise SystemExit(
+            f"channel_presentation {requested!r} would not demote a {current!r} "
+            "build: presentation overrides may only move a build to a less "
+            "prominent channel, never promote it"
+        )
+    if not reason:
+        raise SystemExit(
+            "channel_presentation requires channel_presentation_reason: a "
+            "presentation demotion is an operator decision and must say why"
+        )
+    metadata.presented_channel = requested
+    # The customer-facing description carries the channel copy, so it is
+    # re-derived from the presented channel; metadata.channel, the filename
+    # and the binary stay exactly as published.
+    if metadata.is_configuration and metadata.config_string:
+        metadata.description = describe_configuration(requested, metadata.config_string)
 
 
 def collect_firmware(
@@ -1163,7 +1220,7 @@ def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifa
     config_builds.sort(
         key=lambda art: (
             (art.metadata.config_string or "").lower(),
-            CHANNEL_ORDER.get(art.metadata.channel, 99),
+            CHANNEL_ORDER.get(art.metadata.effective_channel, 99),
         )
     )
     legacy_builds.sort(key=lambda art: _version_sort_key(art.metadata.version))
@@ -1172,7 +1229,7 @@ def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifa
             (art.metadata.model or "").lower(),
             (art.metadata.variant or "").lower(),
             (art.metadata.sensor_addon or "").lower(),
-            CHANNEL_ORDER.get(art.metadata.channel, 99),
+            CHANNEL_ORDER.get(art.metadata.effective_channel, 99),
         )
     )
     return config_builds + legacy_builds
@@ -1183,7 +1240,7 @@ def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
     beta_versions = []
     fallback_versions = []
     for artifact in artifacts:
-        channel = canonical_channel(artifact.metadata.channel, DEFAULT_CHANNEL)
+        channel = canonical_channel(artifact.metadata.effective_channel, DEFAULT_CHANNEL)
         if channel == "stable":
             stable_versions.append(artifact.metadata.version)
         elif channel == "beta":
@@ -1863,7 +1920,7 @@ def build_summary_table(artifacts: Sequence[FirmwareArtifact]) -> str:
             [
                 str(index),
                 device,
-                meta.channel,
+                meta.effective_channel,
                 meta.version,
                 artifact.relative_path,
                 artifact.md5,
