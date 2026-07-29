@@ -61,23 +61,40 @@ register is never rewritten.
 
 ## Slices
 
-1. **Audit inventory.** A table in this doc covering every preset (2),
-   source entry (4 active + 5 delisted), manifest entry (5), imported
-   artifact (4 + Rescue), fixture (2), and each legacy code branch
-   (gen-manifests `model`/`variant` path, url-config alias groups
-   including the Wall branch, the `sample` field machinery,
-   `firmware-nearest` and any other candidate the sweep surfaces), each
-   with a disposition and its basis under the evidence test.
-2. **Execute removals.** Only inventory rows whose disposition is
-   remove-with-evidence; each removal deletes the dead code and its
-   dead-only guards in the same commit, and the audit row records what
-   proved unreachability (for the gen-manifests legacy path: no binary
-   outside `firmware/configurations/` exists and the strict validator
-   forbids new ones).
-3. **History posture.** Verify nothing presents a delisted or historical
-   artifact as an active product (manifest excludes them; guards agree),
-   and add a pin only where a class is unguarded.
-4. Docs, execution notes here, full verify pass, PR.
+1. **Audit inventory.** Executed 2026-07-29; the full inventory with
+   dispositions under the evidence test:
+
+   | Surface | Items | Disposition | Basis |
+   |---|---|---|---|
+   | Presets | S360-KIT-BATH-P, S360-KIT-BEDROOM-P | KEEP | Live, served, guard-joined to SOT and the manifest. |
+   | Active sources | 4 rows | KEEP | Each backs a served manifest build; coherence guarded by manifest-health. |
+   | Delisted sources | 5 rows | KEEP (immutable history) | The WF-H1-REIMPORT-CLEAN-001 register; never rewritten; new pins added (slice 3). |
+   | Manifest entries | 5 builds | KEEP | All backed by on-disk binaries plus sidecars; served surface unchanged. |
+   | Imported artifacts | 4 `.bin` + sidecars, Rescue | KEEP | Published binaries are immutable; never deleted or overwritten. |
+   | Fixtures | esphome-product-catalog.json, expected-surface.json | KEEP | Both consumed by live guards. |
+   | gen-manifests legacy `model`/`variant` parse path | fallback branch, `describe_legacy`, legacy sort | **REMOVE** | Zero legacy binaries on disk (all five live under the canonical paths); the importer writes only canonical names; the naming-policy validator enforces the shape; manifest holds zero legacy builds (no build carries `model`). Replaced by a hard, descriptive error so a stray binary fails the build instead of minting a Model/Variant product. |
+   | `FirmwareMetadata` legacy fields (`model`, `variant`, `sensor_addon`) | dataclass fields, always None | KEEP (schema stability) | Field removal would churn the dataclass and constructors for zero served change; always None by construction now the parser raises. |
+   | state.js legacy `build.model`/`variant` handling | defensive read paths | KEEP (with reason) | The engine file owns the install gates; the branches read live manifest fields defensively and process empty sets (zero legacy builds, structurally starved by the generator error). Removing them would refactor gate-owning code for no served benefit. |
+   | url-config legacy alias groups | incl. the `wall` → `ceiling` pair | KEEP (published contract) | Old customer links must keep resolving; the Wall entry is an alias mapping, not a product branch; doubt means keep. |
+   | `sample` kit-field machinery | kits.json fields, kit-config parse, app.js copy | **REMOVE** | Parsed and copied but read nowhere (no renderer, no filter, no test); sample kits were removed long ago; dead data plumbing end to end. |
+   | firmware-nearest | module + test | KEEP | Live: consumed by state.js, pinned by its own suite. |
+
+2. **Execute removals.** Executed 2026-07-29, exactly the two REMOVE
+   rows: the gen-manifests legacy parse path is now a hard `ValueError`
+   (with `describe_legacy` deleted and `sort_artifacts` simplified to
+   the configuration-only ordering — verified byte-identical: the strict
+   dry-run regenerates the committed manifest with zero diff), and the
+   `sample` plumbing is deleted at all three sites. The error path is
+   unit-verified (a Model/Variant-shaped filename now raises).
+3. **History posture.** Executed 2026-07-29. Verified no delisted config
+   is served without a fresh active source entry (the re-imported AirIQ
+   config has one; nothing else overlaps), and added the previously
+   missing pins to `__tests__/manifest-health.test.js`: every delisted
+   row keeps its provenance fields, and a delisted config may appear in
+   the manifest only alongside an active source entry (the deliberate
+   re-import path).
+4. Docs, execution notes here, full verify pass, PR. **Executed
+   2026-07-29**; verify output recorded in the PR body.
 
 ## Honesty limits
 
