@@ -115,7 +115,6 @@ function freezeKit(entry) {
         commercial_bundle_id: entry.commercial_bundle_id ? String(entry.commercial_bundle_id) : '',
         description: entry.description ? String(entry.description) : '',
         recommended: Boolean(entry.recommended),
-        sample: Boolean(entry.sample),
         wizard_state: Object.freeze(wizardState),
         components: Object.freeze(components),
         headers_required: Array.isArray(entry.headers_required)

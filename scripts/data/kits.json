@@ -25,7 +25,6 @@
             "presentation": "firmware-preset",
             "commercial_bundle_id": "bathroom-poe",
             "recommended": true,
-            "sample": false,
             "wizard_state": {
                 "mount": "ceiling",
                 "power": "poe",
@@ -58,7 +57,6 @@
             "presentation": "firmware-preset",
             "commercial_bundle_id": "bedroom-poe",
             "recommended": false,
-            "sample": false,
             "wizard_state": {
                 "mount": "ceiling",
                 "power": "poe",

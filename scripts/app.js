@@ -444,7 +444,6 @@ function recordDiagnosticsConfiguration() {
       sku: state.kit.sku || null,
       display_name: state.kit.display_name || null,
       firmware_config_string: state.kit.firmware_config_string || null,
-      sample: Boolean(state.kit.sample),
     });
   } else {
     engine.diagnostics.setConfigurationMode('manual');

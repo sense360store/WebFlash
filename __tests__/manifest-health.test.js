@@ -283,3 +283,39 @@ describe('manifest health — REQUIRED_CONFIGS alignment', () => {
         }
     });
 });
+
+describe('manifest health — delisted register stays history, never an active surface', () => {
+    // SENSE360-CANONICALISATION-001 PR 15: firmware/sources.json's
+    // delisted_sources register is immutable history. These pins keep it
+    // shaped as history (every row keeps its provenance fields) and keep it
+    // from quietly becoming an active surface again (a delisted config may
+    // reappear in manifest.json only through a fresh ACTIVE source entry,
+    // which is the deliberate re-import path).
+    const delisted = Array.isArray(sources.delisted_sources)
+        ? sources.delisted_sources
+        : [];
+
+    test('every delisted row keeps its history fields', () => {
+        delisted.forEach(row => {
+            ['asset_name', 'channel', 'config_string', 'delisted_reason', 'release_tag', 'version']
+                .forEach(field => {
+                    expect(typeof row[field]).toBe('string');
+                    expect(row[field].length).toBeGreaterThan(0);
+                });
+        });
+    });
+
+    test('no delisted config is served without a fresh active source entry', () => {
+        const activeConfigs = new Set(
+            (sources.sources || []).map(s => s.config_string).filter(Boolean)
+        );
+        const servedConfigs = new Set(
+            manifest.builds.map(b => b.config_string).filter(Boolean)
+        );
+        delisted.forEach(row => {
+            if (servedConfigs.has(row.config_string)) {
+                expect(activeConfigs.has(row.config_string)).toBe(true);
+            }
+        });
+    });
+});

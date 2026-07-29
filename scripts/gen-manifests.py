@@ -100,15 +100,8 @@ def describe_configuration(channel: str, config_string: str) -> str:
     return f"{base} {suffix}".strip()
 
 
-def describe_legacy(channel: str, model: str, variant: Optional[str], sensor_addon: Optional[str]) -> str:
-    headline, suffix = _channel_descriptor(channel)
-    details = model
-    if variant:
-        details += f" {variant}"
-    if sensor_addon:
-        details += f" ({sensor_addon})"
-    base = f"{headline} for {details}."
-    return f"{base} {suffix}".strip()
+# describe_legacy was removed with the legacy Model/Variant parse path
+# (SENSE360-CANONICALISATION-001 PR 15).
 
 CORE_TOKENS = {
     "core",
@@ -440,31 +433,19 @@ def parse_firmware_metadata(
             chip_family=chip_hint,
             description=description,
         )
-    model_suffix = tokens[0]
-    model = f"Sense360-{model_suffix}"
-    variant = tokens[1] if len(tokens) >= 2 else "Default"
-    sensor_addon = "-".join(tokens[2:]) if len(tokens) > 2 else None
-    legacy_name_part = "-".join(
-        [model_suffix]
-        + ([variant] if variant else [])
-        + ([sensor_addon] if sensor_addon else [])
-    )
-    description = describe_legacy(channel, model, variant, sensor_addon)
-    return FirmwareMetadata(
-        name_part=legacy_name_part,
-        version=version,
-        channel=channel,
-        is_configuration=False,
-        config_string=None,
-        core_type=None,
-        mounting=None,
-        power=None,
-        modules=[],
-        model=model,
-        variant=variant,
-        sensor_addon=sensor_addon,
-        chip_family=None,
-        description=description,
+    # The legacy Model/Variant naming path was removed under
+    # SENSE360-CANONICALISATION-001 PR 15: no legacy binary exists on disk,
+    # the importer only writes canonical
+    # Sense360-<CONFIG>-vX.Y.Z-<channel>.bin names under
+    # firmware/configurations/, and the naming-policy validator enforces the
+    # canonical shape. A binary that does not parse as a configuration is an
+    # error, never a silently minted Model/Variant product.
+    raise ValueError(
+        f"Unrecognised firmware filename '{path.name}': it does not parse as "
+        "a canonical Sense360 configuration and the legacy Model/Variant "
+        "naming path no longer exists. Use the canonical "
+        "Sense360-<CONFIG>-vX.Y.Z-<channel>.bin shape under "
+        "firmware/configurations/."
     )
 
 
@@ -1214,8 +1195,10 @@ def select_latest_builds(
 
 
 def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifact]:
-    config_builds = [a for a in artifacts if a.metadata.is_configuration]
-    legacy_builds = [a for a in artifacts if not a.metadata.is_configuration]
+    # Every artifact is a configuration build: the legacy Model/Variant parse
+    # path was removed under SENSE360-CANONICALISATION-001 PR 15 and
+    # parse_firmware_metadata raises on anything non-canonical.
+    config_builds = list(artifacts)
     config_builds.sort(key=lambda art: _version_sort_key(art.metadata.version))
     config_builds.sort(
         key=lambda art: (
@@ -1223,16 +1206,7 @@ def sort_artifacts(artifacts: Sequence[FirmwareArtifact]) -> List[FirmwareArtifa
             CHANNEL_ORDER.get(art.metadata.effective_channel, 99),
         )
     )
-    legacy_builds.sort(key=lambda art: _version_sort_key(art.metadata.version))
-    legacy_builds.sort(
-        key=lambda art: (
-            (art.metadata.model or "").lower(),
-            (art.metadata.variant or "").lower(),
-            (art.metadata.sensor_addon or "").lower(),
-            CHANNEL_ORDER.get(art.metadata.effective_channel, 99),
-        )
-    )
-    return config_builds + legacy_builds
+    return config_builds
 
 
 def determine_manifest_version(artifacts: Sequence[FirmwareArtifact]) -> str:
