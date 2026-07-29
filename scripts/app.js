@@ -68,7 +68,9 @@ function recommendedKit(kits) {
 // hardcodes a version. The lookup is a pure manifest read (no shared-state
 // mutation); a kit whose config has no published build simply gets no entry, and
 // its row renders no version rather than crashing. Re-renders once resolved so
-// the table fills in. Deduped by config_string (Living / Corridor share one).
+// the table fills in. Deduped by config_string as a safety net: today every
+// visible preset has a distinct config (the duplicate-card guard pins one card
+// per config; the former Living / Corridor pair that shared a build is retired).
 async function resolveKitVersions() {
   if (!engine || !Array.isArray(state.kits) || state.kits.length === 0) return;
   const configStrings = [...new Set(
