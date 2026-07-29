@@ -56,6 +56,13 @@ shape offline (the `--check` mode needs a SOT checkout CI does not have).
    the source SHA it was generated from. Verify the regenerated posture
    flags remain all-false and every lifecycle field is unchanged (the
    expected diff is provenance plus the two `shop_status` prose fields).
+   **Executed 2026-07-29.** Actual delta beyond the expected: three
+   `shop_status` fields (all recording OD-SOT-009 as decided 2026-07-25,
+   planned, internal, non-buyable), one `contents_friendly` label, and
+   the `bathroom-fan-relay-poe` bundle row, which left `bundles.yaml`
+   upstream and therefore leaves the mirror (no preset joins to that
+   id). The posture flags remain all-false; every remaining lifecycle
+   field is unchanged.
 2. **Single commercial identity chain.** Retire the independent
    display-name authority: the `room-bundle-skus.json` vendored fixture
    stops being a naming authority for preset display names, and the
@@ -64,6 +71,21 @@ shape offline (the `--check` mode needs a SOT checkout CI does not have).
    Sweep for any other independent commercial identity or availability
    declaration in `scripts/` and `__tests__/`; every finding is either
    re-derived from the mirror or removed with its reason recorded here.
+   **Executed 2026-07-29.** `__tests__/fixtures/room-bundle-skus.json`
+   deleted; the `kit-served-consistency` display-name test now joins each
+   visible preset to its SOT mirror record by `commercial_bundle_id`,
+   asserts `display_name` equals the SOT `name` and that the record's
+   `webflash_config` agrees with the preset's firmware mapping
+   (anti-tautology preserved: the mirror is a different reviewed file,
+   regenerated only from SOT). Sweep findings: the only other
+   `buyable` occurrences under `scripts/` are the mirror itself, its
+   generator and one explanatory comment in `module-requirements.js`
+   (not a declaration, kept); `__tests__/fixtures/expected-surface.json`
+   declares the reviewed served surface (distribution truth, not
+   commercial identity, kept); no other independent commercial identity
+   or availability declaration was found. A dated retirement note was
+   appended to the `kits.json` authoring log; the historical
+   PRODUCT-KITS-CONSISTENCY-001 note stays verbatim as history.
 3. **Source SHA and schema drift gates.**
    - Generation-time schema gate: the refresh script learns SOT's full
      bundle status vocabulary (`BUNDLE_STATUSES` in SOT
@@ -79,8 +101,25 @@ shape offline (the `--check` mode needs a SOT checkout CI does not have).
      catches drift.
    - The `--check` mode stays the checkout-comparing gate for refresh
      time.
+   **Executed 2026-07-29.** `BUNDLE_STATUSES` added to the refresh
+   script with a fail-loud `SotSchemaContradiction` on unknown or
+   missing status (unit-tested for `None`, misspellings, wrong case and
+   empty string; the commercial subset is asserted to stay within the
+   vocabulary). Offline gates added on both sides:
+   `test_checked_in_mirror_schema_and_provenance` (Python) and the
+   `schema drift gate` test (Jest), covering schema version, provenance
+   shape and per-row `status` / `renderable` / commercial derivations;
+   the pre-existing 40-hex SHA and posture-consistency assertions stay.
+   The opt-in end-to-end check against the local SOT checkout passes
+   with zero skips at the regenerated mirror.
 4. Docs, execution notes here, full verify pass (`npm test`,
-   `gen-manifests --strict-validate --dry-run`), PR.
+   `gen-manifests --strict-validate --dry-run`), PR. **Executed
+   2026-07-29**; verify output recorded in the PR body. The
+   `--strict-validate --dry-run` exits 1 in this environment on the
+   pre-existing `test_only` signing-key refusal (identical on the
+   unmodified base tree; scan and validation complete before the signing
+   stage), which is the documented local-checkout posture, not a change
+   made by this PR.
 
 ## Honesty limits
 
