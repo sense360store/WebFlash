@@ -176,6 +176,30 @@ describe('room presets — schema and SOT/manifest joins', () => {
         expect(kits.some(k => k.commercial_bundle_id === 'kitchen-poe')).toBe(false);
     });
 
+    test('no visible preset carries a fan-bearing firmware config (advanced path only)', () => {
+        // SENSE360-CANONICALISATION-001 PR 14: the fan kit cards were retired
+        // (WF-H1-REIMPORT-CLEAN-001) and fan configurations stay reachable
+        // only through the advanced module builder behind its acknowledgement
+        // gates. This pins the class closed: a returning fan card needs an
+        // explicit product decision, never a silent reappearance.
+        const FAN_TOKENS = ['FanRelay', 'FanPWM', 'FanDAC', 'FanTRIAC'];
+        kits.forEach(kit => {
+            FAN_TOKENS.forEach(token => {
+                expect(kit.firmware_config_string.includes(token)).toBe(false);
+            });
+        });
+    });
+
+    test("every visible preset's room label is one of its own recommended rooms", () => {
+        // Canonical room vocabulary (SENSE360-CANONICALISATION-001 PR 14):
+        // recommended_rooms are pinned verbatim to the SOT record above, so
+        // requiring the card's room label to be one of them means the picker
+        // can never invent a room name outside the canonical SOT vocabulary.
+        kits.forEach(kit => {
+            expect(kit.recommended_rooms).toContain(kit.room_label.toLowerCase());
+        });
+    });
+
     test('identical hardware is one preset with several recommended rooms, never duplicate cards', () => {
         const byConfig = new Map();
         kits.forEach(kit => {

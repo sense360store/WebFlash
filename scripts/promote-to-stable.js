@@ -10,9 +10,10 @@
  *      firmware_channel set to "stable". Because the slice-2 single source of
  *      truth (scripts/data/kits.json, consumed by __tests__/helpers/stable-surface.js)
  *      DERIVES the stable surface from firmware_channel, this same edit is what
- *      makes C "read as stable" in the single-source declaration. Configs that
- *      map to more than one kit card (for example Living + Corridor both map to
- *      Ceiling-POE-RoomIQ-LED) flip every matching card.
+ *      makes C "read as stable" in the single-source declaration. A config that
+ *      mapped to more than one kit card would flip every matching card (none
+ *      does today: the duplicate-card guard pins one card per config, and the
+ *      former Living / Corridor pair that shared a build is retired).
  *
  *   2. Retire any SUPERSEDED preview for C. For each preview source entry in
  *      firmware/sources.json whose config_string === C, the entry is removed
