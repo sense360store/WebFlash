@@ -80,6 +80,26 @@ describe('SOT commercial-surface mirror — provenance and posture', () => {
         expect(mirror.role).toMatch(/refresh-sot-mirror/);
     });
 
+    test('schema drift gate: version, provenance date and every row shape hold', () => {
+        // SENSE360-CANONICALISATION-001 PR 13: CI has no SOT checkout, so the
+        // checked-in mirror's schema and derivations are validated offline in
+        // both suites (this one and __tests__/python/test_refresh_sot_mirror.py).
+        const BUNDLE_STATUSES = new Set([
+            'concept', 'planned', 'preview', 'available', 'paused', 'retired'
+        ]);
+        expect(mirror.schema_version).toBe(1);
+        expect(mirror.provenance.source_commit_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        mirror.bundles.forEach(bundle => {
+            ['id', 'name', 'status', 'visibility'].forEach(field => {
+                expect(bundle[field]).toBeTruthy();
+            });
+            expect(BUNDLE_STATUSES.has(bundle.status)).toBe(true);
+            expect(bundle.commercially_available).toBe(bundle.status === 'available');
+            expect(bundle.buyable).toBe(bundle.status === 'available');
+            expect(bundle.renderable).toBe(bundle.visibility === 'public');
+        });
+    });
+
     test('the posture flags are consistent with the bundle rows (no internal drift)', () => {
         const anyAvailable = mirror.bundles.some(b => b.commercially_available);
         const anyBuyable = mirror.bundles.some(b => b.buyable);

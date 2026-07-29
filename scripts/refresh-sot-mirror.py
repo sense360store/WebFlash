@@ -54,6 +54,17 @@ MIRROR_PATH = REPO_ROOT / "scripts" / "data" / "sot-commercial-mirror.json"
 # update here only when SOT's definition changes.
 COMMERCIAL_STATUSES = frozenset({"available"})
 
+# Mirrors BUNDLE_STATUSES in sense360store/SOT scripts/validate.py — the full
+# lifecycle vocabulary a bundle row may carry. SOT owns this vocabulary too.
+# The refresh fails loudly on any status outside it (SENSE360-CANONICALISATION-001
+# PR 13 schema drift gate): an unknown status would otherwise silently derive
+# non-buyable from a typo or an unsynchronised SOT schema change, and a NEW
+# SOT status must be consciously classified here (commercial or not) before a
+# mirror can be generated from it.
+BUNDLE_STATUSES = frozenset(
+    {"concept", "planned", "preview", "available", "paused", "retired"}
+)
+
 # The fields WebFlash needs, and only those. Everything else in bundles.yaml
 # (pricing history, value props, long descriptions) stays in SOT.
 BUNDLE_FIELDS = (
@@ -100,6 +111,14 @@ def derive_commercial_state(bundle):
     clearly instead of minting a divergent commercial model in WebFlash.
     """
     status = bundle.get("status")
+    if status not in BUNDLE_STATUSES:
+        raise SotSchemaContradiction(
+            f"SOT bundle '{bundle.get('id', '<no id>')}' carries unknown "
+            f"status {status!r}; the mirrored SOT lifecycle vocabulary is "
+            f"{sorted(BUNDLE_STATUSES)}. If SOT added a status, classify it "
+            "here (and against COMMERCIAL_STATUSES) before regenerating; "
+            "never let an unknown status silently derive a commercial state."
+        )
     commercially_available = status in COMMERCIAL_STATUSES
     buyable = commercially_available
 

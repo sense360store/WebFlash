@@ -23,9 +23,12 @@
  *     with an explicit preview badge) — NEVER a hardware-pending / compile-only
  *     / blocked config (the PRODUCT-KITS-CONSISTENCY-001 SAFETY RULE: a
  *     hardware-pending config must never be surfaced as an installable kit);
- *   - the kit's display_name equals the canonical consumer bundle name
- *     (__tests__/fixtures/room-bundle-skus.json — a vendored mirror of
- *     config/room-bundle-skus.json in esphome-public);
+ *   - the kit's display_name equals the commercial bundle name owned by SOT
+ *     (scripts/data/sot-commercial-mirror.json, joined by
+ *     commercial_bundle_id — SENSE360-CANONICALISATION-001 PR 13 retired the
+ *     former second naming authority, a vendored esphome-public
+ *     room-bundle-skus fixture, so commercial identity has exactly one
+ *     source);
  *   - kits.json never carries its own copy of a firmware version (single
  *     source: the version is resolved live from the served manifest).
  *
@@ -80,7 +83,7 @@ describe('PRODUCT-KITS-CONSISTENCY-001 — visible kits track served reality', (
     const rawKits = loadJson(path.join('scripts', 'data', 'kits.json')).kits;
     const manifest = loadJson('manifest.json');
     const productCatalog = loadProductCatalog();
-    const nameMirror = loadJson(path.join('__tests__', 'fixtures', 'room-bundle-skus.json'));
+    const sotMirror = loadJson(path.join('scripts', 'data', 'sot-commercial-mirror.json'));
 
     const manifestByConfig = new Map(
         (manifest.builds || [])
@@ -92,10 +95,10 @@ describe('PRODUCT-KITS-CONSISTENCY-001 — visible kits track served reality', (
             .filter(p => p && p.config_string)
             .map(p => [p.config_string, p])
     );
-    const canonicalNameByConfig = new Map(
-        (nameMirror.bundles || [])
-            .filter(b => b && b.config_string)
-            .map(b => [b.config_string, b.consumer_name])
+    const sotBundleById = new Map(
+        (sotMirror.bundles || [])
+            .filter(b => b && b.id)
+            .map(b => [b.id, b])
     );
 
     const visibleKits = catalog.kits;
@@ -151,11 +154,17 @@ describe('PRODUCT-KITS-CONSISTENCY-001 — visible kits track served reality', (
         });
     });
 
-    test("every visible kit's display_name matches the canonical bundle name", () => {
-        visibleKits.forEach(kit => {
-            const canonical = canonicalNameByConfig.get(kit.firmware_config_string);
-            expect(canonical).toBeTruthy();
-            expect(kit.display_name).toBe(canonical);
+    test("every visible kit's display_name matches its SOT commercial bundle name", () => {
+        // Single commercial identity chain (SENSE360-CANONICALISATION-001
+        // PR 13): the name comes from the SOT commercial mirror, joined by
+        // commercial_bundle_id, and the SOT record's webflash_config must
+        // agree with the kit's firmware mapping. Anti-tautology holds: the
+        // mirror is a different reviewed file, regenerated only from SOT.
+        rawKits.forEach(kit => {
+            const bundle = sotBundleById.get(kit.commercial_bundle_id);
+            expect(bundle).toBeTruthy();
+            expect(kit.display_name).toBe(bundle.name);
+            expect(kit.firmware_config_string).toBe(bundle.webflash_config);
         });
     });
 

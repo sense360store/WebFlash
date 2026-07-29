@@ -93,7 +93,7 @@ class DeriveCommercialStateTests(unittest.TestCase):
         self.assertIn("sneaky", str(ctx.exception))
 
     def test_paused_and_retired_and_concept_are_never_buyable(self):
-        for status in ("paused", "retired", "concept", "preview", None):
+        for status in ("paused", "retired", "concept", "preview"):
             with self.subTest(status=status):
                 available, buyable = MOD.derive_commercial_state(
                     {"id": "b", "status": status}
@@ -101,9 +101,30 @@ class DeriveCommercialStateTests(unittest.TestCase):
                 self.assertFalse(available)
                 self.assertFalse(buyable)
 
+    def test_unknown_status_fails_loudly(self):
+        # SENSE360-CANONICALISATION-001 PR 13 schema drift gate: an unknown
+        # (or missing) status must never silently derive a commercial state —
+        # a typo'd "avaliable" or an unsynchronised SOT schema change would
+        # otherwise mint a wrong non-buyable row without anyone noticing.
+        for status in (None, "avaliable", "AVAILABLE", "shipping", ""):
+            with self.subTest(status=status):
+                with self.assertRaises(MOD.SotSchemaContradiction):
+                    MOD.derive_commercial_state({"id": "b", "status": status})
+
     def test_lifecycle_rule_matches_sot_commercial_statuses(self):
         # The single source of the rule: SOT's COMMERCIAL_STATUSES set.
         self.assertEqual(MOD.COMMERCIAL_STATUSES, frozenset({"available"}))
+
+    def test_status_vocabulary_matches_sot_bundle_statuses(self):
+        # Mirrors BUNDLE_STATUSES in SOT scripts/validate.py; SOT owns the
+        # vocabulary, and the commercial subset must stay within it.
+        self.assertEqual(
+            MOD.BUNDLE_STATUSES,
+            frozenset(
+                {"concept", "planned", "preview", "available", "paused", "retired"}
+            ),
+        )
+        self.assertTrue(MOD.COMMERCIAL_STATUSES <= MOD.BUNDLE_STATUSES)
 
 
 class NormaliseBundleTests(unittest.TestCase):
@@ -178,6 +199,30 @@ class CommercialPostureTests(unittest.TestCase):
                 row["id"],
             )
             self.assertEqual(row["buyable"], row["commercially_available"], row["id"])
+
+    def test_checked_in_mirror_schema_and_provenance(self):
+        # SENSE360-CANONICALISATION-001 PR 13 offline drift gates: CI has no
+        # SOT checkout, so the checked-in mirror's schema, provenance shape
+        # and per-row derivations are validated here without one. A stale
+        # generator, a hand edit, or an unsynchronised schema change fails
+        # this instead of shipping silently.
+        mirror = json.loads(MIRROR_PATH.read_text())
+        self.assertEqual(mirror["schema_version"], 1)
+        provenance = mirror["provenance"]
+        self.assertEqual(provenance["source_repo"], "sense360store/SOT")
+        self.assertRegex(provenance["source_sha"], r"^[0-9a-f]{40}$")
+        self.assertRegex(provenance["source_commit_date"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(provenance["source_files"], ["bundles.yaml"])
+        self.assertEqual(provenance["generator"], "scripts/refresh-sot-mirror.py")
+        for row in mirror["bundles"]:
+            with self.subTest(bundle=row.get("id")):
+                for field in ("id", "name", "status", "visibility"):
+                    self.assertIn(field, row)
+                    self.assertTrue(row[field], field)
+                self.assertIn(row["status"], MOD.BUNDLE_STATUSES)
+                self.assertEqual(
+                    row["renderable"], row["visibility"] == "public", row["id"]
+                )
 
 
 class CheckedInMirrorMatchesSotTests(unittest.TestCase):
