@@ -7880,9 +7880,12 @@ function downloadFirmware() {
 }
 
 
-function initializeFromUrl() {
-    const searchParams = new URLSearchParams(window.location.search || '');
-    setReleaseModeFromUrl(searchParams);
+// SENSE360-REVIEW-RELEASE-001 (WebFlash #604) — the URL-to-wizard-config
+// derivation, extracted verbatim from initializeFromUrl() so the sole 2.0 view
+// can hydrate the engine from a share link through the engine facade instead of
+// re-implementing the mapping. Pure: it reads params and returns a
+// configuration, touching no state, no DOM, no step and no gate.
+function deriveUrlConfiguration(searchParams) {
     const parsed = parseConfigParams(searchParams);
     const sanitizedConfig = mapToWizardConfiguration(parsed.sanitizedConfig);
 
@@ -7919,6 +7922,55 @@ function initializeFromUrl() {
     if (!sanitizedConfig.mounting) {
         sanitizedConfig.mounting = 'ceiling';
     }
+
+    return { sanitizedConfig, notices: parsed.notices };
+}
+
+// Engine-owned share-link hydration for the 2.0 view. Applies ONLY the wizard
+// configuration a URL encodes; it changes no step, resolves no firmware, and
+// touches no acknowledgement, provenance, integrity, freshness or install gate.
+// Every gate continues to run afterwards exactly as it does for a click-built
+// selection.
+//
+// It deliberately does NOT go through applyConfiguration(): that function ends
+// in updateConfiguration() -> syncConfigurationFromInputs(), which re-derives
+// the configuration from the 1.0 render layer's `input[name=...]` radios. Those
+// inputs do not exist in the 2.0 view (the sole view since PR 13), so every
+// module silently reset to 'none' and share links collapsed to the bare
+// Ceiling-POE default. This applies the same filtering and the same
+// AirIQ/VentIQ exclusivity rule directly to the configuration, with no DOM
+// round-trip, so it behaves identically in both views and under jsdom.
+function applyUrlConfiguration(searchParams) {
+    const params = searchParams instanceof URLSearchParams
+        ? searchParams
+        : new URLSearchParams(searchParams || '');
+    const { sanitizedConfig } = deriveUrlConfiguration(params);
+
+    // Same whitelist applyConfiguration() uses: unknown keys (including the
+    // legacy `bathroomairiq` the mapper emits, and any `__proto__`-style own
+    // key from a crafted URL) never reach state.
+    const filteredConfig = {};
+    SUPPORTED_CONFIG_KEYS.forEach(key => {
+        if (Object.prototype.hasOwnProperty.call(sanitizedConfig, key)) {
+            filteredConfig[key] = sanitizedConfig[key];
+        }
+    });
+
+    Object.assign(configuration, defaultConfiguration, enforceAirIQVentIQExclusivity(filteredConfig));
+
+    if (configuration.mounting !== 'ceiling') {
+        configuration.ventiq = 'none';
+    }
+    configuration.voice = 'none';
+
+    return getState();
+}
+
+function initializeFromUrl() {
+    const searchParams = new URLSearchParams(window.location.search || '');
+    setReleaseModeFromUrl(searchParams);
+    const { sanitizedConfig, notices } = deriveUrlConfiguration(searchParams);
+    const parsed = { notices };
 
     applyConfiguration(sanitizedConfig);
 
@@ -8217,5 +8269,9 @@ export {
     // path; the WebFlash 2.0 view (PR 8) applies the URL mode through these so
     // development and recovery visibility behaves exactly as in the 1.0 view.
     getReleaseMode,
-    setReleaseModeFromUrl
+    setReleaseModeFromUrl,
+    // SENSE360-REVIEW-RELEASE-001 (#604) — share-link hydration for the sole
+    // 2.0 view. Applies only the wizard configuration a URL encodes; no step,
+    // no firmware resolution, no acknowledgement and no gate is touched.
+    applyUrlConfiguration
 };
