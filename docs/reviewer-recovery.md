@@ -12,20 +12,38 @@ mean.
 
 ## The route
 
-The reviewer opens one documented link. It carries **board selections**, never
-a firmware identifier:
+The intended reviewer recovery link is:
 
 ```
 https://sense360store.github.io/WebFlash/?core=core&mount=ceiling&power=poe&airiq=airiq&roomiq=roomiq
 ```
 
-WebFlash resolves those selections to the firmware target
-`Ceiling-POE-AirIQ-RoomIQ`. The reviewer never types, reads or needs the config
-string, and never opens the module builder to hunt for the right boards.
+It carries **board selections**, never a firmware identifier. WebFlash resolves
+those selections to the firmware target `Ceiling-POE-AirIQ-RoomIQ`, so a
+reviewer who follows the link never types, reads or needs the config string,
+and never opens the module builder to hunt for the right boards.
 
 This is the **existing** advanced / manual share-link shape
 (`scripts/utils/url-config.js`), consumed through the engine. It is not a new
 flashing system, not a new URL namespace and not a new customer room preset.
+
+### Status: the route works; it is not yet discoverable
+
+Three states, deliberately separated. Only the first is delivered by this
+repository's change:
+
+| | State |
+|---|---|
+| **WebFlash route mechanics** | **Ready.** The link resolves to the correct target and reaches the install view with every gate intact — verified below. |
+| **Customer-doc discoverability** | **Pending.** No canonical customer-facing document points a reviewer at this link. A reviewer cannot discover it from the customer documentation today; the link has to be supplied to them externally. |
+| **Artifact recovery readiness** | **Blocked.** The served binary predates the reviewer firmware surface — see *Artifact parity*. |
+
+Wiring the link into the customer documentation is a **cross-repository Gate D
+follow-up in `sense360store/esphome-public`**, not something WebFlash
+implements on its own: that repository owns the customer documentation surface,
+and the change interacts with `OD-SOT-011` (what the unit is called) and
+`OD-SOT-012` (what may be surfaced in the customer journey). It is recorded
+below rather than silently implemented here.
 
 ### Why this needed a code change
 
@@ -55,6 +73,60 @@ freshness, channel or install gate is touched or bypassed.
 If the unit will not boot at all, the **Rescue** entry in the window bar flashes
 the bundled rescue image first; the link above then restores the product
 firmware.
+
+## The customer-documentation gap
+
+Recorded from `sense360store/esphome-public` `main` at `d99df10`, file
+`site/docs/products/ceiling-poe-airiq-roomiq.md`. **No change is made to that
+repository by this PR.**
+
+Its *Install the firmware* section today tells the reader to:
+
+1. open the **generic** flasher root, `sense360store.github.io/WebFlash` — not
+   a deep link;
+2. *"Select this product (config string `Ceiling-POE-AirIQ-RoomIQ`) and follow
+   the on-screen steps"* — which **requires** exactly the config-string
+   knowledge the reviewer route removes.
+
+The *Updating* and *Factory reset and recovery* sections point at the same bare
+root. The reviewer deep link appears nowhere on the page.
+
+The merged Gate B work also exposed broader stale prose on that page, beyond
+the recovery route:
+
+- **The channel copy contradicts itself.** The lifecycle block correctly says
+  *preview* firmware installable *"on the preview channel; the flasher asks you
+  to acknowledge the preview channel"*, while a later admonition says
+  **"Channel: stable — This product installs from the stable channel"**. Served
+  reality is the preview channel (the owner's 2026-07-28 presentation
+  demotion), which is what WebFlash enforces.
+- **The entity prose is out of date.** The page states the *"current firmware
+  does not yet expose those measurements as Home Assistant entities"* and that
+  `Air Quality State` is *"a placeholder that reads `unknown`"*. The merged
+  reviewer surface exposes CO2, VOC, NOx, Air Quality and Recommendation as
+  customer-default entities.
+
+Fixing that whole page is **not** in scope for WebFlash #604 and is not
+attempted here.
+
+### The smallest separate esphome-public work item required
+
+One customer-doc change in `sense360store/esphome-public`, after this PR:
+
+1. Use the exact review-unit recovery deep link in the install, update and
+   recovery steps for this product.
+2. Remove the requirement to know or select the config string.
+3. Align the firmware, entity and channel copy with merged Release-001 truth —
+   resolve the stable-versus-preview contradiction in favour of the served
+   preview channel, and drop the "measurements not yet exposed" and
+   "`Air Quality State` placeholder" claims.
+4. Preserve the `OD-SOT-011` and `OD-SOT-012` boundaries: name the unit by its
+   boards or as the Sense360 review unit, never Kitchen or Bathroom, and add no
+   customer room card or picker entry.
+
+That work is **not** performed or opened here. It belongs to the repository
+that owns the customer documentation surface, and this record exists so it is
+scheduled rather than assumed.
 
 ## Naming
 
@@ -136,6 +208,12 @@ serving this tree:
 | Console / page errors | 0, across the default landing, the reviewer link and the install step |
 | Default landing unchanged | room picker still leads, Bathroom still recommended, no Kitchen card |
 | Existing share links | `Ceiling-POE-VentIQ-RoomIQ` and `Ceiling-POE-RoomIQ` also resolve again |
+
+**What this verification does and does not establish.** It establishes the
+**route mechanics** only: given the link, WebFlash resolves the right build and
+runs every gate. It establishes nothing about discoverability — the link was
+supplied directly to the browser, exactly as a reviewer would today only if
+someone handed it to them, because no customer document points at it yet.
 
 **Not verified, and not claimed.** No physical flash was performed: no Sense360
 hardware and no Web Serial device were attached to this environment, so

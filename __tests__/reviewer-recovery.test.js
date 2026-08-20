@@ -201,6 +201,23 @@ describe('the reviewer path makes no commercial claim', () => {
         expect(doc).toMatch(/OD-SOT-012/);
         expect(doc.toLowerCase()).toContain('artifact parity');
     });
+
+    test('the record separates route mechanics from customer-doc discoverability', () => {
+        // The route working is not the same as a reviewer being able to find
+        // it. Both states must stay named, and neither may be collapsed into a
+        // single "ready".
+        const lower = doc.toLowerCase();
+        expect(lower).toContain('route mechanics');
+        expect(lower).toContain('discoverability');
+        // The customer-doc gap and its owning repository must stay recorded.
+        expect(doc).toMatch(/esphome-public/);
+        expect(lower).toMatch(/no canonical customer-facing document|not yet discoverable/);
+    });
+
+    test('the record does not claim the reviewer already receives the link from customer docs', () => {
+        expect(doc).not.toMatch(/the reviewer opens one documented link/i);
+        expect(doc).not.toMatch(/customer docs (already|now) (point|link)/i);
+    });
 });
 
 describe('a missing or unserved configuration cannot silently install', () => {
