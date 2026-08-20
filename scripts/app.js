@@ -613,10 +613,20 @@ async function initFromEngine() {
   if (requested.mode === 'advanced') {
     state.mode = 'advanced';
     // A real manual share link (module params present) hydrates the builder from
-    // the engine state that initializeWizard() already applied from the URL. A
-    // bare ?configmode=manual keeps the supported Bathroom PoE default.
+    // the engine state. SENSE360-REVIEW-RELEASE-001 (#604): the 2.0 view is the
+    // sole view and never calls the 1.0 initializeWizard(), so nothing had
+    // applied the URL to the engine before this read — every share link
+    // silently collapsed to the bare Ceiling-POE default. Hydrate through the
+    // engine's own URL mapper first, then read it back. This resolves a
+    // selection only: no step is jumped, no firmware is chosen, and every
+    // acknowledgement, provenance, integrity, freshness and install gate still
+    // runs exactly as it does for a click-built selection.
+    // A bare ?configmode=manual keeps the supported Bathroom PoE default.
     if (urlHasManualMarkers()) {
       try {
+        if (typeof engine.state.applyUrlConfiguration === 'function') {
+          engine.state.applyUrlConfiguration(new URLSearchParams(window.location.search || ''));
+        }
         state.sel = wizardStateToSel(engine.state.getState());
       } catch {
         state.sel = { ...DEFAULT_SEL };
