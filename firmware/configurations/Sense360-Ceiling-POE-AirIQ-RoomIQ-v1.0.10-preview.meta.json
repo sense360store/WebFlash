@@ -1,0 +1,34 @@
+{
+  "changelog": [
+    "Refines the default Home Assistant entity surface to 13 customer-facing room and air-quality entities",
+    "Moves diagnostic and configuration-only entities out of the default view while keeping them available",
+    "Keeps the Core + RoomIQ + AirIQ review composition on the preview channel"
+  ],
+  "known_issues": [],
+  "features": [
+    "PoE-powered Sense360 Core configuration",
+    "AirIQ air-quality sensing",
+    "RoomIQ room sensing"
+  ],
+  "hardware_requirements": [
+    "Sense360 Core (`S360-100`)",
+    "Sense360 AirIQ (`S360-210`)",
+    "Sense360 RoomIQ (`S360-200`)",
+    "Sense360 PoE PSU (`S360-410`)"
+  ],
+  "signed_by": "Sense360 release pipeline",
+  "deprecated": false,
+  "deprecation_reason": null,
+  "artifact_type": "application",
+  "improv": false,
+  "source": {
+    "source_repo": "sense360store/esphome-public",
+    "release_tag": "v1.0.10-preview",
+    "release_url": "https://github.com/sense360store/esphome-public/releases/tag/v1.0.10-preview",
+    "source_asset_name": "Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.10-preview.bin",
+    "source_asset_sha256": "c06389ba52e6c255b965287d52031729b726698b5da340851f3e5b86eceef698",
+    "source_manifest_git_sha": "adb03fdc03f938cb54f62d08b7947a6d82f1a402",
+    "source_manifest_esphome_version": "2026.4.5",
+    "imported_at": "2026-08-21T12:20:14+00:00"
+  }
+}

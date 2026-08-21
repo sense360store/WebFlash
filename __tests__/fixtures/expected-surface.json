@@ -6,10 +6,8 @@
   "builds": [
     {
       "config_string": "Ceiling-POE-AirIQ-RoomIQ",
-      "version": "1.0.9",
-      "channel": "preview",
-      "file_channel": "stable",
-      "presentation_note": "Presentation demotion (owner decision of 2026-07-28, SENSE360-CANONICALISATION-001): served channel preview, immutable published filename channel stable (file_channel). gen-manifests.py rejects any non-demoting channel_presentation."
+      "version": "1.0.10",
+      "channel": "preview"
     },
     {
       "config_string": "Ceiling-POE-RoomIQ",
@@ -110,6 +108,15 @@
       "retired_in": "#582",
       "reason": "WF-H1-REIMPORT-CLEAN-001 W1: built before the upstream credential gate (SEC-ESP-BUILD-GATES-001) and carries shared default credentials; the config cannot be rebuilt on the sanctioned upstream pipeline (fan rows stay out of upstream config/webflash-builds.json), so it is delisted instead of re-imported. See firmware/sources.json delisted_sources and docs/rebuild-clean-credentials-001.md.",
       "note": "The S360-KIT-BATH-P-PWM kit card retired with this build and stays out of kits.json until a post-gate rebuild of the config is re-imported. This retired v1.0.0-preview ARTIFACT must never reappear."
+    },
+    {
+      "config_string": "Ceiling-POE-AirIQ-RoomIQ",
+      "version": "1.0.9",
+      "channel": "preview",
+      "file_channel": "stable",
+      "retired_in": "#607",
+      "reason": "Superseded by the v1.0.10-preview review build (SENSE360-REVIEW-RELEASE-001, issue #604). Retired BEFORE the import because prune_superseded_configurations (scripts/import-firmware-sources.py) only removes a superseded build on the SAME channel: v1.0.9 published as a stable-named binary while v1.0.10 publishes as preview, so the importer would have left two Ceiling-POE-AirIQ-RoomIQ builds in manifest.json and the config would have had no unambiguous served review build.",
+      "note": "A clean supersession, NOT a for-cause delisting: the v1.0.9 binary was correctly signed and served, so its source entry is removed outright (the established supersession pattern of #553 and the Ceiling-POE-RoomIQ v1.0.0-preview retirement) rather than moved to the delisted_sources register, which stays reserved for the pre-credential-gate artifacts that must never reappear. The CONFIG returns in the active surface at v1.0.10 on the preview channel; only this v1.0.9 stable-named ARTIFACT is retired. The 2026-07-28 presentation demotion (SENSE360-CANONICALISATION-001) that served this stable-named binary on the preview channel retires with it: v1.0.10 is published preview, so it needs no channel_presentation override."
     }
   ]
 }

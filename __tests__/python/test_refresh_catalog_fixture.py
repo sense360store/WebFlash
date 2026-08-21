@@ -100,19 +100,28 @@ class RefreshFixtureDataTests(unittest.TestCase):
         self.assertNotIn("Ceiling-POE-Brand-New", configs)
 
     def test_does_not_overwrite_curated_field_upstream_omits(self):
-        # The manual-preview fan entries carry a WebFlash-side version that
-        # upstream does NOT declare. Upstream silence must never null it out.
+        # The manual-preview fan entries carry WebFlash-side identity fields
+        # that upstream does NOT declare. Upstream silence must never null one
+        # out, and must never be recorded as a change.
+        #
+        # The synthetic upstream row echoes whatever ``status`` the vendored
+        # fixture currently holds instead of hardcoding one. A hardcoded status
+        # couples this unit test to the live mirror: the whole-file catalog
+        # refresh moves ``status`` whenever upstream does (the fan rows moved
+        # hardware-pending -> preview on the v1.0.10-preview import), which
+        # turns this contract test red for a reason that has nothing to do with
+        # the contract under test. Echoing the fixture's own value isolates the
+        # only thing being asserted, which is that omitted fields survive.
         fixture = _load_fixture()
         fan_cs = "Ceiling-POE-FanPWM"
-        before = next(
-            p for p in fixture["products"] if p.get("config_string") == fan_cs
+        before = copy.deepcopy(
+            next(p for p in fixture["products"] if p.get("config_string") == fan_cs)
         )
-        self.assertEqual(before["version"], "1.0.0")
         upstream = _upstream(
             [
                 {
                     "config_string": fan_cs,
-                    "status": "hardware-pending",
+                    "status": before["status"],
                     # no version / artifact_name / channel upstream
                 }
             ]
@@ -121,8 +130,18 @@ class RefreshFixtureDataTests(unittest.TestCase):
         after = next(
             p for p in new_fixture["products"] if p.get("config_string") == fan_cs
         )
-        self.assertEqual(after["version"], "1.0.0")
-        self.assertEqual(after.get("artifact_name"), before.get("artifact_name"))
+        # Every synced field upstream omitted is preserved exactly.
+        for field in ("version", "artifact_name", "channel"):
+            self.assertEqual(after.get(field), before.get(field))
+        # Curated WebFlash-owned fields upstream never declares survive too.
+        self.assertEqual(
+            after.get("webflash_import_eligibility"),
+            before.get("webflash_import_eligibility"),
+        )
+        self.assertEqual(
+            after.get("webflash_build_matrix"), before.get("webflash_build_matrix")
+        )
+        # Nothing upstream omitted may be recorded as a change.
         self.assertEqual([c for c in changes if c["identifier"] == fan_cs], [])
 
     def test_preserves_non_sync_fields(self):

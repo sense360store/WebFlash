@@ -58,7 +58,13 @@ describe('the reviewer link resolves the exact review composition', () => {
     test('the resolved config is actually served by the manifest', () => {
         const build = manifest.builds.find(b => b.config_string === REVIEW_CONFIG);
         expect(build).toBeDefined();
-        expect(build.version).toBe('1.0.9');
+        // The served version comes from the reviewed served-surface fixture, not
+        // a literal: the reviewer build is version-bumped by import PRs, and a
+        // hardcoded version silently pins an artifact that a retirement has
+        // already removed. Manifest (reality) vs fixture (reviewed intent) is
+        // still a real cross-artifact comparison per the anti-tautology note.
+        const served = surface.builds.find(b => b.config_string === REVIEW_CONFIG);
+        expect(build.version).toBe(served.version);
     });
 
     test('the link round-trips deterministically through the builder mapping', () => {

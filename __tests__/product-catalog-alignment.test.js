@@ -81,11 +81,22 @@ const FANRELAY_CONFIG_STRING = 'Ceiling-POE-VentIQ-FanRelay-RoomIQ';
 const FANPWM_CONFIG_STRING = 'Ceiling-POE-FanPWM';
 const FANDAC_CONFIG_STRING = 'Ceiling-POE-FanDAC';
 
+// WebFlash exposure is authorised by two WebFlash-owned controls, never by the
+// mirrored upstream lifecycle label on its own: the upstream-declared WebFlash
+// build matrix (`webflash_build_matrix: true`, the build-matrix lane) or the
+// explicit manual-preview authorisation
+// (`webflash_import_eligibility.eligible: true`). Keying this on `status` meant
+// an upstream lifecycle relabel could silently authorise a config WebFlash
+// deliberately withholds: upstream moved FanTRIAC from `blocked` to `preview`
+// while it stayed `webflash_build_matrix: false`, which would have flipped this
+// helper to true for a config that must never ship. This mirrors the import
+// lane in scripts/validate-product-import-readiness.js, so the guard and the
+// runtime classifier agree on who authorises exposure.
 function isWebflashImportEligible(entry) {
     if (!entry) {
         return false;
     }
-    if (ELIGIBLE_STATUSES.has(entry.status)) {
+    if (entry.webflash_build_matrix === true) {
         return true;
     }
     return Boolean(
@@ -287,17 +298,28 @@ describe('product catalog fixture shape', () => {
         expect(entry.status).toBe('production');
     });
 
-    test('FanTRIAC entry is present and blocked', () => {
+    test('FanTRIAC entry is present and withheld by WebFlash-owned controls', () => {
         const entry = catalogIndex.get(FANTRIAC_CONFIG_STRING);
         if (!entry) {
             throw new Error(
                 `Catalog does not contain ${FANTRIAC_CONFIG_STRING}. ` +
-                    'Upstream is the source of truth for this status; if it ' +
-                    'has been removed entirely, drop the FanTRIAC guards below ' +
-                    'and refresh the fixture.'
+                    'Upstream owns this row; if it has been removed entirely, ' +
+                    'drop the FanTRIAC guards below and refresh the fixture.'
             );
         }
-        expect(entry.status).toBe('blocked');
+        // The upstream lifecycle LABEL is mirrored into this fixture by the
+        // whole-file catalog refresh and is upstream's to move (it went
+        // blocked -> preview without any WebFlash decision). It is therefore
+        // deliberately not asserted here. What is asserted is the contract
+        // WebFlash actually depends on: FanTRIAC is out of the upstream
+        // WebFlash build matrix, carries no explicit import authorisation, and
+        // still records the HW-005 hardware blocker. Absence from the served
+        // surface (sources, manifest, REQUIRED_CONFIGS, kits) is pinned by the
+        // dedicated guards elsewhere in this file.
+        expect(entry.webflash_build_matrix).toBe(false);
+        expect(entry.webflash_import_eligibility?.eligible).not.toBe(true);
+        expect(isWebflashImportEligible(entry)).toBe(false);
+        expect(entry.blocker).toBe('HW-005');
     });
 });
 
@@ -322,9 +344,9 @@ describe('firmware/sources.json ↔ product catalog', () => {
                     `firmware/sources.json source "${source.config_string}" has ` +
                         `upstream status "${entry.status}" and no ` +
                         'webflash_import_eligibility.eligible=true authorisation. ' +
-                        `WebFlash only imports from catalog entries in statuses ` +
-                        `[${[...ELIGIBLE_STATUSES].join(', ')}] OR entries upstream ` +
-                        'has explicitly marked webflash_import_eligibility.eligible=true. ' +
+                        'WebFlash imports only from catalog entries that are ' +
+                        'webflash_build_matrix=true OR that upstream has ' +
+                        'explicitly marked webflash_import_eligibility.eligible=true. ' +
                         'Remove the source or wait for upstream to promote / authorise it.'
                 );
             }
@@ -436,9 +458,9 @@ describe('manifest.json ↔ product catalog', () => {
                     `manifest.json build "${build.config_string}" has upstream ` +
                         `status "${entry.status}" and no ` +
                         'webflash_import_eligibility.eligible=true authorisation. ' +
-                        `WebFlash only ships builds in statuses ` +
-                        `[${[...ELIGIBLE_STATUSES].join(', ')}] OR entries upstream ` +
-                        'has explicitly marked webflash_import_eligibility.eligible=true.'
+                        'WebFlash ships only builds whose catalog entry is ' +
+                        'webflash_build_matrix=true OR that upstream has ' +
+                        'explicitly marked webflash_import_eligibility.eligible=true.'
                 );
             }
         }
@@ -577,8 +599,8 @@ describe('scripts/data/kits.json ↔ product catalog', () => {
                         `"${kit.firmware_config_string}" which has upstream ` +
                         `status "${entry.status}" and no ` +
                         'webflash_import_eligibility.eligible=true authorisation. ' +
-                        `Kits may only point at statuses ` +
-                        `[${[...ELIGIBLE_STATUSES].join(', ')}] OR import-eligible entries.`
+                        'Kits may point only at catalog entries that are ' +
+                        'webflash_build_matrix=true OR import-eligible.'
                 );
             }
         }
@@ -822,9 +844,9 @@ describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
     // importer fails closed on it. Eligibility recognition stands (the fixture
     // row is unchanged), but the source entry, manifest build, on-disk pair,
     // and Bathroom Relay kit are gone until a re-verifiable artifact ships.
-    // FanTRIAC stays eligible=false / blocked.
+    // FanTRIAC stays eligible=false, held out of the build matrix.
 
-    test('fixture FanRelay row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
+    test('fixture FanRelay row stays out of the build matrix and carries webflash_import_eligibility.eligible=true', () => {
         const entry = catalogIndex.get(FANRELAY_CONFIG_STRING);
         if (!entry) {
             throw new Error(
@@ -834,24 +856,32 @@ describe('WEBFLASH-RELAY-001 — FanRelay preview import recognition', () => {
                     'config/product-catalog.json + config/preview-release-targets.json.'
             );
         }
-        expect(entry.status).toBe('hardware-pending');
+        // The upstream lifecycle label is mirrored by the whole-file catalog
+        // refresh and is not asserted: an upstream relabel must neither fail a
+        // WebFlash guard nor authorise exposure. The authorisation lane is what
+        // WebFlash owns, so that is what is pinned: this config is OUT of the
+        // upstream WebFlash build matrix and reaches the import lane only
+        // through the explicit manual-preview flag.
         expect(entry.webflash_build_matrix).toBe(false);
         expect(entry.webflash_import_eligibility).toBeDefined();
         expect(entry.webflash_import_eligibility.eligible).toBe(true);
-        // Status alone is NOT import-eligible; the explicit flag is what authorises it.
-        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
         expect(isWebflashImportEligible(entry)).toBe(true);
-        expect(entry.artifact_name).toBe(
-            'Sense360-Ceiling-POE-VentIQ-FanRelay-RoomIQ-v1.0.0-preview.bin'
-        );
-        expect(entry.version).toBe('1.0.0');
-        expect(entry.channel).toBe('preview');
+        // artifact_name / version / channel are upstream-owned identity fields
+        // that the whole-file catalog refresh mirrors verbatim (upstream has
+        // since moved this row to v1.0.1 on the experimental channel). Pinning
+        // them here would assert upstream's state, not WebFlash's contract.
+        // The artifact WebFlash actually delisted stays pinned in the
+        // WebFlash-owned delisted_sources register, asserted below.
     });
 
     test('FanTRIAC remains catalog-ineligible (no webflash_import_eligibility=true)', () => {
         const entry = catalogIndex.get(FANTRIAC_CONFIG_STRING);
         expect(entry).toBeDefined();
-        expect(entry.status).toBe('blocked');
+        // Not keyed on the mirrored upstream status: FanTRIAC is withheld by
+        // WebFlash-owned controls (out of the build matrix, no explicit import
+        // authorisation), which is what keeps it off every served surface.
+        expect(entry.webflash_build_matrix).toBe(false);
+        expect(entry.webflash_import_eligibility?.eligible).not.toBe(true);
         expect(isWebflashImportEligible(entry)).toBe(false);
     });
 
@@ -889,9 +919,9 @@ describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
     // standalone FanPWM asset, so the importer fails closed on it. Eligibility
     // recognition stands (the fixture row is unchanged), but the source entry,
     // manifest build, and on-disk pair are gone until a re-verifiable artifact
-    // ships. FanTRIAC stays eligible=false / blocked.
+    // ships. FanTRIAC stays eligible=false, held out of the build matrix.
 
-    test('fixture FanPWM row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
+    test('fixture FanPWM row stays out of the build matrix and carries webflash_import_eligibility.eligible=true', () => {
         const entry = catalogIndex.get(FANPWM_CONFIG_STRING);
         if (!entry) {
             throw new Error(
@@ -901,12 +931,15 @@ describe('WEBFLASH-PWM-001 — FanPWM preview import recognition', () => {
                     'config/product-catalog.json + config/preview-release-targets.json.'
             );
         }
-        expect(entry.status).toBe('hardware-pending');
+        // The upstream lifecycle label is mirrored by the whole-file catalog
+        // refresh and is not asserted: an upstream relabel must neither fail a
+        // WebFlash guard nor authorise exposure. The authorisation lane is what
+        // WebFlash owns, so that is what is pinned: this config is OUT of the
+        // upstream WebFlash build matrix and reaches the import lane only
+        // through the explicit manual-preview flag.
         expect(entry.webflash_build_matrix).toBe(false);
         expect(entry.webflash_import_eligibility).toBeDefined();
         expect(entry.webflash_import_eligibility.eligible).toBe(true);
-        // Status alone is NOT import-eligible; the explicit flag is what authorises it.
-        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
         expect(isWebflashImportEligible(entry)).toBe(true);
         expect(entry.artifact_name).toBe(
             'Sense360-Ceiling-POE-FanPWM-v1.0.0-preview.bin'
@@ -949,9 +982,9 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC preview import recog
     // asset, so the importer fails closed on it. Eligibility recognition stands
     // (the fixture row is unchanged), but the source entry, manifest build, and
     // on-disk pair are gone until a re-verifiable artifact ships. FanTRIAC
-    // stays eligible=false / blocked.
+    // stays eligible=false, held out of the build matrix.
 
-    test('fixture FanDAC row keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true', () => {
+    test('fixture FanDAC row stays out of the build matrix and carries webflash_import_eligibility.eligible=true', () => {
         const entry = catalogIndex.get(FANDAC_CONFIG_STRING);
         if (!entry) {
             throw new Error(
@@ -961,12 +994,15 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC preview import recog
                     'upstream config/product-catalog.json + config/preview-release-targets.json.'
             );
         }
-        expect(entry.status).toBe('hardware-pending');
+        // The upstream lifecycle label is mirrored by the whole-file catalog
+        // refresh and is not asserted: an upstream relabel must neither fail a
+        // WebFlash guard nor authorise exposure. The authorisation lane is what
+        // WebFlash owns, so that is what is pinned: this config is OUT of the
+        // upstream WebFlash build matrix and reaches the import lane only
+        // through the explicit manual-preview flag.
         expect(entry.webflash_build_matrix).toBe(false);
         expect(entry.webflash_import_eligibility).toBeDefined();
         expect(entry.webflash_import_eligibility.eligible).toBe(true);
-        // Status alone is NOT import-eligible; the explicit flag is what authorises it.
-        expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
         expect(isWebflashImportEligible(entry)).toBe(true);
         expect(entry.artifact_name).toBe(
             'Sense360-Ceiling-POE-FanDAC-v1.0.0-preview.bin'
@@ -1013,7 +1049,7 @@ describe('WF-H1-REIMPORT-CLEAN-001 W1 — full-composition fan bundle previews s
     // REQUIRED_CONFIGS. The upstream catalog fixture still carries their
     // eligibility flags — eligibility is not exposure, and re-listing
     // requires a fresh post-gate source entry. FanTRIAC stays
-    // eligible=false / blocked.
+    // eligible=false, held out of the build matrix.
     const FAN_BUNDLES = [
         {
             config: 'Ceiling-POE-VentIQ-FanPWM-RoomIQ',
@@ -1043,19 +1079,22 @@ describe('WF-H1-REIMPORT-CLEAN-001 W1 — full-composition fan bundle previews s
     ];
 
     test.each(FAN_BUNDLES)(
-        'fixture $config keeps status=hardware-pending but carries webflash_import_eligibility.eligible=true',
+        'fixture $config stays out of the build matrix and carries webflash_import_eligibility.eligible=true',
         ({ config }) => {
             const entry = catalogIndex.get(config);
             expect(entry).toBeDefined();
-            expect(entry.status).toBe('hardware-pending');
+            // status / version / channel are upstream-owned fields mirrored
+            // verbatim by the whole-file catalog refresh (upstream has since
+            // moved several of these rows, e.g. AirIQ-FanRelay to v1.0.1 on the
+            // experimental channel). They are not asserted: an upstream relabel
+            // must neither fail a WebFlash guard nor authorise exposure. The
+            // WebFlash-owned authorisation lane is pinned instead, and the
+            // delisted artifact identity stays pinned in the delisted_sources
+            // register asserted below.
             expect(entry.webflash_build_matrix).toBe(false);
             expect(entry.webflash_import_eligibility).toBeDefined();
             expect(entry.webflash_import_eligibility.eligible).toBe(true);
-            // Status alone is NOT import-eligible; the explicit flag is what authorises it.
-            expect(ELIGIBLE_STATUSES.has(entry.status)).toBe(false);
             expect(isWebflashImportEligible(entry)).toBe(true);
-            expect(entry.version).toBe('1.0.0');
-            expect(entry.channel).toBe('preview');
         }
     );
 

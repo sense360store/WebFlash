@@ -2,8 +2,8 @@
   "name": "Sense360 Modular Platform Firmware",
   "version": "1.0.8",
   "manifest_version": 1,
-  "generated_at": "2026-07-28T12:04:05.374960+00:00",
-  "source_commit": "a1ff535bc12c18001485a4b57b01833cfe902d68",
+  "generated_at": "2026-08-21T12:20:15.451496+00:00",
+  "source_commit": "41b6920492e36a93d9b389c5fa7e334dfff84c75",
   "home_assistant_domain": "esphome",
   "funding_url": "https://sense360store.com/support",
   "new_install_prompt_erase": true,
@@ -11,29 +11,29 @@
   "builds": [
     {
       "device_type": "Core Module",
-      "version": "1.0.9",
+      "version": "1.0.10",
       "channel": "preview",
       "description": "Preview firmware for Sense360 Ceiling-POE-AirIQ-RoomIQ configuration. Early-access build intended for limited validation of upcoming updates.",
       "chipFamily": "ESP32-S3",
       "parts": [
         {
-          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.9-stable.bin",
+          "path": "firmware/configurations/Sense360-Ceiling-POE-AirIQ-RoomIQ-v1.0.10-preview.bin",
           "offset": 0,
-          "md5": "da0325f4f4282b449211eb8654c4dc31",
-          "sha256": "d2e67410a19caf6a7c361c0fb8912b9f63057efb5eb953d6ffe674d638c5359c",
-          "signature": "H3Gf3yT9AgH4w59oT3ki8XIZKryGMCVb+IOUjPsW07I=",
-          "signature_ed25519": "0FSLhX6nHdaQONJnNUhWmc3mhy8PWUWJajSFKj+AEWtnNJmjkDSd0X9PIcJ5sDYnJ8ClNVetPL6MBBOKhzetAw==",
-          "signature_key_id": "dev-2026-01"
+          "md5": "fb98ebd346c8f9a5fe4b1bbfb9b1d122",
+          "sha256": "c06389ba52e6c255b965287d52031729b726698b5da340851f3e5b86eceef698",
+          "signature": "U9HYFfzX9QFvBUNoQTNWNac3bqKuAxKLPWwtQHfilN8=",
+          "signature_ed25519": "ZL/eRn5JlRzd+ELQEKzLMouBw8ClLkkC/a+ffrvueGi95sIWjSznHGnFmqkbFGwYctWtrKcWApKJt5+Z4AsfAw==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-28T11:59:48.307051+00:00",
-      "file_size": 1019040,
+      "build_date": "2026-08-21T12:20:14.543412+00:00",
+      "file_size": 1065568,
       "improv": false,
-      "md5": "da0325f4f4282b449211eb8654c4dc31",
-      "sha256": "d2e67410a19caf6a7c361c0fb8912b9f63057efb5eb953d6ffe674d638c5359c",
-      "signature": "H3Gf3yT9AgH4w59oT3ki8XIZKryGMCVb+IOUjPsW07I=",
-      "signature_ed25519": "0FSLhX6nHdaQONJnNUhWmc3mhy8PWUWJajSFKj+AEWtnNJmjkDSd0X9PIcJ5sDYnJ8ClNVetPL6MBBOKhzetAw==",
-      "signature_key_id": "dev-2026-01",
+      "md5": "fb98ebd346c8f9a5fe4b1bbfb9b1d122",
+      "sha256": "c06389ba52e6c255b965287d52031729b726698b5da340851f3e5b86eceef698",
+      "signature": "U9HYFfzX9QFvBUNoQTNWNac3bqKuAxKLPWwtQHfilN8=",
+      "signature_ed25519": "ZL/eRn5JlRzd+ELQEKzLMouBw8ClLkkC/a+ffrvueGi95sIWjSznHGnFmqkbFGwYctWtrKcWApKJt5+Z4AsfAw==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "AirIQ air-quality sensing",
@@ -47,12 +47,12 @@
       ],
       "known_issues": [],
       "changelog": [
-        "Security rebuild: the shared factory-default credentials were removed; this build ships unprovisioned, with no device credentials configured",
-        "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
-        "Supersedes v1.0.6. No functional changes. A security advisory will follow."
+        "Refines the default Home Assistant entity surface to 13 customer-facing room and air-quality entities",
+        "Moves diagnostic and configuration-only entities out of the default view while keeping them available",
+        "Keeps the Core + RoomIQ + AirIQ review composition on the preview channel"
       ],
-      "source_commit": "a1ff535bc12c18001485a4b57b01833cfe902d68",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/a1ff535bc12c18001485a4b57b01833cfe902d68",
+      "source_commit": "41b6920492e36a93d9b389c5fa7e334dfff84c75",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/41b6920492e36a93d9b389c5fa7e334dfff84c75",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -80,18 +80,18 @@
           "md5": "d3725a20c1ba62d634012d178634117c",
           "sha256": "3a733c65288a5e6745b939e333c1529e3c01034ca3dadbd227a033b63b0a88a7",
           "signature": "gTry7mqjQZTIAkukCIw1N1iO9sj25D4XHuPzRZnodBc=",
-          "signature_ed25519": "6NvtDA/yGq+1z+x89WsC4B3o9Ny5F8KavlQpca0Ej7XE2i9eS3lCtERK6gxUVG+OwDXzCybvLgSGVT+3UooACA==",
-          "signature_key_id": "dev-2026-01"
+          "signature_ed25519": "Hk2+1T0CkxFaSY/SIOA3DR3Yk+nG8iXkK/kMZRlus070DZUBd3ehJAWloZ++rKfUw6AcGgYBmQTQuIpxlGSQDw==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-25T17:25:36.363988+00:00",
+      "build_date": "2026-08-21T12:20:10.376299+00:00",
       "file_size": 886320,
       "improv": false,
       "md5": "d3725a20c1ba62d634012d178634117c",
       "sha256": "3a733c65288a5e6745b939e333c1529e3c01034ca3dadbd227a033b63b0a88a7",
       "signature": "gTry7mqjQZTIAkukCIw1N1iO9sj25D4XHuPzRZnodBc=",
-      "signature_ed25519": "6NvtDA/yGq+1z+x89WsC4B3o9Ny5F8KavlQpca0Ej7XE2i9eS3lCtERK6gxUVG+OwDXzCybvLgSGVT+3UooACA==",
-      "signature_key_id": "dev-2026-01",
+      "signature_ed25519": "Hk2+1T0CkxFaSY/SIOA3DR3Yk+nG8iXkK/kMZRlus070DZUBd3ehJAWloZ++rKfUw6AcGgYBmQTQuIpxlGSQDw==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "RoomIQ room sensing"
@@ -107,8 +107,8 @@
         "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
         "Supersedes v1.0.5. No functional changes. A security advisory will follow."
       ],
-      "source_commit": "a1ff535bc12c18001485a4b57b01833cfe902d68",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/a1ff535bc12c18001485a4b57b01833cfe902d68",
+      "source_commit": "41b6920492e36a93d9b389c5fa7e334dfff84c75",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/41b6920492e36a93d9b389c5fa7e334dfff84c75",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -135,18 +135,18 @@
           "md5": "5024a4758efcae525d424bdd03ab1e48",
           "sha256": "4d10f8a9038e8316d25f24299cbee0bd72e81d039d032126f43f89da0010906c",
           "signature": "QJyE6MMsCn5VlgOln74531yXVC+dGwqExX14HMNL7po=",
-          "signature_ed25519": "HwLZHsrfiNECx3xwsOyJXxUFSaFInklS325C8FJJ+nKDGhP3hN/EcFWGq2TE5rAVsJtF4+lQedjYU/jd9mcvCA==",
-          "signature_key_id": "dev-2026-01"
+          "signature_ed25519": "vKO0yBdO811mUVNeaSIY+hEp7E645/CulIUp4v0I1EHADj0CLtsqMExCfQzAqvbHKDZ6c+LvTkVM41wM0uHxBw==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-25T17:25:36.379988+00:00",
+      "build_date": "2026-08-21T12:20:10.382299+00:00",
       "file_size": 918016,
       "improv": false,
       "md5": "5024a4758efcae525d424bdd03ab1e48",
       "sha256": "4d10f8a9038e8316d25f24299cbee0bd72e81d039d032126f43f89da0010906c",
       "signature": "QJyE6MMsCn5VlgOln74531yXVC+dGwqExX14HMNL7po=",
-      "signature_ed25519": "HwLZHsrfiNECx3xwsOyJXxUFSaFInklS325C8FJJ+nKDGhP3hN/EcFWGq2TE5rAVsJtF4+lQedjYU/jd9mcvCA==",
-      "signature_key_id": "dev-2026-01",
+      "signature_ed25519": "vKO0yBdO811mUVNeaSIY+hEp7E645/CulIUp4v0I1EHADj0CLtsqMExCfQzAqvbHKDZ6c+LvTkVM41wM0uHxBw==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "VentIQ bathroom air-quality sensing",
@@ -167,8 +167,8 @@
         "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
         "Supersedes v1.0.4. No functional changes. A security advisory will follow."
       ],
-      "source_commit": "a1ff535bc12c18001485a4b57b01833cfe902d68",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/a1ff535bc12c18001485a4b57b01833cfe902d68",
+      "source_commit": "41b6920492e36a93d9b389c5fa7e334dfff84c75",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/41b6920492e36a93d9b389c5fa7e334dfff84c75",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -196,18 +196,18 @@
           "md5": "01d966d60ef52d87cab12b1c28b913de",
           "sha256": "c4596b204cfb1ec159d3e10dfb3e2262050464d18cd1b3860387b74499babff6",
           "signature": "mayc/vLYxkfuaC4zJSakAjbKIi/0TzMx54Pm4RzCq5A=",
-          "signature_ed25519": "n9w+hkOAfx4OTxihpUYMR+Ux+4KQVGUzQo25lcXhJoYjd6RY46k+ReRhz32HXLhwdqz5z0lJIx5EDVoYpb7nBA==",
-          "signature_key_id": "dev-2026-01"
+          "signature_ed25519": "/SSxCgnoyAbbmOhua84WBoGt236T2FX0uwwnQw7cwuhQmRs1nCIbXd9zQ0HcOLMIpv+4Pg4ZndJdd4Cs0b9jBA==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-25T17:25:36.367988+00:00",
+      "build_date": "2026-08-21T12:20:10.377299+00:00",
       "file_size": 957168,
       "improv": false,
       "md5": "01d966d60ef52d87cab12b1c28b913de",
       "sha256": "c4596b204cfb1ec159d3e10dfb3e2262050464d18cd1b3860387b74499babff6",
       "signature": "mayc/vLYxkfuaC4zJSakAjbKIi/0TzMx54Pm4RzCq5A=",
-      "signature_ed25519": "n9w+hkOAfx4OTxihpUYMR+Ux+4KQVGUzQo25lcXhJoYjd6RY46k+ReRhz32HXLhwdqz5z0lJIx5EDVoYpb7nBA==",
-      "signature_key_id": "dev-2026-01",
+      "signature_ed25519": "/SSxCgnoyAbbmOhua84WBoGt236T2FX0uwwnQw7cwuhQmRs1nCIbXd9zQ0HcOLMIpv+4Pg4ZndJdd4Cs0b9jBA==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "PoE-powered Sense360 Core configuration",
         "VentIQ bathroom air-quality sensing",
@@ -229,8 +229,8 @@
         "in this build the local API is unencrypted, over-the-air updates and the web interface are unauthenticated, and the fallback Wi-Fi hotspot is open; if you require authenticated access, build your own firmware with unique secrets. Automatic per-device credential setup is planned but not yet implemented",
         "Supersedes v1.0.0-led-preview. Preview channel: not hardware verified. A security advisory will follow."
       ],
-      "source_commit": "a1ff535bc12c18001485a4b57b01833cfe902d68",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/a1ff535bc12c18001485a4b57b01833cfe902d68",
+      "source_commit": "41b6920492e36a93d9b389c5fa7e334dfff84c75",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/41b6920492e36a93d9b389c5fa7e334dfff84c75",
       "signed_by": "Sense360 release pipeline",
       "deprecated": false,
       "deprecation_reason": null,
@@ -259,26 +259,26 @@
           "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
           "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
           "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
-          "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
-          "signature_key_id": "dev-2026-01"
+          "signature_ed25519": "bSWV2Osg2KyDWLl0erTKHdSbGUHCbvmZTiE/bx/Zg5nJ/3MWMhE7uTcqdHavj4EU0gGlinh2mAI6yY25cR7pDQ==",
+          "signature_key_id": "sense360-prod-2026-02"
         }
       ],
-      "build_date": "2026-07-25T17:25:36.383988+00:00",
+      "build_date": "2026-08-21T12:20:10.383299+00:00",
       "file_size": 524288,
       "improv": false,
       "md5": "ec315fe1f5e5f22be61c15be0ed02e6e",
       "sha256": "feeae47feb8bf71549e018fc8028ca702edcd14c6f9888a2478c5d6d6d09d5c7",
       "signature": "02e2nV2fi/sR5NzXMTNyxMf1G7DxJhS+1+fRmi5TfnM=",
-      "signature_ed25519": "o1XCIIFVyMcjhWDJerfgJ/lKv9u7jVVx1/Mw5gf5yqRKZ2TzB6r7OtUwleEMd5/pmP12ChMmcboac2NU2kJmAg==",
-      "signature_key_id": "dev-2026-01",
+      "signature_ed25519": "bSWV2Osg2KyDWLl0erTKHdSbGUHCbvmZTiE/bx/Zg5nJ/3MWMhE7uTcqdHavj4EU0gGlinh2mAI6yY25cR7pDQ==",
+      "signature_key_id": "sense360-prod-2026-02",
       "features": [
         "rescue"
       ],
       "hardware_requirements": [],
       "known_issues": [],
       "changelog": [],
-      "source_commit": "a1ff535bc12c18001485a4b57b01833cfe902d68",
-      "source_url": "https://github.com/sense360store/WebFlash/commit/a1ff535bc12c18001485a4b57b01833cfe902d68",
+      "source_commit": "41b6920492e36a93d9b389c5fa7e334dfff84c75",
+      "source_url": "https://github.com/sense360store/WebFlash/commit/41b6920492e36a93d9b389c5fa7e334dfff84c75",
       "signed_by": null,
       "deprecated": false,
       "deprecation_reason": null,
