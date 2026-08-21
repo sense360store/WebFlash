@@ -239,14 +239,21 @@ describe('WF-PRODUCT-004 — current fixture classifications', () => {
         // through isWebflashImportEligible would re-run the validator's own
         // authorisation logic over the same catalog (a tautology that could
         // never catch an unreviewed eligibility flip in a row no other test
-        // pins individually). Today: Release-One + RoomIQ + AirIQ-RoomIQ
-        // (production), VentIQ-RoomIQ-LED (preview), 3 single-driver fan
-        // manual-previews, 5 room-bundle fan previews. CI-PIPELINE-CLARITY-001
-        // P4 de-listed Ceiling-POE-RoomIQ-LED (never built / served, no
-        // upstream artifact) from preview to hardware-pending, dropping the
-        // import-eligible count from 13 to 12.
+        // pins individually). This is a reviewed count, not a mirrored
+        // lifecycle label: it must be re-reviewed, never auto-derived, when a
+        // catalog refresh moves it.
+        //
+        // Today the 10 are the 4 build-matrix configs (Release-One, RoomIQ,
+        // AirIQ-RoomIQ, VentIQ-RoomIQ-LED) plus 6 manual-preview fan rows
+        // authorised by webflash_import_eligibility.eligible=true (FanPWM,
+        // FanDAC, VentIQ-FanPWM, VentIQ-FanDAC, AirIQ-FanPWM, AirIQ-FanDAC).
+        // The count moved 12 -> 10 when the whole-file catalog refresh landed
+        // with the v1.0.10-preview import: upstream moved both FanRelay rows to
+        // the `experimental` channel, which the manual-preview lane refuses.
+        // That is a tightening (two configs lost import authorisation); nothing
+        // gained it. FanTRIAC stays out on webflash_build_matrix=false.
         expect(report.summary.total).toBe(catalog.products.length);
-        expect(report.summary.import_eligible).toBe(12);
+        expect(report.summary.import_eligible).toBe(10);
         expect(report.summary.manifest_eligible).toBe(expectedBuilds.length);
         expect(report.summary.kit_eligible).toBe(expectedBuilds.length);
         expect(report.summary.required_configs_eligible).toBe(
@@ -264,27 +271,29 @@ describe('WEBFLASH-RELAY-001 — FanRelay manual-preview import eligibility', ()
         expect(PREVIEW_IMPORT_FIELDS).not.toContain('webflash_wrapper');
     });
 
-    test('FanRelay stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
+    test('FanRelay is not manifest / kit / REQUIRED_CONFIGS eligible', () => {
         const e = findEntry(report, FANRELAY_CONFIG);
         expect(e).toBeDefined();
-        // Status stays hardware-pending; the eligibility flag is what authorises it.
-        expect(e.status).toBe('hardware-pending');
         expect(e.shape_issues).toEqual([]);
-        expect(e.effective_eligibility.import.eligible).toBe(true);
-        // The stale v1.0.0-preview retirement removed the source entry, so
-        // effective manifest / kit eligibility drops with it.
+        // The catalog-level import verdict is deliberately NOT pinned here.
+        // It depends on upstream-owned fields the whole-file catalog refresh
+        // mirrors verbatim (upstream has since moved this row to the
+        // `experimental` channel, which the manual-preview lane refuses), and
+        // that verdict may legitimately move in either direction without a
+        // WebFlash decision. The manual-preview lane itself stays covered by
+        // the FanPWM / FanDAC cases below.
+        //
+        // What must hold in every one of those worlds is the WebFlash
+        // contract: FanRelay reaches no served surface. Effective manifest and
+        // kit eligibility stay false because the stale v1.0.0-preview
+        // retirement removed the source entry, and REQUIRED_CONFIGS stays
+        // production-only.
         expect(e.effective_eligibility.manifest.eligible).toBe(false);
         expect(e.effective_eligibility.kit.eligible).toBe(false);
         expect(e.effective_eligibility.required_configs.eligible).toBe(false);
         expect(
             e.effective_eligibility.required_configs.reasons.some(r =>
                 /production-only/i.test(r)
-            )
-        ).toBe(true);
-        // The import reason must name the manual-preview lane explicitly.
-        expect(
-            e.effective_eligibility.import.reasons.some(r =>
-                /manual-preview lane/i.test(r)
             )
         ).toBe(true);
     });
@@ -369,8 +378,10 @@ describe('WEBFLASH-PWM-001 — FanPWM manual-preview import eligibility', () => 
     test('FanPWM stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
         const e = findEntry(report, FANPWM_CONFIG);
         expect(e).toBeDefined();
-        // Status stays hardware-pending; the eligibility flag is what authorises it.
-        expect(e.status).toBe('hardware-pending');
+        // The mirrored upstream status is not pinned: it is moved by the
+        // whole-file catalog refresh, not by a WebFlash decision. The explicit
+        // manual-preview flag is what authorises the import lane, and that is
+        // what the reason assertion below pins.
         expect(e.shape_issues).toEqual([]);
         expect(e.effective_eligibility.import.eligible).toBe(true);
         // The stale v1.0.0-preview retirement removed the source entry, so
@@ -412,8 +423,10 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview impor
     test('FanDAC stays import eligible at catalog level but is retired from manifest + kit surfaces', () => {
         const e = findEntry(report, FANDAC_CONFIG);
         expect(e).toBeDefined();
-        // Status stays hardware-pending; the eligibility flag is what authorises it.
-        expect(e.status).toBe('hardware-pending');
+        // The mirrored upstream status is not pinned: it is moved by the
+        // whole-file catalog refresh, not by a WebFlash decision. The explicit
+        // manual-preview flag is what authorises the import lane, and that is
+        // what the reason assertion below pins.
         expect(e.shape_issues).toEqual([]);
         expect(e.effective_eligibility.import.eligible).toBe(true);
         // The stale v1.0.0-preview retirement removed the source entry, so
@@ -451,26 +464,37 @@ describe('WEBFLASH-PREVIEW-IMPORT-AUTOMATION-001 — FanDAC manual-preview impor
 describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility', () => {
     const report = runForFixture();
 
-    // Of the first preview batch, AirIQ-RoomIQ was promoted by upstream to
-    // production / stable and re-imported as v1.0.6 stable; RoomIQ-LED stays
-    // retired (upstream's regenerated v1.0.0-preview checksums-sha256.txt no
-    // longer lists its asset, so the importer fails closed on it).
+    // Of the first preview batch, AirIQ-RoomIQ is the served reviewer build
+    // and ships as the v1.0.10 preview (its v1.0.9 stable-named predecessor was
+    // retired in the same PR); RoomIQ-LED stays retired (upstream's regenerated
+    // v1.0.0-preview checksums-sha256.txt no longer lists its asset, so the
+    // importer fails closed on it).
 
-    test('Ceiling-POE-AirIQ-RoomIQ is a promoted stable: fully eligible, shipping in sources + manifest + disk', () => {
+    test('Ceiling-POE-AirIQ-RoomIQ is the served review build: import / manifest / kit eligible, never REQUIRED_CONFIGS', () => {
         const e = findEntry(report, 'Ceiling-POE-AirIQ-RoomIQ');
         expect(e).toBeDefined();
-        expect(e.status).toBe('production');
         expect(e.shape_issues).toEqual([]);
+        // The reviewed served state is WebFlash-owned and lives in the
+        // expected-surface fixture, so it is asserted from there rather than
+        // from the mirrored upstream status label.
+        expect(expectedVersionOf('Ceiling-POE-AirIQ-RoomIQ')).toBe('1.0.10');
+        expect(expectedChannelOf('Ceiling-POE-AirIQ-RoomIQ')).toBe('preview');
         expect(e.effective_eligibility.import.eligible).toBe(true);
         expect(e.effective_eligibility.manifest.eligible).toBe(true);
         expect(e.effective_eligibility.kit.eligible).toBe(true);
-        // production + stable is REQUIRED_CONFIGS-ELIGIBLE at catalog level;
-        // eligibility is permission, not presence (see the surface test below).
-        expect(e.effective_eligibility.required_configs.eligible).toBe(true);
+        // REQUIRED_CONFIGS is production-only, and this config serves on the
+        // preview channel, so it is not REQUIRED_CONFIGS-eligible at all. The
+        // live allowlist stays Release-One + Rescue (asserted separately).
+        expect(e.effective_eligibility.required_configs.eligible).toBe(false);
+        expect(
+            e.effective_eligibility.required_configs.reasons.some(r =>
+                /production-only/i.test(r)
+            )
+        ).toBe(true);
     });
 
     test('Ceiling-POE-AirIQ-RoomIQ ships everywhere except kits + REQUIRED_CONFIGS (Kitchen kit withheld)', () => {
-        // The v1.0.6 stable import put the config back in sources, the
+        // The v1.0.10 preview import put the config back in sources, the
         // manifest, and on disk. The S360-KIT-KITCHEN-P kit card stays
         // withheld per the upstream catalog bundle gating (owner waiver
         // HW-AIRIQ-WAIVER-2026-06), and the live REQUIRED_CONFIGS allowlist
@@ -494,10 +518,11 @@ describe('WF-PREVIEW-IMPORT-FIRST-BATCH-001 — first preview batch eligibility'
         // config can be built and re-listed later.
         const e = findEntry(report, 'Ceiling-POE-RoomIQ-LED');
         expect(e).toBeDefined();
-        expect(e.status).toBe('hardware-pending');
         expect(e.shape_issues).toEqual([]);
-        // hardware-pending without an explicit webflash_import_eligibility flag
-        // is not import-eligible; manifest / kit eligibility drop with it.
+        // The mirrored upstream status is not pinned. What keeps this config
+        // de-listed is WebFlash-owned: it is out of the upstream WebFlash build
+        // matrix and carries no explicit webflash_import_eligibility flag, so
+        // it is not import-eligible and manifest / kit eligibility drop with it.
         expect(e.effective_eligibility.import.eligible).toBe(false);
         expect(e.effective_eligibility.manifest.eligible).toBe(false);
         expect(e.effective_eligibility.kit.eligible).toBe(false);
