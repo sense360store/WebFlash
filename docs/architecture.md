@@ -32,12 +32,27 @@ independent halves that only ever communicate through one file, `manifest.json`:
 The pipeline turns firmware binaries into the catalog the browser reads:
 
 - New firmware enters the tree through the **cross-repo importer**
-  ([`scripts/import-firmware-sources.py`](../scripts/import-firmware-sources.py),
-  dispatched by [`.github/workflows/firmware-import.yml`](../.github/workflows/firmware-import.yml)),
+  ([`scripts/import-firmware-sources.py`](../scripts/import-firmware-sources.py)),
   which fetches each upstream `.bin` from `sense360store/esphome-public`,
   verifies its SHA-256 against the upstream checksums, enforces the per-source
   `block_tokens` allowlist, and writes a `<asset>.meta.json` sidecar. The
-  full contract record (`docs/firmware-import.md`) is archived — see
+  sanctioned happy path is the **combined intake workflow**
+  ([`.github/workflows/firmware-intake.yml`](../.github/workflows/firmware-intake.yml)
+  driving [`scripts/firmware-intake.py`](../scripts/firmware-intake.py)): one
+  dispatch (manual, or a future cross-repo dispatch from `esphome-public`)
+  authors the `firmware/sources.json` entry, runs the importer, retires the
+  superseded build for the same config, refreshes the vendored fixtures,
+  regenerates the manifests, runs the test suites, and opens **one PR to
+  `main`** — it never commits to `main`, merges, or deploys. Import
+  authorisation comes only from the WebFlash-owned eligibility lanes in the
+  vendored catalog fixture (`webflash_build_matrix` /
+  `webflash_import_eligibility.eligible`), never from upstream lifecycle
+  status. The step-by-step workflows
+  ([`add-firmware-source.yml`](../.github/workflows/add-firmware-source.yml),
+  [`firmware-import.yml`](../.github/workflows/firmware-import.yml)) remain
+  as manual recovery paths; **nothing chains automatically between them** —
+  each is its own `workflow_dispatch`. The full contract record
+  (`docs/firmware-import.md`) is archived — see
   [`docs/archive-index.md`](archive-index.md).
 - [`scripts/gen-manifests.py`](../scripts/gen-manifests.py) then scans
   `firmware/`, parses each filename via the canonical naming pattern, and

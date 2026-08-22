@@ -75,6 +75,17 @@ Or run [`firmware-import.yml`](.github/workflows/firmware-import.yml) via
 `workflow_dispatch` to do the same in CI; it auto-commits the result to the
 branch you dispatch from and never auto-merges or deploys directly.
 
+For the combined happy path, dispatch
+[`firmware-intake.yml`](.github/workflows/firmware-intake.yml) instead: one
+run authors the `firmware/sources.json` entry, imports and verifies the
+binary, retires the superseded build for the same config, refreshes the
+vendored fixtures, regenerates the manifests, runs the test suites, and opens
+one PR to `main` on a dedicated `intake/<config>` branch. It never commits to
+`main`, merges, or deploys — `firmware-publish.yml` remains the publication
+boundary after the PR merges through review. The two step-by-step workflows
+above remain as recovery paths; nothing chains automatically between them
+(each is its own manual `workflow_dispatch`).
+
 The full contract record (required release-body sections, blocked tokens,
 sidecar provenance fields, and the smoke-check pipeline) lived in
 `docs/firmware-import.md`, archived — see
