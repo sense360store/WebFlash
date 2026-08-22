@@ -82,7 +82,11 @@ binary, retires the superseded build for the same config, refreshes the
 vendored fixtures, regenerates the manifests, runs the test suites, and opens
 one PR to `main` on a dedicated `intake/<config>` branch. It never commits to
 `main`, merges, or deploys — `firmware-publish.yml` remains the publication
-boundary after the PR merges through review. The two step-by-step workflows
+boundary after the PR merges through review. Intake only accepts source
+repos exactly listed in the `allowed_source_repos` trust allowlist in
+`firmware/sources-policy.json`; the check runs before any upstream fetch, on
+both dispatch routes, with no bypass flag, and a missing or malformed
+allowlist fails closed for every repo. The two step-by-step workflows
 above remain as recovery paths; nothing chains automatically between them
 (each is its own manual `workflow_dispatch`).
 

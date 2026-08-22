@@ -11,6 +11,14 @@ unit-testable) offline via payload files.
 
 What one successful run stages (never commits, never deploys):
 
+0. **Trusted-source allowlist (first gate).** ``source_repo`` must be exactly
+   listed in ``allowed_source_repos`` in ``firmware/sources-policy.json``.
+   The check runs BEFORE any upstream release fetch, checksum fetch, catalog
+   fetch, source authoring, or import side effect, and both dispatch routes
+   (workflow_dispatch and repository_dispatch) funnel through this same code
+   path. Dispatch payload shape validation is not trust; a missing/empty/
+   malformed allowlist fails closed for every repo, and there is no bypass
+   flag.
 1. **Eligibility gate (WebFlash-owned lanes).** The config must appear in the
    vendored catalog fixture ``__tests__/fixtures/esphome-product-catalog.json``
    with ``webflash_build_matrix: true`` OR an explicit
@@ -60,6 +68,9 @@ the normal review gate.
 
 Fail-closed refusals (each aborts with a clear message, exit 1):
 
+* a ``source_repo`` not exactly on the ``allowed_source_repos`` allowlist in
+  ``firmware/sources-policy.json`` — checked before any network fetch or
+  side effect; a missing/empty/malformed allowlist refuses every repo;
 * config_string not shaped like a config token, or ``Rescue``, or carrying a
   ``FanTRIAC`` segment;
 * channel outside {stable, preview};
@@ -160,6 +171,74 @@ class IntakeError(RuntimeError):
 # =====================================================================
 # Pure helpers (no network) — unit-testable with synthetic data.
 # =====================================================================
+
+
+def load_allowed_source_repos(policy_path: Optional[Path]) -> List[str]:
+    """Load the trusted-source allowlist from firmware/sources-policy.json.
+
+    Unlike the authoring overrides in that file (which fall back to built-in
+    defaults when absent), ``allowed_source_repos`` is a TRUST decision, so
+    every defect fails closed: a missing policy file, a missing key, a
+    non-list value, an empty list, or a non-string entry all refuse intake
+    outright. There is no built-in fallback list and no bypass flag.
+    """
+
+    if policy_path is None or not policy_path.exists():
+        raise IntakeError(
+            "Trusted-source allowlist unavailable: firmware/sources-policy.json "
+            f"was not found at {policy_path}. Intake refuses every source repo "
+            "until the policy file with 'allowed_source_repos' is present."
+        )
+    try:
+        data = json.loads(policy_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise IntakeError(
+            f"Trusted-source allowlist unavailable: policy file {policy_path} "
+            f"could not be parsed ({exc}). Intake refuses every source repo."
+        ) from exc
+    if not isinstance(data, dict):
+        raise IntakeError(
+            f"Trusted-source allowlist unavailable: policy file {policy_path} "
+            "must be a JSON object. Intake refuses every source repo."
+        )
+    raw = data.get("allowed_source_repos")
+    if (
+        not isinstance(raw, list)
+        or not raw
+        or not all(isinstance(item, str) and item.strip() for item in raw)
+    ):
+        raise IntakeError(
+            f"Trusted-source allowlist unavailable: policy file {policy_path} "
+            "must declare a non-empty 'allowed_source_repos' array of "
+            "owner/repo strings. Intake refuses every source repo."
+        )
+    return [item.strip() for item in raw]
+
+
+def assert_source_repo_allowed(
+    source_repo: str, policy_path: Optional[Path]
+) -> None:
+    """Refuse any source repo not exactly on the trusted allowlist.
+
+    This is the FIRST gate of every intake — it runs before any upstream
+    release fetch, checksum fetch, catalog fetch, source authoring, or import
+    side effect, and it applies identically to every dispatch route (the
+    workflow_dispatch and repository_dispatch triggers both funnel into this
+    same code path). Dispatch payload shape validation is not trust; this
+    allowlist is. Matching is exact (case-sensitive), so any variant spelling
+    fails closed.
+    """
+
+    allowed = load_allowed_source_repos(policy_path)
+    repo = (source_repo or "").strip()
+    if repo not in allowed:
+        raise IntakeError(
+            f"source_repo '{repo}' is not on the trusted-source allowlist "
+            "(allowed_source_repos in firmware/sources-policy.json: "
+            f"{', '.join(allowed)}). Intake refuses it before any network "
+            "fetch or import side effect. Adding a repo to the allowlist is "
+            "a reviewed, deliberate policy change — there is no bypass flag."
+        )
 
 
 def validate_config_string(config: str) -> str:
@@ -473,6 +552,13 @@ def run_intake(
     skip_catalog_refresh: bool = False,
     retired_in_label: Optional[str] = None,
 ) -> Dict[str, Any]:
+    # Trust boundary FIRST: the source repo must be on the committed
+    # allowlist before anything else happens — no release fetch, no checksum
+    # fetch, no catalog fetch, no authoring, no import side effect. Both
+    # dispatch triggers funnel through this same check; upstream data
+    # (release payloads, checksums, catalog status) can never override it.
+    assert_source_repo_allowed(source_repo, policy_path)
+
     config = validate_config_string(config_string)
     tag = add_source.normalize_tag(raw_tag)
     if not tag:
@@ -788,7 +874,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--sources", default=str(DEFAULT_SOURCES_PATH), help="sources.json path."
     )
     parser.add_argument(
-        "--policy", default=str(DEFAULT_POLICY_PATH), help="Optional policy path."
+        "--policy",
+        default=str(DEFAULT_POLICY_PATH),
+        help=(
+            "Policy path (default: firmware/sources-policy.json). Carries the "
+            "authoring overrides AND the allowed_source_repos trust allowlist; "
+            "a missing or malformed allowlist fails intake closed."
+        ),
     )
     parser.add_argument(
         "--firmware-dir", default=str(DEFAULT_FIRMWARE_DIR), help="firmware/ path."

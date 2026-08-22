@@ -9,27 +9,37 @@ name: "Release: Firmware Intake (combined source + import, one PR)"
 # exactly one branch and one PR to main, reviewed by a human.
 #
 # What one run does (scripts/firmware-intake.py is the engine):
-#   1. Validates the dispatch inputs (shape only; authorisation is next).
-#   2. Refuses any config that is not authorised by a WebFlash-owned
+#   1. Validates the dispatch inputs (shape only; shape validation is NOT
+#      trust — the trust decisions are the next two gates).
+#   2. Refuses any source_repo that is not exactly listed in the
+#      allowed_source_repos trust allowlist in firmware/sources-policy.json.
+#      The orchestrator enforces this BEFORE any upstream release fetch,
+#      checksum fetch, catalog fetch, source authoring, or import side
+#      effect; a missing/empty/malformed allowlist refuses every repo, and
+#      there is no bypass flag. Both triggers (workflow_dispatch and
+#      repository_dispatch) funnel into the one orchestrator invocation
+#      below, so they pass through the exact same policy check — the
+#      repository_dispatch payload cannot bypass it.
+#   3. Refuses any config that is not authorised by a WebFlash-owned
 #      eligibility lane in the vendored catalog fixture
 #      (webflash_build_matrix=true or webflash_import_eligibility.eligible=true,
 #      the lanes established by PR #607). Upstream lifecycle status is never
 #      consulted for authorisation.
-#   3. Authors/updates the one firmware/sources.json entry (asset name, pinned
+#   4. Authors/updates the one firmware/sources.json entry (asset name, pinned
 #      SHA256 from checksums-sha256.txt, block_tokens deny-list) — Release 4
 #      semantics, unchanged.
-#   4. Imports the binary through import_source_entry — Release 5 semantics,
+#   5. Imports the binary through import_source_entry — Release 5 semantics,
 #      unchanged: required assets, upstream checksum match, pinned SHA match,
 #      default-credential scan, block tokens (FanTRIAC/LED), size floor,
 #      release-body sections, provenance sidecar, same-channel prune.
-#   5. Retires the superseded build for the same config safely (including the
+#   6. Retires the superseded build for the same config safely (including the
 #      cross-channel case the importer prune cannot handle), updates the
 #      expected-surface fixture in the same change set, and refreshes the
 #      vendored product-catalog fixture.
-#   6. Regenerates manifest.json + firmware-N.json with the same signing
+#   7. Regenerates manifest.json + firmware-N.json with the same signing
 #      handshake as firmware-publish.yml, runs the naming-policy validator,
 #      the import-readiness classifier, and BOTH unit-test suites.
-#   7. Pushes everything to the per-config branch intake/<config_string> and
+#   8. Pushes everything to the per-config branch intake/<config_string> and
 #      creates (or updates) one PR to main.
 #
 # Hard boundaries:
@@ -55,8 +65,9 @@ name: "Release: Firmware Intake (combined source + import, one PR)"
 #     repository_dispatch. WebFlash stores no upstream credential.
 #   * Dispatch payload values are untrusted input: they are only ever passed
 #     through env (never interpolated into run bodies) and are shape-validated
-#     before use; authorisation comes from the WebFlash-owned eligibility
-#     lanes, never from the payload.
+#     before use. Shape validation is not trust: authorisation comes from the
+#     allowed_source_repos allowlist in firmware/sources-policy.json and the
+#     WebFlash-owned eligibility lanes, never from the payload.
 #   * PRs opened with the default GITHUB_TOKEN do not trigger the
 #     pull_request CI workflow (a GitHub Actions limitation). The full suites
 #     already ran inside this workflow, and the deploy gate re-runs them on

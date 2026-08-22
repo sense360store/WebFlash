@@ -43,9 +43,12 @@ The pipeline turns firmware binaries into the catalog the browser reads:
   authors the `firmware/sources.json` entry, runs the importer, retires the
   superseded build for the same config, refreshes the vendored fixtures,
   regenerates the manifests, runs the test suites, and opens **one PR to
-  `main`** — it never commits to `main`, merges, or deploys. Import
-  authorisation comes only from the WebFlash-owned eligibility lanes in the
-  vendored catalog fixture (`webflash_build_matrix` /
+  `main`** — it never commits to `main`, merges, or deploys. The source repo
+  must be exactly listed in the `allowed_source_repos` trust allowlist in
+  `firmware/sources-policy.json` (checked before any upstream fetch or
+  import side effect, on both dispatch routes, with no bypass flag), and
+  import authorisation comes only from the WebFlash-owned eligibility lanes
+  in the vendored catalog fixture (`webflash_build_matrix` /
   `webflash_import_eligibility.eligible`), never from upstream lifecycle
   status. The step-by-step workflows
   ([`add-firmware-source.yml`](../.github/workflows/add-firmware-source.yml),

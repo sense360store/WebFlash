@@ -26,6 +26,10 @@
  *   7. The superseded Release 4 / Release 5 workflows still exist unchanged
  *      as recovery paths (backwards compatibility), and the old false claim
  *      that firmware-import runs "on the resulting merge" stays gone.
+ *   8. The trusted-source allowlist (allowed_source_repos in
+ *      firmware/sources-policy.json) is committed, well-formed, and governs
+ *      the single orchestrator invocation both dispatch routes share — no
+ *      --policy override, no bypass flag.
  */
 
 import { describe, test, expect } from '@jest/globals';
@@ -194,6 +198,37 @@ describe('firmware-intake workflow — pipeline steps stay wired', () => {
         expect(intakeYaml).toMatch(/webflash_build_matrix/);
         expect(intakeYaml).toMatch(/webflash_import_eligibility/);
         expect(intakeYaml).toMatch(/never consulted|never by upstream lifecycle status|never from upstream/i);
+    });
+});
+
+describe('firmware-intake workflow — trusted-source allowlist', () => {
+    test('firmware/sources-policy.json pins the allowed_source_repos allowlist', () => {
+        const policy = JSON.parse(
+            readFileSync(join(ROOT, 'firmware', 'sources-policy.json'), 'utf8')
+        );
+        expect(Array.isArray(policy.allowed_source_repos)).toBe(true);
+        expect(policy.allowed_source_repos.length).toBeGreaterThan(0);
+        expect(policy.allowed_source_repos).toContain('sense360store/esphome-public');
+        for (const repo of policy.allowed_source_repos) {
+            // Exact owner/repo strings only — no globs, no wildcards.
+            expect(repo).toMatch(/^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/);
+        }
+    });
+
+    test('both dispatch routes funnel into one orchestrator invocation governed by the committed policy', () => {
+        // Exactly ONE intake invocation exists, shared by workflow_dispatch
+        // and repository_dispatch — there is no per-trigger code path that
+        // could route around the allowlist check inside the orchestrator.
+        const invocations =
+            intakeYaml.match(/python scripts\/firmware-intake\.py "\$\{ARGS\[@\]\}"/g) || [];
+        expect(invocations.length).toBe(1);
+        // No --policy override and no bypass-style flag: the committed
+        // firmware/sources-policy.json allowlist always governs.
+        expect(intakeYaml).not.toMatch(/--policy\b/);
+        expect(intakeYaml).not.toMatch(/--allow-/);
+        expect(intakeYaml).toMatch(/allowed_source_repos/);
+        expect(intakeYaml).toMatch(/sources-policy\.json/);
+        expect(intakeYaml).toMatch(/[Ss]hape validation is (NOT|not) trust/);
     });
 });
 

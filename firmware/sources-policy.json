@@ -1,5 +1,9 @@
 {
     "_comment": "Optional overrides for scripts/add-firmware-source.py. The script works identically when this file is ABSENT (these values equal its built-in defaults). block_tokens are NOT taken from here directly: for each config the script computes block_tokens = base_block_tokens MINUS the config's own hyphen-split lowercased tokens. That subtraction is load-bearing because scripts/import-firmware-sources.py (assert_block_tokens_absent) UNIONS the config's own tokens into the haystack it scans, so leaving a self-token in the deny-list would reject the config's own legitimate binary. Examples: Ceiling-POE-VentIQ-RoomIQ -> [FanTRIAC, LED]; Ceiling-POE-VentIQ-RoomIQ-LED -> [FanTRIAC] (LED is its own token). To force an exact deny-list for one config, add overrides.<config_string>.block_tokens, which wins outright.",
+    "_comment_allowed_source_repos": "Trusted-source allowlist enforced by scripts/firmware-intake.py: intake refuses any source_repo not exactly listed here, BEFORE any network fetch, source authoring, or import side effect. Unlike the authoring overrides above, this key is a TRUST decision with no built-in fallback: if this file or this key is missing, empty, or malformed, intake fails closed for every repo. Dispatch payload shape validation is not trust; this allowlist (plus the WebFlash-owned eligibility lanes) is. Adding a repo here is a reviewed, deliberate change.",
+    "allowed_source_repos": [
+        "sense360store/esphome-public"
+    ],
     "base_block_tokens": [
         "FanTRIAC",
         "LED"

@@ -11,8 +11,10 @@ hooks are mocked, exactly like ``test_import_firmware_sources.py``.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 import sys
 import tempfile
@@ -103,7 +105,7 @@ def _release_payload(
 
 
 class _Workspace:
-    """Temp repo layout: firmware/, sources.json, and both fixtures."""
+    """Temp repo layout: firmware/, sources.json, policy, and both fixtures."""
 
     def __init__(self, root: Path):
         self.root = root
@@ -113,6 +115,16 @@ class _Workspace:
         self.sources_path = root / "sources.json"
         self.surface_path = root / "expected-surface.json"
         self.catalog_path = root / "esphome-product-catalog.json"
+        self.policy_path = root / "sources-policy.json"
+        self.write_policy()
+
+    def write_policy(self, allowed=(SOURCE_REPO,), extra: Optional[Dict[str, Any]] = None) -> None:
+        doc: Dict[str, Any] = {"allowed_source_repos": list(allowed)}
+        if extra:
+            doc.update(extra)
+        self.policy_path.write_text(
+            json.dumps(doc, indent=4) + "\n", encoding="utf-8"
+        )
 
     def write_sources(
         self,
@@ -213,6 +225,7 @@ def _run(
     config: str = CONFIG,
     dry_run: bool = False,
     retired_in_label: Optional[str] = None,
+    source_repo: str = SOURCE_REPO,
 ) -> Dict[str, Any]:
     asset_bytes = payload["_asset_bytes"]
     checksum_text = payload["_checksum_text"]
@@ -234,7 +247,7 @@ def _run(
         intake.importer, "download_to_path", side_effect=fake_download_to_path
     ):
         return intake.run_intake(
-            source_repo=SOURCE_REPO,
+            source_repo=source_repo,
             raw_tag=tag,
             config_string=config,
             channel=channel,
@@ -242,7 +255,7 @@ def _run(
             token=None,
             dry_run=dry_run,
             sources_path=ws.sources_path,
-            policy_path=None,
+            policy_path=ws.policy_path,
             firmware_dir=ws.firmware_dir,
             surface_fixture_path=ws.surface_path,
             catalog_fixture_path=ws.catalog_path,
@@ -690,6 +703,190 @@ class RefusalTests(unittest.TestCase):
                 _run(ws, tag="v1.0.10-preview", payload=self._payload())
 
 
+class TrustedSourceAllowlistTests(unittest.TestCase):
+    """The trusted-source allowlist gate (allowed_source_repos).
+
+    The gate is the FIRST check of every intake: source_repo must be exactly
+    listed in firmware/sources-policy.json's allowed_source_repos, before any
+    network fetch, authoring, or import side effect, on every dispatch route.
+    """
+
+    def _ready(self, tmp: str) -> _Workspace:
+        ws = _Workspace(Path(tmp))
+        ws.write_sources([])
+        ws.write_surface([])
+        ws.write_catalog([_eligible_product()])
+        return ws
+
+    def _payload(self):
+        return _release_payload(
+            asset_name=_asset_name("1.0.10", "preview"),
+            bin_bytes=_make_bin(b"allowlist-build\n"),
+        )
+
+    def test_upstream_repo_on_allowlist_is_accepted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._ready(tmp)
+            summary = _run(ws, tag="v1.0.10-preview", payload=self._payload())
+            self.assertEqual(summary["source_repo"], SOURCE_REPO)
+            self.assertEqual(summary["version"], "1.0.10")
+
+    def test_arbitrary_valid_owner_repo_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._ready(tmp)
+            with self.assertRaisesRegex(
+                IntakeError, "trusted-source allowlist"
+            ):
+                _run(
+                    ws,
+                    tag="v1.0.10-preview",
+                    payload=self._payload(),
+                    source_repo="evil-owner/esphome-public",
+                )
+
+    def test_valid_upstream_signals_cannot_override_the_allowlist(self):
+        # Everything upstream-controlled is perfect: both eligibility lanes
+        # set, a fully valid release payload with matching checksums. The
+        # allowlist still wins — upstream data never authorises its own repo.
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = _Workspace(Path(tmp))
+            ws.write_sources([])
+            ws.write_surface([])
+            ws.write_catalog(
+                [
+                    _eligible_product(
+                        status="production",
+                        webflash_build_matrix=True,
+                        webflash_import_eligibility={"eligible": True},
+                    )
+                ]
+            )
+            with self.assertRaisesRegex(
+                IntakeError, "trusted-source allowlist"
+            ):
+                _run(
+                    ws,
+                    tag="v1.0.10-preview",
+                    payload=self._payload(),
+                    source_repo="evil-owner/esphome-public",
+                )
+
+    def test_missing_or_malformed_allowlist_fails_closed_for_every_repo(self):
+        # No default-open: a policy file without the key, an empty list, or a
+        # missing file refuses even the canonical upstream repo.
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._ready(tmp)
+            ws.policy_path.write_text(
+                json.dumps({"base_block_tokens": ["FanTRIAC", "LED"]}),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(IntakeError, "allowed_source_repos"):
+                _run(ws, tag="v1.0.10-preview", payload=self._payload())
+
+            ws.write_policy(allowed=[])
+            with self.assertRaisesRegex(IntakeError, "allowed_source_repos"):
+                _run(ws, tag="v1.0.10-preview", payload=self._payload())
+
+            ws.policy_path.unlink()
+            with self.assertRaisesRegex(IntakeError, "not found"):
+                _run(ws, tag="v1.0.10-preview", payload=self._payload())
+
+    def test_rejection_happens_before_any_network_or_import_side_effect(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._ready(tmp)
+            before_sources = ws.sources_path.read_bytes()
+            before_surface = ws.surface_path.read_bytes()
+            before_catalog = ws.catalog_path.read_bytes()
+            with mock.patch.object(
+                intake.add_source, "fetch_release_metadata"
+            ) as author_fetch, mock.patch.object(
+                intake.add_source, "download_text"
+            ) as author_download, mock.patch.object(
+                intake.importer, "fetch_release_metadata"
+            ) as import_fetch, mock.patch.object(
+                intake.importer, "download_to_path"
+            ) as import_download, mock.patch.object(
+                intake.importer, "import_source_entry"
+            ) as import_entry, mock.patch.object(
+                intake.catalog_refresh, "fetch_upstream_catalog"
+            ) as catalog_fetch, mock.patch.object(
+                intake.catalog_refresh, "refresh_catalog_fixture"
+            ) as catalog_refresh_call:
+                with self.assertRaisesRegex(
+                    IntakeError, "trusted-source allowlist"
+                ):
+                    # No release payload and refresh NOT skipped: the run
+                    # would need the network for both — proving the refusal
+                    # precedes every fetch and every import side effect.
+                    intake.run_intake(
+                        source_repo="evil-owner/esphome-public",
+                        raw_tag="v1.0.10-preview",
+                        config_string=CONFIG,
+                        channel=None,
+                        version=None,
+                        token=None,
+                        dry_run=False,
+                        sources_path=ws.sources_path,
+                        policy_path=ws.policy_path,
+                        firmware_dir=ws.firmware_dir,
+                        surface_fixture_path=ws.surface_path,
+                        catalog_fixture_path=ws.catalog_path,
+                        release_payload=None,
+                        catalog_payload=None,
+                        skip_catalog_refresh=False,
+                    )
+            for network_or_side_effect in (
+                author_fetch,
+                author_download,
+                import_fetch,
+                import_download,
+                import_entry,
+                catalog_fetch,
+                catalog_refresh_call,
+            ):
+                network_or_side_effect.assert_not_called()
+            self.assertEqual(ws.sources_path.read_bytes(), before_sources)
+            self.assertEqual(ws.surface_path.read_bytes(), before_surface)
+            self.assertEqual(ws.catalog_path.read_bytes(), before_catalog)
+            self.assertEqual(list(ws.configurations.iterdir()), [])
+
+    def test_dispatch_routes_share_the_check_and_no_bypass_flag_exists(self):
+        # Both workflow_dispatch and repository_dispatch funnel into this one
+        # CLI (there is no other entry point), so proving the CLI refuses a
+        # disallowed repo — with the network hooks untouched — proves the
+        # repository_dispatch route cannot bypass the allowlist either.
+        with tempfile.TemporaryDirectory() as tmp:
+            ws = self._ready(tmp)
+            argv = [
+                "--repo", "evil-owner/esphome-public",
+                "--tag", "v1.0.10-preview",
+                "--config", CONFIG,
+                "--policy", str(ws.policy_path),
+                "--sources", str(ws.sources_path),
+                "--surface-fixture", str(ws.surface_path),
+                "--catalog-fixture", str(ws.catalog_path),
+                "--firmware-dir", str(ws.firmware_dir),
+            ]
+            stderr = io.StringIO()
+            with mock.patch.object(
+                intake.add_source, "fetch_release_metadata"
+            ) as author_fetch, mock.patch.object(
+                intake.importer, "download_to_path"
+            ) as import_download, contextlib.redirect_stderr(stderr):
+                exit_code = intake.main(argv)
+            self.assertEqual(exit_code, 1)
+            self.assertIn("trusted-source allowlist", stderr.getvalue())
+            author_fetch.assert_not_called()
+            import_download.assert_not_called()
+
+            # No bypass flag: an --allow-* style option is not part of the
+            # CLI surface at all.
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as ctx:
+                    intake.parse_args(argv + ["--allow-untrusted-repo"])
+            self.assertEqual(ctx.exception.code, 2)
+
+
 class SurfaceFixtureHelpersTests(unittest.TestCase):
     def test_update_appends_retired_once(self):
         fixture = {
@@ -887,7 +1084,7 @@ class CatalogRefreshWiringTests(unittest.TestCase):
                     token=None,
                     dry_run=False,
                     sources_path=ws.sources_path,
-                    policy_path=None,
+                    policy_path=ws.policy_path,
                     firmware_dir=ws.firmware_dir,
                     surface_fixture_path=ws.surface_path,
                     catalog_fixture_path=ws.catalog_path,
