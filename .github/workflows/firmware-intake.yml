@@ -1,0 +1,444 @@
+name: "Release: Firmware Intake (combined source + import, one PR)"
+
+# The combined intake happy path. One dispatch replaces the manual operator
+# sequence "Release 4: Add Source" (add-firmware-source.yml) followed by a
+# SEPARATE manual dispatch of "Release 5: Import Firmware"
+# (firmware-import.yml). Those two workflows are unchanged and remain
+# available for recovery; nothing chains automatically between them, and
+# nothing chains automatically out of this workflow either — its output is
+# exactly one branch and one PR to main, reviewed by a human.
+#
+# What one run does (scripts/firmware-intake.py is the engine):
+#   1. Validates the dispatch inputs (shape only; shape validation is NOT
+#      trust — the trust decisions are the next two gates).
+#   2. Refuses any source_repo that is not exactly listed in the
+#      allowed_source_repos trust allowlist in firmware/sources-policy.json.
+#      The orchestrator enforces this BEFORE any upstream release fetch,
+#      checksum fetch, catalog fetch, source authoring, or import side
+#      effect; a missing/empty/malformed allowlist refuses every repo, and
+#      there is no bypass flag. Both triggers (workflow_dispatch and
+#      repository_dispatch) funnel into the one orchestrator invocation
+#      below, so they pass through the exact same policy check — the
+#      repository_dispatch payload cannot bypass it.
+#   3. Refuses any config that is not authorised by a WebFlash-owned
+#      eligibility lane in the vendored catalog fixture
+#      (webflash_build_matrix=true or webflash_import_eligibility.eligible=true,
+#      the lanes established by PR #607). Upstream lifecycle status is never
+#      consulted for authorisation.
+#   4. Authors/updates the one firmware/sources.json entry (asset name, pinned
+#      SHA256 from checksums-sha256.txt, block_tokens deny-list) — Release 4
+#      semantics, unchanged.
+#   5. Imports the binary through import_source_entry — Release 5 semantics,
+#      unchanged: required assets, upstream checksum match, pinned SHA match,
+#      default-credential scan, block tokens (FanTRIAC/LED), size floor,
+#      release-body sections, provenance sidecar, same-channel prune.
+#   6. Retires the superseded build for the same config safely (including the
+#      cross-channel case the importer prune cannot handle), updates the
+#      expected-surface fixture in the same change set, and refreshes the
+#      vendored product-catalog fixture.
+#   7. Regenerates manifest.json + firmware-N.json with the same signing
+#      handshake as firmware-publish.yml, runs the naming-policy validator,
+#      the import-readiness classifier, and BOTH unit-test suites.
+#   8. Pushes everything to the per-config branch intake/<config_string> and
+#      creates (or updates) one PR to main.
+#
+# Hard boundaries:
+#   * NEVER commits to main, never merges, never deploys. An explicit branch
+#     guard aborts if the computed branch is main. firmware-publish.yml
+#     remains the sole publication boundary: nothing here ships until the
+#     intake PR merges through the normal review gate.
+#   * Only the expected intake paths are staged (firmware/configurations,
+#     firmware/sources.json, manifest.json, firmware-*.json, the two vendored
+#     fixtures). Any other modified file fails the run.
+#   * If the test suites fail, the run fails BEFORE anything is pushed. A new
+#     stable config that needs a kit / kits-json decision is expected to fail
+#     here: that decision is a deliberate human edit, not intake's to make.
+#
+# Triggers and cross-repo token decision:
+#   * workflow_dispatch — manual recovery path, and also the API entry point
+#     (POST /repos/{owner}/{repo}/actions/workflows/firmware-intake.yml/dispatches).
+#   * repository_dispatch (event_type: firmware-intake) — for the future
+#     esphome-public post-release hook. Upstream stores a credential scoped to
+#     THIS repo only (fine-grained PAT or GitHub App installation token) with
+#     the minimal permission for the chosen route: Actions:write for the
+#     workflow_dispatch API (recommended), or Contents:write for
+#     repository_dispatch. WebFlash stores no upstream credential.
+#   * Dispatch payload values are untrusted input: they are only ever passed
+#     through env (never interpolated into run bodies) and are shape-validated
+#     before use. Shape validation is not trust: authorisation comes from the
+#     allowed_source_repos allowlist in firmware/sources-policy.json and the
+#     WebFlash-owned eligibility lanes, never from the payload.
+#   * PRs opened with the default GITHUB_TOKEN do not trigger the
+#     pull_request CI workflow (a GitHub Actions limitation). The full suites
+#     already ran inside this workflow, and the deploy gate re-runs them on
+#     merge. To make ci.yml fire on the intake PR as well, add an optional
+#     INTAKE_PR_TOKEN secret (fine-grained PAT, this repo only,
+#     Contents:write + Pull requests:write); the workflow uses it when present.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Upstream release tag (e.g. v1.0.11 or v1.0.11-preview).'
+        required: true
+        type: string
+      config_string:
+        description: 'Config to intake. Must be authorised by a WebFlash-owned eligibility lane in the vendored catalog fixture.'
+        required: true
+        type: string
+      channel:
+        description: 'Release channel. auto = inferred from the tag suffix.'
+        required: false
+        type: choice
+        default: auto
+        options:
+          - auto
+          - stable
+          - preview
+      version:
+        description: 'Semver version (optional). Default: parsed from the tag.'
+        required: false
+        type: string
+        default: ''
+      source_repo:
+        description: 'Upstream source repo.'
+        required: false
+        type: string
+        default: sense360store/esphome-public
+      dry_run:
+        description: 'Validate everything; push nothing, open no PR.'
+        required: false
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [firmware-intake]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  # One intake at a time per config so two dispatches cannot race on the same
+  # intake/<config> branch. Different configs may run in parallel.
+  group: firmware-intake-${{ inputs.config_string || github.event.client_payload.config_string }}
+  cancel-in-progress: false
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    env:
+      # Dispatch inputs are normalized here ONCE, as env (never interpolated
+      # into run bodies), covering both trigger shapes. repository_dispatch
+      # payload values are untrusted and are shape-validated below.
+      IN_SOURCE_REPO: ${{ inputs.source_repo || github.event.client_payload.source_repo || 'sense360store/esphome-public' }}
+      IN_RELEASE_TAG: ${{ inputs.release_tag || github.event.client_payload.release_tag }}
+      IN_CONFIG_STRING: ${{ inputs.config_string || github.event.client_payload.config_string }}
+      IN_CHANNEL: ${{ inputs.channel || github.event.client_payload.channel || 'auto' }}
+      IN_VERSION: ${{ inputs.version || github.event.client_payload.version || '' }}
+      IN_DRY_RUN: ${{ inputs.dry_run || github.event.client_payload.dry_run || 'false' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # Full history so the intake branch can be rebuilt from origin/main
+          # and pushed back. The optional INTAKE_PR_TOKEN makes the push/PR
+          # trigger the pull_request CI gate; the default token works too.
+          fetch-depth: 0
+          token: ${{ secrets.INTAKE_PR_TOKEN || github.token }}
+
+      - name: Validate dispatch inputs and compute intake branch
+        # Every dispatch value is validated with bash [[ =~ ]], which anchors
+        # the WHOLE string (POSIX regexec has no line semantics here) — an
+        # untrusted repository_dispatch value with an embedded newline can
+        # never pass, unlike a line-oriented grep. dry_run is validated too,
+        # and ONLY derived, newline-free literals are written to GITHUB_ENV;
+        # raw dispatch values never are (GITHUB_ENV newline-injection guard).
+        run: |
+          set -euo pipefail
+          if [ -z "${IN_RELEASE_TAG}" ] || [ -z "${IN_CONFIG_STRING}" ]; then
+            echo "::error::release_tag and config_string are required." >&2
+            exit 1
+          fi
+          if ! [[ "${IN_CONFIG_STRING}" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,63}$ ]]; then
+            echo "::error::config_string has an invalid shape." >&2
+            exit 1
+          fi
+          if ! [[ "${IN_RELEASE_TAG}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]]; then
+            echo "::error::release_tag has an invalid shape." >&2
+            exit 1
+          fi
+          if ! [[ "${IN_SOURCE_REPO}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}/[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo "::error::source_repo has an invalid shape." >&2
+            exit 1
+          fi
+          case "${IN_CHANNEL}" in
+            auto|stable|preview) ;;
+            *) echo "::error::channel must be auto, stable, or preview." >&2; exit 1 ;;
+          esac
+          if [ -n "${IN_VERSION}" ] && ! [[ "${IN_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must be MAJOR.MINOR.PATCH." >&2
+            exit 1
+          fi
+          case "${IN_DRY_RUN}" in
+            true)  DRY="true" ;;
+            false) DRY="false" ;;
+            *) echo "::error::dry_run must be exactly true or false." >&2; exit 1 ;;
+          esac
+          INTAKE_BRANCH="intake/${IN_CONFIG_STRING}"
+          # Requirement: generated firmware is NEVER committed to main by this
+          # workflow. The prefix already guarantees it; keep the guard explicit
+          # (and each push step re-checks the intake/ prefix at push time).
+          if [ "${INTAKE_BRANCH}" = "main" ] || [ -z "${IN_CONFIG_STRING}" ]; then
+            echo "::error::Refusing to target main." >&2
+            exit 1
+          fi
+          {
+            echo "INTAKE_BRANCH=${INTAKE_BRANCH}"
+            echo "INTAKE_DRY_RUN=${DRY}"
+          } >> "$GITHUB_ENV"
+          echo "Intake branch: ${INTAKE_BRANCH} (dry_run=${DRY})"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.11'
+
+      - name: Install firmware-signing dependencies
+        # gen-manifests.py needs cryptography for Ed25519 signing; same
+        # handshake as firmware-import.yml / firmware-publish.yml.
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install cryptography
+
+      - name: Create intake branch from origin/main
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout -B "${INTAKE_BRANCH}" origin/main
+
+      - name: Run combined intake orchestrator
+        env:
+          # Default token reads public cross-repo releases; no PAT required
+          # for public sense360store/esphome-public.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ARGS=(
+            --repo "${IN_SOURCE_REPO}"
+            --tag "${IN_RELEASE_TAG}"
+            --config "${IN_CONFIG_STRING}"
+          )
+          if [ "${IN_CHANNEL}" != "auto" ]; then
+            ARGS+=(--channel "${IN_CHANNEL}")
+          fi
+          if [ -n "${IN_VERSION}" ]; then
+            ARGS+=(--version "${IN_VERSION}")
+          fi
+          if [ "${INTAKE_DRY_RUN}" = "true" ]; then
+            ARGS+=(--dry-run)
+          fi
+          # Retired-register entries are labeled with this run's URL so the
+          # later PR-number resolution is scoped to exactly this run's
+          # entries — and no unresolved placeholder can ever reach a PR.
+          ARGS+=(--retired-in "${RUN_URL}")
+          python scripts/firmware-intake.py "${ARGS[@]}" \
+            | tee "${RUNNER_TEMP}/intake-log.txt"
+
+      - name: Validate firmware naming policy
+        if: env.INTAKE_DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          node scripts/validate-naming-policy.js firmware/configurations
+
+      - name: Regenerate manifests
+        if: env.INTAKE_DRY_RUN != 'true'
+        env:
+          # Same signing-key handshake as firmware-publish.yml. Production
+          # signing at deploy time stays with the publish workflow; this
+          # regen uses whichever key is available so the committed manifest
+          # matches what publish would produce.
+          WEBFLASH_FIRMWARE_PRIVATE_KEY_B64: ${{ secrets.WEBFLASH_FIRMWARE_PRIVATE_KEY_B64 }}
+          WEBFLASH_FIRMWARE_KEY_ID: ${{ secrets.WEBFLASH_FIRMWARE_KEY_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${WEBFLASH_FIRMWARE_PRIVATE_KEY_B64:-}" ]; then
+            SIGN_MODE="production"
+          else
+            SIGN_MODE="development"
+          fi
+          python scripts/gen-manifests.py \
+            --firmware-dir firmware \
+            --manifest-path manifest.json \
+            --manifest-prefix firmware- \
+            --mode "${SIGN_MODE}" \
+            --summary
+
+      - name: Run import-readiness classifier
+        if: env.INTAKE_DRY_RUN != 'true'
+        run: npm run validate:product-import-readiness
+
+      - name: Run unit tests
+        if: env.INTAKE_DRY_RUN != 'true'
+        run: npm test -- --ci
+
+      - name: Run Python unit tests
+        if: env.INTAKE_DRY_RUN != 'true'
+        run: python -m unittest discover -s __tests__/python -p 'test_*.py'
+
+      - name: Stage intake changes (allowlisted paths only)
+        if: env.INTAKE_DRY_RUN != 'true'
+        id: stage
+        run: |
+          set -euo pipefail
+          # Stage ONLY the files intake is expected to produce; never
+          # `git add -A`. Anything else changing is a bug we want to fail on.
+          # The firmware-*.json glob is quoted so git resolves the pathspec
+          # itself and deletions of stale firmware-N.json files are staged too.
+          git add -- \
+            firmware/configurations \
+            firmware/sources.json \
+            manifest.json \
+            'firmware-*.json' \
+            __tests__/fixtures/esphome-product-catalog.json \
+            __tests__/fixtures/expected-surface.json
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to commit; intake is already applied (idempotent)."
+            exit 0
+          fi
+          # Fail on any modified/untracked file OUTSIDE the allowlist.
+          LEFTOVER=$(git status --porcelain | grep -Ev '^[MADRC] ' || true)
+          if [ -n "${LEFTOVER}" ]; then
+            echo "::error::Unexpected changes outside the intake allowlist:" >&2
+            echo "${LEFTOVER}" >&2
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git --no-pager diff --cached --stat
+
+      - name: Commit and push intake branch
+        if: env.INTAKE_DRY_RUN != 'true' && steps.stage.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          # Push-time re-guard: refuse any branch outside intake/ even if the
+          # environment was tampered with after the validation step.
+          case "${INTAKE_BRANCH}" in
+            intake/*) ;;
+            *) echo "::error::Refusing to push: '${INTAKE_BRANCH}' is not an intake/ branch." >&2; exit 1 ;;
+          esac
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit \
+            -m "Intake ${IN_CONFIG_STRING} from ${IN_SOURCE_REPO}@${IN_RELEASE_TAG}" \
+            -m "Automated by the firmware-intake workflow (${RUN_URL}). Staged only; firmware-publish.yml remains the publication boundary after this PR merges through review."
+          # The intake branch is owned by this workflow and is rebuilt from
+          # origin/main on every run, so an existing remote branch is updated
+          # with a lease-protected force push. Retry per repo conventions.
+          if git fetch origin "+refs/heads/${INTAKE_BRANCH}:refs/remotes/origin/${INTAKE_BRANCH}" 2>/dev/null; then
+            PUSH_ARGS=(--force-with-lease="refs/heads/${INTAKE_BRANCH}:refs/remotes/origin/${INTAKE_BRANCH}")
+          else
+            PUSH_ARGS=(-u)
+          fi
+          pushed=false
+          for delay in 0 2 4 8 16; do
+            if [ "${delay}" -gt 0 ]; then sleep "${delay}"; fi
+            if git push "${PUSH_ARGS[@]}" origin "${INTAKE_BRANCH}"; then
+              pushed=true
+              break
+            fi
+          done
+          if [ "${pushed}" != "true" ]; then
+            echo "::error::Push failed after retries." >&2
+            exit 1
+          fi
+
+      - name: Create or update the intake PR
+        if: env.INTAKE_DRY_RUN != 'true' && steps.stage.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.INTAKE_PR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BODY_FILE="${RUNNER_TEMP}/intake-pr-body.md"
+          {
+            echo "Automated by the firmware-intake workflow: ${RUN_URL}"
+            echo
+            echo "One combined intake for \`${IN_CONFIG_STRING}\` from \`${IN_SOURCE_REPO}@${IN_RELEASE_TAG}\`. It replaces the manual Release 4 (add source) plus Release 5 (import) operator sequence for this release. The run authored the source entry, imported and verified the binary, retired the superseded build for the same config, refreshed the vendored catalog and expected-surface fixtures, regenerated the manifests, and ran the naming policy validator, the import-readiness classifier, and both unit-test suites. The full output is in the linked run."
+            echo
+            echo "Intake log tail:"
+            echo '```'
+            tail -n 25 "${RUNNER_TEMP}/intake-log.txt"
+            echo '```'
+            echo
+            echo "What stays gated: nothing is promoted by this PR. REQUIRED_CONFIGS, kits.json, and the release channel policy are untouched. FanTRIAC stays import blocked, block_tokens are enforced per source, preview builds stay acknowledgement gated and never auto selected, and the Ed25519 plus SHA-256 install gate is unchanged. Import eligibility was authorised by the WebFlash owned lanes (webflash_build_matrix or webflash_import_eligibility.eligible) in the vendored catalog fixture, never by upstream lifecycle status."
+            echo
+            echo "This workflow never merges or deploys. firmware-publish.yml remains the sole publication boundary: the deploy gate reruns the tests, the REQUIRED_CONFIGS assertion, and production signing when this PR merges to main through review."
+            echo
+            echo "REVIEWER: confirm the pinned expected_sha256 in the firmware/sources.json diff matches the intended upstream asset, and review the expected-surface.json edit together with the surface change per its review_rule. If this PR touches provenance surfaces beyond the routine import, fill the reviewer checklist from docs/firmware-provenance.md."
+          } > "${BODY_FILE}"
+          PR_NUMBER=$(gh pr list --head "${INTAKE_BRANCH}" --base main --state open --json number --jq '.[0].number // empty' || true)
+          if [ -z "${PR_NUMBER}" ]; then
+            gh pr create \
+              --base main \
+              --head "${INTAKE_BRANCH}" \
+              --title "Intake ${IN_CONFIG_STRING} from ${IN_RELEASE_TAG}" \
+              --body-file "${BODY_FILE}"
+            PR_NUMBER=$(gh pr list --head "${INTAKE_BRANCH}" --base main --state open --json number --jq '.[0].number // empty')
+          else
+            gh pr edit "${PR_NUMBER}" --body-file "${BODY_FILE}"
+          fi
+          # Numeric-only before it is written to GITHUB_ENV (same
+          # newline-injection guard as the input validation step).
+          if ! [[ "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
+            echo "::error::Could not resolve a numeric intake PR number." >&2
+            exit 1
+          fi
+          echo "INTAKE_PR_NUMBER=${PR_NUMBER}" >> "$GITHUB_ENV"
+          echo "Intake PR: #${PR_NUMBER}"
+
+      - name: Resolve run-labeled retired_in entries to the PR number
+        if: env.INTAKE_DRY_RUN != 'true' && steps.stage.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          # Same push-time re-guard as the main push step.
+          case "${INTAKE_BRANCH}" in
+            intake/*) ;;
+            *) echo "::error::Refusing to push: '${INTAKE_BRANCH}' is not an intake/ branch." >&2; exit 1 ;;
+          esac
+          if ! [[ "${INTAKE_PR_NUMBER}" =~ ^[0-9]+$ ]]; then
+            echo "::error::INTAKE_PR_NUMBER is not numeric." >&2
+            exit 1
+          fi
+          if ! grep -qF "${RUN_URL}" __tests__/fixtures/expected-surface.json; then
+            echo "No run-labeled retired_in entries to resolve."
+            exit 0
+          fi
+          # Scoped to THIS run's label so entries appended by other runs (or
+          # historic entries) are never rewritten or mis-attributed.
+          python scripts/firmware-intake.py \
+            --set-retired-in "#${INTAKE_PR_NUMBER}" \
+            --retired-in-match "${RUN_URL}"
+          git add __tests__/fixtures/expected-surface.json
+          git commit -m "Record intake PR #${INTAKE_PR_NUMBER} in the retired register"
+          pushed=false
+          for delay in 0 2 4 8 16; do
+            if [ "${delay}" -gt 0 ]; then sleep "${delay}"; fi
+            if git push origin "${INTAKE_BRANCH}"; then
+              pushed=true
+              break
+            fi
+          done
+          if [ "${pushed}" != "true" ]; then
+            echo "::error::Push failed after retries." >&2
+            exit 1
+          fi

@@ -15,8 +15,14 @@ name: "Release 4: Add Source"
 #   4. The change is pushed to a unique branch and a PR is opened for review.
 #
 # This workflow never signs firmware, regenerates manifest.json, or deploys.
-# Signing + manifest regeneration stay in firmware-import.yml / firmware-publish.yml,
-# which run on the resulting merge through the normal review gate.
+# Signing + manifest regeneration stay in firmware-import.yml (a SEPARATE
+# MANUAL workflow_dispatch — merging the PR this workflow opens does NOT
+# trigger it) and in firmware-publish.yml (which runs on push to main).
+#
+# NOTE: for the combined happy path, prefer firmware-intake.yml — it performs
+# this source authoring AND the import/retire/regenerate steps in one run and
+# opens a single reviewed PR. This workflow remains as the recovery /
+# source-authoring-only path.
 
 on:
   workflow_dispatch:
@@ -179,9 +185,12 @@ jobs:
           deployed by this workflow.
 
           REVIEWER: confirm the pinned \`expected_sha256\` in the diff matches the
-          intended upstream asset before merging. On merge, the existing
-          firmware-import / firmware-publish workflows handle the actual import,
-          signing, and manifest regeneration through the normal review gate.
+          intended upstream asset before merging. Merging this PR does NOT
+          import anything by itself: the actual import, signing, and manifest
+          regeneration happen via a separate manual dispatch of
+          firmware-import.yml (or the combined firmware-intake.yml workflow),
+          and firmware-publish.yml deploys only what lands on main through
+          the normal review gate.
           EOF
           )
           gh pr create \

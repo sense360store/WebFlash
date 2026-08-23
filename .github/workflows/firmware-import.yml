@@ -6,6 +6,13 @@ name: "Release 5: Import Firmware"
 # sidecar, regenerates manifest.json + firmware-N.json, and auto-commits the
 # result to the same branch the workflow is run from.
 #
+# NOTE: for the combined happy path, prefer firmware-intake.yml — it authors
+# the source entry AND runs this import (plus retirement, fixture refresh,
+# manifest regeneration, and the test suites) in one run, always onto a
+# dedicated intake/<config> branch with one reviewed PR. This workflow
+# remains as the recovery / re-import path. Nothing triggers it
+# automatically: it does not run when an add-firmware-source PR merges.
+#
 # Boundaries:
 #   * Manual trigger only (workflow_dispatch). No webhook from esphome-public.
 #   * Auto-commits to the current branch. Does NOT auto-merge.
