@@ -55,6 +55,9 @@ Every reference to WebFlash as a destination uses that address.
   and invariants that gate every WebFlash PR.
 - `release-gates/` — the WebFlash first release gate and dry run handoff
   records.
+- [`spikes/SPIKE-W1-webflash-erase-semantics.md`](spikes/SPIKE-W1-webflash-erase-semantics.md)
+  — SPIKE-W1 (SEC-ESP-PROVISIONING-001): source investigation of which
+  install paths erase or preserve ESP32 NVS and ownership state.
 - [`archive-index.md`](archive-index.md) — index of archived historical
   records.
 
