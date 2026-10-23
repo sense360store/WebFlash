@@ -99,8 +99,11 @@ unchanged):
   `firmware-import.yml`, and `add-firmware-source.yml`;
 - create or publish a tag or GitHub Release, or deploy the site;
 - merge any PR (see *Merge authority* below);
-- change `sw.js` cache or precache behaviour or `_headers` (CSP, CORS,
-  cache rules) except under a task that explicitly authorises that change;
+- edit `sw.js` (the `STATIC_ASSETS` or `SCRIPT_MODULES` precache lists,
+  `CACHE_NAME`, or any cache or fetch strategy) or `_headers` (CSP, CORS,
+  cache rules) except under a task that explicitly authorises that edit; the
+  routine instructions elsewhere in this file that tell you to make these
+  edits apply only once a task has authorised them;
 - change commercial copy, bundle visibility, buyability, or
   `scripts/data/sot-commercial-mirror.json` other than through its
   generator from a local SOT checkout;
@@ -137,7 +140,9 @@ by the owner. The SOT delegation does not transfer by implication, and the
 delegations adopted by esphome-public and sense360zones in their own
 `CLAUDE.md` files do not cover this repository. Marking a draft PR ready
 for review and retargeting a PR base are merge mechanics and are likewise
-owner-only here.
+owner-only here. This repository also **does not adopt the review-and-decide
+delegation** defined in the SOT operating model: reviewing and accepting
+every PR here, agent-authored or not, remains owner-only.
 
 Agents never self-accept or self-merge a PR, including a governance
 amendment such as this one that would create or widen the agent's own
@@ -238,7 +243,7 @@ Other notable engine pieces:
 - `scripts/utils/release-channels.js` — release-channel policy (per-channel `defaultSelectable`, `requiresAcknowledgement`, `hiddenByDefault`). Preview builds are never auto-selected and gate install on a channel acknowledgement.
 - `scripts/utils/module-availability.js` — presentation-only availability classifier for module variants (states such as `available-stable`, `available-preview`, `no-firmware`, `advanced-manual-warning`). Static overrides take precedence over manifest-derived states; the classifier is **not** the install gate.
 - `scripts/utils/flash-history.js` — flash attempts logged to `localStorage` for diagnostics; entries strip deprecated keys.
-- `sw.js` — service worker. Strategy is network-first for `*.bin` and `manifest.json`, stale-while-revalidate for everything else. **When you add new top-level scripts, add them to `STATIC_ASSETS` or `SCRIPT_MODULES` in `sw.js`** or they will not be available offline.
+- `sw.js` — service worker. Strategy is network-first for `*.bin` and `manifest.json`, stale-while-revalidate for everything else. **When you add new top-level scripts, add them to `STATIC_ASSETS` or `SCRIPT_MODULES` in `sw.js`** or they will not be available offline. Editing `sw.js` is never autonomous (see *Bounded agent autonomy* above): make this edit only under a task that explicitly authorises it, otherwise name the missing entry in the PR as an owner action.
 
 ### Publishing pipeline
 
@@ -276,12 +281,12 @@ Otherwise the frontend will fail to find a build that the manifest claims exists
 
 - **Desktop / Web Serial only.** The install path depends on `navigator.serial`, which is only implemented on desktop Chromium browsers. Do not add code paths that assume mobile or non-Chromium browsers can flash; gate any new install-time UI behind the existing capability detection in `scripts/capabilities.js`.
 - **Pure ESM.** Tests require `NODE_OPTIONS=--experimental-vm-modules` (already set by `npm test`). Do not introduce CommonJS modules under `scripts/` or in tests; new tests should use `import { ... } from '@jest/globals'`. Jest config (`jest.config.cjs`) sets `transform: {}` — no transpilation.
-- **No external runtime dependencies in the wizard.** The only third-party script loaded by `index.html` is `esp-web-tools` from unpkg, which is allowed by the `Content-Security-Policy` in `_headers`. If you need new origins (scripts, fonts, connect-src), update the CSP there.
+- **No external runtime dependencies in the wizard.** The only third-party script loaded by `index.html` is `esp-web-tools` from unpkg, which is allowed by the `Content-Security-Policy` in `_headers`. If you need new origins (scripts, fonts, connect-src), update the CSP there — but editing `_headers` is never autonomous (see *Bounded agent autonomy* above), so make that edit only under a task that explicitly authorises it.
 - **`_headers` is GitHub-Pages-style.** It controls CORS, CSP, and cache rules. Firmware binaries are served with `Cache-Control: max-age=31536000`, so versioned filenames are critical — never overwrite a published `.bin` in place.
 - **Disabled options live in the matrix, not in markup.** The canonical SKU table above documents the products; runtime gating comes from `module-requirements.js` (e.g. `ceilingOnly`, `requiresBathroom`) and the visibility logic in `getVisibleModuleGroupKeys` in `state.js`. AirIQ ↔ VentIQ is mutually exclusive and driven by the Bathroom toggle on Ceiling mounts.
 - **No Model/Variant axis.** The product taxonomy is flat (one SKU per product). When extending the wizard, do not add Base/Pro variants or model/variant fields; add a new SKU entry to `module-requirements.js` and a new module key to `MODULE_KEYS` in `state.js` instead.
 - **Sensitive-value redaction.** `Copy diagnostics` and flash history both pass through redaction (`SENSITIVE_KEY_PATTERN` in `state.js`, `stripDeprecatedConfigurationFields` in `flash-history.js`). When adding new fields to diagnostics or history, audit whether they should be redacted before they ship.
-- **Service worker cache versioning.** The cache name lives in `CACHE_NAME` in `sw.js` (currently `webflash-v20`); bumping it is how forced refreshes are landed. The `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
+- **Service worker cache versioning.** The cache name lives in `CACHE_NAME` in `sw.js` (currently `webflash-v20`); bumping it is how forced refreshes are landed, and it is never autonomous (see *Bounded agent autonomy* above): bump it only under a task that explicitly authorises it. The `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
 - **Generated files are committed.** `manifest.json`, every `firmware-*.json`, and every `firmware/configurations/*.bin` are tracked in git. Regenerate with `gen-manifests.py` and commit the diff together with the firmware change in the same commit.
 - **Branch policy.** All AI-assisted development on this repo runs on a dedicated `claude/...` branch (see workflow instructions). Never push to `main` directly.
 - **Standing invariants.** [`docs/standing-invariants.md`](docs/standing-invariants.md) carries the standing blockers / invariants that gate every WebFlash PR (2.0 sole view, engine owns every gate, stable Bathroom PoE default, preview gating, TRIAC blocked, FanDAC address acknowledgement, and the do-not-change guardrails for docs-only PRs). Never regress them. The former `UPCOMING_PR.md` working queue tracker was retired — see [`docs/archive-index.md`](docs/archive-index.md); PR queue state now lives in GitHub, not in a tracked file.
