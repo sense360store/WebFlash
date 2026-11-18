@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#f6f6f2">
+  <meta name="description" content="Sense360 Pebble is an experimental compact desk and wall sensor enclosure. Follow the concept's measured fit results and remaining engineering work.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+  <title>Pebble | Sense360 concept development</title>
+  <link rel="icon" href="../sense360-favicon-32.png" type="image/png">
+  <link rel="stylesheet" href="./pebble.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="../" aria-label="Sense360 WebFlash home"><span class="brand-dot" aria-hidden="true"></span><span>Sense360</span></a>
+      <nav aria-label="Concept navigation">
+        <a href="#progress">Progress</a>
+        <a href="#engineering">Engineering</a>
+        <a href="#next">What's next</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-heading">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Development concept · Not a released product</p>
+        <h1 id="hero-heading">Pebble<span class="heading-accent">.</span></h1>
+        <p class="hero-lede">One compact sensor enclosure. Designed for a desk or a wall.</p>
+        <p class="hero-detail">A Sense360 industrial-design and engineering study that brings room presence, air quality and PoE power together in a serviceable, 3D-printable form.</p>
+        <p class="hero-note">Design in progress. No enclosure is approved for a complete functional print, sale, or firmware installation.</p>
+        <a class="quiet-link" href="#progress">See current evidence <span aria-hidden="true">↓</span></a>
+      </div>
+      <figure class="illustration">
+        <svg viewBox="0 0 480 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="concept-title concept-desc">
+          <title id="concept-title">Illustrative Sense360 Pebble enclosure</title>
+          <desc id="concept-desc">Minimal upright rounded sensor enclosure with a quiet grey edge, an off-white front, a central PIR lens, and subtle indicator points. This drawing is a form study, not a representation of verified CAD openings.</desc>
+          <defs>
+            <linearGradient id="body" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#fffefa"/><stop offset="1" stop-color="#e8e7df"/></linearGradient>
+            <linearGradient id="side" x1="0" y1="0" x2=".9" y2=".8"><stop stop-color="#878e90"/><stop offset="1" stop-color="#454d50"/></linearGradient>
+            <radialGradient id="lens"><stop stop-color="#f8f9f5"/><stop offset="1" stop-color="#cfd4d0"/></radialGradient>
+          </defs>
+          <ellipse cx="260" cy="426" rx="157" ry="19" fill="#d5d7d1" opacity=".43"/>
+          <path d="M168 77 Q168 43 204 43 L359 43 Q398 43 398 83 L398 330 Q398 368 359 368 L204 368 Q168 368 168 330Z" fill="url(#side)" transform="translate(27 18)"/>
+          <rect x="130" y="62" width="244" height="324" rx="46" fill="url(#body)" stroke="#e7e9e2" stroke-width="3"/>
+          <rect x="148" y="82" width="208" height="283" rx="34" fill="none" stroke="#ffffff" stroke-opacity=".65" stroke-width="2"/>
+          <circle cx="253" cy="197" r="46" fill="#e8ece6" stroke="#d3d8d0" stroke-width="2"/>
+          <circle cx="253" cy="197" r="34" fill="url(#lens)" stroke="#e3e6e0" stroke-width="3"/>
+          <circle cx="253" cy="197" r="13" fill="#d6dbd5" opacity=".56"/>
+          <path d="M192 108 Q252 84 312 108" fill="none" stroke="#b6c5bf" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+          <g fill="#a5d8c3">
+            <circle cx="197" cy="303" r="3.5"/><circle cx="213" cy="309" r="3.5"/>
+            <circle cx="231" cy="312" r="3.5"/><circle cx="249" cy="313" r="3.5"/>
+            <circle cx="267" cy="312" r="3.5"/><circle cx="285" cy="309" r="3.5"/>
+            <circle cx="301" cy="303" r="3.5"/><circle cx="315" cy="294" r="3.5"/>
+          </g>
+          <g stroke="#a4aba8" stroke-width="3" stroke-linecap="round">
+            <path d="M390 170 h14"/><path d="M390 184 h14"/><path d="M390 198 h14"/>
+          </g>
+          <path d="M194 383 Q252 397 316 383" fill="none" stroke="#727a79" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+        </svg>
+        <figcaption>Illustrative form study, not dimensioned CAD or verified sensor placement.</figcaption>
+      </figure>
+    </section>
+
+    <div class="wrap">
+      <section class="metrics" aria-label="Current size reference">
+        <div><span class="metric-label">Current housing study</span><strong>108 × 130 × 76 <small>mm</small></strong><span class="metric-note">C4.1 shell, still provisional</span></div>
+        <div><span class="metric-label">Power</span><strong>PoE</strong><span class="metric-note">Separate lower board bay</span></div>
+        <div><span class="metric-label">Mounting intent</span><strong>Desk + wall</strong><span class="metric-note">Shared housing, removable feet</span></div>
+      </section>
+
+      <section id="progress" class="section" aria-labelledby="progress-heading">
+        <div class="section-heading"><div><p class="kicker">Build evidence</p><h2 id="progress-heading">What we've actually proved</h2></div><p class="date">Last reviewed 18 November 2026</p></div>
+        <div class="evidence-grid">
+          <article class="panel">
+            <span class="tag passed">Physical fit observed</span>
+            <h3>Stacked PCB spacers</h3>
+            <p>Three 17.4 mm and three 14.2 mm spacers have been printed and assembled with the real boards. Visual fit appears good; mechanical retention and cable strain are not qualified.</p>
+          </article>
+          <article class="panel">
+            <span class="tag passed">Physical fit observed</span>
+            <h3>SPS30 guide width</h3>
+            <p>The 42.0 mm nominal guide opening was tested with the real SPS30. It slides comfortably. This proves width fit only, not airflow or retention.</p>
+          </article>
+          <article class="panel">
+            <span class="tag studied">CAD study only</span>
+            <h3>PoE-inclusive packaging</h3>
+            <p>A separate lower PoE bay is included in the latest layout audit. The three-board assembly measured 50.8 mm in depth <em>without</em> PoE. The combined posed component envelope is not a physical enclosure-fit result.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="engineering" class="section" aria-labelledby="engineering-heading">
+        <div class="section-heading"><div><p class="kicker">Engineering priorities</p><h2 id="engineering-heading">What remains open</h2></div></div>
+        <div class="work-list">
+          <article><span class="item-no">01</span><div><h3>PoE / RJ45 access</h3><p>Confirm fitted jack, latch release, connector insertion and cable/boot routing. Published candidate jack bodies appear dimensionally equal, but their electrical identity has not been reconciled.</p></div><span class="work-state">Investigating</span></article>
+          <article><span class="item-no">02</span><div><h3>SPS30 air path</h3><p>Register its two inlets and one exhaust with separate exterior channels. Protect against recirculation and keep the sensor serviceable.</p></div><span class="work-state">Open</span></article>
+          <article><span class="item-no">03</span><div><h3>PIR, radar and indicators</h3><p>Verify Panasonic EKMC1601111 lens visibility, actual installed LD2450/SEN0609 boresights, LED-ring retention and light-sensor isolation.</p></div><span class="work-state">Open</span></article>
+          <article><span class="item-no">04</span><div><h3>Next enclosure and print check</h3><p>Regenerate a compact parametric shell from verified interfaces, then check assembly, print orientation, H2S slicing and representative physical tests.</p></div><span class="work-state">Not run</span></article>
+        </div>
+      </section>
+
+      <section id="next" class="section callout-section" aria-labelledby="next-heading">
+        <div class="callout-main"><p class="kicker">Our design principle</p><h2 id="next-heading">As small as it can be. As capable as it needs to be.</h2><p>Accuracy, airflow, repairability and low manufacturing waste matter more than an artificially thin case. The full enclosure is not ready for printing; only specific test pieces are being validated.</p></div>
+        <div class="callout-side"><strong>Not for sale</strong><span>Not released</span><span>Not validated as a complete unit</span></div>
+      </section>
+      <footer>
+        <span>© 2026 Sense360 · Pebble development concept</span>
+        <div><a href="../">Firmware installer</a><a href="https://github.com/sense360store/concept/pull/89" rel="noopener noreferrer">Engineering review (team access)</a></div>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>
