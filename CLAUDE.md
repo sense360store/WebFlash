@@ -26,6 +26,136 @@ Before starting any cross-repository work, Claude Code must read the SOT operati
 - When WebFlash evidence materially changes programme state, the SOT update is made in a separate PR, never bundled into the WebFlash change.
 - This repository-local `CLAUDE.md` and [`docs/standing-invariants.md`](docs/standing-invariants.md) remain authoritative for repository-internal distribution and installer rules.
 
+### Bounded agent autonomy (AGENT-BOUNDED-AUTONOMY-001)
+
+This repository **adopts AGENT-BOUNDED-AUTONOMY-001**, the bounded agent
+autonomy contract defined in the *AGENT-BOUNDED-AUTONOMY-001: bounded
+autonomy* section of
+[`sense360store/SOT/CLAUDE-OPERATING-MODEL.md`](https://github.com/sense360store/SOT/blob/main/CLAUDE-OPERATING-MODEL.md).
+SOT owns the contract and all programme-level authority. Adoption
+provenance: verified against SOT `main` commit
+[`a379cdd913b5f0569fca185f7ce1986a936aa79f`](https://github.com/sense360store/SOT/commit/a379cdd913b5f0569fca185f7ce1986a936aa79f)
+(contract present, including the conditional merge delegation and
+review-and-decide delegation amendments; the SOT rollout plan names WebFlash
+as the next adoption, with distribution tightening: manifests, install
+gates, channels and signing are never autonomous). The canonical link stays
+pointed at SOT `main`; the contract text is **not duplicated here**, and
+future tasks invoke it with the **canonical SOT invocation block** rather
+than restating its rules.
+
+This `CLAUDE.md` and
+[`docs/standing-invariants.md`](docs/standing-invariants.md) provide
+**repository-local tightening** on top of the SOT contract. Local rules may
+**tighten but never loosen** the SOT contract; where rules differ, the
+**stricter safety rule wins**; an authority conflict the SOT precedence
+rules cannot resolve ends the run as `BLOCKED_AUTHORITY_CONFLICT`, never a
+judgement call. Every existing rule in this file (the trust model, the
+standing invariants, the publishing pipeline invariants, preview gating,
+the FanTRIAC block, the branch policy) stands unchanged and is not
+relaxed by this adoption. Within an explicitly authorised task, agents
+**continue autonomously through routine repository-local engineering**
+until exactly one of the five named SOT terminal states is reached.
+
+**Autonomous within an authorised task** (the distribution-scoped
+instantiation of the SOT autonomous permissions): inspect source, data
+files, generated manifests, history, PRs, and CI; add or update wizard,
+documentation, and test code inside this repository's authority and
+outside the never-autonomous surfaces below; run the Jest suite, the
+naming-policy validator, and `scripts/gen-manifests.py` in
+`--dry-run` mode only; inspect existing manifests, served binaries,
+signatures, and release evidence read-only; remediate every
+branch-caused test or CI failure; create and maintain one draft PR on a
+`claude/...` branch; and prepare a separate SOT reconciliation
+recommendation when distribution evidence materially changes programme
+state.
+
+**Never autonomous in this repository** (distribution tightening; each
+line restates or narrows, never widens, the SOT owner reservations;
+[`docs/standing-invariants.md`](docs/standing-invariants.md) applies
+unchanged):
+
+- manifests: changing `manifest.json`, any `firmware-*.json`, or any
+  generated manifest output, including running `scripts/gen-manifests.py`
+  in writing mode and committing the result, adding or removing a
+  `REQUIRED_CONFIGS` entry, or editing `firmware/sources.json`,
+  `firmware/sources-policy.json`, or any firmware binary or `.meta.json`
+  sidecar;
+- install gates: changing the install, download, provenance, SHA-256,
+  signature, manifest freshness, service-worker update, preflight, or
+  advanced/manual-warning acknowledgement gates (`evaluateInstallGate`,
+  `verifyFirmwareIntegrity`, `evaluatePreflightPolicy` and the engine
+  modules that feed them), and weakening or bypassing any gate in any way;
+- release channels: changing channel policy in
+  `scripts/utils/release-channels.js` (`defaultSelectable`,
+  `requiresAcknowledgement`, `hiddenByDefault`), promoting or demoting a
+  build between channels, or exposing any kit, module, room preset, or
+  channel that is not already exposed;
+- signing: generating, rotating, adding, or removing signing keys, editing
+  the pinned trust list `scripts/utils/firmware-trusted-keys.js`, changing
+  the signing step in `.github/workflows/firmware-publish.yml`, or
+  claiming signature verification the engine has not performed;
+- dispatch any workflow that can import, publish, sign, or deploy
+  firmware: in particular `firmware-publish.yml`, `firmware-intake.yml`,
+  `firmware-import.yml`, and `add-firmware-source.yml`;
+- create or publish a tag or GitHub Release, or deploy the site;
+- merge any PR (see *Merge authority* below);
+- edit `sw.js` (the `STATIC_ASSETS` or `SCRIPT_MODULES` precache lists,
+  `CACHE_NAME`, or any cache or fetch strategy) or `_headers` (CSP, CORS,
+  cache rules) except under a task that explicitly authorises that edit; the
+  routine instructions elsewhere in this file that tell you to make these
+  edits apply only once a task has authorised them;
+- change commercial copy, bundle visibility, buyability, or
+  `scripts/data/sot-commercial-mirror.json` other than through its
+  generator from a local SOT checkout;
+- claim hardware, bench, compliance, customer, or commercial evidence, or
+  author or amend operator attestations;
+- change SOT programme status in this repository.
+
+**Read-only observation stays allowed**: agents may verify existing
+manifests, served binaries, checksums, signatures, releases, tags,
+owner-authored decisions, and the live installer. Observation never
+authorises mutation and never raises the evidence level; when reporting
+existing external evidence, cite its provenance and name the exact
+evidence level it proves.
+
+**Workflow distinction**: routine PR CI and validation inspection is
+autonomous; branch-caused CI remediation is autonomous; dispatching or
+rerunning any workflow is owner-reserved in this repository.
+
+**Terminal states**: the five SOT terminal states apply exactly as defined
+in the SOT contract (`READY_FOR_OWNER_REVIEW`, `BLOCKED_OWNER_DECISION`,
+`BLOCKED_EXTERNAL_ACCESS`, `BLOCKED_AUTHORITY_CONFLICT`,
+`UNSAFE_TO_PROCEED`), and this repository defines no sixth local state.
+The conjunctive escalation rule is preserved unchanged: the owner may be
+interrupted only when **all four** SOT threshold conditions hold
+simultaneously.
+
+#### Merge authority
+
+This repository **does not adopt the conditional merge delegation**
+defined in the SOT operating model. No owner instruction authorising that
+delegation for WebFlash specifically has been recorded, so **WebFlash
+merges remain owner-only**: every PR here, whatever its state, is merged
+by the owner. The SOT delegation does not transfer by implication, and the
+delegations adopted by esphome-public and sense360zones in their own
+`CLAUDE.md` files do not cover this repository. Marking a draft PR ready
+for review and retargeting a PR base are merge mechanics and are likewise
+owner-only here. This repository also **does not adopt the review-and-decide
+delegation** defined in the SOT operating model: reviewing and accepting
+every PR here, agent-authored or not, remains owner-only.
+
+Agents never self-accept or self-merge a PR, including a governance
+amendment such as this one that would create or widen the agent's own
+authority. CI green, a clean mergeable state and owner silence are not
+acceptance. Adopting a merge delegation here later requires its own
+adoption PR in this repository, quoting an owner instruction that names
+WebFlash, held for owner acceptance and merged by the owner.
+
+This adoption is governance text and its regression test only
+(`__tests__/agent-bounded-autonomy-adoption.test.js`): it changes no
+firmware, manifest, install gate, release channel, signing key, workflow,
+wizard behaviour, product status, or commercial state.
+
 ## Sense360 hardware reference (canonical SKUs)
 
 This table is a **synchronized local selection/display mirror** of the canonical hardware catalog owned by `sense360store/esphome-public` (`config/hardware-catalog.json` and `docs/product-taxonomy.md`) — physical board identity is owned upstream, never here; when the two disagree, upstream wins and this table is the thing to fix. The **Friendly name** column is the canonical user-facing label — use it verbatim in wizard markup, manifest descriptions, and module metadata. There is no Model/Variant axis: each SKU is its own product, and "Base / Pro" or model/variant terminology must be dropped when touching this code. The **Old name** column lists deprecated internal/historical names and exists only to help recognise legacy references; do not use these in new code.
@@ -113,7 +243,7 @@ Other notable engine pieces:
 - `scripts/utils/release-channels.js` — release-channel policy (per-channel `defaultSelectable`, `requiresAcknowledgement`, `hiddenByDefault`). Preview builds are never auto-selected and gate install on a channel acknowledgement.
 - `scripts/utils/module-availability.js` — presentation-only availability classifier for module variants (states such as `available-stable`, `available-preview`, `no-firmware`, `advanced-manual-warning`). Static overrides take precedence over manifest-derived states; the classifier is **not** the install gate.
 - `scripts/utils/flash-history.js` — flash attempts logged to `localStorage` for diagnostics; entries strip deprecated keys.
-- `sw.js` — service worker. Strategy is network-first for `*.bin` and `manifest.json`, stale-while-revalidate for everything else. **When you add new top-level scripts, add them to `STATIC_ASSETS` or `SCRIPT_MODULES` in `sw.js`** or they will not be available offline.
+- `sw.js` — service worker. Strategy is network-first for `*.bin` and `manifest.json`, stale-while-revalidate for everything else. **When you add new top-level scripts, add them to `STATIC_ASSETS` or `SCRIPT_MODULES` in `sw.js`** or they will not be available offline. Editing `sw.js` is never autonomous (see *Bounded agent autonomy* above): make this edit only under a task that explicitly authorises it, otherwise name the missing entry in the PR as an owner action.
 
 ### Publishing pipeline
 
@@ -151,12 +281,12 @@ Otherwise the frontend will fail to find a build that the manifest claims exists
 
 - **Desktop / Web Serial only.** The install path depends on `navigator.serial`, which is only implemented on desktop Chromium browsers. Do not add code paths that assume mobile or non-Chromium browsers can flash; gate any new install-time UI behind the existing capability detection in `scripts/capabilities.js`.
 - **Pure ESM.** Tests require `NODE_OPTIONS=--experimental-vm-modules` (already set by `npm test`). Do not introduce CommonJS modules under `scripts/` or in tests; new tests should use `import { ... } from '@jest/globals'`. Jest config (`jest.config.cjs`) sets `transform: {}` — no transpilation.
-- **No external runtime dependencies in the wizard.** The only third-party script loaded by `index.html` is `esp-web-tools` from unpkg, which is allowed by the `Content-Security-Policy` in `_headers`. If you need new origins (scripts, fonts, connect-src), update the CSP there.
+- **No external runtime dependencies in the wizard.** The only third-party script loaded by `index.html` is `esp-web-tools` from unpkg, which is allowed by the `Content-Security-Policy` in `_headers`. If you need new origins (scripts, fonts, connect-src), update the CSP there — but editing `_headers` is never autonomous (see *Bounded agent autonomy* above), so make that edit only under a task that explicitly authorises it.
 - **`_headers` is GitHub-Pages-style.** It controls CORS, CSP, and cache rules. Firmware binaries are served with `Cache-Control: max-age=31536000`, so versioned filenames are critical — never overwrite a published `.bin` in place.
 - **Disabled options live in the matrix, not in markup.** The canonical SKU table above documents the products; runtime gating comes from `module-requirements.js` (e.g. `ceilingOnly`, `requiresBathroom`) and the visibility logic in `getVisibleModuleGroupKeys` in `state.js`. AirIQ ↔ VentIQ is mutually exclusive and driven by the Bathroom toggle on Ceiling mounts.
 - **No Model/Variant axis.** The product taxonomy is flat (one SKU per product). When extending the wizard, do not add Base/Pro variants or model/variant fields; add a new SKU entry to `module-requirements.js` and a new module key to `MODULE_KEYS` in `state.js` instead.
 - **Sensitive-value redaction.** `Copy diagnostics` and flash history both pass through redaction (`SENSITIVE_KEY_PATTERN` in `state.js`, `stripDeprecatedConfigurationFields` in `flash-history.js`). When adding new fields to diagnostics or history, audit whether they should be redacted before they ship.
-- **Service worker cache versioning.** The cache name lives in `CACHE_NAME` in `sw.js` (currently `webflash-v20`); bumping it is how forced refreshes are landed. The `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
+- **Service worker cache versioning.** The cache name lives in `CACHE_NAME` in `sw.js` (currently `webflash-v20`); bumping it is how forced refreshes are landed, and it is never autonomous (see *Bounded agent autonomy* above): bump it only under a task that explicitly authorises it. The `activate` handler deletes any cache that starts with `webflash-` but is not the current name.
 - **Generated files are committed.** `manifest.json`, every `firmware-*.json`, and every `firmware/configurations/*.bin` are tracked in git. Regenerate with `gen-manifests.py` and commit the diff together with the firmware change in the same commit.
 - **Branch policy.** All AI-assisted development on this repo runs on a dedicated `claude/...` branch (see workflow instructions). Never push to `main` directly.
 - **Standing invariants.** [`docs/standing-invariants.md`](docs/standing-invariants.md) carries the standing blockers / invariants that gate every WebFlash PR (2.0 sole view, engine owns every gate, stable Bathroom PoE default, preview gating, TRIAC blocked, FanDAC address acknowledgement, and the do-not-change guardrails for docs-only PRs). Never regress them. The former `UPCOMING_PR.md` working queue tracker was retired — see [`docs/archive-index.md`](docs/archive-index.md); PR queue state now lives in GitHub, not in a tracked file.
